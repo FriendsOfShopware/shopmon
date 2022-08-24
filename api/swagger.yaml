@@ -69,6 +69,33 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/User'
+    patch:
+      tags:
+        - Account
+      summary: Update current logged in user
+      operationId: updateUser
+      security: 
+        - AuthToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+              properties:
+                currentPassword:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                newPassword:
+                  type: string
+      responses:
+        204:
+          description: "User has been updated"
+        404:
+          $ref: '#/components/responses/NotFound'
     delete:
       tags:
         - Account
@@ -97,6 +124,87 @@ paths:
       responses:
         204:
           description: "Team has been deleted"
+        404:
+          $ref: '#/components/responses/NotFound'
+  /api/teams/{teamId}/members:
+    get:
+      tags:
+        - Team
+      summary: List all users in Team
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "All users in the Team"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    email:
+                      type: string
+                      format: email
+                      example: test@test.de
+        404:
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+        - Team
+      summary: Add user to Team
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: test@test.de
+      responses:
+        204:
+          description: "Added user to Team"
+        404:
+          $ref: '#/components/responses/NotFound'
+  /api/teams/{teamId}/members/{userId}:
+    delete:
+      tags:
+        - Team
+      summary: Delete user from Team
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: "Deleted user from Team"
         404:
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/shops:
