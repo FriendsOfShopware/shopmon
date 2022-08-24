@@ -19,6 +19,8 @@ export async function onSchedule() {
 
     const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, shop.client_secret));
 
+    // Authentificate only once
+    await client.getToken();
     
     const responses = await Promise.allSettled([
         client.get('/_info/config'),
