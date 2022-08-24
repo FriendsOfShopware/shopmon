@@ -1,0 +1,17 @@
+name = "shopmon"
+main = "worker.js"
+workers_dev = false
+compatibility_date = "2022-03-04"
+account_id = "963ff7fb9c523564b5f3a398ab39d488"
+routes = ["shopmon.fos.gg/*"]
+
+minify = true
+node_compat = false
+
+[build]
+command = "npm run build"
+
+[[kv_namespaces]]
+  binding = "kvStorage"
+  id = "61a260743f17482e92fa5cb2c340edec"
+  preview_id = "61a260743f17482e92fa5cb2c340edec"
