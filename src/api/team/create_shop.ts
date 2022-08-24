@@ -6,7 +6,7 @@ export async function createShop(req: Request): Promise<Response> {
     const json = await req.json();
 
     const { teamId } = req.params;
-    
+
     if (typeof json.shop_url !== 'string') {
         return new Response('Invalid shop_url.', { status: 400 });
     }
@@ -27,14 +27,26 @@ export async function createShop(req: Request): Promise<Response> {
     } catch (e) {
         return new Response('Cannot reach shop', { status: 400 });
     }
-    
-    await getConnection().execute('INSERT INTO shops (team_id, name, url, client_id, client_secret) VALUES (?, ?, ?, ?, ?)', [
-        teamId, 
+
+    const result = await getConnection().execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at) VALUES (?, ?, ?, ?, ?, NOW())', [
+        teamId,
         json.name || json.shop_url,
         json.shop_url,
         json.client_id,
         json.client_secret
     ]);
 
-    return new Response('', { status: 200 });
+    if (result.error?.code == 'ALREADY_EXISTS') {
+        return new Response('Shop already exists.', { status: 400 });
+    }
+
+    const respBody = JSON.stringify({
+        id: result.insertId,
+    })
+
+    return new Response(respBody, {
+        headers: {
+            'Content-Type': 'application/json',
+        }, status: 200
+    });
 }
