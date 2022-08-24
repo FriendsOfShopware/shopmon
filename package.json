@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "build": "esbuild --bundle --outfile=worker.js --minify src/index.ts"
+    "build": "esbuild --bundle --outfile=worker.js src/index.ts"
   },
   "author": "",
   "license": "MIT",
