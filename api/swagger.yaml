@@ -1,0 +1,290 @@
+openapi: 3.0.0
+servers:
+  - url: https://shopmon.fos.gg
+info:
+  description: Shopmon API
+  version: "1.0.0"
+  title: Shopmon API
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register
+      operationId: register
+      description: |
+        Create a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: bad input parameter
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      operationId: Login
+      description: |
+        Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: search results matching criteria
+          headers:
+            token:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: bad input parameter
+  /api/account/me:
+    get:
+      tags:
+        - Account
+      summary: Get current logged in user info
+      operationId: getCurrentUser
+      security: 
+        - AuthToken: []
+      responses:
+        '200':
+          description: "User info"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/User'
+  /api/teams/{teamId}/shops:
+    get:
+      tags:
+        - Team
+      summary: List all shops of an Team
+      operationId: listShops
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "All shops of an Team"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shop'
+    post:
+      tags:
+        - Team
+      summary: Create an new Shop
+      operationId: createShop
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShopRequest'
+      responses:
+        '200':
+          description: Successfull created
+          content:
+            'application/json':
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: Created shop id
+  /api/teams/{teamId}/shop/{shopId}:
+    get:
+      tags:
+        - Team
+      summary: Get detailed information about an Shop
+      operationId: getShopDetailed
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Shop"
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ShopDetailed'
+components:
+  securitySchemes:
+    AuthToken:
+      type: apiKey
+      in: header
+      name: token
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: test@test.de
+        password:
+          type: string
+          minLength: 8
+          example: shopware
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: test@test.de
+        password:
+          type: string
+          minLength: 8
+          example: shopware
+    CreateShopRequest:
+      type: object
+      required:
+        - shop_url
+        - client_id
+        - client_secret
+      properties:
+        shop_url:
+          type: string
+          format: url
+          example: https://test.de
+        client_id:
+          type: string
+        client_secret:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: number
+        email:
+          type: string
+          format: email
+          example: test@test.de
+        created_at:
+          type: string
+          format: date-time
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+          
+    Team:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        is_owner:
+          type: number
+          description: Is 1 when the user is owner of the team
+          example: 1
+    Shop:
+      type: object
+      properties:
+        id:
+          type: number
+        shop_url:
+          type: string
+          format: url
+        shop_version:
+          type: string
+        created_at:
+          type: string
+    ShopDetailed:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Shop'
+        - type: object
+          properties:
+            scrapeInfo:
+              $ref: '#/components/schemas/ShopScrapeInfo'
+              
+            
+    ShopScrapeInfo:
+      type: object
+      properties:
+        id:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        shop_version:
+          type: string
+        extensions:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              version:
+                type: string
+              availableVersion:
+                type: string
+              storeLink:
+                type: string
+                format: url
+        scheduled_tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+              interval:
+                type: number
+              last_run:
+                type: string
+                format: date-time
+              next_run:
+                type: string
+                format: date-time
