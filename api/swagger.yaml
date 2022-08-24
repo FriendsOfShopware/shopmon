@@ -20,13 +20,13 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        '200':
+        200:
           description: search results matching criteria
           content:
             application/json:
               schema:
                 type: object
-        '400':
+        400:
           description: bad input parameter
   /api/auth/login:
     post:
@@ -42,7 +42,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
       responses:
-        '200':
+        200:
           description: search results matching criteria
           headers:
             token:
@@ -52,7 +52,7 @@ paths:
             application/json:
               schema:
                 type: object
-        '400':
+        400:
           description: bad input parameter
   /api/account/me:
     get:
@@ -63,12 +63,42 @@ paths:
       security: 
         - AuthToken: []
       responses:
-        '200':
+        200:
           description: "User info"
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/User'
+    delete:
+      tags:
+        - Account
+      summary: Delete current logged in user
+      operationId: deleteUser
+      security: 
+        - AuthToken: []
+      responses:
+        204:
+          description: "User has been deleted"
+        404:
+          $ref: '#/components/responses/NotFound'
+  /api/teams/{teamId}:
+    delete:
+      tags:
+        - Team
+      summary: Delete an Team
+      security: 
+        - AuthToken: []
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: "Team has been deleted"
+        404:
+          $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/shops:
     get:
       tags:
@@ -84,7 +114,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        200:
           description: "All shops of an Team"
           content:
             'application/json':
@@ -92,6 +122,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Shop'
+        404:
+          $ref: '#/components/responses/NotFound'
     post:
       tags:
         - Team
@@ -111,7 +143,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateShopRequest'
       responses:
-        '200':
+        200:
           description: Successfull created
           content:
             'application/json':
@@ -121,6 +153,8 @@ paths:
                     id:
                       type: number
                       description: Created shop id
+        404:
+          $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/shop/{shopId}:
     get:
       tags:
@@ -141,13 +175,43 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        200:
           description: "Shop"
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/ShopDetailed'
+        404:
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Team
+      summary: Delete a shop
+      operationId: deleteShop
+      parameters: 
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: "Successfull deleted"
+        404:
+          $ref: '#/components/responses/NotFound'
 components:
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            type: object
   securitySchemes:
     AuthToken:
       type: apiKey
