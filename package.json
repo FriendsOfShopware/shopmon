@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "build": "esbuild --bundle --outfile=worker.js src/index.ts"
+    "build": "esbuild --bundle --outfile=worker.js src/index.ts",
+    "deploy:worker": "wrangler publish",
+    "deploy:site": "cd frontend && npm run build && wrangler pages publish --project-name shopmon  dist/"
   },
   "author": "",
   "license": "MIT",

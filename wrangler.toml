@@ -23,6 +23,3 @@ command = "npm run build"
 
 [triggers]
 crons = ["* * * * *"]
-
-[site]
-bucket = "./frontend/dist"
