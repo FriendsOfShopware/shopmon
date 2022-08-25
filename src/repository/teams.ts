@@ -32,18 +32,16 @@ export default class Teams {
     }
 
     static async deleteTeam(teamId: string): Promise<void> {
+        // Fetch all shops in the team
         const shops = await getConnection().execute(`SELECT id FROM shop WHERE team_id = ?`, [teamId]);
 
         const shopIds = shops.rows.map(shop => shop.id);
 
+        // Delete shops
         await getConnection().execute(`DELETE FROM shop WHERE team_id = ?`, [teamId]);
         await getConnection().execute(`DELETE FROM shop_scrape_info WHERE shop_id IN (?)`, [shopIds]);
 
-        for (const shop of shops.rows) {
-
-            await getConnection().execute(`DELETE FROM shop_to_user WHERE shop_id = ?`, [shop.id]);
-        }
-
+        // Delete team
         await getConnection().execute(`DELETE FROM team WHERE id = ?`, [teamId]);
         await getConnection().execute(`DELETE FROM user_to_team WHERE team_id = ?`, [teamId]);
     }
