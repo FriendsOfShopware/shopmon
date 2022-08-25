@@ -5,11 +5,11 @@ export class NoContentResponse extends Response {
 }
 
 export class ErrorResponse extends Response {
-    constructor(message: string) {
+    constructor(message: string, statusCode = 500) {
         super(
             JSON.stringify({message}),
         {
-            status: 500,
+            status: statusCode,
             headers: {
                 "content-type": 'application/json',
             }

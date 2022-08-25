@@ -6,6 +6,14 @@ interface TeamMember {
 }
 
 export default class Teams {
+    static async createTeam(name: string, ownerId: string): Promise<string> {
+        const teamInsertResult = await getConnection().execute("INSERT INTO team (name, owner_id) VALUES (?, ?)", [name, ownerId]);
+
+        await getConnection().execute("INSERT INTO user_to_team (user_id, team_id) VALUES (?, ?)", [ownerId, teamInsertResult.insertId]);
+
+        return teamInsertResult.insertId as string;
+    }
+
     static async listMembers(teamId: string): Promise<TeamMember[]> {
         const result = await getConnection().execute(`SELECT
         user.id,

@@ -1,7 +1,9 @@
 import { getConnection } from "../../db";
 import bcryptjs from "bcryptjs";
+import { NoContentResponse } from "../common/response";
+import Teams from "../../repository/teams";
 
-const validateEmail = (email: string) => {
+export const validateEmail = (email: string) => {
     return String(email)
       .toLowerCase()
       .match(
@@ -41,13 +43,9 @@ export default async function (req: Request) : Promise<Response> {
     const salt = bcryptjs.genSaltSync(10)
     const hashedPassword = bcryptjs.hashSync(json.password, salt)
 
-    const userInsertResult = await getConnection().execute("INSERT INTO user (email, password, salt, created_at) VALUES 0(?, ?, ?, NOW())", [json.email, hashedPassword, salt]);
+    const userInsertResult = await getConnection().execute("INSERT INTO user (email, password) VALUES (?, ?)", [json.email, hashedPassword]);
 
-    const teamInsertResult = await getConnection().execute("INSERT INTO team (name, owner_id, created_at) VALUES (?, ?, NOW())", [`${json.email}'s Team`, userInsertResult.insertId]);
+    await Teams.createTeam(`${json.email}'s Team`, userInsertResult.insertId as string);
 
-    await getConnection().execute("INSERT INTO user_to_team (user_id, team_id) VALUES (?, ?)", [userInsertResult.insertId, teamInsertResult.insertId]);
-
-    return new Response("OK", {
-        status: 200
-    });
+    return new NoContentResponse();
 }

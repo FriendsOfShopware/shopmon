@@ -1,7 +1,9 @@
 import { getConnection, getKv } from "../../db";
 import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
-import { NoContentResponse } from "../common/response";
+import { ErrorResponse, JsonResponse } from "../common/response";
+
+const loginError = new ErrorResponse("Invalid email or password", 400);
 
 export async function login(req: Request): Promise<Response> {
     const json = await req.json();
@@ -15,9 +17,7 @@ export async function login(req: Request): Promise<Response> {
     const result = await getConnection().execute("SELECT id, password FROM user WHERE email = ?", [json.email]);
 
     if (!result.rows.length) {
-        return new Response('User not found', {
-            status: 404
-        });
+        return loginError;
     }
 
     const user = result.rows[0];
@@ -25,9 +25,7 @@ export async function login(req: Request): Promise<Response> {
     const passwordIsValid = bcryptjs.compareSync(json.password, user.password as string);
 
     if (!passwordIsValid) {
-        return new Response('Invalid password', {
-            status: 400
-        });
+        return loginError;
     }
 
     const authToken = `u-${user.id}-${randomString(20)}`;
@@ -41,7 +39,7 @@ export async function login(req: Request): Promise<Response> {
         }
     );
 
-    return new NoContentResponse({
+    return new JsonResponse({
         'token': authToken
     });
 }
