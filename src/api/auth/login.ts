@@ -1,11 +1,10 @@
 import { getConnection, getKv } from "../../db";
 import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
+import { NoContentResponse } from "../common/response";
 
 export async function login(req: Request): Promise<Response> {
     const json = await req.json();
-
-    console.log("TEST")
 
     if (json.email === undefined || json.password === undefined) {
         return new Response('Missing email or password', {
@@ -38,14 +37,11 @@ export async function login(req: Request): Promise<Response> {
             id: user.id
         }),
         {
-            expirationTtl: 60 * 30,
+            expirationTtl: 60 * 30, // 30 minutes
         }
     );
 
-    return new Response("OK", {
-        status: 200,
-        headers: {
-            'token': authToken
-        }
+    return new NoContentResponse({
+        'token': authToken
     });
 }

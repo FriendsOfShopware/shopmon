@@ -1,0 +1,19 @@
+import { Router } from "itty-router";
+import { validateToken } from "../middleware/auth";
+import { validateTeam, validateTeamOwner } from "../middleware/team";
+import { createShop } from "./create_shop";
+import { deleteShop } from "./delete_shop";
+import { getShop } from "./get_stop";
+import { listShops } from "./list_shops";
+import { addMember, listMembers } from "./members";
+
+const teamRouter = Router({base: "/api/team"});
+
+teamRouter.get('/:teamId/members', validateToken, validateTeam, listMembers);
+teamRouter.post('/:teamId/members', validateToken, validateTeam, validateTeamOwner, addMember);
+teamRouter.get('/:teamId/shops', validateToken, validateTeam, listShops);
+teamRouter.post('/:teamId/shops', validateToken, validateTeam, createShop);
+teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, getShop);
+teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, deleteShop);
+
+export default teamRouter;

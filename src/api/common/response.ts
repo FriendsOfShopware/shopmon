@@ -1,6 +1,6 @@
 export class NoContentResponse extends Response {
-    constructor() {
-        super('', { status: 204 });
+    constructor(headers = {}) {
+        super(null, { status: 204, headers });
     }
 }
 
@@ -18,11 +18,12 @@ export class ErrorResponse extends Response {
 }
 
 export class JsonResponse extends Response {
-    constructor(body: any, status = 200) {
+    constructor(body: any, status: number = 200, headers: {} = {}) {
         super(JSON.stringify(body), {
             status,
             headers: {
                 "content-type": 'application/json',
+                ... headers
             }
         });
     }
