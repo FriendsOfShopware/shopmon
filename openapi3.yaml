@@ -73,6 +73,53 @@ paths:
           description: Confirmed
         '400':
           description: bad input parameter
+  /api/auth/reset:
+    post:
+      tags:
+        - Account
+      summary: Reset Password
+      operationId: ResetPassword
+      description: |
+        Reset Password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '204':
+          description: Reset Password
+        '400':
+          description: bad input parameter
+  /api/auth/reset/{token}:
+    post:
+      tags:
+        - Account
+      summary: Confirm reset password mail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      parameters: 
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: ConfirmResetPassword
+      responses:
+        '204':
+          description: Successfully reset password
+        '400':
+          description: bad input parameter
   /api/account/me:
     get:
       tags:
