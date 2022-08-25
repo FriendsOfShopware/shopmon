@@ -1,4 +1,6 @@
-import { getConnection } from "../../db";
+import { getConnection, getKv } from "../../db";
+import Users from "../../repository/users";
+import { NoContentResponse } from "../common/response";
 
 export async function accountMe(req: Request): Promise<Response> {
     const result = await getConnection().execute('SELECT id, email, created_at FROM user WHERE id = ?', [req.userId]);
@@ -15,4 +17,12 @@ export async function accountMe(req: Request): Promise<Response> {
             'Content-Type': 'application/json'
         }
     });
+}
+
+export async function accountDelete(req: Request): Promise<Response> {
+    await Users.delete(req.userId);
+
+    await getKv().delete(req.headers.get('token') as string)
+
+    return new NoContentResponse();
 }
