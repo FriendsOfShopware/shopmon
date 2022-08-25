@@ -32,7 +32,7 @@ export default class Shops {
             id
         ]);
 
-        await getConnection().execute('DELETE FROM shop shop_scrape_info shop_id = ?', [
+        await getConnection().execute('DELETE FROM shop_scrape_info WHERE shop_id = ?', [
             id
         ]);
    }
