@@ -39,6 +39,9 @@ export const useAuthStore = defineStore({
         alertStore.error(error);
       }
     },
+    async confirmMail(token) {
+      await fetchWrapper.post(`${baseUrl}/auth/confirm/${token}`);
+    },
     logout() {
       this.user = null;
       localStorage.removeItem('user');

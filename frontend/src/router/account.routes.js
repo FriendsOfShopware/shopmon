@@ -1,10 +1,11 @@
-import { Layout, Login, Register } from '@/views/account';
+import { Layout, Login, Register, AccountConfirm } from '@/views/account';
 
 export default {
     path: '/account',
     component: Layout,
     children: [
-        { path: 'login', component: Login },
-        { path: 'register', component: Register }
+        { name: 'account.login', path: 'login', component: Login },
+        { name: 'account.register', path: 'register', component: Register },
+        { name: 'account.confirm', path: 'confirm/:token', component: AccountConfirm },
     ]
 };
