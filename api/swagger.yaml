@@ -108,7 +108,7 @@ paths:
           description: "User has been deleted"
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/teams/{teamId}:
+  /api/team/{teamId}:
     delete:
       tags:
         - Team
@@ -126,7 +126,7 @@ paths:
           description: "Team has been deleted"
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/teams/{teamId}/members:
+  /api/team/{teamId}/members:
     get:
       tags:
         - Team
@@ -184,7 +184,7 @@ paths:
           description: "Added user to Team"
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/teams/{teamId}/members/{userId}:
+  /api/team/{teamId}/members/{userId}:
     delete:
       tags:
         - Team
@@ -207,7 +207,7 @@ paths:
           description: "Deleted user from Team"
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/teams/{teamId}/shops:
+  /api/team/{teamId}/shops:
     get:
       tags:
         - Team
@@ -263,7 +263,7 @@ paths:
                       description: Created shop id
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/teams/{teamId}/shop/{shopId}:
+  /api/team/{teamId}/shop/{shopId}:
     get:
       tags:
         - Team
