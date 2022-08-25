@@ -8,8 +8,7 @@ import { router } from '@/router';
 import { Spinner } from '@/components/icon';
 
 const schema = Yup.object().shape({
-  firstName: Yup.string().required('First Name is required'),
-  lastName: Yup.string().required('Last Name is required'),
+  username: Yup.string().required('Username is required'),
   email: Yup.string().required('Email is required'),
   password: Yup.string()
     .required('Password is required')
@@ -38,23 +37,13 @@ async function onSubmit(values) {
   >
     <div class="mb-2">
       <Field
-        name="firstName"
-        placeholder="First Name"
+        name="username"
+        placeholder="Username"
         type="text"
         class="field"
-        :class="{ 'is-invalid': errors.firstName }"
+        :class="{ 'is-invalid': errors.username }"
       />
-      <div class="text-red-700">{{ errors.firstName }}</div>
-    </div>
-    <div class="mb-2">
-      <Field
-        name="lastName"
-        placeholder="Last Name"
-        type="text"
-        class="field"
-        :class="{ 'is-invalid': errors.lastName }"
-      />
-      <div class="text-red-700">{{ errors.lastName }}</div>
+      <div class="text-red-700">{{ errors.username }}</div>
     </div>
     <div class="mb-2">
       <Field
