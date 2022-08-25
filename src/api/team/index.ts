@@ -6,9 +6,11 @@ import { deleteShop } from "./delete_shop";
 import { getShop } from "./get_stop";
 import { listShops } from "./list_shops";
 import { addMember, listMembers, removeMember } from "./members";
+import { deleteTeam } from "./team";
 
 const teamRouter = Router({base: "/api/team"});
 
+teamRouter.delete('/:teamId', validateToken, validateTeam, validateTeamOwner, deleteTeam);
 teamRouter.get('/:teamId/members', validateToken, validateTeam, listMembers);
 teamRouter.post('/:teamId/members', validateToken, validateTeam, validateTeamOwner, addMember);
 teamRouter.delete('/:teamId/members/:userId', validateToken, validateTeam, validateTeamOwner, removeMember);

@@ -296,6 +296,8 @@ paths:
         - Team
       summary: Delete a shop
       operationId: deleteShop
+      security: 
+        - AuthToken: []
       parameters: 
         - name: teamId
           in: path
