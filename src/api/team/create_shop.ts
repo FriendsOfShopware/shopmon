@@ -1,6 +1,8 @@
 import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { Shop } from "shopware-app-server-sdk/shop";
 import { getConnection } from "../../db";
+import Shops from "../../repository/shops";
+import { ErrorResponse, JsonResponse } from "../common/response";
 
 export async function createShop(req: Request): Promise<Response> {
     const json = await req.json();
@@ -28,26 +30,18 @@ export async function createShop(req: Request): Promise<Response> {
         return new Response('Cannot reach shop', { status: 400 });
     }
 
-    const result = await getConnection().execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)', [
-        teamId,
-        json.name || json.shop_url,
-        json.shop_url,
-        json.client_id,
-        json.client_secret,
-        resp.body.version,
-    ]);
+    try {
+        const id = await Shops.createShop({
+            team_id: teamId,
+            name: json.name || json.shop_url,
+            client_id: json.client_id,
+            client_secret: json.client_secret,
+            shop_url: json.shop_url,
+            version: resp.body.version,
+        });
 
-    if (result.error?.code == 'ALREADY_EXISTS') {
-        return new Response('Shop already exists.', { status: 400 });
+        return new JsonResponse({ id });
+    } catch (e: any) {
+        return new ErrorResponse(e.message || 'Unknown error')
     }
-
-    const respBody = JSON.stringify({
-        id: result.insertId,
-    })
-
-    return new Response(respBody, {
-        headers: {
-            'Content-Type': 'application/json',
-        }, status: 200
-    });
 }
