@@ -3,9 +3,9 @@ import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
-const loginError = new ErrorResponse("Invalid email or password", 400);
-
 export async function login(req: Request): Promise<Response> {
+    const loginError = new ErrorResponse("Invalid email or password", 400);
+
     const json = await req.json();
 
     if (json.email === undefined || json.password === undefined) {
