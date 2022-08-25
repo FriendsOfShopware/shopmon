@@ -38,7 +38,7 @@ export async function login(req: Request): Promise<Response> {
             id: user.id
         }),
         {
-            expirationTtl: 60 * 1000,
+            expirationTtl: 60 * 30,
         }
     );
 
