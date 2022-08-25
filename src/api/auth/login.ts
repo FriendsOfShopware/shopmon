@@ -9,12 +9,10 @@ export async function login(req: Request): Promise<Response> {
     const json = await req.json();
 
     if (json.email === undefined || json.password === undefined) {
-        return new Response('Missing email or password', {
-            status: 400
-        });
+        return new ErrorResponse('Missing email or password', 400);
     }
 
-    const result = await getConnection().execute("SELECT id, password FROM user WHERE email = ?", [json.email]);
+    const result = await getConnection().execute("SELECT id, password FROM user WHERE email = ? AND verify_code IS NULL", [json.email]);
 
     if (!result.rows.length) {
         return loginError;

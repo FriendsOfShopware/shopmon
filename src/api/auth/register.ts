@@ -2,6 +2,8 @@ import { getConnection } from "../../db";
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import Teams from "../../repository/teams";
+import { randomString } from "../../util";
+import { sendMailConfirmToUser } from "../../mail/mail";
 
 export const validateEmail = (email: string) => {
     return String(email)
@@ -35,9 +37,13 @@ export default async function (req: Request) : Promise<Response> {
     const salt = bcryptjs.genSaltSync(10)
     const hashedPassword = await bcryptjs.hash(json.password, salt)
 
-    const userInsertResult = await getConnection().execute("INSERT INTO user (email, password) VALUES (?, ?)", [json.email, hashedPassword]);
+    const token = randomString(32)
+
+    const userInsertResult = await getConnection().execute("INSERT INTO user (email, password, verify_code) VALUES (?, ?, ?)", [json.email, hashedPassword, token]);
 
     await Teams.createTeam(`${json.email}'s Team`, userInsertResult.insertId as string);
+
+    await sendMailConfirmToUser(json.email, token);
 
     return new NoContentResponse();
 }
