@@ -22,7 +22,7 @@ export async function login(req: Request): Promise<Response> {
 
     const user = result.rows[0];
 
-    const passwordIsValid = bcryptjs.compareSync(json.password, user.password as string);
+    const passwordIsValid = await bcryptjs.compare(json.password, user.password as string);
 
     if (!passwordIsValid) {
         return loginError;
