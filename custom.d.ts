@@ -5,6 +5,7 @@ declare var MAIL_URL: string;
 declare var MAIL_SECRET: string;
 declare var MAIL_FROM: string;
 declare var FRONTEND_URL: string;
+declare var ORIGIN_HOST: string;
 declare var kvStorage: KVNamespace;
 
 interface Team {

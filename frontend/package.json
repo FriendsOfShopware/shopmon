@@ -1,0 +1,28 @@
+{
+    "name": "shopmon-frontend",
+    "private": true,
+    "version": "0.0.0",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "@headlessui/vue": "^1.6.7",
+      "@heroicons/vue": "^1.0.6",
+      "@tailwindcss/forms": "^0.5.2",
+      "pinia": "^2.0.13",
+      "vee-validate": "^4.5.11",
+      "vue": "^3.2.33",
+      "vue-router": "^4.0.14",
+      "yup": "^0.32.11"
+    },
+    "devDependencies": {
+      "@vitejs/plugin-vue": "^2.3.0",
+      "autoprefixer": "^10.4.2",
+      "postcss": "^8.4.5",
+      "tailwindcss": "^3.0.13",
+      "vite": "^2.9.0"
+    }
+  }
+  

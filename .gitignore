@@ -1,3 +1,5 @@
 /node_modules
 /worker.js
 /.dev.vars
+/frontend/node_modules
+/frontend/dist
