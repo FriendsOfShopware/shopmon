@@ -20,12 +20,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        '200':
-          description: search results matching criteria
-          content:
-            application/json:
-              schema:
-                type: object
+        '204':
+          description: Registration successful
         '400':
           description: bad input parameter
   /api/auth/login:
@@ -43,7 +39,7 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: search results matching criteria
+          description: Token
           headers:
             token:
               schema:
@@ -52,6 +48,9 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  token:
+                    type: string
         '400':
           description: bad input parameter
   /api/account/me:
