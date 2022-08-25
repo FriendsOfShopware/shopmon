@@ -20,13 +20,13 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        200:
+        '200':
           description: search results matching criteria
           content:
             application/json:
               schema:
                 type: object
-        400:
+        '400':
           description: bad input parameter
   /api/auth/login:
     post:
@@ -42,7 +42,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
       responses:
-        200:
+        '200':
           description: search results matching criteria
           headers:
             token:
@@ -52,7 +52,7 @@ paths:
             application/json:
               schema:
                 type: object
-        400:
+        '400':
           description: bad input parameter
   /api/account/me:
     get:
@@ -63,7 +63,7 @@ paths:
       security: 
         - AuthToken: []
       responses:
-        200:
+        '200':
           description: "User info"
           content:
             'application/json':
@@ -92,9 +92,9 @@ paths:
                 newPassword:
                   type: string
       responses:
-        204:
+        '204':
           description: "User has been updated"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
     delete:
       tags:
@@ -104,9 +104,9 @@ paths:
       security: 
         - AuthToken: []
       responses:
-        204:
+        '204':
           description: "User has been deleted"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}:
     delete:
@@ -122,9 +122,9 @@ paths:
           schema:
             type: string
       responses:
-        204:
+        '204':
           description: "Team has been deleted"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/members:
     get:
@@ -140,7 +140,7 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        '200':
           description: "All users in the Team"
           content:
             application/json:
@@ -155,7 +155,7 @@ paths:
                       type: string
                       format: email
                       example: test@test.de
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
     post:
       tags:
@@ -180,9 +180,9 @@ paths:
                   format: email
                   example: test@test.de
       responses:
-        204:
+        '204':
           description: "Added user to Team"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/members/{userId}:
     delete:
@@ -203,9 +203,9 @@ paths:
           schema:
             type: string
       responses:
-        204:
+        '204':
           description: "Deleted user from Team"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/shops:
     get:
@@ -222,7 +222,7 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        '200':
           description: "All shops of an Team"
           content:
             'application/json':
@@ -230,7 +230,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Shop'
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
     post:
       tags:
@@ -251,7 +251,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateShopRequest'
       responses:
-        200:
+        '200':
           description: Successfull created
           content:
             'application/json':
@@ -261,7 +261,7 @@ paths:
                     id:
                       type: number
                       description: Created shop id
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
   /api/teams/{teamId}/shop/{shopId}:
     get:
@@ -283,13 +283,13 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        '200':
           description: "Shop"
           content:
             'application/json':
               schema:
                 $ref: '#/components/schemas/ShopDetailed'
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
     delete:
       tags:
@@ -308,9 +308,9 @@ paths:
           schema:
             type: string
       responses:
-        204:
+        '204':
           description: "Successfull deleted"
-        404:
+        '404':
           $ref: '#/components/responses/NotFound'
 components:
   responses:
@@ -416,9 +416,7 @@ components:
         - type: object
           properties:
             scrapeInfo:
-              $ref: '#/components/schemas/ShopScrapeInfo'
-              
-            
+              $ref: '#/components/schemas/ShopScrapeInfo'      
     ShopScrapeInfo:
       type: object
       properties:
