@@ -1,4 +1,3 @@
-import { JsonResponse } from "../api/common/response";
 import { getConnection } from "../db";
 
 interface TeamMember {
@@ -28,13 +27,7 @@ export default class Teams {
         await getConnection().execute(`INSERT INTO user_to_team (team_id, user_id) VALUES(?, ?)`, [teamId, member.rows[0].id]);
     }
 
-    static async removeMember(teamId: string, email: string): Promise<void> {
-        const member = await getConnection().execute(`SELECT id FROM user WHERE email = ?`, [email]);
-
-        if (member.rows.length === 0) {
-            return;
-        }
-
-        await getConnection().execute(`DELETE FROM user_to_team WHERE team_id = ? AND user_id = ?`, [teamId, member.rows[0].id]);
+    static async removeMember(teamId: string, userId: string): Promise<void> {
+        await getConnection().execute(`DELETE FROM user_to_team WHERE team_id = ? AND user_id = ?`, [teamId, userId]);
     }
 }

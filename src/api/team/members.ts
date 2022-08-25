@@ -24,17 +24,15 @@ export async function addMember(req: Request): Promise<Response> {
 }
 
 export async function removeMember(req: Request): Promise<Response> {
-    const { teamId } = req.params;
+    const { teamId, userId } = req.params;
 
-    const json = await req.json();
-
-    if (json.email === undefined) {
+    if (userId == req.userId) {
         return new JsonResponse({
-            message: "Missing email"
+            message: "You cannot remove yourself"
         }, 400);
     }
 
-    await Teams.removeMember(teamId, json.email);
+    await Teams.removeMember(teamId, userId);
 
     return new NoContentResponse();
 }
