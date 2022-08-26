@@ -85,7 +85,7 @@ async function onSubmit(values) {
       </div>
 
       <div class="text-sm">
-        <a href="#" class="font-medium"> Forgot your password? </a>
+        <router-link to="forgot-password" class="font-medium">Forgot your password?</router-link>
       </div>
     </div>
 
