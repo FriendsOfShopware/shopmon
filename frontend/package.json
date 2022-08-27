@@ -11,7 +11,7 @@
       "@headlessui/vue": "^1.6.7",
       "@heroicons/vue": "^1.0.6",
       "@tailwindcss/forms": "^0.5.2",
-      "pinia": "^2.0.13",
+      "pinia": "^2.0.21",
       "vee-validate": "^4.5.11",
       "vue": "^3.2.33",
       "vue-router": "^4.0.14",
