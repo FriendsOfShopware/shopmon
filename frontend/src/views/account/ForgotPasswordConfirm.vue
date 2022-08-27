@@ -6,7 +6,7 @@ import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { useAlertStore, useAuthStore } from '@/stores';
-import { Spinner } from '@/components/icon';
+import Spinner from '@/components/icon/Spinner.vue';
 
 const schema = Yup.object().shape({
   password: Yup.string()
@@ -27,7 +27,7 @@ async function onSubmit(values: any): Promise<void> {
     setTimeout(() => {
       router.push('/account/login');
     }, 2000);
-  } catch (error) {
+  } catch (error: Error) {
     alertStore.error(error.message);
   }
 }

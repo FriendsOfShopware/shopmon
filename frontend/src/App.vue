@@ -1,10 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { RouterView } from 'vue-router';
 
-import { Nav, Alert } from '@/components';
+import Nav from '@/components/layout/Nav.vue';
+import Alert from '@/components/Alert.vue';
+
 import { useAuthStore } from '@/stores';
 
 const authStore = useAuthStore();
+
+if (authStore.isAuthenticated) {
+  authStore.refreshUser();
+}
 </script>
 
 <template>
@@ -12,5 +18,3 @@ const authStore = useAuthStore();
   <Alert />
   <RouterView />
 </template>
-
-<style></style>

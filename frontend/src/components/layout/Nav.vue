@@ -29,7 +29,7 @@ const userNavigation = [
 </script>
 
 <template>
-  <Disclosure v-show="authStore.user" as="nav" class="bg-sky-500" v-slot="{ open }">
+  <Disclosure v-if="authStore.user" as="nav" class="bg-sky-500" v-slot="{ open }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center">

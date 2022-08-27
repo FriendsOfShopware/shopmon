@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { storeToRefs } from 'pinia';
 
-import { useAlertStore } from '@/stores';
+import { useAlertStore } from '@/stores/alert.store';
 import { XMarkIcon } from '@heroicons/vue/24/solid';
 
 const alertStore = useAlertStore();

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Spinner, Header, MainContainer } from '@/components';
+
+import Spinner from '@/components/icon/Spinner.vue'
+import Header from '@/components/layout/Header.vue'
+import MainContainer from '@/components/layout/MainContainer.vue';
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
-import { storeToRefs } from 'pinia';
 import { ref } from 'vue';
 
 import { useAuthStore, useAlertStore } from '@/stores';
@@ -12,7 +14,12 @@ import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 const authStore = useAuthStore();
 const alertStore = useAlertStore();
 
-let { user } = storeToRefs(authStore);
+const user = {
+  currentPassword: '',
+  newPassword: '',
+  username: authStore.user?.username,
+  email: authStore.user?.email,
+}
 
 const isSubmitting = ref(false);
 let showAccountDeletionModal = ref(false)
@@ -23,7 +30,7 @@ const schema = Yup.object().shape({
   username: Yup.string().min(5, 'Username must be at least 5 characters'),
   newPassword: Yup.string()
     .transform((x) => (x === '' ? undefined : x))
-    .concat(user ? null : Yup.string().required('Password is required'))
+    .concat(Yup.string().required('Password is required'))
     .min(8, 'Password must be at least 8 characters'),
 });
 
@@ -31,7 +38,7 @@ async function onSubmit(values: any) {
   try {
     await authStore.updateProfile(values);
     alertStore.success("User updated");
-  } catch (error) {
+  } catch (error: Error) {
     alertStore.error(error);
   }
 }
@@ -39,13 +46,12 @@ async function onSubmit(values: any) {
 async function deleteUser() {
   try {
     await authStore.delete();
-  } catch (error) {
+  } catch (error: Error) {
     alertStore.error(error);
   }
 
   showAccountDeletionModal.value = false;
 }
-
 </script>
 
 <template>
@@ -122,7 +128,13 @@ async function deleteUser() {
                   </div>
               </div>
               <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-500 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Save</button>
+                <button
+                  :disabled="isSubmitting"
+                  type="submit" 
+                  class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-500 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+                >
+                  Save
+                </button>
               </div>
             </div>
           </Form>

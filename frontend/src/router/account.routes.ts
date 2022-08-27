@@ -1,4 +1,10 @@
-import { Layout, Login, Register, AccountConfirm, ForgotPassword, Profile, ForgotPasswordConfirm } from '@/views/account';
+import Layout from '@/views/account/Layout.vue';
+import Profile from '@/views/account/Profile.vue';
+import Login from '@/views/account/Login.vue';
+import Register from '@/views/account/Register.vue';
+import AccountConfirm from '@/views/account/AccountConfirm.vue';
+import ForgotPassword from '@/views/account/ForgotPassword.vue';
+import ForgotPasswordConfirm from '@/views/account/ForgotPasswordConfirm.vue';
 
 export default {
     path: '/account',

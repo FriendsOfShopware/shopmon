@@ -1,11 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { useAuthStore, useAlertStore } from '@/stores';
 import { router } from '@/router';
 
-import { Spinner } from '@/components/icon';
+import Spinner from '@/components/icon/Spinner.vue';
 
 const schema = Yup.object().shape({
   username: Yup.string().required('Username is required'),

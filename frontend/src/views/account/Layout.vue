@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 
-import { LoginContainer, MainContainer } from '@/components'
+import LoginContainer from '@/components/layout/LoginContainer.vue';
 import { useAuthStore } from '@/stores';
 
 const authStore = useAuthStore();

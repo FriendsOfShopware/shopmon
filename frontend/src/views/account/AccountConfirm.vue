@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
 import { InformationCircleIcon, CheckCircleIcon  } from '@heroicons/vue/24/solid'
 
 import { useAuthStore } from '@/stores';
 </script>
 
-<script>
+<script lang="ts">
 export default {
     data() {
         return {
@@ -16,7 +16,7 @@ export default {
         const authStore = useAuthStore();
 
         try {
-            await authStore.confirmMail(this.$route.params.token);
+            await authStore.confirmMail(this.$route.params.token as string);
             this.success = true;
         } catch (e) {
             this.success = false;

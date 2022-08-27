@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Form, Field, SubmissionHandler } from 'vee-validate';
+import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { useAuthStore, useAlertStore } from '@/stores';
-import { Spinner } from '@/components/icon';
+import Spinner from '@/components/icon/Spinner.vue';
 
 const schema = Yup.object().shape({
   email: Yup.string().required('Email is required')
@@ -16,7 +16,7 @@ async function onSubmit(values: any): Promise<void> {
   try {
     await usersStore.resetPassword(values.email);
     alertStore.success('Password reset email sent');
-  } catch (error) {
+  } catch (error: Error) {
     alertStore.error(error.message);
   }
 }

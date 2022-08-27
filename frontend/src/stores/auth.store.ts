@@ -3,24 +3,25 @@ import { defineStore } from 'pinia';
 import { fetchWrapper } from '@/helpers';
 import { router } from '@/router';
 import { useAlertStore } from '@/stores';
+import type { User } from '@apiTypes/user';
 
-export const useAuthStore = defineStore({
-  id: 'auth',
-  state: () => ({
-    user: JSON.parse(localStorage.getItem('user')),
+export const useAuthStore = defineStore('auth', {
+  state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null} => ({
+    isAuthenticated: sessionStorage.getItem('user') !== null,
+    user: JSON.parse(sessionStorage.getItem('user') as string),
     returnUrl: null,
   }),
   actions: {
     async refreshUser() {
       const user = await fetchWrapper.get(`/account/me`, '', {
-        token: this.user.token,
+        token: this.user!!.token,
       });
 
-      user.token = this.user.token;
+      user.token = this.user!!.token;
 
       this.user = user;
 
-      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.setItem('user', JSON.stringify(user));
     },
 
     async login(email: string, password: string) {
@@ -40,11 +41,11 @@ export const useAuthStore = defineStore({
         this.user = user;
 
         // store user details and jwt in local storage to keep user logged in between page refreshes
-        localStorage.setItem('user', JSON.stringify(user));
+        sessionStorage.setItem('user', JSON.stringify(user));
 
         // redirect to previous url or default to home page
         router.push(this.returnUrl || '/');
-      } catch (error) {
+      } catch (error: any) {
         const alertStore = useAlertStore();
         alertStore.error(error);
       }

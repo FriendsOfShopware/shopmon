@@ -1,9 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { LockClosedIcon } from '@heroicons/vue/24/solid'
-import { Spinner } from '@/components/icon';
+import  Spinner from '@/components/icon/Spinner.vue';
 
 import { useAuthStore } from '@/stores';
 
@@ -12,7 +12,7 @@ const schema = Yup.object().shape({
   password: Yup.string().required('Password is required'),
 });
 
-async function onSubmit(values) {
+async function onSubmit(values: any) {
   const authStore = useAuthStore();
   const { email, password } = values;
   await authStore.login(email, password);
