@@ -5,11 +5,13 @@
     "moduleResolution": "Node",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+    "jsx": "preserve"
   },
   "exclude": [
     "node_modules",
     "dist",
     "test"
-  ]
+  ],
+  "vueCompilerOptions": {}
 }
