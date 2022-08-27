@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory, RouteLocationNormalized } from 'vue-router';
 
-import { useAuthStore, useAlertStore } from '@/stores';
+import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
 import accountRoutes from './account.routes';
+import { useAlertStore } from '@/stores/alert.store';
 
 
 export const router = createRouter({

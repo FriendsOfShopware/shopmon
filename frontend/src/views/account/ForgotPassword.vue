@@ -2,14 +2,15 @@
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useAuthStore, useAlertStore } from '@/stores';
 import Spinner from '@/components/icon/Spinner.vue';
+import { useAuthStore } from '@/stores/auth.store';
+import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     email: Yup.string().required('Email is required')
 })
 
-async function onSubmit(values: {email: string}): Promise<void> {
+async function onSubmit(values: any): Promise<void> {
     const usersStore = useAuthStore();
     const alertStore = useAlertStore();
   

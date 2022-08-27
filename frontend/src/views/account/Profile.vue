@@ -7,9 +7,10 @@ import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 import { ref } from 'vue';
 
-import { useAuthStore, useAlertStore } from '@/stores';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { useAuthStore } from '@/stores/auth.store';
+import { useAlertStore } from '@/stores/alert.store';
 
 const authStore = useAuthStore();
 const alertStore = useAlertStore();
@@ -21,7 +22,7 @@ const user = {
     email: authStore.user?.email,
 }
 
-let showAccountDeletionModal = ref(false)
+const showAccountDeletionModal = ref(false)
 
 const schema = Yup.object().shape({
     currentPassword: Yup.string().required('Current password is required'),
@@ -33,7 +34,7 @@ const schema = Yup.object().shape({
         .min(8, 'Password must be at least 8 characters'),
 });
 
-async function onSubmit(values: {username: string, email: string, currentPassword: string, newPassword: string}) {
+async function onSubmit(values: any) {
     try {
         await authStore.updateProfile(values);
         alertStore.success("User updated");
@@ -193,13 +194,11 @@ async function deleteUser() {
                 </div>
                 <div class="mt-5">
                   <button
-                    type="button" 
-                    :disabled="isSubmitting"
+                    type="button"
                     class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
                     @click="showAccountDeletionModal = true"
                   >
                     <Spinner
-                      v-if="isSubmitting"
                       class="mr-2"
                     />
                     Delete account

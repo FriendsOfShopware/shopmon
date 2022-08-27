@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { InformationCircleIcon, CheckCircleIcon  } from '@heroicons/vue/24/solid'
 
-import { useAuthStore } from '@/stores';
+import { useAuthStore } from '@/stores/auth.store';
 </script>
 
 <script lang="ts">

@@ -2,10 +2,11 @@
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useAuthStore, useAlertStore } from '@/stores';
 import { router } from '@/router';
 
 import Spinner from '@/components/icon/Spinner.vue';
+import { useAuthStore } from '@/stores/auth.store';
+import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     username: Yup.string().required('Username is required'),
@@ -15,14 +16,14 @@ const schema = Yup.object().shape({
         .min(8, 'Password must be at least 8 characters'),
 });
 
-async function onSubmit(values) {
+async function onSubmit(values: any) {
     const authStore = useAuthStore();
     const alertStore = useAlertStore();
     try {
         await authStore.register(values);
         await router.push('/account/login');
         alertStore.success('Registration successful');
-    } catch (error) {
+    } catch (error: any) {
         alertStore.error(error);
     }
 }
