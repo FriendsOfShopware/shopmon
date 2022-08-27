@@ -20,7 +20,7 @@ const route = useRoute()
 const router = useRouter();
 const alertStore = useAlertStore();
 
-async function onSubmit(values: {password: string}): Promise<void> {  
+async function onSubmit(values: any): Promise<void> {  
     try {
         await authStore.confirmResetPassword(route.params.token as string, values.password);
         alertStore.success('Password has been resetted. You will be redirected to login page in 2 seconds.');

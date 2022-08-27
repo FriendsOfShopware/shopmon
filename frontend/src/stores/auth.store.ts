@@ -49,9 +49,9 @@ export const useAuthStore = defineStore('auth', {
 
                 // redirect to previous url or default to home page
                 router.push(this.returnUrl || '/');
-            } catch (error: unknown) {
+            } catch (error: any) {
                 const alertStore = useAlertStore();
-                alertStore.error((error as Error).message);
+                alertStore.error(error);
             }
         },
         async register(user: object) {
