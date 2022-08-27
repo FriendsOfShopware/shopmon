@@ -30,7 +30,11 @@ export async function accountMe(req: Request): Promise<Response> {
 }
 
 export async function accountDelete(req: Request): Promise<Response> {
-    await Users.delete(req.userId);
+    try {
+        await Users.delete(req.userId);
+    } catch (e: any) {
+        return new ErrorResponse(e?.message || 'Unknown error');
+    }
 
     await getKv().delete(req.headers.get('token') as string)
 
