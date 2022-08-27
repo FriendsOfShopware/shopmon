@@ -96,6 +96,21 @@ paths:
         '400':
           description: bad input parameter
   /api/auth/reset/{token}:
+    get:
+      tags:
+        - Account
+      summary: Check reset token exists
+      parameters: 
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reset Token exists
+        '404':
+          description: Token does not exists
     post:
       tags:
         - Account
@@ -151,6 +166,8 @@ paths:
                 - currentPassword
               properties:
                 currentPassword:
+                  type: string
+                username:
                   type: string
                 email:
                   type: string
@@ -397,9 +414,12 @@ components:
     RegisterRequest:
       type: object
       required:
+        - username
         - email
         - password
       properties:
+        username:
+          type: string
         email:
           type: string
           format: email
@@ -439,6 +459,9 @@ components:
       properties:
         id:
           type: number
+        username:
+          type: string
+          example: demo-user
         email:
           type: string
           format: email

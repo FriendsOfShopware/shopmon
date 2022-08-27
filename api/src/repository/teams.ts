@@ -17,6 +17,7 @@ export default class Teams {
     static async listMembers(teamId: string): Promise<TeamMember[]> {
         const result = await getConnection().execute(`SELECT
         user.id,
+        user.username,
         user.email
     FROM user_to_team 
     INNER JOIN user ON(user.id = user_to_team.user_id)

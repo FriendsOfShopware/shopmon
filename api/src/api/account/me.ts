@@ -13,7 +13,7 @@ const revokeTokens = async (userId: string) => {
 }
 
 export async function accountMe(req: Request): Promise<Response> {
-    const result = await getConnection().execute('SELECT id, email, created_at FROM user WHERE id = ?', [req.userId]);
+    const result = await getConnection().execute('SELECT id, username, email, created_at FROM user WHERE id = ?', [req.userId]);
 
     const json = result.rows[0];
 
@@ -38,7 +38,7 @@ export async function accountDelete(req: Request): Promise<Response> {
 }
 
 export async function accountUpdate(req: Request): Promise<Response> {
-    const {currentPassword, email, newPassword } = await req.json();
+    const {currentPassword, email, newPassword, username } = await req.json();
 
     const result = await getConnection().execute('SELECT id, password FROM user WHERE id = ?', [req.userId]);
 
@@ -70,6 +70,10 @@ export async function accountUpdate(req: Request): Promise<Response> {
 
     if (email !== undefined) {
         await getConnection().execute('UPDATE user SET email = ? WHERE id = ?', [email, req.userId]);
+    }
+
+    if (username !== undefined) {
+        await getConnection().execute('UPDATE user SET username = ? WHERE id = ?', [username, req.userId]);
     }
 
     return new NoContentResponse();
