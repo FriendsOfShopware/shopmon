@@ -7,6 +7,6 @@ export default {
         { name: 'account.login', path: 'login', component: Login },
         { name: 'account.register', path: 'register', component: Register },
         { name: 'account.confirm', path: 'confirm/:token', component: AccountConfirm },
-        { path: 'forgot-password', component: ForgotPassword },
+        { name: 'account.forgot.password', path: 'forgot-password', component: ForgotPassword },
     ]
 };
