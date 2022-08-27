@@ -27,6 +27,6 @@
     "test"
   ],
   "files": [
-    "custom.d.ts"
+    "api/custom.d.ts"
   ]
 }
