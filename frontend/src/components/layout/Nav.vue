@@ -12,12 +12,12 @@ import {
 } from '@headlessui/vue';
 import {
   BellIcon,
-  MenuIcon,
-  XIcon,
+  Bars2Icon,
+  XMarkIcon,
   UserIcon,
-  LogoutIcon,
+  ArrowLeftOnRectangleIcon,
   CogIcon,
-} from '@heroicons/vue/outline';
+} from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
 
@@ -33,7 +33,7 @@ const navigation = [{ name: 'Dashboard', route: '/' }];
 const userNavigation = [
   { name: 'Your Profile', route: '/account', icon: UserIcon },
   { name: 'Settings', route: '/users', icon: CogIcon },
-  { name: 'Logout', route: '/logout', icon: LogoutIcon },
+  { name: 'Logout', route: '/logout', icon: ArrowLeftOnRectangleIcon },
 ];
 </script>
 
@@ -150,8 +150,8 @@ const userNavigation = [
               focus:outline-none
             ">
             <span class="sr-only">Open main menu</span>
-            <MenuIcon v-if="!open" class="block h-6 w-6" aria-hidden="true" />
-            <XIcon v-else class="block h-6 w-6" aria-hidden="true" />
+            <Bars2Icon v-if="!open" class="block h-6 w-6" aria-hidden="true" />
+            <XMarkIcon v-else class="block h-6 w-6" aria-hidden="true" />
           </DisclosureButton>
         </div>
       </div>

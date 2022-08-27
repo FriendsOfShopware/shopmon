@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 
 import { useAlertStore } from '@/stores';
-import { XIcon } from '@heroicons/vue/solid';
+import { XMarkIcon } from '@heroicons/vue/24/solid';
 
 const alertStore = useAlertStore();
 const { alert } = storeToRefs(alertStore);
@@ -36,7 +36,7 @@ const { alert } = storeToRefs(alertStore);
           @click="alertStore.clear()"
           class="w-4 h-4 absolute top-1 right-1 color-red-500"
         >
-          <XIcon />
+          <XMarkIcon />
         </button>
         {{ alert.message }}
       </div>

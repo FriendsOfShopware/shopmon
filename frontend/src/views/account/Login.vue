@@ -2,7 +2,7 @@
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { LockClosedIcon } from '@heroicons/vue/solid';
+import { LockClosedIcon } from '@heroicons/vue/24/solid'
 import { Spinner } from '@/components/icon';
 
 import { useAuthStore } from '@/stores';
