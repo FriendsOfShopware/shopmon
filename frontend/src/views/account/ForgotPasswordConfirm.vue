@@ -5,8 +5,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useAlertStore, useAuthStore } from '@/stores';
 import Spinner from '@/components/icon/Spinner.vue';
+import { useAuthStore } from '@/stores/auth.store';
+import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     password: Yup.string()

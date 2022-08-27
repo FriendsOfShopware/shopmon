@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import { LockClosedIcon } from '@heroicons/vue/24/solid'
 import  Spinner from '@/components/icon/Spinner.vue';
 
-import { useAuthStore } from '@/stores';
+import { useAuthStore } from '@/stores/auth.store';
 
 const schema = Yup.object().shape({
     email: Yup.string().required('Email is required'),

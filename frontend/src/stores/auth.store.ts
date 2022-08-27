@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
 import { router } from '@/router';
-import { useAlertStore } from '@/stores';
+import { useAlertStore } from '@/stores/alert.store';
 import type { User } from '@apiTypes/user'; 
 
 export const useAuthStore = defineStore('auth', {
