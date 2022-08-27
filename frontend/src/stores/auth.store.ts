@@ -44,7 +44,7 @@ export const useAuthStore = defineStore({
       await fetchWrapper.post(`/auth/confirm/${token}`);
     },
     async resetPassword(email: string) {
-      await fetchWrapper.post(`/api/auth/reset`, { email });
+      await fetchWrapper.post(`/auth/reset`, { email });
     },
     logout() {
       this.user = null;

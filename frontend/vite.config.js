@@ -3,6 +3,12 @@ import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+const hmr = {};
+
+if (process.env.HMR_PORT) {
+    hmr.clientPort = process.env.HMR_PORT;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [vue()],
@@ -13,7 +19,7 @@ export default defineConfig({
     },
     server: {
         hmr: {
-            clientPort: 443,
+            ...hmr
         },
         proxy: {
             '/api': {

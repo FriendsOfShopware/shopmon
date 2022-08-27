@@ -1,22 +1,23 @@
 <script setup lang="ts">
+import { Form, Field, SubmissionHandler } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { useAuthStore, useAlertStore } from '@/stores';
-import { router } from '@/router';
+import { Spinner } from '@/components/icon';
 
 const schema = Yup.object().shape({
   email: Yup.string().required('Email is required')
-});
+})
 
-async function onSubmit(values) {
+async function onSubmit(values: any): Promise<void> {
   const usersStore = useAuthStore();
   const alertStore = useAlertStore();
+  
   try {
-    await usersStore.resetPassword(values);
-    await router.push('/account/login');
-    alertStore.success('Registration successful');
+    await usersStore.resetPassword(values.email);
+    alertStore.success('Password reset email sent');
   } catch (error) {
-    alertStore.error(error);
+    alertStore.error(error.message);
   }
 }
 </script>
