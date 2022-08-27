@@ -5,11 +5,14 @@
     "moduleResolution": "Node",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+    "lib": ["DOM", "ES2015", "ESNext"],
+    "jsx": "preserve"
   },
   "exclude": [
     "node_modules",
     "dist",
     "test"
-  ]
+  ],
+  "vueCompilerOptions": {}
 }

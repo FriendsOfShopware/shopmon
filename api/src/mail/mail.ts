@@ -41,7 +41,7 @@ export async function sendMailResetPassword(email: string, token: string) {
         <p>Hi,</p>
         <p>Please click the link below to reset your password.</p>
 
-        <p><a href="${FRONTEND_URL}/account/reset/${token}">Reset password</a></p>
+        <p><a href="${FRONTEND_URL}/account/forgot-password/${token}">Reset password</a></p>
 
         <p>Best regards,</p>
         <p>FriendsOfShopware</p>

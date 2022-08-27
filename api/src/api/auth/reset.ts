@@ -1,7 +1,7 @@
 import { getConnection, getKv } from "../../db";
 import { sendMailResetPassword } from "../../mail/mail";
 import { randomString } from "../../util";
-import { ErrorResponse, NoContentResponse } from "../common/response";
+import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 import bcryptjs from "bcryptjs";
 
 export async function resetPasswordMail(req: Request) {
@@ -20,6 +20,18 @@ export async function resetPasswordMail(req: Request) {
     await sendMailResetPassword(email, token);
 
     return new NoContentResponse()
+}
+
+export async function resetAvailable(req: Request) {
+    const {token} = await req.params;
+
+    const result = await getKv().get(`reset_${token}`);
+
+    if (result === null) {
+        return new JsonResponse({}, 404);
+    }
+
+    return new JsonResponse({}, 200);
 }
 
 export async function confirmResetPassword(req: Request): Promise<Response> {

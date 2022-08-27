@@ -11,7 +11,7 @@ export const useAuthStore = defineStore({
     returnUrl: null,
   }),
   actions: {
-    async login(email, password) {
+    async login(email: string, password: string) {
       try {
         const login = await fetchWrapper.post(`/auth/login`, {
           email,
@@ -37,11 +37,20 @@ export const useAuthStore = defineStore({
         alertStore.error(error);
       }
     },
-    async register(user) {
+    async register(user: object) {
       await fetchWrapper.post(`/auth/register`, user);
     },
-    async confirmMail(token) {
+    async confirmMail(token: string) {
       await fetchWrapper.post(`/auth/confirm/${token}`);
+    },
+    async resetPassword(email: string) {
+      await fetchWrapper.post(`/auth/reset`, { email });
+    },
+    async resetAvailable(token: string) {
+      await fetchWrapper.get(`/auth/reset/${token}`);
+    },
+    async confirmResetPassword(token: string, password: string) {
+      await fetchWrapper.post(`/auth/reset/${token}`, { password });
     },
     logout() {
       this.user = null;
