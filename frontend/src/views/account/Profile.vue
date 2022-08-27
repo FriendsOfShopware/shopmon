@@ -18,8 +18,10 @@ const isSubmitting = ref(false);
 let showAccountDeletionModal = ref(false)
 
 const schema = Yup.object().shape({
-  email: Yup.string().required('Username is required'),
-  password: Yup.string()
+  currentPassword: Yup.string().required('Current password is required'),
+  email: Yup.string().email(),
+  username: Yup.string().min(5, 'Username must be at least 5 characters'),
+  newPassword: Yup.string()
     .transform((x) => (x === '' ? undefined : x))
     .concat(user ? null : Yup.string().required('Password is required'))
     .min(8, 'Password must be at least 8 characters'),
@@ -27,6 +29,7 @@ const schema = Yup.object().shape({
 
 async function onSubmit(values: any) {
   try {
+    await authStore.updateProfile(values);
     alertStore.success("User updated");
   } catch (error) {
     alertStore.error(error);
@@ -46,73 +49,128 @@ async function deleteUser() {
 </script>
 
 <template>
-  <Header title="Profile" />
+  <Header title="Settings" />
   <MainContainer>
-    <template v-if="!(user?.loading || user?.error)">
-      <Form @submit="onSubmit" :validation-schema="schema" :initial-values="user" v-slot="{ errors, isSubmitting }">
-        <div class="grid grid-cols-3 gap-4 mb-4">
-          <div class="col-span-3">
-            <label for="email-address" class="block text-sm font-medium text-gray-700">Email address</label>
-            <Field name="email" type="text" class="field" :class="{ 'is-invalid': errors.email }" />
-            <div class="invalid-feedback">{{ errors.email }}</div>
-          </div>
-
-          <div class="col-span-3">
-            <label for="email-address" class="block text-sm font-medium text-gray-700">Password</label>
-            <Field name="password" type="password" class="field" :class="{ 'is-invalid': errors.password }" />
-            <div class="invalid-feedback">{{ errors.password }}</div>
+    <div>
+      <div class="md:grid md:grid-cols-3 md:gap-6">
+        <div class="md:col-span-1">
+          <div class="px-4 sm:px-0">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Account</h3>
+            <p class="mt-1 text-sm text-gray-600">Manage your Account</p>
           </div>
         </div>
+        <div class="mt-5 md:mt-0 md:col-span-2">
+          <Form
+            @submit="onSubmit"
+            :validation-schema="schema"
+            :initial-values="user"
+            v-slot="{ errors, isSubmitting }"
+          >
+            <div class="shadow sm:rounded-md sm:overflow-hidden">
+              <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+                  <div class="grid grid-cols-6 gap-6">
+                    <div class="col-span-6">
+                      <label for="currentPassword" class="block text-sm font-medium text-gray-700">Current Password*</label>
+                      <Field 
+                        type="password" 
+                        name="currentPassword" 
+                        id="currentPassword" 
+                        autocomplete="current-password" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        :class="{ 'is-invalid': errors.currentPassword }"
+                      ></Field>
+                      <div class="text-red-700">{{ errors.currentPassword }}</div>
+                    </div>
 
-        <div class="flex justify-between">          
-          <router-link to="/" custom v-slot="{ navigate }">
-            <button @click="navigate" @keypress.enter="navigate" role="link" class="btn">Cancel</button>
-          </router-link>
+                    <div class="col-span-6">
+                      <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                      <Field 
+                        type="text" 
+                        name="username" 
+                        id="username" 
+                        autocomplete="username" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        :class="{ 'is-invalid': errors.username }"
+                      ></Field>
+                      <div class="text-red-700">{{ errors.username }}</div>
+                    </div>
 
-          <button class="btn btn-primary w-48" :disabled="isSubmitting">
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3" :disabled="isSubmitting" v-if="isSubmitting">
-              <Spinner />
-            </span>
-            Save
-          </button>
+                    <div class="col-span-6">
+                      <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                      <Field 
+                        type="text" 
+                        name="email" 
+                        id="email" 
+                        autocomplete="email" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        :class="{ 'is-invalid': errors.email }"
+                      />
+                      <div class="text-red-700">{{ errors.email }}</div>
+                    </div>
+
+                    <div class="col-span-6">
+                      <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+                      <Field 
+                        type="password"
+                        name="newPassword" 
+                        id="newPassword" 
+                        autocomplete="new-password" 
+                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        :class="{ 'is-invalid': errors.newPassword }"
+                      />
+                    </div>
+                  </div>
+              </div>
+              <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-500 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">Save</button>
+              </div>
+            </div>
+          </Form>
         </div>
-      </Form>
+      </div>
+    </div>
 
-      <div class="bg-white shadow sm:rounded-lg mt-5">
-        <div class="px-4 py-5 sm:p-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Delete your account</h3>
-          <div class="mt-2 max-w-xl text-sm text-gray-500">
-            <p>Once you delete your account, you will lose all data associated with it.</p>
-          </div>
-          <div class="mt-5">
-            <button
-              @click="showAccountDeletionModal = true" 
-              type="button"
-             :disabled="isSubmitting" class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
-              <Spinner v-if="isSubmitting" class="mr-2" />
-              Delete account
-            </button>
+    <div class="hidden sm:block" aria-hidden="true">
+      <div class="py-5">
+        <div class="border-t border-gray-200" />
+      </div>
+    </div>
+
+    <div class="mt-10 sm:mt-0">
+      <div class="md:grid md:grid-cols-3 md:gap-6">
+        <div class="md:col-span-1">
+          <div class="px-4 sm:px-0">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">Deleting your Account</h3>
           </div>
         </div>
+        <div class="mt-5 md:mt-0 md:col-span-2">
+          <form action="#" method="POST">
+            <div class="shadow overflow-hidden sm:rounded-md">
+              <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+                <div class="mt-2 max-w-xl text-sm text-gray-500">
+                  <p>Once you delete your account, you will lose all data associated with it. All owning Teams will be also deleted with all shops associated.</p>
+                </div>
+                <div class="mt-5">
+                  <button
+                    @click="showAccountDeletionModal = true" 
+                    type="button"
+                  :disabled="isSubmitting" class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
+                    <Spinner v-if="isSubmitting" class="mr-2" />
+                    Delete account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-    </template>
-    <template v-if="user?.loading">
-      <div class="text-center m-5">
-        <Spinner />
-      </div>
-    </template>
-    <template v-if="user?.error">
-      <div class="text-center m-5">
-        <div class="text-danger">Error loading user: {{ user.error }}</div>
-      </div>
-    </template>
+    </div>
 
-
-      <TransitionRoot as="template" :show="showAccountDeletionModal">
-        <Dialog as="div" class="relative z-10" @close="showAccountDeletionModal = false">
-          <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-          </TransitionChild>
+    <TransitionRoot as="template" :show="showAccountDeletionModal">
+      <Dialog as="div" class="relative z-10" @close="showAccountDeletionModal = false">
+        <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+        </TransitionChild>
 
           <div class="fixed z-10 inset-0 overflow-y-auto">
             <div class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0">

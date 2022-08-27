@@ -8,7 +8,7 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <Nav />
+  <Nav v-if="authStore.user" />
   <Alert />
   <RouterView />
 </template>

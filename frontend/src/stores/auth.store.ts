@@ -11,6 +11,18 @@ export const useAuthStore = defineStore({
     returnUrl: null,
   }),
   actions: {
+    async refreshUser() {
+      const user = await fetchWrapper.get(`/account/me`, '', {
+        token: this.user.token,
+      });
+
+      user.token = this.user.token;
+
+      this.user = user;
+
+      localStorage.setItem('user', JSON.stringify(user));
+    },
+
     async login(email: string, password: string) {
       try {
         const login = await fetchWrapper.post(`/auth/login`, {
@@ -51,6 +63,12 @@ export const useAuthStore = defineStore({
     },
     async confirmResetPassword(token: string, password: string) {
       await fetchWrapper.post(`/auth/reset/${token}`, { password });
+    },
+
+    async updateProfile(info: any) {
+      await fetchWrapper.patch(`/account/me`, info);
+
+      await this.refreshUser();
     },
     logout() {
       this.user = null;
