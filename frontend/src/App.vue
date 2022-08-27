@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores';
 const authStore = useAuthStore();
 
 if (authStore.isAuthenticated) {
-  authStore.refreshUser();
+    authStore.refreshUser();
 }
 </script>
 

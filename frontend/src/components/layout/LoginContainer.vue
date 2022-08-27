@@ -3,7 +3,8 @@ import Logo from '@/components/layout/Logo.vue';
 </script>
 
 <template>
-    <div class="
+  <div
+    class="
       min-h-full
       flex
       items-center
@@ -12,10 +13,11 @@ import Logo from '@/components/layout/Logo.vue';
       px-4
       sm:px-6
       lg:px-8
-    ">
-        <div class="max-w-md w-full space-y-8">
-            <Logo />
-            <slot />
-        </div>
+    "
+  >
+    <div class="max-w-md w-full space-y-8">
+      <Logo />
+      <slot />
     </div>
+  </div>
 </template>

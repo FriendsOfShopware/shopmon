@@ -5,7 +5,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix"
     },
     "dependencies": {
         "@headlessui/vue": "^1.6.7",

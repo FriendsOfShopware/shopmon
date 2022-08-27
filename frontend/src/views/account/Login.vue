@@ -8,14 +8,14 @@ import  Spinner from '@/components/icon/Spinner.vue';
 import { useAuthStore } from '@/stores';
 
 const schema = Yup.object().shape({
-  email: Yup.string().required('Email is required'),
-  password: Yup.string().required('Password is required'),
+    email: Yup.string().required('Email is required'),
+    password: Yup.string().required('Password is required'),
 });
 
-async function onSubmit(values: any) {
-  const authStore = useAuthStore();
-  const { email, password } = values;
-  await authStore.login(email, password);
+async function onSubmit(values: {email: string, password: string}) {
+    const authStore = useAuthStore();
+    const { email, password } = values;
+    await authStore.login(email, password);
 }
 </script>
 
@@ -27,18 +27,26 @@ async function onSubmit(values: any) {
     <p class="mt-2 text-center text-sm text-gray-600">
       Or
       {{ ' ' }}
-      <router-link to="register" class="font-medium">register</router-link>
+      <router-link
+        to="register"
+        class="font-medium"
+      >
+        register
+      </router-link>
     </p>
   </div>
   <Form
-    class="mt-8 space-y-6"
-    @submit="onSubmit"
-    :validation-schema="schema"
     v-slot="{ errors, isSubmitting }"
+    class="mt-8 space-y-6"
+    :validation-schema="schema"
+    @submit="onSubmit"
   >
     <div class="rounded-md shadow-sm -space-y-px">
       <div>
-        <label for="email-address" class="sr-only">Email address</label>
+        <label
+          for="email-address"
+          class="sr-only"
+        >Email address</label>
         <Field
           id="email-address"
           name="email"
@@ -51,7 +59,10 @@ async function onSubmit(values: any) {
         />
       </div>
       <div>
-        <label for="password" class="sr-only">Password</label>
+        <label
+          for="password"
+          class="sr-only"
+        >Password</label>
         <Field
           id="password"
           name="password"
@@ -67,20 +78,28 @@ async function onSubmit(values: any) {
 
     <div class="flex items-end">
       <div class="text-sm flex">
-        <router-link to="/account/forgot-password" class="font-medium">Forgot your password?</router-link>
+        <router-link
+          to="/account/forgot-password"
+          class="font-medium"
+        >
+          Forgot your password?
+        </router-link>
       </div>
     </div>
 
     <div>
-      <button type="submit" class="group w-full btn btn-primary">
+      <button
+        type="submit"
+        class="group w-full btn btn-primary"
+      >
         <span
           class="absolute left-0 inset-y-0 flex items-center pl-3"
           :disabled="isSubmitting"
         >
           <LockClosedIcon
+            v-if="!isSubmitting"
             class="h-5 w-5 opacity-25 group-hover:opacity-50"
             aria-hidden="true"
-            v-if="!isSubmitting"
           />
           <Spinner v-if="isSubmitting" />
         </span>

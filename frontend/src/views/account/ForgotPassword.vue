@@ -6,31 +6,33 @@ import { useAuthStore, useAlertStore } from '@/stores';
 import Spinner from '@/components/icon/Spinner.vue';
 
 const schema = Yup.object().shape({
-  email: Yup.string().required('Email is required')
+    email: Yup.string().required('Email is required')
 })
 
-async function onSubmit(values: any): Promise<void> {
-  const usersStore = useAuthStore();
-  const alertStore = useAlertStore();
+async function onSubmit(values: {email: string}): Promise<void> {
+    const usersStore = useAuthStore();
+    const alertStore = useAlertStore();
   
-  try {
-    await usersStore.resetPassword(values.email);
-    alertStore.success('Password reset email sent');
-  } catch (error: Error) {
-    alertStore.error(error.message);
-  }
+    try {
+        await usersStore.resetPassword(values.email);
+        alertStore.success('Password reset email sent');
+    } catch (error: Error) {
+        alertStore.error(error.message);
+    }
 }
 </script>
 
 <template>
-<div>
-  <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">Forgot password</h4>
-  <p>We will send you a confirmation email. Click on the link in it to change your password.</p>
+  <div>
+    <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">
+      Forgot password
+    </h4>
+    <p>We will send you a confirmation email. Click on the link in it to change your password.</p>
   </div>
   <Form
-    @submit="onSubmit"
-    :validation-schema="schema"
     v-slot="{ errors, isSubmitting }"
+    :validation-schema="schema"
+    @submit="onSubmit"
   >
     <div class="mb-2">
       <Field
@@ -40,14 +42,19 @@ async function onSubmit(values: any): Promise<void> {
         class="field"
         :class="{ 'is-invalid': errors.email }"
       />
-      <div class="text-red-700">{{ errors.email }}</div>
+      <div class="text-red-700">
+        {{ errors.email }}
+      </div>
     </div>
     <div class="">
-      <button class="btn btn-primary w-full" :disabled="isSubmitting">
+      <button
+        class="btn btn-primary w-full"
+        :disabled="isSubmitting"
+      >
         <span
+          v-if="isSubmitting"
           class="absolute left-0 inset-y-0 flex items-center pl-3"
           :disabled="isSubmitting"
-          v-if="isSubmitting"
         >
           <Spinner />
         </span>
@@ -56,8 +63,9 @@ async function onSubmit(values: any): Promise<void> {
       <router-link
         to="login"
         class="text-gray-900 inline-block mt-2 center text-center w-full"
-        >Cancel</router-link
       >
+        Cancel
+      </router-link>
     </div>
   </Form>
 </template>

@@ -8,13 +8,18 @@ export const fetchWrapper = {
     delete: request('DELETE')
 };
 
+
+interface CustomRequestInit extends RequestInit {
+    headers: Record<string, string>
+}
+
 function request(method: string) {
-    return (url: string, body: any = null, headers = {}) => {
+    return (url: string, body: null|string|object = null, headers = {}) => {
         url = '/api' + url;
-        const requestOptions = {
+        const requestOptions: CustomRequestInit = {
             method,
             headers: {... authHeader(url), ...headers},
-            body: null,
+            body: null, 
         };
         if (body) {
             requestOptions.headers['Content-Type'] = 'application/json';

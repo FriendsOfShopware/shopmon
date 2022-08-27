@@ -11,10 +11,10 @@ const { user } = storeToRefs(authStore);
 </script>
 
 <template>
-    <div v-if="user">
-        <Header title="Dashboard"></Header>
-        <MainContainer>
-            Das ist mein Inhalt
-        </MainContainer>
-    </div>
+  <div v-if="user">
+    <Header title="Dashboard" />
+    <MainContainer>
+      Das ist mein Inhalt
+    </MainContainer>
+  </div>
 </template>
