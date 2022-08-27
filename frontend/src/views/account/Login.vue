@@ -8,7 +8,7 @@ import { Spinner } from '@/components/icon';
 import { useAuthStore } from '@/stores';
 
 const schema = Yup.object().shape({
-  email: Yup.string().required('Username is required'),
+  email: Yup.string().required('Email is required'),
   password: Yup.string().required('Password is required'),
 });
 
@@ -36,7 +36,6 @@ async function onSubmit(values) {
     :validation-schema="schema"
     v-slot="{ errors, isSubmitting }"
   >
-    <input type="hidden" name="remember" value="true" />
     <div class="rounded-md shadow-sm -space-y-px">
       <div>
         <label for="email-address" class="sr-only">Email address</label>
@@ -48,6 +47,7 @@ async function onSubmit(values) {
           required=""
           class="field-no-rounded rounded-t-md"
           placeholder="Email address"
+          :class="{ 'is-invalid': errors.email }"
         />
       </div>
       <div>
@@ -60,32 +60,14 @@ async function onSubmit(values) {
           required=""
           class="field-no-rounded rounded-b-md"
           placeholder="Password"
+          :class="{ 'is-invalid': errors.password }"
         />
       </div>
     </div>
 
-    <div class="flex items-center justify-between">
-      <div class="flex items-center">
-        <input
-          id="remember-me"
-          name="remember-me"
-          type="checkbox"
-          class="
-            h-4
-            w-4
-            text-sky-500
-            focus:ring-sky-500
-            border-gray-300
-            rounded
-          "
-        />
-        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-          Remember me
-        </label>
-      </div>
-
-      <div class="text-sm">
-        <router-link to="forgot-password" class="font-medium">Forgot your password?</router-link>
+    <div class="flex items-end">
+      <div class="text-sm flex">
+        <router-link to="/account/forgot-password" class="font-medium">Forgot your password?</router-link>
       </div>
     </div>
 
