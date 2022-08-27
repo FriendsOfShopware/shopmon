@@ -12,6 +12,9 @@ export default defineConfig({
         }
     },
     server: {
+        hmr: {
+            clientPort: 443,
+        },
         proxy: {
             '/api': {
                 target: 'https://shopmon.fos.gg',
