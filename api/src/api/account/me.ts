@@ -84,3 +84,29 @@ export async function accountUpdate(req: Request): Promise<Response> {
 
     return new NoContentResponse();
 }
+
+export async function listUserShops(req: Request): Promise<Response> {
+    const res = await getConnection().execute(`
+        SELECT 
+            shop.id,
+            shop.name,
+            shop.url,
+            shop.created_at,
+            shop.last_scraped_at,
+            shop.shopware_version,
+            shop.team_id,
+            team.name as team_name
+        FROM shop 
+            INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
+            INNER JOIN team ON(team.id = shop.team_id)
+        WHERE user_to_team.user_id = ?
+        ORDER BY shop.team_id
+    `, [req.userId]);
+
+    return new Response(JSON.stringify(res.rows), { 
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}

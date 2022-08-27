@@ -1,6 +1,4 @@
 <script setup lang="ts">
-
-import Spinner from '@/components/icon/Spinner.vue'
 import Header from '@/components/layout/Header.vue'
 import MainContainer from '@/components/layout/MainContainer.vue';
 import { Form, Field } from 'vee-validate';
@@ -198,9 +196,6 @@ async function deleteUser() {
                     class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
                     @click="showAccountDeletionModal = true"
                   >
-                    <Spinner
-                      class="mr-2"
-                    />
                     Delete account
                   </button>
                 </div>

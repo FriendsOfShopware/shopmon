@@ -20,7 +20,10 @@ import {
 
 const authStore = useAuthStore();
 
-const navigation = [{ name: 'Dashboard', route: '/' }];
+const navigation = [
+  { name: 'Dashboard', route: '/' },
+  { name: 'My Shops', route: '/account/shops'},
+];
 
 const userNavigation = [
     { name: 'Settings', route: '/account/settings', icon: CogIcon },

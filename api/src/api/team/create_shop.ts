@@ -10,15 +10,15 @@ export async function createShop(req: Request): Promise<Response> {
     const { teamId } = req.params;
 
     if (typeof json.shop_url !== 'string') {
-        return new Response('Invalid shop_url.', { status: 400 });
+        return new ErrorResponse('Invalid shop_url.', 400);
     }
 
     if (typeof json.client_id !== 'string') {
-        return new Response('Invalid client_id.', { status: 400 });
+        return new ErrorResponse('Invalid client_id.', 400);
     }
 
     if (typeof json.client_secret !== 'string') {
-        return new Response('Invalid client_secret.', { status: 400 });
+        return new ErrorResponse('Invalid client_secret.', 400);
     }
 
     const client = new HttpClient(new Shop('', json.shop_url, '', json.client_id, json.client_secret))
@@ -27,7 +27,7 @@ export async function createShop(req: Request): Promise<Response> {
     try {
         resp = await client.get('/_info/config');
     } catch (e) {
-        return new Response('Cannot reach shop', { status: 400 });
+        return new ErrorResponse('Cannot reach shop', 400);
     }
 
     try {
