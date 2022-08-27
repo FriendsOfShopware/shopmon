@@ -46,6 +46,12 @@ export const useAuthStore = defineStore({
     async resetPassword(email: string) {
       await fetchWrapper.post(`/auth/reset`, { email });
     },
+    async resetAvailable(token: string) {
+      await fetchWrapper.get(`/auth/reset/${token}`);
+    },
+    async confirmResetPassword(token: string, password: string) {
+      await fetchWrapper.post(`/auth/reset/${token}`, { password });
+    },
     logout() {
       this.user = null;
       localStorage.removeItem('user');

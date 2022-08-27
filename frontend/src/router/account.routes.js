@@ -1,4 +1,4 @@
-import { Layout, Login, Register, AccountConfirm, ForgotPassword } from '@/views/account';
+import { Layout, Login, Register, AccountConfirm, ForgotPassword, ForgotPasswordConfirm } from '@/views/account';
 
 export default {
     path: '/account',
@@ -8,5 +8,6 @@ export default {
         { name: 'account.register', path: 'register', component: Register },
         { name: 'account.confirm', path: 'confirm/:token', component: AccountConfirm },
         { name: 'account.forgot.password', path: 'forgot-password', component: ForgotPassword },
+        { name: 'account.forgot.password.confirm', path: 'forgot-password/:token', component: ForgotPasswordConfirm },
     ]
 };
