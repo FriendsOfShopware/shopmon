@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useAuthStore } from '@/stores';
 
 import {
@@ -14,25 +14,16 @@ import {
   BellIcon,
   Bars2Icon,
   XMarkIcon,
-  UserIcon,
   ArrowLeftOnRectangleIcon,
   CogIcon,
 } from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
 
-const user = {
-  name: 'Tom Cook',
-  email: 'tom@example.com',
-  imageUrl:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-};
-
 const navigation = [{ name: 'Dashboard', route: '/' }];
 
 const userNavigation = [
-  { name: 'Your Profile', route: '/account', icon: UserIcon },
-  { name: 'Settings', route: '/users', icon: CogIcon },
+  { name: 'Settings', route: '/account/settings', icon: CogIcon },
   { name: 'Logout', route: '/logout', icon: ArrowLeftOnRectangleIcon },
 ];
 </script>
@@ -90,7 +81,7 @@ const userNavigation = [
                     focus:outline-none
                   ">
                   <span class="sr-only">Open user menu</span>
-                  <img class="h-8 w-8 rounded-full" :src="user.imageUrl" alt="" />
+                  <img class="h-8 w-8 rounded-full" :src="authStore.user.avatar" alt="" />
                 </MenuButton>
               </div>
               <transition enter-active-class="transition ease-out duration-100"
@@ -113,8 +104,7 @@ const userNavigation = [
                   ">
                   <div class="px-4 py-2 border-b">
                     <div class="text-base font-medium">
-                      {{ authStore.user.firstName }}
-                      {{ authStore.user.lastName }}
+                      {{ authStore.user.username }}
                     </div>
                     <div class="text-sm font-medium text-sky-700">
                       {{ authStore.user.email }}
@@ -170,11 +160,11 @@ const userNavigation = [
       <div class="pt-4 pb-3 border-t border-sky-400">
         <div class="flex items-center px-5">
           <div class="flex-shrink-0">
-            <img class="h-10 w-10 rounded-full" :src="user.imageUrl" alt="" />
+            <img class="h-10 w-10 rounded-full" :src="authStore.user.avatar" alt="" />
           </div>
           <div class="ml-3">
             <div class="text-base font-medium text-white">
-              {{ authStore.user.firstName }} {{ authStore.user.lastName }}
+              {{ authStore.user.username }}
             </div>
             <div class="text-sm font-medium text-sky-200">
               {{ authStore.user.email }}

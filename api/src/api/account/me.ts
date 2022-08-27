@@ -13,9 +13,11 @@ const revokeTokens = async (userId: string) => {
 }
 
 export async function accountMe(req: Request): Promise<Response> {
-    const result = await getConnection().execute('SELECT id, username, email, created_at FROM user WHERE id = ?', [req.userId]);
+    const result = await getConnection().execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
 
     const json = result.rows[0];
+
+    json.avatar = `https://www.gravatar.com/avatar/${json.avatar}?d=identicon`;
 
     const teamResult = await getConnection().execute('SELECT team.id, team.name, team.created_at, (team.owner_id = user_to_team.user_id) as is_owner  FROM team INNER JOIN user_to_team ON user_to_team.team_id = team.id WHERE user_to_team.user_id = ?', [req.userId]);
 
