@@ -2,7 +2,7 @@
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useUsersStore, useAlertStore } from '@/stores';
+import { useAuthStore, useAlertStore } from '@/stores';
 import { router } from '@/router';
 
 import { Spinner } from '@/components/icon';
@@ -16,10 +16,10 @@ const schema = Yup.object().shape({
 });
 
 async function onSubmit(values) {
-  const usersStore = useUsersStore();
+  const authStore = useAuthStore();
   const alertStore = useAlertStore();
   try {
-    await usersStore.register(values);
+    await authStore.register(values);
     await router.push('/account/login');
     alertStore.success('Registration successful');
   } catch (error) {
@@ -79,7 +79,8 @@ async function onSubmit(values) {
       <router-link
         to="login"
         class="text-gray-900 inline-block mt-2 center text-center w-full"
-        >Cancel</router-link
+        >Cancel
+      </router-link
       >
     </div>
   </Form>

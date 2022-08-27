@@ -4,26 +4,24 @@ import { fetchWrapper } from '@/helpers';
 import { router } from '@/router';
 import { useAlertStore } from '@/stores';
 
-const baseUrl = `/api`;
-
 export const useAuthStore = defineStore({
   id: 'auth',
   state: () => ({
-    // initialize state from local storage to enable user to stay logged in
     user: JSON.parse(localStorage.getItem('user')),
     returnUrl: null,
   }),
   actions: {
     async login(email, password) {
       try {
-        const login = await fetchWrapper.post(`${baseUrl}/auth/login`, {
+        const login = await fetchWrapper.post(`/auth/login`, {
           email,
           password,
         });
 
-        const user = await fetchWrapper.get(`${baseUrl}/account/me`, '', {
+        const user = await fetchWrapper.get(`/account/me`, '', {
           token: login.token,
         });
+
         user.token = login.token
 
         // update pinia state
@@ -39,8 +37,11 @@ export const useAuthStore = defineStore({
         alertStore.error(error);
       }
     },
+    async register(user) {
+      await fetchWrapper.post(`/auth/register`, user);
+    },
     async confirmMail(token) {
-      await fetchWrapper.post(`${baseUrl}/auth/confirm/${token}`);
+      await fetchWrapper.post(`/auth/confirm/${token}`);
     },
     logout() {
       this.user = null;
