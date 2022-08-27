@@ -11,7 +11,6 @@ node_compat = false
 [vars]
 MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
-ORIGIN_HOST="https://localhost:3000"
 
 [build]
 command = "npm run build"
