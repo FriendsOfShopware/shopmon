@@ -57,5 +57,9 @@ export const useAuthStore = defineStore({
       localStorage.removeItem('user');
       router.push('/account/login');
     },
+    async delete() {
+      await fetchWrapper.delete(`/account/me`);
+      this.logout();
+    }
   },
 });
