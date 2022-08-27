@@ -31,7 +31,7 @@ const user = {
 const navigation = [{ name: 'Dashboard', route: '/' }];
 
 const userNavigation = [
-  { name: 'Your Profile', route: '/profile', icon: UserIcon },
+  { name: 'Your Profile', route: '/account', icon: UserIcon },
   { name: 'Settings', route: '/users', icon: CogIcon },
   { name: 'Logout', route: '/logout', icon: LogoutIcon },
 ];
@@ -109,6 +109,7 @@ const userNavigation = [
                     bg-white
                     ring-1 ring-black ring-opacity-5
                     focus:outline-none
+                    z-10
                   ">
                   <div class="px-4 py-2 border-b">
                     <div class="text-base font-medium">
@@ -121,13 +122,14 @@ const userNavigation = [
                   </div>
                   <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
                   <button @click="
-                    item.route === '/logout'
-                      ? authStore.logout()
-                      : $router.push(item.route)
-                  " :class="[
-  active ? 'bg-gray-100' : '',
-  'w-full text-left px-4 py-2 text-sm text-gray-700',
-]">
+                      item.route === '/logout'
+                        ? authStore.logout()
+                        : $router.push(item.route)
+                      " 
+                    :class="[
+                      active ? 'bg-gray-100' : '',
+                      'w-full text-left px-4 py-2 text-sm text-gray-700',
+                    ]">
                     <component :is="item.icon" class="w-4 h-4 inline-block text-sky-700 mr-1"></component>
                     {{ item.name }}
                   </button>

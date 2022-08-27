@@ -46,7 +46,7 @@ async function onSubmit(values) {
       <div class="text-red-700">{{ errors.email }}</div>
     </div>
     <div class="">
-      <button class="btn btn-primary" :disabled="isSubmitting">
+      <button class="btn btn-primary w-full" :disabled="isSubmitting">
         <span
           class="absolute left-0 inset-y-0 flex items-center pl-3"
           :disabled="isSubmitting"

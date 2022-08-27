@@ -11,7 +11,7 @@ const authStore = useAuthStore();
   <LoginContainer v-if="!authStore.user">
     <router-view></router-view>
   </LoginContainer>
-  <MainContainer v-else>
+  <template v-else>
     <router-view></router-view>
-  </MainContainer>
+  </template>
 </template>
