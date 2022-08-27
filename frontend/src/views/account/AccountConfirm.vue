@@ -33,33 +33,41 @@ export default {
 </script>
 
 <template>
+    <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">Confirming your Account Registration</h4>
     <div class="rounded-md bg-blue-50 p-4" v-if="isLoading">
         <div class="flex">
             <div class="flex-shrink-0">
                 <InformationCircleIcon class="h-5 w-5 text-blue-400" aria-hidden="true" />
             </div>
             <div class="ml-3 flex-1 md:flex md:justify-between">
-                <p class="text-sm text-blue-700">Confirming your Mail Address</p>
+                <p class="text-sm text-blue-700">Loading...</p>
             </div>
         </div>
     </div>
 
-    <div class="rounded-md bg-green-50 p-4" v-if="!isLoading && success">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <CheckCircleIcon class="h-5 w-5 text-green-400" aria-hidden="true" />
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-green-800">Mail Confirmation</h3>
-                <div class="mt-2 text-sm text-green-700">
-                    <p>Your Mail address has been verified</p>
+    <div v-else>
+        <div class="rounded-md bg-green-50 p-4" v-if="success">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <CheckCircleIcon class="h-5 w-5 text-blue-400" aria-hidden="true" />
                 </div>
-                <div class="mt-4">
-                    <div class="-mx-2 -my-1.5 flex">
-                        <button type="button"
-                            @click="goToLogin"
-                            class="bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600">Go to login</button>
-                    </div>
+                <div class="ml-3 flex-1 md:flex md:justify-between">
+                    <p class="text-sm text-blue-700">Your Mail Address has been confirmed. 
+                        <router-link to="/account/login" class="text-blue-700">
+                            Login
+                        </router-link>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-md bg-red-50 p-4" v-else>
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <InformationCircleIcon class="h-5 w-5 text-red-400" aria-hidden="true" />
+                </div>
+                <div class="ml-3 flex-1 md:flex md:justify-between">
+                    <p class="text-sm text-red-700">The given token has been expired</p>
                 </div>
             </div>
         </div>

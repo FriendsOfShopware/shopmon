@@ -37,7 +37,7 @@ function authHeader(url: string): object {
     }
 }
 
-async function handleResponse(response) {
+async function handleResponse(response: Response) {
     const isJson = response.headers?.get('content-type')?.includes('application/json');
     const data = isJson ? await response.json() : null;
 
