@@ -58,9 +58,9 @@ async function deleteUser() {
       <FormGroup title="Account" subTitle="Manage Your Account">
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6">
-            <label for="currentPassword" class="block text-sm font-medium text-gray-700">Current Password*</label>
+            <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password*</label>
             <Field id="currentPassword" type="password" name="currentPassword" autocomplete="current-password"
-              class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="field"
               :class="{ 'is-invalid': errors.currentPassword }" />
             <div class="text-red-700">
               {{ errors.currentPassword }}
@@ -68,9 +68,9 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <Field id="username" type="text" name="username" autocomplete="username"
-              class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="field"
               :class="{ 'is-invalid': errors.username }" />
             <div class="text-red-700">
               {{ errors.username }}
@@ -78,9 +78,9 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
             <Field id="email" type="text" name="email" autocomplete="email"
-              class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="field"
               :class="{ 'is-invalid': errors.email }" />
             <div class="text-red-700">
               {{ errors.email }}
@@ -88,9 +88,9 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+            <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
             <Field id="newPassword" type="password" name="newPassword" autocomplete="new-password"
-              class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="field"
               :class="{ 'is-invalid': errors.newPassword }" />
           </div>
         </div>
