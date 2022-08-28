@@ -16,8 +16,6 @@ const authStore = useAuthStore();
 const alertStore = useAlertStore();
 
 const user = {
-  currentPassword: '',
-  newPassword: '',
   username: authStore.user?.username,
   email: authStore.user?.email,
 }
@@ -30,12 +28,10 @@ const schema = Yup.object().shape({
   username: Yup.string().min(5, 'Username must be at least 5 characters'),
   newPassword: Yup.string()
     .transform((x) => (x === '' ? undefined : x))
-    .concat(Yup.string().required('Password is required'))
     .min(8, 'Password must be at least 8 characters'),
 });
 
 async function onSubmit(values: any) {
-  console.log(values);
   try {
     await authStore.updateProfile(values);
     alertStore.success("User updated");
