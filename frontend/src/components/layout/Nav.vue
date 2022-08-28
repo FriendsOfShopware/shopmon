@@ -15,7 +15,7 @@ import {
     Bars2Icon,
     XMarkIcon,
     ArrowLeftOnRectangleIcon,
-    CogIcon,
+    Cog6ToothIcon,
 } from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
@@ -26,7 +26,7 @@ const navigation = [
 ];
 
 const userNavigation = [
-    { name: 'Settings', route: '/account/settings', icon: CogIcon },
+    { name: 'Settings', route: '/account/settings', icon: Cog6ToothIcon, },
     { name: 'Logout', route: '/logout', icon: ArrowLeftOnRectangleIcon },
 ];
 </script>
