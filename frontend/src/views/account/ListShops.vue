@@ -50,7 +50,11 @@ shopStore.loadShops();
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                   <tr v-for="shop in shopStore.shops" :key="shop.id">
-                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">{{ shop.name }}</td>
+                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
+                      <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
+                        {{ shop.name }}
+                      </router-link>
+                    </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ shop.shopware_version }}</td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ shop.team_name }}</td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ shop.last_scraped_at }}</td>

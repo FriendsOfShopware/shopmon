@@ -1,11 +1,12 @@
 import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { Shop } from '@apiTypes/shop'; 
+import type { Shop, ShopDetailed } from '@apiTypes/shop'; 
 
 export const useShopStore = defineStore('shop', {
-    state: (): {shops: Shop[], isLoading: boolean} => ({
+    state: (): {shops: Shop[], isLoading: boolean, shop: ShopDetailed|null} => ({
         isLoading: false,
         shops: [],
+        shop: null,
     }),
     actions: {
         async loadShops() {
@@ -21,6 +22,12 @@ export const useShopStore = defineStore('shop', {
             this.isLoading = false;
 
             await this.loadShops();
+        },
+
+        async loadShop(teamId: string, shopId: string) {
+            this.isLoading = true;
+            this.shop = await fetchWrapper.get(`/team/${teamId}/shop/${shopId}`) as ShopDetailed;
+            this.isLoading = false;
         }
     }
 })

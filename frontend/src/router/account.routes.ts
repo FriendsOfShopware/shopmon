@@ -15,5 +15,6 @@ export default {
         { name: 'account.settings', path: 'settings', component: () => import('@/views/account/Settings.vue') },
         { name: 'account.shops.list', path: 'shops', component: () => import('@/views/account/ListShops.vue') },
         { name: 'account.shops.new', path: 'shops/new', component: () => import('@/views/account/AddShop.vue') },
+        { name: 'account.shops.detail', path: 'teams/:teamId/:shopId', component: () => import('@/views/account/DetailShop.vue') },
     ]
 };

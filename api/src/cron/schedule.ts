@@ -25,7 +25,9 @@ export async function onSchedule() {
     const responses = await Promise.allSettled([
         client.get('/_info/config'),
         client.get('/_action/extension/installed'),
-        client.post('/search/scheduled-task')
+        client.post('/search/scheduled-task'),
+        client.get('/_info/queue.json'),
+        client.get('/_action/cache_info')
     ]) as any
 
     await con.execute('UPDATE shop SET shopware_version = ? WHERE id = ?', [
@@ -47,15 +49,16 @@ export async function onSchedule() {
         return {
             name: task.name,
             status: task.status,
-            latestVersion: task.latestVersion,
             lastExecutionTime: task.lastExecutionTime,
             nextExecutionTime: task.nextExecutionTime,
         };
     });
 
-    await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, created_at) VALUES(?, ?, ?, NOW())', [
+    await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, created_at) VALUES(?, ?, ?, ?, ?, NOW())', [
         shop.id,
         JSON.stringify(extensions),
         JSON.stringify(scheduledTasks),
+        JSON.stringify(responses[3].value.body),
+        JSON.stringify(responses[4].value.body)
     ]);
 }
