@@ -43,7 +43,7 @@ export default async function (req: Request) : Promise<Response> {
 
     const token = randomString(32)
 
-    const userInsertResult = await getConnection().execute("INSERT INTO user (email, username, password, verify_code) VALUES (?, ?, ?)", [json.email, json.username, hashedPassword, token]);
+    const userInsertResult = await getConnection().execute("INSERT INTO user (email, username, password, verify_code) VALUES (?, ?, ?, ?)", [json.email, json.username, hashedPassword, token]);
 
     await Teams.createTeam(`${json.email}'s Team`, userInsertResult.insertId as string);
 
