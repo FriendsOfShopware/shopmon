@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply text-gray-900;
+  @apply text-gray-900 text-sm;
 }
 
 a {
@@ -11,7 +11,7 @@ a {
 }
 
 .btn {
-  @apply relative flex justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500 focus:ring-2 focus:ring-offset-2 focus:ring-sky-500;
+  @apply relative inline-flex justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500 focus:ring-2 focus:ring-offset-2 focus:ring-sky-500;
 }
 
 .btn-primary {
@@ -24,4 +24,8 @@ a {
 
 .field {
   @apply field-no-rounded rounded-md;
+}
+
+table th {
+  @apply font-semibold text-sky-900;
 }
