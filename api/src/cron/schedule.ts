@@ -38,7 +38,7 @@ export async function onSchedule() {
                 error = `Request#${i} failed with status code: ${response.reason.response.statusCode}: Body: ${JSON.stringify(response.reason.response.body)}`;
             }
 
-            await con.execute('UPDATE shop SET status = ?, last_scrapted_error = ? WHERE id = ?', [
+            await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
                 'red',
                 error,
                 shop.id,
