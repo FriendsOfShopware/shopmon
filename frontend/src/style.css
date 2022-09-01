@@ -38,8 +38,7 @@ table th {
   @apply shadow absolute rounded py-1 px-3 bg-gray-700 text-white shadow;
   content: attr(data-tooltip);  
   bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: -.75rem;
   display: none;
 }
 

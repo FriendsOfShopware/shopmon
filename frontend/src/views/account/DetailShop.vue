@@ -59,7 +59,7 @@ function isTaskOverdue(task: ScheduledTask) {
       </div>
     </div>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-visible">
+    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">Extensions</h3>
         <p class="mt-1 text-sm text-gray-500">List of all installed extensions</p>
@@ -108,7 +108,7 @@ function isTaskOverdue(task: ScheduledTask) {
       </div>
     </div>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-visible">
+    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium ">Scheduled Tasks</h3>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all Scheduled Tasks</p>
