@@ -29,3 +29,33 @@ a {
 table th {
   @apply font-semibold text-sky-900;
 }
+
+*[data-tooltip] {
+  @apply relative;
+}
+
+*[data-tooltip]:before {
+  @apply shadow absolute rounded py-1 px-3 bg-gray-700 text-white shadow;
+  content: attr(data-tooltip);  
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+}
+
+*[data-tooltip]:after {
+  
+  content: "";
+  position:absolute;
+  left:50%;
+  bottom:100%;
+  margin-bottom: -8px;
+  transform:translateX(-50%);
+  border: 6px solid transparent;
+  @apply border-t-gray-700;
+  display:none;
+}
+
+*[data-tooltip]:hover:before, *[data-tooltip]:hover:after {
+  display:block;
+}
