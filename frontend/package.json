@@ -10,17 +10,17 @@
     },
     "dependencies": {
         "@headlessui/vue": "^1.6.7",
-        "@heroicons/vue": "^2.0.8",
+        "@heroicons/vue": "^2.0.10",
         "@tailwindcss/forms": "^0.5.2",
         "pinia": "^2.0.21",
-        "vee-validate": "^4.5.11",
-        "vue": "^3.2.33",
+        "vee-validate": "^4.6.7",
+        "vue": "^3.2.38",
         "vue-router": "^4.1.5",
         "yup": "^0.32.11"
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^5.35.1",
-        "@typescript-eslint/parser": "^5.35.1",
+        "@typescript-eslint/eslint-plugin": "^5.36.1",
+        "@typescript-eslint/parser": "^5.36.1",
         "@vitejs/plugin-vue": "^2.3.0",
         "autoprefixer": "^10.4.2",
         "eslint": "^8.23.0",
