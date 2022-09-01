@@ -7,7 +7,7 @@ export interface Shop {
     team_id: number,
     team_name: string,
     last_scraped_at: string;
-    last_scrapted_error: string;
+    last_scraped_error: string;
 }
 
 export interface ShopDetailed extends Shop {

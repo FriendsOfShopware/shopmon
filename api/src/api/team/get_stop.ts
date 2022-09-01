@@ -13,7 +13,7 @@ export async function getShop(req: Request): Promise<Response> {
         shop.created_at, 
         shop.shopware_version, 
         shop.last_scraped_at, 
-        shop.last_scrapted_error,
+        shop.last_scraped_error,
         shop.shopware_version, 
         shop_scrape_info.extensions, 
         shop_scrape_info.scheduled_task,
