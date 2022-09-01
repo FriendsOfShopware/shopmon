@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "@headlessui/vue": "^1.6.7",
-        "@heroicons/vue": "^2.0.8",
+        "@heroicons/vue": "^2.0.10",
         "@tailwindcss/forms": "^0.5.2",
         "pinia": "^2.0.21",
         "vee-validate": "^4.6.7",
