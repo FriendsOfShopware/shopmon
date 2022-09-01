@@ -90,6 +90,7 @@ export async function listUserShops(req: Request): Promise<Response> {
         SELECT 
             shop.id,
             shop.name,
+            shop.status,
             shop.url,
             shop.created_at,
             shop.last_scraped_at,
