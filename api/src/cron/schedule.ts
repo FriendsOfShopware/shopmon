@@ -30,7 +30,25 @@ export async function onSchedule() {
         client.get('/_action/cache_info')
     ]) as any
 
-    await con.execute('UPDATE shop SET shopware_version = ? WHERE id = ?', [
+    for (let [i, response] of responses.entries()) {
+        if (response.status === 'rejected') {
+            let error = response.reason;
+
+            if (response.reason.response) {
+                error = `Request#${i} failed with status code: ${response.reason.response.statusCode}: Body: ${JSON.stringify(response.reason.response.body)}`;
+            }
+
+            await con.execute('UPDATE shop SET status = ?, last_scrapted_error = ? WHERE id = ?', [
+                'red',
+                error,
+                shop.id,
+            ]);
+            return;
+        }
+    }
+
+    await con.execute('UPDATE shop SET status = ?, shopware_version = ? WHERE id = ?', [
+        'green',
         responses[0].value.body.version,
         shop.id,
     ]);
