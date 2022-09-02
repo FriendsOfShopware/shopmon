@@ -9,6 +9,16 @@ export const useShopStore = defineStore('shop', {
         shop: null,
     }),
     actions: {
+        async refreshShops() {
+            if(!this.shop) {
+                return;
+            }
+
+            const shops = await fetchWrapper.get('/account/me/shops') as Shop[];
+
+            sessionStorage.setItem('shops', JSON.stringify(shops));
+        },
+
         async loadShops() {
             this.isLoading = true;
             const shops = await fetchWrapper.get('/account/me/shops') as Shop[];
@@ -28,6 +38,16 @@ export const useShopStore = defineStore('shop', {
             this.isLoading = true;
             this.shop = await fetchWrapper.get(`/team/${teamId}/shop/${shopId}`) as ShopDetailed;
             this.isLoading = false;
+        },
+
+        async updateShop(teamId: number, id: number, payload: any) {
+            await fetchWrapper.patch(`/team/${teamId}/shop/${id}`, payload);
+
+            await this.refreshShops();
+        },
+
+        async delete(teamId: number, shopId: number) {
+            await fetchWrapper.delete(`/team/${teamId}/shop/${shopId}`);
         }
     }
 })

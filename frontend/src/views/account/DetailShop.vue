@@ -21,7 +21,20 @@ function isTaskOverdue(task: ScheduledTask) {
 </script>
 
 <template>
-  <Header v-if="shopStore.shop" :title="shopStore.shop.name" />
+  <Header v-if="shopStore.shop" :title="shopStore.shop.name">
+    <router-link 
+      :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
+      type="button"
+      class="group btn btn-primary flex items-center"
+    >
+      <font-awesome-icon 
+        icon="fa-solid fa-pencil" 
+        class="-ml-1 mr-2 opacity-25 group-hover:opacity-50" 
+        aria-hidden="true" 
+      />
+      Edit Shop
+    </router-link>
+  </Header>
   <MainContainer v-if="shopStore.shop">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
