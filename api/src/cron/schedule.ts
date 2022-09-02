@@ -155,7 +155,7 @@ export async function onSchedule() {
         }
     }
 
-    await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ? WHERE id = ?', [
+    await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
         'green',
         responses.config.body.version,
         favicon,
