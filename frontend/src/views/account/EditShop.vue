@@ -38,10 +38,12 @@ const schema = Yup.object().shape({
 });
 
 async function onSubmit(values: any) {
-    try {
-        await shopStore.updateShop(shop.teamId, shop.id, values);
-    } catch (e: any) {
-        alertStore.error(e);
+    if ( shop.teamId && shop.id ) {
+        try {
+            await shopStore.updateShop(shop.teamId, shop.id, values);
+        } catch (e: any) {
+            alertStore.error(e);
+        }
     }
 }
 
