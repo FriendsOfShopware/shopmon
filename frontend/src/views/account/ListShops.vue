@@ -47,6 +47,7 @@ shopStore.loadShops();
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="py-3.5 pl-4 pr-3 text-left sm:pl-6 lg:pl-8">Name</th>
+            <th scope="col" class="px-3 py-3.5 text-left">URL</th>
             <th scope="col" class="px-3 py-3.5 text-left">Version</th>
             <th scope="col" class="px-3 py-3.5 text-left">Team</th>
             <th scope="col" class="px-3 py-3.5 text-left">Last checked at</th>
@@ -55,11 +56,24 @@ shopStore.loadShops();
         <tbody class="divide-y divide-gray-200">
           <tr class="even:bg-gray-50" v-for="shop in shopStore.shops" :key="shop.id">
             <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
+              <font-awesome-icon 
+                icon="fa-solid fa-circle"
+                size="sm"
+                class="mr-2"
+                :class="['text-' + shop.status + '-600']"
+              />
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
                 {{ shop.name }}
               </router-link>
             </td>
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>
+            <td class="whitespace-nowrap px-3 py-4 text-gray-500">
+              <a :href="shop.url" :data-tooltip="shop.url" target="_blank">
+                <font-awesome-icon 
+                  icon="fa-solid fa-up-right-from-square"
+                />
+              </a>
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.team_name }}</td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.last_scraped_at }}</td>
           </tr>
