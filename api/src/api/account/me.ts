@@ -92,6 +92,7 @@ export async function listUserShops(req: Request): Promise<Response> {
             shop.name,
             shop.status,
             shop.url,
+            shop.favicon,
             shop.created_at,
             shop.last_scraped_at,
             shop.shopware_version,

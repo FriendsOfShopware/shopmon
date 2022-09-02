@@ -5,6 +5,7 @@ import promiseAllProperties from 'promise-all-properties';
 import versionCompare from 'version-compare'
 import type {Extension, ExtensionChangelog} from "../../../shared/shop";
 
+const faviconRegex = /rel="shortcut icon"\s*href="(?<icon>.*)">/gm;
 const fetchShopSQL = 'SELECT id, url, shopware_version , client_id, client_secret FROM shop WHERE last_scraped_at IS NULL OR last_scraped_at < DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY id ASC LIMIT 1';
 
 export async function onSchedule() {
@@ -22,8 +23,16 @@ export async function onSchedule() {
 
     const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, shop.client_secret));
 
-    // Authentificate only once
-    await client.getToken();
+    try {
+        await client.getToken();
+    } catch (e) {
+        await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
+            'red',
+            'The API authentication failed. Please check your credentials.',
+            shop.id,
+        ]);
+        return;
+    }
 
     let responses;
 
@@ -34,7 +43,8 @@ export async function onSchedule() {
             app: client.post('/search/app'),
             scheduledTask: client.post('/search/scheduled-task'),
             queue: client.get('/_info/queue.json'),
-            cacheInfo: client.get('/_action/cache_info')
+            cacheInfo: client.get('/_action/cache_info'),
+            home: fetch(shop.url)
         })
     } catch (e: any) {
         let error = e;
@@ -50,12 +60,6 @@ export async function onSchedule() {
         ]);
         return;
     }
-
-    await con.execute('UPDATE shop SET status = ?, shopware_version = ? WHERE id = ?', [
-        'green',
-        responses.config.body.version,
-        shop.id,
-    ]);
 
     const extensions: Extension[] = [];
 
@@ -140,11 +144,30 @@ export async function onSchedule() {
         }
     }
 
+    let favicon: string|null = null
+
+    if (responses.home.ok) {
+        const body = await responses.home.text();
+        const match = faviconRegex.exec(body);
+
+        if (match && match.groups && match.groups.icon !== undefined) {
+            favicon = match.groups.icon;
+        }
+    }
+
+    await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
+        'green',
+        responses.config.body.version,
+        favicon,
+        shop.id,
+    ]);
+
     await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, created_at) VALUES(?, ?, ?, ?, ?, NOW())', [
         shop.id,
         JSON.stringify(extensions),
         JSON.stringify(scheduledTasks),
         JSON.stringify(responses.queue.body),
-        JSON.stringify(responses.cacheInfo.body)
+        JSON.stringify(responses.cacheInfo.body),
+        favicon
     ]);
 }
