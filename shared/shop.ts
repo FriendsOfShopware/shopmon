@@ -24,8 +24,17 @@ export interface Extension {
     name: string,
     active: boolean,
     version: string,
-    latestVersion: string,
+    latestVersion: string|null,
     installed: boolean,
+    ratingAverage: number|null,
+    storeLink: string|null,
+    changelog: ExtensionChangelog[]|null,
+}
+
+export interface ExtensionChangelog {
+    version: string
+    text: string
+    creationDate: string
 }
 
 export interface ScheduledTask {
