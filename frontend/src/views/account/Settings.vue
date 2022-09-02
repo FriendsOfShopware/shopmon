@@ -2,6 +2,7 @@
 import Header from '@/components/layout/Header.vue'
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
+import Spinner from '@/components/icon/Spinner.vue';
 
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
@@ -94,7 +95,16 @@ async function deleteUser() {
           </div>
         </div>
         <div class="text-right flex justify-end">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary inline-block">
+          <button :disabled="isSubmitting" type="submit" class="btn btn-primary flex items-center group">
+            <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+              <font-awesome-icon 
+                class="h-5 w-5" 
+                aria-hidden="true"
+                icon="fa-solid fa-floppy-disk" 
+                v-if="!isSubmitting" 
+              />
+              <Spinner v-else />
+            </span>
             Save
           </button>
         </div>
@@ -109,8 +119,12 @@ async function deleteUser() {
 
         <div class="mt-5">
           <button type="button"
-            class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
+            class="btn btn-danger group flex items-center"
             @click="showAccountDeletionModal = true">
+            <font-awesome-icon 
+              icon="fa-solid fa-trash" 
+              class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50"
+            />
             Delete account
           </button>
         </div>
@@ -154,12 +168,12 @@ async function deleteUser() {
                 </div>
                 <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                   <button type="button"
-                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
                     @click="deleteUser">
                     Deactivate
                   </button>
                   <button ref="cancelButtonRef" type="button"
-                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
                     @click="showAccountDeletionModal = false">
                     Cancel
                   </button>

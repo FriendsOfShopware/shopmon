@@ -11,11 +11,15 @@ a {
 }
 
 .btn {
-  @apply relative inline-flex justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500 focus:ring-2 focus:ring-offset-2 focus:ring-sky-500;
+  @apply relative inline-flex justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500;
 }
 
 .btn-primary {
   @apply border-sky-500 text-white bg-sky-500 hover:bg-sky-600 hover:text-white;
+}
+
+.btn-danger {
+  @apply border-red-600 text-white bg-red-600 hover:bg-red-700 hover:text-white hover:border-red-600;
 }
 
 .field-no-rounded {
