@@ -25,7 +25,10 @@ function isTaskOverdue(task: ScheduledTask) {
   <MainContainer v-if="shopStore.shop">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
-        <h3 class="text-lg leading-6 font-medium">Shop Information</h3>
+        <h3 class="text-lg leading-6 font-medium">
+          <font-awesome-icon icon="fa-solid fa-circle-info" class="mr-1" />
+          Shop Information
+        </h3>
       </div>
       <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8">
         <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -50,13 +53,24 @@ function isTaskOverdue(task: ScheduledTask) {
             <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cache_info.httpCache ? 'Enabled' : 'Disabled' }}
             </dd>
           </div>
+          <div class="sm:col-span-1">
+            <dt class="font-medium">URL</dt>
+            <dd class="mt-1 text-sm text-gray-500">
+              <a :href="shopStore.shop.url" target="_blank">
+                {{ shopStore.shop.url }}
+              </a>              
+            </dd>
+          </div>
         </dl>
       </div>
     </div>
 
     <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
-        <h3 class="text-lg leading-6 font-medium">Extensions</h3>
+        <h3 class="text-lg leading-6 font-medium">
+          <font-awesome-icon icon="fa-solid fa-plug" class="mr-1" />
+          Extensions
+        </h3>
         <p class="mt-1 text-sm text-gray-500">List of all installed extensions</p>
       </div>
       <div class="border-t border-gray-200">
@@ -76,16 +90,16 @@ function isTaskOverdue(task: ScheduledTask) {
                 : 'opacity-40',
             ]">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 align-middle sm:pl-6 lg:pl-8">
-                <span class="text-green-400" data-tooltip="Active" v-if="extension.active">
+                <span class="text-green-400 mr-1" data-tooltip="Active" v-if="extension.active">
                   <font-awesome-icon 
+                    size="lg"
                     icon="fa-solid fa-circle-check" 
-                    class="w-5 h-5 inline-block align-middle mr-1" 
                   />
                 </span>
-                <span class="text-gray-300" data-tooltip="Deactive" v-if="!extension.active">
+                <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-if="!extension.active">
                   <font-awesome-icon 
-                    icon="fa-solid fa-circle-xmark" 
-                    class="w-5 h-5 inline-block align-middle mr-1" 
+                    size="lg" 
+                    icon="fa-solid fa-circle-xmark"
                   />
                 </span>
                 {{ extension.name }}
@@ -111,7 +125,10 @@ function isTaskOverdue(task: ScheduledTask) {
 
     <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
-        <h3 class="text-lg leading-6 font-medium ">Scheduled Tasks</h3>
+        <h3 class="text-lg leading-6 font-medium ">
+          <font-awesome-icon icon="fa-solid fa-list-check" class="mr-1" />
+          Scheduled Tasks
+        </h3>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all Scheduled Tasks</p>
       </div>
       <div class="border-t border-gray-200">
@@ -127,16 +144,16 @@ function isTaskOverdue(task: ScheduledTask) {
           <tbody class="divide-y divide-gray-200 bg-white">
             <tr class="even:bg-gray-50" v-for="task in shopStore.shop.scheduled_task" :key="task.name">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
-                <span class="text-amber-600" data-tooltip="Task overdue" v-if="isTaskOverdue(task)">
+                <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="isTaskOverdue(task)">
                   <font-awesome-icon 
-                    icon="fa-solid fa-circle-xmark" 
-                    class="w-5 h-5 inline-block align-middle mr-1" 
+                    size="lg"
+                    icon="fa-solid fa-circle-xmark"
                   />
                 </span>
-                <span class="text-green-400" data-tooltip="Working" v-else>
+                <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
                   <font-awesome-icon 
-                    icon="fa-solid fa-circle-check" 
-                    class="w-5 h-5 inline-block align-middle mr-1" 
+                    size="lg"
+                    icon="fa-solid fa-circle-check"
                   />
                 </span>                
                 {{ task.name }}

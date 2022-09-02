@@ -11,10 +11,10 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 /* import FontAwesomeIcon */
-import { faKey, faUserPlus, faEnvelope, faCircleInfo, faCircleCheck, faCircleXmark, faXmark, faGear, faPowerOff, faBarsStaggered, faPlus, faFloppyDisk, faTriangleExclamation, faTrash, faCircle, faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import { faKey, faUserPlus, faEnvelope, faCircleInfo, faCircleCheck, faCircleXmark, faXmark, faGear, faPowerOff, faBarsStaggered, faPlus, faFloppyDisk, faTriangleExclamation, faTrash, faCircle, faUpRightFromSquare, faPlug, faListCheck } from '@fortawesome/free-solid-svg-icons';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
 
-library.add( faKey, faUserPlus, faEnvelope, faCircleInfo, faCircleCheck, faCircleXmark, faXmark, faBell, faGear, faPowerOff, faBarsStaggered, faPlus, faFloppyDisk, faTriangleExclamation, faTrash, faCircle, faUpRightFromSquare );
+library.add( faKey, faUserPlus, faEnvelope, faCircleInfo, faCircleCheck, faCircleXmark, faXmark, faBell, faGear, faPowerOff, faBarsStaggered, faPlus, faFloppyDisk, faTriangleExclamation, faTrash, faCircle, faUpRightFromSquare, faPlug, faListCheck );
 
 const app = createApp(App);
 
