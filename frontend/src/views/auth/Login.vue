@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
+import { ref } from 'vue';
 
 import Spinner from '@/components/icon/Spinner.vue';
 
 import { useAuthStore } from '@/stores/auth.store';
+
+const passwordType = ref('password')
 
 const schema = Yup.object().shape({
   email: Yup.string().required('Email is required'),
@@ -40,8 +43,14 @@ async function onSubmit(values: any) {
       </div>
       <div>
         <label for="password" class="sr-only">Password</label>
-        <Field id="password" name="password" type="password" autocomplete="current-password" required=""
-          class="field-no-rounded rounded-b-md" placeholder="Password" :class="{ 'is-invalid': errors.password }" />
+        <div class="relative">
+          <Field id="password" name="password" :type="passwordType" autocomplete="current-password" required=""
+          class="field-no-rounded field-password rounded-b-md" placeholder="Password" :class="{ 'is-invalid': errors.password }" />
+          <div class="absolute right-0 inset-y-0 flex items-center pr-3 cursor-pointer z-10">
+            <font-awesome-icon icon="fa-solid fa-eye" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
+            <font-awesome-icon icon="fa-solid fa-eye-slash" v-else @click="passwordType = 'password'" />
+          </div>
+        </div>        
       </div>
     </div>
 

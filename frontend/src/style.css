@@ -30,6 +30,10 @@ a {
   @apply field-no-rounded rounded-md;
 }
 
+.field-password {
+  @apply pr-9;
+}
+
 table th {
   @apply font-semibold text-sky-900;
 }
