@@ -10,13 +10,6 @@ import {
     MenuItem,
     MenuItems,
 } from '@headlessui/vue';
-import {
-    BellIcon,
-    Bars2Icon,
-    XMarkIcon,
-    ArrowLeftOnRectangleIcon,
-    Cog6ToothIcon,
-} from '@heroicons/vue/24/outline';
 
 const authStore = useAuthStore();
 
@@ -26,8 +19,8 @@ const navigation = [
 ];
 
 const userNavigation = [
-    { name: 'Settings', route: '/account/settings', icon: Cog6ToothIcon, },
-    { name: 'Logout', route: '/logout', icon: ArrowLeftOnRectangleIcon },
+    { name: 'Settings', route: '/account/settings', icon: 'fa-solid fa-gear', },
+    { name: 'Logout', route: '/logout', icon: 'fa-solid fa-power-off' },
 ];
 </script>
 
@@ -72,21 +65,22 @@ const userNavigation = [
             <button
               type="button"
               class="
+                h-8
+                w-8
                 bg-sky-400
                 p-1
                 rounded-full
                 text-sky-200
                 hover:text-white
                 focus:outline-none
-                focus:ring-2
-                focus:ring-offset-2
-                focus:ring-offset-sky-400
-                focus:ring-white
+                flex
+                justify-center
+                items-center
               "
             >
               <span class="sr-only">View notifications</span>
-              <BellIcon
-                class="h-6 w-6"
+              <font-awesome-icon icon="fa-regular fa-bell"
+                class="h-5 w-5"
                 aria-hidden="true"
               />
             </button>
@@ -164,8 +158,7 @@ const userNavigation = [
                           : $router.push(item.route)
                       "
                     >
-                      <component
-                        :is="item.icon"
+                      <font-awesome-icon :icon="item.icon"
                         class="w-4 h-4 inline-block text-sky-700 mr-1"
                       />
                       {{ item.name }}
@@ -189,12 +182,14 @@ const userNavigation = [
             "
           >
             <span class="sr-only">Open main menu</span>
-            <Bars2Icon
+            <font-awesome-icon 
+              icon="fa-solid fa-bars-staggered"
               v-if="!open"
               class="block h-6 w-6"
               aria-hidden="true"
             />
-            <XMarkIcon
+            <font-awesome-icon 
+            icon="fa-solid fa-xmark"
               v-else
               class="block h-6 w-6"
               aria-hidden="true"
@@ -243,24 +238,25 @@ const userNavigation = [
           <button
             type="button"
             class="
+              w-8
+              h-8
               ml-auto
               bg-sky-400
-              flex-shrink-0
               p-1
               border-2 border-transparent
               rounded-full
               text-sky-200
+              flex
+              justify-center
+              items-center
               hover:text-white
               focus:outline-none
-              focus:ring-2
-              focus:ring-offset-2
-              focus:ring-offset-sky-400
-              focus:ring-white
             "
           >
             <span class="sr-only">View notifications</span>
-            <BellIcon
-              class="h-6 w-6"
+            <font-awesome-icon 
+              icon="fa-regular fa-bell"
+              class="h-5 w-5"
               aria-hidden="true"
             />
           </button>
@@ -286,8 +282,8 @@ const userNavigation = [
                 : $router.push(item.route)
             "
           >
-            <component
-              :is="item.icon"
+            <font-awesome-icon 
+              :icon="item.icon"
               class="w-4 h-4 inline-block text-sky-200 mr-1"
             />
             {{ item.name }}

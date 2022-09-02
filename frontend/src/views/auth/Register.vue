@@ -76,15 +76,17 @@ async function onSubmit(values: any) {
     </div>
     <div class="">
       <button
-        class="btn btn-primary w-full"
+        class="btn btn-primary w-full group"
         :disabled="isSubmitting"
       >
-        <span
-          v-if="isSubmitting"
-          class="absolute left-0 inset-y-0 flex items-center pl-3"
-          :disabled="isSubmitting"
-        >
-          <Spinner />
+        <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
+           <font-awesome-icon 
+            class="h-5 w-5" 
+            aria-hidden="true"
+            icon="fa-solid fa-user-plus" 
+            v-if="!isSubmitting" 
+          />
+          <Spinner v-else />
         </span>
         Register
       </button>

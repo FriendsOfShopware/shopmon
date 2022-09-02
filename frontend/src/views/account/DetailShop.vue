@@ -5,11 +5,6 @@ import { useShopStore } from '@/stores/shop.store';
 import { useRoute } from 'vue-router';
 import type { ScheduledTask } from '@apiTypes/shop';
 
-import {
-  CheckCircleIcon,
-  XCircleIcon
-} from '@heroicons/vue/24/solid';
-
 const route = useRoute();
 const shopStore = useShopStore();
 
@@ -82,10 +77,16 @@ function isTaskOverdue(task: ScheduledTask) {
             ]">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 align-middle sm:pl-6 lg:pl-8">
                 <span class="text-green-400" data-tooltip="Active" v-if="extension.active">
-                  <CheckCircleIcon class="w-5 inline " />
+                  <font-awesome-icon 
+                    icon="fa-solid fa-circle-check" 
+                    class="w-5 h-5 inline-block align-middle mr-1" 
+                  />
                 </span>
                 <span class="text-gray-300" data-tooltip="Deactive" v-if="!extension.active">
-                  <XCircleIcon class="inline w-5" />
+                  <font-awesome-icon 
+                    icon="fa-solid fa-circle-xmark" 
+                    class="w-5 h-5 inline-block align-middle mr-1" 
+                  />
                 </span>
                 {{ extension.name }}
               </td>
@@ -127,10 +128,16 @@ function isTaskOverdue(task: ScheduledTask) {
             <tr class="even:bg-gray-50" v-for="task in shopStore.shop.scheduled_task" :key="task.name">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
                 <span class="text-amber-600" data-tooltip="Task overdue" v-if="isTaskOverdue(task)">
-                  <XCircleIcon class="inline w-5" />
+                  <font-awesome-icon 
+                    icon="fa-solid fa-circle-xmark" 
+                    class="w-5 h-5 inline-block align-middle mr-1" 
+                  />
                 </span>
                 <span class="text-green-400" data-tooltip="Working" v-else>
-                  <CheckCircleIcon class="w-5 inline" />
+                  <font-awesome-icon 
+                    icon="fa-solid fa-circle-check" 
+                    class="w-5 h-5 inline-block align-middle mr-1" 
+                  />
                 </span>                
                 {{ task.name }}
               </td>

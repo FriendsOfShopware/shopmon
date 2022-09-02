@@ -60,17 +60,16 @@ function goToResend() {
   </div>
   <div
     v-if="isLoading"
-    class="rounded-md bg-blue-50 p-4"
+    class="rounded-md bg-blue-50 p-4 border border-sky-200"
   >
     <div class="flex">
-      <div class="flex-shrink-0">
-        <InformationCircleIcon
-          class="h-5 w-5 text-blue-400"
-          aria-hidden="true"
-        />
-      </div>
+      <font-awesome-icon 
+        icon="fa-solid fa-circle-info"
+        class="h-5 w-5 text-sky-400"
+        aria-hidden="true"
+      />
       <div class="ml-3 flex-1 md:flex md:justify-between">
-        <p class="text-sm text-blue-700">
+        <p class="text-sm text-sky-700">
           Loading...
         </p>
       </div>
@@ -98,16 +97,18 @@ function goToResend() {
       </div>
       <div class="">
         <button
-          class="btn btn-primary"
+          class="w-full group btn btn-primary"
           :disabled="isSubmitting"
         >
-          <span
-            v-if="isSubmitting"
-            class="absolute left-0 inset-y-0 flex items-center pl-3"
-            :disabled="isSubmitting"
-          >
-            <Spinner />
-          </span>
+          <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
+          <font-awesome-icon 
+            class="h-5 w-5" 
+            aria-hidden="true"
+            icon="fa-solid fa-key" 
+            v-if="!isSubmitting" 
+          />
+          <Spinner v-else />
+        </span>
           Change Password
         </button>
         <router-link
@@ -119,35 +120,39 @@ function goToResend() {
       </div>
     </Form>
     <div v-else>
-      <div class="rounded-md bg-red-50 p-4">
+      <div class="rounded-md bg-red-50 p-4 border border-red-200">
         <div class="flex">
           <div class="flex-shrink-0">
-            <CheckCircleIcon
-              class="h-5 w-5 text-red-400"
+            <font-awesome-icon 
+              icon="fa-solid fa-circle-xmark"
+              class="h-5 w-5 text-red-600"
               aria-hidden="true"
             />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-800">
+            <h3 class="text-sm font-medium text-red-900">
               Invalid Token
             </h3>
-            <div class="mt-2 text-sm text-red-700">
+            <div class="mt-2 text-sm text-red-800">
               <p>It looks like your Token is expired.</p>
-            </div>
-            <div class="mt-4">
-              <div class="-mx-2 -my-1.5 flex">
-                <button
-                  type="button"
-                  class="bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
-                  @click="goToResend"
-                >
-                  Resend mail
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </div>
+      <button
+        type="button"
+        class="mt-4 btn btn-primary w-full"
+        @click="goToResend"
+      >
+        <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
+           <font-awesome-icon 
+            class="h-5 w-5" 
+            aria-hidden="true"
+            icon="fa-solid fa-envelope"
+          />
+        </span>
+        Resend mail
+      </button>
     </div>
   </div>
 </template>

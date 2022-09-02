@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth.store';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
-import { EllipsisVerticalIcon } from '@heroicons/vue/20/solid'
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);

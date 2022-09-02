@@ -2,7 +2,6 @@
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import { useShopStore } from '@/stores/shop.store';
-import { PlusIcon } from '@heroicons/vue/20/solid'
 const shopStore = useShopStore();
 
 shopStore.loadShops();
@@ -14,9 +13,13 @@ shopStore.loadShops();
     <router-link
       to="/account/shops/new"
       type="button"
-      class="btn btn-primary"
+      class="group btn btn-primary flex items-center align-middle"
     >
-      <PlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+      <font-awesome-icon 
+        icon="fa-solid fa-plus" 
+        class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
+        aria-hidden="true" 
+      />
       Add Shop
     </router-link>
   </Header>
@@ -28,9 +31,13 @@ shopStore.loadShops();
       <h3 class="mt-2 font-medium">No shops</h3>
       <p class="mt-1 text-gray-500">Get started by adding your first Shop.</p>
       <div class="mt-6">
-        <router-link to="/account/shops/new" class="btn btn-primary">
-          <PlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-          New Shop
+        <router-link to="/account/shops/new" class="btn btn-primary group flex items-center">
+          <font-awesome-icon 
+            icon="fa-solid fa-plus" 
+            class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
+            aria-hidden="true" 
+          />
+          Add Shop
         </router-link>
       </div>
     </div>

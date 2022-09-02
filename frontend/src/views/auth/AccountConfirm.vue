@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { InformationCircleIcon, CheckCircleIcon  } from '@heroicons/vue/24/solid'
 
 import { useAuthStore } from '@/stores/auth.store';
 </script>
@@ -38,17 +37,16 @@ export default {
   </h4>
   <div
     v-if="isLoading"
-    class="rounded-md bg-blue-50 p-4"
+    class="rounded-md bg-blue-50 p-4 border border-sky-200"
   >
     <div class="flex">
-      <div class="flex-shrink-0">
-        <InformationCircleIcon
-          class="h-5 w-5 text-blue-400"
-          aria-hidden="true"
-        />
-      </div>
+      <font-awesome-icon 
+        icon="fa-solid fa-circle-info"
+        class="h-5 w-5 text-sky-500"
+        aria-hidden="true"
+      />
       <div class="ml-3 flex-1 md:flex md:justify-between">
-        <p class="text-sm text-blue-700">
+        <p class="text-sm text-sky-700">
           Loading...
         </p>
       </div>
@@ -58,21 +56,19 @@ export default {
   <div v-else>
     <div
       v-if="success"
-      class="rounded-md bg-green-50 p-4"
+      class="rounded-md bg-green-50 p-4 border border-green-200"
     >
       <div class="flex">
-        <div class="flex-shrink-0">
-          <CheckCircleIcon
-            class="h-5 w-5 text-blue-400"
-            aria-hidden="true"
-          />
-        </div>
+        <font-awesome-icon 
+          icon="fa-solid fa-circle-check"
+          class="h-5 w-5 text-green-500"
+          aria-hidden="true"
+        />
         <div class="ml-3 flex-1 md:flex md:justify-between">
-          <p class="text-sm text-blue-700">
+          <p class="text-sm text-green-700">
             Your Mail Address has been confirmed. 
             <router-link
               to="/account/login"
-              class="text-blue-700"
             >
               Login
             </router-link>
@@ -83,17 +79,16 @@ export default {
 
     <div
       v-else
-      class="rounded-md bg-red-50 p-4"
+      class="rounded-md bg-red-50 p-4 border border-red-200"
     >
       <div class="flex">
-        <div class="flex-shrink-0">
-          <InformationCircleIcon
-            class="h-5 w-5 text-red-400"
-            aria-hidden="true"
-          />
-        </div>
+        <font-awesome-icon 
+          icon="fa-solid fa-circle-xmark"
+          class="h-5 w-5 text-red-600"
+          aria-hidden="true"
+        />
         <div class="ml-3 flex-1 md:flex md:justify-between">
-          <p class="text-sm text-red-700">
+          <p class="text-sm text-red-900">
             The given token has been expired
           </p>
         </div>
