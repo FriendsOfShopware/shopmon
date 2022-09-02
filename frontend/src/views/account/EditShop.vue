@@ -48,12 +48,14 @@ async function onSubmit(values: any) {
 }
 
 async function deleteShop() {
-    try {
-        await shopStore.delete(shop.teamId, shop.id);
+    if ( shop.teamId && shop.id ) {
+        try {
+            await shopStore.delete(shop.teamId, shop.id);
 
-        router.push('/account/shops');
-    } catch (error: Error) {
-        alertStore.error(error);
+            router.push('/account/shops');
+        } catch (error: Error) {
+            alertStore.error(error);
+        }
     }
 }
 
