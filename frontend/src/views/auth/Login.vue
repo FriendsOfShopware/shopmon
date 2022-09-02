@@ -47,8 +47,8 @@ async function onSubmit(values: any) {
           <Field id="password" name="password" :type="passwordType" autocomplete="current-password" required=""
           class="field-no-rounded field-password rounded-b-md" placeholder="Password" :class="{ 'is-invalid': errors.password }" />
           <div class="absolute right-0 inset-y-0 flex items-center pr-3 cursor-pointer z-10">
-            <font-awesome-icon icon="fa-solid fa-eye" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
-            <font-awesome-icon icon="fa-solid fa-eye-slash" v-else @click="passwordType = 'password'" />
+            <font-awesome-icon icon="fa-solid fa-eye" class="w-[18px]" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
+            <font-awesome-icon icon="fa-solid fa-eye-slash" class="w-[18px]" v-else @click="passwordType = 'password'" />
           </div>
         </div>        
       </div>
