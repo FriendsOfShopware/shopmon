@@ -46,7 +46,8 @@ shopStore.loadShops();
       <table class="min-w-full divide-y-2 divide-gray-200 bg-white">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="py-3.5 pl-4 pr-3 text-left sm:pl-6 lg:pl-8">Name</th>
+            <th scope="col" class="w-11 py-3.5 px-1 text-left"></th>
+            <th scope="col" class="px-3 py-3.5 text-left">Name</th>
             <th scope="col" class="px-3 py-3.5 text-left">URL</th>
             <th scope="col" class="px-3 py-3.5 text-left">Version</th>
             <th scope="col" class="px-3 py-3.5 text-left">Team</th>
@@ -55,13 +56,20 @@ shopStore.loadShops();
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr class="even:bg-gray-50" v-for="shop in shopStore.shops" :key="shop.id">
-            <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
+            <td class="whitespace-nowrap py-2 px-3">
+              <img :src="shop.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="shop.favicon" />
+            </td>
+            <td class="whitespace-nowrap px-3 py-4">
               <font-awesome-icon 
                 icon="fa-solid fa-circle"
                 size="sm"
                 class="mr-2"
-                :class="['text-' + shop.status + '-600']"
-              />
+                :class="[
+                  {'text-green-400': shop.status === 'green'},
+                  {'text-yellow-400': shop.status === 'yellow'},
+                  {'text-red-600': shop.status === 'red'},
+                ]"
+              />              
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
                 {{ shop.name }}
               </router-link>
