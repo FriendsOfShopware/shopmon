@@ -96,7 +96,7 @@ async function onSubmit(values: any) {
         </div>
       </FormGroup>
 
-      <div class="flex justify-end">
+      <div class="flex justify-end group">
         <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
           <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
           <font-awesome-icon 
