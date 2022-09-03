@@ -23,7 +23,7 @@ export default defineConfig({
         },
         proxy: {
             '/api': {
-                target: 'https://shopmon.fos.gg',
+                target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
                 changeOrigin: true
             }
         }

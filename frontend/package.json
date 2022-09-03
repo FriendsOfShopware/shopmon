@@ -4,6 +4,7 @@
     "version": "0.0.0",
     "scripts": {
         "dev": "vite",
+        "dev:local": "SHOPMON_API_URL=http://localhost:5000 vite",
         "build": "vite build",
         "preview": "vite preview",
         "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix"
