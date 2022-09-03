@@ -5,7 +5,6 @@ import promiseAllProperties from 'promise-all-properties';
 import versionCompare from 'version-compare'
 import type {Extension, ExtensionChangelog} from "../../../shared/shop";
 
-const faviconRegex = /rel="shortcut icon"\s*href="(?<icon>.*)">/gm;
 const fetchShopSQL = 'SELECT id, url, shopware_version , client_id, client_secret FROM shop WHERE last_scraped_at IS NULL OR last_scraped_at < DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY id ASC LIMIT 1';
 
 export async function onSchedule() {
@@ -148,7 +147,7 @@ export async function onSchedule() {
 
     if (responses.home.ok) {
         const body = await responses.home.text();
-        const match = faviconRegex.exec(body);
+        const match = /rel="shortcut icon"\s*href="(?<icon>.*)">/gm.exec(body);
 
         if (match && match.groups && match.groups.icon !== undefined) {
             favicon = match.groups.icon;
