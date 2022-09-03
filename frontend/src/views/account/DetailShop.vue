@@ -3,10 +3,15 @@ import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import { useShopStore } from '@/stores/shop.store';
 import { useRoute } from 'vue-router';
-import type { ScheduledTask } from '@apiTypes/shop';
+import type { Extension, ExtensionChangelog, ScheduledTask } from '@apiTypes/shop';
+import { ref } from 'vue';
+import type { Ref } from 'vue';
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 
 const route = useRoute();
 const shopStore = useShopStore();
+const viewChangelogDialog: Ref<boolean> = ref(false);
+const dialogExtension: Ref<Extension | null> = ref(null);
 
 shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
 
@@ -18,24 +23,25 @@ function isTaskOverdue(task: ScheduledTask) {
 
   return currentTime.getTime() > nextExecute.getTime();
 }
+
+function openExtensionChangelog(extension: Extension | null) {
+  dialogExtension.value = extension;
+  viewChangelogDialog.value = true;  
+}
+
 </script>
 
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
-    <router-link 
+    <router-link
       :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
-      type="button"
-      class="group btn btn-primary flex items-center"
-    >
-      <font-awesome-icon 
-        icon="fa-solid fa-pencil" 
-        class="-ml-1 mr-2 opacity-25 group-hover:opacity-50" 
-        aria-hidden="true" 
-      />
+      type="button" class="group btn btn-primary flex items-center">
+      <font-awesome-icon icon="fa-solid fa-pencil" class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
+        aria-hidden="true" />
       Edit Shop
     </router-link>
   </Header>
-  <MainContainer v-if="shopStore.shop">
+  <MainContainer v-if="shopStore.shop && shopStore.shop.last_scraped_at">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
@@ -71,14 +77,14 @@ function isTaskOverdue(task: ScheduledTask) {
             <dd class="mt-1 text-sm text-gray-500">
               <a :href="shopStore.shop.url" target="_blank">
                 {{ shopStore.shop.url }}
-              </a>              
+              </a>
             </dd>
           </div>
         </dl>
       </div>
     </div>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
+    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden" v-if="shopStore.shop.extensions">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
           <font-awesome-icon icon="fa-solid fa-plug" class="mr-1" />
@@ -104,16 +110,10 @@ function isTaskOverdue(task: ScheduledTask) {
             ]">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 align-middle sm:pl-6 lg:pl-8">
                 <span class="text-green-400 mr-1" data-tooltip="Active" v-if="extension.active">
-                  <font-awesome-icon 
-                    size="lg"
-                    icon="fa-solid fa-circle-check" 
-                  />
+                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
                 </span>
                 <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-if="!extension.active">
-                  <font-awesome-icon 
-                    size="lg" 
-                    icon="fa-solid fa-circle-xmark"
-                  />
+                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
                 </span>
                 {{ extension.name }}
               </td>
@@ -121,11 +121,11 @@ function isTaskOverdue(task: ScheduledTask) {
                 {{ extension.version }}
               </td>
               <td class="whitespace-nowrap px-3 py-4">
-                <span
+                <button
                   class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1"
-                  v-if="extension.latestVersion">
+                  v-if="extension.latestVersion && extension.version < extension.latestVersion" @click="openExtensionChangelog(extension)">
                   {{ extension.latestVersion }}
-                </span>
+              </button>
               </td>
               <td class="whitespace-nowrap px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">
                 No known issues. <a href="#">Report issue</a>
@@ -136,7 +136,8 @@ function isTaskOverdue(task: ScheduledTask) {
       </div>
     </div>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden">
+    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden"
+      v-if="shopStore.shop.scheduled_task">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium ">
           <font-awesome-icon icon="fa-solid fa-list-check" class="mr-1" />
@@ -158,17 +159,11 @@ function isTaskOverdue(task: ScheduledTask) {
             <tr class="even:bg-gray-50" v-for="task in shopStore.shop.scheduled_task" :key="task.name">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
                 <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="isTaskOverdue(task)">
-                  <font-awesome-icon 
-                    size="lg"
-                    icon="fa-solid fa-circle-xmark"
-                  />
+                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
                 </span>
                 <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
-                  <font-awesome-icon 
-                    size="lg"
-                    icon="fa-solid fa-circle-check"
-                  />
-                </span>                
+                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+                </span>
                 {{ task.name }}
               </td>
               <td class="whitespace-nowrap px-3 py-4">
@@ -182,5 +177,63 @@ function isTaskOverdue(task: ScheduledTask) {
         </table>
       </div>
     </div>
+
+    <TransitionRoot as="template" :show="viewChangelogDialog">
+      <Dialog as="div" class="relative z-10" @close="viewChangelogDialog = false">
+        <TransitionChild as="template" enter="ease-out duration-300" enter-from="opacity-0" enter-to="opacity-100"
+          leave="ease-in duration-200" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+        </TransitionChild>
+
+        <div class="fixed z-10 inset-0 overflow-y-auto">
+          <div class="flex items-end sm:items-center justify-center min-h-full p-4 text-center sm:p-0">
+            <TransitionChild as="template" enter="ease-out duration-300"
+              enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200"
+              leave-from="opacity-100 translate-y-0 sm:scale-100"
+              leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+              <DialogPanel
+                class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full sm:p-6">
+                
+                <button class="absolute top-1 right-2.5 focus:outline-none"
+                  @click="viewChangelogDialog = false">
+                  <font-awesome-icon
+                    aria-hidden="true"
+                    size="xl"
+                    icon="fa-solid fa-xmark" 
+                  />
+                </button>
+
+                <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900 mb-3">
+                    Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span>
+                </DialogTitle>
+
+                <ul v-if="dialogExtension?.changelog && dialogExtension.changelog.length > 0">
+                  <li class="mb-2" v-for="changeLog in dialogExtension.changelog" :key="changeLog.version">
+                    <div class="font-medium mb-1">{{ changeLog.version }} - <span class="text-xs font-normal text-gray-500">{{ new Date(changeLog.creationDate).toLocaleDateString() }}</span></div>
+                    <div class="pl-3" v-html="changeLog.text"></div>
+                  </li>
+                </ul>
+                <div class="rounded-md bg-red-50 p-4 border border-red-200" v-else>
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      <font-awesome-icon 
+                        icon="fa-solid fa-circle-xmark"
+                        class="h-5 w-5 text-red-600"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div class="ml-3 text-red-900">
+                      No Changelog data provided
+                    </div>
+                  </div>
+                </div>                 
+                
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </MainContainer>
 </template>
