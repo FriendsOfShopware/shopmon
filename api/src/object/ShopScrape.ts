@@ -2,10 +2,10 @@ import { Connection } from "@planetscale/database/dist";
 import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { Shop } from "shopware-app-server-sdk/shop";
 import { getConnection } from "../db";
-import promiseAllProperties from 'promise-all-properties';
 import versionCompare from 'version-compare'
 import { Extension, ExtensionChangelog } from "../../../shared/shop";
-
+import promiseAllProperties from '../helper/promise'
+ 
 interface SQLShop {
     id: string;
     url: string;
