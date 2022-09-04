@@ -39,8 +39,6 @@ export async function login(req: Request, env: Env): Promise<Response> {
         }
     );
 
-    throw new Error("FOOOO");
-
     return new JsonResponse({
         'token': authToken
     });
