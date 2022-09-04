@@ -36,3 +36,4 @@ jobs:
       with:
         environment: production
         sourcemaps: './api/'
+        ignore_empty: true
