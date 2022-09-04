@@ -5,7 +5,7 @@ compatibility_date = "2022-03-04"
 account_id = "963ff7fb9c523564b5f3a398ab39d488"
 routes = ["shopmon.fos.gg/api/*"]
 
-minify = false
+minify = true
 node_compat = false
 
 [vars]
@@ -13,7 +13,7 @@ MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
 
 [build]
-command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --sourcemap workers/api.ts"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap workers/api.ts"
 
 [[kv_namespaces]]
   binding = "kvStorage"

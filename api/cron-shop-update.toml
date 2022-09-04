@@ -4,11 +4,11 @@ workers_dev = false
 compatibility_date = "2022-03-04"
 account_id = "963ff7fb9c523564b5f3a398ab39d488"
 
-minify = false
+minify = true
 node_compat = false
 
 [build]
-command = "node_modules/.bin/esbuild --bundle --outfile=worker.cron-shop-update.js --format=esm --conditions=node --sourcemap workers/cron-shop-update.ts"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.cron-shop-update.js --minify --format=esm --conditions=node --sourcemap workers/cron-shop-update.ts"
 
 [triggers]
 crons = ["* * * * *"]

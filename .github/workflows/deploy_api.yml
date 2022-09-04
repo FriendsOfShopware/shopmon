@@ -15,23 +15,24 @@ jobs:
       run: |
         cd api
         npm install
-    - name: Publish
+    - name: Publish API
       uses: cloudflare/wrangler-action@2.0.0
       with:
         apiToken: ${{ secrets.CF_API_TOKEN }}
         workingDirectory: 'api'
         command: '-c api.toml publish'
-  cron-shop-update:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: NPM Install
-      run: |
-        cd api
-        npm install
-    - name: Publish
+    - name: Publish Cron Shop Update
       uses: cloudflare/wrangler-action@2.0.0
       with:
         apiToken: ${{ secrets.CF_API_TOKEN }}
         workingDirectory: 'api'
         command: '-c cron-shop-update.toml publish'
+    - name: Create Sentry release
+      uses: getsentry/action-release@v1
+      env:
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+        SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      with:
+        environment: production
+        sourcemaps: './api/'
