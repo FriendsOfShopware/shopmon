@@ -1,18 +1,20 @@
-import { getConnection, getKv } from "../../db";
+import { getConnection } from "../../db";
 import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
-export async function login(req: Request): Promise<Response> {
+export async function login(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
     const loginError = new ErrorResponse("Invalid email or password", 400);
 
-    const json = await req.json();
+    const json = await req.json() as any;
 
     if (json.email === undefined || json.password === undefined) {
         return new ErrorResponse('Missing email or password', 400);
     }
 
-    const result = await getConnection().execute("SELECT id, password FROM user WHERE email = ? AND verify_code IS NULL", [json.email]);
+    const result = await con.execute("SELECT id, password FROM user WHERE email = ? AND verify_code IS NULL", [json.email]);
 
     if (!result.rows.length) {
         return loginError;
@@ -27,7 +29,7 @@ export async function login(req: Request): Promise<Response> {
     }
 
     const authToken = `u-${user.id}-${randomString(20)}`;
-    await getKv().put(
+    await env.kvStorage.put(
         authToken, 
         JSON.stringify({
             id: user.id
@@ -36,6 +38,8 @@ export async function login(req: Request): Promise<Response> {
             expirationTtl: 60 * 30, // 30 minutes
         }
     );
+
+    throw new Error("FOOOO");
 
     return new JsonResponse({
         'token': authToken

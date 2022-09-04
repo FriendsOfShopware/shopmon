@@ -1,9 +1,10 @@
 import { getConnection } from "../../db";
 
-export async function validateTeam(req: Request): Promise<Response|void> {
+export async function validateTeam(req: Request, env: Env): Promise<Response|void> {
     const { teamId } = req.params;
+    const con = getConnection(env)
 
-    const res = await getConnection().execute('SELECT team.owner_id as ownerId FROM user_to_team INNER JOIN team ON(team.id = user_to_team.team_id) WHERE user_id = ? AND team_id = ?', [req.userId, teamId]);
+    const res = await con.execute('SELECT team.owner_id as ownerId FROM user_to_team INNER JOIN team ON(team.id = user_to_team.team_id) WHERE user_id = ? AND team_id = ?', [req.userId, teamId]);
 
     if (res.rows.length === 0) {
         return new Response('Not Found.', { status: 404 });

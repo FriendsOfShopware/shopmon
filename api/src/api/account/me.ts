@@ -1,25 +1,27 @@
-import { getConnection, getKv } from "../../db";
+import { getConnection } from "../../db";
 import Users from "../../repository/users";
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { validateEmail } from "../auth/register";
 
-const revokeTokens = async (userId: string) => {
-    const result = await getKv().list({prefix: `u-${userId}-`});
+const revokeTokens = async (kv: KVNamespace, userId: string) => {
+    const result = await kv.list({prefix: `u-${userId}-`});
     
     for (const key of result.keys) {
-        await getKv().delete(key.name);
+        await kv.delete(key.name);
     }
 }
 
-export async function accountMe(req: Request): Promise<Response> {
-    const result = await getConnection().execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
+export async function accountMe(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
+    const result = await con.execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
 
     const json = result.rows[0];
 
     json.avatar = `https://www.gravatar.com/avatar/${json.avatar}?d=identicon`;
 
-    const teamResult = await getConnection().execute('SELECT team.id, team.name, team.created_at, (team.owner_id = user_to_team.user_id) as is_owner  FROM team INNER JOIN user_to_team ON user_to_team.team_id = team.id WHERE user_to_team.user_id = ?', [req.userId]);
+    const teamResult = await con.execute('SELECT team.id, team.name, team.created_at, (team.owner_id = user_to_team.user_id) as is_owner  FROM team INNER JOIN user_to_team ON user_to_team.team_id = team.id WHERE user_to_team.user_id = ?', [req.userId]);
 
     json.teams = teamResult.rows;
     
@@ -31,22 +33,27 @@ export async function accountMe(req: Request): Promise<Response> {
     });
 }
 
-export async function accountDelete(req: Request): Promise<Response> {
+export async function accountDelete(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
     try {
-        await Users.delete(req.userId);
+        await Users.delete(con, req.userId);
     } catch (e: any) {
         return new ErrorResponse(e?.message || 'Unknown error');
     }
 
-    await getKv().delete(req.headers.get('token') as string)
+    await env.kvStorage.delete(req.headers.get('token') as string)
 
     return new NoContentResponse();
 }
 
-export async function accountUpdate(req: Request): Promise<Response> {
+export async function accountUpdate(req: Request, env: Env): Promise<Response> {
+    // @ts-ignore
     const {currentPassword, email, newPassword, username } = await req.json();
 
-    const result = await getConnection().execute('SELECT id, password FROM user WHERE id = ?', [req.userId]);
+    const con = getConnection(env);
+
+    const result = await con.execute('SELECT id, password FROM user WHERE id = ?', [req.userId]);
 
     if (!result.rows.length) {
         return new ErrorResponse('User not found', 404);
@@ -69,24 +76,26 @@ export async function accountUpdate(req: Request): Promise<Response> {
     if (newPassword !== undefined) {
         const hash = bcryptjs.hashSync(newPassword, 10);
 
-        await revokeTokens(req.userId);
+        await revokeTokens(env.kvStorage, req.userId);
 
-        await getConnection().execute('UPDATE user SET password = ? WHERE id = ?', [hash, req.userId]);
+        await con.execute('UPDATE user SET password = ? WHERE id = ?', [hash, req.userId]);
     }
 
     if (email !== undefined) {
-        await getConnection().execute('UPDATE user SET email = ? WHERE id = ?', [email, req.userId]);
+        await con.execute('UPDATE user SET email = ? WHERE id = ?', [email, req.userId]);
     }
 
     if (username !== undefined) {
-        await getConnection().execute('UPDATE user SET username = ? WHERE id = ?', [username, req.userId]);
+        await con.execute('UPDATE user SET username = ? WHERE id = ?', [username, req.userId]);
     }
 
     return new NoContentResponse();
 }
 
-export async function listUserShops(req: Request): Promise<Response> {
-    const res = await getConnection().execute(`
+export async function listUserShops(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
+    const res = await con.execute(`
         SELECT 
             shop.id,
             shop.name,

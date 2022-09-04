@@ -1,4 +1,4 @@
-import { getConnection } from "../db";
+import { Connection } from "@planetscale/database/dist";
 
 interface CreateShopRequest {
     team_id: string;
@@ -10,29 +10,33 @@ interface CreateShopRequest {
 }
 
 export default class Shops {
-    static async createShop(params: CreateShopRequest): Promise<string> {
-        const result = await getConnection().execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)', [
-            params.team_id,
-            params.name,
-            params.shop_url,
-            params.client_id,
-            params.client_secret,
-            params.version,
-        ]);
-    
-        if (result.error?.code == 'ALREADY_EXISTS') {
-            throw new Error('Shop already exists.');
-        }
+    static async createShop(con: Connection, params: CreateShopRequest): Promise<string> {
+        try {
+            const result = await con.execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)', [
+                params.team_id,
+                params.name,
+                params.shop_url,
+                params.client_id,
+                params.client_secret,
+                params.version,
+            ]);
 
-        return result.insertId as string;
+            return result.insertId as string;
+        } catch (e: any) {
+            if (e.error?.code == 'ALREADY_EXISTS') {
+                throw new Error('Shop already exists.');
+            }
+
+            throw e;
+        }
     }
 
-    static async deleteShop(id: number): Promise<void> {
-        await getConnection().execute('DELETE FROM shop WHERE id = ?', [
+    static async deleteShop(con: Connection, id: number): Promise<void> {
+        await con.execute('DELETE FROM shop WHERE id = ?', [
             id
         ]);
 
-        await getConnection().execute('DELETE FROM shop_scrape_info WHERE shop_id = ?', [
+        await con.execute('DELETE FROM shop_scrape_info WHERE shop_id = ?', [
             id
         ]);
    }

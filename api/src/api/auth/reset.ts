@@ -1,31 +1,33 @@
-import { getConnection, getKv } from "../../db";
+import { getConnection } from "../../db";
 import { sendMailResetPassword } from "../../mail/mail";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 import bcryptjs from "bcryptjs";
 
-export async function resetPasswordMail(req: Request) {
-    const {email} = await req.json();
+export async function resetPasswordMail(req: Request, env: Env) {
+    const {email} = await req.json() as any;
 
     const token = randomString(32);
 
-    const result = await getConnection().execute('SELECT id FROM user WHERE email = ?', [email]);
+    const con = getConnection(env);
+
+    const result = await con.execute('SELECT id FROM user WHERE email = ?', [email]);
 
     if (result.rows.length === 0) {
         return new NoContentResponse()
     }
 
-    await getKv().put(`reset_${token}`, result.rows[0].id.toString());
+    await env.kvStorage.put(`reset_${token}`, result.rows[0].id.toString());
 
-    await sendMailResetPassword(email, token);
+    await sendMailResetPassword(env, email, token);
 
     return new NoContentResponse()
 }
 
-export async function resetAvailable(req: Request) {
+export async function resetAvailable(req: Request, env: Env) {
     const {token} = await req.params;
 
-    const result = await getKv().get(`reset_${token}`);
+    const result = await env.kvStorage.get(`reset_${token}`);
 
     if (result === null) {
         return new JsonResponse({}, 404);
@@ -34,11 +36,12 @@ export async function resetAvailable(req: Request) {
     return new JsonResponse({}, 200);
 }
 
-export async function confirmResetPassword(req: Request): Promise<Response> {
-    const {password} = await req.json();
+export async function confirmResetPassword(req: Request, env: Env): Promise<Response> {
+    const {password} = await req.json() as any;
     const {token} = req.params;
 
-    const id = await getKv().get(`reset_${token}`);
+    const con = getConnection(env)
+    const id = await env.kvStorage.get(`reset_${token}`);
 
     if (!id) {
         return new ErrorResponse('Invalid token', 400);
@@ -47,8 +50,8 @@ export async function confirmResetPassword(req: Request): Promise<Response> {
     const salt = await bcryptjs.genSalt(10);
     const newPassword = await bcryptjs.hash(password, salt);
 
-    await getConnection().execute('UPDATE user SET password = ? WHERE id = ?', [newPassword, id]);
-    await getKv().delete(`reset_${token}`);
+    await con.execute('UPDATE user SET password = ? WHERE id = ?', [newPassword, id]);
+    await env.kvStorage.delete(`reset_${token}`);
 
     return new NoContentResponse()
 }

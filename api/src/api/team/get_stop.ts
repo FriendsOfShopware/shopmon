@@ -1,10 +1,12 @@
 import { getConnection } from "../../db";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
-export async function getShop(req: Request): Promise<Response> {
+export async function getShop(req: Request, env: Env): Promise<Response> {
     const { teamId, shopId } = req.params;
 
-    const result = await getConnection().execute(`
+    const con = getConnection(env)
+
+    const result = await con.execute(`
     SELECT 
         shop.id, 
         shop.name, 

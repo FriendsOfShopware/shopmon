@@ -1,15 +1,16 @@
+import { Connection } from "@planetscale/database/dist";
 import { getConnection } from "../db";
 import Teams from "./teams";
 
 export default class Users {
-    static async delete(id: string): Promise<void> {
-        const ownerTeams = await getConnection().execute(`SELECT id FROM team WHERE owner_id = ?`, [id]);
+    static async delete(con: Connection, id: string): Promise<void> {
+        const ownerTeams = await con.execute(`SELECT id FROM team WHERE owner_id = ?`, [id]);
 
         for (let row of ownerTeams.rows) {
-            await Teams.deleteTeam(row.id);
+            await Teams.deleteTeam(con, row.id);
         }
 
-        await getConnection().execute(`DELETE FROM user WHERE id = ?`, [id]);
-        await getConnection().execute(`DELETE FROM user_to_team WHERE user_id = ?`, [id]);
+        await con.execute(`DELETE FROM user WHERE id = ?`, [id]);
+        await con.execute(`DELETE FROM user_to_team WHERE user_id = ?`, [id]);
     }
 }

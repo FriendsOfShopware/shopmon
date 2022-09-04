@@ -7,8 +7,8 @@ import type {Extension, ExtensionChangelog} from "../../../shared/shop";
 
 const fetchShopSQL = 'SELECT id, url, shopware_version , client_id, client_secret FROM shop WHERE last_scraped_at IS NULL OR last_scraped_at < DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY id ASC LIMIT 1';
 
-export async function onSchedule() {
-    const con = getConnection();
+export async function onSchedule(env: Env) {
+    const con = getConnection(env);
 
     const shops = await con.execute(fetchShopSQL);
 

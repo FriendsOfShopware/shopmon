@@ -1,11 +1,14 @@
-declare var DATABASE_HOST: string;
-declare var DATABASE_USER: string;
-declare var DATABASE_PASSWORD: string;
-declare var MAIL_URL: string;
-declare var MAIL_SECRET: string;
-declare var MAIL_FROM: string;
-declare var FRONTEND_URL: string;
-declare var kvStorage: KVNamespace;
+interface Env {
+    DATABASE_HOST: string;
+    DATABASE_USER: string;
+    DATABASE_PASSWORD: string;
+    MAIL_URL: string;
+    MAIL_SECRET: string;
+    MAIL_FROM: string;
+    FRONTEND_URL: string;
+    SENTRY_DSN: string;
+    kvStorage: KVNamespace;
+}
 
 interface Team {
     id: string;

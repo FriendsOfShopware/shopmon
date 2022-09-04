@@ -1,10 +1,11 @@
 {
   "name": "shopmon",
   "version": "0.0.1",
+  "type": "module",
   "description": "",
   "scripts": {
     "local": "wrangler dev --port 5000 --local",
-    "build": "esbuild --bundle --outfile=worker.js --conditions=node src/index.ts",
+    "build": "esbuild --bundle --outfile=worker.js --format=esm --conditions=node --sourcemap src/index.ts",
     "deploy:worker": "wrangler publish",
     "deploy:site": "cd frontend && npm run build && wrangler pages publish --project-name shopmon  dist/"
   },
@@ -16,6 +17,7 @@
     "itty-router": "^2.6.1",
     "promise-all-properties": "^3.0.6",
     "shopware-app-server-sdk": "^0.0.15",
+    "toucan-js": "^2.6.1",
     "version-compare": "^1.4.0"
   },
   "devDependencies": {

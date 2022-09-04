@@ -13,8 +13,8 @@ export const validateEmail = (email: string) => {
       );
   };
 
-export default async function (req: Request) : Promise<Response> {
-    const json = await req.json();
+export default async function (req: Request, env: Env) : Promise<Response> {
+    const json = await req.json() as any;
 
     if (json.email === undefined || json.password === undefined || json.username === undefined) {
         return new ErrorResponse('Missing user, email or password', 400);
@@ -32,7 +32,9 @@ export default async function (req: Request) : Promise<Response> {
         return new ErrorResponse('The username must be at least 5 characters long', 400);
     }
 
-    const result = await getConnection().execute("SELECT 1 FROM user WHERE email = ?", [json.email]);
+    const con = getConnection(env);
+
+    const result = await con.execute("SELECT 1 FROM user WHERE email = ?", [json.email]);
 
     if (result.rows.length) {
         return new ErrorResponse('Given email address is already registered', 400);
@@ -43,11 +45,11 @@ export default async function (req: Request) : Promise<Response> {
 
     const token = randomString(32)
 
-    const userInsertResult = await getConnection().execute("INSERT INTO user (email, username, password, verify_code) VALUES (?, ?, ?, ?)", [json.email, json.username, hashedPassword, token]);
+    const userInsertResult = await con.execute("INSERT INTO user (email, username, password, verify_code) VALUES (?, ?, ?, ?)", [json.email, json.username, hashedPassword, token]);
 
-    await Teams.createTeam(`${json.email}'s Team`, userInsertResult.insertId as string);
+    await Teams.createTeam(con, `${json.email}'s Team`, userInsertResult.insertId as string);
 
-    await sendMailConfirmToUser(json.email, token);
+    await sendMailConfirmToUser(env, json.email, token);
 
     return new NoContentResponse();
 }
