@@ -4,20 +4,34 @@ import { getConnection } from "../db";
 import promiseAllProperties from 'promise-all-properties';
 import versionCompare from 'version-compare'
 import type {Extension, ExtensionChangelog} from "../../../shared/shop";
+import { Connection } from "@planetscale/database/dist";
+
+interface SQLShop {
+    id: string;
+    url: string;
+    shopware_version: string;
+    client_id: string;
+    client_secret: string;
+}
 
 const fetchShopSQL = 'SELECT id, url, shopware_version , client_id, client_secret FROM shop WHERE last_scraped_at IS NULL OR last_scraped_at < DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY id ASC LIMIT 1';
 
 export async function onSchedule(env: Env) {
     const con = getConnection(env);
 
-    const shops = await con.execute(fetchShopSQL);
+    for (let i = 0; i < 2; i++) {
+        const shops = await con.execute(fetchShopSQL);
 
-    if (shops.rows.length === 0) {
-        return;
+        if (shops.rows.length === 0) {
+            return;
+        }
+
+        await updateShop(shops.rows[0] as SQLShop, con);
     }
+}
 
-    const shop = shops.rows[0];
-
+async function updateShop(shop: SQLShop, con: Connection) {
+    
     await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
 
     const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, shop.client_secret));
