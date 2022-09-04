@@ -8,7 +8,7 @@ minify = false
 node_compat = false
 
 [build]
-command = "esbuild --bundle --outfile=worker.cron-shop-update.js --format=esm --conditions=node --sourcemap workers/cron-shop-update.ts"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.cron-shop-update.js --format=esm --conditions=node --sourcemap workers/cron-shop-update.ts"
 
 [triggers]
 crons = ["* * * * *"]

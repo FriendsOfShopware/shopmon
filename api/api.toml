@@ -13,7 +13,7 @@ MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
 
 [build]
-command = "esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --sourcemap workers/api.ts"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --sourcemap workers/api.ts"
 
 [[kv_namespaces]]
   binding = "kvStorage"
