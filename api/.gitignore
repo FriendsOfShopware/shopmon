@@ -1,3 +1,5 @@
-/worker.js*
+/worker*.js
+/worker*.js.map
 /.dev.vars
 /node_modules
+/pnpm-lock.yaml

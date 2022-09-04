@@ -4,10 +4,11 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "local": "wrangler dev --port 5000 --local",
-    "build": "esbuild --bundle --outfile=worker.js --format=esm --conditions=node --sourcemap src/index.ts",
-    "deploy:worker": "wrangler publish",
-    "deploy:site": "cd frontend && npm run build && wrangler pages publish --project-name shopmon  dist/"
+    "api:local": "wrangler -c api.toml dev --port 5000 --local",
+    "api:deploy": "wrangler -c api.toml publish",
+
+    "cron-shop-update:local": "wrangler -c cron-shop-update.toml dev --port 5000 --local",
+    "cron-shop-update:deploy": "wrangler -c cron-shop-update.toml publish"
   },
   "author": "",
   "license": "MIT",

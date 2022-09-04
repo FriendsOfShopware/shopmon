@@ -18,7 +18,8 @@
     ]
   },
   "include": [
-    "src"
+    "src",
+    "workers"
   ],
   "exclude": [
     "node_modules",
