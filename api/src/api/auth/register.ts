@@ -17,7 +17,7 @@ export default async function (req: Request) : Promise<Response> {
     const json = await req.json();
 
     if (json.email === undefined || json.password === undefined || json.username === undefined) {
-        return new ErrorResponse('Missing email or password', 400);
+        return new ErrorResponse('Missing user, email or password', 400);
     }
 
     if (!validateEmail(json.email)) {
@@ -35,7 +35,7 @@ export default async function (req: Request) : Promise<Response> {
     const result = await getConnection().execute("SELECT 1 FROM user WHERE email = ?", [json.email]);
 
     if (result.rows.length) {
-        return new ErrorResponse('User already exists', 400);
+        return new ErrorResponse('Given email address is already registered', 400);
     }
 
     const salt = bcryptjs.genSaltSync(10)

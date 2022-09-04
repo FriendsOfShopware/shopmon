@@ -22,7 +22,7 @@ async function onSubmit(values: any) {
     try {
         await authStore.register(values);
         await router.push('/account/login');
-        alertStore.success('Registration successful');
+        alertStore.success('Registration successful. Please check your mailbox and confirm your email address.');
     } catch (error: any) {
         alertStore.error(error);
     }

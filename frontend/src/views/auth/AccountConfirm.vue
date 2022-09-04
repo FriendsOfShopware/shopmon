@@ -66,7 +66,7 @@ export default {
         />
         <div class="ml-3 flex-1 md:flex md:justify-between">
           <p class="text-sm text-green-700">
-            Your Mail Address has been confirmed. 
+            Your email address has been confirmed.
             <router-link
               to="/account/login"
             >
