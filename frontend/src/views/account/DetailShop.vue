@@ -134,7 +134,6 @@ function openExtensionChangelog(extension: Extension | null) {
                   <font-awesome-icon icon="fa-regular fa-star-half-stroke" v-else-if="(extension.ratingAverage / 2) - n === -.5"/>
                   <font-awesome-icon icon="fa-solid fa-star" v-else />
                 </template>
-                {{ extension.ratingAverage }}
               </td>
               <td class="whitespace-nowrap px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">
                 No known issues. <a href="#">Report issue</a>
