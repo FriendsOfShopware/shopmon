@@ -99,6 +99,7 @@ function openExtensionChangelog(extension: Extension | null) {
               <th scope="col" class="py-3.5 pl-4 pr-3 text-left sm:pl-6 lg:pl-8">Name</th>
               <th scope="col" class="px-3 py-3.5 text-left w-28">Version</th>
               <th scope="col" class="px-3 py-3.5 text-left w-28">Latest</th>
+              <th scope="col" class="px-3 py-3.5 text-left w-28">Rating</th>
               <th scope="col" class="px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">Known Issues</th>
             </tr>
           </thead>
@@ -126,6 +127,14 @@ function openExtensionChangelog(extension: Extension | null) {
                   v-if="extension.latestVersion && extension.version < extension.latestVersion" @click="openExtensionChangelog(extension)">
                   {{ extension.latestVersion }}
               </button>
+              </td>
+              <td class="whitespace-nowrap px-3 py-4">
+                <template v-if="extension.ratingAverage !== null" v-for="n in 5">
+                  <font-awesome-icon icon="fa-regular fa-star" v-if="(extension.ratingAverage / 2) - n < -.5" />
+                  <font-awesome-icon icon="fa-regular fa-star-half-stroke" v-else-if="(extension.ratingAverage / 2) - n === -.5"/>
+                  <font-awesome-icon icon="fa-solid fa-star" v-else />
+                </template>
+                {{ extension.ratingAverage }}
               </td>
               <td class="whitespace-nowrap px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">
                 No known issues. <a href="#">Report issue</a>
