@@ -3,7 +3,7 @@ import { createSentry } from '../src/sentry';
 
 export default {
     fetch(request: Request, env: Env, ctx: ExecutionContext) {
-        const sentry = createSentry(ctx, env);
+        const sentry = createSentry(ctx, env, request);
 
         return router
             .handle(request, env, ctx, sentry)
