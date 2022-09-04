@@ -21,12 +21,6 @@ jobs:
         apiToken: ${{ secrets.CF_API_TOKEN }}
         workingDirectory: 'api'
         command: '-c api.toml publish'
-    - name: Publish Cron Shop Update
-      uses: cloudflare/wrangler-action@2.0.0
-      with:
-        apiToken: ${{ secrets.CF_API_TOKEN }}
-        workingDirectory: 'api'
-        command: '-c cron-shop-update.toml publish'
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:

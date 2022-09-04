@@ -13,9 +13,15 @@ MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
 
 [build]
-command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap workers/api.ts --source-root=/"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap src/workers/api.ts --source-root=/"
+
+[durable_objects]
+bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}]
 
 [[kv_namespaces]]
   binding = "kvStorage"
   id = "61a260743f17482e92fa5cb2c340edec"
   preview_id = "61a260743f17482e92fa5cb2c340edec"
+
+[triggers]
+crons = ["* * * * *"]

@@ -1,5 +1,6 @@
-import router from '../src/router'
-import { createSentry } from '../src/sentry';
+import { onSchedule } from '../cron/schedule';
+import router from '../router'
+import { createSentry } from '../sentry';
 
 export default {
     fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -11,5 +12,11 @@ export default {
                 sentry.captureException(err);
                 return new Response(err.message, {status: 500});
             })
+    },
+
+    scheduled(event: ScheduledEvent, env: Env) {
+        return onSchedule(env)
     }
 }
+
+export { ShopScrape } from '../object/ShopScrape';

@@ -8,6 +8,7 @@ interface Env {
     FRONTEND_URL: string;
     SENTRY_DSN: string;
     kvStorage: KVNamespace;
+    SHOPS_SCRAPE: DurableObjectNamespace;
 }
 
 interface Team {

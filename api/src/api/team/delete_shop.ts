@@ -18,5 +18,9 @@ export async function deleteShop(req: Request, env: Env): Promise<Response> {
 
     await Shops.deleteShop(con, shopId);
 
+    const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(shopId))
+
+    await scrapeObject.fetch(`http://localhost/delete?id=${shopId.toString()}`);
+
     return new NoContentResponse();
 }
