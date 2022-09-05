@@ -53,7 +53,7 @@ export class ShopScrape implements DurableObject {
             return new Response('OK');
         }
 
-        return new Response('', {status: 404});
+        return new Response('', { status: 404 });
     }
 
     async alarm(): Promise<void> {
@@ -122,6 +122,7 @@ export class ShopScrape implements DurableObject {
                 cacheInfo: client.get('/_action/cache_info'),
                 home: fetch(shop.url)
             })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             let error = e;
     
@@ -180,7 +181,7 @@ export class ShopScrape implements DurableObject {
             url.searchParams.set('locale', 'en-GB');
             url.searchParams.set('shopwareVersion', shop.shopware_version);
     
-            for (let extension of extensions) {
+            for (const extension of extensions) {
                 url.searchParams.append('technicalNames[]', extension.name);
             }
     
@@ -193,7 +194,7 @@ export class ShopScrape implements DurableObject {
             if (storeResp.ok) {
                 const storePlugins = await storeResp.json() as any[];
     
-                for (let extension of extensions) {
+                for (const extension of extensions) {
                     const storePlugin = storePlugins.find((plugin: any) => plugin.name === extension.name);
     
                     if (storePlugin) {
@@ -204,7 +205,7 @@ export class ShopScrape implements DurableObject {
                         if (storePlugin.latestVersion != extension.version) {
                             const changelogs: ExtensionChangelog[] = [];
     
-                            for (let changelog of storePlugin.changelog) {
+                            for (const changelog of storePlugin.changelog) {
                                 if (versionCompare(changelog.version, extension.version) > 0) {
                                     changelogs.push({
                                         version: changelog.version,

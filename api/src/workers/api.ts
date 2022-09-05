@@ -10,7 +10,7 @@ export default {
             .handle(request, env, ctx, sentry)
             .catch((err) => {
                 sentry.captureException(err);
-                return new Response(err.message, {status: 500});
+                return new Response(err.message, { status: 500 });
             })
     },
 

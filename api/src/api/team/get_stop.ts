@@ -2,7 +2,15 @@ import { getConnection } from "../../db";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
 export async function getShop(req: Request, env: Env): Promise<Response> {
-    const { teamId, shopId } = req.params;
+    const { teamId, shopId } = req.params as { teamId?: string, shopId?: string };
+
+    if (typeof teamId !== "string") {
+        return new ErrorResponse('Missing teamId', 400);
+    }
+
+    if (typeof shopId !== "string") {
+        return new ErrorResponse('Missing shopId', 400);
+    }
 
     const con = getConnection(env)
 

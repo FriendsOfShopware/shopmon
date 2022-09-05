@@ -7,16 +7,16 @@ import { sendMailConfirmToUser } from "../../mail/mail";
 
 export const validateEmail = (email: string) => {
     return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
-  };
+        .toLowerCase()
+        .match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        );
+};
 
 export default async function (req: Request, env: Env) : Promise<Response> {
-    const json = await req.json() as any;
+    const json = await req.json() as { email?: string, password?: string, username?: string };
 
-    if (json.email === undefined || json.password === undefined || json.username === undefined) {
+    if (typeof json.email !== "string" || typeof json.password !== "string" || typeof json.username !== "string") {
         return new ErrorResponse('Missing user, email or password', 400);
     }
 

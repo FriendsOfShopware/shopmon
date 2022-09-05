@@ -3,7 +3,9 @@ import { ErrorResponse, NoContentResponse } from "../common/response";
 
 export async function confirmMail(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
-    const { token } = req.params;
+
+    // todo perform input validation
+    const { token } = req.params as { token: string };
 
     const result = await con.execute('SELECT id FROM user WHERE verify_code = ?', [token])
 

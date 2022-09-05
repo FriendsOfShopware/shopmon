@@ -38,6 +38,7 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 
     try {
         await Users.delete(con, req.userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         return new ErrorResponse(e?.message || 'Unknown error');
     }
@@ -48,8 +49,8 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 }
 
 export async function accountUpdate(req: Request, env: Env): Promise<Response> {
-    // @ts-ignore
-    const {currentPassword, email, newPassword, username } = await req.json();
+    // todo perform input validation
+    const {currentPassword, email, newPassword, username } = await req.json() as {currentPassword: string, email: string, newPassword: string, username: string};
 
     const con = getConnection(env);
 

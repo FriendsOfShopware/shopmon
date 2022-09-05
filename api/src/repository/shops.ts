@@ -22,6 +22,7 @@ export default class Shops {
             ]);
 
             return result.insertId as string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             if (e.error?.code == 'ALREADY_EXISTS') {
                 throw new Error('Shop already exists.');
@@ -39,5 +40,5 @@ export default class Shops {
         await con.execute('DELETE FROM shop_scrape_info WHERE shop_id = ?', [
             id
         ]);
-   }
+    }
 }
