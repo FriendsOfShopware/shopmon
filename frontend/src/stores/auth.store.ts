@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
 import { useAlertStore } from '@/stores/alert.store';
 import type { User } from '@apiTypes/user'; 
