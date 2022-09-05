@@ -6,6 +6,7 @@ import versionCompare from 'version-compare'
 import { Extension, ExtensionChangelog } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
+import { createSentry } from "../sentry";
  
 interface SQLShop {
     id: string;
@@ -78,7 +79,15 @@ export class ShopScrape implements DurableObject {
         }
 
 
-        await this.updateShop(shops.rows[0] as SQLShop, con);
+        try {
+            await this.updateShop(shops.rows[0] as SQLShop, con);
+        } catch (e) {
+            const sentry = createSentry(this.state, this.env);
+
+            sentry.setExtra('shopId', id);
+            sentry.captureException(e);
+        }
+
         console.log(`Updated shop ${id}`)
 
         this.state.storage.setAlarm(Date.now() + 60 * MINUTES);

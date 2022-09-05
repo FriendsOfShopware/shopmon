@@ -1,6 +1,7 @@
 import Toucan from "toucan-js";
+import { Context } from "toucan-js/dist/types";
 
-export function createSentry(ctx: ExecutionContext, env: Env, req: Request|null = null) {
+export function createSentry(ctx: ExecutionContext|Context, env: Env, req: Request|null = null) {
     const options: any = {
         dsn: env.SENTRY_DSN,
         context: ctx,
