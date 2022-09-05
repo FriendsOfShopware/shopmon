@@ -5,6 +5,7 @@ import { getConnection } from "../db";
 import versionCompare from 'version-compare'
 import { Extension, ExtensionChangelog } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
+import { CheckerInput, CheckerRegistery } from "./status/registery";
  
 interface SQLShop {
     id: string;
@@ -159,6 +160,7 @@ export class ShopScrape implements DurableObject {
             return {
                 name: task.name,
                 status: task.status,
+                interval: task.runInterval,
                 lastExecutionTime: task.lastExecutionTime,
                 nextExecutionTime: task.nextExecutionTime,
             };
@@ -220,20 +222,31 @@ export class ShopScrape implements DurableObject {
                 favicon = match.groups.icon;
             }
         }
+
+        const input: CheckerInput = {
+            extensions: extensions,
+            queueInfo: responses.queue.body,
+            scheduledTasks: scheduledTasks,
+            cacheInfo: responses.cacheInfo.body,
+            favicon: favicon,
+        }
+
+        const checkerResult = await CheckerRegistery.check(input);
     
         await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
-            'green',
+            checkerResult.status,
             responses.config.body.version,
             favicon,
             shop.id,
         ]);
     
-        await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, created_at) VALUES(?, ?, ?, ?, ?, NOW())', [
+        await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())', [
             shop.id,
-            JSON.stringify(extensions),
-            JSON.stringify(scheduledTasks),
-            JSON.stringify(responses.queue.body),
-            JSON.stringify(responses.cacheInfo.body),
+            JSON.stringify(input.extensions),
+            JSON.stringify(input.scheduledTasks),
+            JSON.stringify(input.queueInfo),
+            JSON.stringify(input.cacheInfo),
+            JSON.stringify(checkerResult.checks),
             favicon
         ]);
     }

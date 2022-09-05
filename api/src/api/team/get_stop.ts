@@ -21,6 +21,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
         shop_scrape_info.scheduled_task,
         shop_scrape_info.queue_info,
         shop_scrape_info.cache_info,
+        shop_scrape_info.checks,
         shop.team_id,
         team.name as team_name
     FROM shop
@@ -44,6 +45,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
     shop.scheduled_task = JSON.parse(shop.scheduled_task);
     shop.queue_info = JSON.parse(shop.queue_info);
     shop.cache_info = JSON.parse(shop.cache_info);
+    shop.checks = JSON.parse(shop.checks);
 
     return new JsonResponse(shop);
 }

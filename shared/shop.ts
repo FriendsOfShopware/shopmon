@@ -1,6 +1,12 @@
+export enum SHOP_STATUS {
+    GREEN = 'green',
+    YELLOW = 'yellow',
+    RED = 'red',
+}
+
 export interface Shop {
     id: number,
-    status: 'green' | 'yellow' | 'red',
+    status: SHOP_STATUS,
     name: string,
     url: string,
     shopware_version: string,
@@ -13,11 +19,8 @@ export interface Shop {
 export interface ShopDetailed extends Shop {
     extensions: Extension[];
     scheduled_task: ScheduledTask[];
-    cache_info: {
-        environment: string;
-        httpCache: boolean;
-        cacheAdapter: string;
-    };
+    cache_info: CacheInfo;
+    queue_info: QueueInfo[];
 }
 
 export interface Extension {
@@ -40,7 +43,18 @@ export interface ExtensionChangelog {
 export interface ScheduledTask {
     name: string,
     status: string,
-    latestVersion: string,
+    interval: number,
     lastExecutionTime: string,
     nextExecutionTime: string,
+}
+
+export interface QueueInfo {
+    name: string;
+    size: number;
+}
+
+export interface CacheInfo {
+    environment: string;
+    httpCache: boolean;
+    cacheAdapter: string;
 }
