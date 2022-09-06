@@ -83,7 +83,7 @@ shopStore.loadShops();
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.team_name }}</td>
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.last_scraped_at }}</td>
+            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ new Date(shop.last_scraped_at).toLocaleString() }}</td>
           </tr>
         </tbody>
       </table>

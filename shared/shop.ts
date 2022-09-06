@@ -8,6 +8,7 @@ export interface Shop {
     id: number,
     status: SHOP_STATUS,
     name: string,
+    favicon: string|null;
     url: string,
     shopware_version: string,
     team_id: number,
