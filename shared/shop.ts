@@ -44,6 +44,7 @@ export interface ScheduledTask {
     name: string,
     status: string,
     interval: number,
+    overdue: boolean;
     lastExecutionTime: string,
     nextExecutionTime: string,
 }

@@ -15,15 +15,6 @@ const dialogExtension: Ref<Extension | null> = ref(null);
 
 shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
 
-function isTaskOverdue(task: ScheduledTask) {
-  // Some timestamps are always UTC
-  var currentTime = new Date();
-  currentTime.setMinutes(currentTime.getMinutes() + currentTime.getTimezoneOffset());
-  const nextExecute = new Date(task.nextExecutionTime);
-
-  return currentTime.getTime() > nextExecute.getTime();
-}
-
 function openExtensionChangelog(extension: Extension | null) {
   dialogExtension.value = extension;
   viewChangelogDialog.value = true;  
@@ -166,7 +157,7 @@ function openExtensionChangelog(extension: Extension | null) {
           <tbody class="divide-y divide-gray-200 bg-white">
             <tr class="even:bg-gray-50" v-for="task in shopStore.shop.scheduled_task" :key="task.name">
               <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
-                <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="isTaskOverdue(task)">
+                <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="task.overdue">
                   <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
                 </span>
                 <span class="text-green-400 mr-1" data-tooltip="Working" v-else>

@@ -170,6 +170,7 @@ export class ShopScrape implements DurableObject {
                 name: task.name,
                 status: task.status,
                 interval: task.runInterval,
+                overdue: new Date(task.nextExecutionTime).getTime() < new Date().getTime(),
                 lastExecutionTime: task.lastExecutionTime,
                 nextExecutionTime: task.nextExecutionTime,
             };
