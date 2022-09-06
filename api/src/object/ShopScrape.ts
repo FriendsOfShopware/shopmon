@@ -119,8 +119,7 @@ export class ShopScrape implements DurableObject {
                 app: client.post('/search/app'),
                 scheduledTask: client.post('/search/scheduled-task'),
                 queue: client.get('/_info/queue.json'),
-                cacheInfo: client.get('/_action/cache_info'),
-                home: fetch(shop.url)
+                cacheInfo: client.get('/_action/cache_info')
             })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
@@ -222,16 +221,7 @@ export class ShopScrape implements DurableObject {
             }
         }
     
-        let favicon: string|null = null
-    
-        if (responses.home.ok) {
-            const body = await responses.home.text();
-            const match = /rel="shortcut icon"\s*href="(?<icon>.*)">/gm.exec(body);
-    
-            if (match && match.groups && match.groups.icon !== undefined) {
-                favicon = match.groups.icon;
-            }
-        }
+        let favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         const input: CheckerInput = {
             extensions: extensions,
