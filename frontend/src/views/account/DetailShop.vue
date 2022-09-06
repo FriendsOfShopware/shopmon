@@ -38,7 +38,7 @@ async function onRefresh() {
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
     <div class="flex gap-2">
-      <button class="btn flex items-center" data-tooltip="Reload shop data" @click="onRefresh"
+      <button class="btn flex items-center" data-tooltip="Refresh shop data" @click="onRefresh"
         :disabled="shopStore.isRefreshing">
         <font-awesome-icon :class="{'animate-spin': shopStore.isRefreshing}" icon="fa-solid fa-rotate" size="lg" />
       </button>
