@@ -8,9 +8,9 @@ export async function login(req: Request, env: Env): Promise<Response> {
 
     const loginError = new ErrorResponse("Invalid email or password", 400);
 
-    const json = await req.json() as any;
+    const json = await req.json() as { email?: string, password?: string };
 
-    if (json.email === undefined || json.password === undefined) {
+    if (typeof json.email !== "string" || typeof json.password !== "string") {
         return new ErrorResponse('Missing email or password', 400);
     }
 

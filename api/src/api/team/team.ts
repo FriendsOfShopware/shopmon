@@ -1,8 +1,15 @@
 import Teams from "../../repository/teams";
-import { NoContentResponse } from "../common/response";
+import { ErrorResponse, NoContentResponse } from "../common/response";
 
 export async function deleteTeam(req: Request): Promise<Response> {
-    await Teams.deleteTeam(req.team.id);
+    const { teamId } = req.params as { teamId?: string };
+
+    if (typeof teamId !== "string") {
+        return new ErrorResponse('Missing teamId', 400);
+    }
+
+    // todo fix bug missing con
+    await Teams.deleteTeam(con, teamId);
 
     return new NoContentResponse();
 }

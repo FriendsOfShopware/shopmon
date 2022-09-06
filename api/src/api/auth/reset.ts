@@ -5,7 +5,8 @@ import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/respon
 import bcryptjs from "bcryptjs";
 
 export async function resetPasswordMail(req: Request, env: Env) {
-    const {email} = await req.json() as any;
+    // todo perform input validation
+    const { email } = await req.json() as {email: string};
 
     const token = randomString(32);
 
@@ -25,7 +26,8 @@ export async function resetPasswordMail(req: Request, env: Env) {
 }
 
 export async function resetAvailable(req: Request, env: Env) {
-    const {token} = await req.params;
+    // todo perform input validation
+    const { token } = await req.params as { token: string };
 
     const result = await env.kvStorage.get(`reset_${token}`);
 
@@ -37,8 +39,12 @@ export async function resetAvailable(req: Request, env: Env) {
 }
 
 export async function confirmResetPassword(req: Request, env: Env): Promise<Response> {
-    const {password} = await req.json() as any;
-    const {token} = req.params;
+    const { password } = await req.json() as {password?: string};
+    const { token } = req.params as {token?: string};
+
+    if (typeof password !== "string") {
+        return new ErrorResponse('Missing password', 400);
+    }
 
     const con = getConnection(env)
     const id = await env.kvStorage.get(`reset_${token}`);

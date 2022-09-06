@@ -1,5 +1,4 @@
 import { Connection } from "@planetscale/database/dist";
-import { getConnection } from "../db";
 
 interface TeamMember {
     id: number;

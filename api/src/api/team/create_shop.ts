@@ -5,9 +5,13 @@ import Shops from "../../repository/shops";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
 export async function createShop(req: Request, env: Env): Promise<Response> {
-    const json = await req.json() as any;
+    const json = await req.json() as { shop_url?: string, client_id?: string, client_secret?: string, name?: string };
 
-    const { teamId } = req.params;
+    const { teamId } = req.params as { teamId?: string };
+
+    if (typeof teamId !== "string") {
+        return new ErrorResponse('Missing teamId', 400);
+    }
 
     if (typeof json.shop_url !== 'string') {
         return new ErrorResponse('Invalid shop_url.', 400);
@@ -19,6 +23,10 @@ export async function createShop(req: Request, env: Env): Promise<Response> {
 
     if (typeof json.client_secret !== 'string') {
         return new ErrorResponse('Invalid client_secret.', 400);
+    }
+
+    if (typeof json.name === "undefined" || typeof json.name !== 'string') {
+        return new ErrorResponse('Invalid name.', 400);
     }
 
     const client = new HttpClient(new Shop('', json.shop_url, '', json.client_id, json.client_secret))
@@ -47,6 +55,7 @@ export async function createShop(req: Request, env: Env): Promise<Response> {
         await scrapeObject.fetch(`http://localhost/now?id=${id.toString()}`);
 
         return new JsonResponse({ id });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         return new ErrorResponse(e.message || 'Unknown error')
     }

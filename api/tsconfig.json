@@ -14,10 +14,14 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "types": [
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+    ],
+    "typeRoots": [
+      "./src/types"
     ]
   },
   "include": [
+    "types",
     "src",
     "workers"
   ],
@@ -26,7 +30,4 @@
     "dist",
     "test"
   ],
-  "files": [
-    "custom.d.ts"
-  ]
 }

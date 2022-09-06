@@ -7,7 +7,7 @@ export async function onSchedule(env: Env) {
 
     const shops = await con.execute(fetchShopSQL);
 
-    for (let shop of shops.rows) {
+    for (const shop of shops.rows) {
         const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(shop.id.toString()));
 
         await scrapeObject.fetch(`http://localhost/cron?id=${shop.id.toString()}`);

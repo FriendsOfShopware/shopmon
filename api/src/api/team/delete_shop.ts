@@ -1,9 +1,17 @@
 import { getConnection } from "../../db";
 import Shops from "../../repository/shops";
-import { NoContentResponse } from "../common/response";
+import { ErrorResponse, NoContentResponse } from "../common/response";
 
 export async function deleteShop(req: Request, env: Env): Promise<Response> {
-    const { teamId, shopId } = req.params;
+    const { teamId, shopId } = req.params as { teamId?: string, shopId?: string };
+
+    if (typeof teamId !== "string") {
+        return new ErrorResponse('Missing teamId', 400);
+    }
+
+    if (typeof shopId !== "string") {
+        return new ErrorResponse('Missing shopId', 400);
+    }
 
     const con = getConnection(env)
 
@@ -16,6 +24,7 @@ export async function deleteShop(req: Request, env: Env): Promise<Response> {
         return new Response('Not Found.', { status: 404 });
     }
 
+    // todo check if shopId is a number
     await Shops.deleteShop(con, shopId);
 
     const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(shopId))

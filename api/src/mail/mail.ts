@@ -13,9 +13,9 @@ async function sendMail(env: Env, mail: MaiLRequest) {
         headers: {
             'Content-Type': 'application/json',
             'token': env.MAIL_SECRET,
-            },
-            body: JSON.stringify(mail)
-        });
+        },
+        body: JSON.stringify(mail)
+    });
 }
 
 export async function sendMailConfirmToUser(env: Env, email: string, token: string) {
