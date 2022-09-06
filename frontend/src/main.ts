@@ -33,7 +33,8 @@ import {
     faPencil, 
     faEye, 
     faEyeSlash, 
-    faStar as fasStar 
+    faStar as fasStar,
+    faRotate
 } from '@fortawesome/free-solid-svg-icons';
 
 import { 
@@ -67,7 +68,8 @@ library.add(
     faEyeSlash, 
     fasStar, 
     farStar, 
-    farStarHalfStroke
+    farStarHalfStroke,
+    faRotate
 );
 
 const app = createApp(App);

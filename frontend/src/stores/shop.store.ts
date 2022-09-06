@@ -3,8 +3,9 @@ import { defineStore } from "pinia";
 import type { Shop, ShopDetailed } from '@apiTypes/shop'; 
 
 export const useShopStore = defineStore('shop', {
-    state: (): {shops: Shop[], isLoading: boolean, shop: ShopDetailed|null} => ({
+    state: (): {shops: Shop[], isLoading: boolean, isRefreshing: boolean, shop: ShopDetailed|null} => ({
         isLoading: false,
+        isRefreshing: false,
         shops: [],
         shop: null,
     }),
@@ -38,6 +39,12 @@ export const useShopStore = defineStore('shop', {
             this.isLoading = true;
             this.shop = await fetchWrapper.get(`/team/${teamId}/shop/${shopId}`) as ShopDetailed;
             this.isLoading = false;
+        },
+
+        async refreshShop(teamId: number, id: number) {
+            this.isRefreshing = true;
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`);
+            this.isRefreshing = false;
         },
 
         async updateShop(teamId: number, id: number, payload: any) {

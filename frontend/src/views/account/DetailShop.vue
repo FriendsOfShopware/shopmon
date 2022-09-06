@@ -2,6 +2,7 @@
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import { useShopStore } from '@/stores/shop.store';
+import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 import type { Extension, ExtensionChangelog, ScheduledTask } from '@apiTypes/shop';
 import { ref } from 'vue';
@@ -10,6 +11,7 @@ import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } fro
 
 const route = useRoute();
 const shopStore = useShopStore();
+const alertStore = useAlertStore();
 const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
 
@@ -20,17 +22,34 @@ function openExtensionChangelog(extension: Extension | null) {
   viewChangelogDialog.value = true;  
 }
 
+async function onRefresh() {
+  if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
+        try {
+            await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id);
+            alertStore.success('Your Shop will refresh soon!')
+        } catch (e: any) {
+            alertStore.error(e);
+        }
+    }
+}
+
 </script>
 
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
-    <router-link
-      :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
-      type="button" class="group btn btn-primary flex items-center">
-      <font-awesome-icon icon="fa-solid fa-pencil" class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
-        aria-hidden="true" />
-      Edit Shop
-    </router-link>
+    <div class="flex gap-2">
+      <button class="btn flex items-center" data-tooltip="Reload shop data" @click="onRefresh"
+        :disabled="shopStore.isRefreshing">
+        <font-awesome-icon :class="{'animate-spin': shopStore.isRefreshing}" icon="fa-solid fa-rotate" size="lg" />
+      </button>
+      <router-link
+        :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
+        type="button" class="group btn btn-primary flex items-center">
+        <font-awesome-icon icon="fa-solid fa-pencil" class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
+          aria-hidden="true" />
+        Edit Shop
+      </router-link>
+    </div>
   </Header>
   <MainContainer v-if="shopStore.shop && shopStore.shop.last_scraped_at">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
@@ -115,14 +134,16 @@ function openExtensionChangelog(extension: Extension | null) {
               <td class="whitespace-nowrap px-3 py-4">
                 <button
                   class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1"
-                  v-if="extension.latestVersion && extension.version < extension.latestVersion" @click="openExtensionChangelog(extension)">
+                  v-if="extension.latestVersion && extension.version < extension.latestVersion"
+                  @click="openExtensionChangelog(extension)">
                   {{ extension.latestVersion }}
-              </button>
+                </button>
               </td>
               <td class="whitespace-nowrap px-3 py-4">
                 <template v-if="extension.ratingAverage !== null" v-for="n in 5">
                   <font-awesome-icon icon="fa-regular fa-star" v-if="(extension.ratingAverage / 2) - n < -.5" />
-                  <font-awesome-icon icon="fa-regular fa-star-half-stroke" v-else-if="(extension.ratingAverage / 2) - n === -.5"/>
+                  <font-awesome-icon icon="fa-regular fa-star-half-stroke"
+                    v-else-if="(extension.ratingAverage / 2) - n === -.5" />
                   <font-awesome-icon icon="fa-solid fa-star" v-else />
                 </template>
               </td>
@@ -193,41 +214,35 @@ function openExtensionChangelog(extension: Extension | null) {
               leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
               <DialogPanel
                 class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full sm:p-6">
-                
-                <button class="absolute top-1 right-2.5 focus:outline-none"
-                  @click="viewChangelogDialog = false">
-                  <font-awesome-icon
-                    aria-hidden="true"
-                    size="xl"
-                    icon="fa-solid fa-xmark" 
-                  />
+
+                <button class="absolute top-1 right-2.5 focus:outline-none" @click="viewChangelogDialog = false">
+                  <font-awesome-icon aria-hidden="true" size="xl" icon="fa-solid fa-xmark" />
                 </button>
 
                 <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900 mb-3">
-                    Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span>
+                  Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span>
                 </DialogTitle>
 
                 <ul v-if="dialogExtension?.changelog && dialogExtension.changelog.length > 0">
                   <li class="mb-2" v-for="changeLog in dialogExtension.changelog" :key="changeLog.version">
-                    <div class="font-medium mb-1">{{ changeLog.version }} - <span class="text-xs font-normal text-gray-500">{{ new Date(changeLog.creationDate).toLocaleDateString() }}</span></div>
+                    <div class="font-medium mb-1">{{ changeLog.version }} - <span
+                        class="text-xs font-normal text-gray-500">{{ new
+                        Date(changeLog.creationDate).toLocaleDateString() }}</span></div>
                     <div class="pl-3" v-html="changeLog.text"></div>
                   </li>
                 </ul>
                 <div class="rounded-md bg-red-50 p-4 border border-red-200" v-else>
                   <div class="flex">
                     <div class="flex-shrink-0">
-                      <font-awesome-icon 
-                        icon="fa-solid fa-circle-xmark"
-                        class="h-5 w-5 text-red-600"
-                        aria-hidden="true"
-                      />
+                      <font-awesome-icon icon="fa-solid fa-circle-xmark" class="h-5 w-5 text-red-600"
+                        aria-hidden="true" />
                     </div>
                     <div class="ml-3 text-red-900">
                       No Changelog data provided
                     </div>
                   </div>
-                </div>                 
-                
+                </div>
+
               </DialogPanel>
             </TransitionChild>
           </div>
