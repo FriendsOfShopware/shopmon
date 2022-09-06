@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
+import DataTable from '@/components/layout/DataTable.vue';
+
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
+
 import type { Extension, ExtensionChangelog, ScheduledTask } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
+
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 
 const route = useRoute();
@@ -50,6 +54,7 @@ async function onRefresh() {
         :disabled="shopStore.isRefreshing">
         <font-awesome-icon :class="{'animate-spin': shopStore.isRefreshing}" icon="fa-solid fa-rotate" size="lg" />
       </button>
+      
       <router-link
         :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
         type="button" class="group btn btn-primary flex items-center">
@@ -59,6 +64,7 @@ async function onRefresh() {
       </router-link>
     </div>
   </Header>
+
   <MainContainer v-if="shopStore.shop && shopStore.shop.last_scraped_at">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
@@ -111,56 +117,40 @@ async function onRefresh() {
         <p class="mt-1 text-sm text-gray-500">List of all installed extensions</p>
       </div>
       <div class="border-t border-gray-200">
-        <table class="min-w-full divide-y-2 divide-gray-300">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="py-3.5 pl-4 pr-3 text-left sm:pl-6 lg:pl-8">Name</th>
-              <th scope="col" class="px-3 py-3.5 text-left w-28">Version</th>
-              <th scope="col" class="px-3 py-3.5 text-left w-28">Latest</th>
-              <th scope="col" class="px-3 py-3.5 text-left w-28">Rating</th>
-              <th scope="col" class="px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">Known Issues</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr class="even:bg-gray-50" v-for="extension in shopStore.shop.extensions" :key="extension.name" :class="[
-              extension.installed
-                ? 'opacity-100'
-                : 'opacity-40',
-            ]">
-              <td class="whitespace-nowrap py-4 pl-4 pr-3 align-middle sm:pl-6 lg:pl-8">
-                <span class="text-green-400 mr-1" data-tooltip="Active" v-if="extension.active">
-                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
-                </span>
-                <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-if="!extension.active">
-                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
-                </span>
-                {{ extension.name }}
-              </td>
-              <td class="whitespace-nowrap px-3 py-4">
-                {{ extension.version }}
-              </td>
-              <td class="whitespace-nowrap px-3 py-4">
-                <button
-                  class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1"
-                  v-if="extension.latestVersion && extension.version < extension.latestVersion"
-                  @click="openExtensionChangelog(extension)">
-                  {{ extension.latestVersion }}
-                </button>
-              </td>
-              <td class="whitespace-nowrap px-3 py-4">
-                <template v-if="extension.ratingAverage !== null" v-for="n in 5">
-                  <font-awesome-icon icon="fa-regular fa-star" v-if="(extension.ratingAverage / 2) - n < -.5" />
-                  <font-awesome-icon icon="fa-regular fa-star-half-stroke"
-                    v-else-if="(extension.ratingAverage / 2) - n === -.5" />
-                  <font-awesome-icon icon="fa-solid fa-star" v-else />
-                </template>
-              </td>
-              <td class="whitespace-nowrap px-3 py-3.5 pr-4 text-right sm:pr-6 lg:pr-8">
-                No known issues. <a href="#">Report issue</a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <DataTable
+          :labels="{'name': {'name': 'Name'}, 'version': {'name': 'Version'}, 'latest': {'name': 'Latest'}, 'rating': {'name': 'Rating'}, 'issue': {'name': 'Known Issue', 'class': 'px-3 text-right'}}"
+          :data="shopStore.shop.extensions">
+          <template #cell(name)="{ item }">
+            <span class="text-green-400 mr-1" data-tooltip="Active" v-if="item.active">
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+            </span>
+            <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-if="!item.active">
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+            </span>
+            {{ item.name }}
+          </template>
+
+          <template #cell(latest)="{ item }">
+            <button
+              class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1"
+              v-if="item.latestVersion && item.version < item.latestVersion" @click="openExtensionChangelog(item)">
+              {{ item.latestVersion }}
+            </button>
+          </template>
+
+          <template #cell(rating)="{ item }">
+            <template v-if="item.ratingAverage !== null" v-for="n in 5">
+              <font-awesome-icon icon="fa-regular fa-star" v-if="(item.ratingAverage / 2) - n < -.5" />
+              <font-awesome-icon icon="fa-regular fa-star-half-stroke"
+                v-else-if="(item.ratingAverage / 2) - n === -.5" />
+              <font-awesome-icon icon="fa-solid fa-star" v-else />
+            </template>
+          </template>
+
+          <template #cell(issue)="{ item }">
+            No known issues. <a href="#">Report issue</a>
+          </template>
+        </DataTable>
       </div>
     </div>
 
@@ -174,35 +164,27 @@ async function onRefresh() {
         <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all Scheduled Tasks</p>
       </div>
       <div class="border-t border-gray-200">
-        <table class="min-w-full divide-y-2 divide-gray-300">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="py-3.5 pl-4 pr-3 text-left sm:pl-6 lg:pl-8">Name</th>
-              <th scope="col" class="px-3 py-3.5 text-left">Last Executed</th>
-              <th scope="col" class="px-3 py-3.5 text-left">Next Execution
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
-            <tr class="even:bg-gray-50" v-for="task in shopStore.shop.scheduled_task" :key="task.name">
-              <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6 lg:pl-8">
-                <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="task.overdue">
-                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
-                </span>
-                <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
-                  <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
-                </span>
-                {{ task.name }}
-              </td>
-              <td class="whitespace-nowrap px-3 py-4">
-                {{ new Date(task.lastExecutionTime).toLocaleString() }}
-              </td>
-              <td class="whitespace-nowrap px-3 py-4">
-                {{ new Date(task.nextExecutionTime).toLocaleString() }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <DataTable
+          :labels="{'name': {'name': 'Name'}, 'last': {'name': 'Last Executed'}, 'next': {'name': 'Next Execution'}}"
+          :data="shopStore.shop.scheduled_task">
+          <template #cell(name)="{ item }">
+            <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.overdue">
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+            </span>
+            <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+            </span>
+            {{ item.name }}
+          </template>
+
+          <template #cell(last)="{ item }">
+            {{ new Date(item.lastExecutionTime).toLocaleString() }}
+          </template>
+
+          <template #cell(next)="{ item }">
+            {{ new Date(item.nextExecutionTime).toLocaleString() }}
+          </template>
+        </DataTable>
       </div>
     </div>
 
