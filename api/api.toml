@@ -19,13 +19,10 @@ command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=e
 bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}]
 
 [[migrations]]
-tag = "v1" # Should be unique for each entry
+tag = "v1"
 new_classes = ["ShopScrape"]
 
 [[kv_namespaces]]
   binding = "kvStorage"
   id = "61a260743f17482e92fa5cb2c340edec"
   preview_id = "61a260743f17482e92fa5cb2c340edec"
-
-[triggers]
-crons = ["* * * * *"]

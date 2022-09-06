@@ -1,4 +1,3 @@
-import { onSchedule } from '../cron/schedule';
 import router from '../router'
 import { createSentry } from '../sentry';
 
@@ -12,10 +11,6 @@ export default {
                 sentry.captureException(err);
                 return new Response(err.message, { status: 500 });
             })
-    },
-
-    scheduled(event: ScheduledEvent, env: Env) {
-        return onSchedule(env)
     }
 }
 
