@@ -4,14 +4,6 @@ import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { validateEmail } from "../auth/register";
 
-const revokeTokens = async (kv: KVNamespace, userId: string) => {
-    const result = await kv.list({prefix: `u-${userId}-`});
-    
-    for (const key of result.keys) {
-        await kv.delete(key.name);
-    }
-}
-
 export async function accountMe(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
@@ -49,7 +41,7 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 }
 
 export async function accountUpdate(req: Request, env: Env): Promise<Response> {
-    const {currentPassword, email, newPassword, username } = await req.json() as {currentPassword: string, email: string, newPassword: string, username: string};
+    const { currentPassword, email, newPassword, username } = await req.json() as {currentPassword: string, email: string, newPassword: string, username: string};
 
     const con = getConnection(env);
 
@@ -76,7 +68,7 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
     if (newPassword !== undefined) {
         const hash = bcryptjs.hashSync(newPassword, 10);
 
-        await revokeTokens(env.kvStorage, req.userId);
+        await Users.revokeUserSessions(env.kvStorage, req.userId);
 
         await con.execute('UPDATE user SET password = ? WHERE id = ?', [hash, req.userId]);
     }

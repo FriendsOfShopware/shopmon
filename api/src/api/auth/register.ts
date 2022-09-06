@@ -32,6 +32,8 @@ export default async function (req: Request, env: Env) : Promise<Response> {
         return new ErrorResponse('The username must be at least 5 characters long', 400);
     }
 
+    json.email = json.email.toLowerCase();
+
     const con = getConnection(env);
 
     const result = await con.execute("SELECT 1 FROM user WHERE email = ?", [json.email]);

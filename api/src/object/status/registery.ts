@@ -20,7 +20,7 @@ export class CheckerOutput {
     public status: SHOP_STATUS = SHOP_STATUS.GREEN;
     public checks: CheckerChecks[] = [];
 
-    public success(message: string, source: string = 'Shopmon') {
+    public success(message: string, source = 'Shopmon') {
         this.checks.push({
             level: SHOP_STATUS.GREEN,
             message: message,
@@ -28,7 +28,7 @@ export class CheckerOutput {
         });
     }
 
-    public warning(message: string, source: string = 'Shopmon') {
+    public warning(message: string, source = 'Shopmon') {
         this.checks.push({
             level: SHOP_STATUS.YELLOW,
             message: message,
@@ -40,7 +40,7 @@ export class CheckerOutput {
         }
     }
 
-    public error(message: string, source: string = 'Shopmon') {
+    public error(message: string, source = 'Shopmon') {
         this.checks.push({
             level: SHOP_STATUS.RED,
             message: message,

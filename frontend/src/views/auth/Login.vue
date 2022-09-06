@@ -6,6 +6,10 @@ import { ref } from 'vue';
 import Spinner from '@/components/icon/Spinner.vue';
 
 import { useAuthStore } from '@/stores/auth.store';
+import { useRouter } from 'vue-router';
+import { useAlertStore } from '@/stores/alert.store';
+
+const router = useRouter();
 
 const passwordType = ref('password')
 
@@ -17,7 +21,15 @@ const schema = Yup.object().shape({
 async function onSubmit(values: any) {
   const authStore = useAuthStore();
   const { email, password } = values;
-  await authStore.login(email, password);
+  try {
+    await authStore.login(email, password);
+
+    // redirect to previous url or default to home page
+    router.push(authStore.returnUrl || '/');
+  } catch (e) {
+    const alertStore = useAlertStore();
+    alertStore.error(error);
+  }
 }
 </script>
 

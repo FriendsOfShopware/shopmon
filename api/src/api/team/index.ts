@@ -9,7 +9,7 @@ import { addMember, listMembers, removeMember } from "./members";
 import { refreshShop } from "./refresh_shop";
 import { deleteTeam } from "./team";
 
-const teamRouter = Router({base: "/api/team"});
+const teamRouter = Router({ base: "/api/team" });
 
 teamRouter.delete('/:teamId', validateToken, validateTeam, validateTeamOwner, deleteTeam);
 teamRouter.get('/:teamId/members', validateToken, validateTeam, listMembers);

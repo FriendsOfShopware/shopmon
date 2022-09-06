@@ -14,6 +14,7 @@ export default function promiseAllProperties<T extends PlainObj>(
 ): Promise<T> {
     const keys = Object.keys(promisesMap);
     const promises = keys.map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (promisesMap as any)[key];
     });
 

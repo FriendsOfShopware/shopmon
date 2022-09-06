@@ -14,4 +14,18 @@ export default class Users {
         await con.execute(`DELETE FROM user WHERE id = ?`, [id]);
         await con.execute(`DELETE FROM user_to_team WHERE user_id = ?`, [id]);
     }
+
+    static async revokeUserSessions(session: KVNamespace, id: string): Promise<void> {
+        const accessToken = await session.list({ prefix: `u-${id}-` });
+    
+        for (const key of accessToken.keys) {
+            await session.delete(key.name);
+        }
+
+        const refreshToken = await session.list({ prefix: `r-${id}-` });
+    
+        for (const key of refreshToken.keys) {
+            await session.delete(key.name);
+        }
+    }
 }

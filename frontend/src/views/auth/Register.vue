@@ -53,7 +53,7 @@ async function onSubmit(values: any) {
     <div class="mb-2">
       <Field
         name="email"
-        placeholder="Email"
+        placeholder="Email address"
         type="text"
         class="field"
         :class="{ 'is-invalid': errors.email }"

@@ -16,6 +16,30 @@ interface SQLShop {
     client_secret: string;
 }
 
+interface ShopwareScheduledTask {
+    name: string;
+    runInterval: number;
+    status: string;
+    overdue: boolean;
+    lastExecutionTime: string;
+    nextExecutionTime: string;
+}
+
+interface ShopwareStoreExtension {
+    name: string;
+    ratingAverage: number;
+    storeLink: string;
+    version: string;
+    latestVersion: string;
+    changelog: {
+        version: string;
+        text: string;
+        creationDate: {
+            date: string
+        }
+    }[];
+}
+
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
 
@@ -165,7 +189,7 @@ export class ShopScrape implements DurableObject {
             } as Extension)
         }
     
-        const scheduledTasks = responses.scheduledTask.body.data.map((task: any) => {
+        const scheduledTasks = responses.scheduledTask.body.data.map((task: ShopwareScheduledTask) => {
             return {
                 name: task.name,
                 status: task.status,
@@ -192,10 +216,10 @@ export class ShopScrape implements DurableObject {
             })
     
             if (storeResp.ok) {
-                const storePlugins = await storeResp.json() as any[];
+                const storePlugins = await storeResp.json() as ShopwareStoreExtension[];
     
                 for (const extension of extensions) {
-                    const storePlugin = storePlugins.find((plugin: any) => plugin.name === extension.name);
+                    const storePlugin = storePlugins.find((plugin: ShopwareStoreExtension) => plugin.name === extension.name);
     
                     if (storePlugin) {
                         extension.latestVersion = storePlugin.version;
@@ -222,7 +246,7 @@ export class ShopScrape implements DurableObject {
             }
         }
     
-        let favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
+        const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         const input: CheckerInput = {
             extensions: extensions,

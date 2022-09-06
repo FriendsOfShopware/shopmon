@@ -1,6 +1,6 @@
 import { connect, Connection, cast, Field } from '@planetscale/database'
 
-function inflate(field: Field, value: any) {
+function inflate(field: Field, value: string|null) {
     if (field.type === 'DATETIME') {
         if (value === null) {
             return null

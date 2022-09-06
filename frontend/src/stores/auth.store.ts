@@ -2,14 +2,15 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
-import { useAlertStore } from '@/stores/alert.store';
 import type { User } from '@apiTypes/user'; 
 
 export const useAuthStore = defineStore('auth', {
-    state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null} => ({
+    state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null, access_token: string|null, refresh_token: string|null} => ({
         isAuthenticated: sessionStorage.getItem('user') !== null,
         user: JSON.parse(sessionStorage.getItem('user') as string),
         returnUrl: null,
+        access_token: sessionStorage.getItem('access_token'),
+        refresh_token: sessionStorage.getItem('refresh_token'),
     }),
     actions: {
         async refreshUser() {
@@ -17,42 +18,28 @@ export const useAuthStore = defineStore('auth', {
                 return;
             }
 
-            const user = await fetchWrapper.get(`/account/me`, '', {
-                token: this.user.token,
-            });
+            this.user = await fetchWrapper.get(`/account/me`);
 
-            user.token = this.user.token;
-
-            this.user = user;
-
-            sessionStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('user', JSON.stringify(this.user));
         },
 
         async login(email: string, password: string) {
-            try {
-                const login = await fetchWrapper.post(`/auth/login`, {
-                    email,
-                    password,
-                });
+            const login = await fetchWrapper.post(`/auth/token`, {
+                client_id: 'shopmon',
+                grant_type: 'password',
+                username: email,
+                password: password,
+            });
 
-                const user = await fetchWrapper.get(`/account/me`, '', {
-                    token: login.token,
-                });
+            this.setAccessToken(login.access_token, login.refresh_token);
 
-                user.token = login.token
+            const user = await fetchWrapper.get(`/account/me`);
 
-                // update pinia state
-                this.user = user;
+            // update pinia state
+            this.user = user;
 
-                // store user details and jwt in local storage to keep user logged in between page refreshes
-                sessionStorage.setItem('user', JSON.stringify(user));
-
-                // redirect to previous url or default to home page
-                router.push(this.returnUrl || '/');
-            } catch (error: any) {
-                const alertStore = useAlertStore();
-                alertStore.error(error);
-            }
+            // store user details and jwt in local storage to keep user logged in between page refreshes
+            sessionStorage.setItem('user', JSON.stringify(user));
         },
         async register(user: object) {
             await fetchWrapper.post(`/auth/register`, user);
@@ -73,11 +60,28 @@ export const useAuthStore = defineStore('auth', {
         async updateProfile(info: {username: string, email: string, currentPassword: string, newPassword: string}) {
             await fetchWrapper.patch(`/account/me`, info);
 
+            if (info.newPassword && info.email) {
+                await this.login(info.email, info.newPassword);
+            }
+
             await this.refreshUser();
         },
+
+        setAccessToken(access_token: string, refresh_token: string|null = null) {
+            this.access_token = access_token;
+            sessionStorage.setItem('access_token', access_token);
+            
+            if (refresh_token) {
+                this.refresh_token = refresh_token;
+                sessionStorage.setItem('refresh_token', refresh_token);
+            }
+        },
+
         logout() {
             this.user = null;
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('refresh_token');
             router.push('/account/login');
         },
         async delete() {

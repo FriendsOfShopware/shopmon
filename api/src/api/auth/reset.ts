@@ -3,13 +3,16 @@ import { sendMailResetPassword } from "../../mail/mail";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 import bcryptjs from "bcryptjs";
+import Users from "../../repository/users";
 
 export async function resetPasswordMail(req: Request, env: Env) {
-    const { email } = await req.json() as {email: string};
+    let { email } = await req.json() as {email: string};
 
     const token = randomString(32);
 
     const con = getConnection(env);
+
+    email = email.toLowerCase();
 
     const result = await con.execute('SELECT id FROM user WHERE email = ?', [email]);
 
@@ -56,6 +59,8 @@ export async function confirmResetPassword(req: Request, env: Env): Promise<Resp
 
     await con.execute('UPDATE user SET password = ? WHERE id = ?', [newPassword, id]);
     await env.kvStorage.delete(`reset_${token}`);
+
+    await Users.revokeUserSessions(env.kvStorage, id);
 
     return new NoContentResponse()
 }

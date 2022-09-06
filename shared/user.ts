@@ -3,7 +3,6 @@ export interface User {
     username: string;
     email: string;
     created_at: string;
-    token?: string;
     avatar: string;
 
     teams: Team[];
