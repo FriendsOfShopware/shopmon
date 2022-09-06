@@ -15,18 +15,26 @@ const alertStore = useAlertStore();
 const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
 
-shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
-
 function openExtensionChangelog(extension: Extension | null) {
   dialogExtension.value = extension;
   viewChangelogDialog.value = true;  
 }
 
+function loadShop() {
+  shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
+}
+
+loadShop();
+
 async function onRefresh() {
   if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
         try {
             await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id);
-            alertStore.success('Your Shop will refresh soon!')
+            alertStore.success('Your Shop will refresh soon!');
+            setTimeout(() => {
+              loadShop();
+              alertStore.clear();
+            }, 5000);
         } catch (e: any) {
             alertStore.error(e);
         }
