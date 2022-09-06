@@ -24,8 +24,13 @@ export async function deleteShop(req: Request, env: Env): Promise<Response> {
         return new Response('Not Found.', { status: 404 });
     }
 
-    // todo check if shopId is a number
-    await Shops.deleteShop(con, shopId);
+    const convertedShopId = parseInt(shopId);
+
+    if (isNaN(convertedShopId)) {
+        return new ErrorResponse('Invalid shopId', 400);
+    }
+
+    await Shops.deleteShop(con, convertedShopId);
 
     const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(shopId))
 

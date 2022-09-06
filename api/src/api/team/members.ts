@@ -1,18 +1,20 @@
+import { getConnection } from "../../db";
 import Teams from "../../repository/teams";
 import { JsonResponse, NoContentResponse } from "../common/response";
 
-export async function listMembers(req: Request): Promise<Response> {
+export async function listMembers(req: Request, env: Env): Promise<Response> {
     const { teamId } = req.params as { teamId?: string };
 
     if (typeof teamId !== "string") {
         return new JsonResponse('Missing teamId', 400);
     }
 
-    // todo fix bug missing con
+    const con = getConnection(env);
+
     return new JsonResponse(await Teams.listMembers(con, teamId));
 }
 
-export async function addMember(req: Request): Promise<Response> {
+export async function addMember(req: Request, env: Env): Promise<Response> {
     const { teamId } = req.params as { teamId?: string };
     const json = await req.json() as { email?: string };
 
@@ -30,13 +32,14 @@ export async function addMember(req: Request): Promise<Response> {
         }, 400);
     }
 
-    // todo fix bug missing con
+    const con = getConnection(env);
+
     await Teams.addMember(con, teamId, json.email);
 
     return new NoContentResponse();
 }
 
-export async function removeMember(req: Request): Promise<Response> {
+export async function removeMember(req: Request, env: Env): Promise<Response> {
     const { teamId, userId } = req.params as { teamId?: string, userId?: string };
 
     if (typeof teamId !== "string") {
@@ -53,7 +56,8 @@ export async function removeMember(req: Request): Promise<Response> {
         }, 400);
     }
 
-    // todo fix bug missing con
+    const con = getConnection(env);
+
     await Teams.removeMember(con, teamId, userId);
 
     return new NoContentResponse();

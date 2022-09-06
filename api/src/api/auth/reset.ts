@@ -5,7 +5,6 @@ import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/respon
 import bcryptjs from "bcryptjs";
 
 export async function resetPasswordMail(req: Request, env: Env) {
-    // todo perform input validation
     const { email } = await req.json() as {email: string};
 
     const token = randomString(32);
@@ -26,7 +25,6 @@ export async function resetPasswordMail(req: Request, env: Env) {
 }
 
 export async function resetAvailable(req: Request, env: Env) {
-    // todo perform input validation
     const { token } = await req.params as { token: string };
 
     const result = await env.kvStorage.get(`reset_${token}`);

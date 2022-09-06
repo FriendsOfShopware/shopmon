@@ -49,7 +49,6 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 }
 
 export async function accountUpdate(req: Request, env: Env): Promise<Response> {
-    // todo perform input validation
     const {currentPassword, email, newPassword, username } = await req.json() as {currentPassword: string, email: string, newPassword: string, username: string};
 
     const con = getConnection(env);
