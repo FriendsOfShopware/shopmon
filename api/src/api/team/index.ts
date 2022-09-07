@@ -8,6 +8,7 @@ import { listShops } from "./list_shops";
 import { addMember, listMembers, removeMember } from "./members";
 import { refreshShop } from "./refresh_shop";
 import { deleteTeam } from "./team";
+import { updateShop } from "./update_shop";
 
 const teamRouter = Router({ base: "/api/team" });
 
@@ -18,6 +19,7 @@ teamRouter.delete('/:teamId/members/:userId', validateToken, validateTeam, valid
 teamRouter.get('/:teamId/shops', validateToken, validateTeam, listShops);
 teamRouter.post('/:teamId/shops', validateToken, validateTeam, validateTeamOwner, createShop);
 teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, getShop);
+teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateShop);
 teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, refreshShop);
 teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, deleteShop);
 

@@ -41,6 +41,14 @@ async function onSubmit(values: any) {
     if ( shop.teamId && shop.id ) {
         try {
             await shopStore.updateShop(shop.teamId, shop.id, values);
+
+            router.push({
+                name: 'account.shops.detail',
+                params: {
+                    teamId: shop.teamId,
+                    shopId: shop.id
+                }
+            })
         } catch (e: any) {
             alertStore.error(e);
         }
