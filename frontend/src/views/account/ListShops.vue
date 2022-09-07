@@ -60,16 +60,9 @@ shopStore.loadShops();
               <img :src="shop.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="shop.favicon" />
             </td>
             <td class="whitespace-nowrap px-3 py-4">
-              <font-awesome-icon 
-                icon="fa-solid fa-circle"
-                size="sm"
-                class="mr-2"
-                :class="[
-                  {'text-green-400': shop.status === 'green'},
-                  {'text-yellow-400': shop.status === 'yellow'},
-                  {'text-red-600': shop.status === 'red'},
-                ]"
-              />              
+              <font-awesome-icon icon="fa-solid fa-circle-xmark" class="text-red-600 mr-2" v-if="shop.status == 'red'" />
+              <font-awesome-icon icon="fa-solid fa-circle-info" class="text-yellow-400 mr-2" v-else-if="shop.status === 'yellow'" />
+              <font-awesome-icon icon="fa-solid fa-circle-check" class="text-green-400 mr-2" v-else />             
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
                 {{ shop.name }}
               </router-link>

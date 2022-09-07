@@ -70,7 +70,9 @@ async function onRefresh() {
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
-          <font-awesome-icon icon="fa-solid fa-circle-info" class="mr-1" />
+          <font-awesome-icon icon="fa-solid fa-circle-xmark" class="text-red-600 mr-1" v-if="shopStore.shop.status == 'red'" />
+          <font-awesome-icon icon="fa-solid fa-circle-info" class="text-yellow-400 mr-1" v-else-if="shopStore.shop.status === 'yellow'" />
+          <font-awesome-icon icon="fa-solid fa-circle-check" class="text-green-400 mr-1" v-else />
           Shop Information
         </h3>
       </div>
