@@ -2,6 +2,7 @@
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
+import Tabs from '@/components/layout/Tabs.vue';
 
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
@@ -54,7 +55,7 @@ async function onRefresh() {
         :disabled="shopStore.isRefreshing">
         <font-awesome-icon :class="{'animate-spin': shopStore.isRefreshing}" icon="fa-solid fa-rotate" size="lg" />
       </button>
-      
+
       <router-link
         :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
         type="button" class="group btn btn-primary flex items-center">
@@ -108,17 +109,35 @@ async function onRefresh() {
       </div>
     </div>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden" v-if="shopStore.shop.extensions">
-      <div class="py-5 px-4 sm:px-6 lg:px-8">
-        <h3 class="text-lg leading-6 font-medium">
-          <font-awesome-icon icon="fa-solid fa-plug" class="mr-1" />
-          Extensions
-        </h3>
-        <p class="mt-1 text-sm text-gray-500">List of all installed extensions</p>
-      </div>
-      <div class="border-t border-gray-200">
+    <Tabs :labels="{
+      checks: {title: 'Checks', count: shopStore.shop.checks.length, icon: 'fa-solid fa-circle-check'}, 
+      extensions: {title: 'Extensions', count: shopStore.shop.extensions.length, icon: 'fa-solid fa-plug'}, 
+      tasks: {title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: 'fa-solid fa-list-check'}, 
+      queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: 'fa-solid fa-circle-check'}
+    }">
+
+      <template #panel(checks)="{ label }">
         <DataTable
-          :labels="{'name': {'name': 'Name'}, 'version': {'name': 'Version'}, 'latest': {'name': 'Latest'}, 'rating': {'name': 'Rating'}, 'issue': {'name': 'Known Issue', 'class': 'px-3 text-right'}}"
+          :labels="{message: {name: 'Message'}}"
+          :data="shopStore.shop.checks">
+          <template #cell(message)="{ item }">
+            <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.level == 'red'">
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+            </span>
+            <span class="text-yellow-400 mr-1" data-tooltip="Working" v-else-if="item.level === 'yellow'">
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-info" />
+            </span>
+            <span class="text-green-400 mr-1" data-tooltip="OK" v-else>
+              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+            </span>
+            {{ item.message }}
+          </template>
+        </DataTable>
+      </template> 
+
+      <template #panel(extensions)="{ label }">
+        <DataTable
+          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
             <span class="text-green-400 mr-1" data-tooltip="Active" v-if="item.active">
@@ -151,21 +170,11 @@ async function onRefresh() {
             No known issues. <a href="#">Report issue</a>
           </template>
         </DataTable>
-      </div>
-    </div>
+      </template>
 
-    <div class="mb-12 bg-white shadow rounded-md overflow-y-scroll md:overflow-hidden"
-      v-if="shopStore.shop.scheduled_task">
-      <div class="py-5 px-4 sm:px-6 lg:px-8">
-        <h3 class="text-lg leading-6 font-medium ">
-          <font-awesome-icon icon="fa-solid fa-list-check" class="mr-1" />
-          Scheduled Tasks
-        </h3>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all Scheduled Tasks</p>
-      </div>
-      <div class="border-t border-gray-200">
+      <template #panel(tasks)="{ label }">
         <DataTable
-          :labels="{'name': {'name': 'Name'}, 'last': {'name': 'Last Executed'}, 'next': {'name': 'Next Execution'}}"
+          :labels="{name: {name: 'Name'}, last: {name: 'Last Executed'}, next: {name: 'Next Execution'}}"
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
             <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.overdue">
@@ -185,8 +194,16 @@ async function onRefresh() {
             {{ new Date(item.nextExecutionTime).toLocaleString() }}
           </template>
         </DataTable>
-      </div>
-    </div>
+      </template>
+
+      <template #panel(queue)="{ label }">
+        <DataTable
+          :labels="{name: {name: 'Name'}, size: {name: 'Size'}}"
+          :data="shopStore.shop.queue_info">
+        </DataTable>
+      </template> 
+
+    </Tabs>
 
     <TransitionRoot as="template" :show="viewChangelogDialog">
       <Dialog as="div" class="relative z-10" @close="viewChangelogDialog = false">
