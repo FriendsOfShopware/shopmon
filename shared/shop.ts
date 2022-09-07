@@ -22,6 +22,7 @@ export interface ShopDetailed extends Shop {
     scheduled_task: ScheduledTask[];
     cache_info: CacheInfo;
     queue_info: QueueInfo[];
+    pagespeed: Pagespeed[];
 }
 
 export interface Extension {
@@ -60,4 +61,14 @@ export interface CacheInfo {
     environment: string;
     httpCache: boolean;
     cacheAdapter: string;
+}
+
+export interface Pagespeed {
+    id: number;
+    shop_id: number;
+    created_at: string;
+    performance: number;
+    accessibility: number;
+    best_practices: number;
+    seo: number;
 }

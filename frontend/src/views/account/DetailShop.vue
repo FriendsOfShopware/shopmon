@@ -125,7 +125,8 @@ async function onRefresh() {
       checks: {title: 'Checks', count: shopStore.shop.checks.length, icon: 'fa-solid fa-circle-check'}, 
       extensions: {title: 'Extensions', count: shopStore.shop.extensions.length, icon: 'fa-solid fa-plug'}, 
       tasks: {title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: 'fa-solid fa-list-check'}, 
-      queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: 'fa-solid fa-circle-check'}
+      queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: 'fa-solid fa-circle-check'},
+      pagespeed: {title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: 'fa-solid fa-rocket'}
     }">
 
       <template #panel(checks)="{ label }">
@@ -234,6 +235,16 @@ async function onRefresh() {
         <DataTable
           :labels="{name: {name: 'Name'}, size: {name: 'Size'}}"
           :data="shopStore.shop.queue_info">
+        </DataTable>
+      </template>
+
+      <template #panel(pagespeed)="{ label }">
+        <DataTable
+          :labels="{created: {name: 'Checked At'}, performance: {name: 'Performance'}, accessibility: {name: 'Accessibility'}, bestpractices: {name: 'Best Practices'}, seo: {name: 'SEO'}}"
+          :data="shopStore.shop.pagespeed">
+          <template #cell(created)="{ item }">
+            <a target="_blank" :href="'https://web.dev/measure/?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
+          </template>
         </DataTable>
       </template> 
 

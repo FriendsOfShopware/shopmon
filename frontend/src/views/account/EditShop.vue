@@ -150,7 +150,7 @@ async function deleteShop() {
 
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
-0.                <div class="mt-5">
+                <div class="mt-5">
                     <button type="button" class="btn btn-danger group flex items-center"
                         @click="showShopDeletionModal = true">
                         <font-awesome-icon icon="fa-solid fa-trash"
