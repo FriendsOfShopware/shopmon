@@ -125,13 +125,13 @@ async function onRefresh() {
           :labels="{message: {name: 'Message'}}"
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
-            <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.level == 'red'">
+            <span class="text-red-600 mr-1" v-if="item.level == 'red'">
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
             </span>
-            <span class="text-yellow-400 mr-1" data-tooltip="Working" v-else-if="item.level === 'yellow'">
+            <span class="text-yellow-400 mr-1" v-else-if="item.level === 'yellow'">
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-info" />
             </span>
-            <span class="text-green-400 mr-1" data-tooltip="OK" v-else>
+            <span class="text-green-400 mr-1" v-else>
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
             </span>
             {{ item.message }}
