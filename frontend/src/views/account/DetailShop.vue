@@ -140,10 +140,13 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <span class="text-green-400 mr-1" data-tooltip="Active" v-if="item.active">
+            <span class="text-gray-400 mr-1" data-tooltip="Not installed" v-if="!item.installed">
+              <font-awesome-icon size="lg" icon="fa-regular fa-circle" />
+            </span>
+            <span class="text-green-400 mr-1" data-tooltip="Active" v-else-if="item.active">
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
             </span>
-            <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-if="!item.active">
+            <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-else>
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
             </span>
             {{ item.name }}

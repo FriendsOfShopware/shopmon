@@ -40,7 +40,8 @@ import {
 import { 
     faBell, 
     faStar as farStar, 
-    faStarHalfStroke as farStarHalfStroke 
+    faStarHalfStroke as farStarHalfStroke,
+    faCircle as faCircleStroke
 } from '@fortawesome/free-regular-svg-icons';
 
 library.add(
@@ -69,7 +70,8 @@ library.add(
     fasStar, 
     farStar, 
     farStarHalfStroke,
-    faRotate
+    faRotate,
+    faCircleStroke
 );
 
 const app = createApp(App);
