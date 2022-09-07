@@ -2,6 +2,7 @@ import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { CacheInfo, Extension, QueueInfo, ScheduledTask, SHOP_STATUS } from "../../../../shared/shop"; 
 import env from "./checks/env";
 import frosh_tools from "./checks/frosh_tools";
+import security from "./checks/security";
 import task from "./checks/task";
 import worker from "./checks/worker";
 
@@ -74,6 +75,7 @@ export class CheckerRegistery {
         const result = new CheckerOutput();
 
         await Promise.all([
+            new security().check(input, result),
             new env().check(input, result),
             new task().check(input, result),
             new worker().check(input, result),
