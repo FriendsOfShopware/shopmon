@@ -7,7 +7,7 @@
         <thead class="bg-gray-50">
             <tr>
                 <th v-for="(label, key, index) in labels" 
-                    :key="label" 
+                    :key="key" 
                     class="py-3.5"
                     :class="[
                         {'px-3 text-left': !label.class},
