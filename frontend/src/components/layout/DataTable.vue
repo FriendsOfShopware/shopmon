@@ -3,7 +3,7 @@
 </script>
     
 <template>
-    <table class="min-w-full divide-y-2 divide-gray-300 background">
+    <table class="min-w-full divide-y-2 divide-gray-300 background" v-if="data.length > 0">
         <thead class="bg-gray-50">
             <tr>
                 <th v-for="(label, key, index) in labels" 
@@ -38,4 +38,9 @@
             </tr>
         </tbody>
     </table>
+    <div class="p-6 text-center text-gray-400" v-else>
+        <font-awesome-icon icon="fa-solid fa-inbox" class="text-9xl text-gray-200 mb-4" />
+        <h2 class="text-2xl font-bold text-gray-400 block">No Data</h2>
+        There is no data to display the table
+    </div>
 </template>
