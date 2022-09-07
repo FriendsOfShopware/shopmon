@@ -104,7 +104,7 @@ async function deleteShop() {
             </FormGroup>
 
             <FormGroup title="Integration"
-                info="The Shopware Integration must be created on an User to be able access the Extension Manager">
+                info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
                 <div class="sm:col-span-6">
                     <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1"> Client-ID </label>
                     <Field type="text" name="client_id" id="client_id" class="field"
@@ -140,10 +140,9 @@ async function deleteShop() {
         <FormGroup :title="'Deleting shop ' + shop.name">
             <form action="#" method="POST">
 
-                <p>Once you delete your shop, you will lose all data associated with it. All collected data
-                    also deleted.</p>
+                <p>Once you delete your shop, you will lose all data associated with it. </p>
 
-                <div class="mt-5">
+0.                <div class="mt-5">
                     <button type="button" class="btn btn-danger group flex items-center"
                         @click="showShopDeletionModal = true">
                         <font-awesome-icon icon="fa-solid fa-trash"

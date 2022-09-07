@@ -76,7 +76,7 @@ async function onSubmit(values: any) {
 
       </FormGroup>
 
-      <FormGroup title="Integration" info="The Shopware Integration must be created on an User to be able access the Extension Manager">
+      <FormGroup title="Integration" info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
         <div class="sm:col-span-6">
           <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1"> Client-ID </label>
           <Field type="text" name="client_id" id="client_id" class="field"

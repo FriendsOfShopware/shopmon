@@ -17,8 +17,7 @@ defineProps<{ title: string, subTitle?: string, info?: string }>()
                 <div class="flex-shrink-0">
                     <font-awesome-icon icon="fa-solid fa-circle-info" class="h-5 w-5 text-sky-400" aria-hidden="true" />
                 </div>
-                <div class="ml-3 flex-1 md:flex md:justify-between text-sm text-sky-900">
-                    {{ info }}
+                <div class="ml-3 flex-1 md:flex md:justify-between text-sm text-sky-900" v-html="info">
                 </div>
             </div>
         </div>
