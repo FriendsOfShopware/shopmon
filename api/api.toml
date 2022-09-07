@@ -16,11 +16,15 @@ FRONTEND_URL="https://shopmon.fos.gg"
 command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap src/workers/api.ts --source-root=/"
 
 [durable_objects]
-bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}]
+bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}, {name = "PAGESPEED_SCRAPE", class_name = "PagespeedScrape"}]
 
 [[migrations]]
 tag = "v1"
 new_classes = ["ShopScrape"]
+
+[[migrations]]
+tag = "v2"
+new_classes = ["PagespeedScrape"]
 
 [[kv_namespaces]]
   binding = "kvStorage"

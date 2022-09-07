@@ -43,6 +43,8 @@ DATABASE_USER=USER
 DATABASE_PASSWORD=PW
 MAIL_URL=https://localhost:3000
 MAIL_SECRET=foooo
+SENTRY_DSN=https://sentry.io
+PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
 ```
 - Emails will be not really send, copy the code from the API
 - Run `npm install`

@@ -15,3 +15,4 @@ export default {
 }
 
 export { ShopScrape } from '../object/ShopScrape';
+export { PagespeedScrape } from '../object/PagespeedScrape';
