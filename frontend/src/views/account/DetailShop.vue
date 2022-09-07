@@ -136,7 +136,12 @@ async function onRefresh() {
             <span class="text-green-400 mr-1" v-else>
               <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
             </span>
-            {{ item.message }}
+            <a :href="item.link" target="_blank" v-if="item.link">
+              {{ item.message }} <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
+            </a>
+            <template v-else>
+              {{ item.message }} 
+            </template>
           </template>
         </DataTable>
       </template> 
