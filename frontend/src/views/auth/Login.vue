@@ -28,7 +28,7 @@ async function onSubmit(values: any) {
     router.push(authStore.returnUrl || '/');
   } catch (e) {
     const alertStore = useAlertStore();
-    alertStore.error(error);
+    alertStore.error(e);
   }
 }
 </script>

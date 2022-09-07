@@ -68,7 +68,7 @@ export default async function oauth(req: Request, env: Env): Promise<Response> {
 async function handlePasswordGrant(params: OAuthRequest, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const loginError = new ErrorResponse('The user credentials were incorrect.');
+    const loginError = new ErrorResponse('The user credentials were incorrect.', 401);
 
     const result = await con.execute("SELECT id, password FROM user WHERE email = ? AND verify_code IS NULL", [params.username.toLowerCase()]);
 
