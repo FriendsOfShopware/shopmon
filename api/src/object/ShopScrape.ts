@@ -28,7 +28,7 @@ interface ShopwareScheduledTask {
 interface ShopwareStoreExtension {
     name: string;
     ratingAverage: number;
-    storeLink: string;
+    link: string;
     version: string;
     latestVersion: string;
     changelog: {
@@ -173,6 +173,7 @@ export class ShopScrape implements DurableObject {
                 storeLink: null,
                 changelog: null,
                 installed: plugin.installedAt !== null,
+                installedAt: plugin.installedAt,
             } as Extension)
         }
     
@@ -186,6 +187,7 @@ export class ShopScrape implements DurableObject {
                 storeLink: null,
                 changelog: null,
                 installed: true, // When it's in DB its always installed
+                installedAt: app.createdAt,
             } as Extension)
         }
     
@@ -224,7 +226,7 @@ export class ShopScrape implements DurableObject {
                     if (storePlugin) {
                         extension.latestVersion = storePlugin.version;
                         extension.ratingAverage = storePlugin.ratingAverage;
-                        extension.storeLink = storePlugin.storeLink;
+                        extension.storeLink = storePlugin.link.replace('http://store.shopware.com:80', 'https://store.shopware.com');
     
                         if (storePlugin.latestVersion != extension.version) {
                             const changelogs: ExtensionChangelog[] = [];

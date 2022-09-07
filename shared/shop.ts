@@ -33,6 +33,7 @@ export interface Extension {
     ratingAverage: number|null,
     storeLink: string|null,
     changelog: ExtensionChangelog[]|null,
+    installedAt: string|null,
 }
 
 export interface ExtensionChangelog {
