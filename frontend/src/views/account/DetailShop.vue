@@ -141,7 +141,7 @@ async function onRefresh() {
 
       <template #panel(extensions)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
+          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, storeLink: {name: 'Store'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
             <span class="text-gray-400 mr-1" data-tooltip="Not installed" v-if="!item.installed">
@@ -171,6 +171,20 @@ async function onRefresh() {
                 v-else-if="(item.ratingAverage / 2) - n === -.5" />
               <font-awesome-icon icon="fa-solid fa-star" v-else />
             </template>
+          </template>
+
+          <template #cell(installedAt)="{ item }">
+            <template v-if="item.installedAt">
+              {{ new Date(item.installedAt).toLocaleString() }}
+            </template>
+          </template>
+
+          <template #cell(storeLink)="{ item }">
+            <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank" v-if="item.storeLink">
+                <font-awesome-icon 
+                  icon="fa-solid fa-up-right-from-square"
+                />
+              </a>
           </template>
 
           <template #cell(issue)="{ item }">
