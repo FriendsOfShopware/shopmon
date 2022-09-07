@@ -34,14 +34,14 @@ import {
     faEye, 
     faEyeSlash, 
     faStar as fasStar,
-    faRotate
+    faRotate,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { 
     faBell, 
     faStar as farStar, 
     faStarHalfStroke as farStarHalfStroke,
-    faCircle as faCircleStroke
+    faCircle as farCircle
 } from '@fortawesome/free-regular-svg-icons';
 
 library.add(
@@ -71,7 +71,7 @@ library.add(
     farStar, 
     farStarHalfStroke,
     faRotate,
-    faCircleStroke
+    farCircle,
 );
 
 const app = createApp(App);
