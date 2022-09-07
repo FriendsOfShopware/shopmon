@@ -8,6 +8,8 @@ export default class implements Checker {
                 result.warning(`Task ${task.name} is overdue`);
             }
         }
+
+        result.success(`All scheduled tasks are running correctly`);
     }
 }
 

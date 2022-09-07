@@ -13,5 +13,7 @@ export default class implements Checker {
             result.warning(`Environment is not set to production or staging. It is set to ${input.cacheInfo.environment}`);
             return
         }
+
+        result.success(`Environment is set correctly to ${input.cacheInfo.environment}`);
     }
 }

@@ -252,10 +252,12 @@ export class ShopScrape implements DurableObject {
 
         const input: CheckerInput = {
             extensions: extensions,
+            config: responses.config.body,
             queueInfo: responses.queue.body,
             scheduledTasks: scheduledTasks,
             cacheInfo: responses.cacheInfo.body,
             favicon: favicon,
+            client
         }
 
         const checkerResult = await CheckerRegistery.check(input);
