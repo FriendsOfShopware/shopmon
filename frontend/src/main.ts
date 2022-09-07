@@ -36,6 +36,7 @@ import {
     faStar as fasStar,
     faRotate,
     faInbox,
+    faRightToBracket,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { 
@@ -74,6 +75,7 @@ library.add(
     faRotate,
     farCircle,
     faInbox,
+    faRightToBracket,
 );
 
 const app = createApp(App);

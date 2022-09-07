@@ -103,6 +103,10 @@ async function onRefresh() {
               <a :href="shopStore.shop.url" target="_blank">
                 {{ shopStore.shop.url }}
               </a>
+              &nbsp;/&nbsp;
+              <a :href="shopStore.shop.url + '/admin'" data-tooltip="Shopware admin URL" target="_blank">
+                admin
+              </a>
             </dd>
           </div>
         </dl>

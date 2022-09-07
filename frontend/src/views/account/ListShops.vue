@@ -80,6 +80,12 @@ shopStore.loadShops();
                   icon="fa-solid fa-up-right-from-square"
                 />
               </a>
+              &nbsp;
+              <a :href="shop.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
+                <font-awesome-icon 
+                  icon="fa-solid fa-right-to-bracket"
+                />
+              </a>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.team_name }}</td>
