@@ -13,20 +13,23 @@ import { ref } from 'vue';
 import type { Ref } from 'vue';
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+import { fetchWrapper } from '@/helpers/fetch-wrapper';
 
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
+const latestShopwareVersion: Ref<string|null> = ref(null);
 
 function openExtensionChangelog(extension: Extension | null) {
   dialogExtension.value = extension;
   viewChangelogDialog.value = true;  
 }
 
-function loadShop() {
+async function loadShop() {
   shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
+  latestShopwareVersion.value = await fetchWrapper.get('/info/latest-shopware-version') as string;
 }
 
 loadShop();
@@ -80,7 +83,10 @@ async function onRefresh() {
         <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium">Shopware Version</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.shopware_version }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">
+              {{ shopStore.shop.shopware_version }}
+              <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1" v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version">{{ latestShopwareVersion }}</span>
+            </dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="font-medium">Team</dt>
