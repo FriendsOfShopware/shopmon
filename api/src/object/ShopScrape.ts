@@ -155,6 +155,16 @@ export class ShopScrape implements DurableObject {
             if (e.response) {
                 error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
             }
+
+            await Shops.notify(
+                con,
+                this.env.USER_SOCKET,
+                shop.id,
+                'error',
+                `Shop: ${shop.name} could not be updated`,
+                `Could not connect to shop. Please check your remote server and try again. Error: ${error}`,
+                { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+            )
     
             await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
                 'red',

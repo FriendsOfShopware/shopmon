@@ -1,6 +1,14 @@
 import { Connection } from "@planetscale/database/dist";
 import { getConnection } from "../db";
+import Shops from "../repository/shops";
 import { createSentry } from "../sentry";
+
+interface SQLShop {
+    id: number;
+    name: string;
+    url: string;
+    team_id: number;
+}
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
@@ -53,7 +61,7 @@ export class PagespeedScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, url FROM shop WHERE id = ?';
+        const fetchShopSQL = 'SELECT id, name, url, team_id FROM shop WHERE id = ?';
 
         const shops = await con.execute(fetchShopSQL, [id]);
 
@@ -65,7 +73,7 @@ export class PagespeedScrape implements DurableObject {
         }
 
         try {
-            await this.computePagespeed(shops.rows[0].id, shops.rows[0].url, con);
+            await this.computePagespeed(shops.rows[0] as SQLShop, con);
         } catch(e) {
             const sentry = createSentry(this.state, this.env);
 
@@ -77,10 +85,38 @@ export class PagespeedScrape implements DurableObject {
         console.log(`Set alarm for shop ${id} to one day`)
     }
 
-    async computePagespeed(id: number, url: string, con: Connection) {
+    async computePagespeed(shop: SQLShop, con: Connection) {
+        try {
+            const home = await fetch(shop.url);
+
+            if (home.status !== 200) {
+                await Shops.notify(
+                    con,
+                    this.env.USER_SOCKET,
+                    shop.id.toString(),
+                    'error',
+                    `Shop: ${shop.name} could not be checked for Pagespeed`,
+                    `Could not run Pagespeed against Shop as the http status code is ${home.status}, but expected is 200`,
+                    { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+                )
+                return;
+            }
+
+        } catch (e) {
+            await Shops.notify(
+                con,
+                this.env.USER_SOCKET,
+                shop.id.toString(),
+                'error',
+                `Shop: ${shop.name} could not be checked for Pagespeed`,
+                `Could not connect to shop. Please check your remote server and try again. Error: ${e}`,
+                { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+            )
+        }
+
         const params = new URL('https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed');
         params.searchParams.set('strategy', 'MOBILE');
-        params.searchParams.set('url', url);
+        params.searchParams.set('url', shop.url);
         params.searchParams.set('key', this.env.PAGESPEED_API_KEY);
         params.searchParams.append('category', 'ACCESSIBILITY');
         params.searchParams.append('category', 'BEST_PRACTICES');
@@ -97,7 +133,7 @@ export class PagespeedScrape implements DurableObject {
         const pagespeed = await pagespeedResponse.json() as PagespeedResponse;
 
         await con.execute('INSERT INTO shop_pagespeed(shop_id, performance, accessibility, bestpractices, seo) VALUES(?, ?, ?, ?, ?)', [
-            id,
+            shop.id,
             pagespeed.lighthouseResult.categories.performance.score * 100,
             pagespeed.lighthouseResult.categories.accessibility.score * 100,
             pagespeed.lighthouseResult.categories['best-practices'].score * 100,
