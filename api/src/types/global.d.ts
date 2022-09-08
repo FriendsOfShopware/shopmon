@@ -12,6 +12,7 @@ declare global {
         kvStorage: KVNamespace;
         SHOPS_SCRAPE: DurableObjectNamespace;
         PAGESPEED_SCRAPE: DurableObjectNamespace;
+        USER_SOCKET: DurableObjectNamespace;
     }
 
     interface Team {

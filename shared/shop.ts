@@ -1,3 +1,5 @@
+import type { Team } from './team'
+
 export enum SHOP_STATUS {
     GREEN = 'green',
     YELLOW = 'yellow',
@@ -11,8 +13,8 @@ export interface Shop {
     favicon: string|null;
     url: string,
     shopware_version: string,
-    team_id: number,
-    team_name: string,
+    team_id: Team['id'],
+    team_name: Team['name'],
     last_scraped_at: string;
     last_scraped_error: string;
 }

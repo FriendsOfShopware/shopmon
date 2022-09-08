@@ -41,4 +41,33 @@ export default class Shops {
             id
         ]);
     }
+
+    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, level: 'warning' | 'error', title: string, message: string, link: { name: string, params?: Record<string, string> }): Promise<void> {
+        const users = await con.execute(`SELECT 
+        user_to_team.user_id as id
+        FROM user_to_team
+        INNER JOIN shop ON(shop.team_id = user_to_team.team_id)
+        WHERE shop.id = ?`, [shopId]);
+
+        for (const user of users.rows) {
+            await con.execute('REPLACE INTO user_notification (user_id, level, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())', [
+                user.id,
+                level,
+                title,
+                message,
+                JSON.stringify(link)
+            ]);
+
+            await namespace.get(namespace.idFromName(user.id.toString())).fetch('http://localhost/api/send', {
+                method: 'POST',
+                body: JSON.stringify({
+                    user_id: user.id,
+                    level,
+                    title,
+                    message,
+                    link
+                })
+            });
+        }
+    }
 }

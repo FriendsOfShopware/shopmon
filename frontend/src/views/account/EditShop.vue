@@ -20,7 +20,10 @@ const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
+const teamId = parseInt(route.params.teamId as string, 10);
+const shopId = parseInt(route.params.shopId as string, 10);
+
+shopStore.loadShop(teamId, shopId);
 
 const showShopDeletionModal = ref(false)
 

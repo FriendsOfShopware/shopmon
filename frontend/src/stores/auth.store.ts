@@ -41,18 +41,23 @@ export const useAuthStore = defineStore('auth', {
             // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
         },
+
         async register(user: object) {
             await fetchWrapper.post(`/auth/register`, user);
         },
+
         async confirmMail(token: string) {
             await fetchWrapper.post(`/auth/confirm/${token}`);
         },
+
         async resetPassword(email: string) {
             await fetchWrapper.post(`/auth/reset`, { email });
         },
+
         async resetAvailable(token: string) {
             await fetchWrapper.get(`/auth/reset/${token}`);
         },
+
         async confirmResetPassword(token: string, password: string) {
             await fetchWrapper.post(`/auth/reset/${token}`, { password });
         },
@@ -84,6 +89,7 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('refresh_token');
             router.push('/account/login');
         },
+
         async delete() {
             await fetchWrapper.delete(`/account/me`);
             this.logout();

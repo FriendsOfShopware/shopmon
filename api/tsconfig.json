@@ -4,8 +4,7 @@
     "module": "commonjs",
     "target": "esnext",
     "lib": [
-      "esnext",
-      "dom"
+      "esnext"
     ],
     "alwaysStrict": true,
     "strict": true,

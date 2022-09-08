@@ -8,8 +8,8 @@ const REFRESH_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 const ACCESS_TOKEN_TTL = 60 * 30; // 30 minutes
 
 
-interface Token {
-    id: string;
+export interface Token {
+    id: number;
 }
 
 type OAuthRequest = {

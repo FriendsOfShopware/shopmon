@@ -7,9 +7,12 @@ import { Extension, ExtensionChangelog } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../sentry";
+import Shops from "../repository/shops";
  
 interface SQLShop {
     id: string;
+    name: string;
+    team_id: string;
     url: string;
     shopware_version: string;
     client_id: string;
@@ -91,7 +94,7 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, url, shopware_version, client_id, client_secret FROM shop WHERE id = ?';
+        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id FROM shop WHERE id = ?';
 
         const shops = await con.execute(fetchShopSQL, [id]);
 
@@ -101,7 +104,6 @@ export class ShopScrape implements DurableObject {
             await this.state.storage.deleteAll();
             return;
         }
-
 
         try {
             await this.updateShop(shops.rows[0] as SQLShop, con);
@@ -126,9 +128,10 @@ export class ShopScrape implements DurableObject {
         try {
             await client.getToken();
         } catch (e) {
-            await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
+            await Shops.notify(con, this.env.USER_SOCKET, shop.id, 'error', `Shop: ${shop.name} could not be updated`, 'Could not connect to shop. Please check your credentials and try again.', { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } });
+
+            await con.execute('UPDATE shop SET status = ? WHERE id = ?', [
                 'red',
-                'The API authentication failed. Please check your credentials.',
                 shop.id,
             ]);
             return;

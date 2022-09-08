@@ -1,3 +1,5 @@
+import type { Team } from './team'
+
 export interface User {
     id: number;
     username: string;
@@ -6,10 +8,4 @@ export interface User {
     avatar: string;
 
     teams: Team[];
-}
-
-export interface Team {
-    id: number;
-    name: string;
-    created_at: string;
 }

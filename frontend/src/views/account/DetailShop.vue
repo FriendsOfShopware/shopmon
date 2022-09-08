@@ -8,7 +8,7 @@ import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionChangelog, ScheduledTask } from '@apiTypes/shop';
+import type { Extension } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
@@ -28,7 +28,10 @@ function openExtensionChangelog(extension: Extension | null) {
 }
 
 async function loadShop() {
-  shopStore.loadShop(route.params.teamId as string, route.params.shopId as string);
+  const teamId = parseInt(route.params.teamId as string, 10);
+  const shopId = parseInt(route.params.shopId as string, 10);
+
+  shopStore.loadShop(teamId, shopId);
   latestShopwareVersion.value = await fetchWrapper.get('/info/latest-shopware-version') as string;
 }
 
