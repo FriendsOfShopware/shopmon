@@ -16,8 +16,6 @@ export const useShopStore = defineStore('shop', {
             }
 
             const shops = await fetchWrapper.get('/account/me/shops') as Shop[];
-
-            sessionStorage.setItem('shops', JSON.stringify(shops));
         },
 
         async loadShops() {

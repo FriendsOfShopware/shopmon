@@ -6,11 +6,11 @@ import type { User } from '@apiTypes/user';
 
 export const useAuthStore = defineStore('auth', {
     state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null, access_token: string|null, refresh_token: string|null} => ({
-        isAuthenticated: sessionStorage.getItem('user') !== null,
-        user: JSON.parse(sessionStorage.getItem('user') as string),
+        isAuthenticated: localStorage.getItem('user') !== null,
+        user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
-        access_token: sessionStorage.getItem('access_token'),
-        refresh_token: sessionStorage.getItem('refresh_token'),
+        access_token: localStorage.getItem('access_token'),
+        refresh_token: localStorage.getItem('refresh_token'),
     }),
     actions: {
         async refreshUser() {
@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', {
 
             this.user = await fetchWrapper.get(`/account/me`);
 
-            sessionStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem('user', JSON.stringify(this.user));
         },
 
         async login(email: string, password: string) {
@@ -39,7 +39,7 @@ export const useAuthStore = defineStore('auth', {
             this.user = user;
 
             // store user details and jwt in local storage to keep user logged in between page refreshes
-            sessionStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify(user));
         },
         async register(user: object) {
             await fetchWrapper.post(`/auth/register`, user);
@@ -69,19 +69,19 @@ export const useAuthStore = defineStore('auth', {
 
         setAccessToken(access_token: string, refresh_token: string|null = null) {
             this.access_token = access_token;
-            sessionStorage.setItem('access_token', access_token);
+            localStorage.setItem('access_token', access_token);
             
             if (refresh_token) {
                 this.refresh_token = refresh_token;
-                sessionStorage.setItem('refresh_token', refresh_token);
+                localStorage.setItem('refresh_token', refresh_token);
             }
         },
 
         logout() {
             this.user = null;
-            sessionStorage.removeItem('user');
-            sessionStorage.removeItem('access_token');
-            sessionStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
             router.push('/account/login');
         },
         async delete() {
