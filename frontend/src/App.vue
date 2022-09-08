@@ -17,6 +17,7 @@ if (authStore.isAuthenticated) {
     
     if(authToken) {
       notificationStore.connect(authToken);
+      notificationStore.loadNotifications();
     }
 }
 </script>

@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
-import type { User } from '@apiTypes/user'; 
+import type { User } from '@apiTypes/user';
+import { useNotificationStore } from './notification.store';
 
 export const useAuthStore = defineStore('auth', {
     state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null, access_token: string|null, refresh_token: string|null} => ({
@@ -40,6 +41,9 @@ export const useAuthStore = defineStore('auth', {
 
             // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
+
+            useNotificationStore().connect(login.access_token);
+            await useNotificationStore().loadNotifications();
         },
 
         async register(user: object) {
@@ -91,6 +95,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async delete() {
+            useNotificationStore().disconnect();
             await fetchWrapper.delete(`/account/me`);
             this.logout();
         }

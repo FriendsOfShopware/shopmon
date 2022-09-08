@@ -58,6 +58,7 @@ export const useNotificationStore = defineStore('notification', {
             if (!this.websocket) return;
 
             this.websocket.close();
+            this.websocket = null;
         }
     }
 })
