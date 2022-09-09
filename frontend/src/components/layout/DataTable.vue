@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-    defineProps<{labels: Record<string, {class?: string, name: string}>, data: Record<string, any>[]}>()
+    defineProps<{labels: Record<string, {class?: string, classOverride?: boolean, name: string}>, data: Record<string, any>[]}>()
 </script>
     
 <template>
@@ -10,9 +10,9 @@
                     :key="key" 
                     class="py-3.5"
                     :class="[
-                        {'px-3 text-left': !label.class},
-                        {'pl-4 lg:pl-8': index === 0},
-                        {'pr-4 sm:pr-6 lg:pr-8': index === Object.keys(labels).length - 1},
+                        {'px-3 text-left': !label.class && !label.classOverride},
+                        {'pl-4 lg:pl-8': index === 0 && !label.classOverride},
+                        {'pr-4 sm:pr-6 lg:pr-8': index === Object.keys(labels).length - 1 && !label.classOverride},
                         label.class,
                     ]"
                 >
@@ -25,9 +25,9 @@
                 <td v-for="(label, key, index) in labels"
                     class="whitespace-nowrap py-4 align-middle"
                     :class="[
-                        {'px-3': !label.class},
-                        {'pl-4 lg:pl-8': index === 0},
-                        {'pr-4 sm:pr-6 lg:pr-8': index === Object.keys(labels).length - 1},
+                        {'px-3': !label.class && !label.classOverride},
+                        {'pl-4 lg:pl-8': index === 0 && !label.classOverride},
+                        {'pr-4 sm:pr-6 lg:pr-8': index === Object.keys(labels).length - 1 && !label.classOverride},
                         label.class,
                     ]"
                 >

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
+import DataTable from '@/components/layout/DataTable.vue';
+
 import { useShopStore } from '@/stores/shop.store';
+
 const shopStore = useShopStore();
 
 shopStore.loadShops();
@@ -38,48 +41,39 @@ shopStore.loadShops();
           Add Shop
         </router-link>
       </div>
-    </div>
+    </div>    
 
     <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden" v-else>
-      <table class="min-w-full divide-y-2 divide-gray-200 bg-white">
-        <thead class="bg-gray-50">
-          <tr>
-            <th scope="col" class="w-11 py-3.5 px-1 text-left"></th>
-            <th scope="col" class="px-3 py-3.5 text-left">Name</th>
-            <th scope="col" class="px-3 py-3.5 text-left">URL</th>
-            <th scope="col" class="px-3 py-3.5 text-left">Version</th>
-            <th scope="col" class="px-3 py-3.5 text-left">Team</th>
-            <th scope="col" class="px-3 py-3.5 text-left">Last checked at</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr class="even:bg-gray-50" v-for="shop in shopStore.shops" :key="shop.id">
-            <td class="whitespace-nowrap py-2 px-3">
-              <img :src="shop.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="shop.favicon" />
-            </td>
-            <td class="whitespace-nowrap px-3 py-4">
-              <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base" v-if="shop.status == 'red'" />
-              <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base" v-else-if="shop.status === 'yellow'" />
-              <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base" v-else />             
-              <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
-                {{ shop.name }}
-              </router-link>
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">
-              <a :href="shop.url" :data-tooltip="shop.url" target="_blank">
-                <icon-fa6-solid:up-right-from-square />
-              </a>
-              &nbsp;
-              <a :href="shop.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
-                <icon-fa6-solid:right-to-bracket />
-              </a>
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.team_name }}</td>
-            <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ new Date(shop.last_scraped_at).toLocaleString() }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <DataTable
+        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 py-3.5 px-3'}, name: {name: 'Name'}, url: {name: 'URL'}, shopware_version: {name: 'Version'}, team_name: {name: 'Team'}, checked: {name: 'last checked at'}}"
+        :data="shopStore.shops">
+        <template #cell(favicon)="{ item }">
+          <img :src="item.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="item.favicon" />
+        </template>
+
+        <template #cell(name)="{ item }">
+          <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base" v-if="item.status == 'red'" />
+          <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base" v-else-if="item.status === 'yellow'" />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base" v-else />             
+          <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.id } }">
+            {{ item.name }}
+          </router-link>
+        </template>
+
+        <template #cell(url)="{ item }">
+          <a :href="item.url" :data-tooltip="item.url" target="_blank">
+            <icon-fa6-solid:up-right-from-square />
+          </a>
+          &nbsp;
+          <a :href="item.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
+            <icon-fa6-solid:right-to-bracket />
+          </a>
+        </template>
+
+        <template #cell(checked)="{ item }">
+          {{ new Date(item.last_scraped_at).toLocaleString() }}
+        </template>
+      </DataTable>
     </div>
   </MainContainer>
 </template>
