@@ -27,29 +27,22 @@ shopStore.loadShop(teamId, shopId);
 
 const showShopDeletionModal = ref(false)
 
-const shop = {
-    id: shopStore.shop?.id,
-    name: shopStore.shop?.name,
-    teamId: shopStore.shop?.team_id,
-    shop_url: shopStore.shop?.url
-}
-
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
-    shop_url: Yup.string().required('Shop URL is required').url(),
-    teamId: Yup.number().required('Team is required'),
+    url: Yup.string().required('Shop URL is required').url(),
+    team_id: Yup.number().required('Team is required'),
 });
 
 async function onSubmit(values: any) {
-    if ( shop.teamId && shop.id ) {
+    if ( shopStore.shop ) {
         try {
-            await shopStore.updateShop(shop.teamId, shop.id, values);
+            await shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, values);
 
             router.push({
                 name: 'account.shops.detail',
                 params: {
-                    teamId: shop.teamId,
-                    shopId: shop.id
+                    teamId: shopStore.shop.team_id,
+                    shopId: shopStore.shop.id
                 }
             })
         } catch (e: any) {
@@ -59,9 +52,9 @@ async function onSubmit(values: any) {
 }
 
 async function deleteShop() {
-    if ( shop.teamId && shop.id ) {
+    if ( shopStore.shop ) {
         try {
-            await shopStore.delete(shop.teamId, shop.id);
+            await shopStore.delete(shopStore.shop.team_id, shopStore.shop.id);
 
             router.push('/account/shops');
         } catch (error: Error) {
@@ -73,14 +66,14 @@ async function deleteShop() {
 </script>
     
 <template>
-    <Header :title="'Edit ' + shop.name" v-if="shop">
-        <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.teamId, shopId: shop.id } }"
+    <Header :title="'Edit ' + shopStore.shop.name" v-if="shopStore.shop">
+        <router-link :to="{ name: 'account.shops.detail', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
             type="button" class="group btn">
             Cancel
         </router-link>
     </Header>
-    <MainContainer v-if="shop && authStore.user">
-        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shop" @submit="onSubmit">
+    <MainContainer v-if="shopStore.shop && authStore.user">
+        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shopStore.shop" @submit="onSubmit">
             <FormGroup title="Shop information" subTitle="">
                 <div class="sm:col-span-6">
                     <label for="Name" class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
@@ -92,8 +85,8 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="teamId" class="block text-sm font-medium text-gray-700 mb-1"> Team </label>
-                    <Field as="select" id="teamId" name="teamId" class="field">
+                    <label for="team_id" class="block text-sm font-medium text-gray-700 mb-1"> Team </label>
+                    <Field as="select" id="team_id" name="team_id" class="field">
                         <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">
                             {{ team.name }}
                         </option>
@@ -104,11 +97,11 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="shop_url" class="block text-sm font-medium text-gray-700 mb-1"> URL </label>
-                    <Field type="text" name="shop_url" id="shop_url" autocomplete="url" class="field"
-                        v-bind:class="{ 'is-invalid': errors.shop_url }" />
+                    <label for="url" class="block text-sm font-medium text-gray-700 mb-1"> URL </label>
+                    <Field type="text" name="url" id="url" autocomplete="url" class="field"
+                        v-bind:class="{ 'is-invalid': errors.url }" />
                     <div class="text-red-700">
-                        {{ errors.shop_url }}
+                        {{ errors.url }}
                     </div>
                 </div>
 
@@ -148,7 +141,7 @@ async function deleteShop() {
             </div>
         </Form>
 
-        <FormGroup :title="'Deleting shop ' + shop.name">
+        <FormGroup :title="'Deleting shop ' + shopStore.shop.name">
             <form action="#" method="POST">
 
                 <p>Once you delete your shop, you will lose all data associated with it. </p>

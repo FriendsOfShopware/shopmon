@@ -6,8 +6,8 @@ import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/respon
 
 type UpdateShopRequest = {
     name: string;
-    shop_url: string;
-    teamId: number;
+    url: string;
+    team_id: number;
     client_id: string;
     client_secret: string;
 }
@@ -17,11 +17,11 @@ const validate = init<UpdateShopRequest>({
         type: "string",
         required: true
     },
-    teamId: {
+    team_id: {
         type: "number",
         required: true
     },
-    shop_url: {
+    url: {
         type: "string",
     },
     client_id: {
@@ -46,19 +46,19 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
 
     await con.execute('UPDATE shop SET name = ? WHERE id = ?', [json.name, shopId]);
 
-    if (json.teamId != teamId) {
+    if (json.team_id != teamId) {
         const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, json.teamId]);
 
         if (!team.rows.length) {
             return new ErrorResponse("You are not a member of this team", 403);
         }
 
-        await con.execute('UPDATE shop SET team_id = ? WHERE id = ?', [json.teamId, shopId]);
+        await con.execute('UPDATE shop SET team_id = ? WHERE id = ?', [json.team_id, shopId]);
     }
 
-    if (json.shop_url && json.client_id && json.client_secret) {
+    if (json.url && json.client_id && json.client_secret) {
         // Try out the new credentials
-        const client = new HttpClient(new Shop('', json.shop_url, '', json.client_id, json.client_secret))
+        const client = new HttpClient(new Shop('', json.url, '', json.client_id, json.client_secret))
 
         try {
             await client.get('/_info/config');
@@ -66,7 +66,7 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
             return new ErrorResponse('Cannot reach shop', 400);
         }
 
-        await con.execute('UPDATE shop SET url = ?, client_id = ?, client_secret = ? WHERE id = ?', [json.shop_url, json.client_id, json.client_secret, shopId]);
+        await con.execute('UPDATE shop SET url = ?, client_id = ?, client_secret = ? WHERE id = ?', [json.url, json.client_id, json.client_secret, shopId]);
     }
 
     return new NoContentResponse();
