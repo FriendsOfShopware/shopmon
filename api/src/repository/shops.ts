@@ -42,7 +42,7 @@ export default class Shops {
         ]);
     }
 
-    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, level: 'warning' | 'error', title: string, message: string, link: { name: string, params?: Record<string, string> }): Promise<void> {
+    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, level: 'warning' | 'error', title: string, message: string, link: { name: string, params?: Record<string, string> }|false): Promise<void> {
         const users = await con.execute(`SELECT 
         user_to_team.user_id as id
         FROM user_to_team

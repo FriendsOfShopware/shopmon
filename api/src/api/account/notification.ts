@@ -6,6 +6,10 @@ export async function getNotifications(req: Request, env: Env): Promise<Response
 
     const result = await con.execute(`SELECT * FROM user_notification WHERE user_id = ?`, [req.userId]);
 
+    for (const row of result.rows) {
+        row.link = JSON.parse(row.link);
+    }
+
     return new JsonResponse(result.rows);
 }
 
