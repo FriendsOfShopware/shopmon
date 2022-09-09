@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full rounded-lg bg-white mb-16 shadow">
+    <div class="w-full rounded-lg bg-white mb-16 shadow overflow-hidden">
         <TabGroup>
             <TabList class="border-b border-gray-200 -mb-px flex space-x-4 px-6">
                 <Tab v-for="(label, key) in labels" as="template" :key="key" v-slot="{ selected }">
