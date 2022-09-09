@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-    defineProps<{labels: Object, data: Object}>()
+    defineProps<{labels: Record<string, {class?: string, name: string}>, data: Record<string, any>[]}>()
 </script>
     
 <template>
