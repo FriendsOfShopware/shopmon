@@ -43,7 +43,7 @@ shopStore.loadShops();
       </div>
     </div>    
 
-    <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden" v-else>
+    <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white" v-else>
       <DataTable
         :labels="{favicon: {name: '', classOverride: true, class: 'w-11 py-3.5 px-3'}, name: {name: 'Name'}, url: {name: 'URL'}, shopware_version: {name: 'Version'}, team_name: {name: 'Team'}, checked: {name: 'last checked at'}}"
         :data="shopStore.shops">
