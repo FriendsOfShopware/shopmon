@@ -65,3 +65,8 @@ table th {
 *[data-tooltip]:hover:before, *[data-tooltip]:hover:after {
   display:block;
 }
+
+svg {
+  @apply inline;
+  vertical-align: -0.2em;
+}

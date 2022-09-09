@@ -58,20 +58,20 @@ shopStore.loadShops();
               <img :src="shop.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="shop.favicon" />
             </td>
             <td class="whitespace-nowrap px-3 py-4">
-              <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 inline" v-if="shop.status == 'red'" />
-              <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 inline" v-else-if="shop.status === 'yellow'" />
-              <icon-fa6-solid:circle-check class="text-green-400 mr-2 inline" v-else />             
+              <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base" v-if="shop.status == 'red'" />
+              <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base" v-else-if="shop.status === 'yellow'" />
+              <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base" v-else />             
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
                 {{ shop.name }}
               </router-link>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">
               <a :href="shop.url" :data-tooltip="shop.url" target="_blank">
-                <icon-fa6-solid:up-right-from-square class="inline"/>
+                <icon-fa6-solid:up-right-from-square />
               </a>
               &nbsp;
               <a :href="shop.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
-                <icon-fa6-solid:right-to-bracket class="inline"/>
+                <icon-fa6-solid:right-to-bracket />
               </a>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            

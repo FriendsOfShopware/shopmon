@@ -142,18 +142,12 @@ async function onRefresh() {
           :labels="{message: {name: 'Message'}}"
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
-            <span class="text-red-600 mr-1" v-if="item.level == 'red'">
-              <icon-fa6-solid:circle-xmark size="lg inline"/>
-            </span>
-            <span class="text-yellow-400 mr-1" v-else-if="item.level === 'yellow'">
-              <icon-fa6-solid:circle-info size="lg inline"/>
-            </span>
-            <span class="text-green-400 mr-1" v-else>
-              <icon-fa6-solid:circle-check size="lg"/>
-            </span>
+            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base" v-if="item.level == 'red'" />
+            <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 text-base" v-else-if="item.level === 'yellow'" />
+            <icon-fa6-solid:circle-check  class="text-green-400 mr-1 text-base" v-else />
             <a :href="item.link" target="_blank" v-if="item.link">
               {{ item.message }} 
-              <icon-fa6-solid:up-right-from-square/>
+              <icon-fa6-solid:up-right-from-square  class="text-xs"/>
             </a>
             <template v-else>
               {{ item.message }} 
@@ -167,15 +161,9 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, storeLink: {name: 'Store'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <span class="text-gray-400 mr-1" data-tooltip="Not installed" v-if="!item.installed">
-              <icon-fa6-regular:circle size="lg"/>
-            </span>
-            <span class="text-green-400 mr-1" data-tooltip="Active" v-else-if="item.active">
-              <icon-fa6-solid:circle-check size="lg"/>
-            </span>
-            <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-else>
-              <icon-fa6-solid:circle-xmark size="lg"/>
-            </span>
+            <icon-fa6-regular:circle class="text-gray-400 mr-1 text-base" data-tooltip="Not installed" v-if="!item.installed" />
+            <icon-fa6-solid:circle-check class="text-green-400 mr-1 text-base" data-tooltip="Active" v-else-if="item.active" />
+            <icon-fa6-solid:circle-xmark class="text-gray-300 mr-1 text-base" data-tooltip="Deactive" v-else />
             {{ item.name }}
           </template>
 
@@ -219,12 +207,8 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, last: {name: 'Last Executed'}, next: {name: 'Next Execution'}}"
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
-            <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.overdue">
-              <icon-fa6-solid:circle-xmark size="lg"/>
-            </span>
-            <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
-              <icon-fa6-solid:circle-check size="lg"/>
-            </span>
+            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base" data-tooltip="Task overdue" v-if="item.overdue"/>
+            <icon-fa6-solid:circle-check class="text-green-400 mr-1 text-base" data-tooltip="Working" v-else/>
             {{ item.name }}
           </template>
 
@@ -274,7 +258,7 @@ async function onRefresh() {
               <DialogPanel
                 class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full sm:p-6">
 
-                <button class="absolute top-1 right-2.5 focus:outline-none" @click="viewChangelogDialog = false">
+                <button class="absolute top-1 right-2.5 focus:outline-none text-base" @click="viewChangelogDialog = false">
                   <icon-fa6-solid:xmark aria-hidden="true" size="xl"/>
                 </button>
 

@@ -37,7 +37,8 @@ export default defineConfig({
             ],
           }),
         Icons({
-           autoInstall: true, 
+           autoInstall: true,
+           scale: 1,
         }),
     ],
     resolve: {
