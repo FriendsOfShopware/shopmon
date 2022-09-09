@@ -21,7 +21,7 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-            <tr class="even:bg-gray-50" v-for="(item, key) in data" :key="key">
+            <tr class="even:bg-gray-50 hover:bg-sky-50" v-for="(item, key) in data" :key="key">
                 <td v-for="(label, key, index) in labels"
                     class="whitespace-nowrap py-4 align-middle"
                     :class="[
