@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 
 interface Alert {
+    title: string,
     message: string;
-    type: 'alert-success' | 'alert-danger';
+    type: 'success' | 'error' | 'warning';
 }
 
 export const useAlertStore = defineStore({
@@ -12,11 +13,18 @@ export const useAlertStore = defineStore({
     }),
     actions: {
         success(message: string) {
-            this.alert = { message, type: 'alert-success' };
+            this.alert = { title: 'Action success', message, type: 'success' };
+            setTimeout(() => {
+                this.clear()
+            }, 5000);
         },
 
         error(message: string) {
-            this.alert = { message, type: 'alert-danger' };
+            this.alert = { title: 'Something went wrong', message, type: 'error' };
+        },
+
+        warning(message: string) {
+            this.alert = { title: 'Additional information', message, type: 'warning' };
         },
 
         clear() {

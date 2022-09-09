@@ -7,43 +7,45 @@ const alertStore = useAlertStore();
 const { alert } = storeToRefs(alertStore);
 </script>
 
-<template>
-  <transition
-    enter-active-class="transition ease-out duration-200"
-    enter-from-class="opacity-0 -translate-y-1"
-    enter-to-class="opacity-100 translate-y-0"
-    leave-active-class="transition ease-in duration-150"
-    leave-from-class="opacity-100 translate-y-0"
-    leave-to-class="opacity-0 -translate-y-1"
-  >
+<template>  
     <div
-      v-if="alert"
-      class="w-full absolute flex justify-center p-3"
+      class="absolute right-0 flex p-3 max-w-sm w-full overflow-hidden z-20"
     >
+    <transition
+    enter-active-class="transition ease-out duration-200"
+    enter-from-class="translate-x-full"
+    enter-to-class="translate-x-0"
+    leave-active-class="transition ease-in duration-150"
+    leave-from-class="translate-x-0"
+    leave-to-class="translate-x-full"
+  >
       <div
-        class="relative max-w-xl w-full rounded p-3 border inset-0"
-        :class="alert.type"
+        class="relative w-full rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mb-4 bg-white"
+        :class="[
+          {'border-l-red-600': alert.type === 'error'},
+          {'border-l-yellow-400': alert.type === 'warning'},
+          {'border-l-green-400': alert.type === 'success'},
+        ]"
+        v-if="alert"
       >
         <button
           class="w-4 h-4 absolute top-1 right-1 color-red-500"
           @click="alertStore.clear()"
         >
-        <icon-fa6-solid:xmark
-            aria-hidden="true"
-        />
+          <icon-fa6-solid:xmark aria-hidden="true" />
         </button>
-        {{ alert.message }}
+        <div class="shrink-0">
+          <icon-fa6-solid:circle-xmark v-if="alert.type === 'error'" class="text-red-600" />
+          <icon-fa6-solid:circle-info v-else-if="alert.type === 'warning'" class="text-yellow-400" />
+          <icon-fa6-solid:circle-check v-else class="text-green-400" />
+        </div>
+        <div>
+          <div class="font-medium">{{ alert.title }}</div>
+          {{ alert.message }}
+        </div>
+        
       </div>
+    </transition>
     </div>
-  </transition>
+  
 </template>
-
-<style>
-.alert-danger {
-  @apply text-red-900 border-red-200 bg-red-50;
-}
-
-.alert-success {
-  @apply text-green-900 border-green-200 bg-green-50;
-}
-</style>

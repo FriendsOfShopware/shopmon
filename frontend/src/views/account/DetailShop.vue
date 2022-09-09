@@ -49,7 +49,6 @@ async function onRefresh() {
             alertStore.success('Your Shop will refresh soon!');
             setTimeout(() => {
               loadShop();
-              alertStore.clear();
             }, 5000);
         } catch (e: any) {
             alertStore.error(e);
