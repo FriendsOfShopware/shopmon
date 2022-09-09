@@ -10,7 +10,7 @@
                     ]">
                         <font-awesome-icon v-if="label.icon" :icon="label.icon" class="mr-2 text-sm" />
                         {{ label.title }}
-                        <span v-if="label.count > 0"
+                        <span v-if="label.count && label.count > 0"
                             class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium ">
                             {{ label.count }}
                         </span>
@@ -35,6 +35,6 @@
   import { ref } from 'vue'
   import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 
-  defineProps<{labels: Object}>()
+  defineProps<{labels: Record<string, {title: string, count?: number, icon?: string}>}>()
 </script>
   
