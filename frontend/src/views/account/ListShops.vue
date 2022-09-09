@@ -15,8 +15,7 @@ shopStore.loadShops();
       type="button"
       class="group btn btn-primary flex items-center align-middle"
     >
-      <font-awesome-icon 
-        icon="fa-solid fa-plus" 
+    <icon-fa6-solid:plus 
         class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
         aria-hidden="true" 
       />
@@ -32,8 +31,7 @@ shopStore.loadShops();
       <p class="mt-1 text-gray-500">Get started by adding your first Shop.</p>
       <div class="mt-6">
         <router-link to="/account/shops/new" class="btn btn-primary group flex items-center">
-          <font-awesome-icon 
-            icon="fa-solid fa-plus" 
+          <icon-fa6-solid:plus
             class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
             aria-hidden="true" 
           />
@@ -60,24 +58,20 @@ shopStore.loadShops();
               <img :src="shop.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="shop.favicon" />
             </td>
             <td class="whitespace-nowrap px-3 py-4">
-              <font-awesome-icon icon="fa-solid fa-circle-xmark" class="text-red-600 mr-2" v-if="shop.status == 'red'" />
-              <font-awesome-icon icon="fa-solid fa-circle-info" class="text-yellow-400 mr-2" v-else-if="shop.status === 'yellow'" />
-              <font-awesome-icon icon="fa-solid fa-circle-check" class="text-green-400 mr-2" v-else />             
+              <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 inline" v-if="shop.status == 'red'" />
+              <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 inline" v-else-if="shop.status === 'yellow'" />
+              <icon-fa6-solid:circle-check class="text-green-400 mr-2 inline" v-else />             
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
                 {{ shop.name }}
               </router-link>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">
               <a :href="shop.url" :data-tooltip="shop.url" target="_blank">
-                <font-awesome-icon 
-                  icon="fa-solid fa-up-right-from-square"
-                />
+                <icon-fa6-solid:up-right-from-square class="inline"/>
               </a>
               &nbsp;
               <a :href="shop.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
-                <font-awesome-icon 
-                  icon="fa-solid fa-right-to-bracket"
-                />
+                <icon-fa6-solid:right-to-bracket class="inline"/>
               </a>
             </td>
             <td class="whitespace-nowrap px-3 py-4 text-gray-500">{{ shop.shopware_version }}</td>            

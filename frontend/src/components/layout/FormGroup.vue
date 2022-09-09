@@ -15,7 +15,7 @@ defineProps<{ title: string, subTitle?: string, info?: string }>()
 
             <div v-if="info" class="rounded-md bg-blue-50 p-4 border border-blue-300 flex mt-3">
                 <div class="flex-shrink-0">
-                    <font-awesome-icon icon="fa-solid fa-circle-info" class="h-5 w-5 text-sky-400" aria-hidden="true" />
+                    <icon-fa6-solid:circle-info class="h-5 w-5 text-sky-400" aria-hidden="true" />
                 </div>
                 <div class="ml-3 flex-1 md:flex md:justify-between text-sm text-sky-900" v-html="info">
                 </div>

@@ -40,8 +40,7 @@ export default {
     class="rounded-md bg-blue-50 p-4 border border-sky-200"
   >
     <div class="flex">
-      <font-awesome-icon 
-        icon="fa-solid fa-circle-info"
+      <icon-fa6-solid:circle-info
         class="h-5 w-5 text-sky-500"
         aria-hidden="true"
       />
@@ -59,8 +58,7 @@ export default {
       class="rounded-md bg-green-50 p-4 border border-green-200"
     >
       <div class="flex">
-        <font-awesome-icon 
-          icon="fa-solid fa-circle-check"
+        <icon-fa6-solid:circle-check
           class="h-5 w-5 text-green-500"
           aria-hidden="true"
         />
@@ -82,8 +80,7 @@ export default {
       class="rounded-md bg-red-50 p-4 border border-red-200"
     >
       <div class="flex">
-        <font-awesome-icon 
-          icon="fa-solid fa-circle-xmark"
+        <icon-fa6-solid:circle-xmark
           class="h-5 w-5 text-red-600"
           aria-hidden="true"
         />

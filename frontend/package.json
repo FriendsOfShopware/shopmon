@@ -10,20 +10,19 @@
         "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix"
     },
     "dependencies": {
-        "@fortawesome/fontawesome-svg-core": "^6.2.0",
-        "@fortawesome/free-brands-svg-icons": "^6.2.0",
-        "@fortawesome/free-regular-svg-icons": "^6.2.0",
-        "@fortawesome/free-solid-svg-icons": "^6.2.0",
-        "@fortawesome/vue-fontawesome": "^3.0.1",
         "@headlessui/vue": "^1.7.0",
         "@tailwindcss/forms": "^0.5.3",
         "pinia": "^2.0.22",
+        "unplugin-icons": "^0.14.9",
+        "unplugin-vue-components": "^0.22.4",
         "vee-validate": "^4.6.7",
         "vue": "^3.2.39",
         "vue-router": "^4.1.5",
         "yup": "^0.32.11"
     },
     "devDependencies": {
+        "@iconify-json/fa6-regular": "^1.1.6",
+        "@iconify-json/fa6-solid": "^1.1.7",
         "@typescript-eslint/eslint-plugin": "^5.36.2",
         "@typescript-eslint/parser": "^5.36.2",
         "@vitejs/plugin-vue": "^2.3.0",

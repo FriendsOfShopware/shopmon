@@ -99,10 +99,9 @@ async function onSubmit(values: any) {
       <div class="flex justify-end group">
         <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
           <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-          <font-awesome-icon 
+          <icon-fa6-solid:floppy-disk
             class="h-5 w-5" 
             aria-hidden="true"
-            icon="fa-solid fa-floppy-disk" 
             v-if="!isSubmitting" 
           />
           <Spinner v-else />

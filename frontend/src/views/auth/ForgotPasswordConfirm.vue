@@ -63,7 +63,7 @@ function goToResend() {
     class="rounded-md bg-blue-50 p-4 border border-sky-200"
   >
     <div class="flex">
-      <font-awesome-icon 
+      envelope
         icon="fa-solid fa-circle-info"
         class="h-5 w-5 text-sky-400"
         aria-hidden="true"
@@ -101,10 +101,9 @@ function goToResend() {
           :disabled="isSubmitting"
         >
           <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
-          <font-awesome-icon 
+          <icon-fa6-solid:key
             class="h-5 w-5" 
             aria-hidden="true"
-            icon="fa-solid fa-key" 
             v-if="!isSubmitting" 
           />
           <Spinner v-else />
@@ -123,8 +122,7 @@ function goToResend() {
       <div class="rounded-md bg-red-50 p-4 border border-red-200">
         <div class="flex">
           <div class="flex-shrink-0">
-            <font-awesome-icon 
-              icon="fa-solid fa-circle-xmark"
+            <icon-fa6-solid:circle-xmark
               class="h-5 w-5 text-red-600"
               aria-hidden="true"
             />
@@ -145,10 +143,9 @@ function goToResend() {
         @click="goToResend"
       >
         <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
-           <font-awesome-icon 
+           <icon-fa6-solid:envelope
             class="h-5 w-5" 
             aria-hidden="true"
-            icon="fa-solid fa-envelope"
           />
         </span>
         Resend mail

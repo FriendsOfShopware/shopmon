@@ -15,6 +15,9 @@ import {
     PopoverPanel,
 } from '@headlessui/vue';
 
+import FaGear from '~icons/fa6-solid/gear';
+import FaPowerOff from '~icons/fa6-solid/power-off';
+
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
 
@@ -24,8 +27,8 @@ const navigation = [
 ];
 
 const userNavigation = [
-    { name: 'Settings', route: '/account/settings', icon: 'fa-solid fa-gear', },
-    { name: 'Logout', route: '/logout', icon: 'fa-solid fa-power-off' },
+    { name: 'Settings', route: '/account/settings', icon: FaGear, },
+    { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
 </script>
 
@@ -68,7 +71,7 @@ const userNavigation = [
               items-center
             ">
               <span class="sr-only">View notifications</span>
-              <font-awesome-icon icon="fa-regular fa-bell" class="h-5 w-5" aria-hidden="true" />
+              <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
               <div v-if="notificationStore.notifications.length > 0" class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
                 {{ notificationStore.notifications.length }}
               </div>
@@ -86,8 +89,8 @@ const userNavigation = [
                     <ul v-if="notificationStore.notifications.length > 0" class="divide-y divide-gray-200 overflow-y-auto max-h-80">
                       <li v-for="notification in notificationStore.notifications" class="px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50">
                         <div class="shrink-0">
-                          <font-awesome-icon icon="fa-solid fa-circle-xmark" v-if="notification.level === 'error'" class="text-red-600" />
-                          <font-awesome-icon icon="fa-solid fa-circle-info" v-else class="text-yellow-400" />
+                          <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600" />
+                          <icon-fa6-solid:circle-info v-else class="text-yellow-400" />
                         </div>
                         <div>
                           <div class="font-medium">
@@ -162,7 +165,7 @@ const userNavigation = [
                         ? authStore.logout()
                         : $router.push(item.route)
                     ">
-                  <font-awesome-icon :icon="item.icon" class="w-4 h-4 inline-block text-sky-700 mr-1" />
+                  <component :is="item.icon" class="w-4 h-4 inline-block text-sky-700 mr-1" />
                   {{ item.name }}
                 </button>
                 </MenuItem>
@@ -183,8 +186,8 @@ const userNavigation = [
             focus:outline-none
           ">
           <span class="sr-only">Open main menu</span>
-          <font-awesome-icon icon="fa-solid fa-bars-staggered" v-if="!open" class="block h-6 w-6" aria-hidden="true" />
-          <font-awesome-icon icon="fa-solid fa-xmark" v-else class="block h-6 w-6" aria-hidden="true" />
+          <icon-fa6-solid:bars-staggered v-if="!open" class="block h-6 w-6" aria-hidden="true" />
+          <icon-fa6-solid:xmark v-else class="block h-6 w-6" aria-hidden="true" />
         </DisclosureButton>
       </div>
     </div>
@@ -230,7 +233,7 @@ const userNavigation = [
               focus:outline-none
             ">
             <span class="sr-only">View notifications</span>
-            <font-awesome-icon icon="fa-regular fa-bell" class="h-5 w-5" aria-hidden="true" />
+            <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
         <div class="mt-3 px-2 space-y-1">
@@ -248,7 +251,7 @@ const userNavigation = [
                 ? authStore.logout()
                 : $router.push(item.route)
             ">
-            <font-awesome-icon :icon="item.icon" class="w-4 h-4 inline-block text-sky-200 mr-1" />
+            <component :is="item.icon" class="w-4 h-4 inline-block text-sky-200 mr-1" />
             {{ item.name }}
           </DisclosureButton>
         </div>

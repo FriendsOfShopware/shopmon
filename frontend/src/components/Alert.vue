@@ -28,10 +28,9 @@ const { alert } = storeToRefs(alertStore);
           class="w-4 h-4 absolute top-1 right-1 color-red-500"
           @click="alertStore.clear()"
         >
-          <font-awesome-icon
+        <icon-fa6-solid:xmark
             aria-hidden="true"
-            icon="fa-solid fa-xmark" 
-          />
+        />
         </button>
         {{ alert.message }}
       </div>

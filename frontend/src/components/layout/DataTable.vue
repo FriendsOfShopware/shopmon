@@ -39,7 +39,7 @@
         </tbody>
     </table>
     <div class="p-6 text-center text-gray-400" v-else>
-        <font-awesome-icon icon="fa-solid fa-inbox" class="text-9xl text-gray-200 mb-4" />
+        <icon-fa6-solid:inbox class="text-9xl text-gray-200 mb-4" />
         <h2 class="text-2xl font-bold text-gray-400 block">No Data</h2>
         There is no data to display the table
     </div>

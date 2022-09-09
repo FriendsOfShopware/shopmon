@@ -15,6 +15,11 @@ import type { Ref } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
 
+import FaCircleCheck from '~icons/fa6-solid/circle-check';
+import FaPlug from '~icons/fa6-solid/plug';
+import FaListCheck from '~icons/fa6-solid/list-check';
+import FaRocket from '~icons/fa6-solid/rocket';
+
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
@@ -59,13 +64,13 @@ async function onRefresh() {
     <div class="flex gap-2">
       <button class="btn flex items-center" data-tooltip="Refresh shop data" @click="onRefresh"
         :disabled="shopStore.isRefreshing">
-        <font-awesome-icon :class="{'animate-spin': shopStore.isRefreshing}" icon="fa-solid fa-rotate" size="lg" />
+        <icon-fa6-solid:rotate :class="{'animate-spin': shopStore.isRefreshing}" size="lg" />
       </button>
 
       <router-link
         :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
         type="button" class="group btn btn-primary flex items-center">
-        <font-awesome-icon icon="fa-solid fa-pencil" class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
+        <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
           aria-hidden="true" />
         Edit Shop
       </router-link>
@@ -76,9 +81,9 @@ async function onRefresh() {
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
-          <font-awesome-icon icon="fa-solid fa-circle-xmark" class="text-red-600 mr-1" v-if="shopStore.shop.status == 'red'" />
-          <font-awesome-icon icon="fa-solid fa-circle-info" class="text-yellow-400 mr-1" v-else-if="shopStore.shop.status === 'yellow'" />
-          <font-awesome-icon icon="fa-solid fa-circle-check" class="text-green-400 mr-1" v-else />
+          <icon-fa6-solid:circle-xmark class="text-red-600 mr-1" v-if="shopStore.shop.status == 'red'" />
+          <icon-fa6-solid:circle-info class="text-yellow-400 mr-1" v-else-if="shopStore.shop.status === 'yellow'" />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-1" v-else />
           Shop Information
         </h3>
       </div>
@@ -125,11 +130,11 @@ async function onRefresh() {
     </div>
 
     <Tabs :labels="{
-      checks: {title: 'Checks', count: shopStore.shop.checks.length, icon: 'fa-solid fa-circle-check'}, 
-      extensions: {title: 'Extensions', count: shopStore.shop.extensions.length, icon: 'fa-solid fa-plug'}, 
-      tasks: {title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: 'fa-solid fa-list-check'}, 
-      queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: 'fa-solid fa-circle-check'},
-      pagespeed: {title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: 'fa-solid fa-rocket'}
+      checks: {title: 'Checks', count: shopStore.shop.checks.length, icon: FaCircleCheck}, 
+      extensions: {title: 'Extensions', count: shopStore.shop.extensions.length, icon: FaPlug}, 
+      tasks: {title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: FaListCheck}, 
+      queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: FaCircleCheck},
+      pagespeed: {title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: FaRocket}
     }">
 
       <template #panel(checks)="{ label }">
@@ -138,16 +143,17 @@ async function onRefresh() {
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
             <span class="text-red-600 mr-1" v-if="item.level == 'red'">
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+              <icon-fa6-solid:circle-xmark size="lg inline"/>
             </span>
             <span class="text-yellow-400 mr-1" v-else-if="item.level === 'yellow'">
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-info" />
+              <icon-fa6-solid:circle-info size="lg inline"/>
             </span>
             <span class="text-green-400 mr-1" v-else>
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+              <icon-fa6-solid:circle-check size="lg"/>
             </span>
             <a :href="item.link" target="_blank" v-if="item.link">
-              {{ item.message }} <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
+              {{ item.message }} 
+              <icon-fa6-solid:up-right-from-square/>
             </a>
             <template v-else>
               {{ item.message }} 
@@ -162,13 +168,13 @@ async function onRefresh() {
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
             <span class="text-gray-400 mr-1" data-tooltip="Not installed" v-if="!item.installed">
-              <font-awesome-icon size="lg" icon="fa-regular fa-circle" />
+              <icon-fa6-regular:circle size="lg"/>
             </span>
             <span class="text-green-400 mr-1" data-tooltip="Active" v-else-if="item.active">
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+              <icon-fa6-solid:circle-check size="lg"/>
             </span>
             <span class="text-gray-300 mr-1" data-tooltip="Deactive" v-else>
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+              <icon-fa6-solid:circle-xmark size="lg"/>
             </span>
             {{ item.name }}
           </template>
@@ -183,10 +189,10 @@ async function onRefresh() {
 
           <template #cell(rating)="{ item }">
             <template v-if="item.ratingAverage !== null" v-for="n in 5">
-              <font-awesome-icon icon="fa-regular fa-star" v-if="(item.ratingAverage / 2) - n < -.5" />
-              <font-awesome-icon icon="fa-regular fa-star-half-stroke"
+              <icon-fa6-regular:star v-if="(item.ratingAverage / 2) - n < -.5" />
+              <icon-fa6-solid:star-half-stroke
                 v-else-if="(item.ratingAverage / 2) - n === -.5" />
-              <font-awesome-icon icon="fa-solid fa-star" v-else />
+              <icon-fa6-solid:star v-else />
             </template>
           </template>
 
@@ -198,9 +204,7 @@ async function onRefresh() {
 
           <template #cell(storeLink)="{ item }">
             <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank" v-if="item.storeLink">
-                <font-awesome-icon 
-                  icon="fa-solid fa-up-right-from-square"
-                />
+              <icon-fa6-solid:up-right-from-square/>
               </a>
           </template>
 
@@ -216,10 +220,10 @@ async function onRefresh() {
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
             <span class="text-red-600 mr-1" data-tooltip="Task overdue" v-if="item.overdue">
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-xmark" />
+              <icon-fa6-solid:circle-xmark size="lg"/>
             </span>
             <span class="text-green-400 mr-1" data-tooltip="Working" v-else>
-              <font-awesome-icon size="lg" icon="fa-solid fa-circle-check" />
+              <icon-fa6-solid:circle-check size="lg"/>
             </span>
             {{ item.name }}
           </template>
@@ -271,7 +275,7 @@ async function onRefresh() {
                 class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full sm:p-6">
 
                 <button class="absolute top-1 right-2.5 focus:outline-none" @click="viewChangelogDialog = false">
-                  <font-awesome-icon aria-hidden="true" size="xl" icon="fa-solid fa-xmark" />
+                  <icon-fa6-solid:xmark aria-hidden="true" size="xl"/>
                 </button>
 
                 <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900 mb-3">
@@ -289,7 +293,7 @@ async function onRefresh() {
                 <div class="rounded-md bg-red-50 p-4 border border-red-200" v-else>
                   <div class="flex">
                     <div class="flex-shrink-0">
-                      <font-awesome-icon icon="fa-solid fa-circle-xmark" class="h-5 w-5 text-red-600"
+                      <icon-fa6-solid:circle-xmark class="h-5 w-5 text-red-600"
                         aria-hidden="true" />
                     </div>
                     <div class="ml-3 text-red-900">

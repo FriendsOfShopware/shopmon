@@ -8,7 +8,7 @@
                       'whitespace-nowrap flex pt-4 pb-3 px-2 border-b-2 font-medium text-base',
                       {'border-sky-500 text-sky-600': selected},
                     ]">
-                        <font-awesome-icon v-if="label.icon" :icon="label.icon" class="mr-2 text-sm" />
+                        <component v-if="label.icon" :is="label.icon" class="mr-2 text-sm"></component>
                         {{ label.title }}
                         <span v-if="label.count && label.count > 0"
                             class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium ">
@@ -32,7 +32,6 @@
 </template>
   
 <script setup lang="ts">
-  import { ref } from 'vue'
   import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
 
   defineProps<{labels: Record<string, {title: string, count?: number, icon?: string}>}>()

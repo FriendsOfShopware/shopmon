@@ -1,7 +1,10 @@
 import { fileURLToPath, URL } from 'url';
 
 import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
+import Vue from '@vitejs/plugin-vue';
+import Icons from 'unplugin-icons/vite'
+import IconsResolver from 'unplugin-icons/resolver'
+import Components from 'unplugin-vue-components/vite'
 
 const hmr = {};
 
@@ -24,7 +27,19 @@ if (process.env.SHOPMON_API_URL) {
 }
 
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [
+        Vue(),
+        Components({
+            resolvers: [
+              IconsResolver({
+                prefix: 'icon',
+              }),
+            ],
+          }),
+        Icons({
+           autoInstall: true, 
+        }),
+    ],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))

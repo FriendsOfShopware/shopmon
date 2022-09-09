@@ -11,7 +11,10 @@
     },
     "strictNullChecks": true,
     "lib": ["DOM", "ES2015", "ESNext"],
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "types": [
+      "unplugin-icons/types/vue",
+    ]
   },
   "exclude": [
     "node_modules",

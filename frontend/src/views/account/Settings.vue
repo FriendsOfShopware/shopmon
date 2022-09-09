@@ -97,10 +97,9 @@ async function deleteUser() {
         <div class="text-right flex justify-end">
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary flex items-center group">
             <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-              <font-awesome-icon 
+              <icon-fa6-solid:floppy-disk
                 class="h-5 w-5" 
-                aria-hidden="true"
-                icon="fa-solid fa-floppy-disk" 
+                aria-hidden="true" 
                 v-if="!isSubmitting" 
               />
               <Spinner v-else />
@@ -121,8 +120,7 @@ async function deleteUser() {
           <button type="button"
             class="btn btn-danger group flex items-center"
             @click="showAccountDeletionModal = true">
-            <font-awesome-icon 
-              icon="fa-solid fa-trash" 
+            <icon-fa6-solid:trash 
               class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50"
             />
             Delete account
@@ -149,8 +147,7 @@ async function deleteUser() {
               <DialogPanel
                 class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full sm:p-6">
                 <div class="sm:flex sm:items-start">
-                    <font-awesome-icon 
-                      icon="fa-solid fa-triangle-exclamation" 
+                    <icon-fa6-solid:triangle-exclamation 
                       class="h-6 w-6 text-red-600" 
                       aria-hidden="true" 
                     />

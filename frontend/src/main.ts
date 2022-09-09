@@ -6,85 +6,9 @@ import './style.css';
 import App from './App.vue';
 import { router } from './router';
 
-
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-
-/* import FontAwesomeIcon */
-import { 
-    faKey, 
-    faUserPlus, 
-    faEnvelope, 
-    faCircleInfo, 
-    faCircleCheck, 
-    faCircleXmark, 
-    faXmark, 
-    faGear, 
-    faPowerOff, 
-    faBarsStaggered, 
-    faPlus, 
-    faFloppyDisk, 
-    faTriangleExclamation, 
-    faTrash, 
-    faCircle, 
-    faUpRightFromSquare, 
-    faPlug, 
-    faListCheck, 
-    faPencil, 
-    faEye, 
-    faEyeSlash, 
-    faStar as fasStar,
-    faRotate,
-    faInbox,
-    faRightToBracket,
-    faRocket,
-} from '@fortawesome/free-solid-svg-icons';
-
-import { 
-    faBell, 
-    faStar as farStar, 
-    faStarHalfStroke as farStarHalfStroke,
-    faCircle as farCircle
-} from '@fortawesome/free-regular-svg-icons';
-
-library.add(
-    faKey, 
-    faUserPlus, 
-    faEnvelope, 
-    faCircleInfo, 
-    faCircleCheck, 
-    faCircleXmark, 
-    faXmark, 
-    faBell, 
-    faGear, 
-    faPowerOff, 
-    faBarsStaggered, 
-    faPlus, 
-    faFloppyDisk, 
-    faTriangleExclamation, 
-    faTrash, 
-    faCircle, 
-    faUpRightFromSquare, 
-    faPlug, 
-    faListCheck, 
-    faPencil, 
-    faEye, 
-    faEyeSlash, 
-    fasStar, 
-    farStar, 
-    farStarHalfStroke,
-    faRotate,
-    farCircle,
-    faInbox,
-    faRightToBracket,
-    faRocket,
-);
-
 const app = createApp(App);
 
 app.use(createPinia());
 app.use(router);
-
-app.component('font-awesome-icon', FontAwesomeIcon);
 
 app.mount('#app');

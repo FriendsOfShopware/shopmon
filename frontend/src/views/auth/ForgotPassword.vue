@@ -53,10 +53,9 @@ async function onSubmit(values: any): Promise<void> {
         :disabled="isSubmitting"
       >
         <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
-           <font-awesome-icon 
+           <icon-fa6-solid:envelope
             class="h-5 w-5" 
             aria-hidden="true"
-            icon="fa-solid fa-envelope" 
             v-if="!isSubmitting" 
           />
           <Spinner v-else />

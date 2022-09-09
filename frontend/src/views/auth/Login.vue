@@ -59,8 +59,8 @@ async function onSubmit(values: any) {
           <Field id="password" name="password" :type="passwordType" autocomplete="current-password" required=""
           class="field-no-rounded field-password rounded-b-md" placeholder="Password" :class="{ 'is-invalid': errors.password }" />
           <div class="absolute right-0 inset-y-0 flex items-center pr-3 cursor-pointer z-10">
-            <font-awesome-icon icon="fa-solid fa-eye" class="w-[18px]" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
-            <font-awesome-icon icon="fa-solid fa-eye-slash" class="w-[18px]" v-else @click="passwordType = 'password'" />
+            <icon-fa6-solid:eye class="w-[18px]" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
+            <icon-fa6-solid:eye-slash class="w-[18px]" v-else @click="passwordType = 'password'" />
           </div>
         </div>        
       </div>
@@ -77,10 +77,9 @@ async function onSubmit(values: any) {
     <div>
       <button type="submit" class="group w-full btn btn-primary" :disabled="isSubmitting">
         <span class="absolute left-0 inset-y-0 flex items-center pl-3 opacity-25 group-hover:opacity-50">
-          <font-awesome-icon 
+          <icon-fa6-solid:key
             class="h-5 w-5" 
             aria-hidden="true"
-            icon="fa-solid fa-key" 
             v-if="!isSubmitting" 
           />
           <Spinner v-else />
