@@ -30,6 +30,11 @@ a {
   @apply field-no-rounded rounded-md;
 }
 
+.field-no-rounded.has-error,
+.field.has-error {
+  @apply border-red-600 relative z-10;
+}
+
 .field-password {
   @apply pr-9;
 }

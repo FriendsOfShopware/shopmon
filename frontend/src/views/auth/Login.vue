@@ -15,7 +15,7 @@ const authStore = useAuthStore();
 const passwordType = ref('password')
 
 const schema = Yup.object().shape({
-  email: Yup.string().required('Email is required'),
+  email: Yup.string().required('Email is required').email(),
   password: Yup.string().required('Password is required'),
 });
 
@@ -48,32 +48,36 @@ async function onSubmit(values: any) {
       </p>
     </div>
     <Form v-slot="{ errors, isSubmitting }" class="mt-8 space-y-6" :validation-schema="schema" @submit="onSubmit">
-      <div class="rounded-md shadow-sm -space-y-px">
+      
+      <div class="-space-y-px">
+        <div v-if="errors" class="pb-2 text-red-500">
+          <div v-for="error in errors" key="error">
+            {{ error }}
+          </div>
+        </div>
+
         <div>
           <label for="email-address" class="sr-only">Email address</label>
           <Field id="email-address" name="email" type="email" autocomplete="email" required=""
-            class="field-no-rounded rounded-t-md" placeholder="Email address" :class="{ 'is-invalid': errors.email }" />
+            class="field-no-rounded rounded-t-md" placeholder="Email address" :class="{ 'has-error': errors.email }" />
         </div>
-        <div>
+        
+        <div class="relative">
           <label for="password" class="sr-only">Password</label>
-          <div class="relative">
-            <Field id="password" name="password" :type="passwordType" autocomplete="current-password" required=""
-            class="field-no-rounded field-password rounded-b-md" placeholder="Password" :class="{ 'is-invalid': errors.password }" />
-            <div class="absolute right-0 inset-y-0 flex items-center pr-3 cursor-pointer z-10">
-              <icon-fa6-solid:eye class="w-[18px]" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
-              <icon-fa6-solid:eye-slash class="w-[18px]" v-else @click="passwordType = 'password'" />
-            </div>
-          </div>        
+          <Field id="password" name="password" :type="passwordType" autocomplete="current-password" required=""
+          class="field-no-rounded field-password rounded-b-md" placeholder="Password" :class="{ 'has-error': errors.password }" />
+          <div class="absolute right-0 inset-y-0 flex items-center pr-3 cursor-pointer z-10">
+            <icon-fa6-solid:eye class="w-[18px]" v-if="passwordType == 'password'" @click="passwordType = 'text'" />
+            <icon-fa6-solid:eye-slash class="w-[18px]" v-else @click="passwordType = 'password'" />
+          </div>      
         </div>
-      </div>
+      </div>      
 
-      <div class="flex items-end">
-        <div class="text-sm flex">
-          <router-link to="/account/forgot-password" class="font-medium">
-            Forgot your password?
-          </router-link>
-        </div>
-      </div>
+      <div>
+        <router-link to="/account/forgot-password" class="font-medium">
+        Forgot your password?
+      </router-link>
+      </div>      
 
       <div>
         <button type="submit" class="group w-full btn btn-primary" :disabled="isSubmitting">
