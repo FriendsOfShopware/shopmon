@@ -1,4 +1,5 @@
 import { Connection } from "@planetscale/database/dist";
+import { UserSocketHelper } from "../object/UserSocket";
 
 interface CreateShopRequest {
     team_id: string;
@@ -58,16 +59,19 @@ export default class Shops {
                 JSON.stringify(link)
             ]);
 
-            await namespace.get(namespace.idFromName(user.id.toString())).fetch('http://localhost/api/send', {
-                method: 'POST',
-                body: JSON.stringify({
-                    user_id: user.id,
-                    level,
-                    title,
-                    message,
-                    link
-                })
-            });
+            await UserSocketHelper.sendNotification(
+                namespace,
+                user.id.toString(),
+                {
+                    notification: {
+                        user_id: user.id,
+                        level,
+                        title,
+                        message,
+                        link
+                    }
+                }
+            )
         }
     }
 }

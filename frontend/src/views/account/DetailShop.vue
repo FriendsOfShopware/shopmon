@@ -47,9 +47,6 @@ async function onRefresh() {
         try {
             await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id);
             alertStore.success('Your Shop will refresh soon!');
-            setTimeout(() => {
-              loadShop();
-            }, 5000);
         } catch (e: any) {
             alertStore.error(e);
         }

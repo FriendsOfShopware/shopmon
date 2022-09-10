@@ -1,3 +1,5 @@
+import { WebsocketMessage } from "../../../shared/notification";
+
 export class UserSocket implements DurableObject {
     state: DurableObjectState;
     env: Env;
@@ -46,5 +48,14 @@ export class UserSocket implements DurableObject {
         }
 
         return new Response('Not found', { status: 404 });
+    }
+}
+
+export class UserSocketHelper {
+    static async sendNotification(namespace: DurableObjectNamespace, userId: string, notification: WebsocketMessage) {
+        await namespace.get(namespace.idFromName(userId)).fetch('http://localhost/api/send', {
+            method: 'POST',
+            body: JSON.stringify(notification)
+        });
     }
 }

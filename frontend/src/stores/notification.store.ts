@@ -1,6 +1,8 @@
 import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { Notification } from "@apiTypes/notification";
+import type { Notification, WebsocketMessage } from "@apiTypes/notification";
+import { useShopStore } from "./shop.store";
+import { useAlertStore } from "./alert.store";
 
 export const useNotificationStore = defineStore('notification', {
     state: () => ({
@@ -34,9 +36,22 @@ export const useNotificationStore = defineStore('notification', {
 
             this.websocket = new WebSocket(url);
             this.websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data) as Notification;
+                const data = JSON.parse(event.data) as WebsocketMessage;
 
-                this.notifications.push(data);
+                if (data.notification) {
+                    this.notifications.unshift(data.notification);
+                }
+
+                if (data.shopUpdate) {
+                    const shopStore = useShopStore();
+                    const alertStore = useAlertStore();
+
+                    if (shopStore.shop?.id === data.shopUpdate.id) {
+                        shopStore.loadShop(shopStore.shop.team_id, data.shopUpdate.id);
+
+                        alertStore.success('Shop has been updated');
+                    }
+                }
             }
         },
 

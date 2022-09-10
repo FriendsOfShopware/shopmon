@@ -8,6 +8,7 @@ import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../sentry";
 import Shops from "../repository/shops";
+import { UserSocketHelper } from "./UserSocket";
  
 interface SQLShop {
     id: string;
@@ -73,6 +74,10 @@ export class ShopScrape implements DurableObject {
             await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
             console.log(`Set alarm for shop ${id} to 5 seconds`)
 
+            if (url.searchParams.has('userId')) {
+                await this.state.storage.put('triggeredBy', url.searchParams.get('userId'))
+            }
+
             return new Response('OK');
         } else if (url.pathname === '/delete') {
             await this.state.storage.deleteAll();
@@ -105,8 +110,9 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
+        const shop = shops.rows[0] as SQLShop;
         try {
-            await this.updateShop(shops.rows[0] as SQLShop, con);
+            await this.updateShop(shop, con);
         } catch (e) {
             const sentry = createSentry(this.state, this.env);
 
@@ -117,6 +123,22 @@ export class ShopScrape implements DurableObject {
         console.log(`Updated shop ${id}`)
 
         this.state.storage.setAlarm(Date.now() + 60 * MINUTES);
+
+        const triggeredBy = await this.state.storage.get<string>('triggeredBy');
+        if (triggeredBy !== undefined) {
+            await this.state.storage.delete('triggeredBy');
+
+            await UserSocketHelper.sendNotification(
+                this.env.USER_SOCKET,
+                triggeredBy,
+                {
+                    shopUpdate: {
+                        id: parseInt(shop.id),
+                        team_id: parseInt(shop.team_id),
+                    }
+                }
+            )
+        }
     }
 
     async updateShop(shop: SQLShop, con: Connection) {
