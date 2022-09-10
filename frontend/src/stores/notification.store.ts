@@ -99,6 +99,12 @@ export const useNotificationStore = defineStore('notification', {
             this.notifications = [];
         },
 
+        async deleteNotification(id: number) {
+            await fetchWrapper.delete(`/account/me/notifications/${id}`);
+
+            this.notifications = this.notifications.filter(e => e.id !== id);
+        },
+
         disconnect() {
             if (!this.websocket) return;
 

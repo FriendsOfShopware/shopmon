@@ -87,28 +87,38 @@ const userNavigation = [
             >
               <PopoverPanel class="absolute right-0 z-10 mt-2 w-screen max-w-[300px] px-4 sm:px-0">
                 <div class="overflow-hidden rounded-md shadow-lg bg-white">
-                  <div class="p-4 font-medium border-b border-grey-200">Notifications</div>
-                    <ul v-if="notificationStore.notifications.length > 0" class="divide-y divide-gray-200 overflow-y-auto max-h-80">
-                      <li v-for="notification in notificationStore.notifications" class="px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50">
-                        <div class="shrink-0">
-                          <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600" />
-                          <icon-fa6-solid:circle-info v-else class="text-yellow-400" />
+                  <div class="p-4 font-medium border-b border-grey-200 flex justify-between">
+                    Notifications
+                    <button class="flex items-center" @click="notificationStore.deleteAllNotifications">
+                      <icon-fa6-solid:trash class="opacity-30 hover:opacity-100" />
+                    </button>
+                  </div>
+                  <ul v-if="notificationStore.notifications.length > 0" class="divide-y divide-gray-200 overflow-y-auto max-h-80">
+                    <li v-for="notification in notificationStore.notifications" class="px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50">
+                      <div class="shrink-0">
+                        <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600" />
+                        <icon-fa6-solid:circle-info v-else class="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div class="font-medium">
+                          {{ notification.title }}
+                        </div>                          
+                        <div class="text-gray-500">
+                          {{ notification.message }}
                         </div>
-                        <div>
-                          <div class="font-medium">
-                            {{ notification.title }}
-                          </div>                          
-                          <div class="text-gray-500">
-                            {{ notification.message }}
-                          </div>
-                          <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
-                        </div>
-                        
-                      </li>
-                    </ul>
-                    <template v-else>
-                      Not much going on here
-                    </template>                
+                        <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
+                      </div>
+                      <div>
+                        <button @click="notificationStore.deleteNotification(notification.id)">
+                          <icon-fa6-solid:xmark v-if="notification.level === 'error'" class="opacity-30 hover:opacity-100" />
+                        </button>                        
+                      </div>
+                      
+                    </li>
+                  </ul>
+                  <div v-else class="p-4">
+                    Not much going on here
+                  </div>                
                 </div>
               </PopoverPanel>
             </transition>
