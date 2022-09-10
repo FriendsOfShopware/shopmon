@@ -20,7 +20,7 @@ const { alert } = storeToRefs(alertStore);
     leave-to-class="translate-x-full"
   >
       <div
-        class="relative w-full rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mr-3 mb-4 bg-white"
+        class="relative w-screen rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mr-3 mb-4 bg-white"
         :class="[
           {'border-l-red-600': alert.type === 'error'},
           {'border-l-yellow-400': alert.type === 'warning'},
