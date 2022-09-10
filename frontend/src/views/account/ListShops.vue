@@ -48,7 +48,7 @@ shopStore.loadShops();
         :labels="{favicon: {name: '', classOverride: true, class: 'w-11 py-3.5 px-3'}, name: {name: 'Name'}, url: {name: 'URL'}, shopware_version: {name: 'Version'}, team_name: {name: 'Team'}, checked: {name: 'last checked at'}}"
         :data="shopStore.shops">
         <template #cell(favicon)="{ item }">
-          <img :src="item.favicon" class="inline-block w-5 h-5 mr-2 align-middle" v-if="item.favicon" />
+          <img :src="item.favicon" alt="Shop Logo" class="inline-block w-5 h-5 mr-2 align-middle" v-if="item.favicon" />
         </template>
 
         <template #cell(name)="{ item }">
