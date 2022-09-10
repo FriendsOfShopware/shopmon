@@ -1,5 +1,7 @@
 import { Connection } from "@planetscale/database/dist";
+import { Notification } from "../../../shared/notification";
 import { UserSocketHelper } from "../object/UserSocket";
+import Users from "./users";
 
 interface CreateShopRequest {
     team_id: string;
@@ -43,7 +45,7 @@ export default class Shops {
         ]);
     }
 
-    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, level: 'warning' | 'error', title: string, message: string, link: { name: string, params?: Record<string, string> }|false): Promise<void> {
+    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: Notification): Promise<void> {
         const users = await con.execute(`SELECT 
         user_to_team.user_id as id
         FROM user_to_team
@@ -51,25 +53,13 @@ export default class Shops {
         WHERE shop.id = ?`, [shopId]);
 
         for (const user of users.rows) {
-            await con.execute('REPLACE INTO user_notification (user_id, level, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())', [
-                user.id,
-                level,
-                title,
-                message,
-                JSON.stringify(link)
-            ]);
+            await Users.createNotification(con, user.id, key, notification);
 
             await UserSocketHelper.sendNotification(
                 namespace,
                 user.id.toString(),
                 {
-                    notification: {
-                        user_id: user.id,
-                        level,
-                        title,
-                        message,
-                        link
-                    }
+                    notification
                 }
             )
         }

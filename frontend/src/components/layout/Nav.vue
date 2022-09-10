@@ -57,7 +57,9 @@ const userNavigation = [
       <div class="hidden md:block">
         <div class="ml-4 flex items-center md:ml-6">
           <Popover v-slot="{ open }" class="relative">
-            <PopoverButton class="
+            <PopoverButton
+              @click="notificationStore.markAllRead"
+              class="
               h-8
               w-8
               bg-sky-400
@@ -72,8 +74,8 @@ const userNavigation = [
             ">
               <span class="sr-only">View notifications</span>
               <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
-              <div v-if="notificationStore.notifications.length > 0" class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
-                {{ notificationStore.notifications.length }}
+              <div v-if="notificationStore.unreadNotificationCount > 0" class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
+                {{ notificationStore.unreadNotificationCount }}
               </div>
             </PopoverButton>
 

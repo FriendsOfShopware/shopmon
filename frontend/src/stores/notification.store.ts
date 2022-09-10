@@ -17,6 +17,9 @@ export const useNotificationStore = defineStore('notification', {
 
             return this.websocket.readyState === WebSocket.OPEN;
         },
+        unreadNotificationCount(): number {
+            return this.notifications.filter((n) => !n.read).length;
+        }
     },
     actions: {
         connect(access_token: string) {
@@ -39,6 +42,13 @@ export const useNotificationStore = defineStore('notification', {
                 const data = JSON.parse(event.data) as WebsocketMessage;
 
                 if (data.notification) {
+                    for (const notification of this.notifications) {
+                        if (notification.title === data.notification.title && notification.message === data.notification.message) {
+                            notification.read = false;
+                            return;
+                        }
+                    }
+
                     this.notifications.unshift(data.notification);
                 }
 
@@ -61,6 +71,26 @@ export const useNotificationStore = defineStore('notification', {
             this.isLoading = false;
 
             this.notifications = notifications;
+        },
+
+        async markAllRead() {
+            let allRead = true;
+            for (const notification of this.notifications) {
+                if (notification.read === false) {
+                    allRead = false;
+                    break;
+                }
+            }
+
+            if (allRead) {
+                return;
+            }
+
+            await fetchWrapper.patch('/account/me/notifications/mark-all-read');
+
+            for (const notification of this.notifications) {
+                notification.read = true;
+            }
         },
 
         async deleteAllNotifications() {

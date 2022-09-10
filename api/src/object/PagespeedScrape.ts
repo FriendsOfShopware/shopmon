@@ -74,7 +74,7 @@ export class PagespeedScrape implements DurableObject {
 
         try {
             await this.computePagespeed(shops.rows[0] as SQLShop, con);
-        } catch(e) {
+        } catch (e) {
             const sentry = createSentry(this.state, this.env);
 
             sentry.setExtra('shopId', id);
@@ -94,10 +94,13 @@ export class PagespeedScrape implements DurableObject {
                     con,
                     this.env.USER_SOCKET,
                     shop.id.toString(),
-                    'error',
-                    `Shop: ${shop.name} could not be checked for Pagespeed`,
-                    `Could not run Pagespeed against Shop as the http status code is ${home.status}, but expected is 200`,
-                    { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+                    `pagespeed.wrong.status.${shop.id}`,
+                    {
+                        level: 'error',
+                        title: `Shop: ${shop.name} could not be checked for Pagespeed`,
+                        message: `Could not run Pagespeed against Shop as the http status code is ${home.status}, but expected is 200`,
+                        link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+                    }
                 )
                 return;
             }
@@ -107,10 +110,13 @@ export class PagespeedScrape implements DurableObject {
                 con,
                 this.env.USER_SOCKET,
                 shop.id.toString(),
-                'error',
-                `Shop: ${shop.name} could not be checked for Pagespeed`,
-                `Could not connect to shop. Please check your remote server and try again. Error: ${e}`,
-                { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+                `pagespeed.shop.not.available.${shop.id}`,
+                {
+                    level: 'error',
+                    title: `Shop: ${shop.name} could not be checked for Pagespeed`,
+                    message: `Could not connect to shop. Please check your remote server and try again. Error: ${e}`,
+                    link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
+                }
             )
         }
 
@@ -137,7 +143,7 @@ export class PagespeedScrape implements DurableObject {
             pagespeed.lighthouseResult.categories.performance.score * 100,
             pagespeed.lighthouseResult.categories.accessibility.score * 100,
             pagespeed.lighthouseResult.categories['best-practices'].score * 100,
-            pagespeed.lighthouseResult.categories.seo.score  * 100,
+            pagespeed.lighthouseResult.categories.seo.score * 100,
         ]);
     }
 }
@@ -159,4 +165,4 @@ interface Audit {
     description: string
     score: number
     manualDescription: string
-  }
+}

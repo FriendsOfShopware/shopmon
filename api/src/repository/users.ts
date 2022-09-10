@@ -1,4 +1,5 @@
 import { Connection } from "@planetscale/database/dist";
+import { Notification } from "../../../shared/notification";
 import Teams from "./teams";
 
 export default class Users {
@@ -27,5 +28,16 @@ export default class Users {
         for (const key of refreshToken.keys) {
             await session.delete(key.name);
         }
+    }
+
+    static async createNotification(con: Connection, userId: number, key: string, notification: Notification): Promise<void> {
+        await con.execute('INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE `read` = 0', [
+            userId,
+            key,
+            notification.level,
+            notification.title,
+            notification.message,
+            JSON.stringify(notification.link)
+        ]);
     }
 }

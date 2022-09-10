@@ -150,7 +150,18 @@ export class ShopScrape implements DurableObject {
         try {
             await client.getToken();
         } catch (e) {
-            await Shops.notify(con, this.env.USER_SOCKET, shop.id, 'error', `Shop: ${shop.name} could not be updated`, 'Could not connect to shop. Please check your credentials and try again.', { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } });
+            await Shops.notify(
+                con, 
+                this.env.USER_SOCKET, 
+                shop.id, 
+                `shop.update-auth-error.${shop.id}`,
+                {
+                    level: 'error', 
+                    title: `Shop: ${shop.name} could not be updated`, 
+                    message: 'Could not connect to shop. Please check your credentials and try again.', 
+                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                }
+            );
 
             await con.execute('UPDATE shop SET status = ? WHERE id = ?', [
                 'red',
@@ -182,10 +193,13 @@ export class ShopScrape implements DurableObject {
                 con,
                 this.env.USER_SOCKET,
                 shop.id,
-                'error',
-                `Shop: ${shop.name} could not be updated`,
-                `Could not connect to shop. Please check your remote server and try again. Error: ${error}`,
-                { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                `shop.not.updated_${shop.id}`,
+                {
+                    level: 'error',
+                    title: `Shop: ${shop.name} could not be updated`,
+                    message: `Could not connect to shop. Please check your credentials and try again.`,
+                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                }
             )
     
             await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
