@@ -7,9 +7,9 @@ const alertStore = useAlertStore();
 const { alert } = storeToRefs(alertStore);
 </script>
 
-<template>  
+<template>
     <div
-      class="absolute right-0 flex p-3 max-w-sm w-full overflow-hidden z-20"
+      class="fixed top-3 right-0 flex max-w-sm overflow-hidden z-20"
     >
     <transition
     enter-active-class="transition ease-out duration-200"
@@ -20,7 +20,7 @@ const { alert } = storeToRefs(alertStore);
     leave-to-class="translate-x-full"
   >
       <div
-        class="relative w-full rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mb-4 bg-white"
+        class="relative w-full rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mr-3 mb-4 bg-white"
         :class="[
           {'border-l-red-600': alert.type === 'error'},
           {'border-l-yellow-400': alert.type === 'warning'},
