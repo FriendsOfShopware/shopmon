@@ -6,16 +6,20 @@ import type { User } from '@apiTypes/user';
 import { useNotificationStore } from './notification.store';
 
 export const useAuthStore = defineStore('auth', {
-    state: (): {isAuthenticated: boolean, user: User|null, returnUrl: string|null, access_token: string|null, refresh_token: string|null} => ({
-        isAuthenticated: localStorage.getItem('user') !== null,
+    state: (): { user: User | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
         user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
         access_token: localStorage.getItem('access_token'),
         refresh_token: localStorage.getItem('refresh_token'),
     }),
+    getters: {
+        isAuthenticated(): boolean {
+            return this.user !== null && this.access_token !== null && this.refresh_token !== null;
+        }
+    },
     actions: {
         async refreshUser() {
-            if(!this.user) {
+            if (!this.user) {
                 return;
             }
 
@@ -66,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
             await fetchWrapper.post(`/auth/reset/${token}`, { password });
         },
 
-        async updateProfile(info: {username: string, email: string, currentPassword: string, newPassword: string}) {
+        async updateProfile(info: { username: string, email: string, currentPassword: string, newPassword: string }) {
             await fetchWrapper.patch(`/account/me`, info);
 
             if (info.newPassword && info.email) {
@@ -76,10 +80,10 @@ export const useAuthStore = defineStore('auth', {
             await this.refreshUser();
         },
 
-        setAccessToken(access_token: string, refresh_token: string|null = null) {
+        setAccessToken(access_token: string, refresh_token: string | null = null) {
             this.access_token = access_token;
             localStorage.setItem('access_token', access_token);
-            
+
             if (refresh_token) {
                 this.refresh_token = refresh_token;
                 localStorage.setItem('refresh_token', refresh_token);
@@ -88,6 +92,8 @@ export const useAuthStore = defineStore('auth', {
 
         logout() {
             this.user = null;
+            this.refresh_token = null;
+            this.access_token = null;
             localStorage.removeItem('user');
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');

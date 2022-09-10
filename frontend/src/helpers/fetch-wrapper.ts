@@ -70,6 +70,8 @@ function handleResponse(url: RequestInfo | URL, requestOptions: CustomRequestIni
                         return fetch(url, requestOptions).then(handleResponse(url, requestOptions));
                     } else {
                         logout();
+
+                        return Promise.reject('Refresh token expired');
                     }
                 } else {
                     logout();
