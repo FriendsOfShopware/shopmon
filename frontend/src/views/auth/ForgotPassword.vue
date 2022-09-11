@@ -2,7 +2,6 @@
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 
-import Spinner from '@/components/icon/Spinner.vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
 
@@ -58,7 +57,7 @@ async function onSubmit(values: any): Promise<void> {
             aria-hidden="true"
             v-if="!isSubmitting" 
           />
-          <Spinner v-else />
+          <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
         </span>
         Send email
       </button>

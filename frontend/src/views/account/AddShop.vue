@@ -2,7 +2,6 @@
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
-import Spinner from '@/components/icon/Spinner.vue';
 
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -104,7 +103,7 @@ async function onSubmit(values: any) {
             aria-hidden="true"
             v-if="!isSubmitting" 
           />
-          <Spinner v-else />
+          <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
         </span>
           Save
         </button>

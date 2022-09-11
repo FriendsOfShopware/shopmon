@@ -4,7 +4,6 @@ import * as Yup from 'yup';
 
 import { router } from '@/router';
 
-import Spinner from '@/components/icon/Spinner.vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
 
@@ -85,7 +84,7 @@ async function onSubmit(values: any) {
             aria-hidden="true"
             v-if="!isSubmitting" 
           />
-          <Spinner v-else />
+          <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
         </span>
         Register
       </button>

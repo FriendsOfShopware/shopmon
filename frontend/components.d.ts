@@ -34,13 +34,13 @@ declare module '@vue/runtime-core' {
     'IconFa6Solid:triangleExclamation': typeof import('~icons/fa6-solid/triangle-exclamation')['default']
     'IconFa6Solid:upRightFromSquare': typeof import('~icons/fa6-solid/up-right-from-square')['default']
     'IconFa6Solid:xmark': typeof import('~icons/fa6-solid/xmark')['default']
+    'IconLineMd:loadingTwotoneLoop': typeof import('~icons/line-md/loading-twotone-loop')['default']
     LoginContainer: typeof import('./src/components/layout/LoginContainer.vue')['default']
     Logo: typeof import('./src/components/layout/Logo.vue')['default']
     MainContainer: typeof import('./src/components/layout/MainContainer.vue')['default']
     Nav: typeof import('./src/components/layout/Nav.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Spinner: typeof import('./src/components/icon/Spinner.vue')['default']
     Tabs: typeof import('./src/components/layout/Tabs.vue')['default']
   }
 }

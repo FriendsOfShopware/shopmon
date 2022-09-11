@@ -2,7 +2,6 @@
 import Header from '@/components/layout/Header.vue'
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
-import Spinner from '@/components/icon/Spinner.vue';
 
 import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
@@ -102,7 +101,7 @@ async function deleteUser() {
                 aria-hidden="true" 
                 v-if="!isSubmitting" 
               />
-              <Spinner v-else />
+              <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
             </span>
             Save
           </button>

@@ -3,8 +3,6 @@ import { Form, Field } from 'vee-validate';
 import * as Yup from 'yup';
 import { ref } from 'vue';
 
-import Spinner from '@/components/icon/Spinner.vue';
-
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
 import { useAlertStore } from '@/stores/alert.store';
@@ -87,7 +85,7 @@ async function onSubmit(values: any) {
               aria-hidden="true"
               v-if="!isSubmitting" 
             />
-            <Spinner v-else />
+            <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
           </span>
           Sign in
         </button>

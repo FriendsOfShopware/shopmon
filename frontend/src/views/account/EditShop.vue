@@ -2,7 +2,6 @@
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
-import Spinner from '@/components/icon/Spinner.vue';
 
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { useAlertStore } from '@/stores/alert.store';
@@ -134,7 +133,7 @@ async function deleteShop() {
                     <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
                         <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true"
                             v-if="!isSubmitting" />
-                        <Spinner v-else />
+                        <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
                     </span>
                     Save
                 </button>
