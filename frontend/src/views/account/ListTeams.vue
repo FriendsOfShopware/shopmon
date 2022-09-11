@@ -26,11 +26,10 @@ const teams = user.value?.teams.map(team => ({
       type="button"
       class="group btn btn-primary flex items-center align-middle"
     >
-      <font-awesome-icon 
-        icon="fa-solid fa-plus" 
-        class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
-        aria-hidden="true" 
-      />
+    <icon-fa6-solid:plus
+      class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
+      aria-hidden="true" 
+    />
       Add Team
     </router-link>
   </Header>
@@ -43,8 +42,7 @@ const teams = user.value?.teams.map(team => ({
       <p class="mt-1 text-gray-500">Get started by adding your first Team.</p>
       <div class="mt-6">
         <router-link to="/account/teams/new" class="btn btn-primary group flex items-center">
-          <font-awesome-icon 
-            icon="fa-solid fa-plus" 
+          <icon-fa6-solid:plus
             class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
             aria-hidden="true" 
           />
@@ -66,16 +64,12 @@ const teams = user.value?.teams.map(team => ({
           </template>
 
           <template #cell(members)="{ item }">
-            <font-awesome-icon 
-                icon="fa-solid fa-people-group"
-            />
+            <icon-fa6-solid:people-group />
             {{ item.members }}
           </template>
 
           <template #cell(shops)="{ item }">
-            <font-awesome-icon 
-                icon="fa-solid fa-cart-shopping"
-            />
+            <icon-fa6-solid:cart-shopping />
             {{ item.shops }}
           </template>
         </DataTable>
