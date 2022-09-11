@@ -4,10 +4,9 @@ import type { Team } from '@apiTypes/team';
 import type { User } from '@apiTypes/user';
 
 export const useTeamStore = defineStore('team', {
-    state: (): { teams: Team[], isLoading: boolean, isRefreshing: boolean, team: Team|null, members: User[] } => ({
+    state: (): { isLoading: boolean, isRefreshing: boolean, team: Team|null, members: User[] } => ({
         isLoading: false,
         isRefreshing: false,
-        teams: [],
         team: null,
         members: []
     }),

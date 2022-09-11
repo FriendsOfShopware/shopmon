@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-
+import type { User } from '@apiTypes/user';
 import { useAuthStore } from '@/stores/auth.store';
+import { fetchWrapper } from '@/helpers/fetch-wrapper';
+import { ref } from 'vue';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
@@ -12,11 +14,22 @@ const { user } = storeToRefs(authStore);
 
 const teams = user.value?.teams.map(team => ({
     ...team,
-    initials: team.name.substring(0, 2),
-    members: 1,
-    bgColor: 'bg-purple-600',
+    membersCount: ref(0),
     shops: 1
 }));
+
+async function getMembersCount(teamId) {
+  const members = await fetchWrapper.get(`/team/${teamId}/members`) as User[];
+  return members.length;
+}
+
+async function loadMemberCounts() {
+  for (const team of teams) {
+    team.membersCount.value = await getMembersCount(team.id);
+  }
+}
+
+loadMemberCounts();
 </script>
 
 <template>
@@ -64,8 +77,10 @@ const teams = user.value?.teams.map(team => ({
           </template>
 
           <template #cell(members)="{ item }">
-            <icon-fa6-solid:people-group />
-            {{ item.members }}
+            <span v-if="item.membersCount.value > 0">
+              <icon-fa6-solid:people-group />
+              {{ item.membersCount }}
+            </span>
           </template>
 
           <template #cell(shops)="{ item }">
