@@ -24,6 +24,7 @@ const notificationStore = useNotificationStore();
 const navigation = [
   { name: 'Dashboard', route: '/' },
   { name: 'My Shops', route: '/account/shops'},
+  { name: 'My Teams', route: '/account/teams'},
 ];
 
 const userNavigation = [

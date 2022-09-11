@@ -17,5 +17,7 @@ export default {
         { name: 'account.shops.new', path: 'shops/new', component: () => import('@/views/account/AddShop.vue') },
         { name: 'account.shops.edit', path: 'teams/edit/:teamId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/EditShop.vue') },
         { name: 'account.shops.detail', path: 'teams/:teamId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/DetailShop.vue') },
+        { name: 'account.teams.list', path: 'teams', component: () => import('@/views/account/ListTeams.vue') },
+        { name: 'account.teams.detail', path: 'teams/:teamId', component: () => import('@/views/account/DetailTeam.vue') },
     ]
 };
