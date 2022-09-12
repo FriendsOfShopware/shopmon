@@ -13,7 +13,19 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 
     json.avatar = `https://www.gravatar.com/avatar/${json.avatar}?d=identicon`;
 
-    const teamResult = await con.execute('SELECT team.id, team.name, team.created_at, (team.owner_id = user_to_team.user_id) as is_owner  FROM team INNER JOIN user_to_team ON user_to_team.team_id = team.id WHERE user_to_team.user_id = ?', [req.userId]);
+    const teamResult = await con.execute(`
+    SELECT 
+	team.id, 
+	team.name, 
+	team.created_at, 
+	(team.owner_id = user_to_team.user_id) as is_owner,
+	(SELECT COUNT(1) FROM shop WHERE team_id = team.id) AS shopCount,
+	(SELECT COUNT(1) FROM user_to_team WHERE team_id = team.id) AS memberCount
+FROM team 
+	INNER JOIN user_to_team ON user_to_team.team_id = team.id 
+WHERE 
+	user_to_team.user_id = ?
+    `, [req.userId]);
 
     json.teams = teamResult.rows;
     
