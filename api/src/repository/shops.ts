@@ -52,8 +52,10 @@ export default class Shops {
         INNER JOIN shop ON(shop.team_id = user_to_team.team_id)
         WHERE shop.id = ?`, [shopId]);
 
+        notification.read = false;
+
         for (const user of users.rows) {
-            await Users.createNotification(con, user.id, key, notification);
+            notification.id = await Users.createNotification(con, user.id, key, notification);
 
             await UserSocketHelper.sendNotification(
                 namespace,

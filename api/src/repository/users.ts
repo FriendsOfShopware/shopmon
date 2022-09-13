@@ -30,7 +30,7 @@ export default class Users {
         }
     }
 
-    static async createNotification(con: Connection, userId: number, key: string, notification: Notification): Promise<void> {
+    static async createNotification(con: Connection, userId: number, key: string, notification: Notification): Promise<number> {
         await con.execute('INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE `read` = 0', [
             userId,
             key,
@@ -39,5 +39,9 @@ export default class Users {
             notification.message,
             JSON.stringify(notification.link)
         ]);
+
+        const result = await con.execute('SELECT id from user_notification WHERE user_id = ? AND `key` = ?', [userId, key]);
+
+        return result.rows[0].id;
     }
 }
