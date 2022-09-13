@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
+import { ref } from 'vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -15,6 +16,8 @@ const { user } = storeToRefs(authStore);
 
 const teamId = parseInt(route.params.teamId as string, 10);
 const team = user.value?.teams.find(team => team.id == teamId);
+
+const showAddMemberModal = ref(false);
 
 teamStore.loadMembers(teamId);
 </script>
@@ -61,10 +64,16 @@ teamStore.loadMembers(teamId);
       </div>
     </div>
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
-      <div class="py-5 px-4 sm:px-6 lg:px-8">
+      <div class="py-5 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <h3 class="text-lg leading-6 font-medium">
           Members
         </h3>
+        <button class="btn btn-primary" @click="showAddMemberModal = true">
+            <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+                <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true" />
+            </span>
+            Add
+        </button>
       </div>
       <div class="border-t border-gray-200">
       <DataTable
@@ -73,5 +82,20 @@ teamStore.loadMembers(teamId);
       </DataTable>
       </div>
     </div>
+
+    <Modal :show="showAddMemberModal" :closeXMark="true" @close="showAddMemberModal = false">
+      <template #title>Add member</template>
+      <template #content>
+        Member Form here
+      </template>
+      <template #footer>
+        <button type="button" class="btn btn-primary w-full sm:ml-3 sm:w-auto" @click="addMember">
+          <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+              <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true" />
+          </span>
+          Add
+        </button>
+      </template>
+    </Modal>
   </MainContainer>
 </template>
