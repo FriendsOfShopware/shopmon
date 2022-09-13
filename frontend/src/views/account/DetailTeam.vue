@@ -37,13 +37,41 @@ teamStore.loadMembers(teamId);
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
+          Team Information
+        </h3>
+      </div>
+      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8">
+        <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium">Team Name</dt>
+            <dd class="mt-1 text-sm text-gray-500">
+              {{ team.name }}
+            </dd>
+          </div>
+          
+          <div class="sm:col-span-1">
+            <dt class="font-medium">Member Count</dt>
+            <dd class="mt-1 text-sm text-gray-500">{{ team.memberCount }}</dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="font-medium">Shop Count</dt>
+            <dd class="mt-1 text-sm text-gray-500">{{ team.shopCount }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="py-5 px-4 sm:px-6 lg:px-8">
+        <h3 class="text-lg leading-6 font-medium">
           Members
         </h3>
       </div>
+      <div class="border-t border-gray-200">
       <DataTable
           :labels="{email: {name: 'Email'}, username: {name: 'Username'}}"
           :data="teamStore.members">
-        </DataTable>
+      </DataTable>
+      </div>
     </div>
   </MainContainer>
 </template>
