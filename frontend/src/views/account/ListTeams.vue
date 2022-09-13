@@ -9,35 +9,11 @@ import { ref } from 'vue';
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
-import Spinner from '@/components/icon/Spinner.vue';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-const teams = user.value?.teams.map(team => ({
-    ...team,
-    membersCount: ref(0),
-    shopsCount: ref(0)
-}));
-
-async function getMembersCount(teamId) {
-  const members = await fetchWrapper.get(`/team/${teamId}/members`) as User[];
-  return members.length;
-}
-
-async function getShopsCount(teamId) {
-  const shops = await fetchWrapper.get(`/team/${teamId}/shops`) as Shop[];
-  return shops.length;
-}
-
-async function loadCounts() {
-  for (const team of teams) {
-    team.membersCount.value = await getMembersCount(team.id);
-    team.shopsCount.value = await getShopsCount(team.id);
-  }
-}
-
-loadCounts();
+const teams = user.value?.teams;
 </script>
 
 <template>
@@ -74,7 +50,7 @@ loadCounts();
 
     <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden" v-else>
       <DataTable
-          :labels="{name: {name: 'Name'}, membersCount: {name: 'Members'}, shopsCount: {name: 'Shops'}}"
+          :labels="{name: {name: 'Name'}, memberCount: {name: 'Members'}, shopCount: {name: 'Shops'}}"
           :data="teams"
           class="bg-white"
       >
@@ -84,60 +60,14 @@ loadCounts();
               </router-link>
           </template>
 
-          <template #cell(membersCount)="{ item }">
-            <span v-if="item.membersCount.value > 0">
-              <icon-fa6-solid:people-group />
-              {{ item.membersCount }}
-            </span>
-            <svg
-              v-else
-              class="animate-spin h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-25"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+          <template #cell(memberCount)="{ item }">
+            <icon-fa6-solid:people-group />
+            {{ item.memberCount }}
           </template>
 
           <template #cell(shopsCount)="{ item }">
-            <span v-if="item.shopsCount.value > 0">
-              <icon-fa6-solid:cart-shopping />
-              {{ item.shopsCount }}
-            </span>
-            <svg
-              v-else
-              class="animate-spin h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-25"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+            <icon-fa6-solid:cart-shopping />
+            {{ item.shopCount }}
           </template>
         </DataTable>
     </div>
