@@ -20,7 +20,9 @@ export async function resetPasswordMail(req: Request, env: Env) {
         return new NoContentResponse()
     }
 
-    await env.kvStorage.put(`reset_${token}`, result.rows[0].id.toString());
+    await env.kvStorage.put(`reset_${token}`, result.rows[0].id.toString(), {
+        expirationTtl: 60 * 60, // 1 hour
+    });
 
     await sendMailResetPassword(env, email, token);
 
