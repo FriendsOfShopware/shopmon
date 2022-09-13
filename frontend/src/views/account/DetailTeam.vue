@@ -26,7 +26,7 @@ teamStore.loadMembers(teamId);
         v-if="team.is_owner"
         :to="{ name: 'account.teams.edit', params: { teamId } }"
         type="button" class="group btn btn-primary flex items-center">
-        <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
+        <icon-fa6-solid:plus class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
           aria-hidden="true" />
         Edit Team
       </router-link>

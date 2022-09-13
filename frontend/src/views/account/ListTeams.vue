@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import type { User } from '@apiTypes/user';
-import type { Shop } from '@apiTypes/shop';
 import { useAuthStore } from '@/stores/auth.store';
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
-import { ref } from 'vue';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';

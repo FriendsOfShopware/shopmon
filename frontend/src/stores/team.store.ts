@@ -16,5 +16,13 @@ export const useTeamStore = defineStore('team', {
             this.members = await fetchWrapper.get(`/team/${teamId}/members`) as User[];
             this.isLoading = false;
         },
+        
+        async delete(teamId: number) {
+            await fetchWrapper.delete(`/team/${teamId}`);
+        },
+
+        async addMember(teamId: number, payload: any) {
+            await fetchWrapper.post(`/team/${teamId}/members`, payload);
+        }
     }
 })
