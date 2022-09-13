@@ -10,7 +10,7 @@
         "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix"
     },
     "dependencies": {
-        "@headlessui/vue": "^1.7.0",
+        "@headlessui/vue": "^1.7.1",
         "@tailwindcss/forms": "^0.5.3",
         "fast-sort": "^3.2.0",
         "pinia": "^2.0.22",
