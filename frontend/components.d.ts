@@ -47,6 +47,7 @@ declare module '@vue/runtime-core' {
     LoginContainer: typeof import('./src/components/layout/LoginContainer.vue')['default']
     Logo: typeof import('./src/components/layout/Logo.vue')['default']
     MainContainer: typeof import('./src/components/layout/MainContainer.vue')['default']
+    Modal: typeof import('./src/components/layout/Modal.vue')['default']
     Nav: typeof import('./src/components/layout/Nav.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
