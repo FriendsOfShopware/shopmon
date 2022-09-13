@@ -282,10 +282,13 @@ export class ShopScrape implements DurableObject {
     
                             for (const changelog of storePlugin.changelog) {
                                 if (versionCompare(changelog.version, extension.version) > 0) {
+                                    const compare = versionCompare(changelog.version, extension.latestVersion);
+
                                     changelogs.push({
                                         version: changelog.version,
                                         text: changelog.text,
                                         creationDate: changelog.creationDate.date,
+                                        isCompatible: compare < 0 || compare === 0,
                                     } as ExtensionChangelog)
                                 }
                             }

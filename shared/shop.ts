@@ -43,6 +43,7 @@ export interface ExtensionChangelog {
     version: string
     text: string
     creationDate: string
+    isCompatible: boolean;
 }
 
 export interface ScheduledTask {
