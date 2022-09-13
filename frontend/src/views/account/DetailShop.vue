@@ -157,9 +157,15 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, storeLink: {name: 'Store'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <icon-fa6-regular:circle class="text-gray-400 mr-1 text-base" data-tooltip="Not installed" v-if="!item.installed" />
-            <icon-fa6-solid:circle-check class="text-green-400 mr-1 text-base" data-tooltip="Active" v-else-if="item.active" />
-            <icon-fa6-solid:circle-xmark class="text-gray-300 mr-1 text-base" data-tooltip="Deactive" v-else />
+            <span class="text-gray-400 mr-1 text-base" data-tooltip="Not installed" v-if="!item.installed">
+              <icon-fa6-regular:circle />
+            </span>
+            <span class="text-green-400 mr-1 text-base" data-tooltip="Active" v-else-if="item.active">
+              <icon-fa6-solid:circle-check />
+            </span>
+            <span class="text-gray-300 mr-1 text-base" data-tooltip="Deactive" v-else>
+              <icon-fa6-solid:circle-xmark />
+            </span>            
             {{ item.name }}
           </template>
 
@@ -189,7 +195,7 @@ async function onRefresh() {
           <template #cell(storeLink)="{ item }">
             <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank" v-if="item.storeLink">
               <icon-fa6-solid:up-right-from-square/>
-              </a>
+            </a>
           </template>
 
           <template #cell(issue)="{ item }">
@@ -203,8 +209,12 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, last: {name: 'Last Executed'}, next: {name: 'Next Execution'}}"
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
-            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base" data-tooltip="Task overdue" v-if="item.overdue"/>
-            <icon-fa6-solid:circle-check class="text-green-400 mr-1 text-base" data-tooltip="Working" v-else/>
+            <span class="text-red-600 mr-1 text-base" data-tooltip="Task overdue" v-if="item.overdue">
+              <icon-fa6-solid:circle-xmark />
+            </span>
+            <span class="text-green-400 mr-1 text-base" data-tooltip="Working" v-else>
+              <icon-fa6-solid:circle-check />
+            </span>            
             {{ item.name }}
           </template>
 
