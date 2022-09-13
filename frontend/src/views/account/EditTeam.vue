@@ -5,7 +5,6 @@
     import MainContainer from '@/components/layout/MainContainer.vue';
     import FormGroup from '@/components/layout/FormGroup.vue';
     
-    import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
     import { useAlertStore } from '@/stores/alert.store';
     import { useAuthStore } from '@/stores/auth.store';
     import { useTeamStore } from '@/stores/team.store';
