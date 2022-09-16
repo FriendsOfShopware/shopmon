@@ -1,4 +1,4 @@
-import { Connection } from "@planetscale/database/dist";
+import {Connection} from "@planetscale/database/dist";
 
 interface TeamMember {
     id: number;
@@ -30,7 +30,7 @@ export default class Teams {
         const member = await con.execute(`SELECT id FROM user WHERE email = ?`, [email]);
 
         if (member.rows.length === 0) {
-            return;
+            throw new Error("User not found");
         }
 
         await con.execute(`INSERT INTO user_to_team (team_id, user_id) VALUES(?, ?)`, [teamId, member.rows[0].id]);
@@ -48,10 +48,18 @@ export default class Teams {
 
         // Delete shops
         await con.execute(`DELETE FROM shop WHERE team_id = ?`, [teamId]);
-        await con.execute(`DELETE FROM shop_scrape_info WHERE shop_id IN (?)`, [shopIds]);
+        if( shopIds.length > 0 ) {
+            await con.execute(`DELETE
+                               FROM shop_scrape_info
+                               WHERE shop_id IN (?)`, [shopIds]);
+        }
 
         // Delete team
         await con.execute(`DELETE FROM team WHERE id = ?`, [teamId]);
         await con.execute(`DELETE FROM user_to_team WHERE team_id = ?`, [teamId]);
+    }
+
+    static async updateTeam(con: Connection, teamId: string, name: string): Promise<void> {
+        await con.execute(`UPDATE team SET name = ? WHERE id = ?`, [name, teamId]);
     }
 }

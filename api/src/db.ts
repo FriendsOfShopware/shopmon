@@ -1,4 +1,4 @@
-import { connect, Connection, cast, Field } from '@planetscale/database'
+import {cast, connect, Connection, Field} from '@planetscale/database/dist'
 
 function inflate(field: Field, value: string|null) {
     if (field.type === 'DATETIME') {

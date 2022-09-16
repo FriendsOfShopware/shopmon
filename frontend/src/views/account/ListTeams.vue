@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/stores/auth.store';
+import {storeToRefs} from 'pinia';
+import {useAuthStore} from '@/stores/auth.store';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
@@ -15,7 +15,7 @@ const teams = user.value?.teams;
 <template>
   <Header title="My Teams">
     <router-link
-      to="/account/shops/new"
+      to="/account/teams/new"
       type="button"
       class="group btn btn-primary flex items-center align-middle"
     >

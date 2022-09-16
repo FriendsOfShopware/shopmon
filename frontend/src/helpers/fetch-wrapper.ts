@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth.store';
+import {useAuthStore} from '@/stores/auth.store';
 
 export const fetchWrapper = {
     get: request('GET'),
@@ -79,7 +79,7 @@ function handleResponse(url: RequestInfo | URL, requestOptions: CustomRequestIni
             }
 
             // get error message from body or default to response status
-            const error = (data && data.message) || response.status;
+            const error = (data && data.message) || await response.text() || response.status;
             return Promise.reject(error);
         }
 

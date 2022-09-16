@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
+import {storeToRefs} from 'pinia';
 
-import { useAuthStore } from '@/stores/auth.store';
+import {useAuthStore} from '@/stores/auth.store';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
@@ -30,7 +30,9 @@ const teams = user.value?.teams.map(team => ({
             </div>
             <div class="flex-1 flex items-center justify-between border-t border-r border-b border-gray-200 bg-white rounded-r-md truncate">
               <div class="flex-1 px-4 py-2 text-sm truncate">
-                <a :href="'uff'" class="text-gray-900 font-medium hover:text-gray-600">{{ team.name }}</a>
+                <router-link :to="{ name: 'account.teams.detail', params: { teamId: team.id } }" class="text-gray-900 font-medium hover:text-gray-600">
+                  {{ team.name }}
+                </router-link>
                 <p class="text-gray-500">{{ team.members }} Members</p>
               </div>
             </div>
