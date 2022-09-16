@@ -41,6 +41,7 @@ MAIL_URL=https://localhost:3000
 MAIL_SECRET=foooo
 SENTRY_DSN=https://sentry.io
 PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
+APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
 ```
 - Emails will be not really send, copy the code from the API
 - Run `npm install`
