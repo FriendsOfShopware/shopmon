@@ -31,14 +31,10 @@ const authStore = useAuthStore();
         name: Yup.string().required('Team name is required'),
     });
 
-    const schemaMembers = Yup.object().shape({
-        email: Yup.string().email('Email address is not valid').required('Email address is required'),
-    });
-    
     async function onSaveTeam(values: any) {
       if (team) {
         try {
-          await teamStore.updateTeam(team.id, { team: values } );
+          await teamStore.updateTeam(team.id, values);
           await router.push({
             name: 'account.teams.detail',
             params: {

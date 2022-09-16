@@ -23,7 +23,7 @@
                     <div v-if="!!$slots.icon">                        
                         <slot name="icon"></slot>
                     </div>                        
-                    <div class="text-left" :class="[{'ml-4': !!$slots.icon}]">
+                    <div class="text-left grow" :class="[{'ml-4': !!$slots.icon}]">
                         <DialogTitle as="h3" class="text-lg leading-6 font-medium text-gray-900" v-if="!!$slots.title">
                             <slot name="title"></slot>
                         </DialogTitle>

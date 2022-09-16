@@ -150,6 +150,7 @@ async function onRemoveMember(userId: number) {
               :validation-schema="schemaMembers"
               @submit="onAddMember"
               id="addMemberForm"
+              class="pt-6"
           >
             <label for="email" class="block text-sm font-medium text-gray-700 mb-1"> Email </label>
             <Field type="text" name="email" id="email" autocomplete="email" class="field"
