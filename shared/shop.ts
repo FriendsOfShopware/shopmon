@@ -17,6 +17,7 @@ export interface Shop {
     team_name: Team['name'],
     last_scraped_at: string;
     last_scraped_error: string;
+    initials: string;
 }
 
 export interface ShopDetailed extends Shop {

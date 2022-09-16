@@ -23,7 +23,9 @@ export const useShopStore = defineStore('shop', {
             const shops = await fetchWrapper.get('/account/me/shops') as Shop[];
             this.isLoading = false;
 
-            this.shops = shops;
+            const enrichedShops = this.setShopsInitials(shops);
+
+            this.shops = enrichedShops;
         },
 
         async loadShop(teamId: number, shopId: number) {
@@ -46,6 +48,23 @@ export const useShopStore = defineStore('shop', {
 
         async delete(teamId: number, shopId: number) {
             await fetchWrapper.delete(`/team/${teamId}/shop/${shopId}`);
+        },
+
+        setShopsInitials(shops: Shop[]) {
+            return shops?.map(shop => ({
+                ...shop,
+                initials: this.getShopInitias(shop.name)
+            }));
+        },
+
+        getShopInitias(name: string) {
+            let initials = name.split(/\s/).slice(0,2).reduce((response,word)=> response+=word.slice(0,1),'');
+
+            if (initials && initials.length > 1) {
+                return initials.toUpperCase();
+            }
+
+            return name.slice(0,2).toUpperCase();
         }
     }
 })
