@@ -113,12 +113,12 @@ async function onRefresh() {
           <div class="sm:col-span-1">
             <dt class="font-medium">URL</dt>
             <dd class="mt-1 text-sm text-gray-500">
-              <a :href="shopStore.shop.url" target="_blank">
-                {{ shopStore.shop.url }}
+              <a :href="shopStore.shop.url" data-tooltip="Go to storefront" target="_blank">
+                <icon-fa6-solid:store /> Storefront
               </a>
               &nbsp;/&nbsp;
-              <a :href="shopStore.shop.url + '/admin'" data-tooltip="Shopware admin URL" target="_blank">
-                admin
+              <a :href="shopStore.shop.url + '/admin'" data-tooltip="Go to shopware admin" target="_blank">
+                <icon-fa6-solid:shield-halved /> Admin
               </a>
             </dd>
           </div>
@@ -155,7 +155,7 @@ async function onRefresh() {
 
       <template #panel(extensions)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, storeLink: {name: 'Store'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
+          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
             <span class="text-gray-400 mr-1 text-base" data-tooltip="Not installed" v-if="!item.installed">
@@ -166,8 +166,15 @@ async function onRefresh() {
             </span>
             <span class="text-gray-300 mr-1 text-base" data-tooltip="Deactive" v-else>
               <icon-fa6-solid:circle-xmark />
-            </span>            
-            {{ item.name }}
+            </span>
+            <template v-if="item.storeLink">
+              <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank">
+                {{ item.name }}
+              </a>
+            </template>
+            <template v-else>
+              {{ item.name }}
+            </template>
           </template>
 
           <template #cell(latest)="{ item }">

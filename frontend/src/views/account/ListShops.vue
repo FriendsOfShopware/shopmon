@@ -61,12 +61,12 @@ shopStore.loadShops();
         </template>
 
         <template #cell(url)="{ item }">
-          <a :href="item.url" :data-tooltip="item.url" target="_blank">
-            <icon-fa6-solid:up-right-from-square />
+          <a :href="item.url" data-tooltip="Go to shopware storefront" target="_blank">
+            <icon-fa6-solid:store />
           </a>
           &nbsp;
-          <a :href="item.url + '/admin'" data-tooltip="Go to Shop Admin" target="_blank">
-            <icon-fa6-solid:right-to-bracket />
+          <a :href="item.url + '/admin'" data-tooltip="Go to shopware admin" target="_blank">
+            <icon-fa6-solid:shield-halved />
           </a>
         </template>
 
