@@ -55,12 +55,10 @@ const userNavigation = [
           </div>
         </div>
       </div>
-      <div class="hidden md:block">
-        <div class="ml-4 flex items-center md:ml-6">
-          <Popover v-slot="{ open }" class="relative">
-            <PopoverButton
-              @click="notificationStore.markAllRead"
-              class="
+
+      <div class="flex ml-4 md:ml-6 items-center gap-3">
+        <Popover v-slot="{ open }" class="md:relative">
+          <PopoverButton @click="notificationStore.markAllRead" class="
               h-8
               w-8
               bg-sky-400
@@ -73,61 +71,65 @@ const userNavigation = [
               justify-center
               items-center
             ">
-              <span class="sr-only">View notifications</span>
-              <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
-              <div v-if="notificationStore.unreadNotificationCount > 0" class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
-                {{ notificationStore.unreadNotificationCount }}
-              </div>
-            </PopoverButton>
+            <span class="sr-only">View notifications</span>
+            <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
+            <div v-if="notificationStore.unreadNotificationCount > 0"
+              class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
+              {{ notificationStore.unreadNotificationCount }}
+            </div>
+          </PopoverButton>
 
-            <transition
-              enter-active-class="transition ease-out duration-100"
-              enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
-              leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
-              leave-to-class="transform opacity-0 scale-95"
-            >
-              <PopoverPanel class="absolute right-0 z-10 mt-2 w-screen max-w-[300px] px-4 sm:px-0">
-                <div class="overflow-hidden rounded-md shadow-lg bg-white">
-                  <div class="p-4 font-medium border-b border-grey-200 flex justify-between">
-                    Notifications
-                    <button class="flex items-center" @click="notificationStore.deleteAllNotifications" v-if="notificationStore.notifications.length > 0">
-                      <icon-fa6-solid:trash class="opacity-30 hover:opacity-100" />
-                    </button>
-                  </div>
-                  <ul v-if="notificationStore.notifications.length > 0" class="divide-y divide-gray-200 overflow-y-auto max-h-80">
-                    <li v-for="notification in notificationStore.notifications" class="group px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50">
-                      <div class="shrink-0">
-                        <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600" />
-                        <icon-fa6-solid:circle-info v-else class="text-yellow-400" />
-                      </div>
-                      <div>
-                        <div class="font-medium">
-                          {{ notification.title }}
-                        </div>
-                        <div class="text-gray-500">
-                          {{ notification.message }}
-                        </div>
-                        <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
-                      </div>
-                      <div>
-                        <button @click="notificationStore.deleteNotification(notification.id)" class="invisible group-hover:visible">
-                          <icon-fa6-solid:xmark v-if="notification.level === 'error'" class="opacity-30 hover:opacity-100" />
-                        </button>                        
-                      </div>
-                      
-                    </li>
-                  </ul>
-                  <div v-else class="p-4">
-                    Not much going on here
-                  </div>                
+          <transition enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95">
+            <PopoverPanel class="absolute left-0 right-0 z-10 mt-2 w-screen px-4 sm:px-0 md:max-w-[300px] md:left-auto">
+              <div class="overflow-hidden rounded-md shadow-lg bg-white">
+                <div class="p-4 font-medium border-b border-grey-200 flex justify-between">
+                  Notifications
+                  <button class="flex items-center" @click="notificationStore.deleteAllNotifications"
+                    v-if="notificationStore.notifications.length > 0">
+                    <icon-fa6-solid:trash class="opacity-30 hover:opacity-100" />
+                  </button>
                 </div>
-              </PopoverPanel>
-            </transition>
-          </Popover>
-          
+                <ul v-if="notificationStore.notifications.length > 0"
+                  class="divide-y divide-gray-200 overflow-y-auto max-h-80">
+                  <li v-for="notification in notificationStore.notifications"
+                    class="group px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50">
+                    <div class="shrink-0">
+                      <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600" />
+                      <icon-fa6-solid:circle-info v-else class="text-yellow-400" />
+                    </div>
+                    <div>
+                      <div class="font-medium">
+                        {{ notification.title }}
+                      </div>
+                      <div class="text-gray-500">
+                        {{ notification.message }}
+                      </div>
+                      <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
+                    </div>
+                    <div>
+                      <button @click="notificationStore.deleteNotification(notification.id)"
+                        class="invisible group-hover:visible">
+                        <icon-fa6-solid:xmark v-if="notification.level === 'error'"
+                          class="opacity-30 hover:opacity-100" />
+                      </button>
+                    </div>
 
+                  </li>
+                </ul>
+                <div v-else class="p-4">
+                  Not much going on here
+                </div>
+              </div>
+            </PopoverPanel>
+          </transition>
+        </Popover>
+
+        <div class="hidden md:block">
           <!-- Profile dropdown -->
-          <Menu as="div" class="ml-3 relative">
+          <Menu as="div" class="relative">
             <div>
               <MenuButton class="
                   max-w-xs
@@ -142,8 +144,7 @@ const userNavigation = [
                 <img class="h-8 w-8 rounded-full" :src="authStore.user.avatar" alt="">
               </MenuButton>
             </div>
-            <transition 
-              enter-active-class="transition ease-out duration-100"
+            <transition enter-active-class="transition ease-out duration-100"
               enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
               leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
               leave-to-class="transform opacity-0 scale-95">
@@ -174,10 +175,10 @@ const userNavigation = [
                   active ? 'bg-gray-100' : '',
                   'w-full text-left px-4 py-2 text-sm text-gray-700',
                 ]" @click="
-                      item.route === '/logout'
-                        ? authStore.logout()
-                        : $router.push(item.route)
-                    ">
+                    item.route === '/logout'
+                      ? authStore.logout()
+                      : $router.push(item.route)
+                  ">
                   <component :is="item.icon" class="w-4 h-4 inline-block text-sky-700 mr-1" />
                   {{ item.name }}
                 </button>
@@ -186,11 +187,10 @@ const userNavigation = [
             </transition>
           </Menu>
         </div>
-      </div>
 
-      <div class="-mr-2 flex md:hidden">
-        <!-- Mobile menu button -->
-        <DisclosureButton class="
+        <div class="-mr-2 flex md:hidden">
+          <!-- Mobile menu button -->
+          <DisclosureButton class="
             inline-flex
             items-center
             justify-center
@@ -198,10 +198,11 @@ const userNavigation = [
             text-white
             focus:outline-none
           ">
-          <span class="sr-only">Open main menu</span>
-          <icon-fa6-solid:bars-staggered v-if="!open" class="block h-6 w-6" aria-hidden="true" />
-          <icon-fa6-solid:xmark v-else class="block h-6 w-6" aria-hidden="true" />
-        </DisclosureButton>
+            <span class="sr-only">Open main menu</span>
+            <icon-fa6-solid:bars-staggered v-if="!open" class="block h-6 w-6" aria-hidden="true" />
+            <icon-fa6-solid:xmark v-else class="block h-6 w-6" aria-hidden="true" />
+          </DisclosureButton>
+        </div>
       </div>
     </div>
 
@@ -230,24 +231,6 @@ const userNavigation = [
               {{ authStore.user.email }}
             </div>
           </div>
-          <button type="button" class="
-              w-8
-              h-8
-              ml-auto
-              bg-sky-400
-              p-1
-              border-2 border-transparent
-              rounded-full
-              text-sky-200
-              flex
-              justify-center
-              items-center
-              hover:text-white
-              focus:outline-none
-            ">
-            <span class="sr-only">View notifications</span>
-            <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
-          </button>
         </div>
         <div class="mt-3 px-2 space-y-1">
           <DisclosureButton v-for="item in userNavigation" :key="item.name" as="a" class="
