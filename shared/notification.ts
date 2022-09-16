@@ -11,10 +11,10 @@ export interface ShopUpdate {
 }
 
 export interface Notification {
-    id?: number;
+    id: number;
     level: 'error'|'warning';
     title: string;
     message: string;
     link: { name: string, params?: Record<string, string> }|false
-    read?: boolean;
+    read: boolean;
 }

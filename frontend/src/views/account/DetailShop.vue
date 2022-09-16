@@ -75,22 +75,22 @@ async function onRefresh() {
   </Header>
 
   <MainContainer v-if="shopStore.shop && shopStore.shop.last_scraped_at">
-    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark:shadow-none">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
-          <icon-fa6-solid:circle-xmark class="text-red-600 mr-1" v-if="shopStore.shop.status == 'red'" />
-          <icon-fa6-solid:circle-info class="text-yellow-400 mr-1" v-else-if="shopStore.shop.status === 'yellow'" />
-          <icon-fa6-solid:circle-check class="text-green-400 mr-1" v-else />
+          <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 dark:text-red-400 " v-if="shopStore.shop.status == 'red'" />
+          <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 dark:text-yellow-200" v-else-if="shopStore.shop.status === 'yellow'" />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-1 dark:text-yellow-200" v-else />
           Shop Information
         </h3>
       </div>
-      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8">
+      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700">
         <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
               {{ shopStore.shop.shopware_version }}
-              <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1" v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version">{{ latestShopwareVersion }}</span>
+              <span class="text-xs font-semibold inline-block py-1 px-2 rounded text-amber-700 bg-amber-200" v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version">{{ latestShopwareVersion }}</span>
             </dd>
           </div>
           <div class="sm:col-span-1">
@@ -139,9 +139,9 @@ async function onRefresh() {
           :labels="{message: {name: 'Message'}}"
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
-            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base" v-if="item.level == 'red'" />
-            <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 text-base" v-else-if="item.level === 'yellow'" />
-            <icon-fa6-solid:circle-check  class="text-green-400 mr-1 text-base" v-else />
+            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base dark:text-red-400 " v-if="item.level == 'red'" />
+            <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 text-base dark:text-yellow-200 " v-else-if="item.level === 'yellow'" />
+            <icon-fa6-solid:circle-check  class="text-green-400 mr-1 text-base dark:text-green-200" v-else />
             <a :href="item.link" target="_blank" v-if="item.link">
               {{ item.message }} 
               <icon-fa6-solid:up-right-from-square  class="text-xs"/>
@@ -158,13 +158,13 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <span class="text-gray-400 mr-1 text-base" data-tooltip="Not installed" v-if="!item.installed">
+            <span class="text-gray-400 mr-1 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
               <icon-fa6-regular:circle />
             </span>
-            <span class="text-green-400 mr-1 text-base" data-tooltip="Active" v-else-if="item.active">
+            <span class="text-green-400 mr-1 text-base dark:text-green-200" data-tooltip="Active" v-else-if="item.active">
               <icon-fa6-solid:circle-check />
             </span>
-            <span class="text-gray-300 mr-1 text-base" data-tooltip="Deactive" v-else>
+            <span class="text-gray-300 mr-1 text-base dark:text-neutral-500" data-tooltip="Deactive" v-else>
               <icon-fa6-solid:circle-xmark />
             </span>
             <template v-if="item.storeLink">
@@ -179,7 +179,7 @@ async function onRefresh() {
 
           <template #cell(latest)="{ item }">
             <button
-              class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded text-amber-600 bg-amber-200 uppercase last:mr-0 mr-1"
+              class="text-xs font-semibold inline-block py-1 px-2 rounded text-amber-700 bg-amber-200"
               v-if="item.latestVersion && item.version < item.latestVersion" @click="openExtensionChangelog(item)">
               {{ item.latestVersion }}
             </button>
@@ -217,10 +217,10 @@ async function onRefresh() {
           :labels="{name: {name: 'Name'}, last: {name: 'Last Executed'}, next: {name: 'Next Execution'}}"
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
-            <span class="text-red-600 mr-1 text-base" data-tooltip="Task overdue" v-if="item.overdue">
+            <span class="text-red-600 mr-1 text-base dark:text-red-400 " data-tooltip="Task overdue" v-if="item.overdue">
               <icon-fa6-solid:circle-xmark />
             </span>
-            <span class="text-green-400 mr-1 text-base" data-tooltip="Working" v-else>
+            <span class="text-green-400 mr-1 text-base dark:text-green-200" data-tooltip="Working" v-else>
               <icon-fa6-solid:circle-check />
             </span>            
             {{ item.name }}
@@ -269,7 +269,7 @@ async function onRefresh() {
         <div class="rounded-md bg-red-50 p-4 border border-red-200" v-else>
           <div class="flex">
             <div class="flex-shrink-0">
-              <icon-fa6-solid:circle-xmark class="h-5 w-5 text-red-600"
+              <icon-fa6-solid:circle-xmark class="h-5 w-5 text-red-600 dark:text-red-400 "
                 aria-hidden="true" />
             </div>
             <div class="ml-3 text-red-900">

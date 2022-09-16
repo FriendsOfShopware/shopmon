@@ -77,7 +77,7 @@ const authStore = useAuthStore();
             >
                 <FormGroup title="Team Information" subTitle="">
                     <div class="sm:col-span-6">
-                        <label for="Name" class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
+                        <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
                         <Field type="text" name="name" id="name" autocomplete="name" class="field"
                             v-bind:class="{ 'is-invalid': errors.name }" />
                         <div class="text-red-700">
@@ -116,7 +116,7 @@ const authStore = useAuthStore();
     
             <Modal :show="showTeamDeletionModal" @close="showTeamDeletionModal = false">
                 <template #icon>
-                    <icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600" aria-hidden="true" />
+                    <icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
                 </template>
                 <template #title>Delete team</template>
                 <template #content>

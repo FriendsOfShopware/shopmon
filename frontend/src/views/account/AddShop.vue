@@ -46,7 +46,7 @@ async function onSubmit(values: any) {
     <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shops" @submit="onSubmit">
       <FormGroup title="Shop information" subTitle="">
         <div class="sm:col-span-6">
-          <label for="Name" class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
+          <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
           <Field type="text" name="name" id="name" autocomplete="username" class="field"
             v-bind:class="{ 'is-invalid': errors.name }" />
           <div class="text-red-700">
@@ -55,7 +55,7 @@ async function onSubmit(values: any) {
         </div>
 
         <div class="sm:col-span-6">
-          <label for="teamId" class="block text-sm font-medium text-gray-700 mb-1"> Team </label>
+          <label for="teamId" class="block text-sm font-medium mb-1"> Team </label>
           <Field as="select" id="teamId" name="teamId" class="field">
             <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">{{ team.name }}</option>
           </Field>
@@ -65,7 +65,7 @@ async function onSubmit(values: any) {
         </div>
 
         <div class="sm:col-span-6">
-          <label for="shop_url" class="block text-sm font-medium text-gray-700 mb-1"> URL </label>
+          <label for="shop_url" class="block text-sm font-medium mb-1"> URL </label>
           <Field type="text" name="shop_url" id="shop_url" autocomplete="url" class="field"
             v-bind:class="{ 'is-invalid': errors.shop_url }" />
           <div class="text-red-700">
@@ -77,7 +77,7 @@ async function onSubmit(values: any) {
 
       <FormGroup title="Integration" info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
         <div class="sm:col-span-6">
-          <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1"> Client-ID </label>
+          <label for="client_id" class="block text-sm font-medium mb-1"> Client-ID </label>
           <Field type="text" name="client_id" id="client_id" class="field"
             v-bind:class="{ 'is-invalid': errors.client_id }" />
           <div class="text-red-700">
@@ -86,7 +86,7 @@ async function onSubmit(values: any) {
         </div>
 
         <div class="sm:col-span-6">
-          <label for="client_secret" class="block text-sm font-medium text-gray-700 mb-1"> Client-Secret </label>
+          <label for="client_secret" class="block text-sm font-medium mb-1"> Client-Secret </label>
           <Field type="text" name="client_secret" id="client_secret" class="field"
             v-bind:class="{ 'is-invalid': errors.client_secret }" />
           <div class="text-red-700">

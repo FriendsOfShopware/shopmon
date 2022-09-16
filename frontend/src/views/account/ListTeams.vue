@@ -27,7 +27,7 @@ const teams = user.value?.teams;
     </router-link>
   </Header>
   <MainContainer v-if="user">
-    <div class="text-center" v-if="teams.length === 0">
+    <div class="text-center" v-if="teams && teams.length === 0">
       <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       </svg>
@@ -44,11 +44,11 @@ const teams = user.value?.teams;
       </div>
     </div>
 
-    <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden" v-else>
+    <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden dark:shadow-none" v-else>
       <DataTable
           :labels="{name: {name: 'Name'}, memberCount: {name: 'Members'}, shopCount: {name: 'Shops'}}"
           :data="teams"
-          class="bg-white"
+          class="bg-white dark:bg-neutral-800"
       >
           <template #cell(name)="{ item }">
             <router-link :to="{ name: 'account.teams.detail', params: { teamId: item.id } }">

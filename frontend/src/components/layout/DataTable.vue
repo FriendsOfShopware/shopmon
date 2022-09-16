@@ -1,6 +1,6 @@
  <template>
-    <table class="min-w-full divide-y-2 divide-gray-300 background" v-if="data.length > 0">
-        <thead class="bg-gray-50">
+    <table class="min-w-full divide-y-2 divide-gray-300 dark:divide-neutral-900" v-if="data.length > 0">
+        <thead class="bg-gray-50 dark:bg-neutral-800">
             <tr>
                 <th v-for="(label, key, index) in labels" 
                     :key="key" 
@@ -23,8 +23,8 @@
                 </th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200">
-            <tr class="even:bg-gray-50 hover:bg-sky-50" v-for="(item, key) in sortedData" :key="key">
+        <tbody class="divide-y divide-gray-200 dark:divide-none">
+            <tr class="even:bg-gray-50 hover:bg-sky-50 dark:even:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]" v-for="(item, key) in sortedData" :key="key">
                 <td v-for="(label, key, index) in labels"
                     class="whitespace-nowrap py-4 align-middle"
                     :class="[

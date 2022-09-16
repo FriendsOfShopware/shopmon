@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 body {
-  @apply text-gray-900 text-sm;
+  @apply text-gray-900 text-sm bg-gray-100 dark:bg-neutral-900 dark:text-neutral-400;
 }
 
 a {
-  @apply text-sky-700 hover:text-sky-600;
+  @apply text-sky-700 hover:text-sky-600 dark:text-sky-400 dark:hover:text-sky-500;
 }
 
 .btn {
-  @apply relative inline-flex items-center justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500;
+  @apply relative inline-flex items-center justify-center py-2 px-4 border-2 border-gray-300 text-sm font-medium rounded-md focus:outline-none hover:border-sky-500 dark:border-neutral-700 dark:hover:border-sky-500 dark:text-neutral-400 dark:hover:text-neutral-400;
 }
 
 .btn-primary {
-  @apply border-sky-500 text-white bg-sky-500 hover:bg-sky-600 hover:text-white;
+  @apply border-sky-500 text-white bg-sky-500 hover:bg-sky-600 hover:text-white dark:border-sky-500 dark:text-white dark:hover:text-white;
 }
 
 .btn-danger {
-  @apply border-red-600 text-white bg-red-600 hover:bg-red-700 hover:text-white hover:border-red-600;
+  @apply border-red-600 text-white bg-red-600 hover:bg-red-700 hover:text-white hover:border-red-600 dark:bg-red-500 dark:border-red-500 dark:hover:bg-red-600 dark:hover:border-red-400 dark:text-white dark:hover:text-white;
 }
 
 .field-no-rounded {
-  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm;
+  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 dark:bg-neutral-900 dark:border-neutral-800 dark:placeholder-gray-500 dark:text-neutral-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500 focus:z-10 sm:text-sm;
 }
 
 .field {
@@ -40,7 +40,7 @@ a {
 }
 
 table th {
-  @apply font-semibold text-sky-900;
+  @apply font-semibold text-sky-900 dark:text-gray-400;
 }
 
 *[data-tooltip] {

@@ -84,13 +84,13 @@ async function onRemoveMember(userId: number) {
   </Header>
 
   <MainContainer>
-    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:shadow-none dark:bg-neutral-800">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
           Team Information
         </h3>
       </div>
-      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8">
+      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700">
         <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium">Team Name</dt>
@@ -110,7 +110,7 @@ async function onRemoveMember(userId: number) {
         </dl>
       </div>
     </div>
-    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark-shadow-none">
       <div class="py-5 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <h3 class="text-lg leading-6 font-medium">
           Members
@@ -122,7 +122,7 @@ async function onRemoveMember(userId: number) {
             Add
         </button>
       </div>
-      <div class="border-t border-gray-200">
+      <div class="border-t border-gray-200 dark:border-neutral-700">
       <DataTable
           :labels="{email: {name: 'Email'}, username: {name: 'Username'}}"
           :data="teamStore.members">
@@ -150,9 +150,8 @@ async function onRemoveMember(userId: number) {
               :validation-schema="schemaMembers"
               @submit="onAddMember"
               id="addMemberForm"
-              class="pt-6"
           >
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1"> Email </label>
+            <label for="email" class="block text-sm font-medium mb-1"> Email </label>
             <Field type="text" name="email" id="email" autocomplete="email" class="field"
                    v-bind:class="{ 'is-invalid': errors.emailAddress }" />
             <div class="text-red-700">

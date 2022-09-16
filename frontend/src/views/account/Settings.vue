@@ -128,7 +128,7 @@ async function deleteUser() {
     </FormGroup>
 
     <Modal :show="showAccountDeletionModal" @close="showAccountDeletionModal = false">
-      <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600" aria-hidden="true" /></template>
+      <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" /></template>
       <template #title>Deactivate account</template>
       <template #content>                
         Are you sure you want to deactivate your account? All of your data will be permanently removed

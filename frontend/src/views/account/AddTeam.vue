@@ -36,12 +36,12 @@ async function onCreateTeam(values: any) {
 </script>
 
 <template>
-  <Header title="New Shop" />
+  <Header title="New Team" />
   <MainContainer v-if="authStore.user">
     <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="owner" @submit="onCreateTeam">
       <FormGroup title="Team Information" subTitle="">
         <div class="sm:col-span-6">
-          <label for="Name" class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
+          <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
           <Field type="text" name="name" id="name" autocomplete="name" class="field"
                  v-bind:class="{ 'is-invalid': errors.name }" />
           <div class="text-red-700">

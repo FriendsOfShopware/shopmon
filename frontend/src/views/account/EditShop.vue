@@ -74,7 +74,7 @@ async function deleteShop() {
         <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shopStore.shop" @submit="onSubmit">
             <FormGroup title="Shop information" subTitle="">
                 <div class="sm:col-span-6">
-                    <label for="Name" class="block text-sm font-medium text-gray-700 mb-1"> Name </label>
+                    <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
                     <Field type="text" name="name" id="name" autocomplete="name" class="field"
                         v-bind:class="{ 'is-invalid': errors.name }" />
                     <div class="text-red-700">
@@ -83,7 +83,7 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="team_id" class="block text-sm font-medium text-gray-700 mb-1"> Team </label>
+                    <label for="team_id" class="block text-sm font-medium mb-1"> Team </label>
                     <Field as="select" id="team_id" name="team_id" class="field">
                         <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">
                             {{ team.name }}
@@ -95,7 +95,7 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="url" class="block text-sm font-medium text-gray-700 mb-1"> URL </label>
+                    <label for="url" class="block text-sm font-medium mb-1"> URL </label>
                     <Field type="text" name="url" id="url" autocomplete="url" class="field"
                         v-bind:class="{ 'is-invalid': errors.url }" />
                     <div class="text-red-700">
@@ -108,7 +108,7 @@ async function deleteShop() {
             <FormGroup title="Integration"
                 info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
                 <div class="sm:col-span-6">
-                    <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1"> Client-ID </label>
+                    <label for="client_id" class="block text-sm font-medium mb-1"> Client-ID </label>
                     <Field type="text" name="client_id" id="client_id" class="field"
                         v-bind:class="{ 'is-invalid': errors.client_id }" />
                     <div class="text-red-700">
@@ -117,7 +117,7 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="client_secret" class="block text-sm font-medium text-gray-700 mb-1"> Client-Secret
+                    <label for="client_secret" class="block text-sm font-medium mb-1"> Client-Secret
                     </label>
                     <Field type="text" name="client_secret" id="client_secret" class="field"
                         v-bind:class="{ 'is-invalid': errors.client_secret }" />
@@ -156,7 +156,7 @@ async function deleteShop() {
         </FormGroup>
 
         <Modal :show="showShopDeletionModal" :closeXMark="true" @close="showShopDeletionModal = false">
-            <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600" aria-hidden="true" /></template>
+            <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" /></template>
             <template #title>Delete shop</template>
             <template #content>                
                 Are you sure you want to delete your Shop? All of your data will

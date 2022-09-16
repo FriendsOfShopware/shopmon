@@ -34,10 +34,10 @@ async function onSubmit(values: any) {
 <template>
   <div v-if="!authStore.isAuthenticated">
     <div>
-      <h2 class="text-center text-3xl tracking-tight font-bold text-gray-900">
+      <h2 class="text-center text-3xl tracking-tight font-bold">
         Sign in to your account
       </h2>
-      <p class="mt-2 text-center text-sm text-gray-600">
+      <p class="mt-2 text-center text-sm text-gray-600 dark:text-neutral-500">
         Or
         {{ ' ' }}
         <router-link to="register" class="font-medium">

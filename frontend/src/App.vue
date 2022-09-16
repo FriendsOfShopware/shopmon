@@ -20,6 +20,10 @@ if (authStore.isAuthenticated) {
       notificationStore.loadNotifications();
     }
 }
+
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.documentElement.classList.add('dark');
+}
 </script>
 
 <template>

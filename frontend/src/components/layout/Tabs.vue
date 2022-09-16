@@ -1,7 +1,7 @@
 <template>
-    <div class="w-full rounded-lg bg-white mb-16 shadow overflow-hidden">
+    <div class="w-full rounded-lg bg-white mb-16 shadow overflow-hidden dark:bg-neutral-800">
         <TabGroup>
-            <TabList class="border-b border-gray-200 -mb-px flex space-x-4 px-6">
+            <TabList class="border-b border-gray-200 -mb-px flex space-x-4 px-6 dark:border-neutral-700">
                 <Tab v-for="(label, key) in labels" as="template" :key="key" v-slot="{ selected }">
                     <button :class="[
                       'felx items-center border-transparent hover:border-sky-500 focus:outline-none',
@@ -11,7 +11,7 @@
                         <component v-if="label.icon" :is="label.icon" class="mr-2"></component>
                         {{ label.title }}
                         <span v-if="label.count && label.count > 0"
-                            class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium ">
+                            class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-900">
                             {{ label.count }}
                         </span>
                     </button>

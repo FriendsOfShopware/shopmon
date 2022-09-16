@@ -59,16 +59,15 @@ function goToResend() {
   </div>
   <div
     v-if="isLoading"
-    class="rounded-md bg-blue-50 p-4 border border-sky-200"
+    class="rounded-md bg-blue-50 p-4 border border-sky-200 dark:bg-gray-900 dark:border-sky-400"
   >
     <div class="flex">
-      envelope
-        icon="fa-solid fa-circle-info"
-        class="h-5 w-5 text-sky-400"
+      <icon-fa6-solid:circle-info
+        class="h-5 w-5 text-sky-500"
         aria-hidden="true"
       />
-      <div class="ml-3 flex-1 md:flex md:justify-between">
-        <p class="text-sm text-sky-700">
+      <div class="ml-3 flex-1 md:flex md:justify-between ">
+        <p class="text-sky-900 dark:text-sky-600">
           Loading...
         </p>
       </div>
@@ -118,19 +117,19 @@ function goToResend() {
       </div>
     </Form>
     <div v-else>
-      <div class="rounded-md bg-red-50 p-4 border border-red-200">
+      <div class="rounded-md bg-red-50 p-4 border border-red-200 dark:bg-red-900 dark:bg-opacity-30 dark:border-red-400">
         <div class="flex">
           <div class="flex-shrink-0">
             <icon-fa6-solid:circle-xmark
-              class="h-5 w-5 text-red-600"
+              class="h-5 w-5 text-red-600 dark:text-red-400"
               aria-hidden="true"
             />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-red-900">
+            <h3 class="font-medium text-red-900 dark:text-red-500">
               Invalid Token
             </h3>
-            <div class="mt-2 text-sm text-red-800">
+            <div class="mt-1 text-red-800 dark:text-red-400">
               <p>It looks like your Token is expired.</p>
             </div>
           </div>
