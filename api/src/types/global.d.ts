@@ -3,8 +3,8 @@ declare global {
         DATABASE_HOST: string;
         DATABASE_USER: string;
         DATABASE_PASSWORD: string;
-        MAIL_URL: string;
-        MAIL_SECRET: string;
+        MAILGUN_KEY: string;
+        MAILGUN_DOMAIN: string;
         MAIL_FROM: string;
         FRONTEND_URL: string;
         SENTRY_DSN: string;

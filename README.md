@@ -1,6 +1,6 @@
 # Shop Monitoring
 
-Shopmon is an hosted application from FriendsOfShopware to manage multiple Shopware instances.
+Shopmon is a hosted application from FriendsOfShopware to manage multiple Shopware instances.
 
 ## Features
 
@@ -9,16 +9,11 @@ Overview of all your Shopware instances to see:
 - Shopware Version and Security Updates
 - Show all installed extension and extension updates
 
-## Ideas
-
-- Alerting based on some criterias like one day no orders has been created
-- Track the queue stats and show nice diagrams
-
-
 ## Requirements
 
 - Cloudflare Worker
 - Planet Scale Database
+- Mailgun
 
 ## Install
 
@@ -31,9 +26,10 @@ Overview of all your Shopware instances to see:
 ### Hosting own API
 
 - Install [wrangler](https://developers.cloudflare.com/workers/wrangler/get-started/)
-- Create a own Planet Scale Account + Database
-- Create [a serverless access key](https://planetscale.com/blog/introducing-the-planetscale-serverless-driver-for-javascript)\
-- Import schema `db.sql` using some MySQL cli's
+- Create an own Planet Scale Account + Database
+- Create an own Mailgun Account or copy verify code from Database entries
+- Create [a serverless access key](https://planetscale.com/blog/introducing-the-planetscale-serverless-driver-for-javascript)
+- Import schema `db.sql` using some MySQL CLI's
 - Go to `api`
 - Create a file `.dev.vars`
 
@@ -48,8 +44,7 @@ PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
 ```
 - Emails will be not really send, copy the code from the API
 - Run `npm install`
-- Run `wrangler dev --port 5000 --local`
-- Adjust `vite.config.js` from frontend to point to `http://localhost:5000`
+- Run `npm run dev:local`
 
 
 ## License

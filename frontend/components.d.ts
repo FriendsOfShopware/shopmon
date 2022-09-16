@@ -26,6 +26,7 @@ declare module '@vue/runtime-core' {
     'IconFa6Solid:circleCheck': typeof import('~icons/fa6-solid/circle-check')['default']
     'IconFa6Solid:circleInfo': typeof import('~icons/fa6-solid/circle-info')['default']
     'IconFa6Solid:circleXmark': typeof import('~icons/fa6-solid/circle-xmark')['default']
+    'IconFa6Solid:envelope': typeof import('~icons/fa6-solid/envelope')['default']
     'IconFa6Solid:eye': typeof import('~icons/fa6-solid/eye')['default']
     'IconFa6Solid:eyeSlash': typeof import('~icons/fa6-solid/eye-slash')['default']
     'IconFa6Solid:faBell': typeof import('~icons/fa6-solid/fa-bell')['default']

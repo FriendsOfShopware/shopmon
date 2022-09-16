@@ -8,13 +8,18 @@ interface MaiLRequest {
 async function sendMail(env: Env, mail: MaiLRequest) {
     mail.from = env.MAIL_FROM;
 
-    await fetch(env.MAIL_URL, {
+    const formData = new FormData();
+    formData.append('from', mail.from);
+    formData.append('to', mail.to);
+    formData.append('subject', mail.subject);
+    formData.append('html', mail.body);
+
+    await fetch(`https://api.eu.mailgun.net/v3/${env.MAILGUN_DOMAIN}/messages`, {
         method: 'POST',
+        body: formData,
         headers: {
-            'Content-Type': 'application/json',
-            'token': env.MAIL_SECRET,
-        },
-        body: JSON.stringify(mail)
+            'Authorization': 'Basic ' + btoa('api:' + env.MAILGUN_KEY)
+        }
     });
 }
 
