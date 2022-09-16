@@ -2,6 +2,7 @@ import { Connection } from "@planetscale/database/dist";
 import { Notification } from "../../../shared/notification";
 import { UserSocketHelper } from "../object/UserSocket";
 import Users from "./users";
+import {sendAlert} from "../mail/mail";
 
 interface CreateShopRequest {
     team_id: string;
@@ -10,6 +11,23 @@ interface CreateShopRequest {
     shop_url: string;
     client_id: string;
     client_secret: string;
+}
+
+export interface ShopAlert {
+    shopId: string;
+    key: string;
+    subject: string;
+    message: string;
+}
+
+export interface Shop {
+    name: string;
+}
+
+export interface User {
+    id: number;
+    username: string;
+    email: string;
 }
 
 export default class Shops {
@@ -45,16 +63,28 @@ export default class Shops {
         ]);
     }
 
-    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: Notification): Promise<void> {
-        const users = await con.execute(`SELECT 
-        user_to_team.user_id as id
-        FROM user_to_team
+    static async getUsersOfShop(con: Connection, shopId: string) {
+        const result = await con.execute(`
+        SELECT
+            user_to_team.user_id as id,
+            user.username,
+            user.email
+        FROM
+            user_to_team
         INNER JOIN shop ON(shop.team_id = user_to_team.team_id)
-        WHERE shop.id = ?`, [shopId]);
+        INNER JOIN user ON(user.id = user_to_team.user_id)
+        WHERE shop.id = ?
+        `, [shopId])
+
+        return result.rows as User[]
+    }
+
+    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: Notification): Promise<void> {
+        const users = await this.getUsersOfShop(con, shopId);
 
         notification.read = false;
 
-        for (const user of users.rows) {
+        for (const user of users) {
             notification.id = await Users.createNotification(con, user.id, key, notification);
 
             await UserSocketHelper.sendNotification(
@@ -64,6 +94,28 @@ export default class Shops {
                     notification
                 }
             )
+        }
+    }
+
+    static async alert(con: Connection, env: Env, alert: ShopAlert): Promise<void> {
+        const users = await this.getUsersOfShop(con, alert.shopId);
+        const alertKey = `alert_${alert.key}_${alert.shopId}`;
+
+        const foundAlert = await env.kvStorage.get(alertKey);
+
+        if (foundAlert !== null) {
+            return;
+        }
+
+        await env.kvStorage.put(alertKey, "1", {
+            expirationTtl: 86400, // one day
+        });
+
+        const result = await con.execute(`SELECT name FROM shop WHERE id = ?`, [alert.shopId])
+        const shop = result.rows[0] as Shop;
+
+        for (const user of users) {
+            await sendAlert(env, shop, user, alert)
         }
     }
 }

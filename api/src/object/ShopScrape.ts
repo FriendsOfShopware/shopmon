@@ -163,6 +163,18 @@ export class ShopScrape implements DurableObject {
                 }
             );
 
+            await Shops.alert(
+                con,
+                this.env,
+                {
+                    key: `shop.update-auth-error.${shop.id}`,
+                    shopId: shop.id,
+                    subject: 'Shop Update Error',
+                    message: 'The Shop could not be updated. Please check your credentials and try again.'
+
+                }
+            )
+
             await con.execute('UPDATE shop SET status = ? WHERE id = ?', [
                 'red',
                 shop.id,

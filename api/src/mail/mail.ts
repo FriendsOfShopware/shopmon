@@ -1,3 +1,5 @@
+import type { Shop, ShopAlert, User } from "../repository/shops";
+
 interface MaiLRequest {
     from?: string;
     to: string;
@@ -57,4 +59,17 @@ export async function sendMailResetPassword(env: Env, email: string, token: stri
         subject: 'Reset your password',
         body: mailBody
     });
+}
+
+export async function sendAlert(env: Env, shop: Shop, user: User, alert: ShopAlert) {
+    await sendMail(env, {
+        to: user.email,
+        subject: `Shop Alert: ${alert.subject} - ${shop.name}`,
+        body: `Hello ${user.username},<br><br>
+
+        The Shop ${shop.name} has an new alert: <br><br>
+
+        ${alert.message}.
+        `
+    })
 }
