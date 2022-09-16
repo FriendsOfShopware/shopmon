@@ -9,6 +9,7 @@ declare global {
         FRONTEND_URL: string;
         SENTRY_DSN: string;
         PAGESPEED_API_KEY: string;
+        APP_SECRET: string;
         kvStorage: KVNamespace;
         SHOPS_SCRAPE: DurableObjectNamespace;
         PAGESPEED_SCRAPE: DurableObjectNamespace;

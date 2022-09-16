@@ -1,6 +1,7 @@
 import { init } from "@mmyoji/object-validator";
 import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { Shop } from "shopware-app-server-sdk/shop";
+import { encrypt } from "../../crypto";
 import { getConnection } from "../../db";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 
@@ -66,7 +67,9 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
             return new ErrorResponse('Cannot reach shop', 400);
         }
 
-        await con.execute('UPDATE shop SET url = ?, client_id = ?, client_secret = ? WHERE id = ?', [json.url, json.client_id, json.client_secret, shopId]);
+        const clientSecret = await encrypt(env.APP_SECRET, json.client_secret);
+
+        await con.execute('UPDATE shop SET url = ?, client_id = ?, client_secret = ? WHERE id = ?', [json.url, json.client_id, clientSecret, shopId]);
     }
 
     return new NoContentResponse();

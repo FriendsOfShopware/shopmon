@@ -9,6 +9,7 @@ import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../sentry";
 import Shops from "../repository/shops";
 import { UserSocketHelper } from "./UserSocket";
+import { decrypt } from "../crypto";
  
 interface SQLShop {
     id: string;
@@ -144,8 +145,10 @@ export class ShopScrape implements DurableObject {
     async updateShop(shop: SQLShop, con: Connection) {
     
         await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
+
+        const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
     
-        const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, shop.client_secret));
+        const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, clientSecret));
     
         try {
             await client.getToken();
