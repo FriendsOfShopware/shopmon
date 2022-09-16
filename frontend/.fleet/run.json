@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "type": "command",
+      "name": "Vite against Prod",
+      "program": "npm",
+      "args": [
+        "run",
+        "dev"
+      ]
+    },
+    {
+      "type": "command",
+      "name": "Vite against Local",
+      "program": "npm",
+      "args": [
+        "run",
+        "dev:local"
+      ]
+    }
+  ]
+}
