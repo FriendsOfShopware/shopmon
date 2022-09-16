@@ -20,7 +20,7 @@ Overview of all your Shopware instances to see:
 ### Frontend
 
 - Go to `frontend`
-- Run `npm run dev`
+- Run  `npm i` and `npm run dev`
 - Open `localhost:3000` to see the page
 
 ### Hosting own API
