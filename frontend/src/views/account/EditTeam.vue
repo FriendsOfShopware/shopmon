@@ -1,20 +1,20 @@
 <script setup lang="ts">
-    import { storeToRefs } from 'pinia';
+import {storeToRefs} from 'pinia';
 
-    import Header from '@/components/layout/Header.vue';
-    import MainContainer from '@/components/layout/MainContainer.vue';
-    import FormGroup from '@/components/layout/FormGroup.vue';
-    
-    import { useAlertStore } from '@/stores/alert.store';
-    import { useAuthStore } from '@/stores/auth.store';
-    import { useTeamStore } from '@/stores/team.store';
-    
-    import { Form, Field } from 'vee-validate';
-    import { useRouter, useRoute } from 'vue-router';
-    import * as Yup from 'yup';
-    import { ref } from 'vue';
-    
-    const authStore = useAuthStore();
+import Header from '@/components/layout/Header.vue';
+import MainContainer from '@/components/layout/MainContainer.vue';
+import FormGroup from '@/components/layout/FormGroup.vue';
+
+import {useAlertStore} from '@/stores/alert.store';
+import {useAuthStore} from '@/stores/auth.store';
+import {useTeamStore} from '@/stores/team.store';
+
+import {Field, Form} from 'vee-validate';
+import {useRoute, useRouter} from 'vue-router';
+import * as Yup from 'yup';
+import {ref} from 'vue';
+
+const authStore = useAuthStore();
     const teamStore = useTeamStore();
     const alertStore = useAlertStore();
     const router = useRouter();
@@ -35,32 +35,29 @@
         email: Yup.string().email('Email address is not valid').required('Email address is required'),
     });
     
-    async function onSubmit(values: any) {
-        console.log("Waiting for feature: Update Team");
-    }
-
-    async function onAddMember(values: any) {
-        if ( team ) {
-            try {
-                await teamStore.addMember(team.id, values);
-    
-                router.push('/account/teams');
-            } catch (error: Error) {
-                alertStore.error(error);
+    async function onSaveTeam(values: any) {
+      if (team) {
+        try {
+          await teamStore.updateTeam(team.id, { team: values } );
+          await router.push({
+            name: 'account.teams.detail',
+            params: {
+              teamId: team.id
             }
+          })
+        } catch (error: any) {
+          alertStore.error(error);
         }
+      }
     }
     
     async function deleteTeam() {
-        console.log('Waiting for feature: Create Team');
-        return;
-        
         if ( team ) {
             try {
                 await teamStore.delete(team.id);
-    
-                router.push('/account/teams');
-            } catch (error: Error) {
+
+                await router.push({ name: 'account.teams.list'})
+            } catch (error: any) {
                 alertStore.error(error);
             }
         }
@@ -80,7 +77,7 @@
                 v-slot="{ errors, isSubmitting }"
                 :validation-schema="schema"
                 :initial-values="team"
-                @submit="onSubmit"
+                @submit="onSaveTeam"
             >
                 <FormGroup title="Team Information" subTitle="">
                     <div class="sm:col-span-6">
@@ -94,41 +91,13 @@
                 </FormGroup>
 
                 <div class="flex justify-end pb-12">
-                    <button disabled type="submit" class="btn btn-primary opacity-25">
+                    <button type="submit" class="btn btn-primary">
                         <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
                             <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true"
                                 v-if="!isSubmitting" />
                             <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
                         </span>
                         Save
-                    </button>
-                </div>
-            </Form>
-
-            <Form 
-                v-slot="{ errors, isSubmitting }"
-                :validation-schema="schemaMembers"
-                @submit="onAddMember"
-            >
-                <FormGroup title="Members" subTitle="">
-                    <div class="sm:col-span-6">
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1"> Email </label>
-                        <Field type="text" name="email" id="email" autocomplete="email" class="field"
-                            v-bind:class="{ 'is-invalid': errors.emailAddress }" />
-                        <div class="text-red-700">
-                            {{ errors.email }}
-                        </div>
-                    </div>
-                </FormGroup>
-
-                <div class="flex justify-end pb-12">
-                    <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-                        <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                            <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true"
-                                v-if="!isSubmitting" />
-                            <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
-                        </span>
-                        Add
                     </button>
                 </div>
             </Form>
@@ -139,7 +108,7 @@
                     <p>Once you delete your team, you will lose all data associated with it. </p>
     
                     <div class="mt-5">
-                        <button disabled type="button" class="btn btn-danger group flex items-center opacity-25"
+                        <button type="button" class="btn btn-danger group flex items-center"
                             @click="showTeamDeletionModal = true">
                             <icon-fa6-solid:trash
                                 class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
