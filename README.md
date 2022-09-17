@@ -38,8 +38,8 @@ Overview of all your Shopware instances to see:
 DATABASE_HOST=aws.connect.psdb.cloud
 DATABASE_USER=USER
 DATABASE_PASSWORD=PW
-MAIL_URL=https://localhost:3000
-MAIL_SECRET=foooo
+MAILGUN_KEY=KEY
+MAILGUN_DOMAIN=DOMAIJ
 SENTRY_DSN=https://sentry.io
 PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
 APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
