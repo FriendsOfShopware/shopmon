@@ -46,6 +46,12 @@ export const useShopStore = defineStore('shop', {
             this.isRefreshing = false;
         },
 
+        async clearCache(teamId: number, id: number) {
+            this.isRefreshing = true;
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/clear_cache`);
+            this.isRefreshing = false;
+        },
+
         async delete(teamId: number, shopId: number) {
             await fetchWrapper.delete(`/team/${teamId}/shop/${shopId}`);
         },

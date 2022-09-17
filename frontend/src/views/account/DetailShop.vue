@@ -54,11 +54,26 @@ async function onRefresh() {
     }
 }
 
+async function onCacheClear() {
+  if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
+    try {
+      await shopStore.clearCache(shopStore.shop.team_id, shopStore.shop.id);
+      alertStore.success('Your Shop cache will be deleted soon');
+    } catch (e: any) {
+      alertStore.error(e);
+    }
+  }
+}
+
 </script>
 
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
     <div class="flex gap-2">
+      <button class="btn flex items-center" data-tooltip="Clear shop cache" @click="onCacheClear"
+              :disabled="shopStore.isRefreshing">
+        <icon-fa6-solid:trash :class="{'animate-spin': shopStore.isRefreshing}" size="lg" />
+      </button>
       <button class="btn flex items-center" data-tooltip="Refresh shop data" @click="onRefresh"
         :disabled="shopStore.isRefreshing">
         <icon-fa6-solid:rotate :class="{'animate-spin': shopStore.isRefreshing}" size="lg" />
@@ -164,7 +179,7 @@ async function onRefresh() {
             <span class="text-green-400 mr-1 text-base dark:text-green-200" data-tooltip="Active" v-else-if="item.active">
               <icon-fa6-solid:circle-check />
             </span>
-            <span class="text-gray-300 mr-1 text-base dark:text-neutral-500" data-tooltip="Deactive" v-else>
+            <span class="text-gray-300 mr-1 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
               <icon-fa6-solid:circle-xmark />
             </span>
             <template v-if="item.storeLink">

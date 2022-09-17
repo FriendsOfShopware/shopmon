@@ -20,6 +20,7 @@
         <read>plugin</read>
         <read>system_config</read>
         <read>scheduled_task</read>
+        <permission>system:clear_cache</permission>
         <permission>system:cache:info</permission>
     </permissions>
 </manifest>

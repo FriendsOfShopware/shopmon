@@ -1,0 +1,36 @@
+POST {{host}}/api/oauth/token
+Accept: application/json
+Content-Type: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+{
+  "client_id": "administration",
+  "grant_type": "password",
+  "scopes": "write",
+  "username": "{{adminUser}}",
+  "password": "{{adminPw}}"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+client.global.set("token_type", response.body.token_type);
+%}
+
+###
+
+GET {{host}}/api/_action/cache_info
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+###
+
+DELETE {{host}}/api/_action/cache
+Accept: application/json
+Content-Type: application/json
+Cache-Control: no-cache
+Authorization: {{token_type}} {{auth_token}}
+
+###

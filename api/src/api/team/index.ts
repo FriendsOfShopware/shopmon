@@ -11,7 +11,7 @@ import {refreshShop} from "./refresh_shop";
 import {createTeam} from "./create_team";
 import {updateTeam} from "./update_team";
 import {deleteTeam} from "./delete_team";
-
+import {clearShopCache} from "./clear_shop_cache";
 
 const teamRouter = Router({ base: "/api/team" });
 
@@ -27,5 +27,6 @@ teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, getShop);
 teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateShop);
 teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, refreshShop);
 teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, deleteShop);
+teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, clearShopCache);
 
 export default teamRouter;
