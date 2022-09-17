@@ -12,6 +12,7 @@ export const useShopStore = defineStore('shop', {
     actions: {
         async createShop(teamId: number, payload: any) {
             this.isLoading = true;
+            payload.shop_url = payload.shop_url.replace(/\/+$/, '');
             await fetchWrapper.post(`/team/${teamId}/shops`, payload);
             this.isLoading = false;
 
@@ -35,6 +36,7 @@ export const useShopStore = defineStore('shop', {
         },
         
         async updateShop(teamId: number, id: number, payload: any) {
+            payload.shop_url = payload.shop_url.replace(/\/+$/, '');
             await fetchWrapper.patch(`/team/${teamId}/shop/${id}`, payload);
 
             await this.loadShop(teamId, id);
