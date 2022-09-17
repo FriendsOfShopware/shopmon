@@ -26,9 +26,10 @@ Overview of all your Shopware instances to see:
 ### Hosting own API
 
 - Install [wrangler](https://developers.cloudflare.com/workers/wrangler/get-started/)
-- Create an own Planet Scale Account + Database
-- Create an own Mailgun Account or copy verify code from Database entries
+- Create an own [Planet Scale Account](https://auth.planetscale.com/sign-up) + Database
+- Create an own [Mailgun Account](https://signup.mailgun.com/new/signup) or copy verify code from Database entries
 - Create [a serverless access key](https://planetscale.com/blog/introducing-the-planetscale-serverless-driver-for-javascript)
+- Activate [Google Pagespeed API](https://developers.google.com/speed/docs/insights/v5/get-started)
 - Import schema `db.sql` using some MySQL CLI's
 - Go to `api`
 - Create a file `.dev.vars`
