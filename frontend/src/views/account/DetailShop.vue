@@ -58,7 +58,7 @@ async function onCacheClear() {
   if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
     try {
       await shopStore.clearCache(shopStore.shop.team_id, shopStore.shop.id);
-      alertStore.success('Your Shop cache will be deleted soon');
+      alertStore.success('Your Shop cache was cleared successfully');
     } catch (e: any) {
       alertStore.error(e);
     }
@@ -70,9 +70,9 @@ async function onCacheClear() {
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
     <div class="flex gap-2">
-      <button class="btn flex items-center" data-tooltip="Clear shop cache" @click="onCacheClear"
-              :disabled="shopStore.isRefreshing">
-        <icon-fa6-solid:trash :class="{'animate-spin': shopStore.isRefreshing}" size="lg" />
+      <button class="btn btn-danger flex items-center" data-tooltip="Clear shop cache" @click="onCacheClear"
+              :disabled="shopStore.isCacheClearing">
+        <icon-fa6-solid:trash :class="{'animate-pulse': shopStore.isCacheClearing}" size="lg" />
       </button>
       <button class="btn flex items-center" data-tooltip="Refresh shop data" @click="onRefresh"
         :disabled="shopStore.isRefreshing">

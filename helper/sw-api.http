@@ -6,11 +6,9 @@ Content-Type: application/json
 
 
 {
-  "client_id": "administration",
-  "grant_type": "password",
-  "scopes": "write",
-  "username": "{{adminUser}}",
-  "password": "{{adminPw}}"
+  "grant_type": "client_credentials",
+  "client_id": "{{clientId}}",
+  "client_secret": "{{clientSecret}}"
 }
 
 > {%
@@ -23,7 +21,7 @@ client.global.set("token_type", response.body.token_type);
 GET {{host}}/api/_action/cache_info
 Accept: application/json
 Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+Authorization: {{token_type}} {{auth_token}}
 
 ###
 
