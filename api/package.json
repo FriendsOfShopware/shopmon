@@ -4,8 +4,8 @@
   "type": "module",
   "description": "",
   "scripts": {
-    "dev:local": "TZ=UTC wrangler -c api.toml dev --port 5789 --local",
-    "api:deploy": "wrangler -c api.toml publish",
+    "dev:local": "TZ=UTC wrangler dev --port 5789 --local",
+    "api:deploy": "wrangler publish",
     "eslint": "eslint 'src/**/*.ts'",
     "eslint:fix": "eslint 'src/**/*.ts' --fix"
   },

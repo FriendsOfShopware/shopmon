@@ -2,7 +2,6 @@ name = "shopmon"
 main = "worker.api.js"
 workers_dev = false
 compatibility_date = "2022-03-04"
-account_id = "963ff7fb9c523564b5f3a398ab39d488"
 routes = ["shopmon.fos.gg/api/*"]
 
 minify = true
@@ -13,7 +12,7 @@ MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
 
 [build]
-command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap src/workers/api.ts --source-root=/"
+command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap src/index.ts --source-root=/"
 
 [durable_objects]
 bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}, {name = "PAGESPEED_SCRAPE", class_name = "PagespeedScrape"}, {name = "USER_SOCKET", class_name = "UserSocket"}]

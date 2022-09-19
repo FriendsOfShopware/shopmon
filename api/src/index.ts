@@ -1,5 +1,5 @@
-import router from '../router'
-import { createSentry } from '../sentry';
+import router from './router'
+import { createSentry } from './sentry';
 
 export default {
     fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -14,6 +14,6 @@ export default {
     }
 }
 
-export { ShopScrape } from '../object/ShopScrape';
-export { PagespeedScrape } from '../object/PagespeedScrape';
-export { UserSocket } from '../object/UserSocket';
+export { ShopScrape } from './object/ShopScrape';
+export { PagespeedScrape } from './object/PagespeedScrape';
+export { UserSocket } from './object/UserSocket';

@@ -20,7 +20,7 @@ jobs:
       with:
         apiToken: ${{ secrets.CF_API_TOKEN }}
         workingDirectory: 'api'
-        command: '-c api.toml publish'
+        command: 'publish'
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:

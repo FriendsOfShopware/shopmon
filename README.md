@@ -56,6 +56,8 @@ PASSWORD: check /settings/passwords
 
 #### Cloudflare worker
 - Install [wrangler](https://developers.cloudflare.com/workers/wrangler/get-started/)
+- Set all secrets in the UI or using wrangler cli
+- Adjust `routes` inside `wrangler.toml` to your domain
 
 
 #### Mailgun
