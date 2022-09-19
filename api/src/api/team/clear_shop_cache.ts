@@ -1,4 +1,4 @@
-import {ErrorResponse, JsonResponse} from "../common/response";
+import {ErrorResponse, NoContentResponse} from "../common/response";
 import {Shop} from "shopware-app-server-sdk/shop";
 import {decrypt} from "../../crypto";
 import {HttpClient} from "shopware-app-server-sdk/component/http-client";
@@ -26,5 +26,5 @@ export async function clearShopCache(req: Request, env: Env): Promise<Response> 
         return new ErrorResponse(e.response.body.errors[0].detail, e.response.statusCode);
     }
 
-    return new JsonResponse({}, 200);
+    return new NoContentResponse();
 }
