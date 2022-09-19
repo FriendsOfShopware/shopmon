@@ -41,14 +41,14 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
         return new JsonResponse(errors, 400);
     }
 
-    const { shopId, teamId } = req.params;
+    const { shopId } = req.params;
 
     const con = getConnection(env);
 
     await con.execute('UPDATE shop SET name = ? WHERE id = ?', [json.name, shopId]);
 
-    if (json.team_id != teamId) {
-        const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, json.teamId]);
+    if (json.team_id != parseInt(req.team.id)) {
+        const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, req.team.id]);
 
         if (!team.rows.length) {
             return new ErrorResponse("You are not a member of this team", 403);

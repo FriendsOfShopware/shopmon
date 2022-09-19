@@ -12,6 +12,7 @@ import {createTeam} from "./create_team";
 import {updateTeam} from "./update_team";
 import {deleteTeam} from "./delete_team";
 import {clearShopCache} from "./clear_shop_cache";
+import { validateShop } from "../middleware/shop";
 
 const teamRouter = Router({ base: "/api/team" });
 
@@ -23,10 +24,10 @@ teamRouter.post('/:teamId/members', validateToken, validateTeam, validateTeamOwn
 teamRouter.delete('/:teamId/members/:userId', validateToken, validateTeam, validateTeamOwner, removeMember);
 teamRouter.get('/:teamId/shops', validateToken, validateTeam, listShops);
 teamRouter.post('/:teamId/shops', validateToken, validateTeam, validateTeamOwner, createShop);
-teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, getShop);
-teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateShop);
-teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, refreshShop);
-teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, deleteShop);
-teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, clearShopCache);
+teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, getShop);
+teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateShop, validateShop);
+teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, validateShop, refreshShop);
+teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, deleteShop);
+teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, validateShop, clearShopCache);
 
 export default teamRouter;

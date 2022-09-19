@@ -2,11 +2,7 @@ import { getConnection } from "../../db";
 import { ErrorResponse, JsonResponse } from "../common/response";
 
 export async function getShop(req: Request, env: Env): Promise<Response> {
-    const { teamId, shopId } = req.params as { teamId?: string, shopId?: string };
-
-    if (typeof teamId !== "string") {
-        return new ErrorResponse('Missing teamId', 400);
-    }
+    const { shopId } = req.params as { shopId?: string };
 
     if (typeof shopId !== "string") {
         return new ErrorResponse('Missing shopId', 400);
@@ -36,11 +32,9 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
         INNER JOIN team ON(team.id = shop.team_id)
         LEFT JOIN shop_scrape_info ON(shop_scrape_info.shop_id = shop.id) 
     WHERE 
-        shop.id = ? 
-        AND shop.team_id = ?
+        shop.id = ?
     `, [
-        shopId,
-        teamId
+        shopId
     ]);
 
     if (result.rows.length === 0) {
