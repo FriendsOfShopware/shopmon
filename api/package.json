@@ -15,7 +15,7 @@
     "@mmyoji/object-validator": "^0.0.4",
     "@planetscale/database": "^1.3.0",
     "bcryptjs": "^2.4.3",
-    "itty-router": "^2.6.1",
+    "itty-router": "^2.6.3",
     "shopware-app-server-sdk": "^0.0.15",
     "toucan-js": "^2.6.1",
     "version-compare": "^1.4.0"
