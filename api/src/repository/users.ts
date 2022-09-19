@@ -1,5 +1,5 @@
 import { Connection } from "@planetscale/database/dist";
-import { Notification } from "../../../shared/notification";
+import { Notification, NotificationCreation } from "../../../shared/notification";
 import Teams from "./teams";
 
 export default class Users {
@@ -30,7 +30,7 @@ export default class Users {
         }
     }
 
-    static async createNotification(con: Connection, userId: number, key: string, notification: Notification): Promise<number> {
+    static async createNotification(con: Connection, userId: number, key: string, notification: NotificationCreation): Promise<Notification> {
         await con.execute('INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE `read` = 0', [
             userId,
             key,
@@ -42,6 +42,10 @@ export default class Users {
 
         const result = await con.execute('SELECT id from user_notification WHERE user_id = ? AND `key` = ?', [userId, key]);
 
-        return result.rows[0].id;
+        const noti = notification as Notification;
+        noti.read = false;
+        noti.id = result.rows[0].id;
+
+        return noti;
     }
 }

@@ -1,5 +1,5 @@
 import { Connection } from "@planetscale/database/dist";
-import { Notification } from "../../../shared/notification";
+import { NotificationCreation } from "../../../shared/notification";
 import { UserSocketHelper } from "../object/UserSocket";
 import Users from "./users";
 import {sendAlert} from "../mail/mail";
@@ -79,19 +79,17 @@ export default class Shops {
         return result.rows as User[]
     }
 
-    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: Notification): Promise<void> {
+    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: NotificationCreation): Promise<void> {
         const users = await this.getUsersOfShop(con, shopId);
 
-        notification.read = false;
-
         for (const user of users) {
-            notification.id = await Users.createNotification(con, user.id, key, notification);
+            const createdNotification = await Users.createNotification(con, user.id, key, notification);
 
             await UserSocketHelper.sendNotification(
                 namespace,
                 user.id.toString(),
                 {
-                    notification
+                    notification: createdNotification
                 }
             )
         }
