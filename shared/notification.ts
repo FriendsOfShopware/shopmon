@@ -17,4 +17,5 @@ export interface Notification {
     message: string;
     link: { name: string, params?: Record<string, string> }|false
     read: boolean;
+    created_at: string;
 }

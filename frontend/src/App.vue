@@ -21,6 +21,11 @@ if (authStore.isAuthenticated) {
     }
 }
 
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  e.matches ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+});
+
+
 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
   document.documentElement.classList.add('dark');
 }

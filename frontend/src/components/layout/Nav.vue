@@ -89,7 +89,7 @@ function toggleDarkMode() {
             enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
             leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
             leave-to-class="transform opacity-0 scale-95">
-            <PopoverPanel class="absolute left-0 right-0 z-20 mt-2 w-screen px-4 sm:px-0 md:max-w-[300px] md:left-auto">
+            <PopoverPanel class="absolute left-0 right-0 z-20 mt-2 w-screen px-4 sm:px-0 md:max-w-[400px] md:left-auto">
               <div class="overflow-hidden rounded-md shadow-lg bg-white dark:bg-neutral-800">
                 <div class="p-4 font-medium border-b border-grey-200 flex justify-between dark:border-neutral-700">
                   Notifications
@@ -110,10 +110,13 @@ function toggleDarkMode() {
                       <div class="font-medium">
                         {{ notification.title }}
                       </div>
-                      <div class="text-gray-500">
-                        {{ notification.message }}
+                      <div class="text-xs mb-[0.15rem] text-gray-500 dark:text-neutral-500">
+                        {{ new Date(notification.created_at).toLocaleString() }}
                       </div>
-                      <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
+                      <div class="text-gray-500 dark:text-neutral-500">
+                        {{ notification.message }} <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
+                      </div>
+                      
                     </div>
                     <div>
                       <button @click="notificationStore.deleteNotification(notification.id)"
@@ -145,7 +148,7 @@ function toggleDarkMode() {
               enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
               leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
               leave-to-class="transform opacity-0 scale-95">
-              <MenuItems class="origin-top-right absolute right-0 mt-2 w-48 rounded-md py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10 dark:bg-neutral-800">
+              <MenuItems class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white focus:outline-none z-10 dark:bg-neutral-800">
                 <div class="px-4 py-2 border-b dark:border-neutral-700">
                   <div class="text-base font-medium">
                     {{ authStore.user.username }}
