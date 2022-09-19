@@ -3,9 +3,10 @@ import { defineStore } from "pinia";
 import type { Shop, ShopDetailed } from '@apiTypes/shop'; 
 
 export const useShopStore = defineStore('shop', {
-    state: (): { shops: Shop[], isLoading: boolean, isRefreshing: boolean, shop: ShopDetailed|null } => ({
+    state: (): { shops: Shop[], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, shop: ShopDetailed|null } => ({
         isLoading: false,
         isRefreshing: false,
+        isCacheClearing: false,
         shops: [],
         shop: null,
     }),
@@ -46,6 +47,12 @@ export const useShopStore = defineStore('shop', {
             this.isRefreshing = true;
             await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`);
             this.isRefreshing = false;
+        },
+
+        async clearCache(teamId: number, id: number) {
+            this.isCacheClearing = true;
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/clear_cache`);
+            this.isCacheClearing = false;
         },
 
         async delete(teamId: number, shopId: number) {
