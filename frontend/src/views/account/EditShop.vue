@@ -61,24 +61,6 @@ async function deleteShop() {
     }
 }
 
-async function clearCache(values: any) {
-  if ( shopStore.shop ) {
-    try {
-      await shopStore.clearShopCache(shopStore.shop.team_id, shopStore.shop.id, values);
-
-      router.push({
-        name: 'account.shops.detail',
-        params: {
-          teamId: shopStore.shop.team_id,
-          shopId: shopStore.shop.id
-        }
-      })
-    } catch (e: any) {
-      alertStore.error(e);
-    }
-  }
-}
-
 </script>
     
 <template>
