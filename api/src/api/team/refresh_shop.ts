@@ -11,5 +11,9 @@ export async function refreshShop(req: Request, env: Env): Promise<Response> {
 
     await obj.fetch(`http://localhost/now?id=${shopId.toString()}&userId=${req.userId.toString()}`);
 
+    const pagespeed = env.PAGESPEED_SCRAPE.get(env.PAGESPEED_SCRAPE.idFromName(shopId.toString()));
+
+    await pagespeed.fetch(`http://localhost/now?id=${shopId.toString()}`);
+
     return new NoContentResponse();
 }
