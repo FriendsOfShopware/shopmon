@@ -16,7 +16,7 @@ import Logo from '@/components/layout/Logo.vue';
     "
   >
     <div class="max-w-md w-full space-y-8">
-      <Logo />
+      <Logo class="mx-auto h-36 w-auto" />
       <slot />
     </div>
   </div>
