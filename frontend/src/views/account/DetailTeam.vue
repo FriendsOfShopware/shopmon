@@ -130,7 +130,7 @@ async function onRemoveMember(userId: number) {
               <button type="button" 
                       class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100" 
                       @click="onRemoveMember(item.id)" 
-                      data-tooltip="Unasign"
+                      data-tooltip="Unassign"
               >
                 <icon-fa6-solid:trash aria-hidden="true" />
               </button>
