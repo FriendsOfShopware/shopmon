@@ -51,6 +51,7 @@ declare module '@vue/runtime-core' {
     'IconFa6Solid:upRightFromSquare': typeof import('~icons/fa6-solid/up-right-from-square')['default']
     'IconFa6Solid:userPlus': typeof import('~icons/fa6-solid/user-plus')['default']
     'IconFa6Solid:xmark': typeof import('~icons/fa6-solid/xmark')['default']
+    'IconIc:baselineMonitorHeart': typeof import('~icons/ic/baseline-monitor-heart')['default']
     'IconLineMd:loadingTwotoneLoop': typeof import('~icons/line-md/loading-twotone-loop')['default']
     LoginContainer: typeof import('./src/components/layout/LoginContainer.vue')['default']
     Logo: typeof import('./src/components/layout/Logo.vue')['default']
