@@ -60,7 +60,7 @@ shopStore.loadShops();
 
       <h2 class="text-gray-500 text-sm font-medium">My Shops's</h2>
       <ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <li v-for="shop in shopStore.shops" :key="shop.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none">
+        <li v-for="shop in shopStore.shops" :key="shop.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
           <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }" class="flex">
             <div
               class="flex-shrink-0 flex items-center justify-center w-16 text-sm font-medium rounded-l-md text-gray-900"
@@ -69,7 +69,7 @@ shopStore.loadShops();
                 {{ shop.initials }}
               </span>
             </div>
-            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800">
+            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800 group-hover:bg-sky-50 dark:group-hover:bg-[#2a2b2f]">
               <div class="text-gray-900 font-medium truncate dark:text-neutral-400">{{ shop.name }}</div>
               <div class="text-gray-500">
                 {{ shop.shopware_version }}
@@ -82,7 +82,7 @@ shopStore.loadShops();
 
       <h2 class="text-gray-500 text-sm font-medium">My Team's</h2>
       <ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <li v-for="team in teams" :key="team.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none">
+        <li v-for="team in teams" :key="team.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
           <router-link :to="{ name: 'account.teams.detail', params: { teamId: team.id } }" class="flex">
             <div
               class="flex-shrink-0 flex items-center justify-center w-16 text-sm font-medium rounded-l-md uppercase text-gray-900"
@@ -91,7 +91,7 @@ shopStore.loadShops();
                 {{ team.name.substring(0, 2) }}
               </span>
             </div>
-            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800">
+            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800 group-hover:bg-sky-50 dark:group-hover:bg-[#2a2b2f]">
               <div class="text-gray-900 font-medium truncate dark:text-neutral-400">{{ team.name }}</div>
               <div class="text-gray-500">
                 {{ team.memberCount }} Members, {{ team.shopCount }} Shops
