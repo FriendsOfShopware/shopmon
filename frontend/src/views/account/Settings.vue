@@ -56,7 +56,7 @@ async function deleteUser() {
       <FormGroup title="Account" subTitle="Manage Your Account">
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6">
-            <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password*</label>
+            <label for="currentPassword" class="block text-sm font-medium mb-1">Current Password*</label>
             <Field id="currentPassword" type="password" name="currentPassword" autocomplete="current-password"
               class="field"
               :class="{ 'is-invalid': errors.currentPassword }" />
@@ -66,7 +66,7 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label for="username" class="block text-sm font-medium mb-1">Username</label>
             <Field id="username" type="text" name="username" autocomplete="username"
               class="field"
               :class="{ 'is-invalid': errors.username }" />
@@ -76,7 +76,7 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+            <label for="email" class="block text-sm font-medium mb-1">Email address</label>
             <Field id="email" type="text" name="email" autocomplete="email"
               class="field"
               :class="{ 'is-invalid': errors.email }" />
@@ -86,7 +86,7 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <label for="newPassword" class="block text-sm font-medium mb-1">New Password</label>
             <Field id="newPassword" type="password" name="newPassword" autocomplete="new-password"
               class="field"
               :class="{ 'is-invalid': errors.newPassword }" />
