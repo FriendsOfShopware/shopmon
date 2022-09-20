@@ -124,18 +124,16 @@ async function onRemoveMember(userId: number) {
       </div>
       <div class="border-t border-gray-200 dark:border-neutral-700">
       <DataTable
-          :labels="{email: {name: 'Email'}, username: {name: 'Username'}}"
+          :labels="{email: {name: 'Email'}, username: {name: 'Username'}, actions: {name: '', class: 'text-right'}}"
           :data="teamStore.members">
-          <template #cell(username)="{ item, value }">
-              <div class="flex justify-between">
-                <span>{{ value }}</span>
-                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="onRemoveMember(item.id)">
-                  <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                      <icon-fa6-solid:trash class="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  Unassign
-                </button>
-              </div>
+          <template #cell(actions)="{ item }">            
+              <button type="button" 
+                      class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100" 
+                      @click="onRemoveMember(item.id)" 
+                      data-tooltip="Unasign"
+              >
+                <icon-fa6-solid:trash aria-hidden="true" />
+              </button>
           </template>
       </DataTable>
       </div>
