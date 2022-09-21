@@ -52,10 +52,10 @@
     import { computed, reactive, watch, ref } from 'vue';
     import { sort } from 'fast-sort';
 
-    const props = defineProps<{labels: Record<string, {class?: string, classOverride?: boolean, name: string, sortable?: boolean}>, data: Record<string, any>[]}>()
+    const props = defineProps<{labels: Record<string, {class?: string, classOverride?: boolean, name: string, sortable?: boolean}>, defaultSorting?: {by: string, desc?: boolean},data: Record<string, any>[]}>()
 
-    const sortBy = ref(null);
-    const sortDesc = ref(null);
+    const sortBy = ref(props.defaultSorting?.by || null);
+    const sortDesc = ref(props.defaultSorting?.desc || null);
 
     const sortedData = computed(() => {
         const { data } = props;
