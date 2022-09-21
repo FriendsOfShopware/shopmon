@@ -70,13 +70,13 @@ async function onCacheClear() {
 <template>
   <Header v-if="shopStore.shop" :title="shopStore.shop.name">
     <div class="flex gap-2">
-      <button class="btn btn-danger flex items-center" data-tooltip="Clear shop cache" @click="onCacheClear"
+      <button class="btn" data-tooltip="Clear shop cache" @click="onCacheClear"
               :disabled="shopStore.isCacheClearing">
-        <icon-fa6-solid:trash :class="{'animate-pulse': shopStore.isCacheClearing}" size="lg" />
+        <icon-ic:baseline-cleaning-services :class="{'animate-pulse': shopStore.isCacheClearing}" class="w-4 h-4" />
       </button>
-      <button class="btn flex items-center" data-tooltip="Refresh shop data" @click="onRefresh"
+      <button class="btn" data-tooltip="Refresh shop data" @click="onRefresh"
         :disabled="shopStore.isRefreshing">
-        <icon-fa6-solid:rotate :class="{'animate-spin': shopStore.isRefreshing}" size="lg" />
+        <icon-fa6-solid:rotate :class="{'animate-spin': shopStore.isRefreshing}" />
       </button>
 
       <router-link
