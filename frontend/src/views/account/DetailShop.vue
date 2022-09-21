@@ -156,9 +156,9 @@ async function onCacheClear() {
           :labels="{message: {name: 'Message'}}"
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
-            <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 text-base dark:text-red-400 " v-if="item.level == 'red'" />
-            <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 text-base dark:text-yellow-200 " v-else-if="item.level === 'yellow'" />
-            <icon-fa6-solid:circle-check  class="text-green-400 mr-1 text-base dark:text-green-200" v-else />
+            <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 " v-if="item.level == 'red'" />
+            <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200 " v-else-if="item.level === 'yellow'" />
+            <icon-fa6-solid:circle-check  class="text-green-400 mr-2 text-base dark:text-green-200" v-else />
             <a :href="item.link" target="_blank" v-if="item.link">
               {{ item.message }} 
               <icon-fa6-solid:up-right-from-square  class="text-xs"/>
@@ -175,13 +175,13 @@ async function onCacheClear() {
           :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <span class="text-gray-400 mr-1 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
+            <span class="text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
               <icon-fa6-regular:circle />
             </span>
-            <span class="text-green-400 mr-1 text-base dark:text-green-200" data-tooltip="Active" v-else-if="item.active">
+            <span class="text-green-400 mr-2 text-base dark:text-green-200" data-tooltip="Active" v-else-if="item.active">
               <icon-fa6-solid:circle-check />
             </span>
-            <span class="text-gray-300 mr-1 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
+            <span class="text-gray-300 mr-2 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
               <icon-fa6-solid:circle-xmark />
             </span>
             <template v-if="item.storeLink">
