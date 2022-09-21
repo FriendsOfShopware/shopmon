@@ -105,8 +105,9 @@ async function onCacheClear() {
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
               {{ shopStore.shop.shopware_version }}
-              <span class="text-xs font-semibold inline-block py-1 px-2 rounded bg-amber-200" v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version"><a
-                  :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" class="text-amber-700">{{ latestShopwareVersion }}</a></span>
+              <a class="badge badge-warning" 
+                  v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version" 
+                  :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" >{{ latestShopwareVersion }}</a>
             </dd>
           </div>
           <div class="sm:col-span-1">
@@ -195,7 +196,7 @@ async function onCacheClear() {
 
           <template #cell(latest)="{ item }">
             <button
-              class="text-xs font-semibold inline-block py-1 px-2 rounded text-amber-700 bg-amber-200"
+              class="badge badge-warning"
               v-if="item.latestVersion && item.version < item.latestVersion" @click="openExtensionChangelog(item)">
               {{ item.latestVersion }}
             </button>
