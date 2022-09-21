@@ -50,21 +50,25 @@
 
 <script lang="ts" setup>
     import { computed, reactive, watch, ref } from 'vue';
-    import { sort } from 'fast-sort';
+    import { sort, createNewSortInstance } from 'fast-sort';
 
     const props = defineProps<{labels: Record<string, {class?: string, classOverride?: boolean, name: string, sortable?: boolean}>, defaultSorting?: {by: string, desc?: boolean},data: Record<string, any>[]}>()
 
     const sortBy = ref(props.defaultSorting?.by || null);
     const sortDesc = ref(props.defaultSorting?.desc || null);
 
+    const naturalSort = createNewSortInstance({
+        comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare,
+    });
+
     const sortedData = computed(() => {
         const { data } = props;
         if (sortBy.value === null) return data;
 
         if (sortDesc.value) {
-            return sort(data).desc(sortBy.value);
+            return naturalSort(data).desc(sortBy.value);
         } else {
-            return sort(data).asc(sortBy.value);
+            return naturalSort(data).asc(sortBy.value);
         }
     });
 
