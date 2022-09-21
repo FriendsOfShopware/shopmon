@@ -20,6 +20,7 @@
                         <icon-fa6-solid:chevron-up v-if="sortDesc === true" />
                         <icon-fa6-solid:chevron-down v-else />
                     </template>
+                    <span class="inline-block w-[14px]" v-else></span>
                 </th>
             </tr>
         </thead>
