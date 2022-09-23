@@ -201,8 +201,8 @@ function toggleDarkMode() {
       <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
         <DisclosureButton v-for="item in navigation" :key="item.name" as="a" :class="[
           item.route == $route.path
-            ? 'bg-sky-700 text-white dark:text-white dark:hover:text-white'
-            : 'text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white',
+            ? 'bg-sky-700 text-white hover:text-white dark:text-white dark:hover:text-white'
+            : 'text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white',
           'block px-3 py-2 rounded-md text-base font-medium',
         ]" :aria-current="item.route == $route.path ? 'page' : undefined" @click="$router.push(item.route)">
           {{ item.name }}
@@ -223,7 +223,7 @@ function toggleDarkMode() {
           </div>
         </div>
         <div class="mt-3 px-2 space-y-1">
-          <DisclosureButton v-for="item in userNavigation" :key="item.name" as="a" class="block px-3 py-1 rounded-md text-base font-medium text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white" 
+          <DisclosureButton v-for="item in userNavigation" :key="item.name" as="a" class="block px-3 py-1 rounded-md text-base font-medium text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white" 
           @click="
               item.route === '/logout'
                 ? authStore.logout()
