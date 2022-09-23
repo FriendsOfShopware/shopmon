@@ -19,6 +19,7 @@ interface SQLShop {
     shopware_version: string;
     client_id: string;
     client_secret: string;
+    ignores: string|string[];
 }
 
 interface ShopwareScheduledTask {
@@ -100,7 +101,7 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id FROM shop WHERE id = ?';
+        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id, ignores FROM shop WHERE id = ?';
 
         const shops = await con.execute(fetchShopSQL, [id]);
 
@@ -112,6 +113,8 @@ export class ShopScrape implements DurableObject {
         }
 
         const shop = shops.rows[0] as SQLShop;
+        shop.ignores = JSON.parse(shop.ignores as string || '[]')
+
         try {
             await this.updateShop(shop, con);
         } catch (e) {
@@ -324,7 +327,8 @@ export class ShopScrape implements DurableObject {
             scheduledTasks: scheduledTasks,
             cacheInfo: responses.cacheInfo.body,
             favicon: favicon,
-            client
+            client,
+            ignores: shop.ignores as string[],
         }
 
         const checkerResult = await CheckerRegistery.check(input);
