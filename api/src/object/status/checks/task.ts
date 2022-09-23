@@ -5,11 +5,11 @@ export default class implements Checker {
     async check(input: CheckerInput, result: CheckerOutput): Promise<void> {
         for (const task of input.scheduledTasks) {
             if (isTaskOverdue(task) && task.interval > 3600) {
-                result.warning(`Task ${task.name} is overdue`);
+                result.warning(`task.${task.name}`, `Task ${task.name} is overdue`);
             }
         }
 
-        result.success(`All scheduled tasks are running correctly`);
+        result.success('task.all', `All scheduled tasks are running correctly`);
     }
 }
 

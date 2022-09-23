@@ -8,6 +8,7 @@ import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/respon
 type UpdateShopRequest = {
     name: string;
     url: string;
+    ignores: string[];
     team_id: number;
     client_id: string;
     client_secret: string;
@@ -15,8 +16,7 @@ type UpdateShopRequest = {
 
 const validate = init<UpdateShopRequest>({
     name: {
-        type: "string",
-        required: true
+        type: "string"
     },
     team_id: {
         type: "number",
@@ -45,7 +45,13 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
 
     const con = getConnection(env);
 
-    await con.execute('UPDATE shop SET name = ? WHERE id = ?', [json.name, shopId]);
+    if (json.name) {
+        await con.execute('UPDATE shop SET name = ? WHERE id = ?', [json.name, shopId]);
+    }
+
+    if (json.ignores) {
+        await con.execute('UPDATE shop SET ignores = ? WHERE id = ?', [JSON.stringify(json.ignores), shopId]);
+    }
 
     if (json.team_id != parseInt(req.team.id)) {
         const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, req.team.id]);

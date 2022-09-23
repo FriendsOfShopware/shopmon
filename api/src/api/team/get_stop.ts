@@ -20,7 +20,8 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
         shop.shopware_version, 
         shop.last_scraped_at, 
         shop.last_scraped_error,
-        shop.shopware_version, 
+        shop.shopware_version,
+        shop.ignores,
         shop_scrape_info.extensions, 
         shop_scrape_info.scheduled_task,
         shop_scrape_info.queue_info,
@@ -50,6 +51,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
     shop.queue_info = JSON.parse(shop.queue_info);
     shop.cache_info = JSON.parse(shop.cache_info);
     shop.checks = JSON.parse(shop.checks);
+    shop.ignores = JSON.parse(shop.ignores);
     shop.pagespeed = pagespeed.rows;
 
     return new JsonResponse(shop);

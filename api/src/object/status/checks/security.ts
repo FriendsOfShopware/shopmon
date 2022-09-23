@@ -17,7 +17,7 @@ export default class implements Checker {
         for (const advisoryId of securityInfo.versionToAdvisories[input.config.version]) {
             const advisory = securityInfo.advisories[advisoryId];
 
-            result.error(`Security Issue: ${advisory.title}`, advisory.source, advisory.link);
+            result.error(`advisory.${advisory.cve}`, `Security Issue: ${advisory.title}`, advisory.source, advisory.link);
         }
     }
 }

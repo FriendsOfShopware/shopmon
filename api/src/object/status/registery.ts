@@ -22,6 +22,7 @@ export interface CheckerInput {
 }
 
 export interface CheckerChecks {
+    id: string;
     level: SHOP_STATUS;
     message: string;
     source: string;
@@ -32,8 +33,9 @@ export class CheckerOutput {
     public status: SHOP_STATUS = SHOP_STATUS.GREEN;
     public checks: CheckerChecks[] = [];
 
-    public success(message: string, source = 'Shopmon', link: string|null = null) {
+    public success(id: string, message: string, source = 'Shopmon', link: string|null = null) {
         this.checks.push({
+            id,
             level: SHOP_STATUS.GREEN,
             message: message,
             source: source,
@@ -41,8 +43,9 @@ export class CheckerOutput {
         });
     }
 
-    public warning(message: string, source = 'Shopmon', link: string|null = null) {
+    public warning(id: string, message: string, source = 'Shopmon', link: string|null = null) {
         this.checks.push({
+            id,
             level: SHOP_STATUS.YELLOW,
             message: message,
             source: source,
@@ -54,8 +57,9 @@ export class CheckerOutput {
         }
     }
 
-    public error(message: string, source = 'Shopmon', link: string|null = null) {
+    public error(id: string, message: string, source = 'Shopmon', link: string|null = null) {
         this.checks.push({
+            id,
             level: SHOP_STATUS.RED,
             message: message,
             source: source,

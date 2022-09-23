@@ -94,3 +94,6 @@ CREATE TABLE `shop` (
 ) ENGINE InnoDB,
   CHARSET utf8mb4,
   COLLATE utf8mb4_0900_ai_ci;
+
+alter table shop
+    add ignores text default '[]' null after last_scraped_error;
