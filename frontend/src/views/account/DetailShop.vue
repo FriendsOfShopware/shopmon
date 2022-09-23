@@ -117,7 +117,7 @@ async function notificateIgnoreUpdate() {
         <h3 class="text-lg leading-6 font-medium">
           <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 dark:text-red-400 " v-if="shopStore.shop.status == 'red'" />
           <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 dark:text-yellow-200" v-else-if="shopStore.shop.status === 'yellow'" />
-          <icon-fa6-solid:circle-check class="text-green-400 mr-1 dark:text-yellow-200" v-else />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-1 dark:text-green-200" v-else />
           Shop Information
         </h3>
       </div>
