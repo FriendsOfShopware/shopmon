@@ -19,6 +19,7 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 	team.name, 
 	team.created_at, 
 	(team.owner_id = user_to_team.user_id) as is_owner,
+    team.owner_id,
 	(SELECT COUNT(1) FROM shop WHERE team_id = team.id) AS shopCount,
 	(SELECT COUNT(1) FROM user_to_team WHERE team_id = team.id) AS memberCount
 FROM team 
