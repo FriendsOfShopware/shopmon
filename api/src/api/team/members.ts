@@ -23,7 +23,13 @@ export async function addMember(req: Request, env: Env): Promise<Response> {
 
     const con = getConnection(env);
 
-    await Teams.addMember(con, req.team.id, json.email);
+    try {
+        await Teams.addMember(con, req.team.id, json.email);
+    } catch (e) {
+        return new JsonResponse({
+            message: e?.toString()
+        }, 400);
+    }
 
     return new NoContentResponse();
 }

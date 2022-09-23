@@ -9,7 +9,15 @@ export default {
             .handle(request, env, ctx, sentry)
             .catch((err) => {
                 sentry.captureException(err);
-                return new Response(err.message, { status: 500 });
+                return new Response(
+                    JSON.stringify({ message: err.message }),
+                    { 
+                        status: 500,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
             })
     }
 }
