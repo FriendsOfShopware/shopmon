@@ -172,7 +172,7 @@ async function onCacheClear() {
 
       <template #panel(extensions)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name'}, version: {name: 'Version'}, latest: {name: 'Latest'}, rating: {name: 'Rating'}, installedAt: {name: 'Installed at'}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
+          :labels="{name: {name: 'Name', sortable: true}, version: {name: 'Version'}, latest: {name: 'Latest'}, ratingAverage: {name: 'Rating', sortable: true}, installedAt: {name: 'Installed at', sortable: true}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
             <span class="text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
@@ -202,7 +202,7 @@ async function onCacheClear() {
             </button>
           </template>
 
-          <template #cell(rating)="{ item }">
+          <template #cell(ratingAverage)="{ item }">
             <template v-if="item.ratingAverage !== null" v-for="n in 5">
               <icon-fa6-regular:star v-if="(item.ratingAverage / 2) - n < -.5" />
               <icon-fa6-solid:star-half-stroke
@@ -231,7 +231,7 @@ async function onCacheClear() {
 
       <template #panel(tasks)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name'}, last: {name: 'Last Executed'}, next: {name: 'Next Execution'}}"
+          :labels="{name: {name: 'Name', sortable: true}, lastExecutionTime: {name: 'Last Executed', sortable: true}, nextExecutionTime: {name: 'Next Execution', sortable: true}}"
           :data="shopStore.shop.scheduled_task">
           <template #cell(name)="{ item }">
             <span class="text-red-600 mr-1 text-base dark:text-red-400 " data-tooltip="Task overdue" v-if="item.overdue">
@@ -243,11 +243,11 @@ async function onCacheClear() {
             {{ item.name }}
           </template>
 
-          <template #cell(last)="{ item }">
+          <template #cell(lastExecutionTime)="{ item }">
             {{ new Date(item.lastExecutionTime).toLocaleString() }}
           </template>
 
-          <template #cell(next)="{ item }">
+          <template #cell(nextExecutionTime)="{ item }">
             {{ new Date(item.nextExecutionTime).toLocaleString() }}
           </template>
         </DataTable>
@@ -255,7 +255,7 @@ async function onCacheClear() {
 
       <template #panel(queue)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name'}, size: {name: 'Size'}}"
+          :labels="{name: {name: 'Name', sortable: true}, size: {name: 'Size', sortable: true}}"
           :data="shopStore.shop.queue_info">
         </DataTable>
       </template>

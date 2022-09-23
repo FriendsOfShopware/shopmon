@@ -39,8 +39,9 @@ shopStore.loadShops();
       class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white dark:bg-neutral-800 dark:shadow-none"
       v-else>
       <DataTable
-        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopware_version: {name: 'Version', sortable: true}, team_name: {name: 'Team'}, checked: {name: 'last checked at'}}"
-        :data="shopStore.shops">
+        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopware_version: {name: 'Version', sortable: true}, team_name: {name: 'Team', sortable: true}, last_scraped_at: {name: 'last checked at', sortable: true}}"
+        :data="shopStore.shops"
+        :default-sorting="{by: 'name'}">
         <template #cell(favicon)="{ item }">
           <img :src="item.favicon" alt="Shop Logo" class="inline-block w-5 h-5 align-middle" v-if="item.favicon" />
         </template>
@@ -66,7 +67,7 @@ shopStore.loadShops();
           </a>
         </template>
 
-        <template #cell(checked)="{ item }">
+        <template #cell(last_scraped_at)="{ item }">
           {{ new Date(item.last_scraped_at).toLocaleString() }}
         </template>
       </DataTable>
