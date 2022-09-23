@@ -97,7 +97,7 @@ function mapToShopmon(checks: FroshToolsCheck[], result: CheckerOutput) {
         if (status.state === 'STATE_OK') {
             result.success(status.snippet, msg, 'FroshTools', status.url);
         } else if (status.snippet, status.state === 'STATE_WARNING') {
-            result.warning(msg, 'FroshTools', status.url);
+            result.warning(status.snippet, msg, 'FroshTools', status.url);
         } else if (status.state === 'STATE_ERROR') {
             result.error(status.snippet, msg, 'FroshTools', status.url);
         }
