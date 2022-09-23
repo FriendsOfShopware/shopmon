@@ -74,7 +74,7 @@ export default class implements Checker {
                     mapToShopmon(healthStatus.body as FroshToolsCheck[], result);
                     mapToShopmon(performanceStatus.body as FroshToolsCheck[], result);
                 } catch (e) {
-                    result.error(`FroshTools is not reachable: Error: ${e}`);
+                    result.error('frosh.tools.connect', `FroshTools is not reachable: Error: ${e}`);
                     return;
                 }
             }
@@ -95,11 +95,11 @@ function mapToShopmon(checks: FroshToolsCheck[], result: CheckerOutput) {
         }
 
         if (status.state === 'STATE_OK') {
-            result.success(msg, 'FroshTools', status.url);
-        } else if (status.state === 'STATE_WARNING') {
+            result.success(status.snippet, msg, 'FroshTools', status.url);
+        } else if (status.snippet, status.state === 'STATE_WARNING') {
             result.warning(msg, 'FroshTools', status.url);
         } else if (status.state === 'STATE_ERROR') {
-            result.error(msg, 'FroshTools', status.url);
+            result.error(status.snippet, msg, 'FroshTools', status.url);
         }
     }
 }

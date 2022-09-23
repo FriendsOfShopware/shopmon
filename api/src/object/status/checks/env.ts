@@ -10,10 +10,10 @@ export default class implements Checker {
 
     async check(input: CheckerInput, result: CheckerOutput): Promise<void> {
         if (!this.VAILD_ENVIRONMENTS.includes(input.cacheInfo.environment)) {
-            result.warning(`Environment is not set to production or staging. It is set to ${input.cacheInfo.environment}`);
+            result.warning('shopware.env', `Environment is not set to production or staging. It is set to ${input.cacheInfo.environment}`);
             return
         }
 
-        result.success(`Environment is set correctly to ${input.cacheInfo.environment}`);
+        result.success('shopware.env', `Environment is set correctly to ${input.cacheInfo.environment}`);
     }
 }
