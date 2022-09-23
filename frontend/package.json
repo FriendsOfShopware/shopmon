@@ -16,7 +16,7 @@
         "pinia": "^2.0.22",
         "unplugin-icons": "^0.14.10",
         "unplugin-vue-components": "^0.22.7",
-        "vee-validate": "^4.6.8",
+        "vee-validate": "^4.6.9",
         "vue": "^3.2.39",
         "vue-router": "^4.1.5",
         "yup": "^0.32.11"
@@ -29,7 +29,7 @@
         "@typescript-eslint/eslint-plugin": "^5.38.0",
         "@typescript-eslint/parser": "^5.38.0",
         "@vitejs/plugin-vue": "^3.1.0",
-        "autoprefixer": "^10.4.11",
+        "autoprefixer": "^10.4.12",
         "eslint": "^8.23.1",
         "eslint-plugin-vue": "^9.5.1",
         "postcss": "^8.4.16",
