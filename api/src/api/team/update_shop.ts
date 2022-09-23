@@ -19,8 +19,7 @@ const validate = init<UpdateShopRequest>({
         type: "string"
     },
     team_id: {
-        type: "number",
-        required: true
+        type: "number"
     },
     url: {
         type: "string",
@@ -53,7 +52,7 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
         await con.execute('UPDATE shop SET ignores = ? WHERE id = ?', [JSON.stringify(json.ignores), shopId]);
     }
 
-    if (json.team_id != parseInt(req.team.id)) {
+    if (json.team_id && json.team_id != parseInt(req.team.id)) {
         const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, req.team.id]);
 
         if (!team.rows.length) {
