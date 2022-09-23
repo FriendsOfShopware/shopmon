@@ -7,7 +7,7 @@
                     <button :class="[
                     'felx items-center border-transparent hover:border-sky-500 focus:outline-none',
                     'whitespace-nowrap pt-4 pb-3 px-3 border-b-2 font-medium text-base relative',
-                    'after:block after:absolute after:-bottom-[3px] after:h-px after:bg-neutral-700 after:-left-6 after:-right-6',
+                    'after:block after:absolute after:-bottom-[3px] after:h-px after:bg-gray-200 dark:after:bg-neutral-700 after:-left-6 after:-right-6',
                     {'border-sky-500 text-sky-600': selected},
                     ]">
                         <component v-if="label.icon" :is="label.icon" class="mr-2"></component>
