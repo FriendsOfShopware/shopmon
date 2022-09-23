@@ -19,6 +19,7 @@ export interface CheckerInput {
     cacheInfo: CacheInfo;
     favicon: string|null;
     client: HttpClient;
+    ignores: string[];
 }
 
 export interface CheckerChecks {
@@ -32,6 +33,11 @@ export interface CheckerChecks {
 export class CheckerOutput {
     public status: SHOP_STATUS = SHOP_STATUS.GREEN;
     public checks: CheckerChecks[] = [];
+    ignores: string[];
+
+    constructor(ignores: string[]) {
+        this.ignores = ignores;
+    }
 
     public success(id: string, message: string, source = 'Shopmon', link: string|null = null) {
         this.checks.push({
@@ -52,9 +58,11 @@ export class CheckerOutput {
             link
         });
 
-        if (this.status === SHOP_STATUS.GREEN) {
-            this.status = SHOP_STATUS.YELLOW;
+        if (this.ignores.indexOf(id) !== -1) {
+            return;
         }
+
+        this.status = SHOP_STATUS.YELLOW;
     }
 
     public error(id: string, message: string, source = 'Shopmon', link: string|null = null) {
@@ -66,6 +74,10 @@ export class CheckerOutput {
             link
         });
 
+        if (this.ignores.indexOf(id) !== -1) {
+            return;
+        }
+
         this.status = SHOP_STATUS.RED;
     }
 }
@@ -76,7 +88,7 @@ export interface Checker {
 
 export class CheckerRegistery {
     static async check(input: CheckerInput) {
-        const result = new CheckerOutput();
+        const result = new CheckerOutput(input.ignores);
 
         await Promise.all([
             new security().check(input, result),
