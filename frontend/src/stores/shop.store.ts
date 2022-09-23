@@ -37,7 +37,9 @@ export const useShopStore = defineStore('shop', {
         },
         
         async updateShop(teamId: number, id: number, payload: any) {
-            payload.shop_url = payload.shop_url.replace(/\/+$/, '');
+            if ( payload.shop_url ) {
+                payload.shop_url = payload.shop_url.replace(/\/+$/, '');
+            }
             await fetchWrapper.patch(`/team/${teamId}/shop/${id}`, payload);
 
             await this.loadShop(teamId, id);

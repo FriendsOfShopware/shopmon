@@ -65,6 +65,28 @@ async function onCacheClear() {
   }
 }
 
+async function ignoreCheck(id: string) {
+  if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
+    shopStore?.shop?.ignores.push(id);
+  
+    shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, {ignores: shopStore?.shop?.ignores});
+    notificateIgnoreUpdate();
+  }
+}
+
+async function removeIgnore(id: string) {
+  if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
+    shopStore.shop.ignores = shopStore.shop.ignores.filter((aid: string) => aid !== id);
+  
+    shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, {ignores: shopStore?.shop?.ignores});
+    notificateIgnoreUpdate();
+  }
+}
+
+async function notificateIgnoreUpdate() {
+  alertStore.info('Ignore state updated. Will effect after next shop update');
+}
+
 </script>
 
 <template>
@@ -153,7 +175,7 @@ async function onCacheClear() {
 
       <template #panel(checks)="{ label }">
         <DataTable
-          :labels="{message: {name: 'Message'}}"
+          :labels="{message: {name: 'Message'}, actions: {name: 'Ignore', class: 'px-3 text-right'}}"
           :data="shopStore.shop.checks">
           <template #cell(message)="{ item }">
             <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 " v-if="item.level == 'red'" />
@@ -166,6 +188,14 @@ async function onCacheClear() {
             <template v-else>
               {{ item.message }} 
             </template>
+          </template>
+          <template #cell(actions)="{ item }">
+            <button @click="removeIgnore(item.id)" v-if="shopStore.shop.ignores.includes(item.id)" data-tooltip="check is ignored" class="opacity-25 tooltip-position-left hover:opacity-100">
+              <icon-fa6-solid:eye-slash />
+            </button>
+            <button @click="ignoreCheck(item.id)" v-else data-tooltip="check used" class="opacity-25 tooltip-position-left hover:opacity-100">
+              <icon-fa6-solid:eye />
+            </button>
           </template>
         </DataTable>
       </template> 
