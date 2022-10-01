@@ -1,7 +1,7 @@
 {
     "recommendations": [
-        "Vue.volar",
-        "vue.vscode-typescript-vue-plugin",
+        "lukashass.volar",
+        "johnsoncodehk.vscode-typescript-vue-plugin",
         "redhat.vscode-xml"
     ]
 }
