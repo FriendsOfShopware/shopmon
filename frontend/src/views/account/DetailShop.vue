@@ -190,10 +190,10 @@ async function notificateIgnoreUpdate() {
             </template>
           </template>
           <template #cell(actions)="{ item }">
-            <button @click="removeIgnore(item.id)" v-if="shopStore.shop.ignores.includes(item.id)" data-tooltip="check is ignored" class="opacity-25 tooltip-position-left hover:opacity-100">
+            <button @click="removeIgnore(item.id)" v-if="shopStore.shop.ignores.includes(item.id)" data-tooltip="check is ignored" class="text-red-600 opacity-25 tooltip-position-left dark:text-red-400 group-hover:opacity-100">
               <icon-fa6-solid:eye-slash />
             </button>
-            <button @click="ignoreCheck(item.id)" v-else data-tooltip="check used" class="opacity-25 tooltip-position-left hover:opacity-100">
+            <button @click="ignoreCheck(item.id)" v-else data-tooltip="check used" class="opacity-25 tooltip-position-left group-hover:opacity-100">
               <icon-fa6-solid:eye />
             </button>
           </template>
