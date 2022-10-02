@@ -1,7 +1,7 @@
 ports:
   - name: Frontend
     port: 3000
-    onOpen: open-preview
+    onOpen: open-browser
   - name: API
     port: 5789
     onOpen: ignore
