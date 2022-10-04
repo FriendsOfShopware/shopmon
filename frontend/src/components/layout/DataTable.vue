@@ -25,7 +25,7 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-none">
-            <tr class="group even:bg-gray-50 hover:bg-sky-50 dark:even:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]" v-for="(item, key) in sortedData" :key="key">
+            <tr class="group even:bg-gray-50 hover:bg-sky-50 dark:even:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]" v-for="(item, itemKey) in sortedData" :key="itemKey">
                 <td v-for="(label, key, index) in labels"
                     class="whitespace-nowrap py-4 align-middle"
                     :class="[
@@ -34,8 +34,9 @@
                         {'pr-4 sm:pr-6 lg:pr-8': index === Object.keys(labels).length - 1 && !label.classOverride},
                         label.class,
                     ]"
+                    :key="key"
                 >
-                    <slot :name="`cell(${key})`" :value="item[key]" :item="item">
+                    <slot :name="`cell(${key})`" :value="item[key]" :item="item" :data="sortedData" :itemKey="itemKey">
                         {{ item[key] }}
                     </slot>
                 </td>

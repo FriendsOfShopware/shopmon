@@ -297,6 +297,20 @@ async function notificateIgnoreUpdate() {
           <template #cell(created)="{ item }">
             <a target="_blank" :href="'https://web.dev/measure/?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
           </template>
+
+          <template v-slot:[cell]="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
+            <span class="mr-2">{{ item[cellKey] }}</span>
+            <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
+              <icon-fa6-solid:arrow-right 
+                :class="[{
+                  'text-green-400 -rotate-45 dark:text-green-200': data[(itemKey + 1)][cellKey] < item[cellKey],
+                  'text-red-600 rotate-45 dark:text-red-400': data[(itemKey + 1)][cellKey] > item[cellKey]
+                }]"
+              />
+            </template>
+            <icon-fa6-solid:minus v-else />
+          </template>
+
         </DataTable>
       </template> 
 
