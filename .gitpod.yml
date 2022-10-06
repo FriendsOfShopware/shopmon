@@ -11,3 +11,13 @@ vscode:
     - lukashass.volar
     - johnsoncodehk.vscode-typescript-vue-plugin
     - redhat.vscode-xml
+    
+github:
+  prebuilds:
+    master: true
+    branches: true
+    pullRequests: true
+    pullRequestsFromForks: true
+    addCheck: false
+    addComment: false
+    addBadge: true
