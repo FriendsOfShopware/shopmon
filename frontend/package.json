@@ -13,7 +13,7 @@
         "@headlessui/vue": "^1.7.3",
         "@tailwindcss/forms": "^0.5.3",
         "fast-sort": "^3.2.0",
-        "pinia": "^2.0.22",
+        "pinia": "^2.0.23",
         "unplugin-icons": "^0.14.11",
         "unplugin-vue-components": "^0.22.8",
         "vee-validate": "^4.6.10",
