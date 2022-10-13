@@ -328,7 +328,7 @@ async function notificateIgnoreUpdate() {
         <ul v-if="dialogExtension?.changelog && dialogExtension.changelog.length > 0">
           <li class="mb-2" v-for="changeLog in dialogExtension.changelog" :key="changeLog.version">
             <div class="font-medium mb-1">
-              <span data-tooltip="not compatible with your version" v-if="!dialogExtension.isCompatible">
+              <span data-tooltip="not compatible with your version" v-if="!changeLog.isCompatible">
                 <icon-fa6-solid:circle-info class="text-yellow-400 text-base dark:text-yellow-200" />
               </span>
               {{ changeLog.version }} - 
