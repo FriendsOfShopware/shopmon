@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
 import accountRoutes from './account.routes';
 import { useAlertStore } from '@/stores/alert.store';
-
+import { nextTick } from 'vue'
 
 export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,4 +34,10 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         // redirect to home page if logged in and trying to access a public page
         return '/';
     }
+});
+
+const DEFAULT_TITLE = 'Shopware Monitoring';
+router.afterEach(async (to, from) => {
+    await nextTick();
+    document.title = to.meta.title || DEFAULT_TITLE;
 });

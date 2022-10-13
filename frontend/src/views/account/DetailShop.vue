@@ -37,11 +37,17 @@ async function loadShop() {
   const teamId = parseInt(route.params.teamId as string, 10);
   const shopId = parseInt(route.params.shopId as string, 10);
 
-  shopStore.loadShop(teamId, shopId);
+  await shopStore.loadShop(teamId, shopId);
   latestShopwareVersion.value = await fetchWrapper.get('/info/latest-shopware-version') as string;
 }
 
-loadShop();
+loadShop().then(function() {
+  if ( shopStore?.shop?.name ) {
+
+  console.log(shopStore.shop.name);
+    document.title = shopStore.shop.name;
+  }
+});
 
 async function onRefresh() {
   if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
