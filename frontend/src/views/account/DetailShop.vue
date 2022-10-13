@@ -123,7 +123,7 @@ async function notificateIgnoreUpdate() {
         <h3 class="text-lg leading-6 font-medium">
           <icon-fa6-solid:circle-xmark class="text-red-600 mr-1 dark:text-red-400 " v-if="shopStore.shop.status == 'red'" />
           <icon-fa6-solid:circle-info class="text-yellow-400 mr-1 dark:text-yellow-200" v-else-if="shopStore.shop.status === 'yellow'" />
-          <icon-fa6-solid:circle-check class="text-green-400 mr-1 dark:text-green-200" v-else />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-1 dark:text-green-300" v-else />
           Shop Information
         </h3>
       </div>
@@ -186,7 +186,7 @@ async function notificateIgnoreUpdate() {
           <template #cell(message)="{ item }">
             <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 " v-if="item.level == 'red'" />
             <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200 " v-else-if="item.level === 'yellow'" />
-            <icon-fa6-solid:circle-check  class="text-green-400 mr-2 text-base dark:text-green-200" v-else />
+            <icon-fa6-solid:circle-check  class="text-green-400 mr-2 text-base dark:text-green-300" v-else />
             <a :href="item.link" target="_blank" v-if="item.link">
               {{ item.message }} 
               <icon-fa6-solid:up-right-from-square  class="text-xs"/>
@@ -214,7 +214,7 @@ async function notificateIgnoreUpdate() {
             <span class="text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
               <icon-fa6-regular:circle />
             </span>
-            <span class="text-green-400 mr-2 text-base dark:text-green-200" data-tooltip="Active" v-else-if="item.active">
+            <span class="text-green-400 mr-2 text-base dark:text-green-300" data-tooltip="Active" v-else-if="item.active">
               <icon-fa6-solid:circle-check />
             </span>
             <span class="text-gray-300 mr-2 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
@@ -273,7 +273,7 @@ async function notificateIgnoreUpdate() {
             <span class="text-red-600 mr-1 text-base dark:text-red-400 " data-tooltip="Task overdue" v-if="item.overdue">
               <icon-fa6-solid:circle-xmark />
             </span>
-            <span class="text-green-400 mr-1 text-base dark:text-green-200" data-tooltip="Working" v-else>
+            <span class="text-green-400 mr-1 text-base dark:text-green-300" data-tooltip="Working" v-else>
               <icon-fa6-solid:circle-check />
             </span>            
             {{ item.name }}
@@ -309,7 +309,7 @@ async function notificateIgnoreUpdate() {
             <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
               <icon-fa6-solid:arrow-right 
                 :class="[{
-                  'text-green-400 -rotate-45 dark:text-green-200': data[(itemKey + 1)][cellKey] < item[cellKey],
+                  'text-green-400 -rotate-45 dark:text-green-300': data[(itemKey + 1)][cellKey] < item[cellKey],
                   'text-red-600 rotate-45 dark:text-red-400': data[(itemKey + 1)][cellKey] > item[cellKey]
                 }]"
               />

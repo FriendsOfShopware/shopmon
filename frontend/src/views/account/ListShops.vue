@@ -51,7 +51,7 @@ shopStore.loadShops();
             v-if="item.status == 'red'" />
           <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200"
             v-else-if="item.status === 'yellow'" />
-          <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base dark:text-green-200" v-else />
+          <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base dark:text-green-300" v-else />
           <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.id } }">
             {{ item.name }}
           </router-link>

@@ -39,7 +39,7 @@ const { alert } = storeToRefs(alertStore);
           <icon-fa6-solid:circle-xmark v-if="alert.type === 'error'" class="text-red-600 dark:text-red-400" />
           <icon-fa6-solid:circle-info v-else-if="alert.type === 'warning'" class="text-yellow-400 dark:text-yellow-200" />
           <icon-fa6-solid:circle-info v-else-if="alert.type === 'info'" class="text-sky-400" />
-          <icon-fa6-solid:circle-check v-else class="text-green-400 dark:text-green-200" />
+          <icon-fa6-solid:circle-check v-else class="text-green-400 dark:text-green-300" />
         </div>
         <div>
           <div class="font-medium">{{ alert.title }}</div>
