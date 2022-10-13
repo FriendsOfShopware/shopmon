@@ -31,6 +31,11 @@ interface ShopwareScheduledTask {
     nextExecutionTime: string;
 }
 
+interface ShopwareQueue {
+    name: string,
+    size: number
+}
+
 interface ShopwareStoreExtension {
     name: string;
     ratingAverage: number;
@@ -320,10 +325,12 @@ export class ShopScrape implements DurableObject {
     
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
+        const queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
+
         const input: CheckerInput = {
             extensions: extensions,
             config: responses.config.body,
-            queueInfo: responses.queue.body,
+            queueInfo: queue,
             scheduledTasks: scheduledTasks,
             cacheInfo: responses.cacheInfo.body,
             favicon: favicon,

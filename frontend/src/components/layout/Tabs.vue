@@ -12,7 +12,7 @@
                     ]">
                         <component v-if="label.icon" :is="label.icon" class="mr-2"></component>
                         {{ label.title }}
-                        <span v-if="label.count && label.count > 0"
+                        <span v-if="label.count !== undefined"
                             class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-900">
                             {{ label.count }}
                         </span>
