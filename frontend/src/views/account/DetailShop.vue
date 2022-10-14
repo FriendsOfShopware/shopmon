@@ -127,9 +127,9 @@ async function notificateIgnoreUpdate() {
           Shop Information
         </h3>
       </div>
-      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700">
-        <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div class="sm:col-span-1">
+      <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+        <dl class="grid grid-cols-1 auto-rows-min gap-6 md:col-span-2 md:grid-cols-2">
+          <div class="md:col-span-1">
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
               {{ shopStore.shop.shopware_version }}
@@ -138,24 +138,24 @@ async function notificateIgnoreUpdate() {
                   :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" >{{ latestShopwareVersion }}</a>
             </dd>
           </div>
-          <div class="sm:col-span-1">
+          <div class="md:col-span-1">
             <dt class="font-medium">Team</dt>
             <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.team_name }}</dd>
           </div>
-          <div class="sm:col-span-1">
+          <div class="md:col-span-1">
             <dt class="font-medium">Last Checked At</dt>
             <dd class="mt-1 text-sm text-gray-500">{{ new Date(shopStore.shop.last_scraped_at).toLocaleString() }}</dd>
           </div>
-          <div class="sm:col-span-1">
+          <div class="md:col-span-1">
             <dt class="font-medium">Environment</dt>
             <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cache_info.environment }}</dd>
           </div>
-          <div class="sm:col-span-1">
+          <div class="md:col-span-1">
             <dt class="font-medium">HTTP Cache</dt>
             <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cache_info.httpCache ? 'Enabled' : 'Disabled' }}
             </dd>
           </div>
-          <div class="sm:col-span-1">
+          <div class="md:col-span-1">
             <dt class="font-medium">URL</dt>
             <dd class="mt-1 text-sm text-gray-500">
               <a :href="shopStore.shop.url" data-tooltip="Go to storefront" target="_blank">
@@ -168,6 +168,12 @@ async function notificateIgnoreUpdate() {
             </dd>
           </div>
         </dl>
+        <div class="mt-6 sm:mt-0 sm:col-span-1 sm:row-span-full sm:col-start-2 sm:row-start-1 md:col-start-3 md:row-span-full md:row-start-1">
+          <img :src="`/api/team/${shopStore.shop.shop_image}`" 
+                class="h-[200px] sm:h-[400px] md:h-[200px]" 
+                v-if="shopStore.shop.shop_image">
+          <icon-fa6-solid:image v-else class="text-gray-100 text-9xl" />
+        </div>
       </div>
     </div>
 

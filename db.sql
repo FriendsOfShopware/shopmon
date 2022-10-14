@@ -97,3 +97,5 @@ CREATE TABLE `shop` (
 
 alter table shop
     add ignores text default '[]' null after last_scraped_error;
+
+ALTER TABLE `shop` ADD COLUMN `shop_image` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL AFTER `ignores`;

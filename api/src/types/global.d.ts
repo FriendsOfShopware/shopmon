@@ -14,6 +14,7 @@ declare global {
         SHOPS_SCRAPE: DurableObjectNamespace;
         PAGESPEED_SCRAPE: DurableObjectNamespace;
         USER_SOCKET: DurableObjectNamespace;
+        FILES: R2Bucket;
     }
 
     interface Team {

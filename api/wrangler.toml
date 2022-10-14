@@ -33,3 +33,8 @@ new_classes = ["UserSocket"]
   binding = "kvStorage"
   id = "61a260743f17482e92fa5cb2c340edec"
   preview_id = "61a260743f17482e92fa5cb2c340edec"
+
+[[r2_buckets]]
+  binding = "FILES"
+  bucket_name = "shopmon"
+  preview_bucket_name = "shopmon"

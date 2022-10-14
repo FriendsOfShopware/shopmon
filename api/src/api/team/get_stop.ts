@@ -22,6 +22,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
         shop.last_scraped_error,
         shop.shopware_version,
         shop.ignores,
+        shop.shop_image,
         shop_scrape_info.extensions, 
         shop_scrape_info.scheduled_task,
         shop_scrape_info.queue_info,

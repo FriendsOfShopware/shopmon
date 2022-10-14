@@ -13,6 +13,7 @@ import {updateTeam} from "./update_team";
 import {deleteTeam} from "./delete_team";
 import {clearShopCache} from "./clear_shop_cache";
 import { validateShop } from "../middleware/shop";
+import { shopImage } from "./shop_image";
 
 const teamRouter = Router({ base: "/api/team" });
 
@@ -29,5 +30,6 @@ teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateSho
 teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, validateShop, refreshShop);
 teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, deleteShop);
 teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, validateShop, clearShopCache);
+teamRouter.get('/pagespeed/:uuid/screenshot.jpg', shopImage);
 
 export default teamRouter;

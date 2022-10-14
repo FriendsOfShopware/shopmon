@@ -43,6 +43,7 @@ declare module '@vue/runtime-core' {
     'IconFa6Solid:eyeSlash': typeof import('~icons/fa6-solid/eye-slash')['default']
     'IconFa6Solid:faBell': typeof import('~icons/fa6-solid/fa-bell')['default']
     'IconFa6Solid:floppyDisk': typeof import('~icons/fa6-solid/floppy-disk')['default']
+    'IconFa6Solid:image': typeof import('~icons/fa6-solid/image')['default']
     'IconFa6Solid:inbox': typeof import('~icons/fa6-solid/inbox')['default']
     'IconFa6Solid:key': typeof import('~icons/fa6-solid/key')['default']
     'IconFa6Solid:minus': typeof import('~icons/fa6-solid/minus')['default']

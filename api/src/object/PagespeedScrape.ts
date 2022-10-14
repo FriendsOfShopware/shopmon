@@ -8,6 +8,7 @@ interface SQLShop {
     name: string;
     url: string;
     team_id: number;
+    shop_image: string|null;
 }
 
 const SECONDS = 1000;
@@ -61,7 +62,7 @@ export class PagespeedScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, name, url, team_id FROM shop WHERE id = ?';
+        const fetchShopSQL = 'SELECT shop.id, shop.name, shop.url, shop.team_id, shop.shop_image FROM shop WHERE shop.id = ?';
 
         const shops = await con.execute(fetchShopSQL, [id]);
 
@@ -138,12 +139,29 @@ export class PagespeedScrape implements DurableObject {
 
         const pagespeed = await pagespeedResponse.json() as PagespeedResponse;
 
+        let pageScreenshot = pagespeed.lighthouseResult.audits['final-screenshot'].details.data;
+        pageScreenshot = pageScreenshot.substr(pageScreenshot.indexOf(',') + 1);
+
+        const fileName = `pagespeed/${crypto.randomUUID()}/screenshot.jpg`;
+
+        await this.env.FILES.put(fileName, base64ToArrayBuffer(pageScreenshot));
+
+        // Delete the previous image
+        if (shop.shop_image) {
+            await this.env.FILES.delete(shop.shop_image);
+        }
+
         await con.execute('INSERT INTO shop_pagespeed(shop_id, performance, accessibility, bestpractices, seo) VALUES(?, ?, ?, ?, ?)', [
             shop.id,
             pagespeed.lighthouseResult.categories.performance.score * 100,
             pagespeed.lighthouseResult.categories.accessibility.score * 100,
             pagespeed.lighthouseResult.categories['best-practices'].score * 100,
             pagespeed.lighthouseResult.categories.seo.score * 100,
+        ]);
+
+        await con.execute('UPDATE shop SET shop_image = ? WHERE id = ?', [
+            fileName,
+            shop.id,
         ]);
     }
 }
@@ -156,6 +174,13 @@ interface PagespeedResponse {
             "best-practices": Audit
             seo: Audit
         }
+        audits: {
+            "final-screenshot": {
+                details: {
+                    data: string;
+                }
+            }   
+        }
     }
 }
 
@@ -165,4 +190,14 @@ interface Audit {
     description: string
     score: number
     manualDescription: string
+}
+
+function base64ToArrayBuffer(base64: string) {
+    var binary_string = atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
 }
