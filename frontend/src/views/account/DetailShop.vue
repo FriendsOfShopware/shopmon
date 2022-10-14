@@ -43,8 +43,6 @@ async function loadShop() {
 
 loadShop().then(function() {
   if ( shopStore?.shop?.name ) {
-
-  console.log(shopStore.shop.name);
     document.title = shopStore.shop.name;
   }
 });
