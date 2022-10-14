@@ -215,23 +215,29 @@ async function notificateIgnoreUpdate() {
           :labels="{name: {name: 'Name', sortable: true}, version: {name: 'Version'}, latest: {name: 'Latest'}, ratingAverage: {name: 'Rating', sortable: true}, installedAt: {name: 'Installed at', sortable: true}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
           :data="shopStore.shop.extensions">
           <template #cell(name)="{ item }">
-            <span class="text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
-              <icon-fa6-regular:circle />
-            </span>
-            <span class="text-green-400 mr-2 text-base dark:text-green-300" data-tooltip="Active" v-else-if="item.active">
-              <icon-fa6-solid:circle-check />
-            </span>
-            <span class="text-gray-300 mr-2 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
-              <icon-fa6-solid:circle-xmark />
-            </span>
-            <template v-if="item.storeLink">
-              <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank">
+            <div class="flex items-start">
+              <span class="leading-5 text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
+                <icon-fa6-regular:circle />
+              </span>
+              <span class="leading-5 text-green-400 mr-2 text-base dark:text-green-300" data-tooltip="Active" v-else-if="item.active">
+                <icon-fa6-solid:circle-check />
+              </span>
+              <span class="leading-5 text-gray-300 mr-2 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
+                <icon-fa6-solid:circle-xmark />
+              </span>
+              <div v-if="item.storeLink">
+                <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank">
+                  <div class="font-bold" v-if="item.label">{{ item.label }}</div>
+                  {{ item.name }}
+                </a>
+              </div>
+              <div v-else>
+                <div class="font-bold" v-if="item.label">{{ item.label }}</div>
                 {{ item.name }}
-              </a>
-            </template>
-            <template v-else>
-              {{ item.name }}
-            </template>
+              </div>
+            </div>
+            
+            
           </template>
 
           <template #cell(latest)="{ item }">

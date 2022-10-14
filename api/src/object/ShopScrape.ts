@@ -238,6 +238,7 @@ export class ShopScrape implements DurableObject {
         for (const plugin of responses.plugin.body.data) {
             extensions.push({
                 name: plugin.name,
+                label: plugin.label,
                 active: plugin.active,
                 version: plugin.version,
                 latestVersion: plugin.upgradeVersion,
@@ -252,6 +253,7 @@ export class ShopScrape implements DurableObject {
         for (const app of responses.app.body.data) {
             extensions.push({
                 name: app.name,
+                label: app.label,
                 active: app.active,
                 version: app.version,
                 latestVersion: null,
