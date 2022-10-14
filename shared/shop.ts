@@ -30,6 +30,7 @@ export interface ShopDetailed extends Shop {
 
 export interface Extension {
     name: string,
+    label: string,
     active: boolean,
     version: string,
     latestVersion: string|null,
