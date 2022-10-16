@@ -85,7 +85,7 @@ export default class implements Checker {
 
 function mapToShopmon(checks: FroshToolsCheck[], result: CheckerOutput) {
     for (const status of checks) {
-        if (ignores.includes(status.snippet)) {
+        if (ignores.includes(status.id || status.snippet)) {
             return;
         }
 
