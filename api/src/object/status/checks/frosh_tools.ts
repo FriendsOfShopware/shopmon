@@ -56,6 +56,7 @@ const snippets: Record<string, string> = {
 }
 
 interface FroshToolsCheck {
+    id?: string;
     state: 'STATE_OK' | 'STATE_WARNING' | 'STATE_ERROR';
     snippet: string;
     current: string;
@@ -95,11 +96,11 @@ function mapToShopmon(checks: FroshToolsCheck[], result: CheckerOutput) {
         }
 
         if (status.state === 'STATE_OK') {
-            result.success(status.snippet, msg, 'FroshTools', status.url);
+            result.success(status.id || status.snippet, msg, 'FroshTools', status.url);
         } else if (status.snippet, status.state === 'STATE_WARNING') {
-            result.warning(status.snippet, msg, 'FroshTools', status.url);
+            result.warning(status.id || status.snippet, msg, 'FroshTools', status.url);
         } else if (status.state === 'STATE_ERROR') {
-            result.error(status.snippet, msg, 'FroshTools', status.url);
+            result.error(status.id || status.snippet, msg, 'FroshTools', status.url);
         }
     }
 }
