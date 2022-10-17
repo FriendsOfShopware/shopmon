@@ -123,7 +123,6 @@ export class ShopScrape implements DurableObject {
         try {
             await this.updateShop(shop, con);
         } catch (e) {
-            console.log(e);
             const sentry = createSentry(this.state, this.env);
 
             sentry.setExtra('shopId', id);
