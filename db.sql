@@ -99,3 +99,13 @@ alter table shop
     add ignores text default '[]' null after last_scraped_error;
 
 ALTER TABLE `shop` ADD COLUMN `shop_image` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL AFTER `ignores`;
+
+CREATE TABLE `shop_changelog` (
+    `shop_id` int NOT NULL,
+    `extensions` text NULL,
+    `old_shopware_version` varchar(255) NULL,
+    `new_shopware_version` varchar(255) NULL,
+    `date` datetime NULL
+) ENGINE InnoDB,
+  CHARSET utf8mb4,
+  COLLATE utf8mb4_0900_ai_ci;

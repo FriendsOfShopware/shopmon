@@ -3,7 +3,7 @@ import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { Shop } from "shopware-app-server-sdk/shop";
 import { getConnection } from "../db";
 import versionCompare from 'version-compare'
-import { Extension, ExtensionChangelog } from "../../../shared/shop";
+import { Extension, ExtensionDiff, ExtensionChangelog } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../sentry";
@@ -123,6 +123,7 @@ export class ShopScrape implements DurableObject {
         try {
             await this.updateShop(shop, con);
         } catch (e) {
+            console.log(e);
             const sentry = createSentry(this.state, this.env);
 
             sentry.setExtra('shopId', id);
@@ -324,7 +325,94 @@ export class ShopScrape implements DurableObject {
                 }
             }
         }
-    
+
+        const resultCurrentExtensions = await con.execute('SELECT extensions FROM shop_scrape_info WHERE shop_id = ?', [
+            shop.id
+        ]);
+
+        const extensionsDiff: ExtensionDiff[] = [];
+        if (resultCurrentExtensions.rows.length > 0) {
+            
+            const currentExtensions = JSON.parse(resultCurrentExtensions.rows[0].extensions);
+
+            for (const oldExtension of currentExtensions) {
+                let exists = false;
+
+                for (const newExtension of extensions) {
+                    if (oldExtension.name === newExtension.name) {
+                        let state: string | false = false;
+                        let changelog: ExtensionChangelog[] | null = null;
+                        if (oldExtension.version !== newExtension.version) {
+                            state = 'updated';
+                            changelog = oldExtension.changelog;
+                        }
+                        else if (oldExtension.active === true && newExtension.active === false) {
+                            state = 'deactivated';
+                        }
+                        else if (oldExtension.active === false && newExtension.active === true) {
+                            state = 'activated';
+                        }
+                        
+                        if(state) {
+                            extensionsDiff.push({
+                                name: newExtension.name,
+                                label: newExtension.label,
+                                state: state,
+                                old_version: oldExtension.version,
+                                new_version: newExtension.version,
+                                changelog: changelog,
+                                active: newExtension.active
+                            });
+                        }
+
+                        exists = true;
+                    }
+                }
+
+                if (!exists) {
+                    extensionsDiff.push({
+                        name: oldExtension.name,
+                        label: oldExtension.label,
+                        state: 'removed',
+                        old_version: oldExtension.version,
+                        new_version: null,
+                        changelog: null,
+                        active: oldExtension.active
+                    });
+                }
+            }
+
+            for (const newExtension of extensions) {
+                let exists = false;
+                
+                for (const oldExtension of currentExtensions) {
+                    if (oldExtension.name === newExtension.name) {
+                        exists = true;
+                    }
+                }
+
+                if (!exists) {
+                    extensionsDiff.push({
+                        name: newExtension.name,
+                        label: newExtension.label,
+                        state: 'installed',
+                        old_version: null,
+                        new_version: newExtension.version,
+                        changelog: null,
+                        active: newExtension.active
+                    });
+                }
+            }
+        }
+
+        let updateShopwareVersion: string | null = null,
+            currentShopwareVersion: string | null = null;
+
+        if (shop.shopware_version !== responses.config.body.version) {
+            updateShopwareVersion = responses.config.body.version,
+            currentShopwareVersion = shop.shopware_version;
+        }
+        
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         const queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
@@ -358,5 +446,14 @@ export class ShopScrape implements DurableObject {
             JSON.stringify(checkerResult.checks),
             favicon
         ]);
+
+        if (extensionsDiff.length > 0 || updateShopwareVersion) {
+            await con.execute('INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
+                shop.id,
+                JSON.stringify(extensionsDiff),
+                currentShopwareVersion,
+                updateShopwareVersion
+            ]);
+        }
     }
 }
