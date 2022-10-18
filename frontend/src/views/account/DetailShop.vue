@@ -9,7 +9,7 @@ import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension } from '@apiTypes/shop';
+import type { Extension, ExtensionDiff, ShopChangelog } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
@@ -19,18 +19,25 @@ import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaPlug from '~icons/fa6-solid/plug';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaRocket from '~icons/fa6-solid/rocket';
+import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
+const viewShopChangelogDialog: Ref<boolean> = ref(false);
+const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
 const latestShopwareVersion: Ref<string|null> = ref(null);
-const test = ref(false);
 
 function openExtensionChangelog(extension: Extension | null) {
   dialogExtension.value = extension;
   viewChangelogDialog.value = true;  
+}
+
+function openShopChangelog(shopChangelog: ShopChangelog | null) {
+  dialogShopChangelog.value = shopChangelog;
+  viewShopChangelogDialog.value = true;  
 }
 
 async function loadShop() {
@@ -89,6 +96,33 @@ async function removeIgnore(id: string) {
 
 async function notificateIgnoreUpdate() {
   alertStore.info('Ignore state updated. Will effect after next shop update');
+}
+
+function sumChanges(changes: ShopChangelog) {
+  const messages: string[] = [];
+
+  if (changes.old_shopware_version && changes.new_shopware_version) {
+    messages.push(
+      `Shopware Update from ${changes.old_shopware_version} to ${changes.new_shopware_version}`
+    );
+  }
+
+  const stateCounts: Record<string, number> = {};
+  for (const extension of changes.extensions) {
+    if (stateCounts[extension.state] !== undefined) {
+      stateCounts[extension.state] = stateCounts[extension.state] + 1;
+    } else {
+      stateCounts[extension.state] = 1;
+    }
+  }
+
+  for (const [state, count] of Object.entries(stateCounts)) {
+    messages.push(
+      `${state} ${count} extension` + (count > 1 ? 's' : '')
+    )
+  }  
+
+  return messages.join(', ');
 }
 
 </script>
@@ -180,7 +214,8 @@ async function notificateIgnoreUpdate() {
       extensions: {title: 'Extensions', count: shopStore.shop.extensions.length, icon: FaPlug}, 
       tasks: {title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: FaListCheck}, 
       queue: {title: 'Queue', count: shopStore.shop.queue_info.length, icon: FaCircleCheck},
-      pagespeed: {title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: FaRocket}
+      pagespeed: {title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: FaRocket},
+      changelog: {title: 'Changelog', count: shopStore.shop.changelog.length, icon: FaFileWaverform}
     }">
 
       <template #panel(checks)="{ label }">
@@ -330,6 +365,22 @@ async function notificateIgnoreUpdate() {
         </DataTable>
       </template> 
 
+      <template #panel(changelog)="{ label }">
+        <DataTable
+          :labels="{date: {name: 'Date', sortable: true}, changes: {name: 'Changes'}}"
+          :data="shopStore.shop.changelog">
+
+          <template #cell(date)="{ item }">
+            {{ new Date(item.date).toLocaleString() }}
+          </template>
+
+          <template #cell(changes)="{ item }">
+            <span @click="openShopChangelog(item)" class="cursor-pointer">{{ sumChanges(item) }}</span>
+          </template>
+
+        </DataTable>
+      </template>
+
     </Tabs>
 
     <Modal :show="viewChangelogDialog" :closeXMark="true" @close="viewChangelogDialog = false">
@@ -359,6 +410,30 @@ async function notificateIgnoreUpdate() {
               No Changelog data provided
             </div>
           </div>
+        </div>
+      </template>
+    </Modal>
+
+    <Modal :show="viewShopChangelogDialog" :closeXMark="true" @close="viewShopChangelogDialog = false">
+      <template #title>Shop changelog - <span class="font-normal" v-if="dialogShopChangelog?.date">{{ new Date(dialogShopChangelog.date).toLocaleString() }}</span></template>
+      <template #content>
+        <template v-if="dialogShopChangelog?.old_shopware_version && dialogShopChangelog?.new_shopware_version">
+          Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{ dialogShopChangelog.new_shopware_version }}</strong>
+        </template>
+
+        <div class="mt-4" v-if="dialogShopChangelog?.extensions?.length > 0">
+          <h2 class="text-lg mb-1 font-medium">Shop Plugin Changelog:</h2>
+          <ul class="list-disc">
+            <li class="ml-4 mb-1" v-for="extension in dialogShopChangelog?.extensions" :key="extension.name">
+              <strong>{{ extension.label }}</strong> ({{ extension.name }}) {{ extension.state }}
+              <template>
+                {{ extension.old_version }} {{ extension.new_version }}
+              </template>
+              <template v-if="extension.old_version && extension.new_version">
+                from {{ extension.old_version }} to {{ extension.new_version }}
+              </template>
+            </li>
+          </ul>
         </div>
       </template>
     </Modal>

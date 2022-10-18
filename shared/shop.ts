@@ -26,10 +26,12 @@ export interface ShopDetailed extends Shop {
     cache_info: CacheInfo;
     queue_info: QueueInfo[];
     pagespeed: Pagespeed[];
+    changelog: ShopChangelog[];
 }
 
 export interface Extension {
     name: string,
+    label: string,
     active: boolean,
     version: string,
     latestVersion: string|null,
@@ -38,6 +40,16 @@ export interface Extension {
     storeLink: string|null,
     changelog: ExtensionChangelog[]|null,
     installedAt: string|null,
+}
+
+export interface ExtensionDiff {
+    name: string,
+    label: string,
+    state: string,
+    old_version: string|null,
+    new_version: string|null,
+    changelog: ExtensionChangelog[]|null,
+    active: boolean,
 }
 
 export interface ExtensionChangelog {
@@ -75,4 +87,13 @@ export interface Pagespeed {
     accessibility: number;
     best_practices: number;
     seo: number;
+}
+
+export interface ShopChangelog {
+    id: number;
+    shop_id: number;
+    extensions: ExtensionDiff[];
+    old_shopware_version: string|null;
+    new_shopware_version: string|null;
+    date: string;
 }
