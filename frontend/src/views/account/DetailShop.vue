@@ -261,14 +261,14 @@ function sumChanges(changes: ShopChangelog) {
                 <icon-fa6-solid:circle-xmark />
               </span>
               <div v-if="item.storeLink">
-                <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank">
-                  <div class="font-bold" v-if="item.label">{{ item.label }}</div>
-                  {{ item.name }}
+                <a :href="item.storeLink" target="_blank">
+                  <div class="font-bold whitespace-normal" v-if="item.label">{{ item.label }}</div>
+                  <div class="dark:opacity-50">{{ item.name }}</div>
                 </a>
               </div>
               <div v-else>
-                <div class="font-bold" v-if="item.label">{{ item.label }}</div>
-                {{ item.name }}
+                <div class="font-bold whitespace-normal" v-if="item.label">{{ item.label }}</div>
+                <div class="dark:opacity-50">{{ item.name }}</div>
               </div>
             </div>
             
