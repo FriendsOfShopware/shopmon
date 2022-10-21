@@ -27,7 +27,7 @@ export async function reScheduleTask(req: Request, env: Env): Promise<Response> 
 
     try {
         const nextExecutionTime: string = new Date().toISOString();
-        await client.patch('/scheduled-task/' + taskId, {
+        await client.patch(`/scheduled-task/${taskId}`, {
             'status': 'scheduled',
             'nextExecutionTime': nextExecutionTime
         });
