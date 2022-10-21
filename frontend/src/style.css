@@ -34,6 +34,26 @@ a {
   @apply bg-amber-200 text-amber-700 hover:text-amber-700 dark:text-amber-700 dark:hover:text-amber-700
 }
 
+.pill {
+  @apply text-xs inline-block py-0.5 px-2 rounded-full bg-gray-300 text-gray-900 hover:text-gray-900 dark:text-gray-900 dark:hover:text-gray-900
+}
+
+.pill-success {
+  @apply bg-green-400 dark:bg-green-300
+}
+
+.pill-info {
+  @apply bg-sky-400 dark:bg-sky-300
+}
+
+.pill-warning {
+  @apply bg-amber-200
+}
+
+.pill-error {
+  @apply bg-red-600 text-white dark:text-gray-900 dark:bg-red-400
+}
+
 .field-no-rounded {
   @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 dark:bg-neutral-900 focus:outline-none focus:border-sky-500 focus:z-10 sm:text-sm dark:border-neutral-800 dark:placeholder-gray-500 dark:text-neutral-400 dark:focus:border-sky-500;
   box-shadow: unset !important;
@@ -61,14 +81,15 @@ table th {
 }
 
 *[data-tooltip]:before {
-  @apply shadow absolute rounded py-1 px-3 bg-gray-700 text-white shadow whitespace-nowrap;
+  @apply shadow absolute rounded py-1 px-3 bg-gray-700 text-white text-sm shadow whitespace-nowrap pointer-events-none;
   content: attr(data-tooltip);  
   bottom: calc(100% + 2px);
   left: -.75rem;
   display: none;
 }
 
-*[data-tooltip]:after {  
+*[data-tooltip]:after {
+  @apply pointer-events-none;
   content: "";
   position:absolute;
   left:50%;

@@ -76,6 +76,17 @@ async function onCacheClear() {
   }
 }
 
+async function onReScheduleTask(taskId: string) {
+  if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
+    try {
+      await shopStore.reScheduleTask(shopStore.shop.team_id, shopStore.shop.id, taskId);
+      alertStore.success('Task is re-scheduled');
+    } catch (e: any) {
+      alertStore.error(e);
+    }
+  }
+}
+
 async function ignoreCheck(id: string) {
   if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
     shopStore?.shop?.ignores.push(id);
@@ -312,17 +323,9 @@ function sumChanges(changes: ShopChangelog) {
 
       <template #panel(tasks)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name', sortable: true}, lastExecutionTime: {name: 'Last Executed', sortable: true}, nextExecutionTime: {name: 'Next Execution', sortable: true}}"
-          :data="shopStore.shop.scheduled_task">
-          <template #cell(name)="{ item }">
-            <span class="text-red-600 mr-1 text-base dark:text-red-400 " data-tooltip="Task overdue" v-if="item.overdue">
-              <icon-fa6-solid:circle-xmark />
-            </span>
-            <span class="text-green-400 mr-1 text-base dark:text-green-300" data-tooltip="Working" v-else>
-              <icon-fa6-solid:circle-check />
-            </span>            
-            {{ item.name }}
-          </template>
+          :labels="{name: {name: 'Name', sortable: true}, interval: {name: 'Interval'}, lastExecutionTime: {name: 'Last Executed', sortable: true}, nextExecutionTime: {name: 'Next Execution', sortable: true}, status: {name: 'Status'}, actions: {name: '', class: 'px-3 text-right w-16'}}"
+          :data="shopStore.shop.scheduled_task"
+          :default-sorting="{by: 'nextExecutionTime'}">          
 
           <template #cell(lastExecutionTime)="{ item }">
             {{ new Date(item.lastExecutionTime).toLocaleString() }}
@@ -330,6 +333,39 @@ function sumChanges(changes: ShopChangelog) {
 
           <template #cell(nextExecutionTime)="{ item }">
             {{ new Date(item.nextExecutionTime).toLocaleString() }}
+          </template>
+
+          <template #cell(status)="{ item }">
+            <span class="pill pill-success" v-if="item.status === 'scheduled' && !item.overdue" >
+              <icon-fa6-solid:check />
+              {{ item.status }}
+            </span>
+            <span class="pill pill-info" v-else-if="item.status === 'queued' || item.status === 'running' && !item.overdue" >
+                <icon-fa6-solid:rotate />
+              {{ item.status }}
+            </span>
+            <span class="pill pill-warning" v-else-if="item.status === 'scheduled' || item.status === 'queued' || item.status === 'running' && item.overdue">
+                <icon-fa6-solid:info />
+              {{ item.status }}
+            </span>
+            <span class="pill" v-else-if="item.status === 'inactive'">
+                <icon-fa6-solid:pause />
+              {{ item.status }}
+            </span>
+            <span class="pill pill-error" v-else>
+                <icon-fa6-solid:xmark />
+              {{ item.status }}
+            </span>
+          </template>
+
+          <template #cell(actions)="{ item }">
+            <span class="cursor-pointer opacity-25 hover:opacity-100 tooltip-position-left"
+                  data-tooltip="Re-schedule task" 
+                  @click="onReScheduleTask(item.id)"
+            >
+              <icon-fa6-solid:arrow-rotate-right class="text-base leading-3" />
+            </span>
+            
           </template>
         </DataTable>
       </template>

@@ -23,6 +23,7 @@ interface SQLShop {
 }
 
 interface ShopwareScheduledTask {
+    id: string;
     name: string;
     runInterval: number;
     status: string;
@@ -267,6 +268,7 @@ export class ShopScrape implements DurableObject {
     
         const scheduledTasks = responses.scheduledTask.body.data.map((task: ShopwareScheduledTask) => {
             return {
+                id: task.id,
                 name: task.name,
                 status: task.status,
                 interval: task.runInterval,
