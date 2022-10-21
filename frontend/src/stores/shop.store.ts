@@ -3,10 +3,11 @@ import { defineStore } from "pinia";
 import type { Shop, ShopDetailed } from '@apiTypes/shop'; 
 
 export const useShopStore = defineStore('shop', {
-    state: (): { shops: Shop[], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, shop: ShopDetailed|null } => ({
+    state: (): { shops: Shop[], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: ShopDetailed|null } => ({
         isLoading: false,
         isRefreshing: false,
         isCacheClearing: false,
+        isReSchedulingTask: false,
         shops: [],
         shop: null,
     }),
@@ -55,6 +56,13 @@ export const useShopStore = defineStore('shop', {
             this.isCacheClearing = true;
             await fetchWrapper.post(`/team/${teamId}/shop/${id}/clear_cache`);
             this.isCacheClearing = false;
+        },
+
+        async reScheduleTask(teamId: number, id: number, taskId: string) {
+            this.isReSchedulingTask = true;
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/reschedule_task/${taskId}`);
+            await this.loadShop(teamId, id);
+            this.isReSchedulingTask = false;
         },
 
         async delete(teamId: number, shopId: number) {
