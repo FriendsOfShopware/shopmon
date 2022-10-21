@@ -12,6 +12,7 @@ import {createTeam} from "./create_team";
 import {updateTeam} from "./update_team";
 import {deleteTeam} from "./delete_team";
 import {clearShopCache} from "./clear_shop_cache";
+import {reScheduleTask} from "./reschedule_task";
 import { validateShop } from "../middleware/shop";
 import { shopImage } from "./shop_image";
 
@@ -30,6 +31,7 @@ teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateSho
 teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, validateShop, refreshShop);
 teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, deleteShop);
 teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, validateShop, clearShopCache);
+teamRouter.post('/:teamId/shop/:shopId/reschedule_task/:taskId', validateToken, validateTeam, validateShop, reScheduleTask);
 teamRouter.get('/pagespeed/:uuid/screenshot.jpg', shopImage);
 
 export default teamRouter;
