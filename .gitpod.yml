@@ -11,6 +11,7 @@ vscode:
     - lukashass.volar
     - johnsoncodehk.vscode-typescript-vue-plugin
     - redhat.vscode-xml
+    - hashicorp.terraform
     
 github:
   prebuilds:
