@@ -345,7 +345,7 @@ function sumChanges(changes: ShopChangelog) {
               {{ item.status }}
             </span>
             <span class="pill pill-warning" v-else-if="item.status === 'scheduled' || item.status === 'queued' || item.status === 'running' && item.overdue">
-                <icon-fa6-solid:info />
+                <icon-fa6-solid:info class="align-[-0.1em]" />
               {{ item.status }}
             </span>
             <span class="pill" v-else-if="item.status === 'inactive'">
