@@ -4,7 +4,7 @@ import {validateTeam, validateTeamOwner} from "../middleware/team";
 import {createShop} from "./create_shop";
 import {updateShop} from "./update_shop";
 import {deleteShop} from "./delete_shop";
-import {getShop} from "./get_stop";
+import {getShop} from "./get_shop";
 import {listShops} from "./list_shops";
 import {addMember, listMembers, removeMember} from "./members";
 import {refreshShop} from "./refresh_shop";
