@@ -28,6 +28,7 @@ const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
 const viewShopChangelogDialog: Ref<boolean> = ref(false);
 const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
+const showShopRefreshModal: Ref<boolean> = ref(false);
 const latestShopwareVersion: Ref<string|null> = ref(null);
 
 function openExtensionChangelog(extension: Extension | null) {
@@ -54,10 +55,11 @@ loadShop().then(function() {
   }
 });
 
-async function onRefresh() {
+async function onRefresh(pagespeed: boolean) {
+  showShopRefreshModal.value = false;
   if ( shopStore?.shop?.team_id && shopStore?.shop?.id ) {
         try {
-            await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id);
+            await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id, pagespeed);
             alertStore.success('Your Shop will refresh soon!');
         } catch (e: any) {
             alertStore.error(e);
@@ -145,7 +147,7 @@ function sumChanges(changes: ShopChangelog) {
               :disabled="shopStore.isCacheClearing">
         <icon-ic:baseline-cleaning-services :class="{'animate-pulse': shopStore.isCacheClearing}" class="w-4 h-4" />
       </button>
-      <button class="btn" data-tooltip="Refresh shop data" @click="onRefresh"
+      <button class="btn" data-tooltip="Refresh shop data" @click="showShopRefreshModal = true"
         :disabled="shopStore.isRefreshing">
         <icon-fa6-solid:rotate :class="{'animate-spin': shopStore.isRefreshing}" />
       </button>
@@ -473,6 +475,25 @@ function sumChanges(changes: ShopChangelog) {
         </div>
       </template>
     </Modal>
+
+    <Modal :show="showShopRefreshModal" :closeXMark="true" @close="showShopRefreshModal = false">
+            <template #icon><icon-fa6-solid:rotate class="h-6 w-6 text-sky-500" aria-hidden="true" /></template>
+            <template #title>Refresh {{ shopStore.shop.name }}</template>
+            <template #content>                
+              Do you also want to have a new pagespeed test?
+            </template>
+            <template #footer>
+                <button type="button" class="btn w-full sm:ml-3 sm:w-auto"
+                    @click="onRefresh(true)">
+                    Yes
+                </button>
+                <button ref="cancelButtonRef" type="button"
+                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    @click="onRefresh(false)">
+                    No
+                </button>
+            </template>
+        </Modal>
 
   </MainContainer>
 </template>
