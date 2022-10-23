@@ -202,7 +202,7 @@ export class ShopScrape implements DurableObject {
                 plugin: client.post('/search/plugin'),
                 app: client.post('/search/app'),
                 scheduledTask: client.post('/search/scheduled-task'),
-                queue: client.get('/_info/queue.json'),
+                queue: versionCompare(shop.shopware_version, '6.4.7.0') < 0 ? client.post('/search/message-queue-stats') : client.get('/_info/queue.json'),
                 cacheInfo: client.get('/_action/cache_info')
             })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -416,7 +416,12 @@ export class ShopScrape implements DurableObject {
         
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
-        const queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
+        let queue = null;
+        if ( versionCompare(shop.shopware_version, '6.4.7.0') < 0 ) {
+            queue = responses.queue.body.data.filter((entry: ShopwareQueue) => entry.size > 0);
+        } else {
+            queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
+        }
 
         const input: CheckerInput = {
             extensions: extensions,
