@@ -46,9 +46,9 @@ export const useShopStore = defineStore('shop', {
             await this.loadShop(teamId, id);
         },
 
-        async refreshShop(teamId: number, id: number) {
+        async refreshShop(teamId: number, id: number, pagespeed: boolean) {
             this.isRefreshing = true;
-            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`);
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`, {'pagespeed': pagespeed});
             this.isRefreshing = false;
         },
 
