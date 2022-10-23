@@ -102,7 +102,7 @@ function toggleDarkMode() {
                   </button>
                 </div>
                 <ul v-if="notificationStore.notifications.length > 0"
-                  class="divide-y divide-gray-200 overflow-y-auto max-h-80">
+                  class="divide-y divide-gray-200 overflow-y-auto max-h-80 dark:divide-neutral-700">
                   <li v-for="notification in notificationStore.notifications"
                     class="group px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50 dark:odd:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]">
                     <div class="shrink-0">
