@@ -24,8 +24,9 @@ async function onSubmit(values: any) {
 
     // redirect to previous url or default to home page
     router.push(authStore.returnUrl || '/');
-  } catch (e) {
+  } catch (e: unknown) {
     const alertStore = useAlertStore();
+    
     alertStore.error(e);
   }
 }

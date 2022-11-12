@@ -39,5 +39,12 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
 const DEFAULT_TITLE = 'Shopware Monitoring';
 router.afterEach(async (to, from) => {
     await nextTick();
-    document.title = to.meta.title || DEFAULT_TITLE;
+    
+    const title = to.meta.title;
+    if(typeof title === 'string') {
+        document.title = title;
+        return;
+    } 
+    
+    document.title = DEFAULT_TITLE;
 });

@@ -32,7 +32,6 @@ async function onCreateTeam(values: any) {
     alertStore.error(e);
   }
 }
-
 </script>
 
 <template>

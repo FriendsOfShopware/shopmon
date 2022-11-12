@@ -47,7 +47,7 @@ const teams = user.value?.teams;
     <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden dark:shadow-none" v-else>
       <DataTable
           :labels="{name: {name: 'Name'}, memberCount: {name: 'Members'}, shopCount: {name: 'Shops'}}"
-          :data="teams"
+          :data="teams || []"
           class="bg-white dark:bg-neutral-800"
       >
           <template #cell(name)="{ item }">

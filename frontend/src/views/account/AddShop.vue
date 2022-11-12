@@ -37,7 +37,6 @@ async function onSubmit(values: any) {
     alertStore.error(e);
   }
 }
-
 </script>
 
 <template>

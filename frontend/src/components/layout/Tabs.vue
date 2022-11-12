@@ -35,9 +35,9 @@
 </template>
   
 <script setup lang="ts">
-  import { ref } from 'vue'
   import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue'
+  import type { FunctionalComponent } from 'vue';
 
-  defineProps<{labels: Record<string, {title: string, count?: number, icon?: string}>}>()
+  defineProps<{labels: Record<string, {title: string, count?: number, icon?: FunctionalComponent}>}>()
 </script>
   

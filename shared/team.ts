@@ -4,4 +4,5 @@ export interface Team {
     created_at: string;
     memberCount: number;
     shopCount: number;
+    is_owner: boolean;
 }

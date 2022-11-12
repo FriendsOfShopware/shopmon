@@ -27,6 +27,17 @@ export interface ShopDetailed extends Shop {
     queue_info: QueueInfo[];
     pagespeed: Pagespeed[];
     changelog: ShopChangelog[];
+    shop_image: string;
+    checks: CheckerChecks[];
+    ignores: string[];
+}
+
+export interface CheckerChecks {
+    id: string;
+    level: SHOP_STATUS;
+    message: string;
+    source: string;
+    link: string|null;
 }
 
 export interface Extension {
