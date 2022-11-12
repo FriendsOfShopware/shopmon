@@ -387,7 +387,7 @@ function sumChanges(changes: ShopChangelog) {
             <a target="_blank" :href="'https://web.dev/measure/?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
           </template>
 
-          <template v-slot:[cell]="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
+          <template v-slot:cell="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
             <span class="mr-2">{{ item[cellKey] }}</span>
             <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
               <icon-fa6-solid:arrow-right 
@@ -459,7 +459,7 @@ function sumChanges(changes: ShopChangelog) {
           Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{ dialogShopChangelog.new_shopware_version }}</strong>
         </template>
 
-        <div class="mt-4" v-if="dialogShopChangelog?.extensions?.length > 0">
+        <div class="mt-4" v-if="dialogShopChangelog?.extensions?.length">
           <h2 class="text-lg mb-1 font-medium">Shop Plugin Changelog:</h2>
           <ul class="list-disc">
             <li class="ml-4 mb-1" v-for="extension in dialogShopChangelog?.extensions" :key="extension.name">

@@ -66,7 +66,6 @@ async function onRemoveMember(userId: number) {
     }
   }
 }
-
 </script>
 
 <template>
@@ -83,7 +82,7 @@ async function onRemoveMember(userId: number) {
     </div>
   </Header>
 
-  <MainContainer>
+  <MainContainer v-if="team">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:shadow-none dark:bg-neutral-800">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">

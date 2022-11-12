@@ -51,8 +51,8 @@
 </template>
 
 <script lang="ts" setup>
-    import { computed, reactive, watch, ref } from 'vue';
-    import { sort, createNewSortInstance } from 'fast-sort';
+    import { defineProps, ref, computed } from 'vue'
+    import { createNewSortInstance } from 'fast-sort';
 
     const props = defineProps<{labels: Record<string, {class?: string, classOverride?: boolean, name: string, sortable?: boolean}>, defaultSorting?: {by: string, desc?: boolean},data: Record<string, any>[]}>()
 
