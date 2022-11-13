@@ -13,6 +13,7 @@ declare module '@vue/runtime-core' {
     Header: typeof import('./src/components/layout/Header.vue')['default']
     'IconAntDesign:clearOutlined': typeof import('~icons/ant-design/clear-outlined')['default']
     'IconFa6Regular:circle': typeof import('~icons/fa6-regular/circle')['default']
+    'IconFa6Regular:circleInfo': typeof import('~icons/fa6-regular/circle-info')['default']
     'IconFa6Regular:moon': typeof import('~icons/fa6-regular/moon')['default']
     'IconFa6Regular:star': typeof import('~icons/fa6-regular/star')['default']
     'IconFa6Regular:suin': typeof import('~icons/fa6-regular/suin')['default']

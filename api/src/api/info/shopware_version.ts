@@ -10,7 +10,7 @@ export async function getLatestShopwareVersion(): Promise<Response> {
 
     const installApiData = await installApiResp.json() as ShopwareVersion[]
     
-    return new JsonResponse(installApiData[0].version);
+    return new JsonResponse(installApiData);
 }
 
 interface ShopwareVersion {
