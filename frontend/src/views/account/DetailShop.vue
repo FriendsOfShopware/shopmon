@@ -33,9 +33,9 @@ const dialogExtension: Ref<Extension | null> = ref(null);
 const viewShopChangelogDialog: Ref<boolean> = ref(false);
 const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
 
-const viewUpdateWizzardDialog: Ref<boolean> = ref(false);
-const loadingUpdateWizzard: Ref<boolean> = ref(false);
-const dialogUpdateWizzard: Ref<ShopChangelog | null> = ref(null);
+const viewUpdateWizardDialog: Ref<boolean> = ref(false);
+const loadingUpdateWizard: Ref<boolean> = ref(false);
+const dialogUpdateWizard: Ref<ShopChangelog | null> = ref(null);
 
 const showShopRefreshModal: Ref<boolean> = ref(false);
 const shopwareVersions: Ref<ShopwareVersion[] | null> = ref(null);
@@ -52,9 +52,9 @@ function openShopChangelog(shopChangelog: ShopChangelog | null) {
   viewShopChangelogDialog.value = true;
 }
 
-function openUpdateWizzard() {
-  dialogUpdateWizzard.value = null;
-  viewUpdateWizzardDialog.value = true;
+function openUpdateWizard() {
+  dialogUpdateWizard.value = null;
+  viewUpdateWizardDialog.value = true;
 }
 
 async function loadShop() {
@@ -107,8 +107,8 @@ async function onReScheduleTask(taskId: string) {
   }
 }
 
-async function loadUpdateWizzard(version: string) {
-  loadingUpdateWizzard.value = true;
+async function loadUpdateWizard(version: string) {
+  loadingUpdateWizard.value = true;
 
   const body = {
     "currentVersion": shopStore.shop?.shopware_version,
@@ -116,9 +116,9 @@ async function loadUpdateWizzard(version: string) {
     "plugins": shopStore.shop?.extensions
   }
 
-  dialogUpdateWizzard.value = await fetchWrapper.post('/info/check-extension-compatibility', body);
+  dialogUpdateWizard.value = await fetchWrapper.post('/info/check-extension-compatibility', body);
 
-  loadingUpdateWizzard.value = false;
+  loadingUpdateWizard.value = false;
 }
 
 async function ignoreCheck(id: string) {
@@ -215,9 +215,9 @@ function sumChanges(changes: ShopChangelog) {
                     :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" >
                     {{ latestShopwareVersion }}
                 </a>
-                <button @click="openUpdateWizzard" class="ml-2 badge badge-info">
+                <button @click="openUpdateWizard" class="ml-2 badge badge-info">
                   <icon-fa6-solid:rotate/>
-                  Update Wizzard
+                  Update Wizard
                 </button>
               </template>                
             </dd>
@@ -515,26 +515,26 @@ function sumChanges(changes: ShopChangelog) {
       </template>
     </Modal>
 
-    <Modal :show="viewUpdateWizzardDialog" :closeXMark="true" @close="viewUpdateWizzardDialog = false">
-      <template #title><icon-fa6-solid:rotate /> Shopware Update Wizzard</template>
+    <Modal :show="viewUpdateWizardDialog" :closeXMark="true" @close="viewUpdateWizardDialog = false">
+      <template #title><icon-fa6-solid:rotate /> Shopware Update Wizard</template>
       <template #content>
-        <select class="field mb-2" @change="event => loadUpdateWizzard((event.target as HTMLSelectElement).value)">
+        <select class="field mb-2" @change="event => loadUpdateWizard((event.target as HTMLSelectElement).value)">
           <option disabled selected>Select update Version</option>
           <option v-for="data in shopwareVersions" :key="data.version">{{ data.version }}</option>
         </select>
 
-        <template v-if="loadingUpdateWizzard">
+        <template v-if="loadingUpdateWizard">
           <div class="text-center">
             Loading <icon-fa6-solid:rotate class="animate-spin" />
           </div>          
         </template>
         
-        <div v-if="dialogUpdateWizzard" :class="{'opacity-20': loadingUpdateWizzard}">
+        <div v-if="dialogUpdateWizard" :class="{'opacity-20': loadingUpdateWizard}">
           <h2 class="text-lg mb-1 font-medium">Plugin Compatibility</h2>
 
           <ul>
             <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in sort(shopStore.shop.extensions).asc([u => u.active, u => u.label])" :key="extension.name">
-              <template v-if="!dialogUpdateWizzard.find((plugin: Extension) => plugin.name === extension.name)">
+              <template v-if="!dialogUpdateWizard.find((plugin: Extension) => plugin.name === extension.name)">
                 <div class="flex">
                   <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
                   <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200 mt-0.5" v-else />
@@ -544,7 +544,7 @@ function sumChanges(changes: ShopChangelog) {
                   </div>
                 </div>
               </template>
-              <template v-else v-for="compatibility in dialogUpdateWizzard.filter((plugin: Extension) => plugin.name === extension.name)">
+              <template v-else v-for="compatibility in dialogUpdateWizard.filter((plugin: Extension) => plugin.name === extension.name)">
                 <div class="flex">
                   <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
                   <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 mt-0.5" v-else-if="compatibility.status.type == 'red'" />
