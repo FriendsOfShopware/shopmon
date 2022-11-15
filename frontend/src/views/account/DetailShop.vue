@@ -533,11 +533,13 @@ function sumChanges(changes: ShopChangelog) {
           <h2 class="text-lg mb-1 font-medium">Plugin Compatibility</h2>
 
           <ul>
-            <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in sort(shopStore.shop.extensions).asc([u => u.active, u => u.label])" :key="extension.name">
+            <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in sort(shopStore.shop.extensions).by([{desc: u => u.active}, {asc: u => u.label}])" :key="extension.name">
               <template v-if="!dialogUpdateWizard.find((plugin: Extension) => plugin.name === extension.name)">
                 <div class="flex">
-                  <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
-                  <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200 mt-0.5" v-else />
+                  <div class="mr-2 w-4">
+                    <icon-fa6-regular:circle class="text-base text-gray-400 dark:text-neutral-500" v-if="!extension.active" />
+                    <icon-fa6-solid:circle-info class="text-base text-yellow-400 dark:text-yellow-200" v-else />
+                  </div>                  
                   <div>
                     <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
                     <div >This plugin is not available in the Store. Please contact the plugin manufacturer.</div>
@@ -546,9 +548,11 @@ function sumChanges(changes: ShopChangelog) {
               </template>
               <template v-else v-for="compatibility in dialogUpdateWizard.filter((plugin: Extension) => plugin.name === extension.name)">
                 <div class="flex">
-                  <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
-                  <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 mt-0.5" v-else-if="compatibility.status.type == 'red'" />
-                  <icon-fa6-solid:circle-check  class="text-green-400 mr-2 text-base dark:text-green-300 mt-0.5" v-else />
+                  <div class="mr-2 w-4">
+                    <icon-fa6-regular:circle class="text-base text-gray-400 dark:text-neutral-500" v-if="!extension.active" />
+                    <icon-fa6-solid:circle-xmark class="text-base text-red-600 dark:text-red-400" v-else-if="compatibility.status.type == 'red'" />
+                    <icon-fa6-solid:circle-check  class="text-base text-green-400 dark:text-green-300" v-else />
+                  </div>    
                   <div>
                     <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
                     <div >{{ compatibility.status.label }}</div>
