@@ -30,10 +30,13 @@ a {
   @apply text-xs font-semibold inline-block py-1 px-2 ml-2 rounded bg-gray-300 text-gray-900 hover:text-gray-900 dark:text-gray-900 dark:hover:text-gray-900
 }
 
+.badge-info {
+  @apply bg-sky-500 text-blue-900 hover:text-blue-900 dark:text-blue-900 dark:hover:text-blue-900
+}
+
 .badge-warning {
   @apply bg-amber-200 text-amber-700 hover:text-amber-700 dark:text-amber-700 dark:hover:text-amber-700
 }
-
 
 .pill {
   @apply text-xs inline-block py-0.5 h-[1.375rem] px-2 rounded-full bg-gray-300 text-gray-900 hover:text-gray-900 dark:text-gray-900 dark:hover:text-gray-900

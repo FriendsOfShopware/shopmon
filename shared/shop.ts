@@ -108,3 +108,11 @@ export interface ShopChangelog {
     new_shopware_version: string|null;
     date: string;
 }
+
+export interface ShopwareVersion {
+    sha1: string;
+    sha256: string;
+    size: number;
+    uri: string;
+    version: string;
+}

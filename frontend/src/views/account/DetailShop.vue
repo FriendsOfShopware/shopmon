@@ -4,12 +4,14 @@ import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
 import Tabs from '@/components/layout/Tabs.vue';
 import Modal from '@/components/layout/Modal.vue';
+import { compareVersions } from 'compare-versions';
+import { sort } from 'fast-sort';
 
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionDiff, ShopChangelog } from '@apiTypes/shop';
+import type { Extension, ExtensionDiff, ShopChangelog, ShopwareVersion } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
@@ -24,21 +26,35 @@ import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
+
 const viewChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);
+
 const viewShopChangelogDialog: Ref<boolean> = ref(false);
 const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
+
+const viewUpdateWizardDialog: Ref<boolean> = ref(false);
+const loadingUpdateWizard: Ref<boolean> = ref(false);
+const dialogUpdateWizard: Ref<ShopChangelog | null> = ref(null);
+
 const showShopRefreshModal: Ref<boolean> = ref(false);
+const shopwareVersions: Ref<ShopwareVersion[] | null> = ref(null);
+
 const latestShopwareVersion: Ref<string|null> = ref(null);
 
 function openExtensionChangelog(extension: Extension | null) {
   dialogExtension.value = extension;
-  viewChangelogDialog.value = true;  
+  viewChangelogDialog.value = true;
 }
 
 function openShopChangelog(shopChangelog: ShopChangelog | null) {
   dialogShopChangelog.value = shopChangelog;
-  viewShopChangelogDialog.value = true;  
+  viewShopChangelogDialog.value = true;
+}
+
+function openUpdateWizard() {
+  dialogUpdateWizard.value = null;
+  viewUpdateWizardDialog.value = true;
 }
 
 async function loadShop() {
@@ -46,7 +62,9 @@ async function loadShop() {
   const shopId = parseInt(route.params.shopId as string, 10);
 
   await shopStore.loadShop(teamId, shopId);
-  latestShopwareVersion.value = await fetchWrapper.get('/info/latest-shopware-version') as string;
+  const shopwareVersionsData = await fetchWrapper.get('/info/latest-shopware-version') as ShopwareVersion[];
+  shopwareVersions.value = shopwareVersionsData.filter((entry: ShopwareVersion) => compareVersions(shopStore.shop.shopware_version, entry.version) < 0);
+  latestShopwareVersion.value = shopwareVersions.value[0]?.version;
 }
 
 loadShop().then(function() {
@@ -87,6 +105,20 @@ async function onReScheduleTask(taskId: string) {
       alertStore.error(e);
     }
   }
+}
+
+async function loadUpdateWizard(version: string) {
+  loadingUpdateWizard.value = true;
+
+  const body = {
+    "currentVersion": shopStore.shop?.shopware_version,
+    "futureVersion": version,
+    "plugins": shopStore.shop?.extensions
+  }
+
+  dialogUpdateWizard.value = await fetchWrapper.post('/info/check-extension-compatibility', body);
+
+  loadingUpdateWizard.value = false;
 }
 
 async function ignoreCheck(id: string) {
@@ -178,9 +210,16 @@ function sumChanges(changes: ShopChangelog) {
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
               {{ shopStore.shop.shopware_version }}
-              <a class="badge badge-warning" 
-                  v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version" 
-                  :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" >{{ latestShopwareVersion }}</a>
+              <template v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version">
+                <a class="badge badge-warning"  
+                    :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank" >
+                    {{ latestShopwareVersion }}
+                </a>
+                <button @click="openUpdateWizard" class="ml-2 badge badge-info">
+                  <icon-fa6-solid:rotate/>
+                  Update Wizard
+                </button>
+              </template>                
             </dd>
           </div>
           <div class="md:col-span-1">
@@ -463,7 +502,7 @@ function sumChanges(changes: ShopChangelog) {
           <h2 class="text-lg mb-1 font-medium">Shop Plugin Changelog:</h2>
           <ul class="list-disc">
             <li class="ml-4 mb-1" v-for="extension in dialogShopChangelog?.extensions" :key="extension.name">
-              <strong>{{ extension.label }}</strong> ({{ extension.name }}) {{ extension.state }}
+              <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span> {{ extension.state }}
               <template>
                 {{ extension.old_version }} {{ extension.new_version }}
               </template>
@@ -476,24 +515,71 @@ function sumChanges(changes: ShopChangelog) {
       </template>
     </Modal>
 
+    <Modal :show="viewUpdateWizardDialog" :closeXMark="true" @close="viewUpdateWizardDialog = false">
+      <template #title><icon-fa6-solid:rotate /> Shopware Update Wizard</template>
+      <template #content>
+        <select class="field mb-2" @change="event => loadUpdateWizard((event.target as HTMLSelectElement).value)">
+          <option disabled selected>Select update Version</option>
+          <option v-for="data in shopwareVersions" :key="data.version">{{ data.version }}</option>
+        </select>
+
+        <template v-if="loadingUpdateWizard">
+          <div class="text-center">
+            Loading <icon-fa6-solid:rotate class="animate-spin" />
+          </div>          
+        </template>
+        
+        <div v-if="dialogUpdateWizard" :class="{'opacity-20': loadingUpdateWizard}">
+          <h2 class="text-lg mb-1 font-medium">Plugin Compatibility</h2>
+
+          <ul>
+            <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in sort(shopStore.shop.extensions).asc([u => u.active, u => u.label])" :key="extension.name">
+              <template v-if="!dialogUpdateWizard.find((plugin: Extension) => plugin.name === extension.name)">
+                <div class="flex">
+                  <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
+                  <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200 mt-0.5" v-else />
+                  <div>
+                    <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
+                    <div >This plugin is not available in the Store. Please contact the plugin manufacturer.</div>
+                  </div>
+                </div>
+              </template>
+              <template v-else v-for="compatibility in dialogUpdateWizard.filter((plugin: Extension) => plugin.name === extension.name)">
+                <div class="flex">
+                  <icon-fa6-regular:circle class="text-gray-400 mr-2 text-base dark:text-neutral-500 mt-0.5" v-if="extension.active" />
+                  <icon-fa6-solid:circle-xmark class="text-red-600 mr-2 text-base dark:text-red-400 mt-0.5" v-else-if="compatibility.status.type == 'red'" />
+                  <icon-fa6-solid:circle-check  class="text-green-400 mr-2 text-base dark:text-green-300 mt-0.5" v-else />
+                  <div>
+                    <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
+                    <div >{{ compatibility.status.label }}</div>
+                  </div>
+                </div>              
+              </template>
+            </li>
+          </ul>
+        </div>
+        
+      </template>
+    </Modal>
+
     <Modal :show="showShopRefreshModal" :closeXMark="true" @close="showShopRefreshModal = false">
-            <template #icon><icon-fa6-solid:rotate class="h-6 w-6 text-sky-500" aria-hidden="true" /></template>
-            <template #title>Refresh {{ shopStore.shop.name }}</template>
-            <template #content>                
-              Do you also want to have a new pagespeed test?
-            </template>
-            <template #footer>
-                <button type="button" class="btn w-full sm:ml-3 sm:w-auto"
-                    @click="onRefresh(true)">
-                    Yes
-                </button>
-                <button ref="cancelButtonRef" type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
-                    @click="onRefresh(false)">
-                    No
-                </button>
-            </template>
-        </Modal>
+        <template #icon><icon-fa6-solid:rotate class="h-6 w-6 text-sky-500" aria-hidden="true" /></template>
+        <template #title>Refresh {{ shopStore.shop.name }}</template>
+        <template #content>                
+          Do you also want to have a new pagespeed test?
+        </template>
+        <template #footer>
+            <button type="button" class="btn w-full sm:ml-3 sm:w-auto"
+                @click="onRefresh(true)">
+                Yes
+            </button>
+            <button ref="cancelButtonRef" type="button"
+                class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                @click="onRefresh(false)">
+                No
+            </button>
+        </template>
+    </Modal>
 
   </MainContainer>
 </template>
