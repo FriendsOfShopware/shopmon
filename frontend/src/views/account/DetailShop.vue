@@ -426,7 +426,7 @@ function sumChanges(changes: ShopChangelog) {
             <a target="_blank" :href="'https://web.dev/measure/?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
           </template>
 
-          <template v-slot:cell="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
+          <template v-slot:[cell]="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
             <span class="mr-2">{{ item[cellKey] }}</span>
             <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
               <icon-fa6-solid:arrow-right 
