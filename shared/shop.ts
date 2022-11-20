@@ -70,6 +70,14 @@ export interface ExtensionChangelog {
     isCompatible: boolean;
 }
 
+export interface ExtensionCompatibilitys extends Extension {
+    compatibility: {
+        label: string,
+        name: string,
+        type: string
+    }|null
+}
+
 export interface ScheduledTask {
     name: string,
     status: string,

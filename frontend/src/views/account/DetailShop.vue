@@ -5,13 +5,13 @@ import DataTable from '@/components/layout/DataTable.vue';
 import Tabs from '@/components/layout/Tabs.vue';
 import Modal from '@/components/layout/Modal.vue';
 import { compareVersions } from 'compare-versions';
-import { sort } from 'fast-sort';
+import { sort, createNewSortInstance } from 'fast-sort';
 
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionDiff, ShopChangelog, ShopwareVersion } from '@apiTypes/shop';
+import type { Extension, ExtensionCompatibilitys, ShopChangelog, ShopwareVersion } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
@@ -35,7 +35,7 @@ const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
-const dialogUpdateWizard: Ref<ShopChangelog | null> = ref(null);
+const dialogUpdateWizard: Ref<ExtensionCompatibilitys[] | null> = ref(null);
 
 const showShopRefreshModal: Ref<boolean> = ref(false);
 const shopwareVersions: Ref<ShopwareVersion[] | null> = ref(null);
@@ -116,7 +116,22 @@ async function loadUpdateWizard(version: string) {
     "plugins": shopStore.shop?.extensions
   }
 
-  dialogUpdateWizard.value = await fetchWrapper.post('/info/check-extension-compatibility', body);
+  const pluginCompatibilitys = await fetchWrapper.post('/info/check-extension-compatibility', body);
+  const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
+
+  for ( const extension of extensions ) {
+    const compatibility = pluginCompatibilitys.find((plugin: Extension) => plugin.name === extension.name)
+    extension.compatibility = null;
+    if ( compatibility ) {
+      extension.compatibility = compatibility.status;
+    }
+  }
+
+  const naturalSort = createNewSortInstance({
+    comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare,
+  });
+
+  dialogUpdateWizard.value = naturalSort(extensions).by([{desc: u => u.active}, {asc: u => u.label}]);
 
   loadingUpdateWizard.value = false;
 }
@@ -533,32 +548,21 @@ function sumChanges(changes: ShopChangelog) {
           <h2 class="text-lg mb-1 font-medium">Plugin Compatibility</h2>
 
           <ul>
-            <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in sort(shopStore.shop.extensions).by([{desc: u => u.active}, {asc: u => u.label}])" :key="extension.name">
-              <template v-if="!dialogUpdateWizard.find((plugin: Extension) => plugin.name === extension.name)">
-                <div class="flex">
-                  <div class="mr-2 w-4">
-                    <icon-fa6-regular:circle class="text-base text-gray-400 dark:text-neutral-500" v-if="!extension.active" />
-                    <icon-fa6-solid:circle-info class="text-base text-yellow-400 dark:text-yellow-200" v-else />
-                  </div>                  
-                  <div>
-                    <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
-                    <div >This plugin is not available in the Store. Please contact the plugin manufacturer.</div>
-                  </div>
+            <li class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]" v-for="extension in dialogUpdateWizard" :key="extension.name">
+              <div class="flex">
+                <div class="mr-2 w-4">
+                  <icon-fa6-regular:circle class="text-base text-gray-400 dark:text-neutral-500" v-if="!extension.active" />
+                  <icon-fa6-solid:circle-info class="text-base text-yellow-400 dark:text-yellow-200" v-else-if="!extension.compatibility" />
+                  <icon-fa6-solid:circle-xmark class="text-base text-red-600 dark:text-red-400" v-else-if="extension.compatibility.type == 'red'" />
+                  <icon-fa6-solid:rotate class="text-base text-sky-500 dark:text-sky-400" v-else-if="extension.compatibility.label === 'Available now'" />
+                  <icon-fa6-solid:circle-check class="text-base text-green-400 dark:text-green-300" v-else />
+                </div>                  
+                <div>
+                  <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
+                  <div v-if="!extension.compatibility">This plugin is not available in the Store. Please contact the plugin manufacturer.</div>
+                  <div v-else>{{ extension.compatibility.label }}</div>
                 </div>
-              </template>
-              <template v-else v-for="compatibility in dialogUpdateWizard.filter((plugin: Extension) => plugin.name === extension.name)">
-                <div class="flex">
-                  <div class="mr-2 w-4">
-                    <icon-fa6-regular:circle class="text-base text-gray-400 dark:text-neutral-500" v-if="!extension.active" />
-                    <icon-fa6-solid:circle-xmark class="text-base text-red-600 dark:text-red-400" v-else-if="compatibility.status.type == 'red'" />
-                    <icon-fa6-solid:circle-check  class="text-base text-green-400 dark:text-green-300" v-else />
-                  </div>    
-                  <div>
-                    <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span>
-                    <div >{{ compatibility.status.label }}</div>
-                  </div>
-                </div>              
-              </template>
+              </div>           
             </li>
           </ul>
         </div>
