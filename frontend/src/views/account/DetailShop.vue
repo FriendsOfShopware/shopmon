@@ -518,7 +518,7 @@ function sumChanges(changes: ShopChangelog) {
           <ul class="list-disc">
             <li class="ml-4 mb-1" v-for="extension in dialogShopChangelog?.extensions" :key="extension.name">
               <div><strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span></div>
-              {{ extension.state }}
+              {{ extension.state }} <template v-if="extension.state === 'installed' && extension.active">and activated </template>
               <template v-if="extension.state === 'updated'">
                 from {{ extension.old_version }} to {{ extension.new_version }}
               </template>
