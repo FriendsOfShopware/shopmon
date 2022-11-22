@@ -517,12 +517,16 @@ function sumChanges(changes: ShopChangelog) {
           <h2 class="text-lg mb-1 font-medium">Shop Plugin Changelog:</h2>
           <ul class="list-disc">
             <li class="ml-4 mb-1" v-for="extension in dialogShopChangelog?.extensions" :key="extension.name">
-              <strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span> {{ extension.state }}
-              <template>
-                {{ extension.old_version }} {{ extension.new_version }}
-              </template>
-              <template v-if="extension.old_version && extension.new_version">
+              <div><strong>{{ extension.label }}</strong> <span class="opacity-60">({{ extension.name }})</span></div>
+              {{ extension.state }}
+              <template v-if="extension.state === 'updated'">
                 from {{ extension.old_version }} to {{ extension.new_version }}
+              </template>
+              <template v-else>
+                {{ extension.new_version }}
+                <template v-if="!extension.new_version">
+                  {{ extension.old_version }}
+                </template>
               </template>
             </li>
           </ul>
