@@ -13,21 +13,21 @@
   "license": "MIT",
   "dependencies": {
     "@mmyoji/object-validator": "0.0.4",
-    "@planetscale/database": "1.4.0",
+    "@planetscale/database": "1.5.0",
     "bcryptjs": "2.4.3",
-    "itty-router": "2.6.6",
+    "itty-router": "3.0.11",
     "shopware-app-server-sdk": "0.0.15",
-    "toucan-js": "2.7.0",
+    "toucan-js": "3.1.0",
     "version-compare": "1.4.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20221111.1",
     "@types/bcryptjs": "2.4.2",
-    "@typescript-eslint/eslint-plugin": "5.44.0",
-    "@typescript-eslint/parser": "5.44.0",
-    "esbuild": "0.15.16",
-    "eslint": "8.28.0",
-    "typescript": "4.9.3",
-    "wrangler": "2.4.4"
+    "@typescript-eslint/eslint-plugin": "5.48.1",
+    "@typescript-eslint/parser": "5.48.1",
+    "esbuild": "0.16.17",
+    "eslint": "8.31.0",
+    "typescript": "4.9.4",
+    "wrangler": "2.7.1"
   }
 }
