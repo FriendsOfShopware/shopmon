@@ -1,11 +1,11 @@
-import {ErrorResponse, NoContentResponse} from "../common/response";
-import {Shop} from "shopware-app-server-sdk/shop";
-import {decrypt} from "../../crypto";
-import {HttpClient} from "shopware-app-server-sdk/component/http-client";
-import {getConnection} from "../../db";
+import { ErrorResponse, NoContentResponse } from "../common/response";
+import { Shop } from "shopware-app-server-sdk/shop";
+import { decrypt } from "../../crypto";
+import { HttpClient } from "shopware-app-server-sdk/component/http-client";
+import { getConnection } from "../../db";
 
 export async function clearShopCache(req: Request, env: Env): Promise<Response> {
-    const {shopId} = req.params as { shopId?: string };
+    const { shopId } = req.params as { shopId?: string };
 
     if (typeof shopId !== "string") {
         return new ErrorResponse('Missing shopId', 400);

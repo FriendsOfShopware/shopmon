@@ -1,12 +1,11 @@
-import {ErrorResponse, NoContentResponse} from "../common/response";
-import {Shop} from "shopware-app-server-sdk/shop";
-import {decrypt} from "../../crypto";
-import {HttpClient} from "shopware-app-server-sdk/component/http-client";
-import {getConnection} from "../../db";
-import task from "../../object/status/checks/task";
+import { ErrorResponse, NoContentResponse } from "../common/response";
+import { Shop } from "shopware-app-server-sdk/shop";
+import { decrypt } from "../../crypto";
+import { HttpClient } from "shopware-app-server-sdk/component/http-client";
+import { getConnection } from "../../db";
 
 export async function reScheduleTask(req: Request, env: Env): Promise<Response> {
-    const {shopId, taskId} = req.params as { shopId?: string, taskId?: string };
+    const { shopId, taskId } = req.params as { shopId?: string, taskId?: string };
 
     if (typeof shopId !== "string") {
         return new ErrorResponse('Missing shopId', 400);

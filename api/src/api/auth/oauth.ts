@@ -96,7 +96,7 @@ async function handlePasswordGrant(params: OAuthRequest, env: Env): Promise<Resp
     );
 
     try {
-        const accessToken = await getAuthentificationToken(env, refreshToken);
+        const accessToken = await getAuthentifikationToken(env, refreshToken);
 
         return new JsonResponse({
             "access_token": accessToken,
@@ -113,7 +113,7 @@ async function handlePasswordGrant(params: OAuthRequest, env: Env): Promise<Resp
     }
 }
 
-async function getAuthentificationToken(env: Env, refreshToken: string) {
+async function getAuthentifikationToken(env: Env, refreshToken: string) {
     const token = await env.kvStorage.get(refreshToken);
     const con = getConnection(env);
 
@@ -145,7 +145,7 @@ async function getAuthentificationToken(env: Env, refreshToken: string) {
 
 async function handleRefreshTokenGrant(params: OAuthRequest, env: Env): Promise<Response> {
     try {
-        const accessToken = await getAuthentificationToken(env, params.refresh_token);
+        const accessToken = await getAuthentifikationToken(env, params.refresh_token);
 
         return new JsonResponse({
             "access_token": accessToken,

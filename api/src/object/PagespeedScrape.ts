@@ -133,7 +133,7 @@ export class PagespeedScrape implements DurableObject {
         const pagespeedResponse = await fetch(params.toString());
 
         if (pagespeedResponse.status !== 200) {
-            // That can happen that the shop is in maintaince mode and the pagespeed API returns a 503
+            // That can happen that the shop is in maintenance mode and the PageSpeed API returns a 503
             return;
         }
 
@@ -193,10 +193,10 @@ interface Audit {
 }
 
 function base64ToArrayBuffer(base64: string) {
-    var binary_string = atob(base64);
-    var len = binary_string.length;
-    var bytes = new Uint8Array(len);
-    for (var i = 0; i < len; i++) {
+    const binary_string = atob(base64);
+    const len = binary_string.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
         bytes[i] = binary_string.charCodeAt(i);
     }
     return bytes.buffer;

@@ -4,12 +4,11 @@ import { JsonResponse, NoContentResponse } from "../common/response";
 export async function getNotifications(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const result = await con.execute(`SELECT * FROM user_notification WHERE user_id = ?`, [req.userId]);
+    const result = await con.execute(`SELECT id, key, level, title, message, link, read, created_at FROM user_notification WHERE user_id = ?`, [req.userId]);
 
-    for (const row of result.rows) {
+    for (const row of result.rows as { link: string, read: boolean }[]) {
         row.link = JSON.parse(row.link);
         row.read = !!row.read;
-        delete row.user_id;
     }
 
     return new JsonResponse(result.rows);
@@ -25,9 +24,9 @@ export async function markAllReadNotification(req: Request, env: Env): Promise<R
 
 export async function deleteNotification(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
-    const { id } = req.params;
+    const { id, userId } = req.params;
 
-    await con.execute(`DELETE FROM user_notification WHERE id = ? AND user_id = ?`, [id, req.userId]);
+    await con.execute(`DELETE FROM user_notification WHERE id = ? AND user_id = ?`, [id, userId]);
 
     return new NoContentResponse();
 }
