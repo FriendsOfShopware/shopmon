@@ -4,12 +4,21 @@ import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { validateEmail } from "../auth/register";
 
+type TeamRow = {
+    id: string;
+    name: string;
+    created_at: string;
+    is_owner: boolean;
+    shopCount: number;
+    memberCount: number;
+}
+
 export async function accountMe(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
     const result = await con.execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
 
-    const json = result.rows[0];
+    const json = result.rows[0] as { avatar: string, teams: TeamRow[] };
 
     json.avatar = `https://www.gravatar.com/avatar/${json.avatar}?d=identicon`;
 
@@ -28,7 +37,7 @@ WHERE
 	user_to_team.user_id = ?
     `, [req.userId]);
 
-    json.teams = teamResult.rows;
+    json.teams = teamResult.rows as TeamRow[];
     
     return new Response(JSON.stringify(json), {
         status: 200,
@@ -64,7 +73,7 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
         return new ErrorResponse('User not found', 404);
     }
 
-    const user = result.rows[0];
+    const user = result.rows[0] as { id: string, password: string };
 
     if (!bcryptjs.compareSync(currentPassword, user.password)) {
         return new ErrorResponse('Invalid password', 400);

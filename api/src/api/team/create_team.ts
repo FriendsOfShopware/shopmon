@@ -1,7 +1,7 @@
-import {getConnection} from "../../db";
+import { getConnection } from "../../db";
 import Teams from "../../repository/teams";
-import {ErrorResponse, JsonResponse} from "../common/response";
-import {init} from "@mmyoji/object-validator";
+import { ErrorResponse, JsonResponse } from "../common/response";
+import { init } from "@mmyoji/object-validator";
 
 type CreateTeamRequest = {
     name: string;

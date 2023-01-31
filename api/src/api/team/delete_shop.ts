@@ -36,9 +36,9 @@ export async function deleteShop(req: Request, env: Env): Promise<Response> {
 
     await scrapeObject.fetch(`http://localhost/delete?id=${shopId.toString()}`);
 
-    const pagespeedObject = env.PAGESPEED_SCRAPE.get(env.PAGESPEED_SCRAPE.idFromName(shopId))
+    const pageSpeedObject = env.PAGESPEED_SCRAPE.get(env.PAGESPEED_SCRAPE.idFromName(shopId))
 
-    await pagespeedObject.fetch(`http://localhost/delete?id=${shopId.toString()}`);
+    await pageSpeedObject.fetch(`http://localhost/delete?id=${shopId.toString()}`);
 
     return new NoContentResponse();
 }

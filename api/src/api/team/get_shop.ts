@@ -45,7 +45,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
 
     const shop = result.rows[0];
 
-    const pagespeed = await con.execute('SELECT * FROM shop_pagespeed WHERE shop_id = ? ORDER BY created_at DESC', [shopId]);
+    const pageSpeed = await con.execute('SELECT * FROM shop_pagespeed WHERE shop_id = ? ORDER BY created_at DESC', [shopId]);
 
     const changelog = await con.execute('SELECT * FROM shop_changelog WHERE shop_id = ? ORDER BY date DESC', [shopId]);
 
@@ -59,7 +59,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
     shop.cache_info = JSON.parse(shop.cache_info);
     shop.checks = JSON.parse(shop.checks);
     shop.ignores = JSON.parse(shop.ignores);
-    shop.pagespeed = pagespeed.rows;
+    shop.pagespeed = pageSpeed.rows;
     shop.changelog = changelog.rows;
 
     return new JsonResponse(shop);
