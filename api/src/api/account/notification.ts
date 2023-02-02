@@ -4,7 +4,7 @@ import { JsonResponse, NoContentResponse } from "../common/response";
 export async function getNotifications(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const result = await con.execute('SELECT id, `key`, level, title, message, link, read, created_at FROM user_notification WHERE user_id = ?', [req.userId]);
+    const result = await con.execute('SELECT `id`, `key`, `level`, `title`, `message`, `link`, `read`, `created_at` FROM user_notification WHERE user_id = ?', [req.userId]);
 
     for (const row of result.rows as { link: string, read: boolean }[]) {
         row.link = JSON.parse(row.link);
