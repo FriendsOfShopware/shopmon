@@ -77,7 +77,7 @@ CREATE TABLE `shop` (
 	`key` varchar(50) NOT NULL,
 	`level` varchar(10) NOT NULL,
 	`title` varchar(128) NOT NULL DEFAULT '',
-	`message` varchar(128) NOT NULL,
+	`message` varchar(1024) NOT NULL,
 	`link` varchar(128) NOT NULL,
 	`read` tinyint NOT NULL DEFAULT '0',
 	`created_at` datetime DEFAULT CURRENT_TIMESTAMP(),

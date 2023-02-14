@@ -161,7 +161,17 @@ export class ShopScrape implements DurableObject {
     
         try {
             await client.getToken();
-        } catch (e) {
+        } catch (e: any) {
+            let error = "";
+
+            if (typeof e?.response.body === "object") {
+                if (e?.response.body.errors) {
+                    error = JSON.stringify(e?.response.body.errors[0]);
+                } else {
+                    error = JSON.stringify(e?.response.body);
+                }
+            }
+
             await Shops.notify(
                 con, 
                 this.env.USER_SOCKET, 
@@ -170,7 +180,7 @@ export class ShopScrape implements DurableObject {
                 {
                     level: 'error', 
                     title: `Shop: ${shop.name} could not be updated`, 
-                    message: 'Could not connect to shop. Please check your credentials and try again.', 
+                    message: 'Could not connect to shop. Please check your credentials and try again.' + error, 
                     link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
                 }
             );
@@ -182,7 +192,7 @@ export class ShopScrape implements DurableObject {
                     key: `shop.update-auth-error.${shop.id}`,
                     shopId: shop.id,
                     subject: 'Shop Update Error',
-                    message: 'The Shop could not be updated. Please check your credentials and try again.'
+                    message: 'The Shop could not be updated. Please check your credentials and try again.' + error
 
                 }
             )
