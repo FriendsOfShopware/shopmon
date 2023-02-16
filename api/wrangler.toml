@@ -6,6 +6,7 @@ routes = ["shopmon.fos.gg/api/*"]
 
 minify = true
 node_compat = false
+logpush = true
 
 [vars]
 MAIL_FROM="Shopmon <shopmon@fos.gg>"
