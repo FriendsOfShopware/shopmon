@@ -16,7 +16,10 @@ type TeamRow = {
 export async function accountMe(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const result = await con.execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
+    const query = env.USE_LOCAL_DATABASE ?
+        'SELECT id, username, email, created_at, email as avatar FROM user WHERE id = ?' :
+        'SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?';
+    const result = await con.execute(query, [req.userId]);
 
     const json = result.rows[0] as { avatar: string, teams: TeamRow[] };
 

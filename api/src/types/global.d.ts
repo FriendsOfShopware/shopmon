@@ -1,5 +1,9 @@
+
+
 declare global {
     interface Env {
+        USE_LOCAL_DATABASE: boolean;
+        __D1_BETA__LOCAL_BINDING: D1Database;
         DATABASE_HOST: string;
         DATABASE_USER: string;
         DATABASE_PASSWORD: string;

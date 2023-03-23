@@ -152,8 +152,10 @@ export class ShopScrape implements DurableObject {
     }
 
     async updateShop(shop: SQLShop, con: Connection) {
-    
-        await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
+
+        const query = this.env.USE_LOCAL_DATABASE ? 'UPDATE shop SET last_scraped_at = date(\'now\') WHERE id = ?' :
+            'UPDATE shop SET last_scraped_at = NOW() WHERE id = ?';
+        await con.execute(query, [shop.id]);
 
         const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
     
@@ -452,19 +454,23 @@ export class ShopScrape implements DurableObject {
             favicon,
             shop.id,
         ]);
+
+        const infoQuery = this.env.USE_LOCAL_DATABASE ? 'REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, date(\'now\'))' :
+            'REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())';
     
-        await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())', [
+        await con.execute(infoQuery, [
             shop.id,
             JSON.stringify(input.extensions),
             JSON.stringify(input.scheduledTasks),
             JSON.stringify(input.queueInfo),
             JSON.stringify(input.cacheInfo),
-            JSON.stringify(checkerResult.checks),
-            favicon
+            JSON.stringify(checkerResult.checks)
         ]);
 
         if (extensionsDiff.length > 0 || updateShopwareVersion) {
-            await con.execute('INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
+            const logQuery = this.env.USE_LOCAL_DATABASE ? 'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, date(\'now\'))' :
+                'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())';
+            await con.execute(logQuery, [
                 shop.id,
                 JSON.stringify(extensionsDiff),
                 currentShopwareVersion,

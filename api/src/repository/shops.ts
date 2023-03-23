@@ -33,7 +33,10 @@ export interface User {
 export default class Shops {
     static async createShop(con: Connection, params: CreateShopRequest): Promise<string> {
         try {
-            const result = await con.execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)', [
+            const isLocalConnection = con as any;
+            const query = isLocalConnection['isLocalConnection'] ? 'INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, date(\'now\'), ?)' :
+                'INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)';
+            const result = await con.execute(query, [
                 params.team_id,
                 params.name,
                 params.shop_url,

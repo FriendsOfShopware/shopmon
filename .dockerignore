@@ -1,0 +1,10 @@
+/.vscode
+/.github
+/.git
+/.code-workspace
+/.gitattributes
+/.gitignore
+/LICENSE
+/openapi3.yaml
+/README.md
+/renovate.json

@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  shopmon:
+    build:
+        context: .
+        dockerfile: ./docker/Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - /app/data

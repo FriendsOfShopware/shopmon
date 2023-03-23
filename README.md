@@ -95,6 +95,45 @@ APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
 - Run  `npm i` and `npm run dev:local`
 > Check your console output for request infos and console.logs
 
+## Using Docker
+
+### Docker Compose
+
+See [docker-compose.yml](docker-compose.yml) for an example.
+
+### Environment Variables
+
+| Variable          | Description              | Default                                                                 |
+|-------------------|--------------------------|-------------------------------------------------------------------------|
+| MAILGUN_KEY       | Mailgun API Key          | NULL                                                                    |
+| MAILGUN_DOMAIN    | Mailgun Domain           | NULL                                                                    |
+| PAGESPEED_API_KEY | Google Pagespeed API Key | NULL                                                                    |
+| APP_SECRET        | Application secret       | automatically generated and persisted inside /app/data if not specified |
+
+### Volumes
+
+All data is stored in the /app/data folder. You can mount this folder to a volume to persist the data.
+
+### Managing Users
+
+You can manage users via the tool.sh script.
+
+```
+Usage: ./tool.sh <command> [args]
+Commands:
+  add <username> <password> <email> - adds a user to the sqlite database
+  del <email> - deletes a user from the sqlite database
+  activate <email> - activates a user in the sqlite database
+  list - lists all users in the sqlite database
+  help - prints this help message
+```
+
+Example:
+
+```
+./tool.sh add TestUser password test@test.org
+```
+
 ## License
 
 MIT

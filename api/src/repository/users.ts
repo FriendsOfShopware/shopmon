@@ -31,7 +31,11 @@ export default class Users {
     }
 
     static async createNotification(con: Connection, userId: number, key: string, notification: NotificationCreation): Promise<Notification> {
-        await con.execute('INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE `read` = 0', [
+        const isLocalConnection = con as any;
+        const query = isLocalConnection['isLocalConnection'] ?
+            'INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON CONFLICT(`user_id`, `key`) DO UPDATE SET `read` = 0' :
+            'INSERT INTO user_notification (user_id, `key`, level, title, message, link, `read`) VALUES (?, ?, ?, ?, ?, ?, 0) ON DUPLICATE KEY UPDATE `read` = 0';
+        await con.execute(query, [
             userId,
             key,
             notification.level,
