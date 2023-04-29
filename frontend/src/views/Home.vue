@@ -109,7 +109,8 @@ dashboardStore.loadChangelogs();
         </li>
       </ul>
 
-      <h2 class="text-gray-500 text-lg font-medium mb-3">Last Changes</h2>
+      <template v-if="dashboardStore.changelogs.length > 0">
+        <h2 class="text-gray-500 text-lg font-medium mb-3">Last Changes</h2>
         <DataTable
           :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name'}, changes: {name: 'Changes'}, date: {name: 'Date'}}"
           :data="dashboardStore.changelogs">
@@ -133,6 +134,8 @@ dashboardStore.loadChangelogs();
           </template>
 
         </DataTable>
+      </template>
+      
     </MainContainer>
   </div>
 </template>
