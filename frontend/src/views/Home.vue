@@ -3,9 +3,12 @@ import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
+import { useDashboardStore } from '@/stores/dashboard.store';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
+
+import { sumChanges } from '@/helpers/changelog';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -51,6 +54,10 @@ const teams = user.value?.teams.map(team => ({
 
 const shopStore = useShopStore();
 shopStore.loadShops();
+
+const dashboardStore = useDashboardStore();
+dashboardStore.loadChangelogs();
+
 </script>
 
 <template>
@@ -58,8 +65,8 @@ shopStore.loadShops();
     <Header title="Dashboard" />
     <MainContainer>
 
-      <h2 class="text-gray-500 text-sm font-medium">My Shops's</h2>
-      <ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+      <h2 class="text-gray-500 text-lg font-medium mb-3">My Shops's</h2>
+      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <li v-for="shop in shopStore.shops" :key="shop.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
           <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }" class="flex">
             <div
@@ -80,8 +87,8 @@ shopStore.loadShops();
         </li>
       </ul>
 
-      <h2 class="text-gray-500 text-sm font-medium">My Team's</h2>
-      <ul role="list" class="mt-3 grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <h2 class="text-gray-500 text-lg font-medium mb-3">My Team's</h2>
+      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <li v-for="team in teams" :key="team.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
           <router-link :to="{ name: 'account.teams.detail', params: { teamId: team.id } }" class="flex">
             <div
@@ -101,6 +108,31 @@ shopStore.loadShops();
 
         </li>
       </ul>
+
+      <h2 class="text-gray-500 text-lg font-medium mb-3">Last Changes</h2>
+        <DataTable
+          :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name'}, changes: {name: 'Changes'}, date: {name: 'Date'}}"
+          :data="dashboardStore.changelogs">
+
+          <template #cell(favicon)="{ item }">
+            <img :src="item.shop_favicon" alt="Shop Logo" class="inline-block w-5 h-5 align-middle" v-if="item.shop_favicon" />
+          </template>
+
+          <template #cell(name)="{ item }">
+            <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.shop_id } }">
+              {{ item.shop_name }}
+            </router-link>
+          </template>
+
+          <template #cell(changes)="{ item }">
+            {{ sumChanges(item) }}
+          </template>          
+
+          <template #cell(date)="{ item }">
+            {{ new Date(item.date).toLocaleString() }}
+          </template>
+
+        </DataTable>
     </MainContainer>
   </div>
 </template>
