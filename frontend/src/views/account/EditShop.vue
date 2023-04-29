@@ -31,11 +31,11 @@ const schema = Yup.object().shape({
     team_id: Yup.number().required('Team is required'),
     client_id: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: Yup.string().required("If you change the URL you need to provide client-ID")
+        then: Yup.string().required("If you change the URL you need to provide Client-ID")
     }),
     client_secret: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: Yup.string().required("If you change the URL you need to provide client-SecretD")
+        then: Yup.string().required("If you change the URL you need to provide Client-Secret")
     })
 });
 
