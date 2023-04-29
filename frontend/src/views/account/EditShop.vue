@@ -25,10 +25,18 @@ shopStore.loadShop(teamId, shopId);
 
 const showShopDeletionModal = ref(false)
 
-const schema = Yup.object().shape({
+const schema = Yup.object().shape({    
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
     team_id: Yup.number().required('Team is required'),
+    client_id: Yup.string().when('url', {
+        is: (url: string) => url !== shopStore.shop?.url,
+        then: Yup.string().required("If you change the URL you need to provide client-ID")
+    }),
+    client_secret: Yup.string().when('url', {
+        is: (url: string) => url !== shopStore.shop?.url,
+        then: Yup.string().required("If you change the URL you need to provide client-SecretD")
+    })
 });
 
 async function onSubmit(values: any) {
