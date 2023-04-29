@@ -135,3 +135,38 @@ export async function listUserShops(req: Request, env: Env): Promise<Response> {
         }
     });
 }
+
+
+export async function listUserChangelogs(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
+    const res = await con.execute(`
+    SELECT
+        changelog.id,
+        changelog.shop_id,
+        shop.team_id,
+        shop.name AS shop_name,
+        shop.favicon AS shop_favicon,
+        changelog.extensions,
+        changelog.old_shopware_version,
+        changelog.new_shopware_version,
+        changelog.date
+    FROM shop
+        INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
+        INNER JOIN shop_changelog AS changelog ON(shop.id = changelog.shop_id)
+    WHERE user_to_team.user_id = ?
+    ORDER BY changelog.date DESC
+    LIMIT 10
+    `, [req.userId]);
+
+    for (const row of res.rows) {
+        row.extensions = JSON.parse(row.extensions);
+    }
+
+    return new Response(JSON.stringify(res.rows), { 
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}

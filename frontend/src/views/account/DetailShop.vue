@@ -16,6 +16,7 @@ import { ref } from 'vue';
 import type { Ref } from 'vue';
 
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
+import { sumChanges } from '@/helpers/changelog';
 
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaPlug from '~icons/fa6-solid/plug';
@@ -156,33 +157,6 @@ async function removeIgnore(id: string) {
 
 async function notificateIgnoreUpdate() {
   alertStore.info('Ignore state updated. Will effect after next shop update');
-}
-
-function sumChanges(changes: ShopChangelog) {
-  const messages: string[] = [];
-
-  if (changes.old_shopware_version && changes.new_shopware_version) {
-    messages.push(
-      `Shopware Update from ${changes.old_shopware_version} to ${changes.new_shopware_version}`
-    );
-  }
-
-  const stateCounts: Record<string, number> = {};
-  for (const extension of changes.extensions) {
-    if (stateCounts[extension.state] !== undefined) {
-      stateCounts[extension.state] = stateCounts[extension.state] + 1;
-    } else {
-      stateCounts[extension.state] = 1;
-    }
-  }
-
-  for (const [state, count] of Object.entries(stateCounts)) {
-    messages.push(
-      `${state} ${count} extension` + (count > 1 ? 's' : '')
-    )
-  }  
-
-  return messages.join(', ');
 }
 
 </script>
