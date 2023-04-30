@@ -13,40 +13,6 @@ import { sumChanges } from '@/helpers/changelog';
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-const letterColors = {
-  a: '#00B7FF', b: '#004DFF', c: '#00FFFF', d: '#826400', e: '#580041', f: '#ec4899', g: '#00FF00', h: '#C500FF', i: '#B4FFD7', j: '#FFCA00', k:'#969600', l: '#B4A2FF', m: '#C20078',
-  n: '#1e3a8a', o: '#FF8B00', p: '#FFC8FF', q: '#666666', r: '#dc2626', s: '#CCCCCC', t: '#009E8F', u: '#D7A870', v: '#8200FF', w: '#960000', x: '#BBFF00', y: '#FFFF00', z: '#006F00'  
-} as {[key: string]: string};
-
-function getContrastYIQ(hexcolor: string) {
-	// If a leading # is provided, remove it
-	if (hexcolor.slice(0, 1) === '#') {
-		hexcolor = hexcolor.slice(1);
-	}
-
-	// If a three-character hexcode, make six-character
-	if (hexcolor.length === 3) {
-		hexcolor = hexcolor.split('').map(function (hex) {
-			return hex + hex;
-		}).join('');
-	}
-
-	// Convert to RGB value
-	var r = parseInt(hexcolor.substr(0,2),16);
-	var g = parseInt(hexcolor.substr(2,2),16);
-	var b = parseInt(hexcolor.substr(4,2),16);
-
-	// Get YIQ ratio
-	var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-
-	// Check contrast
-	return (yiq >= 128) ? 'black' : 'white';
-}
-
-function getLetterColor(name: string) {
-  return letterColors[name.substring(0, 1).toLowerCase()];
-}
-
 const teams = user.value?.teams.map(team => ({
     ...team,
     initials: team.name.substring(0, 2)
@@ -65,20 +31,20 @@ dashboardStore.loadChangelogs();
     <Header title="Dashboard" />
     <MainContainer>
 
-      <h2 class="text-gray-500 text-lg font-medium mb-3">My Shops's</h2>
-      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <li v-for="shop in shopStore.shops" :key="shop.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
+      <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+        <icon-fa6-solid:shop />
+        My Shops's
+      </h2>
+      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+        <li v-for="shop in shopStore.shops" :key="shop.id" class="col-span-1 shadow-sm rounded-md bg-white dark:shadow-none dark:bg-neutral-800 hover:bg-sky-50 dark:hover:bg-[#2a2b2f]">
           <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }" class="flex">
-            <div
-              class="flex-shrink-0 flex items-center justify-center w-16 text-sm font-medium rounded-l-md text-gray-900"
-              :style="`background-color: ${getLetterColor(shop.initials)}`">
-              <span :class="[{'text-white': getContrastYIQ(getLetterColor(shop.initials)) === 'white' }]">
-                {{ shop.initials }}
-              </span>
+            <div class="flex-shrink-0 flex items-center justify-center w-16 rounded-l-md bg-gray-100 bg-opacity-50 dark:bg-neutral-700 dark:bg-opacity-25">
+              <img :src="shop.favicon" alt="Shop Logo" class="inline-block w-5 h-5 align-middle" v-if="shop.favicon" />
             </div>
-            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800 group-hover:bg-sky-50 dark:group-hover:bg-[#2a2b2f]">
+            <div class="flex-1 items-center justify-between px-4 py-2 truncate">
               <div class="text-gray-900 font-medium truncate dark:text-neutral-400">{{ shop.name }}</div>
               <div class="text-gray-500">
+                {{ shop.team_name }}<br />
                 {{ shop.shopware_version }}
               </div>
             </div>
@@ -87,18 +53,17 @@ dashboardStore.loadChangelogs();
         </li>
       </ul>
 
-      <h2 class="text-gray-500 text-lg font-medium mb-3">My Team's</h2>
-      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <li v-for="team in teams" :key="team.id" class="col-span-1 shadow-sm rounded-md dark:shadow-none group">
+      <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+        <icon-fa6-solid:people-group />
+        My Team's
+      </h2>
+      <ul role="list" class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+        <li v-for="team in teams" :key="team.id" class="col-span-1 shadow-sm rounded-md bg-white dark:shadow-none dark:bg-neutral-800 hover:bg-sky-50 dark:hover:bg-[#2a2b2f]">
           <router-link :to="{ name: 'account.teams.detail', params: { teamId: team.id } }" class="flex">
-            <div
-              class="flex-shrink-0 flex items-center justify-center w-16 text-sm font-medium rounded-l-md uppercase text-gray-900"
-              :style="`background-color: ${getLetterColor(team.name)}`">
-              <span :class="[{'text-white': getContrastYIQ(getLetterColor(team.name)) === 'white' }]">
-                {{ team.name.substring(0, 2) }}
-              </span>
+            <div class="flex-shrink-0 flex items-center justify-center w-16 rounded-l-md bg-gray-100 bg-opacity-50 dark:bg-neutral-700 dark:bg-opacity-25">
+              <icon-fa6-solid:people-group class="text-lg text-gray-900 dark:text-neutral-400" />
             </div>
-            <div class="flex-1 items-center justify-between bg-white rounded-r-md px-4 py-2 truncate dark:bg-neutral-800 group-hover:bg-sky-50 dark:group-hover:bg-[#2a2b2f]">
+            <div class="flex-1 items-center justify-between px-4 py-2 truncate">
               <div class="text-gray-900 font-medium truncate dark:text-neutral-400">{{ team.name }}</div>
               <div class="text-gray-500">
                 {{ team.memberCount }} Members, {{ team.shopCount }} Shops
@@ -110,30 +75,31 @@ dashboardStore.loadChangelogs();
       </ul>
 
       <template v-if="dashboardStore.changelogs.length > 0">
-        <h2 class="text-gray-500 text-lg font-medium mb-3">Last Changes</h2>
-        <DataTable
-          :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name'}, changes: {name: 'Changes'}, date: {name: 'Date'}}"
-          :data="dashboardStore.changelogs">
+        <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+          <icon-fa6-solid:file-waveform />
+          Last Changes
+        </h2>
+        <div class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white dark:bg-neutral-800 dark:shadow-none mb-10">
+          <DataTable
+            :labels="{name: {name: 'Shop'}, changes: {name: 'Changes'}, date: {name: 'Date'}}"
+            :data="dashboardStore.changelogs">
 
-          <template #cell(favicon)="{ item }">
-            <img :src="item.shop_favicon" alt="Shop Logo" class="inline-block w-5 h-5 align-middle" v-if="item.shop_favicon" />
-          </template>
+            <template #cell(name)="{ item }">
+              <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.shop_id } }">
+                {{ item.shop_name }}
+              </router-link>
+            </template>
 
-          <template #cell(name)="{ item }">
-            <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.shop_id } }">
-              {{ item.shop_name }}
-            </router-link>
-          </template>
+            <template #cell(changes)="{ item }">
+              {{ sumChanges(item) }}
+            </template>          
 
-          <template #cell(changes)="{ item }">
-            {{ sumChanges(item) }}
-          </template>          
+            <template #cell(date)="{ item }">
+              {{ new Date(item.date).toLocaleString() }}
+            </template>
 
-          <template #cell(date)="{ item }">
-            {{ new Date(item.date).toLocaleString() }}
-          </template>
-
-        </DataTable>
+          </DataTable>
+        </div>
       </template>
       
     </MainContainer>
