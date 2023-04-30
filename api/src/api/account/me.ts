@@ -125,7 +125,7 @@ export async function listUserShops(req: Request, env: Env): Promise<Response> {
             INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
             INNER JOIN team ON(team.id = shop.team_id)
         WHERE user_to_team.user_id = ?
-        ORDER BY shop.team_id
+        ORDER BY shop.name
     `, [req.userId]);
 
     return new Response(JSON.stringify(res.rows), { 
