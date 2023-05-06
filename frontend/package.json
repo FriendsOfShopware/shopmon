@@ -3,7 +3,7 @@
     "private": true,
     "version": "0.0.0",
     "scripts": {
-        "dev": "vite --port 3000",
+        "dev": "vite --port 3000 --host",
         "dev:local": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
         "build": "vite build",
         "preview": "vite preview",
