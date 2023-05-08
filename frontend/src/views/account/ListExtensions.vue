@@ -71,7 +71,7 @@ extensionStore.loadExtensions();
 
           <template #cell(version)="{ item }">
             <div class="mb-1" v-for="shop in item.shops">
-              {{ item.version }}
+              {{ shop.version }}
               <span v-if="item.latestVersion && shop.version < item.latestVersion" data-tooltip="Update available">
                 <icon-fa6-solid:rotate class="ml-1 text-base text-amber-600 dark:text-amber-400" />
               </span>
