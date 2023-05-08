@@ -232,7 +232,7 @@ function sumChanges(changes: ShopChangelog) {
                 </a>
                 <button @click="openUpdateWizard" class="ml-2 badge badge-info">
                   <icon-fa6-solid:rotate/>
-                  Update Compatibility Check
+                  Compatibility Check
                 </button>
               </template>                
             </dd>
