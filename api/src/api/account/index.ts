@@ -1,6 +1,6 @@
 import { Router } from "itty-router";
 import { validateToken } from "../middleware/auth";
-import { accountDelete, accountMe, accountUpdate, listUserShops, listUserChangelogs } from "./me";
+import { accountDelete, accountMe, accountUpdate, listUserShops, listUserChangelogs, listUserApps } from "./me";
 import { deleteAllNotifications, deleteNotification, getNotifications, markAllReadNotification } from "./notification";
 
 const accountRouter = Router({ base: "/api/account" });
@@ -11,6 +11,7 @@ accountRouter.patch('/me/notifications/mark-all-read', validateToken, markAllRea
 accountRouter.delete('/me/notifications/:id', validateToken, deleteNotification);
 accountRouter.delete('/me/notifications', validateToken, deleteAllNotifications);
 accountRouter.get('/me/shops', validateToken, listUserShops);
+accountRouter.get('/me/apps', validateToken, listUserApps);
 accountRouter.get('/me/changelogs', validateToken, listUserChangelogs);
 accountRouter.patch('/me', validateToken, accountUpdate);
 accountRouter.delete('/me', validateToken, accountDelete);

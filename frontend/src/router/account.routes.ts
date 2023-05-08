@@ -21,5 +21,6 @@ export default {
         { name: 'account.teams.new', path: 'teams/new', component: () => import('@/views/account/AddTeam.vue') },
         { name: 'account.teams.detail', path: 'teams/:teamId(\\d+)', component: () => import('@/views/account/DetailTeam.vue') },
         { name: 'account.teams.edit', path: 'teams/edit/:teamId(\\d+)', component: () => import('@/views/account/EditTeam.vue') },
+        { name: 'account.extension.list', path: 'extensions', component: () => import('@/views/account/ListExtensions.vue') },
     ]
 };
