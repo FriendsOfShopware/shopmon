@@ -206,7 +206,7 @@ async function notificateIgnoreUpdate() {
                 </a>
                 <button @click="openUpdateWizard" class="ml-2 badge badge-info">
                   <icon-fa6-solid:rotate/>
-                  Update Wizard
+                  Compatibility Check
                 </button>
               </template>                
             </dd>
@@ -509,7 +509,7 @@ async function notificateIgnoreUpdate() {
     </Modal>
 
     <Modal :show="viewUpdateWizardDialog" :closeXMark="true" @close="viewUpdateWizardDialog = false">
-      <template #title><icon-fa6-solid:rotate /> Shopware Update Wizard</template>
+      <template #title><icon-fa6-solid:rotate /> Shopware Plugin Compatibility Check</template>
       <template #content>
         <select class="field mb-2" @change="event => loadUpdateWizard((event.target as HTMLSelectElement).value)">
           <option disabled selected>Select update Version</option>
