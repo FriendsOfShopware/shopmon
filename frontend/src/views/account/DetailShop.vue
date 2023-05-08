@@ -4,6 +4,8 @@ import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
 import Tabs from '@/components/layout/Tabs.vue';
 import Modal from '@/components/layout/Modal.vue';
+import RatingStars from '@/components/layout/RatingStars.vue';
+
 import { compareVersions } from 'compare-versions';
 import { sort, createNewSortInstance } from 'fast-sort';
 
@@ -288,9 +290,10 @@ async function notificateIgnoreUpdate() {
 
       <template #panel(extensions)="{ label }">
         <DataTable
-          :labels="{name: {name: 'Name', sortable: true}, version: {name: 'Version'}, latest: {name: 'Latest'}, ratingAverage: {name: 'Rating', sortable: true}, installedAt: {name: 'Installed at', sortable: true}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
-          :data="shopStore.shop.extensions">
-          <template #cell(name)="{ item }">
+          :labels="{label: {name: 'Name', sortable: true}, version: {name: 'Version'}, latestVersion: {name: 'Latest'}, ratingAverage: {name: 'Rating', sortable: true}, installedAt: {name: 'Installed at', sortable: true}, issue: {name: 'Known Issue', class: 'px-3 text-right'}}"
+          :data="shopStore.shop.extensions"
+          :default-sorting="{by: 'label'}">
+          <template #cell(label)="{ item }">
             <div class="flex items-start">
               <span class="leading-5 text-gray-400 mr-2 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
                 <icon-fa6-regular:circle />
@@ -311,38 +314,24 @@ async function notificateIgnoreUpdate() {
                 <div class="font-bold whitespace-normal" v-if="item.label">{{ item.label }}</div>
                 <div class="dark:opacity-50">{{ item.name }}</div>
               </div>
-            </div>
-            
-            
+            </div> 
           </template>
 
-          <template #cell(latest)="{ item }">
-            <button
-              class="badge badge-warning"
-              v-if="item.latestVersion && item.version < item.latestVersion" @click="openExtensionChangelog(item)">
-              {{ item.latestVersion }}
-            </button>
+          <template #cell(version)="{ item }">
+            {{ item.version }}
+            <span v-if="item.latestVersion && item.version < item.latestVersion" data-tooltip="Update available" @click="openExtensionChangelog(item as Extension)">
+              <icon-fa6-solid:rotate class="ml-1 text-base text-amber-600 dark:text-amber-400 cursor-pointer" />
+            </span>
           </template>
 
           <template #cell(ratingAverage)="{ item }">
-            <template v-if="item.ratingAverage !== null" v-for="n in 5">
-              <icon-fa6-regular:star v-if="(item.ratingAverage / 2) - n < -.5" />
-              <icon-fa6-solid:star-half-stroke
-                v-else-if="(item.ratingAverage / 2) - n === -.5" />
-              <icon-fa6-solid:star v-else />
-            </template>
+            <RatingStars :rating="item.ratingAverage" />
           </template>
 
           <template #cell(installedAt)="{ item }">
             <template v-if="item.installedAt">
               {{ new Date(item.installedAt).toLocaleString() }}
             </template>
-          </template>
-
-          <template #cell(storeLink)="{ item }">
-            <a :href="item.storeLink" :data-tooltip="item.storeLink" target="_blank" v-if="item.storeLink">
-              <icon-fa6-solid:up-right-from-square/>
-            </a>
           </template>
 
           <template #cell(issue)="{ item }">

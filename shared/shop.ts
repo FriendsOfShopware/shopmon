@@ -53,6 +53,20 @@ export interface Extension {
     installedAt: string|null,
 }
 
+export interface UserExtension extends Extension {
+    shops: {
+        [key: string] : {
+            id: string,
+            name: string,
+            team_id: string,
+            shopware_version: string,
+            installed: boolean,
+            active: boolean,
+            version: string
+        }
+    }
+}
+
 export interface ExtensionDiff {
     name: string,
     label: string,

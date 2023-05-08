@@ -82,6 +82,8 @@ declare module '@vue/runtime-core' {
     MainContainer: typeof import('./src/components/layout/MainContainer.vue')['default']
     Modal: typeof import('./src/components/layout/Modal.vue')['default']
     Nav: typeof import('./src/components/layout/Nav.vue')['default']
+    Rating: typeof import('./src/components/layout/rating.vue')['default']
+    RatingStars: typeof import('./src/components/layout/RatingStars.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Tabs: typeof import('./src/components/layout/Tabs.vue')['default']

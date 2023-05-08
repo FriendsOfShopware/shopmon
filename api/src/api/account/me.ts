@@ -3,6 +3,8 @@ import Users from "../../repository/users";
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { validateEmail } from "../auth/register";
+import { shopImage } from "../team/shop_image";
+import { Extension, UserExtension } from "../../../../shared/shop";
 
 type TeamRow = {
     id: string;
@@ -11,6 +13,14 @@ type TeamRow = {
     is_owner: boolean;
     shopCount: number;
     memberCount: number;
+}
+
+type UserExtensionRow = {
+    id: string,
+    name: string,
+    team_id: string,
+    shopware_version: string,
+    extensions: string
 }
 
 export async function accountMe(req: Request, env: Env): Promise<Response> {
@@ -164,6 +174,55 @@ export async function listUserChangelogs(req: Request, env: Env): Promise<Respon
     }
 
     return new Response(JSON.stringify(res.rows), { 
+        status: 200,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
+export async function listUserApps(req: Request, env: Env): Promise<Response> {
+    const con = getConnection(env);
+
+    const res = await con.execute(`
+        SELECT 
+            shop.id,
+            shop.name,
+            shop.team_id,
+            shop.shopware_version,
+            shop_scrape_info.extensions
+        FROM shop 
+            INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
+            INNER JOIN team ON(team.id = shop.team_id)
+            LEFT JOIN shop_scrape_info ON(shop_scrape_info.shop_id = shop.id)
+        WHERE user_to_team.user_id = ?
+        ORDER BY shop.name
+    `, [req.userId]);
+
+    const json = {} as {[key: string] : UserExtension};
+
+    for (const row of res.rows as UserExtensionRow[]) {
+        const extensions = JSON.parse(row.extensions) as Extension[];
+
+        for (const extension of extensions) {
+            if (json[extension.name] === undefined) {
+                json[extension.name] = extension as UserExtension;
+                json[extension.name].shops = {};
+            }
+
+            json[extension.name].shops[row.id] = {
+                'id': row.id,
+                'name': row.name,
+                'team_id': row.team_id,
+                'shopware_version': row.shopware_version,
+                'installed': extension.installed,
+                'active': extension.active,
+                'version': extension.version
+            }
+        }
+    }
+
+    return new Response(JSON.stringify(Object.values(json)), { 
         status: 200,
         headers: {
             'Content-Type': 'application/json'

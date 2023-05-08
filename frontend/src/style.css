@@ -114,6 +114,11 @@ table th {
   right: -.75rem;
 }
 
+.tooltip-position-center[data-tooltip]:before {
+  left: 50%;
+  transform:translateX(-50%);
+}
+
 svg {
   @apply inline;
   vertical-align: -0.2em;
