@@ -55,10 +55,10 @@ extensionStore.loadExtensions();
           <template #cell(shop)="{ item }">
             <div class="mb-1" v-for="shop in item.shops">
               <router-link :to="{ name: 'account.shops.detail', params: { teamId: shop.team_id, shopId: shop.id } }">
-                <span class="leading-5 text-gray-400 mr-1 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!item.installed">
+                <span class="leading-5 text-gray-400 mr-1 text-base dark:text-neutral-500" data-tooltip="Not installed" v-if="!shop.installed">
                   <icon-fa6-regular:circle />
                 </span>
-                <span class="leading-5 text-green-400 mr-1 text-base dark:text-green-300" data-tooltip="Active" v-else-if="item.active">
+                <span class="leading-5 text-green-400 mr-1 text-base dark:text-green-300" data-tooltip="Active" v-else-if="shop.active">
                   <icon-fa6-solid:circle-check />
                 </span>
                 <span class="leading-5 text-gray-300 mr-1 text-base dark:text-neutral-500" data-tooltip="Inactive" v-else>
