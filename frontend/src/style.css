@@ -76,6 +76,10 @@ a {
   @apply pr-9;
 }
 
+.field-search {
+  @apply text-xl;
+}
+
 table th {
   @apply font-semibold text-sky-900 dark:text-gray-400;
 }
