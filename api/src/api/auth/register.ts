@@ -14,6 +14,10 @@ export const validateEmail = (email: string) => {
 };
 
 export default async function (req: Request, env: Env) : Promise<Response> {
+    if (env.DISABLE_REGISTRATION) {
+        return new ErrorResponse('Registration disabled', 400);
+    }
+
     const json = await req.json() as { email?: string, password?: string, username?: string };
 
     if (typeof json.email !== "string" || typeof json.password !== "string" || typeof json.username !== "string") {

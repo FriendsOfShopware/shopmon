@@ -95,7 +95,20 @@ APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
 - Run  `npm i` and `npm run dev:local`
 > Check your console output for request infos and console.logs
 
+## Configuration
+### Disable registration
+To disable user registrations set the following variables:
+
+`frontend/.env` To disable the frontend registration route:
+```text 
+VITE_DISABLE_REGISTRATION=1
+```
+
+`api/.dev.vars` The disable the app functionality:
+```text 
+DISABLE_REGISTRATION=1
+```
+
 ## License
 
 MIT
-

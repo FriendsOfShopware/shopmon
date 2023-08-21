@@ -10,6 +10,7 @@ declare global {
         SENTRY_DSN: string;
         PAGESPEED_API_KEY: string;
         APP_SECRET: string;
+        DISABLE_REGISTRATION: boolean;
         kvStorage: KVNamespace;
         SHOPS_SCRAPE: DurableObjectNamespace;
         PAGESPEED_SCRAPE: DurableObjectNamespace;
