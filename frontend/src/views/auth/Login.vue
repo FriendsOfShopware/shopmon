@@ -17,6 +17,8 @@ const schema = Yup.object().shape({
   password: Yup.string().required('Password is required'),
 });
 
+const disableRegistration = import.meta.env.VITE_DISABLE_REGISTRATION;
+
 async function onSubmit(values: any) {
   const { email, password } = values;
   try {
@@ -38,7 +40,7 @@ async function onSubmit(values: any) {
       <h2 class="text-center text-3xl tracking-tight font-bold">
         Sign in to your account
       </h2>
-      <p class="mt-2 text-center text-sm text-gray-600 dark:text-neutral-500">
+      <p class="mt-2 text-center text-sm text-gray-600 dark:text-neutral-500" v-if="!disableRegistration">
         Or
         {{ ' ' }}
         <router-link to="register" class="font-medium">

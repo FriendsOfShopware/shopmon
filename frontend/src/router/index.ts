@@ -27,6 +27,10 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     const authRequired = !publicPages.includes(to.name as string);
     const authStore = useAuthStore();
 
+    if(import.meta.env.VITE_DISABLE_REGISTRATION && to.name as string == 'account.register') {
+        return '/';
+    }
+
     if (authRequired && !authStore.user) {
         authStore.returnUrl = to.fullPath;
         return '/account/login';
