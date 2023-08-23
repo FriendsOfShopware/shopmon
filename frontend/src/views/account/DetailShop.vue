@@ -401,7 +401,7 @@ async function notificateIgnoreUpdate() {
           :labels="{created: {name: 'Checked At'}, performance: {name: 'Performance'}, accessibility: {name: 'Accessibility'}, bestpractices: {name: 'Best Practices'}, seo: {name: 'SEO'}}"
           :data="shopStore.shop.pagespeed">
           <template #cell(created)="{ item }">
-            <a target="_blank" :href="'https://web.dev/measure/?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
+            <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
           </template>
 
           <template v-slot:[cell]="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
