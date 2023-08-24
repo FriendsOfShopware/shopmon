@@ -1,4 +1,4 @@
-import Toucan from "toucan-js";
+import { Toucan } from "toucan-js";
 import { Context } from "toucan-js/dist/types";
 
 interface SentryOptions {

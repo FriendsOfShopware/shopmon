@@ -1,4 +1,4 @@
-import Toucan from "toucan-js";
+import { Toucan } from "toucan-js";
 import { ErrorResponse } from "../common/response";
 
 export async function validateToken(req: Request, env: Env, ctx: ExecutionContext, sentry: Toucan): Promise<Response|void> {
