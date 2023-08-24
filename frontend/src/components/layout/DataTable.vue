@@ -110,7 +110,7 @@
         return data;
     }
 
-    watch([term, sortBy, sortDesc], ([newTerm, newSortBy, newSortDesc], [oldTerm, oldSortBy, oldSortDesc]) => {        
+    watch([term, sortBy, sortDesc, () => props.data], ([newTerm, newSortBy, newSortDesc]) => {
         let filteredData = filterData(props.data, newTerm);
 
         if (newSortBy !== null) {
