@@ -3,3 +3,4 @@
 /.dev.vars
 /node_modules
 /pnpm-lock.yaml
+/.wrangler
