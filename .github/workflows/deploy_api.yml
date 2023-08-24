@@ -16,13 +16,7 @@ jobs:
       run: |
         cd api
         npm install
-    - name: Publish API
-      uses: cloudflare/wrangler-action@2.0.0
-      with:
-        apiToken: ${{ secrets.CF_API_TOKEN }}
-        accountId: ${{ secrets.CF_ACCOUNT_ID }}
-        workingDirectory: 'api'
-        command: 'publish'
+
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:
@@ -33,3 +27,11 @@ jobs:
         environment: production
         sourcemaps: './api/'
         ignore_empty: true
+
+    - name: Publish API
+      uses: cloudflare/wrangler-action@2.0.0
+      with:
+        apiToken: ${{ secrets.CF_API_TOKEN }}
+        accountId: ${{ secrets.CF_ACCOUNT_ID }}
+        workingDirectory: 'api'
+        command: 'deploy'
