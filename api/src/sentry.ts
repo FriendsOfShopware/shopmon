@@ -16,7 +16,7 @@ export function createSentry(ctx: ExecutionContext|Context, env: Env, req: Reque
         allowedHeaders: ['user-agent'],
         allowedSearchParams: /(.*)/,
     };
-
+    
     if (req) {
         options.request = req;
     }

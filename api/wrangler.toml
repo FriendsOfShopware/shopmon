@@ -13,7 +13,7 @@ MAIL_FROM="Shopmon <shopmon@fos.gg>"
 FRONTEND_URL="https://shopmon.fos.gg"
 
 [build]
-command = "node_modules/.bin/esbuild --bundle --outfile=worker.api.js --format=esm --conditions=node --minify --sourcemap src/index.ts --source-root=/"
+command = "node esbuild.mjs"
 
 [durable_objects]
 bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}, {name = "PAGESPEED_SCRAPE", class_name = "PagespeedScrape"}, {name = "USER_SOCKET", class_name = "UserSocket"}]
