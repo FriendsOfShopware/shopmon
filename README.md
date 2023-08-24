@@ -1,7 +1,5 @@
 # Shop Monitoring
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/FriendsOfShopware/shopmon)
-
 Shopmon is a hosted application from FriendsOfShopware to manage multiple Shopware instances.
 
 * Credentials are saved on a [planetscale](https://planetscale.com/) database

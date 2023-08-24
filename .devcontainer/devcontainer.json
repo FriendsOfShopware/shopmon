@@ -1,3 +1,12 @@
 {
-	"image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye"
+	"image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Vue.volar",
+				"Vue.vscode-typescript-vue-plugin",
+				"redhat.vscode-xml"
+			]
+		}
+	}
 }
