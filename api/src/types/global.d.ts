@@ -1,4 +1,6 @@
 declare global {
+    const SENTRY_RELEASE: string;
+
     interface Env {
         DATABASE_HOST: string;
         DATABASE_USER: string;
