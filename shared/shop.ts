@@ -7,17 +7,19 @@ export enum SHOP_STATUS {
 }
 
 export interface Shop {
-    id: number,
-    status: SHOP_STATUS,
-    name: string,
+    id: number;
+    status: SHOP_STATUS;
+    name: string;
     favicon: string|null;
-    url: string,
-    shopware_version: string,
-    team_id: Team['id'],
-    team_name: Team['name'],
+    url: string;
+    shopware_version: string;
+    team_id: Team['id'];
+    team_name: Team['name'];
     last_scraped_at: string;
     last_scraped_error: string;
-    initials: string;
+    last_updated: string|null;
+    old_shopware_version: string|null;
+    new_shopware_version: string|null;
 }
 
 export interface ShopDetailed extends Shop {
