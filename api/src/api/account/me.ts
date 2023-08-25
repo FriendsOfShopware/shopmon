@@ -130,10 +130,26 @@ export async function listUserShops(req: Request, env: Env): Promise<Response> {
             shop.last_scraped_at,
             shop.shopware_version,
             shop.team_id,
-            team.name as team_name
+            team.name as team_name,
+            changelog.old_shopware_version,
+            changelog.new_shopware_version,
+            changelog.date AS last_updated
         FROM shop 
-            INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
+            INNER JOIN user_to_team ON (user_to_team.team_id = shop.team_id)
             INNER JOIN team ON(team.id = shop.team_id)
+            LEFT JOIN (
+                SELECT
+                    c.shop_id,
+                    c.old_shopware_version,
+                    c.new_shopware_version,
+                    c.date
+                FROM shop_changelog AS c
+                WHERE
+                    c.old_shopware_version IS NOT NULL
+                    AND c.new_shopware_version IS NOT NULL
+                ORDER BY c.date
+                DESC LIMIT 1) changelog
+                ON changelog.shop_id = shop.id 
         WHERE user_to_team.user_id = ?
         ORDER BY shop.name
     `, [req.userId]);
