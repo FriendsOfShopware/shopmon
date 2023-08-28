@@ -111,3 +111,16 @@ CREATE TABLE `shop_changelog` (
 ) ENGINE InnoDB,
   CHARSET utf8mb4,
   COLLATE utf8mb4_0900_ai_ci;
+
+ALTER TABLE `shop` ADD COLUMN `last_updated` JSON DEFAULT '{}' NULL AFTER `shopware_version`;
+
+UPDATE `shop` SET `last_updated` = (
+    SELECT
+        JSON_OBJECT('date', c.date, 'from', c.old_shopware_version, 'to', c.new_shopware_version)
+    FROM `shop_changelog` AS `c`
+    WHERE
+        c.`shop_id` = shop.id AND
+        c.`old_shopware_version` IS NOT NULL
+      AND c.`new_shopware_version` IS NOT NULL
+    ORDER BY c.`date` DESC LIMIT 1
+    ) WHERE `shop`.`last_updated` IS NULL;

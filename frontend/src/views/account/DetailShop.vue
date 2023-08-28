@@ -196,7 +196,7 @@ async function notificateIgnoreUpdate() {
         </h3>
       </div>
       <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        <dl class="grid grid-cols-1 auto-rows-min gap-6 md:col-span-2 md:grid-cols-2">
+        <dl class="grid grid-cols-1 auto-rows-min gap-x-6 gap-y-2 md:col-span-2 md:grid-cols-2">
           <div class="md:col-span-1">
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
@@ -211,6 +211,17 @@ async function notificateIgnoreUpdate() {
                   Compatibility Check
                 </button>
               </template>                
+            </dd>
+          </div>
+          <div class="md:col-span-1">
+            <dt class="font-medium">Last Shop Update</dt>
+            <dd class="mt-1 text-sm text-gray-500">
+              <template v-if="shopStore.shop.last_updated?.date">
+                {{ new Date(shopStore.shop.last_updated.date).toLocaleString() }}
+              </template>
+              <template v-else>
+                never
+              </template>
             </dd>
           </div>
           <div class="md:col-span-1">
