@@ -445,8 +445,6 @@ export class ShopScrape implements DurableObject {
         }
 
         const checkerResult = await CheckerRegistery.check(input);
-
-        console.log(shopUpdate);
     
         await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null, last_updated = ? WHERE id = ?', [
             checkerResult.status,
