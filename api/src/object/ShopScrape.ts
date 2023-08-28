@@ -3,7 +3,7 @@ import { HttpClient } from "shopware-app-server-sdk/component/http-client";
 import { Shop } from "shopware-app-server-sdk/shop";
 import { getConnection } from "../db";
 import versionCompare from 'version-compare'
-import { Extension, ExtensionDiff, ExtensionChangelog } from "../../../shared/shop";
+import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../sentry";
@@ -416,12 +416,12 @@ export class ShopScrape implements DurableObject {
             }
         }
 
-        let updateShopwareVersion: string | null = null,
-            currentShopwareVersion: string | null = null;
+        const shopUpdate: lastUpdated = {};
 
         if (shop.shopware_version !== responses.config.body.version) {
-            updateShopwareVersion = responses.config.body.version,
-            currentShopwareVersion = shop.shopware_version;
+            shopUpdate.from = shop.shopware_version,
+            shopUpdate.to = responses.config.body.version;
+            shopUpdate.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
         }
         
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
@@ -446,10 +446,11 @@ export class ShopScrape implements DurableObject {
 
         const checkerResult = await CheckerRegistery.check(input);
     
-        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
+        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null, last_updated = ? WHERE id = ?', [
             checkerResult.status,
             responses.config.body.version,
             favicon,
+            JSON.stringify(shopUpdate),
             shop.id,
         ]);
     
@@ -463,13 +464,20 @@ export class ShopScrape implements DurableObject {
             favicon
         ]);
 
-        if (extensionsDiff.length > 0 || updateShopwareVersion) {
-            await con.execute('INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
-                shop.id,
-                JSON.stringify(extensionsDiff),
-                currentShopwareVersion,
-                updateShopwareVersion
-            ]);
+        const hasShopUpdate = Object.keys(shopUpdate).length !== 0;
+
+        if (extensionsDiff.length > 0 || hasShopUpdate) {
+            const oldShopwareVersion = hasShopUpdate ? shopUpdate.from : null;
+            const newShopwareVersion = hasShopUpdate ? shopUpdate.to : null;
+
+            await con.execute(
+                'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
+                    shop.id, 
+                    JSON.stringify(extensionsDiff), 
+                    oldShopwareVersion, 
+                    newShopwareVersion
+                ]
+            );
         }
     }
 }

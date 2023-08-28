@@ -68,9 +68,12 @@ shopStore.loadShops();
         </template>
 
         <template #cell(last_updated)="{ item }">
-          <span v-if="item.last_updated" :data-tooltip="'from ' + item.old_shopware_version + ' to ' + item.new_shopware_version">
-            {{ new Date(item.last_updated).toLocaleString() }}
-          </span>
+          <template v-if="item.last_updated?.date" :data-tooltip="'from ' + item.last_updated.from + ' to ' + item.last_updated.to">
+            {{ new Date(item.last_updated.date).toLocaleString() }}
+          </template>
+          <template v-else>
+            {{ null }}
+          </template>
         </template>
 
         <template #cell(last_scraped_at)="{ item }">

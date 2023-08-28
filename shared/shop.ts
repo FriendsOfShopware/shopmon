@@ -6,6 +6,12 @@ export enum SHOP_STATUS {
     RED = 'red',
 }
 
+export interface lastUpdated {
+    date?: string;
+    from?: string;
+    to?: string;
+}
+
 export interface Shop {
     id: number;
     status: SHOP_STATUS;
@@ -13,13 +19,11 @@ export interface Shop {
     favicon: string|null;
     url: string;
     shopware_version: string;
+    last_updated: lastUpdated|null;
     team_id: Team['id'];
     team_name: Team['name'];
     last_scraped_at: string;
     last_scraped_error: string;
-    last_updated: string|null;
-    old_shopware_version: string|null;
-    new_shopware_version: string|null;
 }
 
 export interface ShopDetailed extends Shop {

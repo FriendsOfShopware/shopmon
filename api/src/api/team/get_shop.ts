@@ -21,6 +21,7 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
         shop.last_scraped_at, 
         shop.last_scraped_error,
         shop.shopware_version,
+        shop.last_updated,
         shop.ignores,
         shop.shop_image,
         shop_scrape_info.extensions, 
