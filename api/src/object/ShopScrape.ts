@@ -446,11 +446,10 @@ export class ShopScrape implements DurableObject {
 
         const checkerResult = await CheckerRegistery.check(input);
     
-        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null, last_updated = ? WHERE id = ?', [
+        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
             checkerResult.status,
             responses.config.body.version,
             favicon,
-            JSON.stringify(shopUpdate),
             shop.id,
         ]);
     
@@ -478,6 +477,13 @@ export class ShopScrape implements DurableObject {
                     newShopwareVersion
                 ]
             );
+        }
+
+        if (hasShopUpdate) {
+            await con.execute('UPDATE shop last_updated = ? WHERE id = ?', [
+                JSON.stringify(shopUpdate),
+                shop.id,
+            ]);
         }
     }
 }
