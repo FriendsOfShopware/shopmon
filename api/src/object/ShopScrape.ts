@@ -480,7 +480,7 @@ export class ShopScrape implements DurableObject {
         }
 
         if (hasShopUpdate) {
-            await con.execute('UPDATE shop last_updated = ? WHERE id = ?', [
+            await con.execute('UPDATE shop SET last_updated = ? WHERE id = ?', [
                 JSON.stringify(shopUpdate),
                 shop.id,
             ]);
