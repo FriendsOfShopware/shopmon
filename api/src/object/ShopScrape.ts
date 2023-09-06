@@ -421,7 +421,7 @@ export class ShopScrape implements DurableObject {
         if (shop.shopware_version !== responses.config.body.version) {
             shopUpdate.from = shop.shopware_version,
             shopUpdate.to = responses.config.body.version;
-            shopUpdate.date = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            shopUpdate.date = new Date().toISOString();
         }
         
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
