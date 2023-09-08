@@ -1,6 +1,5 @@
 import { Connection } from "@planetscale/database/dist";
-import { HttpClient } from "shopware-app-server-sdk/component/http-client";
-import { Shop } from "shopware-app-server-sdk/shop";
+import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { getConnection } from "../db";
 import versionCompare from 'version-compare'
 import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../../../shared/shop";
@@ -157,7 +156,9 @@ export class ShopScrape implements DurableObject {
 
         const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
     
-        const client = new HttpClient(new Shop('', shop.url, '', shop.client_id, clientSecret));
+        const apiShop = new SimpleShop('', shop.url, '');
+        apiShop.setShopCredentials(shop.client_id, clientSecret);
+        const client = new HttpClient(apiShop);
     
         try {
             await client.getToken();

@@ -1,6 +1,5 @@
 import { init } from "@mmyoji/object-validator";
-import { HttpClient } from "shopware-app-server-sdk/component/http-client";
-import { Shop } from "shopware-app-server-sdk/shop";
+import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { encrypt } from "../../crypto";
 import { getConnection } from "../../db";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
@@ -64,7 +63,10 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
 
     if (json.url && json.client_id && json.client_secret) {
         // Try out the new credentials
-        const client = new HttpClient(new Shop('', json.url, '', json.client_id, json.client_secret))
+        const shop = new SimpleShop('', json.url, '')
+        shop.setShopCredentials(json.client_id, json.client_secret);
+
+        const client = new HttpClient(shop)
 
         try {
             await client.get('/_info/config');

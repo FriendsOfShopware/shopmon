@@ -5,5 +5,10 @@
         "**/bower_components": true,
         "**/*.code-search": true,
         "api/worker.js": true
-    }
+    },
+    "redhat.telemetry.enabled": false,
+    "editor.renderWhitespace": "all",
+    "editor.renderControlCharacters": true,
+    "editor.formatOnSave": true,
+    "files.insertFinalNewline": true
 }
