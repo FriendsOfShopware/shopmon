@@ -89,7 +89,7 @@ extensionStore.loadExtensions();
 
             <template #cell(installedAt)="{ item }">
               <template v-if="item.installedAt">
-                {{ new Date(item.installedAt).toLocaleString() }}
+                {{ formatDateTime(item.installedAt) }}
               </template>
             </template>
 

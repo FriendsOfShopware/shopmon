@@ -19,6 +19,7 @@ import type { Ref } from 'vue';
 
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { sumChanges } from '@/helpers/changelog';
+import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaPlug from '~icons/fa6-solid/plug';
@@ -217,7 +218,7 @@ async function notificateIgnoreUpdate() {
             <dt class="font-medium">Last Shop Update</dt>
             <dd class="mt-1 text-sm text-gray-500">
               <template v-if="shopStore.shop.last_updated?.date">
-                {{ new Date(shopStore.shop.last_updated.date).toLocaleString() }}
+                {{ formatDate(shopStore.shop.last_updated.date) }}
               </template>
               <template v-else>
                 never
@@ -230,7 +231,7 @@ async function notificateIgnoreUpdate() {
           </div>
           <div class="md:col-span-1">
             <dt class="font-medium">Last Checked At</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ new Date(shopStore.shop.last_scraped_at).toLocaleString() }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">{{ formatDateTime(shopStore.shop.last_scraped_at) }}</dd>
           </div>
           <div class="md:col-span-1">
             <dt class="font-medium">Environment</dt>
@@ -341,7 +342,7 @@ async function notificateIgnoreUpdate() {
 
           <template #cell(installedAt)="{ item }">
             <template v-if="item.installedAt">
-              {{ new Date(item.installedAt).toLocaleString() }}
+              {{ formatDateTime(item.installedAt) }}
             </template>
           </template>
 
@@ -358,11 +359,11 @@ async function notificateIgnoreUpdate() {
           :default-sorting="{by: 'nextExecutionTime'}">          
 
           <template #cell(lastExecutionTime)="{ item }">
-            {{ new Date(item.lastExecutionTime).toLocaleString() }}
+            {{ formatDateTime(item.lastExecutionTime) }}
           </template>
 
           <template #cell(nextExecutionTime)="{ item }">
-            {{ new Date(item.nextExecutionTime).toLocaleString() }}
+            {{ formatDateTime(item.nextExecutionTime) }}
           </template>
 
           <template #cell(status)="{ item }">
@@ -412,7 +413,7 @@ async function notificateIgnoreUpdate() {
           :labels="{created: {name: 'Checked At'}, performance: {name: 'Performance'}, accessibility: {name: 'Accessibility'}, bestpractices: {name: 'Best Practices'}, seo: {name: 'SEO'}}"
           :data="shopStore.shop.pagespeed">
           <template #cell(created)="{ item }">
-            <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url='+ shopStore.shop.url">{{ new Date(item.created_at).toLocaleString() }}</a>
+            <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url='+ shopStore.shop.url">{{ formatDateTime(item.created_at) }}</a>
           </template>
 
           <template v-slot:[cell]="{ item, data, itemKey }" v-for="(cell, cellKey) in {'performance': 'cell(performance)', 'accessibility': 'cell(accessibility)', 'bestpractices': 'cell(bestpractices)', 'seo': 'cell(seo)'}">
@@ -437,7 +438,7 @@ async function notificateIgnoreUpdate() {
           :data="shopStore.shop.changelog">
 
           <template #cell(date)="{ item }">
-            {{ new Date(item.date).toLocaleString() }}
+            {{ formatDateTime(item.date) }}
           </template>
 
           <template #cell(changes)="{ item }">
@@ -460,7 +461,7 @@ async function notificateIgnoreUpdate() {
               </span>
               {{ changeLog.version }} - 
               <span class="text-xs font-normal text-gray-500">
-                {{ new Date(changeLog.creationDate).toLocaleDateString() }}
+                {{ formatDate(changeLog.creationDate) }}
               </span>
             </div>
             <div class="pl-3" v-html="changeLog.text"></div>
@@ -481,7 +482,7 @@ async function notificateIgnoreUpdate() {
     </Modal>
 
     <Modal :show="viewShopChangelogDialog" :closeXMark="true" @close="viewShopChangelogDialog = false">
-      <template #title>Shop changelog - <span class="font-normal" v-if="dialogShopChangelog?.date">{{ new Date(dialogShopChangelog.date).toLocaleString() }}</span></template>
+      <template #title>Shop changelog - <span class="font-normal" v-if="dialogShopChangelog?.date">{{ formatDateTime(dialogShopChangelog.date) }}</span></template>
       <template #content>
         <template v-if="dialogShopChangelog?.old_shopware_version && dialogShopChangelog?.new_shopware_version">
           Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{ dialogShopChangelog.new_shopware_version }}</strong>

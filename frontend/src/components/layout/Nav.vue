@@ -21,6 +21,8 @@ import {
 import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
 
+import { formatDateTime } from '@/helpers/formatter';
+
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
 
@@ -115,7 +117,7 @@ function toggleDarkMode() {
                         {{ notification.title }}
                       </div>
                       <div class="text-xs mb-[0.15rem] text-gray-500 dark:text-neutral-500">
-                        {{ new Date(notification.created_at).toLocaleString() }}
+                        {{ formatDateTime(notification.created_at) }}
                       </div>
                       <div class="text-gray-500 dark:text-neutral-500">
                         {{ notification.message }} <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
