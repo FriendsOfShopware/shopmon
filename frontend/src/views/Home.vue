@@ -9,6 +9,7 @@ import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 
 import { sumChanges } from '@/helpers/changelog';
+import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
@@ -95,7 +96,7 @@ dashboardStore.loadChangelogs();
             </template>          
 
             <template #cell(date)="{ item }">
-              {{ new Date(item.date).toLocaleString() }}
+              {{ formatDateTime(item.date) }}
             </template>
 
           </DataTable>

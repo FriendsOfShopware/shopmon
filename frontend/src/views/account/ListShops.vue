@@ -3,6 +3,8 @@ import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
 
+import { formatDate, formatDateTime } from '@/helpers/formatter';
+
 import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
@@ -69,7 +71,7 @@ shopStore.loadShops();
 
         <template #cell(last_updated)="{ item }">
           <template v-if="item.last_updated?.date" :data-tooltip="'from ' + item.last_updated.from + ' to ' + item.last_updated.to">
-            {{ new Date(item.last_updated.date).toLocaleString() }}
+            {{ formatDate(item.last_updated.date) }}
           </template>
           <template v-else>
             {{ null }}
@@ -77,7 +79,7 @@ shopStore.loadShops();
         </template>
 
         <template #cell(last_scraped_at)="{ item }">
-          {{ new Date(item.last_scraped_at).toLocaleString() }}
+          {{ formatDateTime(item.last_scraped_at) }}
         </template>
       </DataTable>
     </div>
