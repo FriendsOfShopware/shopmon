@@ -12,11 +12,11 @@
                         {'cursor-pointer': label.sortable},
                         label.class,
                     ]"
-                    @click="label.sortable ? setSort(key) : false"
+                    @click="label.sortable ? setSort(label.sortBy ? label.sortBy : key) : false"
                 >
                     {{ label.name }}
 
-                    <template v-if="sortBy === key">
+                    <template v-if="sortBy === key || sortBy === label?.sortBy">
                         <icon-fa6-solid:chevron-up v-if="sortDesc === true" />
                         <icon-fa6-solid:chevron-down v-else />
                     </template>
@@ -67,7 +67,8 @@
             class?: string, 
             classOverride?: boolean, 
             name: string, 
-            sortable?: boolean
+            sortable?: boolean,
+            sortBy?: string
         }>, 
         defaultSorting?: {
             by: string,
@@ -83,7 +84,17 @@
     const sortedFilteredData = ref(props.data);       
 
     const naturalSort = createNewSortInstance({
-        comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare,
+        comparer: (a, b, order) => {
+            // Always sort null values at last
+            if (a === null || a === undefined) {
+                return order;
+            } else if (b === null || b === undefined) {
+                return (order * -1);
+            }
+
+            const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+            return collator.compare(a, b);
+        }
     });
 
     const setSort = (key: string) => {
@@ -110,11 +121,18 @@
         return data;
     }
 
+    const getSortByValue = (data: Record<string, any>[], sortBy: string) => {
+        return sortBy.split('.').reduce((previous: any, current: string) => {
+            return previous === null ? null : previous[current];
+        }, data);
+    }
+
     watch([term, sortBy, sortDesc, () => props.data], ([newTerm, newSortBy, newSortDesc]) => {
         let filteredData = filterData(props.data, newTerm);
 
         if (newSortBy !== null) {
-            filteredData = newSortDesc ? naturalSort(filteredData).desc(newSortBy) : naturalSort(filteredData).asc(newSortBy);
+            const sortDirection = newSortDesc ? 'desc' : 'asc';
+            filteredData = naturalSort(filteredData).by([{ [sortDirection]: d => getSortByValue(d, newSortBy) }]);
         }
 
         sortedFilteredData.value = filteredData;

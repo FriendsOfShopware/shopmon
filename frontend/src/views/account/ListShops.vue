@@ -39,7 +39,7 @@ shopStore.loadShops();
       class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white dark:bg-neutral-800 dark:shadow-none"
       v-else>
       <DataTable
-        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopware_version: {name: 'Version', sortable: true}, last_updated: {name: 'Last update', sortable: true}, team_name: {name: 'Team', sortable: true}, last_scraped_at: {name: 'last checked at', sortable: true}}"
+        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopware_version: {name: 'Version', sortable: true}, last_updated: {name: 'Last update', sortable: true, sortBy: 'last_updated.date'}, team_name: {name: 'Team', sortable: true}, last_scraped_at: {name: 'last checked at', sortable: true}}"
         :data="shopStore.shops"
         :default-sorting="{by: 'name'}">
         <template #cell(favicon)="{ item }">
