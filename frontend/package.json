@@ -8,7 +8,8 @@
         "dev:local": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
         "build": "vite build",
         "preview": "vite preview",
-        "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix"
+        "eslint": "eslint --ext \".ts,.vue\" src/**/*.{ts,vue} --fix",
+        "wrangler": "wrangler"
     },
     "dependencies": {
         "@headlessui/vue": "1.7.16",
@@ -38,6 +39,7 @@
         "postcss": "^8.4.30",
         "tailwindcss": "3.3.3",
         "typescript": "5.2.2",
-        "vite": "4.4.9"
+        "vite": "4.4.9",
+        "wrangler": "^3.9.0"
     }
 }
