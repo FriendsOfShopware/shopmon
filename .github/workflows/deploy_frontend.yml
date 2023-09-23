@@ -43,7 +43,7 @@ jobs:
 
       - name: Publish
         working-directory: frontend
-        run: pnpm run wrangler pages publish --project-name=shopmon dist
+        run: pnpm run wrangler pages deploy --project-name=shopmon dist
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
