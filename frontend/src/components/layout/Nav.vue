@@ -6,16 +6,16 @@ import { useNotificationStore } from '@/stores/notification.store';
 import Logo from '@/components/layout/Logo.vue';
 
 import {
-    Disclosure,
-    DisclosureButton,
-    DisclosurePanel,
-    Menu,
-    MenuButton,
-    MenuItem,
-    MenuItems,
-    Popover, 
-    PopoverButton, 
-    PopoverPanel,
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
 } from '@headlessui/vue';
 
 import FaGear from '~icons/fa6-solid/gear';
@@ -28,14 +28,14 @@ const notificationStore = useNotificationStore();
 
 const navigation = [
   { name: 'Dashboard', route: '/' },
-  { name: 'My Shops', route: '/account/shops'},
-  { name: 'My Apps', route: '/account/extensions'},
-  { name: 'My Teams', route: '/account/teams'},  
+  { name: 'My Shops', route: '/account/shops' },
+  { name: 'My Apps', route: '/account/extensions' },
+  { name: 'My Teams', route: '/account/teams' },
 ];
 
 const userNavigation = [
-    { name: 'Settings', route: '/account/settings', icon: FaGear, },
-    { name: 'Logout', route: '/logout', icon: FaPowerOff },
+  { name: 'Settings', route: '/account/settings', icon: FaGear, },
+  { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
 
 const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -76,13 +76,15 @@ function toggleDarkMode() {
       </div>
 
       <div class="flex ml-4 md:ml-6 items-center gap-3">
-        <button class="text-sky-200 h-8 w-8 bg-sky-400 p-1 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
+        <button
+          class="text-sky-200 h-8 w-8 bg-sky-400 p-1 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
           @click="toggleDarkMode">
           <icon-fa6-regular:moon class="w-5 h-5" v-if="darkMode" />
           <icon-fa6-regular:sun class="w-5 h-5" v-else />
         </button>
         <Popover v-slot="{ open }" class="md:relative">
-          <PopoverButton @click="notificationStore.markAllRead" class="h-8 w-8 bg-sky-400 p-1 rounded-full text-sky-200 hover:text-white focus:outline-none flex justify-center items-center">
+          <PopoverButton @click="notificationStore.markAllRead"
+            class="h-8 w-8 bg-sky-400 p-1 rounded-full text-sky-200 hover:text-white focus:outline-none flex justify-center items-center">
             <span class="sr-only">View notifications</span>
             <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
             <div v-if="notificationStore.unreadNotificationCount > 0"
@@ -109,7 +111,8 @@ function toggleDarkMode() {
                   <li v-for="notification in notificationStore.notifications"
                     class="group px-4 py-2 flex gap-2 odd:bg-gray-50 hover:bg-sky-50 dark:odd:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]">
                     <div class="shrink-0">
-                      <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="text-red-600 dark:text-red-400" />
+                      <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'"
+                        class="text-red-600 dark:text-red-400" />
                       <icon-fa6-solid:circle-info v-else class="text-yellow-400 dark:text-yellow-200" />
                     </div>
                     <div>
@@ -120,9 +123,10 @@ function toggleDarkMode() {
                         {{ formatDateTime(notification.created_at) }}
                       </div>
                       <div class="text-gray-500 dark:text-neutral-500">
-                        {{ notification.message }} <router-link :to="notification.link" type="a" v-if="notification.link">more ...</router-link>
+                        {{ notification.message }} <router-link :to="notification.link" type="a"
+                          v-if="notification.link">more ...</router-link>
                       </div>
-                      
+
                     </div>
                     <div>
                       <button @click="notificationStore.deleteNotification(notification.id)"
@@ -145,7 +149,8 @@ function toggleDarkMode() {
           <!-- Profile dropdown -->
           <Menu as="div" class="relative">
             <div>
-              <MenuButton class="max-w-xs bg-sky-400 rounded-full flex items-center text-sm text-white focus:outline-none">
+              <MenuButton
+                class="max-w-xs bg-sky-400 rounded-full flex items-center text-sm text-white focus:outline-none">
                 <span class="sr-only">Open user menu</span>
                 <img class="h-8 w-8 rounded-full" :src="authStore.user.avatar" alt="">
               </MenuButton>
@@ -154,7 +159,8 @@ function toggleDarkMode() {
               enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
               leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
               leave-to-class="transform opacity-0 scale-95">
-              <MenuItems class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white focus:outline-none z-10 dark:bg-neutral-800">
+              <MenuItems
+                class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white focus:outline-none z-10 dark:bg-neutral-800">
                 <div class="px-4 py-2 border-b dark:border-neutral-700">
                   <div class="text-base font-medium">
                     {{ authStore.user.username }}
@@ -168,10 +174,10 @@ function toggleDarkMode() {
                   active ? 'bg-gray-100 dark:bg-neutral-700' : '',
                   'w-full text-left px-4 py-2 text-sm',
                 ]" @click="
-                    item.route === '/logout'
-                      ? authStore.logout()
-                      : $router.push(item.route)
-                  ">
+  item.route === '/logout'
+    ? authStore.logout()
+    : $router.push(item.route)
+  ">
                   <component :is="item.icon" class="w-4 h-4 inline-block text-sky-700 mr-1 dark:text-sky-600" />
                   {{ item.name }}
                 </button>
@@ -226,17 +232,17 @@ function toggleDarkMode() {
           </div>
         </div>
         <div class="mt-3 px-2 space-y-1">
-          <DisclosureButton v-for="item in userNavigation" :key="item.name" as="a" class="block px-3 py-1 rounded-md text-base font-medium text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white" 
-          @click="
+          <DisclosureButton v-for="item in userNavigation" :key="item.name" as="a"
+            class="block px-3 py-1 rounded-md text-base font-medium text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75 dark:text-white dark:hover:text-white"
+            @click="
               item.route === '/logout'
                 ? authStore.logout()
                 : $router.push(item.route)
-            ">
+              ">
             <component :is="item.icon" class="w-4 h-4 inline-block text-sky-200 mr-1" />
             {{ item.name }}
           </DisclosureButton>
-        </div>
       </div>
-    </DisclosurePanel>
-  </Disclosure>
-</template>
+    </div>
+  </DisclosurePanel>
+</Disclosure></template>

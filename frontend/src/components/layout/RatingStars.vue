@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-    defineProps<{rating: number | null}>()
+defineProps<{ rating: number | null }>()
 </script>
 
 <template>
@@ -9,5 +9,5 @@
             <icon-fa6-solid:star-half-stroke v-else-if="(rating / 2) - n === -.5" />
             <icon-fa6-solid:star v-else />
         </template>
-    </span>    
+    </span>
 </template>

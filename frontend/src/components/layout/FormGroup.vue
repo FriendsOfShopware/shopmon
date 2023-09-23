@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-    defineProps<{ title: string, subTitle?: string, info?: string }>()
+defineProps<{ title: string, subTitle?: string, info?: string }>()
 </script>
 
 <template>
@@ -12,7 +12,8 @@
                 {{ subTitle }}
             </p>
 
-            <div v-if="info" class="rounded-md bg-blue-0 p-4 border border-blue-300 flex mt-3 dark:bg-gray-900 dark:border-sky-400">
+            <div v-if="info"
+                class="rounded-md bg-blue-0 p-4 border border-blue-300 flex mt-3 dark:bg-gray-900 dark:border-sky-400">
                 <div class="flex-shrink-0">
                     <icon-fa6-solid:circle-info class="h-5 w-5 text-sky-400" aria-hidden="true" />
                 </div>
@@ -22,7 +23,8 @@
         </div>
 
         <div class="mt-5 md:mt-0 md:col-span-2">
-            <div class="px-4 py-5 bg-white space-y-6 sm:p-6 shadow overflow-hidden rounded-md dark:bg-neutral-800 dark:shadow-none">
+            <div
+                class="px-4 py-5 bg-white space-y-6 sm:p-6 shadow overflow-hidden rounded-md dark:bg-neutral-800 dark:shadow-none">
                 <slot />
             </div>
         </div>

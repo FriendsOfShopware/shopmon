@@ -8,31 +8,19 @@ const { alert } = storeToRefs(alertStore);
 </script>
 
 <template>
-    <div
-      class="fixed top-3 right-0 flex max-w-sm overflow-hidden z-20"
-    >
-    <transition
-    enter-active-class="transition ease-out duration-200"
-    enter-from-class="translate-x-full"
-    enter-to-class="translate-x-0"
-    leave-active-class="transition ease-in duration-150"
-    leave-from-class="translate-x-0"
-    leave-to-class="translate-x-full"
-  >
+  <div class="fixed top-3 right-0 flex max-w-sm overflow-hidden z-20">
+    <transition enter-active-class="transition ease-out duration-200" enter-from-class="translate-x-full"
+      enter-to-class="translate-x-0" leave-active-class="transition ease-in duration-150" leave-from-class="translate-x-0"
+      leave-to-class="translate-x-full">
       <div
         class="relative w-screen rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex gap-2 mr-3 mb-4 bg-white dark:bg-neutral-800 dark:border-neutral-700"
         :class="[
-          {'border-l-red-600 dark:border-l-red-600': alert.type === 'error'},
-          {'border-l-yellow-400 dark:border-l-yellow-400': alert.type === 'warning'},
-          {'border-l-green-400 dark:border-l-green-400': alert.type === 'success'},
-          {'border-l-sky-400 dark:border-l-sky-400': alert.type === 'info'},
-        ]"
-        v-if="alert"
-      >
-        <button
-          class="w-4 h-4 absolute top-1 right-1 color-red-500"
-          @click="alertStore.clear()"
-        >
+          { 'border-l-red-600 dark:border-l-red-600': alert.type === 'error' },
+          { 'border-l-yellow-400 dark:border-l-yellow-400': alert.type === 'warning' },
+          { 'border-l-green-400 dark:border-l-green-400': alert.type === 'success' },
+          { 'border-l-sky-400 dark:border-l-sky-400': alert.type === 'info' },
+        ]" v-if="alert">
+        <button class="w-4 h-4 absolute top-1 right-1 color-red-500" @click="alertStore.clear()">
           <icon-fa6-solid:xmark aria-hidden="true" />
         </button>
         <div class="shrink-0">
@@ -45,9 +33,8 @@ const { alert } = storeToRefs(alertStore);
           <div class="font-medium">{{ alert.title }}</div>
           {{ alert.message }}
         </div>
-        
+
       </div>
     </transition>
-    </div>
-  
+  </div>
 </template>

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-defineProps<{title: string}>()
+defineProps<{ title: string }>()
 </script>
 
 <template>
@@ -9,8 +9,8 @@ defineProps<{title: string}>()
         <h1 class="text-3xl tracking-tight font-bold leading-tight">
           {{ title }}
         </h1>
-        <slot/>
-      </div> 
+        <slot />
+      </div>
     </div>
   </header>
 </template>

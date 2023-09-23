@@ -11,16 +11,36 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: 'frontend-deploy'
     steps:
-    - uses: actions/checkout@v3
-    - name: Build project
-      run: |
-        cd frontend
-        npm install
-        npm run build
-    - name: Publish
-      uses: cloudflare/wrangler-action@2.0.0
-      with:
-        apiToken: ${{ secrets.CF_API_TOKEN }}
-        accountId: ${{ secrets.CF_ACCOUNT_ID }}
-        workingDirectory: 'frontend'
-        command: pages publish --project-name=shopmon dist
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-frontend-pnpm-store-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-frontend-pnpm-store-
+      
+      - name: Build
+        working-directory: frontend
+        run: pnpm run build
+
+      - name: Publish
+        uses: cloudflare/wrangler-action@v3.1.1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: 'frontend'
+          command: pages publish --project-name=shopmon dist
