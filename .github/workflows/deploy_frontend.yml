@@ -33,6 +33,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-frontend-pnpm-store-
       
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install
+
       - name: Build
         working-directory: frontend
         run: pnpm run build
