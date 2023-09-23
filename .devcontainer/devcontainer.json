@@ -8,7 +8,8 @@
 			"extensions": [
 				"Vue.volar",
 				"Vue.vscode-typescript-vue-plugin",
-				"redhat.vscode-xml"
+				"redhat.vscode-xml",
+				"github.vscode-github-actions"
 			]
 		}
 	}

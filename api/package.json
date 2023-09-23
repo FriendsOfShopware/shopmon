@@ -9,7 +9,8 @@
     "dev:local": "TZ=UTC wrangler dev --port 5789",
     "api:deploy": "wrangler deploy",
     "eslint": "eslint 'src/**/*.ts'",
-    "eslint:fix": "eslint 'src/**/*.ts' --fix"
+    "eslint:fix": "eslint 'src/**/*.ts' --fix",
+    "wrangler": "wrangler"
   },
   "author": "",
   "license": "MIT",
@@ -30,6 +31,6 @@
     "esbuild": "0.19.2",
     "eslint": "8.49.0",
     "typescript": "5.2.2",
-    "wrangler": "^3.7.0"
+    "wrangler": "^3.9.0"
   }
 }

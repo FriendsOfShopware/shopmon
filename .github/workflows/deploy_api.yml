@@ -11,10 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: 'api-deploy'
     steps:
-    - uses: actions/checkout@v3
+    - name: Clone
+      uses: actions/checkout@v3
 
-    - uses: pnpm/action-setup@v2
-      name: Install pnpm
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
       with:
         version: 8
         run_install: false
@@ -24,8 +25,8 @@ jobs:
       run: |
         echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-    - uses: actions/cache@v3
-      name: Setup pnpm cache
+    - name: Setup pnpm cache
+      uses: actions/cache@v3
       with:
         path: ${{ env.STORE_PATH }}
         key: ${{ runner.os }}-api-pnpm-store-${{ hashFiles('api/pnpm-lock.yaml') }}
@@ -52,9 +53,9 @@ jobs:
         ignore_empty: true
 
     - name: Publish API
-      uses: cloudflare/wrangler-action@2.0.0
-      with:
-        apiToken: ${{ secrets.CF_API_TOKEN }}
-        accountId: ${{ secrets.CF_ACCOUNT_ID }}
-        workingDirectory: 'api'
-        command: 'deploy'
+      working-directory: api
+      run: pnpm run wrangler deploy
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
