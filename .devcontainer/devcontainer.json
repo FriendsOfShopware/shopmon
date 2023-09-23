@@ -1,8 +1,12 @@
 {
-	"image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+	"image": "shopmon",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
 	"features": {
 		"ghcr.io/shyim/devcontainers-features/bun:latest": {}
 	},
+	"onCreateCommand": "cd api; corepack prepare",
 	"customizations": {
 		"vscode": {
 			"extensions": [
