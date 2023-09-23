@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "pnpm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: 'fix(deps): '
+    groups:
+      all:
+        patterns:
+          - '*'
+  - package-ecosystem: "pnpm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: 'fix(deps): '
+    groups:
+      all:
+        patterns:
+          - '*'
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: 'fix(deps): '
+    groups:
+      all:
+        patterns:
+          - '*'  
