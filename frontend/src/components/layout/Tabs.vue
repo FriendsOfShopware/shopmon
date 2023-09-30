@@ -5,7 +5,7 @@
                             cols-3 lg:grid-cols-none lg:auto-cols-min lg:grid-flow-col">
                 <Tab v-for="(label, key) in labels" as="template" :key="key" v-slot="{ selected }">
                     <button :class="[
-                        'felx items-center focus:outline-none whitespace-nowrap pt-4 pb-3 px-3 font-medium text-base relative',
+                        'flex items-center focus:outline-none whitespace-nowrap pt-4 pb-3 px-3 font-medium text-base relative',
                         'before:block before:z-1 before:w-0 before:absolute before:left-1/2 before:-translate-x-1/2 before:-bottom-[1px] before:h-[3px] before:bg-sky-500 before:hover:w-full before:transition-all',
                         'after:block after:absolute after:-bottom-[1px] after:h-px after:bg-gray-200 dark:after:bg-neutral-700 after:-left-6 after:-right-6',
                         { 'border-sky-500 text-sky-600 before:!w-full': selected },
