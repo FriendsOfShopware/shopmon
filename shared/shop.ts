@@ -16,10 +16,10 @@ export interface Shop {
     id: number;
     status: SHOP_STATUS;
     name: string;
-    favicon: string|null;
+    favicon: string | null;
     url: string;
     shopware_version: string;
-    last_updated: lastUpdated|null;
+    last_updated: lastUpdated | null;
     team_id: Team['id'];
     team_name: Team['name'];
     last_scraped_at: string;
@@ -43,7 +43,7 @@ export interface CheckerChecks {
     level: SHOP_STATUS;
     message: string;
     source: string;
-    link: string|null;
+    link: string | null;
 }
 
 export interface Extension {
@@ -51,17 +51,17 @@ export interface Extension {
     label: string,
     active: boolean,
     version: string,
-    latestVersion: string|null,
+    latestVersion: string | null,
     installed: boolean,
-    ratingAverage: number|null,
-    storeLink: string|null,
-    changelog: ExtensionChangelog[]|null,
-    installedAt: string|null,
+    ratingAverage: number | null,
+    storeLink: string | null,
+    changelog: ExtensionChangelog[] | null,
+    installedAt: string | null,
 }
 
 export interface UserExtension extends Extension {
     shops: {
-        [key: string] : {
+        [key: string]: {
             id: string,
             name: string,
             team_id: string,
@@ -77,9 +77,9 @@ export interface ExtensionDiff {
     name: string,
     label: string,
     state: string,
-    old_version: string|null,
-    new_version: string|null,
-    changelog: ExtensionChangelog[]|null,
+    old_version: string | null,
+    new_version: string | null,
+    changelog: ExtensionChangelog[] | null,
     active: boolean,
 }
 
@@ -95,7 +95,7 @@ export interface ExtensionCompatibilitys extends Extension {
         label: string,
         name: string,
         type: string
-    }|null
+    } | null
 }
 
 export interface ScheduledTask {
@@ -132,15 +132,11 @@ export interface ShopChangelog {
     id: number;
     shop_id: number;
     extensions: ExtensionDiff[];
-    old_shopware_version: string|null;
-    new_shopware_version: string|null;
+    old_shopware_version: string | null;
+    new_shopware_version: string | null;
     date: string;
 }
 
 export interface ShopwareVersion {
-    sha1: string;
-    sha256: string;
-    size: number;
-    uri: string;
-    version: string;
+    [version: string]: string[];
 }
