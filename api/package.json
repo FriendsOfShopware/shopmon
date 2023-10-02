@@ -24,13 +24,13 @@
     "version-compare": "1.4.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20230914.0",
+    "@cloudflare/workers-types": "4.20230922.0",
     "@types/bcryptjs": "2.4.4",
-    "@typescript-eslint/eslint-plugin": "6.7.2",
-    "@typescript-eslint/parser": "6.7.2",
-    "esbuild": "0.19.3",
+    "@typescript-eslint/eslint-plugin": "6.7.3",
+    "@typescript-eslint/parser": "6.7.3",
+    "esbuild": "0.19.4",
     "eslint": "8.50.0",
     "typescript": "5.2.2",
-    "wrangler": "^3.9.0"
+    "wrangler": "^3.10.1"
   }
 }
