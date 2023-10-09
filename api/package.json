@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "description": "",
-  "packageManager": "pnpm@8.7.6",
+  "packageManager": "pnpm@8.9.0",
   "scripts": {
     "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
     "dev:local": "TZ=UTC wrangler dev --port 5789",
