@@ -17,7 +17,7 @@
         "compare-versions": "^6.1.0",
         "fast-sort": "3.4.0",
         "fuse.js": "^6.6.2",
-        "pinia": "2.1.6",
+        "pinia": "2.1.7",
         "unplugin-icons": "0.17.0",
         "unplugin-vue-components": "0.25.2",
         "vee-validate": "4.11.6",
