@@ -25,22 +25,22 @@ shopStore.loadShop(teamId, shopId);
 
 const showShopDeletionModal = ref(false)
 
-const schema = Yup.object().shape({    
+const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
     team_id: Yup.number().required('Team is required'),
     client_id: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: Yup.string().required("If you change the URL you need to provide Client-ID")
+        then: () => Yup.string().required("If you change the URL you need to provide Client-ID")
     }),
     client_secret: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: Yup.string().required("If you change the URL you need to provide Client-Secret")
+        then: () => Yup.string().required("If you change the URL you need to provide Client-Secret")
     })
 });
 
 async function onSubmit(values: any) {
-    if ( shopStore.shop ) {
+    if (shopStore.shop) {
         try {
             await shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, values);
 
@@ -58,7 +58,7 @@ async function onSubmit(values: any) {
 }
 
 async function deleteShop() {
-    if ( shopStore.shop ) {
+    if (shopStore.shop) {
         try {
             await shopStore.delete(shopStore.shop.team_id, shopStore.shop.id);
 
@@ -73,13 +73,15 @@ async function deleteShop() {
     
 <template>
     <Header :title="'Edit ' + shopStore.shop.name" v-if="shopStore.shop">
-        <router-link :to="{ name: 'account.shops.detail', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
+        <router-link
+            :to="{ name: 'account.shops.detail', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
             type="button" class="group btn">
             Cancel
         </router-link>
     </Header>
     <MainContainer v-if="shopStore.shop && authStore.user">
-        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shopStore.shop" @submit="onSubmit">
+        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shopStore.shop"
+            @submit="onSubmit">
             <FormGroup title="Shop information" subTitle="">
                 <div class="sm:col-span-6">
                     <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
@@ -138,8 +140,7 @@ async function deleteShop() {
             <div class="flex justify-end pb-12">
                 <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
                     <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                        <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true"
-                            v-if="!isSubmitting" />
+                        <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
                         <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
                     </span>
                     Save
@@ -155,8 +156,7 @@ async function deleteShop() {
                 <div class="mt-5">
                     <button type="button" class="btn btn-danger group flex items-center"
                         @click="showShopDeletionModal = true">
-                        <icon-fa6-solid:trash
-                            class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
+                        <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
                         Delete shop
                     </button>
                 </div>
@@ -164,20 +164,19 @@ async function deleteShop() {
         </FormGroup>
 
         <Modal :show="showShopDeletionModal" :closeXMark="true" @close="showShopDeletionModal = false">
-            <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" /></template>
+            <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400"
+                    aria-hidden="true" /></template>
             <template #title>Delete shop</template>
-            <template #content>                
+            <template #content>
                 Are you sure you want to delete your Shop? All of your data will
                 be permanently removed
                 from our servers forever. This action cannot be undone.
             </template>
             <template #footer>
-                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto"
-                    @click="deleteShop">
+                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="deleteShop">
                     Delete
                 </button>
-                <button ref="cancelButtonRef" type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                <button ref="cancelButtonRef" type="button" class="btn w-full mt-3 sm:w-auto sm:mt-0"
                     @click="showShopDeletionModal = false">
                     Cancel
                 </button>
