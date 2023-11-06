@@ -21,15 +21,15 @@
     "bcryptjs": "2.4.3",
     "itty-router": "4.0.23",
     "toucan-js": "3.3.1",
-    "version-compare": "1.4.0"
+    "version-compare": "1.5.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20231025.0",
     "@types/bcryptjs": "2.4.5",
-    "@typescript-eslint/eslint-plugin": "6.9.0",
-    "@typescript-eslint/parser": "6.9.0",
+    "@typescript-eslint/eslint-plugin": "6.9.1",
+    "@typescript-eslint/parser": "6.9.1",
     "esbuild": "0.19.5",
-    "eslint": "8.52.0",
+    "eslint": "8.53.0",
     "typescript": "5.2.2",
     "wrangler": "^3.15.0"
   }
