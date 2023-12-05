@@ -63,7 +63,7 @@ devDependencies:
     version: 6.13.1(eslint@8.55.0)(typescript@5.3.2)
   '@vitejs/plugin-vue':
     specifier: 4.5.1
-    version: 4.5.1(vite@5.0.4)(vue@3.3.9)
+    version: 4.5.1(vite@5.0.5)(vue@3.3.9)
   autoprefixer:
     specifier: 10.4.16
     version: 10.4.16(postcss@8.4.32)
@@ -83,8 +83,8 @@ devDependencies:
     specifier: 5.3.2
     version: 5.3.2
   vite:
-    specifier: 5.0.4
-    version: 5.0.4
+    specifier: 5.0.5
+    version: 5.0.5
   wrangler:
     specifier: ^3.18.0
     version: 3.18.0
@@ -1037,14 +1037,14 @@ packages:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
 
-  /@vitejs/plugin-vue@4.5.1(vite@5.0.4)(vue@3.3.9):
+  /@vitejs/plugin-vue@4.5.1(vite@5.0.5)(vue@3.3.9):
     resolution: {integrity: sha512-DaUzYFr+2UGDG7VSSdShKa9sIWYBa1LL8KC0MNOf2H5LjcTPjob0x8LbkqXWmAtbANJCkpiQTj66UVcQkN2s3g==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.0.0 || ^5.0.0
       vue: ^3.2.25
     dependencies:
-      vite: 5.0.4
+      vite: 5.0.5
       vue: 3.3.9(typescript@5.3.2)
     dev: true
 
@@ -2744,8 +2744,8 @@ packages:
       vue: 3.3.9(typescript@5.3.2)
     dev: false
 
-  /vite@5.0.4:
-    resolution: {integrity: sha512-RzAr8LSvM8lmhB4tQ5OPcBhpjOZRZjuxv9zO5UcxeoY2bd3kP3Ticd40Qma9/BqZ8JS96Ll/jeBX9u+LJZrhVg==}
+  /vite@5.0.5:
+    resolution: {integrity: sha512-OekeWqR9Ls56f3zd4CaxzbbS11gqYkEiBtnWFFgYR2WV8oPJRRKq0mpskYy/XaoCL3L7VINDhqqOMNDiYdGvGg==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
