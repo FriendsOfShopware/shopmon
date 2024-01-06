@@ -6,15 +6,13 @@ import { JsonResponse } from "./api/common/response";
 import infoRouter from "./api/info";
 import { Token } from "./api/auth/oauth";
 import { Hono } from "hono";
-import { sentry } from '@hono/sentry';
+import { sentry } from './middleware/sentry';
 
 const router = Router();
 
 const app = new Hono();
 
-app.use('*', sentry({
-    release: SENTRY_RELEASE,
-}));
+app.use('*', sentry());
 
 router.all("/api/account/*", accountRouter.handle);
 router.all('/api/team/*', teamRouter.handle);
@@ -41,8 +39,9 @@ router.get('/api/ws', async (req: Request, env: Env) => {
 
 router.all('*', () => new JsonResponse({ message: 'Not found' }, 404));
 
-
-app.mount('*', router.handle);
+app.all('*', async (c) => {
+    return await router.handle(c.req.raw, c.env, c.executionCtx, c.get('sentry'))
+})
 
 export default app;
 

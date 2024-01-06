@@ -5,11 +5,11 @@ import versionCompare from 'version-compare'
 import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
-import { createSentry } from "../sentry";
+import { createSentry } from "../toucan";
 import Shops from "../repository/shops";
 import { UserSocketHelper } from "./UserSocket";
 import { decrypt } from "../crypto";
- 
+
 interface SQLShop {
     id: string;
     name: string;
@@ -18,7 +18,7 @@ interface SQLShop {
     shopware_version: string;
     client_id: string;
     client_secret: string;
-    ignores: string|string[];
+    ignores: string | string[];
 }
 
 interface ShopwareScheduledTask {
@@ -151,15 +151,15 @@ export class ShopScrape implements DurableObject {
     }
 
     async updateShop(shop: SQLShop, con: Connection) {
-    
+
         await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
 
         const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
-    
+
         const apiShop = new SimpleShop('', shop.url, '');
         apiShop.setShopCredentials(shop.client_id, clientSecret);
         const client = new HttpClient(apiShop);
-    
+
         try {
             await client.getToken();
         } catch (e: any) {
@@ -174,14 +174,14 @@ export class ShopScrape implements DurableObject {
             }
 
             await Shops.notify(
-                con, 
-                this.env.USER_SOCKET, 
-                shop.id, 
+                con,
+                this.env.USER_SOCKET,
+                shop.id,
                 `shop.update-auth-error.${shop.id}`,
                 {
-                    level: 'error', 
-                    title: `Shop: ${shop.name} could not be updated`, 
-                    message: 'Could not connect to shop. Please check your credentials and try again.' + error, 
+                    level: 'error',
+                    title: `Shop: ${shop.name} could not be updated`,
+                    message: 'Could not connect to shop. Please check your credentials and try again.' + error,
                     link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
                 }
             );
@@ -204,9 +204,9 @@ export class ShopScrape implements DurableObject {
             ]);
             return;
         }
-    
+
         let responses;
-    
+
         try {
             responses = await promiseAllProperties({
                 config: client.get('/_info/config'),
@@ -216,10 +216,10 @@ export class ShopScrape implements DurableObject {
                 queue: versionCompare(shop.shopware_version, '6.4.7.0') < 0 ? client.post('/search/message-queue-stats') : client.get('/_info/queue.json'),
                 cacheInfo: client.get('/_action/cache_info')
             })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             let error = e;
-    
+
             if (e.response) {
                 error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
             }
@@ -236,7 +236,7 @@ export class ShopScrape implements DurableObject {
                     link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
                 }
             )
-    
+
             await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
                 'red',
                 error,
@@ -244,9 +244,9 @@ export class ShopScrape implements DurableObject {
             ]);
             return;
         }
-    
+
         const extensions: Extension[] = [];
-    
+
         for (const plugin of responses.plugin.body.data) {
             extensions.push({
                 name: plugin.name,
@@ -261,7 +261,7 @@ export class ShopScrape implements DurableObject {
                 installedAt: plugin.installedAt,
             } as Extension)
         }
-    
+
         for (const app of responses.app.body.data) {
             extensions.push({
                 name: app.name,
@@ -276,7 +276,7 @@ export class ShopScrape implements DurableObject {
                 installedAt: app.createdAt,
             } as Extension)
         }
-    
+
         const scheduledTasks = responses.scheduledTask.body.data.map((task: ShopwareScheduledTask) => {
             return {
                 id: task.id,
@@ -288,36 +288,36 @@ export class ShopScrape implements DurableObject {
                 nextExecutionTime: task.nextExecutionTime,
             };
         });
-    
+
         if (extensions.length) {
             const url = new URL('https://api.shopware.com/pluginStore/pluginsByName')
             url.searchParams.set('locale', 'en-GB');
             url.searchParams.set('shopwareVersion', shop.shopware_version);
-    
+
             for (const extension of extensions) {
                 url.searchParams.append('technicalNames[]', extension.name);
             }
-    
+
             const storeResp = await fetch(url.toString(), {
                 cf: {
                     cacheTtl: 60 * 60 * 6 // 6 hours
                 }
             })
-    
+
             if (storeResp.ok) {
                 const storePlugins = await storeResp.json() as ShopwareStoreExtension[];
-    
+
                 for (const extension of extensions) {
                     const storePlugin = storePlugins.find((plugin: ShopwareStoreExtension) => plugin.name === extension.name);
-    
+
                     if (storePlugin) {
                         extension.latestVersion = storePlugin.version;
                         extension.ratingAverage = storePlugin.ratingAverage;
                         extension.storeLink = storePlugin.link.replace('http://store.shopware.com:80', 'https://store.shopware.com');
-    
+
                         if (storePlugin.latestVersion != extension.version) {
                             const changelogs: ExtensionChangelog[] = [];
-    
+
                             for (const changelog of storePlugin.changelog) {
                                 if (versionCompare(changelog.version, extension.version) > 0) {
                                     const compare = versionCompare(changelog.version, extension.latestVersion);
@@ -330,7 +330,7 @@ export class ShopScrape implements DurableObject {
                                     } as ExtensionChangelog)
                                 }
                             }
-    
+
                             extension.changelog = changelogs;
                         }
                     }
@@ -344,7 +344,7 @@ export class ShopScrape implements DurableObject {
 
         const extensionsDiff: ExtensionDiff[] = [];
         if (resultCurrentExtensions.rows.length > 0) {
-            
+
             const currentExtensions = JSON.parse(resultCurrentExtensions.rows[0].extensions);
 
             for (const oldExtension of currentExtensions) {
@@ -364,8 +364,8 @@ export class ShopScrape implements DurableObject {
                         else if (oldExtension.active === false && newExtension.active === true) {
                             state = 'activated';
                         }
-                        
-                        if(state) {
+
+                        if (state) {
                             extensionsDiff.push({
                                 name: newExtension.name,
                                 label: newExtension.label,
@@ -396,7 +396,7 @@ export class ShopScrape implements DurableObject {
 
             for (const newExtension of extensions) {
                 let exists = false;
-                
+
                 for (const oldExtension of currentExtensions) {
                     if (oldExtension.name === newExtension.name) {
                         exists = true;
@@ -421,14 +421,14 @@ export class ShopScrape implements DurableObject {
 
         if (shop.shopware_version !== responses.config.body.version) {
             shopUpdate.from = shop.shopware_version,
-            shopUpdate.to = responses.config.body.version;
+                shopUpdate.to = responses.config.body.version;
             shopUpdate.date = new Date().toISOString();
         }
-        
+
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         let queue = null;
-        if ( versionCompare(shop.shopware_version, '6.4.7.0') < 0 ) {
+        if (versionCompare(shop.shopware_version, '6.4.7.0') < 0) {
             queue = responses.queue.body.data.filter((entry: ShopwareQueue) => entry.size > 0);
         } else {
             queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
@@ -446,14 +446,14 @@ export class ShopScrape implements DurableObject {
         }
 
         const checkerResult = await CheckerRegistery.check(input);
-    
+
         await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
             checkerResult.status,
             responses.config.body.version,
             favicon,
             shop.id,
         ]);
-    
+
         await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())', [
             shop.id,
             JSON.stringify(input.extensions),
@@ -472,11 +472,11 @@ export class ShopScrape implements DurableObject {
 
             await con.execute(
                 'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
-                    shop.id, 
-                    JSON.stringify(extensionsDiff), 
-                    oldShopwareVersion, 
-                    newShopwareVersion
-                ]
+                shop.id,
+                JSON.stringify(extensionsDiff),
+                oldShopwareVersion,
+                newShopwareVersion
+            ]
             );
         }
 

@@ -1,7 +1,7 @@
 import { Connection } from "@planetscale/database/dist";
 import { getConnection } from "../db";
 import Shops from "../repository/shops";
-import { createSentry } from "../sentry";
+import { createSentry } from "../toucan";
 
 interface SQLShop {
     id: number;
