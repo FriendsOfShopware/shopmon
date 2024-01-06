@@ -15,7 +15,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@hono/sentry": "^1.0.0",
     "@friendsofshopware/app-server-sdk": "0.0.45",
     "@mmyoji/object-validator": "0.0.5",
     "@planetscale/database": "1.13.0",
