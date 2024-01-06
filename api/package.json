@@ -19,6 +19,7 @@
     "@mmyoji/object-validator": "0.0.5",
     "@planetscale/database": "1.13.0",
     "bcryptjs": "2.4.3",
+    "hono": "~3.12.0",
     "itty-router": "4.0.25",
     "toucan-js": "3.3.1",
     "version-compare": "3.8.0"

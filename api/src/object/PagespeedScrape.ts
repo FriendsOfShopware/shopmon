@@ -1,14 +1,14 @@
 import { Connection } from "@planetscale/database/dist";
 import { getConnection } from "../db";
 import Shops from "../repository/shops";
-import { createSentry } from "../sentry";
+import { createSentry } from "../toucan";
 
 interface SQLShop {
     id: number;
     name: string;
     url: string;
     team_id: number;
-    shop_image: string|null;
+    shop_image: string | null;
 }
 
 const SECONDS = 1000;
@@ -179,7 +179,7 @@ interface PagespeedResponse {
                 details: {
                     data: string;
                 }
-            }   
+            }
         }
     }
 }
