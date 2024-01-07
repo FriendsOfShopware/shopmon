@@ -14,6 +14,9 @@ dependencies:
   '@mmyoji/object-validator':
     specifier: 0.0.5
     version: 0.0.5
+  '@trpc/server':
+    specifier: ^10.45.0
+    version: 10.45.0
   bcryptjs:
     specifier: 2.4.3
     version: 2.4.3
@@ -32,6 +35,9 @@ dependencies:
   version-compare:
     specifier: 3.8.0
     version: 3.8.0
+  zod:
+    specifier: ^3.22.4
+    version: 3.22.4
 
 devDependencies:
   '@cloudflare/workers-types':
@@ -2577,4 +2583,3 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-    dev: true

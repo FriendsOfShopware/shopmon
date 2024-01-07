@@ -1,4 +1,5 @@
-import {useAuthStore} from '@/stores/auth.store';
+import { useAuthStore } from '@/stores/auth.store';
+import { trpcClient } from './trpc';
 
 export const fetchWrapper = {
     get: request('GET'),
@@ -14,12 +15,12 @@ interface CustomRequestInit extends RequestInit {
 }
 
 function request(method: string) {
-    return (url: string, body: null|string|object = null, headers = {}) => {
+    return (url: string, body: null | string | object = null, headers = {}) => {
         url = '/api' + url;
         const requestOptions: CustomRequestInit = {
             method,
-            headers: {... authHeader(url), ...headers},
-            body: null, 
+            headers: { ...authHeader(url), ...headers },
+            body: null,
         };
         if (body) {
             requestOptions.headers['Content-Type'] = 'application/json';
@@ -48,27 +49,15 @@ function handleResponse(url: RequestInfo | URL, requestOptions: CustomRequestIni
             const { refresh_token, logout, setAccessToken } = useAuthStore();
             if (response.status === 401) {
                 if (refresh_token) {
-                    const refreshResponse = await fetch('/api/auth/token', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            client_id: 'shopmon',
-                            grant_type: 'refresh_token',
-                            refresh_token: refresh_token,
-                        }),
-                    });
-    
-                    if (refreshResponse.ok) {
-                        const refreshData = await refreshResponse.json();
-    
-                        setAccessToken(refreshData.access_token);
-    
-                        requestOptions.headers['Authorization'] = `Bearer ${refreshData.access_token}`;
-    
+                    try {
+                        const result = await trpcClient.auth.refreshToken.mutate(refresh_token)
+
+                        setAccessToken(result.accessToken);
+
+                        requestOptions.headers['Authorization'] = `Bearer ${result.accessToken}`;
+
                         return fetch(url, requestOptions).then(handleResponse(url, requestOptions));
-                    } else {
+                    } catch (e) {
                         logout();
 
                         return Promise.reject('Refresh token expired');

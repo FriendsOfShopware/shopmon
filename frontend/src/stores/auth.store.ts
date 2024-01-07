@@ -4,6 +4,7 @@ import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
 import type { User } from '@apiTypes/user';
 import { useNotificationStore } from './notification.store';
+import { trpcClient } from '@/helpers/trpc';
 
 export const useAuthStore = defineStore('auth', {
     state: (): { user: User | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
@@ -29,14 +30,12 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async login(email: string, password: string) {
-            const login = await fetchWrapper.post(`/auth/token`, {
-                client_id: 'shopmon',
-                grant_type: 'password',
-                username: email,
-                password: password,
-            });
+            const result = await trpcClient.auth.loginWithPassword.mutate({
+                email,
+                password
+            })
 
-            this.setAccessToken(login.access_token, login.refresh_token);
+            this.setAccessToken(result.accessToken, result.refreshToken);
 
             const user = await fetchWrapper.get(`/account/me`);
 
@@ -46,28 +45,28 @@ export const useAuthStore = defineStore('auth', {
             // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
 
-            useNotificationStore().connect(login.access_token);
+            useNotificationStore().connect(result.accessToken);
             await useNotificationStore().loadNotifications();
         },
 
-        async register(user: object) {
-            await fetchWrapper.post(`/auth/register`, user);
+        async register(user: { email: string, password: string, username: string }) {
+            trpcClient.auth.register.mutate(user);
         },
 
         async confirmMail(token: string) {
-            await fetchWrapper.post(`/auth/confirm/${token}`);
+            await trpcClient.auth.confirmVerification.mutate(token);
         },
 
         async resetPassword(email: string) {
-            await fetchWrapper.post(`/auth/reset`, { email });
+            await trpcClient.auth.passwordResetRequest.mutate(email);
         },
 
         async resetAvailable(token: string) {
-            await fetchWrapper.get(`/auth/reset/${token}`);
+            return await trpcClient.auth.passwordResetAvailable.mutate(token);
         },
 
         async confirmResetPassword(token: string, password: string) {
-            await fetchWrapper.post(`/auth/reset/${token}`, { password });
+            return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
         },
 
         async updateProfile(info: { username: string, email: string, currentPassword: string, newPassword: string }) {
@@ -90,7 +89,12 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
-        logout() {
+        async logout() {
+            // If session expired, it's fine that trpc fails
+            try {
+                await trpcClient.auth.logout.mutate();
+            } catch (e) { }
+
             this.user = null;
             this.refresh_token = null;
             this.access_token = null;

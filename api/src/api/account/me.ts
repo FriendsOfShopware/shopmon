@@ -2,7 +2,6 @@ import { getConnection, schema } from "../../db";
 import Users from "../../repository/users";
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
-import { validateEmail } from "../auth/register";
 import { Extension, UserExtension } from "../../../../shared/shop";
 import { sql, eq } from "drizzle-orm";
 import { md5 } from "../../crypto";
@@ -91,7 +90,7 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
         return new ErrorResponse('Invalid password', 400);
     }
 
-    if (email !== undefined && !validateEmail(email)) {
+    if (email !== undefined) {
         return new ErrorResponse('Invalid email', 400);
     }
 

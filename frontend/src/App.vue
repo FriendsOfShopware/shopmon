@@ -11,14 +11,14 @@ const authStore = useAuthStore();
 const notificationStore = useNotificationStore()
 
 if (authStore.isAuthenticated) {
-    authStore.refreshUser();
-    
-    const authToken = authStore.access_token;
-    
-    if(authToken) {
-      notificationStore.connect(authToken);
-      notificationStore.loadNotifications();
-    }
+  authStore.refreshUser();
+
+  const authToken = authStore.access_token;
+
+  if (authToken) {
+    notificationStore.connect(authToken);
+    notificationStore.loadNotifications();
+  }
 }
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
