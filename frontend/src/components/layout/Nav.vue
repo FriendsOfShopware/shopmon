@@ -163,10 +163,7 @@ function toggleDarkMode() {
                 class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white focus:outline-none z-10 dark:bg-neutral-800">
                 <div class="px-4 py-2 border-b dark:border-neutral-700">
                   <div class="text-base font-medium">
-                    {{ authStore.user.username }}
-                  </div>
-                  <div class="text-sm font-medium text-sky-700 dark:text-sky-600">
-                    {{ authStore.user.email }}
+                    Hi {{ authStore.user.username }}
                   </div>
                 </div>
                 <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
