@@ -1,5 +1,5 @@
 import { router, publicProcedure } from '..';
-import { schema, Drizzle } from '../../db';
+import { schema } from '../../db';
 import { eq, and, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import bcryptjs from "bcryptjs";

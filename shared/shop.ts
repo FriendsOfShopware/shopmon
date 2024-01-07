@@ -136,7 +136,3 @@ export interface ShopChangelog {
     new_shopware_version: string | null;
     date: string;
 }
-
-export interface ShopwareVersion {
-    [version: string]: string[];
-}

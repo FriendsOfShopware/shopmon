@@ -7,13 +7,13 @@ import Modal from '@/components/layout/Modal.vue';
 import RatingStars from '@/components/layout/RatingStars.vue';
 
 import { compareVersions } from 'compare-versions';
-import { sort, createNewSortInstance } from 'fast-sort';
+import { createNewSortInstance } from 'fast-sort';
 
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionCompatibilitys, ShopChangelog, ShopwareVersion } from '@apiTypes/shop';
+import type { Extension, ExtensionCompatibilitys, ShopChangelog } from '@apiTypes/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
@@ -26,6 +26,7 @@ import FaPlug from '~icons/fa6-solid/plug';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaRocket from '~icons/fa6-solid/rocket';
 import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import { trpcClient } from '@/helpers/trpc';
 
 const route = useRoute();
 const shopStore = useShopStore();
@@ -66,8 +67,8 @@ async function loadShop() {
   const shopId = parseInt(route.params.shopId as string, 10);
 
   await shopStore.loadShop(teamId, shopId);
-  const shopwareVersionsData = await fetchWrapper.get('/info/latest-shopware-version') as ShopwareVersion[];
-  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop.shopware_version, version) < 0);
+  const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
+  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop!!.shopware_version, version) < 0);
   latestShopwareVersion.value = shopwareVersions.value[0];
 }
 
@@ -115,16 +116,17 @@ async function loadUpdateWizard(version: string) {
   loadingUpdateWizard.value = true;
 
   const body = {
-    "currentVersion": shopStore.shop?.shopware_version,
-    "futureVersion": version,
-    "plugins": shopStore.shop?.extensions
+    currentVersion: shopStore.shop!!.shopware_version,
+    futureVersion: version,
+    extensions: shopStore.shop!!.extensions
   }
 
-  const pluginCompatibilitys = await fetchWrapper.post('/info/check-extension-compatibility', body);
+  const pluginCompatibilitys = await trpcClient.info.checkExtensionCompatibility.query(body)
+
   const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
 
   for (const extension of extensions) {
-    const compatibility = pluginCompatibilitys.find((plugin: Extension) => plugin.name === extension.name)
+    const compatibility = pluginCompatibilitys.find((plugin) => plugin.name === extension.name)
     extension.compatibility = null;
     if (compatibility) {
       extension.compatibility = compatibility.status;
