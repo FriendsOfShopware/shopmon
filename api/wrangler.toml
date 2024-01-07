@@ -9,14 +9,22 @@ node_compat = false
 logpush = true
 
 [vars]
-MAIL_FROM="Shopmon <shopmon@fos.gg>"
-FRONTEND_URL="https://shopmon.fos.gg"
+MAIL_ACTIVE = "true"
+MAIL_DKIM_DOMAIN = "fos.gg"
+MAIL_DKIM_SELECTOR = "cf"
+MAIL_FROM = "shopmon@fos.gg"
+MAIL_FROM_NAME = "Shopmon"
+FRONTEND_URL = "https://shopmon.fos.gg"
 
 [build]
 command = "node esbuild.mjs"
 
 [durable_objects]
-bindings = [{name = "SHOPS_SCRAPE", class_name = "ShopScrape"}, {name = "PAGESPEED_SCRAPE", class_name = "PagespeedScrape"}, {name = "USER_SOCKET", class_name = "UserSocket"}]
+bindings = [
+  { name = "SHOPS_SCRAPE", class_name = "ShopScrape" },
+  { name = "PAGESPEED_SCRAPE", class_name = "PagespeedScrape" },
+  { name = "USER_SOCKET", class_name = "UserSocket" },
+]
 
 [[migrations]]
 tag = "v1"
@@ -31,11 +39,11 @@ tag = "v3"
 new_classes = ["UserSocket"]
 
 [[kv_namespaces]]
-  binding = "kvStorage"
-  id = "61a260743f17482e92fa5cb2c340edec"
-  preview_id = "61a260743f17482e92fa5cb2c340edec"
+binding = "kvStorage"
+id = "61a260743f17482e92fa5cb2c340edec"
+preview_id = "61a260743f17482e92fa5cb2c340edec"
 
 [[r2_buckets]]
-  binding = "FILES"
-  bucket_name = "shopmon"
-  preview_bucket_name = "shopmon"
+binding = "FILES"
+bucket_name = "shopmon"
+preview_bucket_name = "shopmon"

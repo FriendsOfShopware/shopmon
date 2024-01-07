@@ -1,28 +1,59 @@
 import type { Shop, ShopAlert, User } from "../repository/shops";
+import { createSentry } from "../toucan";
 
 interface MaiLRequest {
-    from?: string;
     to: string;
     subject: string;
     body: string;
 }
 
 async function sendMail(env: Env, mail: MaiLRequest) {
-    mail.from = env.MAIL_FROM;
+    if (env.MAIL_ACTIVE === 'false') {
+        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`)
+        console.log(mail.body);
+        return;
+    }
 
-    const formData = new FormData();
-    formData.append('from', mail.from);
-    formData.append('to', mail.to);
-    formData.append('subject', mail.subject);
-    formData.append('html', mail.body);
-
-    await fetch(`https://api.eu.mailgun.net/v3/${env.MAILGUN_DOMAIN}/messages`, {
+    // https://blog.cloudflare.com/sending-email-from-workers-with-mailchannels
+    const response = await fetch(`https://api.mailchannels.net/tx/v1/send`, {
         method: 'POST',
-        body: formData,
         headers: {
-            'Authorization': 'Basic ' + btoa('api:' + env.MAILGUN_KEY)
-        }
+            'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+            personalizations: [
+                {
+                    to: [{ email: mail.to }],
+                    ...(() => {
+                        if (env.MAIL_DKIM_PRIVATE_KEY === undefined) {
+                            return {};
+                        }
+
+                        return {
+                            dkim_domain: env.MAIL_DKIM_DOMAIN,
+                            dkim_selector: env.MAIL_DKIM_SELECTOR,
+                            dkim_private_key: env.MAIL_DKIM_PRIVATE_KEY,
+                        };
+                    })(),
+                },
+            ],
+            from: {
+                email: env.MAIL_FROM,
+                name: env.MAIL_FROM_NAME,
+            },
+            subject: mail.subject,
+            content: [
+                {
+                    type: 'text/html',
+                    value: mail.body,
+                },
+            ],
+        }),
     });
+
+    if (!response.ok) {
+        throw new Error(`Failed to send mail: ${await response.text()}`);
+    }
 }
 
 export async function sendMailConfirmToUser(env: Env, email: string, token: string) {
