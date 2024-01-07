@@ -1,5 +1,5 @@
-import { HttpClient } from "shopware-app-server-sdk/component/http-client";
-import { CacheInfo, Extension, QueueInfo, ScheduledTask, SHOP_STATUS } from "../../../../shared/shop"; 
+import { HttpClient } from "@friendsofshopware/app-server-sdk";
+import { CacheInfo, Extension, QueueInfo, ScheduledTask, SHOP_STATUS } from "../../../../shared/shop";
 import env from "./checks/env";
 import frosh_tools from "./checks/frosh_tools";
 import security from "./checks/security";
@@ -17,7 +17,7 @@ export interface CheckerInput {
     scheduledTasks: ScheduledTask[];
     queueInfo: QueueInfo[];
     cacheInfo: CacheInfo;
-    favicon: string|null;
+    favicon: string | null;
     client: HttpClient;
     ignores: string[];
 }
@@ -27,7 +27,7 @@ export interface CheckerChecks {
     level: SHOP_STATUS;
     message: string;
     source: string;
-    link: string|null;
+    link: string | null;
 }
 
 export class CheckerOutput {
@@ -39,7 +39,7 @@ export class CheckerOutput {
         this.ignores = ignores;
     }
 
-    public success(id: string, message: string, source = 'Shopmon', link: string|null = null) {
+    public success(id: string, message: string, source = 'Shopmon', link: string | null = null) {
         this.checks.push({
             id,
             level: SHOP_STATUS.GREEN,
@@ -49,7 +49,7 @@ export class CheckerOutput {
         });
     }
 
-    public warning(id: string, message: string, source = 'Shopmon', link: string|null = null) {
+    public warning(id: string, message: string, source = 'Shopmon', link: string | null = null) {
         this.checks.push({
             id,
             level: SHOP_STATUS.YELLOW,
@@ -65,7 +65,7 @@ export class CheckerOutput {
         this.status = SHOP_STATUS.YELLOW;
     }
 
-    public error(id: string, message: string, source = 'Shopmon', link: string|null = null) {
+    public error(id: string, message: string, source = 'Shopmon', link: string | null = null) {
         this.checks.push({
             id,
             level: SHOP_STATUS.RED,

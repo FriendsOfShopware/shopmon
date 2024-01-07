@@ -8,12 +8,12 @@ interface TeamMember {
 }
 
 export default class Teams {
-    static async createTeam(con: Drizzle, name: string, ownerId: string): Promise<string> {
+    static async createTeam(con: Drizzle, name: string, ownerId: number): Promise<string> {
         const teamInsertResult = await con
             .insert(schema.team)
             .values({
                 name,
-                owner_id: parseInt(ownerId),
+                owner_id: ownerId,
                 created_at: (new Date().toISOString()),
             })
             .execute();
@@ -22,7 +22,7 @@ export default class Teams {
             .insert(schema.userToTeam)
             .values({
                 team_id: teamInsertResult.meta.last_row_id,
-                user_id: parseInt(ownerId),
+                user_id: ownerId,
             })
 
         return teamInsertResult.meta.last_row_id.toString();

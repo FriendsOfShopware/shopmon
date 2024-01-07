@@ -29,7 +29,7 @@ async function getSecurityInfo(): Promise<Security> {
         }
     })
 
-    return await securityInfo.json();
+    return await securityInfo.json() as Security;
 }
 
 interface Security {

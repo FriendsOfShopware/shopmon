@@ -2,7 +2,7 @@ import { ErrorResponse, NoContentResponse } from "../common/response";
 import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { decrypt } from "../../crypto";
 import { getConnection, schema } from "../../db";
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function clearShopCache(req: Request, env: Env): Promise<Response> {
     const { shopId } = req.params as { shopId?: string };
@@ -32,7 +32,7 @@ export async function clearShopCache(req: Request, env: Env): Promise<Response> 
 
     try {
         await client.delete('/_action/cache');
-    } catch (e) {
+    } catch (e: any) {
         return new ErrorResponse(e.response.body.errors[0].detail, e.response.statusCode);
     }
 

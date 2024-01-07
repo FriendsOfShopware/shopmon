@@ -2,7 +2,7 @@ import { ErrorResponse, NoContentResponse } from "../common/response";
 import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { decrypt } from "../../crypto";
 import { getConnection, schema } from "../../db";
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function reScheduleTask(req: Request, env: Env): Promise<Response> {
     const { shopId, taskId } = req.params as { shopId?: string, taskId?: string };
@@ -69,7 +69,7 @@ export async function reScheduleTask(req: Request, env: Env): Promise<Response> 
             .where(eq(schema.shopScrapeInfo.shop, parseInt(shopId)))
             .execute();
 
-    } catch (e) {
+    } catch (e: any) {
         return new ErrorResponse(e.response.body.errors[0].detail, e.response.statusCode);
     }
 

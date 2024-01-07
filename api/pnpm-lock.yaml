@@ -23,6 +23,9 @@ dependencies:
   itty-router:
     specifier: 4.0.25
     version: 4.0.25
+  mail-mime-builder:
+    specifier: ^0.1.0
+    version: 0.1.0
   toucan-js:
     specifier: 3.3.1
     version: 3.3.1
@@ -2025,6 +2028,10 @@ packages:
     dependencies:
       sourcemap-codec: 1.4.8
     dev: true
+
+  /mail-mime-builder@0.1.0:
+    resolution: {integrity: sha512-YjBWVqjMpK7lXrD/9ypSCp0UCwLYB0OhnLHNIU38B0poGbRqlcTbK2aMhZI2pLuqWFkKertLzUg015QQcVAuYw==}
+    dev: false
 
   /memoizee@0.4.15:
     resolution: {integrity: sha512-UBWmJpLZd5STPm7PMUlOw/TSy972M+z8gcyQ5veOnSDRREz/0bmpyTfKt3/51DhEBqCZQn1udM/5flcSPYhkdQ==}

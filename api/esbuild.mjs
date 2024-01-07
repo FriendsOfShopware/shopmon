@@ -21,6 +21,6 @@ if (existsSync('worker.api.js') && process.env.CI) {
             'SENTRY_RELEASE': `"${commitHash}"`,
         }
     });
-    
+
     console.log(result);
 }

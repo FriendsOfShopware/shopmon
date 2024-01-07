@@ -1,8 +1,7 @@
-import { Connection } from "@planetscale/database/dist";
 import { Drizzle, getConnection, schema } from "../db";
 import Shops from "../repository/shops";
 import { createSentry } from "../toucan";
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 interface SQLShop {
     id: number;

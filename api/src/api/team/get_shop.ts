@@ -61,7 +61,9 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
     shop.cache_info = JSON.parse(shop.cache_info || '{}');
     shop.checks = JSON.parse(shop.checks || '{}');
     shop.ignores = JSON.parse(shop.ignores || '[]');
+    // @ts-ignore
     shop.pagespeed = pageSpeed;
+    // @ts-ignore
     shop.changelog = shopChangelog;
 
     return new JsonResponse(shop);

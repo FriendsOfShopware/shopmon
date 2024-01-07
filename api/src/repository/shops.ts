@@ -1,4 +1,3 @@
-import { Connection } from "@planetscale/database/dist";
 import { NotificationCreation } from "../../../shared/notification";
 import { UserSocketHelper } from "../object/UserSocket";
 import Users from "./users";

@@ -56,16 +56,16 @@ export async function createShop(req: Request, env: Env): Promise<Response> {
             version: resp.body.version,
         });
 
-        const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(id));
+        const scrapeObject = env.SHOPS_SCRAPE.get(env.SHOPS_SCRAPE.idFromName(id.toString()));
 
         await scrapeObject.fetch(`http://localhost/now?id=${id.toString()}`);
 
-        const pagespeedObject = env.PAGESPEED_SCRAPE.get(env.PAGESPEED_SCRAPE.idFromName(id));
+        const pagespeedObject = env.PAGESPEED_SCRAPE.get(env.PAGESPEED_SCRAPE.idFromName(id.toString()));
 
         await pagespeedObject.fetch(`http://localhost/now?id=${id.toString()}`);
 
         return new JsonResponse({ id });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         return new ErrorResponse(e.message || 'Unknown error')
     }

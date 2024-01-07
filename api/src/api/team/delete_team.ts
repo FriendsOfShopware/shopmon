@@ -10,7 +10,7 @@ export async function deleteTeam(req: Request, env: Env): Promise<Response> {
     }
 
     const con = getConnection(env);
-    await Teams.deleteTeam(con, teamId);
+    await Teams.deleteTeam(con, parseInt(teamId));
 
     return new NoContentResponse();
 }

@@ -72,7 +72,7 @@ export async function confirmResetPassword(req: Request, env: Env): Promise<Resp
 
     await env.kvStorage.delete(`reset_${token}`);
 
-    await Users.revokeUserSessions(env.kvStorage, id);
+    await Users.revokeUserSessions(env.kvStorage, parseInt(id));
 
     return new NoContentResponse()
 }

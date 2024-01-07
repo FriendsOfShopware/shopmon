@@ -1,5 +1,4 @@
 import type { Shop, ShopAlert, User } from "../repository/shops";
-import { createSentry } from "../toucan";
 
 interface MaiLRequest {
     to: string;

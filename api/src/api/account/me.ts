@@ -7,23 +7,6 @@ import { Extension, UserExtension } from "../../../../shared/shop";
 import { sql, eq } from "drizzle-orm";
 import { md5 } from "../../crypto";
 
-type TeamRow = {
-    id: string;
-    name: string;
-    created_at: string;
-    is_owner: boolean;
-    shopCount: number;
-    memberCount: number;
-}
-
-type UserExtensionRow = {
-    id: string,
-    name: string,
-    team_id: string,
-    shopware_version: string,
-    extensions: string
-}
-
 export async function accountMe(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
@@ -44,6 +27,7 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 
     const emailMd5 = await md5(result.email);
 
+    // @ts-ignore
     result.avatar = `https://www.gravatar.com/avatar/${emailMd5}?d=identicon`;
 
     const teamResult = await con
@@ -60,6 +44,7 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
         .where(eq(userToTeamTable.user_id, req.userId))
         .all();
 
+    // @ts-ignore
     result.teams = teamResult;
 
     return new Response(JSON.stringify(result), {

@@ -1,5 +1,4 @@
 import { Notification, NotificationCreation } from "../../../shared/notification";
-import { Connection } from "@planetscale/database/dist";
 import { Drizzle, schema } from '../db'
 import { eq } from 'drizzle-orm';
 import Teams from "./teams";
@@ -52,7 +51,7 @@ export default class Users {
             .execute();
     }
 
-    static async revokeUserSessions(session: KVNamespace, id: string): Promise<void> {
+    static async revokeUserSessions(session: KVNamespace, id: number): Promise<void> {
         const accessToken = await session.list({ prefix: `u-${id}-` });
 
         for (const key of accessToken.keys) {

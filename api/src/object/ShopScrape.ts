@@ -8,7 +8,7 @@ import { createSentry } from "../toucan";
 import Shops from "../repository/shops";
 import { UserSocketHelper } from "./UserSocket";
 import { decrypt } from "../crypto";
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 interface SQLShop {
     id: number;

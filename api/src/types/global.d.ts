@@ -2,10 +2,6 @@ declare global {
     const SENTRY_RELEASE: string;
 
     interface Env {
-        DATABASE_HOST: string;
-        DATABASE_USER: string;
-        DATABASE_PASSWORD: string;
-
         MAIL_ACTIVE: 'true' | 'false';
         MAIL_FROM: string;
         MAIL_FROM_NAME: string;
@@ -19,12 +15,15 @@ declare global {
         PAGESPEED_API_KEY: string;
         APP_SECRET: string;
         DISABLE_REGISTRATION: boolean;
+
+        // cloudflare bindings
         kvStorage: KVNamespace;
         SHOPS_SCRAPE: DurableObjectNamespace;
         PAGESPEED_SCRAPE: DurableObjectNamespace;
         USER_SOCKET: DurableObjectNamespace;
         FILES: R2Bucket;
         shopmonDB: D1Database;
+        sendMail: SendEmail;
     }
 
     interface Team {

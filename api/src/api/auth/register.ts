@@ -1,4 +1,4 @@
-import { getConnection, user, user as userTable } from "../../db";
+import { getConnection, schema } from "../../db";
 import { eq } from 'drizzle-orm';
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
@@ -45,7 +45,7 @@ export default async function (req: Request, env: Env): Promise<Response> {
         columns: {
             id: true
         },
-        where: eq(userTable.email, json.email)
+        where: eq(schema.user.email, json.email)
     })
 
     if (result !== undefined) {
@@ -57,7 +57,7 @@ export default async function (req: Request, env: Env): Promise<Response> {
 
     const token = randomString(32)
 
-    const userInsertResult = await con.insert(userTable)
+    const userInsertResult = await con.insert(schema.user)
         .values({
             created_at: (new Date()).toISOString(),
             email: json.email,
@@ -70,7 +70,7 @@ export default async function (req: Request, env: Env): Promise<Response> {
         return new ErrorResponse('Failed to create user', 500);
     }
 
-    //await Teams.createTeam(con, `${json.email}'s Team`, userInsertResult.insertId as string);
+    await Teams.createTeam(con, `${json.email}'s Team`, userInsertResult.meta.last_row_id);
 
     await sendMailConfirmToUser(env, json.email, token);
 

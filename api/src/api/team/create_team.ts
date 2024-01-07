@@ -27,13 +27,13 @@ export async function createTeam(req: Request, env: Env): Promise<Response> {
         return new JsonResponse(errors, 400);
     }
 
-    if (json.ownerId as string !== req.userId as string) {
+    if (json.ownerId !== req.userId) {
         return new Response('Forbidden.', { status: 403 });
     }
 
     const con = getConnection(env);
     try {
-        const teamId = await Teams.createTeam(con, json.name, json.ownerId as string);
+        const teamId = await Teams.createTeam(con, json.name, req.userId);
         return new JsonResponse({ teamId });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {

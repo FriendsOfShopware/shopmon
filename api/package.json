@@ -10,6 +10,7 @@
     "api:deploy": "wrangler deploy",
     "eslint": "eslint 'src/**/*.ts'",
     "eslint:fix": "eslint 'src/**/*.ts' --fix",
+    "tslint": "tsc --noEmit",
     "wrangler": "wrangler"
   },
   "author": "",
