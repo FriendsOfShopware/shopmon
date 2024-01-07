@@ -1,9 +1,10 @@
 import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { Shop, ShopDetailed } from '@apiTypes/shop'; 
+import type { Shop, ShopDetailed } from '@apiTypes/shop';
+import { trpcClient, RouterOutput } from "@/helpers/trpc";
 
 export const useShopStore = defineStore('shop', {
-    state: (): { shops: Shop[], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: ShopDetailed|null } => ({
+    state: (): { shops: RouterOutput['account']['currentUserShops'], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: ShopDetailed | null } => ({
         isLoading: false,
         isRefreshing: false,
         isCacheClearing: false,
@@ -23,7 +24,7 @@ export const useShopStore = defineStore('shop', {
 
         async loadShops() {
             this.isLoading = true;
-            const shops = await fetchWrapper.get('/account/me/shops') as Shop[];
+            const shops = await trpcClient.account.currentUserShops.query();
             this.isLoading = false;
 
             const enrichedShops = this.setShopsInitials(shops);
@@ -36,9 +37,9 @@ export const useShopStore = defineStore('shop', {
             this.shop = await fetchWrapper.get(`/team/${teamId}/shop/${shopId}`) as ShopDetailed;
             this.isLoading = false;
         },
-        
+
         async updateShop(teamId: number, id: number, payload: any) {
-            if ( payload.shop_url ) {
+            if (payload.shop_url) {
                 payload.shop_url = payload.shop_url.replace(/\/+$/, '');
             }
             await fetchWrapper.patch(`/team/${teamId}/shop/${id}`, payload);
@@ -48,7 +49,7 @@ export const useShopStore = defineStore('shop', {
 
         async refreshShop(teamId: number, id: number, pagespeed: boolean) {
             this.isRefreshing = true;
-            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`, {'pagespeed': pagespeed});
+            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`, { 'pagespeed': pagespeed });
             this.isRefreshing = false;
         },
 
@@ -69,7 +70,7 @@ export const useShopStore = defineStore('shop', {
             await fetchWrapper.delete(`/team/${teamId}/shop/${shopId}`);
         },
 
-        setShopsInitials(shops: Shop[]) {
+        setShopsInitials(shops: RouterOutput['account']['currentUserShops']) {
             return shops?.map(shop => ({
                 ...shop,
                 initials: this.getShopInitias(shop.name)
@@ -77,13 +78,13 @@ export const useShopStore = defineStore('shop', {
         },
 
         getShopInitias(name: string) {
-            let initials = name.split(/\s/).slice(0,2).reduce((response,word)=> response+=word.slice(0,1),'');
+            let initials = name.split(/\s/).slice(0, 2).reduce((response, word) => response += word.slice(0, 1), '');
 
             if (initials && initials.length > 1) {
                 return initials.toUpperCase();
             }
 
-            return name.slice(0,2).toUpperCase();
+            return name.slice(0, 2).toUpperCase();
         }
     }
 })

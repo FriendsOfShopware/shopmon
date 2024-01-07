@@ -2,12 +2,11 @@ import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
-import type { User } from '@apiTypes/user';
 import { useNotificationStore } from './notification.store';
-import { trpcClient } from '@/helpers/trpc';
+import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 export const useAuthStore = defineStore('auth', {
-    state: (): { user: User | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
+    state: (): { user: RouterOutput['account']['currentUser'] | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
         user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
         access_token: localStorage.getItem('access_token'),
@@ -24,7 +23,7 @@ export const useAuthStore = defineStore('auth', {
                 return;
             }
 
-            this.user = await fetchWrapper.get(`/account/me`);
+            this.user = await trpcClient.account.currentUser.query();
 
             localStorage.setItem('user', JSON.stringify(this.user));
         },
@@ -37,7 +36,7 @@ export const useAuthStore = defineStore('auth', {
 
             this.setAccessToken(result.accessToken, result.refreshToken);
 
-            const user = await fetchWrapper.get(`/account/me`);
+            const user = await trpcClient.account.currentUser.query();
 
             // update pinia state
             this.user = user;
@@ -70,7 +69,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async updateProfile(info: { username: string, email: string, currentPassword: string, newPassword: string }) {
-            await fetchWrapper.patch(`/account/me`, info);
+            await trpcClient.account.updateCurrentUser.mutate(info);
 
             if (info.newPassword && info.email) {
                 await this.login(info.email, info.newPassword);
@@ -106,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
 
         async delete() {
             useNotificationStore().disconnect();
-            await fetchWrapper.delete(`/account/me`);
+            await trpcClient.account.deleteCurrentUser.mutate();
             this.logout();
         }
     },

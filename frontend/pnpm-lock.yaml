@@ -58,6 +58,9 @@ devDependencies:
   '@iconify-json/line-md':
     specifier: 1.1.33
     version: 1.1.33
+  '@trpc/server':
+    specifier: ^10.45.0
+    version: 10.45.0
   '@typescript-eslint/eslint-plugin':
     specifier: 6.15.0
     version: 6.15.0(@typescript-eslint/parser@6.15.0)(eslint@8.56.0)(typescript@5.3.3)
@@ -930,7 +933,6 @@ packages:
 
   /@trpc/server@10.45.0:
     resolution: {integrity: sha512-2Fwzv6nqpE0Ie/G7PeS0EVR89zLm+c1Mw7T+RAGtU807j4oaUx0zGkBXTu5u9AI+j+BYNN2GZxJcuDTAecbr1A==}
-    dev: false
 
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}

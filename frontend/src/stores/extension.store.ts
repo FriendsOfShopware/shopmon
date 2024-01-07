@@ -1,18 +1,17 @@
-import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { UserExtension } from '@apiTypes/shop'; 
+import { trpcClient, RouterOutput } from "@/helpers/trpc";
 
 export const useExtensionStore = defineStore('extension', {
-    state: (): { isLoading: boolean, isRefreshing: boolean, extensions: UserExtension[] } => ({
+    state: (): { isLoading: boolean, isRefreshing: boolean, extensions: RouterOutput['account']['currentUserApps'] } => ({
         isLoading: false,
         isRefreshing: false,
         extensions: []
     }),
     actions: {
-        
+
         async loadExtensions() {
             this.isLoading = true;
-            this.extensions = await fetchWrapper.get('/account/me/apps') as UserExtension[];
+            this.extensions = await trpcClient.account.currentUserApps.query();
             this.isLoading = false;
         }
     }
