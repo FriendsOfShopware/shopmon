@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "description": "",
-  "packageManager": "pnpm@8.9.0",
+  "packageManager": "pnpm@8.14.0",
   "scripts": {
     "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
     "dev:local": "TZ=UTC wrangler dev --port 5789",
@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@friendsofshopware/app-server-sdk": "0.0.45",
+    "@hono/trpc-server": "^0.1.0",
     "@mmyoji/object-validator": "0.0.5",
     "bcryptjs": "2.4.3",
     "drizzle-orm": "^0.29.3",
