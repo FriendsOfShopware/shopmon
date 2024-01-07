@@ -30,7 +30,7 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 
     const json = result.rows[0] as { avatar: string, teams: TeamRow[] };
 
-    json.avatar = `https://www.gravatar.com/avatar/${json.avatar}?d=identicon`;
+    json.avatar = `https://seccdn.libravatar.org/avatar/${json.avatar}?d=identicon`;
 
     const teamResult = await con.execute(`
     SELECT 
