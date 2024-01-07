@@ -13,6 +13,12 @@ const router = Router();
 export type Bindings = {
     MAIL_ACTIVE: 'true' | 'false';
     MAIL_FROM: string;
+    MAIL_FROM_NAME: string;
+
+    MAIL_DKIM_PRIVATE_KEY: string | undefined;
+    MAIL_DKIM_DOMAIN: string;
+    MAIL_DKIM_SELECTOR: string;
+
     FRONTEND_URL: string;
     SENTRY_DSN: string;
     PAGESPEED_API_KEY: string;
