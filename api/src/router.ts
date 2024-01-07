@@ -1,6 +1,5 @@
 import { Router } from "itty-router";
 import teamRouter from './api/team';
-import accountRouter from "./api/account";
 import { JsonResponse } from "./api/common/response";
 import { Hono } from "hono";
 import { sentry } from './middleware/sentry';
@@ -42,7 +41,6 @@ app.use(
     trpcServer({ router: appRouter }),
 )
 
-router.all("/api/account/*", accountRouter.handle);
 router.all('/api/team/*', teamRouter.handle);
 
 app.get('/api/ws', async (c) => {

@@ -1,15 +1,15 @@
-import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { Notification, WebsocketMessage } from "@apiTypes/notification";
+import type { WebsocketMessage } from "@apiTypes/notification";
 import { useShopStore } from "./shop.store";
 import { useAlertStore } from "./alert.store";
+import { trpcClient, RouterOutput } from "@/helpers/trpc";
 
 export const useNotificationStore = defineStore('notification', {
     state: () => ({
         isLoading: false,
         isRefreshing: false,
         websocket: null as WebSocket | null,
-        notifications: [] as Notification[],
+        notifications: [] as RouterOutput['account']['notification']['list'],
     }),
     getters: {
         isConnected(): boolean {
@@ -44,11 +44,12 @@ export const useNotificationStore = defineStore('notification', {
                 if (data.notification) {
                     for (const notification of this.notifications) {
                         if (notification.title === data.notification.title && notification.message === data.notification.message) {
-                            notification.read = false;
+                            notification.read = 0;
                             return;
                         }
                     }
 
+                    // @ts-expect-error
                     this.notifications.unshift(data.notification);
                 }
 
@@ -67,7 +68,7 @@ export const useNotificationStore = defineStore('notification', {
 
         async loadNotifications() {
             this.isLoading = true;
-            const notifications = await fetchWrapper.get('/account/me/notifications') as Notification[];
+            const notifications = await trpcClient.account.notification.list.query();
             this.isLoading = false;
 
             this.notifications = notifications;
@@ -76,7 +77,7 @@ export const useNotificationStore = defineStore('notification', {
         async markAllRead() {
             let allRead = true;
             for (const notification of this.notifications) {
-                if (notification.read === false) {
+                if (notification.read === 0) {
                     allRead = false;
                     break;
                 }
@@ -86,21 +87,21 @@ export const useNotificationStore = defineStore('notification', {
                 return;
             }
 
-            await fetchWrapper.patch('/account/me/notifications/mark-all-read');
+            await trpcClient.account.notification.markAllRead.mutate();
 
             for (const notification of this.notifications) {
-                notification.read = true;
+                notification.read = 1;
             }
         },
 
         async deleteAllNotifications() {
-            await fetchWrapper.delete('/account/me/notifications');
+            await trpcClient.account.notification.delete.mutate();
 
             this.notifications = [];
         },
 
         async deleteNotification(id: number) {
-            await fetchWrapper.delete(`/account/me/notifications/${id}`);
+            await trpcClient.account.notification.delete.mutate(id);
 
             this.notifications = this.notifications.filter(e => e.id !== id);
         },

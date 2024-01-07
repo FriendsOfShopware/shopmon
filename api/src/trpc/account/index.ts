@@ -7,6 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import Users from '../../repository/users';
 import bcryptjs from 'bcryptjs';
+import { notificationRouter } from './notification';
 
 type CurrentUser = {
     id: number;
@@ -59,6 +60,7 @@ export interface UserExtension extends Extension {
 }
 
 export const accountRouter = router({
+    notification: notificationRouter,
     currentUser: publicProcedure
         .use(loggedInUserMiddleware)
         .query(async ({ ctx }) => {
