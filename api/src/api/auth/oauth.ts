@@ -1,5 +1,5 @@
 import { init } from "@mmyoji/object-validator";
-import { getConnection, user as userTable } from "../../db";
+import { getConnection, schema } from "../../db";
 import { and, eq, isNull } from 'drizzle-orm';
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, JsonResponse } from "../common/response";
@@ -77,7 +77,7 @@ async function handlePasswordGrant(params: OAuthRequest, env: Env): Promise<Resp
             id: true,
             password: true
         },
-        where: and(eq(userTable.email, params.username.toLowerCase()), isNull(userTable.verify_code))
+        where: and(eq(schema.user.email, params.username.toLowerCase()), isNull(schema.user.verify_code))
     })
 
     if (result === undefined) {

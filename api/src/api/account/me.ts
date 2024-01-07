@@ -1,4 +1,4 @@
-import { getConnection, user as userTable, team as teamTable, userToTeam as userToTeamTable, schema } from "../../db";
+import { getConnection, schema } from "../../db";
 import Users from "../../repository/users";
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
@@ -12,13 +12,13 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 
     const result = await con
         .select({
-            id: userTable.id,
-            username: userTable.username,
-            email: userTable.email,
-            created_at: userTable.created_at,
+            id: schema.user.id,
+            username: schema.user.username,
+            email: schema.user.email,
+            created_at: schema.user.created_at,
         })
-        .from(userTable)
-        .where(eq(userTable.id, req.userId))
+        .from(schema.user)
+        .where(eq(schema.user.id, req.userId))
         .get()
 
     if (result === undefined) {
@@ -32,16 +32,16 @@ export async function accountMe(req: Request, env: Env): Promise<Response> {
 
     const teamResult = await con
         .select({
-            id: teamTable.id,
-            name: teamTable.name,
-            created_at: teamTable.created_at,
-            owner_id: teamTable.owner_id,
-            shopCount: sql<number>`(SELECT COUNT(1) FROM shop WHERE team_id = ${teamTable.id})`,
-            memberCount: sql<number>`(SELECT COUNT(1) FROM user_to_team WHERE team_id = ${teamTable.id})`,
+            id: schema.team.id,
+            name: schema.team.name,
+            created_at: schema.team.created_at,
+            owner_id: schema.team.owner_id,
+            shopCount: sql<number>`(SELECT COUNT(1) FROM shop WHERE team_id = ${schema.team.id})`,
+            memberCount: sql<number>`(SELECT COUNT(1) FROM user_to_team WHERE team_id = ${schema.team.id})`,
         })
-        .from(teamTable)
-        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, teamTable.id))
-        .where(eq(userToTeamTable.user_id, req.userId))
+        .from(schema.team)
+        .innerJoin(schema.userToTeam, eq(schema.userToTeam.team_id, schema.team.id))
+        .where(eq(schema.userToTeam.user_id, req.userId))
         .all();
 
     // @ts-ignore
@@ -80,7 +80,7 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
             id: true,
             password: true
         },
-        where: eq(userTable.id, req.userId)
+        where: eq(schema.user.id, req.userId)
     })
 
     if (user === undefined) {
@@ -117,7 +117,7 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
     }
 
     if (Object.keys(updates).length !== 0) {
-        await con.update(userTable).set(updates).where(eq(userTable.id, req.userId)).execute();
+        await con.update(schema.user).set(updates).where(eq(schema.user.id, req.userId)).execute();
     }
 
     return new NoContentResponse();
@@ -138,12 +138,12 @@ export async function listUserShops(req: Request, env: Env): Promise<Response> {
             shopware_version: schema.shop.shopware_version,
             last_updated: schema.shop.last_updated,
             team_id: schema.shop.team_id,
-            team_name: teamTable.name
+            team_name: schema.team.name
         })
         .from(schema.shop)
-        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
-        .innerJoin(teamTable, eq(teamTable.id, schema.shop.team_id))
-        .where(eq(userToTeamTable.user_id, req.userId))
+        .innerJoin(schema.userToTeam, eq(schema.userToTeam.team_id, schema.shop.team_id))
+        .innerJoin(schema.team, eq(schema.team.id, schema.shop.team_id))
+        .where(eq(schema.userToTeam.user_id, req.userId))
         .orderBy(schema.shop.name)
         .all();
 
@@ -165,9 +165,9 @@ export async function listUserChangelogs(req: Request, env: Env): Promise<Respon
         date: schema.shopChangelog.date
     })
         .from(schema.shop)
-        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
+        .innerJoin(schema.userToTeam, eq(schema.userToTeam.team_id, schema.shop.team_id))
         .innerJoin(schema.shopChangelog, eq(schema.shopChangelog.shop_id, schema.shop.id))
-        .where(eq(userToTeamTable.user_id, req.userId))
+        .where(eq(schema.userToTeam.user_id, req.userId))
         .limit(10)
         .all();
 
@@ -189,9 +189,9 @@ export async function listUserApps(req: Request, env: Env): Promise<Response> {
         extensions: schema.shopScrapeInfo.extensions
     })
         .from(schema.shop)
-        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
+        .innerJoin(schema.userToTeam, eq(schema.userToTeam.team_id, schema.shop.team_id))
         .innerJoin(schema.shopScrapeInfo, eq(schema.shopScrapeInfo.shop, schema.shop.id))
-        .where(eq(userToTeamTable.user_id, req.userId))
+        .where(eq(schema.userToTeam.user_id, req.userId))
         .orderBy(schema.shop.name)
         .all()
 

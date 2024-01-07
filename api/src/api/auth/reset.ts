@@ -1,4 +1,4 @@
-import { getConnection, user as userTable } from "../../db";
+import { getConnection, schema } from "../../db";
 import { sendMailResetPassword } from "../../mail/mail";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
@@ -19,7 +19,7 @@ export async function resetPasswordMail(req: Request, env: Env) {
         columns: {
             id: true
         },
-        where: eq(userTable.email, email)
+        where: eq(schema.user.email, email)
     })
 
     if (result === undefined) {
@@ -66,9 +66,9 @@ export async function confirmResetPassword(req: Request, env: Env): Promise<Resp
     const newPassword = await bcryptjs.hash(password, salt);
 
     await con
-        .update(userTable)
+        .update(schema.user)
         .set({ password: newPassword })
-        .where(eq(userTable.id, parseInt(id)));
+        .where(eq(schema.user.id, parseInt(id)));
 
     await env.kvStorage.delete(`reset_${token}`);
 

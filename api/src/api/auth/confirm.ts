@@ -1,4 +1,4 @@
-import { getConnection, user as userTable } from "../../db";
+import { getConnection, schema } from "../../db";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { eq } from 'drizzle-orm';
 
@@ -11,7 +11,7 @@ export async function confirmMail(req: Request, env: Env): Promise<Response> {
         columns: {
             id: true
         },
-        where: eq(userTable.verify_code, token)
+        where: eq(schema.user.verify_code, token)
     })
 
     if (result === undefined) {
@@ -19,9 +19,9 @@ export async function confirmMail(req: Request, env: Env): Promise<Response> {
     }
 
     await con
-        .update(userTable)
+        .update(schema.user)
         .set({ verify_code: null })
-        .where(eq(userTable.id, result.id));
+        .where(eq(schema.user.id, result.id));
 
     return new NoContentResponse();
 }
