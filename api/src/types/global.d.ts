@@ -24,15 +24,16 @@ declare global {
         PAGESPEED_SCRAPE: DurableObjectNamespace;
         USER_SOCKET: DurableObjectNamespace;
         FILES: R2Bucket;
+        shopmonDB: D1Database;
     }
 
     interface Team {
         id: string;
-        ownerId: string;
+        ownerId: number;
     }
 
     interface Request {
-        userId: string;
+        userId: number;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         params: any;
         team: Team;

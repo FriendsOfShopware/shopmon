@@ -1,7 +1,8 @@
 import { Connection } from "@planetscale/database/dist";
-import { getConnection } from "../db";
+import { Drizzle, getConnection, schema } from "../db";
 import Shops from "../repository/shops";
 import { createSentry } from "../toucan";
+import { eq, and } from 'drizzle-orm';
 
 interface SQLShop {
     id: number;
@@ -54,7 +55,7 @@ export class PagespeedScrape implements DurableObject {
     async alarm(): Promise<void> {
         const con = getConnection(this.env);
 
-        const id = await this.state.storage.get('id')
+        const id = await this.state.storage.get('id') as string | undefined;
 
         // ID is missing, so we can't do anything
         if (id === undefined) {
@@ -62,19 +63,25 @@ export class PagespeedScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT shop.id, shop.name, shop.url, shop.team_id, shop.shop_image FROM shop WHERE shop.id = ?';
-
-        const shops = await con.execute(fetchShopSQL, [id]);
+        const shop = await con.query.shop.findFirst({
+            columns: {
+                id: true,
+                name: true,
+                url: true,
+                team_id: true,
+            },
+            where: eq(schema.shop.id, parseInt(id))
+        })
 
         // Shop is missing, so we can't do anything
-        if (shops.rows.length === 0) {
+        if (shop === undefined) {
             console.log(`cannot find shop: ${id}. Destroy self`)
             await this.state.storage.deleteAll();
             return;
         }
 
         try {
-            await this.computePagespeed(shops.rows[0] as SQLShop, con);
+            await this.computePagespeed(shop as SQLShop, con);
         } catch (e) {
             const sentry = createSentry(this.state, this.env);
 
@@ -86,7 +93,7 @@ export class PagespeedScrape implements DurableObject {
         console.log(`Set alarm for shop ${id} to one day`)
     }
 
-    async computePagespeed(shop: SQLShop, con: Connection) {
+    async computePagespeed(shop: SQLShop, con: Drizzle) {
         try {
             const home = await fetch(shop.url);
 
@@ -94,7 +101,7 @@ export class PagespeedScrape implements DurableObject {
                 await Shops.notify(
                     con,
                     this.env.USER_SOCKET,
-                    shop.id.toString(),
+                    shop.id,
                     `pagespeed.wrong.status.${shop.id}`,
                     {
                         level: 'error',
@@ -110,7 +117,7 @@ export class PagespeedScrape implements DurableObject {
             await Shops.notify(
                 con,
                 this.env.USER_SOCKET,
-                shop.id.toString(),
+                shop.id,
                 `pagespeed.shop.not.available.${shop.id}`,
                 {
                     level: 'error',
@@ -151,18 +158,19 @@ export class PagespeedScrape implements DurableObject {
             await this.env.FILES.delete(shop.shop_image);
         }
 
-        await con.execute('INSERT INTO shop_pagespeed(shop_id, performance, accessibility, bestpractices, seo) VALUES(?, ?, ?, ?, ?)', [
-            shop.id,
-            pagespeed.lighthouseResult.categories.performance.score * 100,
-            pagespeed.lighthouseResult.categories.accessibility.score * 100,
-            pagespeed.lighthouseResult.categories['best-practices'].score * 100,
-            pagespeed.lighthouseResult.categories.seo.score * 100,
-        ]);
+        await con
+            .insert(schema.shopPageSpeed)
+            .values({
+                shop_id: shop.id,
+                performance: pagespeed.lighthouseResult.categories.performance.score * 100,
+                accessibility: pagespeed.lighthouseResult.categories.accessibility.score * 100,
+                best_practices: pagespeed.lighthouseResult.categories['best-practices'].score * 100,
+                seo: pagespeed.lighthouseResult.categories.seo.score * 100,
+                created_at: new Date().toISOString(),
+            }).execute();
 
-        await con.execute('UPDATE shop SET shop_image = ? WHERE id = ?', [
-            fileName,
-            shop.id,
-        ]);
+
+        await con.update(schema.shop).set({ shop_image: fileName }).where(eq(schema.shop.id, shop.id)).execute();
     }
 }
 

@@ -1,7 +1,8 @@
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { decrypt } from "../../crypto";
-import { getConnection } from "../../db";
+import { getConnection, schema } from "../../db";
+import { and, eq } from 'drizzle-orm';
 
 export async function reScheduleTask(req: Request, env: Env): Promise<Response> {
     const { shopId, taskId } = req.params as { shopId?: string, taskId?: string };
@@ -15,15 +16,22 @@ export async function reScheduleTask(req: Request, env: Env): Promise<Response> 
     }
 
     const con = getConnection(env);
-    const shopData = await con.execute('SELECT url,client_id,client_secret FROM shop WHERE id = ?', [shopId]);
+    const shopData = await con.query.shop.findFirst({
+        columns: {
+            url: true,
+            client_id: true,
+            client_secret: true,
+        },
+        where: eq(schema.shop.id, parseInt(shopId))
+    });
 
-    if (!shopData.rows.length) {
+    if (shopData === undefined) {
         return new ErrorResponse("No shop with this ID found", 404);
     }
-    const clientSecret = await decrypt(env.APP_SECRET, shopData.rows[0].client_secret);
-    const shop = new SimpleShop('', shopData.rows[0].url, '');
-    shop.setShopCredentials(shopData.rows[0].client_id, clientSecret);
 
+    const clientSecret = await decrypt(env.APP_SECRET, shopData.client_secret);
+    const shop = new SimpleShop('', shopData.url, '');
+    shop.setShopCredentials(shopData.client_id, clientSecret);
     const client = new HttpClient(shop);
 
     try {
@@ -33,9 +41,19 @@ export async function reScheduleTask(req: Request, env: Env): Promise<Response> 
             'nextExecutionTime': nextExecutionTime
         });
 
-        const scrapeResult = await con.execute('SELECT scheduled_task FROM shop_scrape_info WHERE shop_id = ?', [shopId]);
+        const scrapeResult = await con.query.shopScrapeInfo.findFirst({
+            columns: {
+                scheduled_task: true,
+            },
+            where: eq(schema.shopScrapeInfo.shop, parseInt(shopId))
+        });
 
-        const scheduledTasks = JSON.parse(scrapeResult.rows[0].scheduled_task);
+        // If there is no scrape result, we don't need to update the scheduled task
+        if (scrapeResult === undefined) {
+            return new NoContentResponse();
+        }
+
+        const scheduledTasks = JSON.parse(scrapeResult.scheduled_task || '{}');
 
         for (const task of scheduledTasks) {
             if (task.id === taskId) {
@@ -45,7 +63,11 @@ export async function reScheduleTask(req: Request, env: Env): Promise<Response> 
             }
         }
 
-        await con.execute('UPDATE shop_scrape_info SET scheduled_task = ? WHERE shop_id = ?', [JSON.stringify(scheduledTasks), shopId]);
+        await con
+            .update(schema.shopScrapeInfo)
+            .set({ scheduled_task: JSON.stringify(scheduledTasks) })
+            .where(eq(schema.shopScrapeInfo.shop, parseInt(shopId)))
+            .execute();
 
     } catch (e) {
         return new ErrorResponse(e.response.body.errors[0].detail, e.response.statusCode);

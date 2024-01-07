@@ -1,4 +1,5 @@
-import { getConnection } from "../../db";
+import { getConnection, user, user as userTable } from "../../db";
+import { eq } from 'drizzle-orm';
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, NoContentResponse } from "../common/response";
 import Teams from "../../repository/teams";
@@ -13,7 +14,7 @@ export const validateEmail = (email: string) => {
         );
 };
 
-export default async function (req: Request, env: Env) : Promise<Response> {
+export default async function (req: Request, env: Env): Promise<Response> {
     if (env.DISABLE_REGISTRATION) {
         return new ErrorResponse('Registration disabled', 400);
     }
@@ -40,9 +41,14 @@ export default async function (req: Request, env: Env) : Promise<Response> {
 
     const con = getConnection(env);
 
-    const result = await con.execute("SELECT 1 FROM user WHERE email = ?", [json.email]);
+    const result = await con.query.user.findFirst({
+        columns: {
+            id: true
+        },
+        where: eq(userTable.email, json.email)
+    })
 
-    if (result.rows.length) {
+    if (result !== undefined) {
         return new ErrorResponse('Given email address is already registered', 400);
     }
 
@@ -51,9 +57,20 @@ export default async function (req: Request, env: Env) : Promise<Response> {
 
     const token = randomString(32)
 
-    const userInsertResult = await con.execute("INSERT INTO user (email, username, password, verify_code) VALUES (?, ?, ?, ?)", [json.email, json.username, hashedPassword, token]);
+    const userInsertResult = await con.insert(userTable)
+        .values({
+            created_at: (new Date()).toISOString(),
+            email: json.email,
+            username: json.username,
+            password: hashedPassword,
+            verify_code: token,
+        })
 
-    await Teams.createTeam(con, `${json.email}'s Team`, userInsertResult.insertId as string);
+    if (!userInsertResult.success) {
+        return new ErrorResponse('Failed to create user', 500);
+    }
+
+    //await Teams.createTeam(con, `${json.email}'s Team`, userInsertResult.insertId as string);
 
     await sendMailConfirmToUser(env, json.email, token);
 

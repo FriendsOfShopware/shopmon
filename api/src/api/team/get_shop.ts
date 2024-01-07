@@ -1,5 +1,6 @@
-import { getConnection } from "../../db";
+import { getConnection, schema } from "../../db";
 import { ErrorResponse, JsonResponse } from "../common/response";
+import { eq, desc } from 'drizzle-orm';
 
 export async function getShop(req: Request, env: Env): Promise<Response> {
     const { shopId } = req.params as { shopId?: string };
@@ -10,58 +11,58 @@ export async function getShop(req: Request, env: Env): Promise<Response> {
 
     const con = getConnection(env)
 
-    const result = await con.execute(`
-    SELECT 
-        shop.id, 
-        shop.name, 
-        shop.url, 
-        shop.status,
-        shop.created_at, 
-        shop.shopware_version, 
-        shop.last_scraped_at, 
-        shop.last_scraped_error,
-        shop.shopware_version,
-        shop.last_updated,
-        shop.ignores,
-        shop.shop_image,
-        shop_scrape_info.extensions, 
-        shop_scrape_info.scheduled_task,
-        shop_scrape_info.queue_info,
-        shop_scrape_info.cache_info,
-        shop_scrape_info.checks,
-        shop.team_id,
-        team.name as team_name
-    FROM shop
-        INNER JOIN team ON(team.id = shop.team_id)
-        LEFT JOIN shop_scrape_info ON(shop_scrape_info.shop_id = shop.id) 
-    WHERE 
-        shop.id = ?
-    `, [
-        shopId
-    ]);
+    const shop = await con.select({
+        id: schema.shop.id,
+        name: schema.shop.name,
+        url: schema.shop.url,
+        status: schema.shop.status,
+        created_at: schema.shop.created_at,
+        shopware_version: schema.shop.shopware_version,
+        last_scraped_at: schema.shop.last_scraped_at,
+        last_scraped_error: schema.shop.last_scraped_error,
+        last_updated: schema.shop.last_updated,
+        ignores: schema.shop.ignores,
+        shop_image: schema.shop.shop_image,
+        extensions: schema.shopScrapeInfo.extensions,
+        scheduled_task: schema.shopScrapeInfo.scheduled_task,
+        queue_info: schema.shopScrapeInfo.queue_info,
+        cache_info: schema.shopScrapeInfo.cache_info,
+        checks: schema.shopScrapeInfo.checks,
+        team_id: schema.shop.team_id,
+        team_name: schema.team.name,
+    })
+        .from(schema.shop)
+        .innerJoin(schema.team, eq(schema.team.id, schema.shop.team_id))
+        .leftJoin(schema.shopScrapeInfo, eq(schema.shopScrapeInfo.shop, schema.shop.id))
+        .where(eq(schema.shop.id, parseInt(shopId)))
+        .get();
 
-    if (result.rows.length === 0) {
+    if (shop === undefined) {
         return new ErrorResponse('Not Found.', 400);
     }
 
-    const shop = result.rows[0];
+    const pageSpeed = await con.query.shopPageSpeed.findMany({
+        where: eq(schema.shopPageSpeed.shop_id, parseInt(shopId)),
+        orderBy: [desc(schema.shopPageSpeed.created_at)]
+    })
 
-    const pageSpeed = await con.execute('SELECT * FROM shop_pagespeed WHERE shop_id = ? ORDER BY created_at DESC', [shopId]);
+    const shopChangelog = await con.query.shopChangelog.findMany({
+        where: eq(schema.shopChangelog.shop_id, parseInt(shopId)),
+        orderBy: [desc(schema.shopChangelog.date)]
+    });
 
-    const changelog = await con.execute('SELECT * FROM shop_changelog WHERE shop_id = ? ORDER BY date DESC', [shopId]);
-
-    for (const row of changelog.rows) {
+    for (const row of shopChangelog) {
         row.extensions = JSON.parse(row.extensions);
     }
 
-    shop.extensions = JSON.parse(shop.extensions);
-    shop.scheduled_task = JSON.parse(shop.scheduled_task);
-    shop.queue_info = JSON.parse(shop.queue_info);
-    shop.cache_info = JSON.parse(shop.cache_info);
-    shop.checks = JSON.parse(shop.checks);
-    shop.ignores = JSON.parse(shop.ignores);
-    shop.pagespeed = pageSpeed.rows;
-    shop.changelog = changelog.rows;
+    shop.extensions = JSON.parse(shop.extensions || '{}');
+    shop.scheduled_task = JSON.parse(shop.scheduled_task || '{}');
+    shop.queue_info = JSON.parse(shop.queue_info || '{}');
+    shop.cache_info = JSON.parse(shop.cache_info || '{}');
+    shop.checks = JSON.parse(shop.checks || '{}');
+    shop.ignores = JSON.parse(shop.ignores || '[]');
+    shop.pagespeed = pageSpeed;
+    shop.changelog = shopChangelog;
 
     return new JsonResponse(shop);
 }

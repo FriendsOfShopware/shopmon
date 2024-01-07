@@ -1,7 +1,8 @@
-import { getConnection } from "../../db";
+import { getConnection, schema } from "../../db";
 import { ErrorResponse } from "../common/response";
+import { and, eq } from 'drizzle-orm';
 
-export async function validateTeam(req: Request, env: Env): Promise<Response|void> {
+export async function validateTeam(req: Request, env: Env): Promise<Response | void> {
     const { teamId } = req.params as { teamId?: string };
 
     if (typeof teamId !== "string") {
@@ -10,19 +11,25 @@ export async function validateTeam(req: Request, env: Env): Promise<Response|voi
 
     const con = getConnection(env)
 
-    const res = await con.execute('SELECT team.owner_id as ownerId FROM user_to_team INNER JOIN team ON(team.id = user_to_team.team_id) WHERE user_id = ? AND team_id = ?', [req.userId, teamId]);
+    const result = await con.select({
+        ownerId: schema.team.owner_id,
+    })
+        .from(schema.team)
+        .innerJoin(schema.userToTeam, eq(schema.userToTeam.team_id, schema.team.id))
+        .where(and(eq(schema.userToTeam.user_id, req.userId), eq(schema.team.id, parseInt(teamId))))
+        .get()
 
-    if (res.rows.length === 0) {
+    if (result === undefined) {
         return new Response('Not Found.', { status: 404 });
     }
 
     req.team = {
         id: teamId,
-        ownerId: res.rows[0].ownerId
+        ownerId: result.ownerId,
     };
 }
 
-export async function validateTeamOwner(req: Request): Promise<Response|void> {
+export async function validateTeamOwner(req: Request): Promise<Response | void> {
     if (req.team.ownerId !== req.userId) {
         return new Response('Forbidden.', { status: 403 });
     }

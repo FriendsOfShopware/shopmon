@@ -1,8 +1,10 @@
 import { init } from "@mmyoji/object-validator";
-import { getConnection } from "../../db";
+import { getConnection, user as userTable } from "../../db";
+import { and, eq, isNull } from 'drizzle-orm';
 import bcryptjs from "bcryptjs";
 import { ErrorResponse, JsonResponse } from "../common/response";
 import { randomString } from "../../util";
+import Users from "../../repository/users";
 
 const REFRESH_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 const ACCESS_TOKEN_TTL = 60 * 30; // 30 minutes
@@ -70,25 +72,29 @@ async function handlePasswordGrant(params: OAuthRequest, env: Env): Promise<Resp
 
     const loginError = new ErrorResponse('The user credentials were incorrect.', 401);
 
-    const result = await con.execute("SELECT id, password FROM user WHERE email = ? AND verify_code IS NULL", [params.username.toLowerCase()]);
+    const result = await con.query.user.findFirst({
+        columns: {
+            id: true,
+            password: true
+        },
+        where: and(eq(userTable.email, params.username.toLowerCase()), isNull(userTable.verify_code))
+    })
 
-    if (!result.rows.length) {
+    if (result === undefined) {
         return loginError;
     }
 
-    const user = result.rows[0];
-
-    const passwordIsValid = await bcryptjs.compare(params.password, user.password as string);
+    const passwordIsValid = await bcryptjs.compare(params.password, result.password as string);
 
     if (!passwordIsValid) {
         return loginError;
     }
 
-    const refreshToken = `r-${user.id}-${randomString(32)}`;
+    const refreshToken = `r-${result.id}-${randomString(32)}`;
     await env.kvStorage.put(
-        refreshToken, 
+        refreshToken,
         JSON.stringify({
-            id: user.id
+            id: result.id
         } as Token),
         {
             expirationTtl: REFRESH_TOKEN_TTL,
@@ -123,15 +129,15 @@ async function getAuthentifikationToken(env: Env, refreshToken: string) {
 
     const data = JSON.parse(token) as Token;
 
-    const result = await con.execute("SELECT id, password FROM user WHERE id = ?", [data.id]);
+    const existence = await Users.existsById(con, data.id);
 
-    if (!result.rows.length) {
+    if (existence === false) {
         throw new Error('Invalid refresh token');
     }
 
     const accessToken = `u-${data.id}-${randomString(32)}`;
     await env.kvStorage.put(
-        accessToken, 
+        accessToken,
         JSON.stringify({
             id: data.id
         } as Token),

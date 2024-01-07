@@ -1,10 +1,11 @@
-import { getConnection } from "../../db";
+import { getConnection, user as userTable, team as teamTable, userToTeam as userToTeamTable, schema } from "../../db";
 import Users from "../../repository/users";
 import bcryptjs from "bcryptjs";
-import { ErrorResponse, NoContentResponse } from "../common/response";
+import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 import { validateEmail } from "../auth/register";
-import { shopImage } from "../team/shop_image";
 import { Extension, UserExtension } from "../../../../shared/shop";
+import { sql, eq } from "drizzle-orm";
+import { md5 } from "../../crypto";
 
 type TeamRow = {
     id: string;
@@ -26,30 +27,42 @@ type UserExtensionRow = {
 export async function accountMe(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const result = await con.execute('SELECT id, username, email, created_at, MD5(email) as avatar FROM user WHERE id = ?', [req.userId]);
+    const result = await con
+        .select({
+            id: userTable.id,
+            username: userTable.username,
+            email: userTable.email,
+            created_at: userTable.created_at,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, req.userId))
+        .get()
 
-    const json = result.rows[0] as { avatar: string, teams: TeamRow[] };
+    if (result === undefined) {
+        return new ErrorResponse('User not found', 404);
+    }
 
-    json.avatar = `https://seccdn.libravatar.org/avatar/${json.avatar}?d=identicon`;
+    const emailMd5 = await md5(result.email);
 
-    const teamResult = await con.execute(`
-    SELECT 
-	team.id, 
-	team.name, 
-	team.created_at, 
-	(team.owner_id = user_to_team.user_id) as is_owner,
-    team.owner_id,
-	(SELECT COUNT(1) FROM shop WHERE team_id = team.id) AS shopCount,
-	(SELECT COUNT(1) FROM user_to_team WHERE team_id = team.id) AS memberCount
-FROM team 
-	INNER JOIN user_to_team ON user_to_team.team_id = team.id 
-WHERE 
-	user_to_team.user_id = ?
-    `, [req.userId]);
+    result.avatar = `https://www.gravatar.com/avatar/${emailMd5}?d=identicon`;
 
-    json.teams = teamResult.rows as TeamRow[];
-    
-    return new Response(JSON.stringify(json), {
+    const teamResult = await con
+        .select({
+            id: teamTable.id,
+            name: teamTable.name,
+            created_at: teamTable.created_at,
+            owner_id: teamTable.owner_id,
+            shopCount: sql<number>`(SELECT COUNT(1) FROM shop WHERE team_id = ${teamTable.id})`,
+            memberCount: sql<number>`(SELECT COUNT(1) FROM user_to_team WHERE team_id = ${teamTable.id})`,
+        })
+        .from(teamTable)
+        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, teamTable.id))
+        .where(eq(userToTeamTable.user_id, req.userId))
+        .all();
+
+    result.teams = teamResult;
+
+    return new Response(JSON.stringify(result), {
         status: 200,
         headers: {
             'Content-Type': 'application/json'
@@ -62,7 +75,7 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 
     try {
         await Users.delete(con, req.userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
         return new ErrorResponse(e?.message || 'Unknown error');
     }
@@ -73,17 +86,21 @@ export async function accountDelete(req: Request, env: Env): Promise<Response> {
 }
 
 export async function accountUpdate(req: Request, env: Env): Promise<Response> {
-    const { currentPassword, email, newPassword, username } = await req.json() as {currentPassword: string, email: string, newPassword: string, username: string};
+    const { currentPassword, email, newPassword, username } = await req.json() as { currentPassword: string, email: string, newPassword: string, username: string };
 
     const con = getConnection(env);
 
-    const result = await con.execute('SELECT id, password FROM user WHERE id = ?', [req.userId]);
+    const user = await con.query.user.findFirst({
+        columns: {
+            id: true,
+            password: true
+        },
+        where: eq(userTable.id, req.userId)
+    })
 
-    if (!result.rows.length) {
+    if (user === undefined) {
         return new ErrorResponse('User not found', 404);
     }
-
-    const user = result.rows[0] as { id: string, password: string };
 
     if (!bcryptjs.compareSync(currentPassword, user.password)) {
         return new ErrorResponse('Invalid password', 400);
@@ -97,20 +114,25 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
         return new ErrorResponse('Password must be at least 8 characters', 400);
     }
 
+    const updates: { password?: string, email?: string, username?: string } = {};
+
     if (newPassword !== undefined) {
         const hash = bcryptjs.hashSync(newPassword, 10);
 
         await Users.revokeUserSessions(env.kvStorage, req.userId);
-
-        await con.execute('UPDATE user SET password = ? WHERE id = ?', [hash, req.userId]);
+        updates['password'] = hash;
     }
 
     if (email !== undefined) {
-        await con.execute('UPDATE user SET email = ? WHERE id = ?', [email, req.userId]);
+        updates['email'] = email;
     }
 
     if (username !== undefined) {
-        await con.execute('UPDATE user SET username = ? WHERE id = ?', [username, req.userId]);
+        updates['username'] = username;
+    }
+
+    if (Object.keys(updates).length !== 0) {
+        await con.update(userTable).set(updates).where(eq(userTable.id, req.userId)).execute();
     }
 
     return new NoContentResponse();
@@ -119,91 +141,79 @@ export async function accountUpdate(req: Request, env: Env): Promise<Response> {
 export async function listUserShops(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const res = await con.execute(`
-        SELECT 
-            shop.id,
-            shop.name,
-            shop.status,
-            shop.url,
-            shop.favicon,
-            shop.created_at,
-            shop.last_scraped_at,
-            shop.shopware_version,
-            shop.last_updated,
-            shop.team_id,
-            team.name as team_name
-        FROM shop 
-            INNER JOIN user_to_team ON (user_to_team.team_id = shop.team_id)
-            INNER JOIN team ON(team.id = shop.team_id)
-        WHERE user_to_team.user_id = ?
-        ORDER BY shop.name
-    `, [req.userId]);
+    const result = await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            status: schema.shop.status,
+            url: schema.shop.url,
+            favicon: schema.shop.favicon,
+            created_at: schema.shop.created_at,
+            last_scraped_at: schema.shop.last_scraped_at,
+            shopware_version: schema.shop.shopware_version,
+            last_updated: schema.shop.last_updated,
+            team_id: schema.shop.team_id,
+            team_name: teamTable.name
+        })
+        .from(schema.shop)
+        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
+        .innerJoin(teamTable, eq(teamTable.id, schema.shop.team_id))
+        .where(eq(userToTeamTable.user_id, req.userId))
+        .orderBy(schema.shop.name)
+        .all();
 
-    return new Response(JSON.stringify(res.rows), { 
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    return new JsonResponse(result);
 }
 
 
 export async function listUserChangelogs(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const res = await con.execute(`
-    SELECT
-        changelog.id,
-        changelog.shop_id,
-        shop.team_id,
-        shop.name AS shop_name,
-        shop.favicon AS shop_favicon,
-        changelog.extensions,
-        changelog.old_shopware_version,
-        changelog.new_shopware_version,
-        changelog.date
-    FROM shop
-        INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
-        INNER JOIN shop_changelog AS changelog ON(shop.id = changelog.shop_id)
-    WHERE user_to_team.user_id = ?
-    ORDER BY changelog.date DESC
-    LIMIT 10
-    `, [req.userId]);
+    const result = await con.select({
+        id: schema.shopChangelog.id,
+        shop_id: schema.shopChangelog.shop_id,
+        shop_name: schema.shop.name,
+        shop_favicon: schema.shop.favicon,
+        extensions: schema.shopChangelog.extensions,
+        old_shopware_version: schema.shopChangelog.old_shopware_version,
+        new_shopware_version: schema.shopChangelog.new_shopware_version,
+        date: schema.shopChangelog.date
+    })
+        .from(schema.shop)
+        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
+        .innerJoin(schema.shopChangelog, eq(schema.shopChangelog.shop_id, schema.shop.id))
+        .where(eq(userToTeamTable.user_id, req.userId))
+        .limit(10)
+        .all();
 
-    for (const row of res.rows) {
-        row.extensions = JSON.parse(row.extensions);
+    for (const row of result) {
+        row.extensions = JSON.parse(row.extensions || '{}');
     }
 
-    return new Response(JSON.stringify(res.rows), { 
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    return new JsonResponse(result);
 }
 
 export async function listUserApps(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const res = await con.execute(`
-        SELECT 
-            shop.id,
-            shop.name,
-            shop.team_id,
-            shop.shopware_version,
-            shop_scrape_info.extensions
-        FROM shop 
-            INNER JOIN user_to_team ON(user_to_team.team_id = shop.team_id)
-            INNER JOIN team ON(team.id = shop.team_id)
-            LEFT JOIN shop_scrape_info ON(shop_scrape_info.shop_id = shop.id)
-        WHERE user_to_team.user_id = ?
-        ORDER BY shop.name
-    `, [req.userId]);
+    const result = await con.select({
+        id: schema.shop.id,
+        name: schema.shop.name,
+        team_id: schema.shop.team_id,
+        shopware_version: schema.shop.shopware_version,
+        extensions: schema.shopScrapeInfo.extensions
+    })
+        .from(schema.shop)
+        .innerJoin(userToTeamTable, eq(userToTeamTable.team_id, schema.shop.team_id))
+        .innerJoin(schema.shopScrapeInfo, eq(schema.shopScrapeInfo.shop, schema.shop.id))
+        .where(eq(userToTeamTable.user_id, req.userId))
+        .orderBy(schema.shop.name)
+        .all()
 
-    const json = {} as {[key: string] : UserExtension};
+    const json = {} as { [key: string]: UserExtension };
 
-    for (const row of res.rows as UserExtensionRow[]) {
-        const extensions = JSON.parse(row.extensions) as Extension[];
+    for (const row of result) {
+        const extensions = JSON.parse(row.extensions || '{}') as Extension[];
 
         for (const extension of extensions) {
             if (json[extension.name] === undefined) {
@@ -223,10 +233,5 @@ export async function listUserApps(req: Request, env: Env): Promise<Response> {
         }
     }
 
-    return new Response(JSON.stringify(Object.values(json)), { 
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    return new JsonResponse(json);
 }

@@ -47,3 +47,8 @@ preview_id = "61a260743f17482e92fa5cb2c340edec"
 binding = "FILES"
 bucket_name = "shopmon"
 preview_bucket_name = "shopmon"
+
+[[d1_databases]]
+binding = "shopmonDB"
+database_name = "shopmon"
+database_id = "cb4155f9-ade9-4035-925a-e483b953c18d"

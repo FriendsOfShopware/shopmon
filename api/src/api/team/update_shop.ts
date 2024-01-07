@@ -1,7 +1,8 @@
 import { init } from "@mmyoji/object-validator";
 import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
 import { encrypt } from "../../crypto";
-import { getConnection } from "../../db";
+import { getConnection, schema } from "../../db";
+import { eq, and } from 'drizzle-orm';
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
 
 type UpdateShopRequest = {
@@ -44,21 +45,29 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
     if (json.name) {
-        await con.execute('UPDATE shop SET name = ? WHERE id = ?', [json.name, shopId]);
+        await con.update(schema.shop).set({ name: json.name }).where(eq(schema.shop.id, parseInt(shopId))).execute();
     }
 
     if (json.ignores) {
-        await con.execute('UPDATE shop SET ignores = ? WHERE id = ?', [JSON.stringify(json.ignores), shopId]);
+        await con.update(schema.shop).set({ ignores: JSON.stringify(json.ignores) }).where(eq(schema.shop.id, parseInt(shopId))).execute();
     }
 
     if (json.team_id && json.team_id != parseInt(req.team.id)) {
-        const team = await con.execute('SELECT 1 FROM user_to_team WHERE user_id = ? AND team_id = ?', [req.userId, req.team.id]);
+        const team = await con.query.team.findFirst({
+            columns: {
+                id: true,
+            },
+            where: and(
+                eq(schema.team.id, json.team_id),
+                eq(schema.team.owner_id, req.userId)
+            )
+        });
 
-        if (!team.rows.length) {
+        if (team === undefined) {
             return new ErrorResponse("You are not a member of this team", 403);
         }
 
-        await con.execute('UPDATE shop SET team_id = ? WHERE id = ?', [json.team_id, shopId]);
+        await con.update(schema.shop).set({ team_id: json.team_id }).where(eq(schema.shop.id, parseInt(shopId))).execute();
     }
 
     if (json.url && json.client_id && json.client_secret) {
@@ -76,7 +85,7 @@ export async function updateShop(req: Request, env: Env): Promise<Response> {
 
         const clientSecret = await encrypt(env.APP_SECRET, json.client_secret);
 
-        await con.execute('UPDATE shop SET url = ?, client_id = ?, client_secret = ? WHERE id = ?', [json.url, json.client_id, clientSecret, shopId]);
+        await con.update(schema.shop).set({ url: json.url, client_id: json.client_id, client_secret: clientSecret }).where(eq(schema.shop.id, parseInt(shopId))).execute();
     }
 
     return new NoContentResponse();

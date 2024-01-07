@@ -2,7 +2,9 @@ import { Connection } from "@planetscale/database/dist";
 import { NotificationCreation } from "../../../shared/notification";
 import { UserSocketHelper } from "../object/UserSocket";
 import Users from "./users";
-import {sendAlert} from "../mail/mail";
+import { sendAlert } from "../mail/mail";
+import { Drizzle, schema } from "../db";
+import { eq } from "drizzle-orm";
 
 interface CreateShopRequest {
     team_id: string;
@@ -31,55 +33,45 @@ export interface User {
 }
 
 export default class Shops {
-    static async createShop(con: Connection, params: CreateShopRequest): Promise<string> {
-        try {
-            const result = await con.execute('INSERT INTO shop (team_id, name, url, client_id, client_secret, created_at, shopware_version) VALUES (?, ?, ?, ?, ?, NOW(), ?)', [
-                params.team_id,
-                params.name,
-                params.shop_url,
-                params.client_id,
-                params.client_secret,
-                params.version,
-            ]);
+    static async createShop(con: Drizzle, params: CreateShopRequest): Promise<number> {
+        const result = await con
+            .insert(schema.shop)
+            .values({
+                team_id: parseInt(params.team_id),
+                name: params.name,
+                url: params.shop_url,
+                client_id: params.client_id,
+                client_secret: params.client_secret,
+                created_at: (new Date().toISOString()),
+                shopware_version: params.version,
+            })
+            .execute();
 
-            return result.insertId as string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            if (e.error?.code == 'ALREADY_EXISTS') {
-                throw new Error('Shop already exists.');
-            }
-
-            throw e;
-        }
+        return result.meta.last_row_id;
     }
 
-    static async deleteShop(con: Connection, id: number): Promise<void> {
-        await con.execute('DELETE FROM shop WHERE id = ?', [
-            id
-        ]);
-
-        await con.execute('DELETE FROM shop_scrape_info WHERE shop_id = ?', [
-            id
-        ]);
+    static async deleteShop(con: Drizzle, id: number): Promise<void> {
+        await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
+        await con.delete(schema.shopScrapeInfo).where(eq(schema.shopScrapeInfo.shop, id)).execute();
     }
 
-    static async getUsersOfShop(con: Connection, shopId: string) {
-        const result = await con.execute(`
-        SELECT
-            user_to_team.user_id as id,
-            user.username,
-            user.email
-        FROM
-            user_to_team
-        INNER JOIN shop ON(shop.team_id = user_to_team.team_id)
-        INNER JOIN user ON(user.id = user_to_team.user_id)
-        WHERE shop.id = ?
-        `, [shopId])
+    static async getUsersOfShop(con: Drizzle, shopId: number) {
+        const result = await con
+            .select({
+                id: schema.userToTeam.user_id,
+                username: schema.user.username,
+                email: schema.user.email,
+            })
+            .from(schema.userToTeam)
+            .innerJoin(schema.shop, eq(schema.shop.team_id, schema.userToTeam.team_id))
+            .innerJoin(schema.user, eq(schema.user.id, schema.userToTeam.user_id))
+            .where(eq(schema.shop.id, shopId))
+            .all();
 
-        return result.rows as User[]
+        return result as User[]
     }
 
-    static async notify(con: Connection, namespace: DurableObjectNamespace, shopId: string, key: string, notification: NotificationCreation): Promise<void> {
+    static async notify(con: Drizzle, namespace: DurableObjectNamespace, shopId: number, key: string, notification: NotificationCreation): Promise<void> {
         const users = await this.getUsersOfShop(con, shopId);
 
         for (const user of users) {
@@ -95,8 +87,8 @@ export default class Shops {
         }
     }
 
-    static async alert(con: Connection, env: Env, alert: ShopAlert): Promise<void> {
-        const users = await this.getUsersOfShop(con, alert.shopId);
+    static async alert(con: Drizzle, env: Env, alert: ShopAlert): Promise<void> {
+        const users = await this.getUsersOfShop(con, parseInt(alert.shopId));
         const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
         const foundAlert = await env.kvStorage.get(alertKey);
@@ -109,11 +101,19 @@ export default class Shops {
             expirationTtl: 86400, // one day
         });
 
-        const result = await con.execute(`SELECT name FROM shop WHERE id = ?`, [alert.shopId])
-        const shop = result.rows[0] as Shop;
+        const result = await con.query.shop.findFirst({
+            columns: {
+                name: true,
+            },
+            where: eq(schema.shop.id, parseInt(alert.shopId))
+        })
+
+        if (result === undefined) {
+            return;
+        }
 
         for (const user of users) {
-            await sendAlert(env, shop, user, alert)
+            await sendAlert(env, result, user, alert)
         }
     }
 }

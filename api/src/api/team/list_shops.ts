@@ -1,14 +1,24 @@
-import { getConnection } from "../../db";
+import { getConnection, schema } from "../../db";
+import { eq } from 'drizzle-orm';
+import { JsonResponse } from "../common/response";
 
-export async function listShops(req: Request, env: Env): Promise<Response> {    
+export async function listShops(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
-    const res = await con.execute('SELECT id, name, url, favicon, created_at, last_scraped_at, status, last_scraped_error, shopware_version FROM shop WHERE team_id = ?', [req.team.id]);
+    const result = await con.query.shop.findMany({
+        columns: {
+            id: true,
+            name: true,
+            url: true,
+            favicon: true,
+            created_at: true,
+            last_scraped_at: true,
+            status: true,
+            last_scraped_error: true,
+            shopware_version: true
+        },
+        where: eq(schema.shop.team_id, parseInt(req.team.id))
+    })
 
-    return new Response(JSON.stringify(res.rows), { 
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    });
+    return new JsonResponse(result)
 }

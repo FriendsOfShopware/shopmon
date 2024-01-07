@@ -62,9 +62,9 @@ export interface Extension {
 export interface UserExtension extends Extension {
     shops: {
         [key: string]: {
-            id: string,
+            id: number,
             name: string,
-            team_id: string,
+            team_id: number,
             shopware_version: string,
             installed: boolean,
             active: boolean,

@@ -1,20 +1,27 @@
-import { getConnection } from "../../db";
+import { getConnection, user as userTable } from "../../db";
 import { ErrorResponse, NoContentResponse } from "../common/response";
+import { eq } from 'drizzle-orm';
 
 export async function confirmMail(req: Request, env: Env): Promise<Response> {
     const con = getConnection(env);
 
     const { token } = req.params as { token: string };
 
-    const result = await con.execute('SELECT id FROM user WHERE verify_code = ?', [token])
+    const result = await con.query.user.findFirst({
+        columns: {
+            id: true
+        },
+        where: eq(userTable.verify_code, token)
+    })
 
-    if (result.rows.length === 0) {
+    if (result === undefined) {
         return new ErrorResponse('Invalid confirm token', 400);
     }
 
-    const userId = result.rows[0].id;
-
-    await con.execute('UPDATE user SET verify_code = NULL WHERE id = ?', [userId]);
+    await con
+        .update(userTable)
+        .set({ verify_code: null })
+        .where(eq(userTable.id, result.id));
 
     return new NoContentResponse();
 }

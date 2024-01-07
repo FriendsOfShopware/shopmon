@@ -1,6 +1,5 @@
-import { Connection } from "@planetscale/database/dist";
 import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
-import { getConnection } from "../db";
+import { Drizzle, getConnection, schema } from "../db";
 import versionCompare from 'version-compare'
 import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../../../shared/shop";
 import promiseAllProperties from '../helper/promise'
@@ -9,11 +8,12 @@ import { createSentry } from "../toucan";
 import Shops from "../repository/shops";
 import { UserSocketHelper } from "./UserSocket";
 import { decrypt } from "../crypto";
+import { eq, and } from 'drizzle-orm';
 
 interface SQLShop {
-    id: string;
+    id: number;
     name: string;
-    team_id: string;
+    team_id: number;
     url: string;
     shopware_version: string;
     client_id: string;
@@ -98,7 +98,7 @@ export class ShopScrape implements DurableObject {
     async alarm(): Promise<void> {
         const con = getConnection(this.env);
 
-        const id = await this.state.storage.get('id')
+        const id = await this.state.storage.get('id') as string | undefined
 
         // ID is missing, so we can't do anything
         if (id === undefined) {
@@ -106,18 +106,25 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id, ignores FROM shop WHERE id = ?';
+        const shop = await con.query.shop.findFirst({
+            columns: {
+                id: true,
+                ignores: true,
+                url: true,
+                client_id: true,
+                client_secret: true,
+            },
+            where: eq(schema.shop.id, parseInt(id))
+        }) as SQLShop | undefined;
 
-        const shops = await con.execute(fetchShopSQL, [id]);
 
         // Shop is missing, so we can't do anything
-        if (shops.rows.length === 0) {
+        if (shop === undefined) {
             console.log(`cannot find shop: ${id}. Destroy self`)
             await this.state.storage.deleteAll();
             return;
         }
 
-        const shop = shops.rows[0] as SQLShop;
         shop.ignores = JSON.parse(shop.ignores as string || '[]')
 
         try {
@@ -142,17 +149,16 @@ export class ShopScrape implements DurableObject {
                 triggeredBy,
                 {
                     shopUpdate: {
-                        id: parseInt(shop.id),
-                        team_id: parseInt(shop.team_id),
+                        id: shop.id,
+                        team_id: shop.team_id,
                     }
                 }
             )
         }
     }
 
-    async updateShop(shop: SQLShop, con: Connection) {
-
-        await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
+    async updateShop(shop: SQLShop, con: Drizzle) {
+        await con.update(schema.shop).set({ last_scraped_at: new Date().toUTCString() }).where(eq(schema.shop.id, shop.id)).execute();
 
         const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
 
@@ -182,7 +188,7 @@ export class ShopScrape implements DurableObject {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
                     message: 'Could not connect to shop. Please check your credentials and try again.' + error,
-                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                    link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
                 }
             );
 
@@ -191,17 +197,15 @@ export class ShopScrape implements DurableObject {
                 this.env,
                 {
                     key: `shop.update-auth-error.${shop.id}`,
-                    shopId: shop.id,
+                    shopId: shop.id.toString(),
                     subject: 'Shop Update Error',
                     message: 'The Shop could not be updated. Please check your credentials and try again.' + error
 
                 }
             )
 
-            await con.execute('UPDATE shop SET status = ? WHERE id = ?', [
-                'red',
-                shop.id,
-            ]);
+            await con.update(schema.shop).set({ status: 'red' }).where(eq(schema.shop.id, shop.id)).execute();
+
             return;
         }
 
@@ -233,15 +237,12 @@ export class ShopScrape implements DurableObject {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
                     message: `Could not connect to shop. Please check your credentials and try again.`,
-                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                    link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
                 }
             )
 
-            await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
-                'red',
-                error,
-                shop.id,
-            ]);
+            await con.update(schema.shop).set({ status: 'red', last_scraped_error: error }).where(eq(schema.shop.id, shop.id)).execute();
+
             return;
         }
 
@@ -338,14 +339,17 @@ export class ShopScrape implements DurableObject {
             }
         }
 
-        const resultCurrentExtensions = await con.execute('SELECT extensions FROM shop_scrape_info WHERE shop_id = ?', [
-            shop.id
-        ]);
+        const resultCurrentExtensions = await con.query.shopScrapeInfo.findFirst({
+            columns: {
+                extensions: true,
+            },
+            where: eq(schema.shopScrapeInfo.shop, shop.id)
+        })
 
         const extensionsDiff: ExtensionDiff[] = [];
-        if (resultCurrentExtensions.rows.length > 0) {
+        if (resultCurrentExtensions) {
 
-            const currentExtensions = JSON.parse(resultCurrentExtensions.rows[0].extensions);
+            const currentExtensions = JSON.parse(resultCurrentExtensions.extensions);
 
             for (const oldExtension of currentExtensions) {
                 let exists = false;
@@ -447,22 +451,24 @@ export class ShopScrape implements DurableObject {
 
         const checkerResult = await CheckerRegistery.check(input);
 
-        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
-            checkerResult.status,
-            responses.config.body.version,
-            favicon,
-            shop.id,
-        ]);
+        await con.update(schema.shop).set({
+            status: checkerResult.status,
+            shopware_version: responses.config.body.version,
+            favicon: favicon,
+            last_scraped_error: null
+        }).where(eq(schema.shop.id, shop.id)).execute();
 
-        await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())', [
-            shop.id,
-            JSON.stringify(input.extensions),
-            JSON.stringify(input.scheduledTasks),
-            JSON.stringify(input.queueInfo),
-            JSON.stringify(input.cacheInfo),
-            JSON.stringify(checkerResult.checks),
-            favicon
-        ]);
+        // delete
+        await con.delete(schema.shopScrapeInfo).where(eq(schema.shopScrapeInfo.shop, shop.id)).execute();
+        await con.insert(schema.shopScrapeInfo).values({
+            shop: shop.id,
+            extensions: JSON.stringify(input.extensions),
+            scheduled_task: JSON.stringify(input.scheduledTasks),
+            queue_info: JSON.stringify(input.queueInfo),
+            cache_info: JSON.stringify(input.cacheInfo),
+            checks: JSON.stringify(checkerResult.checks),
+            created_at: new Date().toISOString(),
+        })
 
         const hasShopUpdate = Object.keys(shopUpdate).length !== 0;
 
@@ -470,21 +476,19 @@ export class ShopScrape implements DurableObject {
             const oldShopwareVersion = hasShopUpdate ? shopUpdate.from : null;
             const newShopwareVersion = hasShopUpdate ? shopUpdate.to : null;
 
-            await con.execute(
-                'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
-                shop.id,
-                JSON.stringify(extensionsDiff),
-                oldShopwareVersion,
-                newShopwareVersion
-            ]
-            );
+            await con
+                .insert(schema.shopChangelog)
+                .values({
+                    shop_id: shop.id,
+                    extensions: JSON.stringify(extensionsDiff),
+                    old_shopware_version: oldShopwareVersion,
+                    new_shopware_version: newShopwareVersion,
+                    date: new Date().toISOString(),
+                }).execute();
         }
 
         if (hasShopUpdate) {
-            await con.execute('UPDATE shop SET last_updated = ? WHERE id = ?', [
-                JSON.stringify(shopUpdate),
-                shop.id,
-            ]);
+            await con.update(schema.shop).set({ last_updated: new Date().toISOString() }).where(eq(schema.shop.id, shop.id)).execute();
         }
     }
 }

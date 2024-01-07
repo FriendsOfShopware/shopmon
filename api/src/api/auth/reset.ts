@@ -1,12 +1,13 @@
-import { getConnection } from "../../db";
+import { getConnection, user as userTable } from "../../db";
 import { sendMailResetPassword } from "../../mail/mail";
 import { randomString } from "../../util";
 import { ErrorResponse, JsonResponse, NoContentResponse } from "../common/response";
+import { eq } from 'drizzle-orm';
 import bcryptjs from "bcryptjs";
 import Users from "../../repository/users";
 
 export async function resetPasswordMail(req: Request, env: Env) {
-    let { email } = await req.json() as {email: string};
+    let { email } = await req.json() as { email: string };
 
     const token = randomString(32);
 
@@ -14,13 +15,18 @@ export async function resetPasswordMail(req: Request, env: Env) {
 
     email = email.toLowerCase();
 
-    const result = await con.execute('SELECT id FROM user WHERE email = ?', [email]);
+    const result = await con.query.user.findFirst({
+        columns: {
+            id: true
+        },
+        where: eq(userTable.email, email)
+    })
 
-    if (result.rows.length === 0) {
+    if (result === undefined) {
         return new NoContentResponse()
     }
 
-    await env.kvStorage.put(`reset_${token}`, result.rows[0].id.toString(), {
+    await env.kvStorage.put(`reset_${token}`, result.id.toString(), {
         expirationTtl: 60 * 60, // 1 hour
     });
 
@@ -42,8 +48,8 @@ export async function resetAvailable(req: Request, env: Env) {
 }
 
 export async function confirmResetPassword(req: Request, env: Env): Promise<Response> {
-    const { password } = await req.json() as {password?: string};
-    const { token } = req.params as {token?: string};
+    const { password } = await req.json() as { password?: string };
+    const { token } = req.params as { token?: string };
 
     if (typeof password !== "string") {
         return new ErrorResponse('Missing password', 400);
@@ -59,7 +65,11 @@ export async function confirmResetPassword(req: Request, env: Env): Promise<Resp
     const salt = await bcryptjs.genSalt(10);
     const newPassword = await bcryptjs.hash(password, salt);
 
-    await con.execute('UPDATE user SET password = ? WHERE id = ?', [newPassword, id]);
+    await con
+        .update(userTable)
+        .set({ password: newPassword })
+        .where(eq(userTable.id, parseInt(id)));
+
     await env.kvStorage.delete(`reset_${token}`);
 
     await Users.revokeUserSessions(env.kvStorage, id);

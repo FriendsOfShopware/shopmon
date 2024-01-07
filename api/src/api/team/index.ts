@@ -29,7 +29,7 @@ teamRouter.post('/:teamId/shops', validateToken, validateTeam, validateTeamOwner
 teamRouter.get('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, getShop);
 teamRouter.patch('/:teamId/shop/:shopId', validateToken, validateTeam, updateShop, validateShop);
 teamRouter.post('/:teamId/shop/:shopId/refresh', validateToken, validateTeam, validateShop, refreshShop);
-teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, deleteShop);
+teamRouter.delete('/:teamId/shop/:shopId', validateToken, validateTeam, validateShop, validateTeamOwner, deleteShop);
 teamRouter.post('/:teamId/shop/:shopId/clear_cache', validateToken, validateTeam, validateShop, clearShopCache);
 teamRouter.post('/:teamId/shop/:shopId/reschedule_task/:taskId', validateToken, validateTeam, validateShop, reScheduleTask);
 teamRouter.get('/pagespeed/:uuid/screenshot.jpg', shopImage);

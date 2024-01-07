@@ -1,4 +1,6 @@
-import {Connection} from "@planetscale/database/dist";
+import { Drizzle, schema } from '../db'
+import { eq, and, inArray } from 'drizzle-orm';
+import Users from "./users";
 
 interface TeamMember {
     id: number;
@@ -6,60 +8,104 @@ interface TeamMember {
 }
 
 export default class Teams {
-    static async createTeam(con: Connection, name: string, ownerId: string): Promise<string> {
-        const teamInsertResult = await con.execute("INSERT INTO team (name, owner_id) VALUES (?, ?)", [name, ownerId]);
+    static async createTeam(con: Drizzle, name: string, ownerId: string): Promise<string> {
+        const teamInsertResult = await con
+            .insert(schema.team)
+            .values({
+                name,
+                owner_id: parseInt(ownerId),
+                created_at: (new Date().toISOString()),
+            })
+            .execute();
 
-        await con.execute("INSERT INTO user_to_team (user_id, team_id) VALUES (?, ?)", [ownerId, teamInsertResult.insertId]);
+        await con
+            .insert(schema.userToTeam)
+            .values({
+                team_id: teamInsertResult.meta.last_row_id,
+                user_id: parseInt(ownerId),
+            })
 
-        return teamInsertResult.insertId as string;
+        return teamInsertResult.meta.last_row_id.toString();
     }
 
-    static async listMembers(con: Connection, teamId: string): Promise<TeamMember[]> {
-        const result = await con.execute(`SELECT
-        user.id,
-        user.username,
-        user.email
-    FROM user_to_team 
-    INNER JOIN user ON(user.id = user_to_team.user_id)
-    WHERE user_to_team.team_id = ?`, [teamId]);
+    static async listMembers(con: Drizzle, teamId: number): Promise<TeamMember[]> {
+        const result = await con.select({
+            id: schema.user.id,
+            username: schema.user.username,
+            email: schema.user.email,
+        }).from(schema.user)
+            .innerJoin(schema.userToTeam, eq(schema.userToTeam.user_id, schema.user.id))
+            .where(eq(schema.userToTeam.team_id, teamId))
+            .all();
 
-        return result.rows as TeamMember[];
+        return result as TeamMember[];
     }
 
-    static async addMember(con: Connection, teamId: string, email: string): Promise<void> {
-        const member = await con.execute(`SELECT id FROM user WHERE email = ?`, [email]);
+    static async addMember(con: Drizzle, teamId: string, email: string): Promise<void> {
+        const exists = await Users.existsByEmail(con, email);
 
-        if (member.rows.length === 0) {
+        if (exists === false) {
             throw new Error("User not found");
         }
 
-        await con.execute(`INSERT INTO user_to_team (team_id, user_id) VALUES(?, ?)`, [teamId, member.rows[0].id]);
+        await con
+            .insert(schema.userToTeam)
+            .values({
+                team_id: parseInt(teamId),
+                user_id: parseInt(email),
+            })
+            .execute();
     }
 
-    static async removeMember(con: Connection, teamId: string, userId: string): Promise<void> {
-        await con.execute(`DELETE FROM user_to_team WHERE team_id = ? AND user_id = ?`, [teamId, userId]);
+    static async removeMember(con: Drizzle, teamId: string, userId: string): Promise<void> {
+        await con
+            .delete(schema.userToTeam)
+            .where(and(eq(schema.userToTeam.team_id, parseInt(teamId)), eq(schema.userToTeam.user_id, parseInt(userId))))
+            .execute();
     }
 
-    static async deleteTeam(con: Connection, teamId: string): Promise<void> {
-        // Fetch all shops in the team
-        const shops = await con.execute(`SELECT id FROM shop WHERE team_id = ?`, [teamId]);
+    static async deleteTeam(con: Drizzle, teamId: number): Promise<void> {
+        const shops = await con.query.shop.findMany({
+            columns: {
+                id: true,
+            },
+            where: eq(schema.shop.team_id, teamId),
+        })
 
-        const shopIds = shops.rows.map(shop => shop.id);
+        const shopIds = shops.map(shop => shop.id);
 
-        // Delete shops
-        await con.execute(`DELETE FROM shop WHERE team_id = ?`, [teamId]);
-        if( shopIds.length > 0 ) {
-            await con.execute(`DELETE
-                               FROM shop_scrape_info
-                               WHERE shop_id IN (?)`, [shopIds]);
+        // Delete shops associated with team
+        await con
+            .delete(schema.shop)
+            .where(eq(schema.shop.team_id, teamId))
+            .execute();
+
+        if (shopIds.length > 0) {
+            await con
+                .delete(schema.shopScrapeInfo)
+                .where(inArray(schema.shopScrapeInfo.shop, shopIds))
+                .execute();
         }
 
         // Delete team
-        await con.execute(`DELETE FROM team WHERE id = ?`, [teamId]);
-        await con.execute(`DELETE FROM user_to_team WHERE team_id = ?`, [teamId]);
+        await con
+            .delete(schema.team)
+            .where(eq(schema.team.id, teamId))
+            .execute();
+
+        await con
+            .delete(schema.userToTeam)
+            .where(eq(schema.userToTeam.team_id, teamId))
+            .execute();
     }
 
-    static async updateTeam(con: Connection, teamId: string, name: string): Promise<void> {
-        await con.execute(`UPDATE team SET name = ? WHERE id = ?`, [name, teamId]);
+    static async updateTeam(con: Drizzle, teamId: string, name: string): Promise<void> {
+        await con
+            .update(schema.team)
+            .set({
+                name
+            })
+            .where(eq(schema.team.id, parseInt(teamId)))
+            .execute()
     }
 }

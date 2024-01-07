@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "commonjs",
+    "module": "esnext",
     "target": "esnext",
     "lib": [
       "esnext"
@@ -13,7 +13,7 @@
     "sourceMap": true,
     "esModuleInterop": true,
     "types": [
-      "@cloudflare/workers-types",
+      "@cloudflare/workers-types"
     ],
     "typeRoots": [
       "./src/types"
