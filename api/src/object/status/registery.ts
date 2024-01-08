@@ -1,18 +1,24 @@
-import { HttpClient } from "@friendsofshopware/app-server-sdk";
-import { CacheInfo, Extension, QueueInfo, ScheduledTask, SHOP_STATUS } from "../../../../shared/shop";
-import env from "./checks/env";
-import frosh_tools from "./checks/frosh_tools";
-import security from "./checks/security";
-import task from "./checks/task";
-import worker from "./checks/worker";
+import { HttpClient } from '@friendsofshopware/app-server-sdk';
+import {
+    CacheInfo,
+    Extension,
+    QueueInfo,
+    ScheduledTask,
+    SHOP_STATUS,
+} from '../../../../shared/shop';
+import env from './checks/env';
+import frosh_tools from './checks/frosh_tools';
+import security from './checks/security';
+import task from './checks/task';
+import worker from './checks/worker';
 
 export interface CheckerInput {
-    extensions: Extension[],
+    extensions: Extension[];
     config: {
         version: string;
         adminWorker: {
             enableAdminWorker: boolean;
-        }
+        };
     };
     scheduledTasks: ScheduledTask[];
     queueInfo: QueueInfo[];
@@ -39,23 +45,33 @@ export class CheckerOutput {
         this.ignores = ignores;
     }
 
-    public success(id: string, message: string, source = 'Shopmon', link: string | null = null) {
+    public success(
+        id: string,
+        message: string,
+        source = 'Shopmon',
+        link: string | null = null,
+    ) {
         this.checks.push({
             id,
             level: SHOP_STATUS.GREEN,
             message: message,
             source: source,
-            link
+            link,
         });
     }
 
-    public warning(id: string, message: string, source = 'Shopmon', link: string | null = null) {
+    public warning(
+        id: string,
+        message: string,
+        source = 'Shopmon',
+        link: string | null = null,
+    ) {
         this.checks.push({
             id,
             level: SHOP_STATUS.YELLOW,
             message: message,
             source: source,
-            link
+            link,
         });
 
         if (this.ignores.indexOf(id) !== -1) {
@@ -65,13 +81,18 @@ export class CheckerOutput {
         this.status = SHOP_STATUS.YELLOW;
     }
 
-    public error(id: string, message: string, source = 'Shopmon', link: string | null = null) {
+    public error(
+        id: string,
+        message: string,
+        source = 'Shopmon',
+        link: string | null = null,
+    ) {
         this.checks.push({
             id,
             level: SHOP_STATUS.RED,
             message: message,
             source: source,
-            link
+            link,
         });
 
         if (this.ignores.indexOf(id) !== -1) {

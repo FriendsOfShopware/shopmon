@@ -1,6 +1,6 @@
 type PlainObj = Record<string, unknown>;
 export type PromisesMap<T extends PlainObj> = {
-  [P in keyof T]: Promise<T[P]> | T[P];
+    [P in keyof T]: Promise<T[P]> | T[P];
 };
 
 /**
@@ -10,7 +10,7 @@ export type PromisesMap<T extends PlainObj> = {
  * @return {Promise<T>}  a promise that resolved to an object with the same properties containing the resolved values
  */
 export default function promiseAllProperties<T extends PlainObj>(
-    promisesMap: PromisesMap<T>
+    promisesMap: PromisesMap<T>,
 ): Promise<T> {
     const keys = Object.keys(promisesMap);
     const promises = keys.map((key) => {
@@ -18,7 +18,7 @@ export default function promiseAllProperties<T extends PlainObj>(
         return (promisesMap as any)[key];
     });
 
-    return Promise.all(promises).then(results => {
+    return Promise.all(promises).then((results) => {
         return results.reduce((resolved, result, index) => {
             resolved[keys[index]] = result;
             return resolved;

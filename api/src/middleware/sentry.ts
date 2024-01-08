@@ -1,22 +1,22 @@
-import type { MiddlewareHandler } from 'hono'
-import { Toucan } from 'toucan-js'
-import { createSentry } from '../toucan'
+import type { MiddlewareHandler } from 'hono';
+import { Toucan } from 'toucan-js';
+import { createSentry } from '../toucan';
 
 declare module 'hono' {
     interface ContextVariableMap {
-        sentry: Toucan
+        sentry: Toucan;
     }
 }
 
 export const sentry = (): MiddlewareHandler => {
     return async (c, next) => {
-        const sentry = createSentry(c.executionCtx, c.env, c.req.raw)
+        const sentry = createSentry(c.executionCtx, c.env, c.req.raw);
 
-        c.set('sentry', sentry)
+        c.set('sentry', sentry);
 
-        await next()
+        await next();
         if (c.error) {
-            sentry.captureException(c.error)
+            sentry.captureException(c.error);
         }
-    }
-}
+    };
+};

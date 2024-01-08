@@ -1,7 +1,7 @@
 import { TRPCError, experimental_standaloneMiddleware } from '@trpc/server';
 import { t } from '.';
 import { eq, and } from 'drizzle-orm';
-import type { context } from './context'
+import type { context } from './context';
 import { schema } from '../db';
 
 export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
@@ -12,12 +12,15 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     return next();
 });
 
-export const organizationMiddleware = experimental_standaloneMiddleware<{ input: { orgId: number }, ctx: context }>().create(async ({ ctx, input, next }) => {
+export const organizationMiddleware = experimental_standaloneMiddleware<{
+    input: { orgId: number };
+    ctx: context;
+}>().create(async ({ ctx, input, next }) => {
     const result = await ctx.drizzle.query.userToTeam.findFirst({
         columns: {
-            user_id: true
+            user_id: true,
         },
-        where: eq(schema.userToTeam.team_id, input.orgId)
+        where: eq(schema.userToTeam.team_id, input.orgId),
     });
 
     if (!result) {
@@ -27,14 +30,17 @@ export const organizationMiddleware = experimental_standaloneMiddleware<{ input:
     return next();
 });
 
-export const organizationAdminMiddleware = experimental_standaloneMiddleware<{ input: { orgId: number }, ctx: context }>().create(async ({ ctx, input, next }) => {
+export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
+    input: { orgId: number };
+    ctx: context;
+}>().create(async ({ ctx, input, next }) => {
     const result = await ctx.drizzle
         .select({
             ownerId: schema.team.owner_id,
         })
         .from(schema.team)
         .where(eq(schema.team.id, input.orgId))
-        .get()
+        .get();
 
     if (!result || result.ownerId !== ctx.user) {
         throw new TRPCError({ code: 'NOT_FOUND' });
@@ -43,14 +49,17 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{ i
     return next();
 });
 
-export const shopMiddleware = experimental_standaloneMiddleware<{ input: { orgId: number, shopId: number }, ctx: context }>().create(async ({ ctx, input, next }) => {
+export const shopMiddleware = experimental_standaloneMiddleware<{
+    input: { orgId: number; shopId: number };
+    ctx: context;
+}>().create(async ({ ctx, input, next }) => {
     const result = await ctx.drizzle
         .select({
             orgId: schema.shop.team_id,
         })
         .from(schema.shop)
         .where(eq(schema.shop.id, input.shopId))
-        .get()
+        .get();
 
     if (!result || result.orgId !== input.orgId) {
         throw new TRPCError({ code: 'NOT_FOUND' });
@@ -58,4 +67,3 @@ export const shopMiddleware = experimental_standaloneMiddleware<{ input: { orgId
 
     return next();
 });
-

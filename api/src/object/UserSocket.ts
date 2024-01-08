@@ -1,4 +1,4 @@
-import { WebsocketMessage } from "../../../frontend/src/types/notification";
+import { WebsocketMessage } from '../../../frontend/src/types/notification';
 
 export class UserSocket implements DurableObject {
     state: DurableObjectState;
@@ -16,8 +16,8 @@ export class UserSocket implements DurableObject {
         const { pathname } = new URL(req.url);
 
         if (pathname === '/api/ws') {
-            if (req.headers.get("Upgrade") != "websocket") {
-                return new Response("Expected websocket", { status: 400 });
+            if (req.headers.get('Upgrade') != 'websocket') {
+                return new Response('Expected websocket', { status: 400 });
             }
 
             const { 0: client, 1: server } = new WebSocketPair();
@@ -27,12 +27,14 @@ export class UserSocket implements DurableObject {
             server.accept();
 
             const closeOrErrorHandler = () => {
-                this.sessions = this.sessions.filter(member => member !== server);
+                this.sessions = this.sessions.filter(
+                    (member) => member !== server,
+                );
             };
 
             // Cleanup when the client closes the connection
-            server.addEventListener("close", closeOrErrorHandler);
-            server.addEventListener("error", closeOrErrorHandler);
+            server.addEventListener('close', closeOrErrorHandler);
+            server.addEventListener('error', closeOrErrorHandler);
 
             return new Response(null, { status: 101, webSocket: client });
         }
@@ -52,10 +54,16 @@ export class UserSocket implements DurableObject {
 }
 
 export class UserSocketHelper {
-    static async sendNotification(namespace: DurableObjectNamespace, userId: string, notification: WebsocketMessage) {
-        await namespace.get(namespace.idFromName(userId)).fetch('http://localhost/api/send', {
-            method: 'POST',
-            body: JSON.stringify(notification)
-        });
+    static async sendNotification(
+        namespace: DurableObjectNamespace,
+        userId: string,
+        notification: WebsocketMessage,
+    ) {
+        await namespace
+            .get(namespace.idFromName(userId))
+            .fetch('http://localhost/api/send', {
+                method: 'POST',
+                body: JSON.stringify(notification),
+            });
     }
 }

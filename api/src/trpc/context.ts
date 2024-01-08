@@ -7,13 +7,10 @@ export type context = {
     user: number | null;
     env: Bindings;
     drizzle: Drizzle;
-}
+};
 
 export function createContext(bindings: Bindings) {
-    return async function ({
-        req,
-        resHeaders,
-    }: FetchCreateContextFnOptions) {
+    return async function ({ req, resHeaders }: FetchCreateContextFnOptions) {
         const auth = req.headers.get('authorization');
 
         let user = null;
@@ -33,5 +30,5 @@ export function createContext(bindings: Bindings) {
         }
 
         return { user, env: bindings, drizzle: getConnection(bindings) };
-    }
+    };
 }

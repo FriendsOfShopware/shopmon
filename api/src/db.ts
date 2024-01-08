@@ -1,9 +1,11 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { drizzle, DrizzleD1Database } from 'drizzle-orm/d1';
 
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    team_id: integer('team_id').notNull().references(() => team.id),
+    team_id: integer('team_id')
+        .notNull()
+        .references(() => team.id),
     name: text('name').notNull(),
     status: text('status').notNull().default('green'),
     url: text('url').notNull(),
@@ -31,7 +33,10 @@ export const shopPageSpeed = sqliteTable('shop_pagespeed', {
 });
 
 export const shopScrapeInfo = sqliteTable('shop_scrape_info', {
-    shop: integer('shop_id').notNull().primaryKey().references(() => shop.id),
+    shop: integer('shop_id')
+        .notNull()
+        .primaryKey()
+        .references(() => shop.id),
     extensions: text('extensions').notNull(),
     scheduled_task: text('scheduled_task'),
     queue_info: text('queue_info'),
@@ -52,7 +57,9 @@ export const shopChangelog = sqliteTable('shop_changelog', {
 export const team = sqliteTable('team', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     name: text('name').notNull(),
-    owner_id: integer('owner_id').notNull().references(() => user.id),
+    owner_id: integer('owner_id')
+        .notNull()
+        .references(() => user.id),
     created_at: text('created_at').notNull(),
     updated_at: text('updated_at'),
 });
@@ -69,7 +76,9 @@ export const user = sqliteTable('user', {
 
 export const userNotification = sqliteTable('user_notification', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    user_id: integer('user_id').notNull().references(() => user.id),
+    user_id: integer('user_id')
+        .notNull()
+        .references(() => user.id),
     key: text('key').notNull(),
     level: text('level').notNull(),
     title: text('title').notNull(),
@@ -80,14 +89,27 @@ export const userNotification = sqliteTable('user_notification', {
 });
 
 export const userToTeam = sqliteTable('user_to_team', {
-    user_id: integer('user_id').notNull().references(() => user.id),
-    team_id: integer('team_id').notNull().references(() => team.id),
+    user_id: integer('user_id')
+        .notNull()
+        .references(() => user.id),
+    team_id: integer('team_id')
+        .notNull()
+        .references(() => team.id),
 });
 
-export const schema = { user, shop, shopPageSpeed, shopScrapeInfo, shopChangelog, team, userNotification, userToTeam }
+export const schema = {
+    user,
+    shop,
+    shopPageSpeed,
+    shopScrapeInfo,
+    shopChangelog,
+    team,
+    userNotification,
+    userToTeam,
+};
 
-export type Drizzle = DrizzleD1Database<typeof schema>
+export type Drizzle = DrizzleD1Database<typeof schema>;
 
 export function getConnection(env: Env) {
-    return drizzle(env.shopmonDB, { schema })
+    return drizzle(env.shopmonDB, { schema });
 }

@@ -1,11 +1,11 @@
-import type { Shop, ShopAlert, User } from "../repository/shops";
+import type { Shop, ShopAlert, User } from '../repository/shops';
 // @ts-expect-error
 import passwordResetTemplate from './sources/password-reset.mjml';
 // @ts-expect-error
 import alertTemplate from './sources/alert.mjml';
 // @ts-expect-error
 import accountConfirmationTemplate from './sources/confirmation.mjml';
-import { Bindings } from "../router";
+import { Bindings } from '../router';
 
 interface MaiLRequest {
     to: string;
@@ -15,7 +15,7 @@ interface MaiLRequest {
 
 async function sendMail(env: Bindings, mail: MaiLRequest) {
     if (env.MAIL_ACTIVE === 'false') {
-        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`)
+        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`);
         console.log(mail.body);
         return;
     }
@@ -62,7 +62,11 @@ async function sendMail(env: Bindings, mail: MaiLRequest) {
     }
 }
 
-export async function sendMailConfirmToUser(env: Bindings, email: string, token: string) {
+export async function sendMailConfirmToUser(
+    env: Bindings,
+    email: string,
+    token: string,
+) {
     await sendMail(env, {
         to: email,
         subject: 'Confirm your email address',
@@ -73,15 +77,27 @@ export async function sendMailConfirmToUser(env: Bindings, email: string, token:
     });
 }
 
-export async function sendMailResetPassword(env: Bindings, email: string, token: string) {
+export async function sendMailResetPassword(
+    env: Bindings,
+    email: string,
+    token: string,
+) {
     await sendMail(env, {
         to: email,
         subject: 'Reset your password',
-        body: passwordResetTemplate({ FRONTEND_URL: env.FRONTEND_URL, token: token })
+        body: passwordResetTemplate({
+            FRONTEND_URL: env.FRONTEND_URL,
+            token: token,
+        }),
     });
 }
 
-export async function sendAlert(env: Bindings, shop: Shop, user: User, alert: ShopAlert) {
+export async function sendAlert(
+    env: Bindings,
+    shop: Shop,
+    user: User,
+    alert: ShopAlert,
+) {
     await sendMail(env, {
         to: user.email,
         subject: `Shop Alert: ${alert.subject} - ${shop.name}`,
@@ -90,6 +106,6 @@ export async function sendAlert(env: Bindings, shop: Shop, user: User, alert: Sh
             shop,
             alert,
             user,
-        })
-    })
+        }),
+    });
 }

@@ -1,7 +1,7 @@
-import { Hono } from "hono";
+import { Hono } from 'hono';
 import { sentry } from './middleware/sentry';
-import { trpcServer } from "./middleware/trpc";
-import { appRouter } from './trpc/router'
+import { trpcServer } from './middleware/trpc';
+import { appRouter } from './trpc/router';
 
 export type Bindings = {
     MAIL_ACTIVE: 'true' | 'false';
@@ -26,15 +26,12 @@ export type Bindings = {
     FILES: R2Bucket;
     shopmonDB: D1Database;
     sendMail: SendEmail;
-}
+};
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', sentry());
-app.use(
-    '/trpc/*',
-    trpcServer({ router: appRouter }),
-)
+app.use('/trpc/*', trpcServer({ router: appRouter }));
 
 // serve screenshots
 app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
@@ -42,23 +39,23 @@ app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
 
     if (uuid.indexOf('/') !== -1) {
         return new Response('', {
-            status: 404
+            status: 404,
         });
     }
 
-    const file = await c.env.FILES.get(`pagespeed/${uuid}/screenshot.jpg`)
+    const file = await c.env.FILES.get(`pagespeed/${uuid}/screenshot.jpg`);
 
     if (uuid.indexOf('/') !== -1) {
         return new Response('', {
-            status: 404
+            status: 404,
         });
     }
 
     return new Response(file?.body, {
         status: 200,
         headers: {
-            "content-type": "image/jpeg"
-        }
+            'content-type': 'image/jpeg',
+        },
     });
 });
 
@@ -77,8 +74,9 @@ app.get('/api/ws', async (c) => {
 
     const data = JSON.parse(token) as { id: number };
 
-    return c.env.USER_SOCKET.get(c.env.USER_SOCKET.idFromName(data.id.toString())).fetch(c.req.raw)
+    return c.env.USER_SOCKET.get(
+        c.env.USER_SOCKET.idFromName(data.id.toString()),
+    ).fetch(c.req.raw);
 });
 
 export default app;
-

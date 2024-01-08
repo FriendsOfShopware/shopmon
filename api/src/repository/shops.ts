@@ -1,9 +1,9 @@
-import { NotificationCreation } from "../../../frontend/src/types/notification";
-import { UserSocketHelper } from "../object/UserSocket";
-import Users from "./users";
-import { sendAlert } from "../mail/mail";
-import { Drizzle, schema } from "../db";
-import { eq } from "drizzle-orm";
+import { NotificationCreation } from '../../../frontend/src/types/notification';
+import { UserSocketHelper } from '../object/UserSocket';
+import Users from './users';
+import { sendAlert } from '../mail/mail';
+import { Drizzle, schema } from '../db';
+import { eq } from 'drizzle-orm';
 
 interface CreateShopRequest {
     team_id: number;
@@ -32,7 +32,10 @@ export interface User {
 }
 
 export default class Shops {
-    static async createShop(con: Drizzle, params: CreateShopRequest): Promise<number> {
+    static async createShop(
+        con: Drizzle,
+        params: CreateShopRequest,
+    ): Promise<number> {
         const result = await con
             .insert(schema.shop)
             .values({
@@ -41,7 +44,7 @@ export default class Shops {
                 url: params.shop_url,
                 client_id: params.client_id,
                 client_secret: params.client_secret,
-                created_at: (new Date().toISOString()),
+                created_at: new Date().toISOString(),
                 shopware_version: params.version,
             })
             .execute();
@@ -51,7 +54,10 @@ export default class Shops {
 
     static async deleteShop(con: Drizzle, id: number): Promise<void> {
         await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
-        await con.delete(schema.shopScrapeInfo).where(eq(schema.shopScrapeInfo.shop, id)).execute();
+        await con
+            .delete(schema.shopScrapeInfo)
+            .where(eq(schema.shopScrapeInfo.shop, id))
+            .execute();
     }
 
     static async getUsersOfShop(con: Drizzle, shopId: number) {
@@ -62,31 +68,52 @@ export default class Shops {
                 email: schema.user.email,
             })
             .from(schema.userToTeam)
-            .innerJoin(schema.shop, eq(schema.shop.team_id, schema.userToTeam.team_id))
-            .innerJoin(schema.user, eq(schema.user.id, schema.userToTeam.user_id))
+            .innerJoin(
+                schema.shop,
+                eq(schema.shop.team_id, schema.userToTeam.team_id),
+            )
+            .innerJoin(
+                schema.user,
+                eq(schema.user.id, schema.userToTeam.user_id),
+            )
             .where(eq(schema.shop.id, shopId))
             .all();
 
-        return result as User[]
+        return result as User[];
     }
 
-    static async notify(con: Drizzle, namespace: DurableObjectNamespace, shopId: number, key: string, notification: NotificationCreation): Promise<void> {
+    static async notify(
+        con: Drizzle,
+        namespace: DurableObjectNamespace,
+        shopId: number,
+        key: string,
+        notification: NotificationCreation,
+    ): Promise<void> {
         const users = await this.getUsersOfShop(con, shopId);
 
         for (const user of users) {
-            const createdNotification = await Users.createNotification(con, user.id, key, notification);
+            const createdNotification = await Users.createNotification(
+                con,
+                user.id,
+                key,
+                notification,
+            );
 
             await UserSocketHelper.sendNotification(
                 namespace,
                 user.id.toString(),
                 {
-                    notification: createdNotification
-                }
-            )
+                    notification: createdNotification,
+                },
+            );
         }
     }
 
-    static async alert(con: Drizzle, env: Env, alert: ShopAlert): Promise<void> {
+    static async alert(
+        con: Drizzle,
+        env: Env,
+        alert: ShopAlert,
+    ): Promise<void> {
         const users = await this.getUsersOfShop(con, parseInt(alert.shopId));
         const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
@@ -96,7 +123,7 @@ export default class Shops {
             return;
         }
 
-        await env.kvStorage.put(alertKey, "1", {
+        await env.kvStorage.put(alertKey, '1', {
             expirationTtl: 86400, // one day
         });
 
@@ -104,15 +131,15 @@ export default class Shops {
             columns: {
                 name: true,
             },
-            where: eq(schema.shop.id, parseInt(alert.shopId))
-        })
+            where: eq(schema.shop.id, parseInt(alert.shopId)),
+        });
 
         if (result === undefined) {
             return;
         }
 
         for (const user of users) {
-            await sendAlert(env, result, user, alert)
+            await sendAlert(env, result, user, alert);
         }
     }
 }

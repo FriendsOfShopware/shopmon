@@ -8,7 +8,7 @@ export const appRouter = router({
     auth: authRouter,
     info: infoRouter,
     account: accountRouter,
-    organization: organizationRouter
-})
+    organization: organizationRouter,
+});
 
-export type AppRouter = typeof appRouter
+export type AppRouter = typeof appRouter;

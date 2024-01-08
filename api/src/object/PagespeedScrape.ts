@@ -1,6 +1,6 @@
-import { Drizzle, getConnection, schema } from "../db";
-import Shops from "../repository/shops";
-import { createSentry } from "../toucan";
+import { Drizzle, getConnection, schema } from '../db';
+import Shops from '../repository/shops';
+import { createSentry } from '../toucan';
 import { eq } from 'drizzle-orm';
 
 interface SQLShop {
@@ -25,21 +25,23 @@ export class PagespeedScrape implements DurableObject {
 
     async fetch(request: Request): Promise<Response> {
         const url = new URL(request.url);
-        const id = url.searchParams.get('id')
+        const id = url.searchParams.get('id');
 
-        await this.state.storage.put('id', id)
+        await this.state.storage.put('id', id);
 
         if (url.pathname === '/cron') {
             const currentAlarm = await this.state.storage.getAlarm();
             if (currentAlarm === null) {
-                await this.state.storage.setAlarm(Date.now() + 24 * 60 * MINUTES);
-                console.log(`Set alarm for shop ${id} to one day`)
+                await this.state.storage.setAlarm(
+                    Date.now() + 24 * 60 * MINUTES,
+                );
+                console.log(`Set alarm for shop ${id} to one day`);
             }
 
             return new Response('OK');
         } else if (url.pathname === '/now') {
             await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
-            console.log(`Set alarm for shop ${id} to 5 seconds`)
+            console.log(`Set alarm for shop ${id} to 5 seconds`);
 
             return new Response('OK');
         } else if (url.pathname === '/delete') {
@@ -54,7 +56,7 @@ export class PagespeedScrape implements DurableObject {
     async alarm(): Promise<void> {
         const con = getConnection(this.env);
 
-        const id = await this.state.storage.get('id') as string | undefined;
+        const id = (await this.state.storage.get('id')) as string | undefined;
 
         // ID is missing, so we can't do anything
         if (id === undefined) {
@@ -69,12 +71,12 @@ export class PagespeedScrape implements DurableObject {
                 url: true,
                 team_id: true,
             },
-            where: eq(schema.shop.id, parseInt(id))
-        })
+            where: eq(schema.shop.id, parseInt(id)),
+        });
 
         // Shop is missing, so we can't do anything
         if (shop === undefined) {
-            console.log(`cannot find shop: ${id}. Destroy self`)
+            console.log(`cannot find shop: ${id}. Destroy self`);
             await this.state.storage.deleteAll();
             return;
         }
@@ -89,7 +91,7 @@ export class PagespeedScrape implements DurableObject {
         }
 
         await this.state.storage.setAlarm(Date.now() + 24 * 60 * MINUTES);
-        console.log(`Set alarm for shop ${id} to one day`)
+        console.log(`Set alarm for shop ${id} to one day`);
     }
 
     async computePagespeed(shop: SQLShop, con: Drizzle) {
@@ -106,12 +108,17 @@ export class PagespeedScrape implements DurableObject {
                         level: 'error',
                         title: `Shop: ${shop.name} could not be checked for Pagespeed`,
                         message: `Could not run Pagespeed against Shop as the http status code is ${home.status}, but expected is 200`,
-                        link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
-                    }
-                )
+                        link: {
+                            name: 'account.shops.detail',
+                            params: {
+                                shopId: shop.id.toString(),
+                                teamId: shop.team_id.toString(),
+                            },
+                        },
+                    },
+                );
                 return;
             }
-
         } catch (e) {
             await Shops.notify(
                 con,
@@ -122,12 +129,20 @@ export class PagespeedScrape implements DurableObject {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be checked for Pagespeed`,
                     message: `Could not connect to shop. Please check your remote server and try again. Error: ${e}`,
-                    link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), teamId: shop.team_id.toString() } }
-                }
-            )
+                    link: {
+                        name: 'account.shops.detail',
+                        params: {
+                            shopId: shop.id.toString(),
+                            teamId: shop.team_id.toString(),
+                        },
+                    },
+                },
+            );
         }
 
-        const params = new URL('https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed');
+        const params = new URL(
+            'https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed',
+        );
         params.searchParams.set('strategy', 'MOBILE');
         params.searchParams.set('url', shop.url);
         params.searchParams.set('key', this.env.PAGESPEED_API_KEY);
@@ -143,9 +158,10 @@ export class PagespeedScrape implements DurableObject {
             return;
         }
 
-        const pagespeed = await pagespeedResponse.json() as PagespeedResponse;
+        const pagespeed = (await pagespeedResponse.json()) as PagespeedResponse;
 
-        let pageScreenshot = pagespeed.lighthouseResult.audits['final-screenshot'].details.data;
+        let pageScreenshot =
+            pagespeed.lighthouseResult.audits['final-screenshot'].details.data;
         pageScreenshot = pageScreenshot.substr(pageScreenshot.indexOf(',') + 1);
 
         const fileName = `pagespeed/${crypto.randomUUID()}/screenshot.jpg`;
@@ -161,42 +177,52 @@ export class PagespeedScrape implements DurableObject {
             .insert(schema.shopPageSpeed)
             .values({
                 shop_id: shop.id,
-                performance: pagespeed.lighthouseResult.categories.performance.score * 100,
-                accessibility: pagespeed.lighthouseResult.categories.accessibility.score * 100,
-                best_practices: pagespeed.lighthouseResult.categories['best-practices'].score * 100,
+                performance:
+                    pagespeed.lighthouseResult.categories.performance.score *
+                    100,
+                accessibility:
+                    pagespeed.lighthouseResult.categories.accessibility.score *
+                    100,
+                best_practices:
+                    pagespeed.lighthouseResult.categories['best-practices']
+                        .score * 100,
                 seo: pagespeed.lighthouseResult.categories.seo.score * 100,
                 created_at: new Date().toISOString(),
-            }).execute();
+            })
+            .execute();
 
-
-        await con.update(schema.shop).set({ shop_image: fileName }).where(eq(schema.shop.id, shop.id)).execute();
+        await con
+            .update(schema.shop)
+            .set({ shop_image: fileName })
+            .where(eq(schema.shop.id, shop.id))
+            .execute();
     }
 }
 
 interface PagespeedResponse {
     lighthouseResult: {
         categories: {
-            performance: Audit
-            accessibility: Audit
-            "best-practices": Audit
-            seo: Audit
-        }
+            performance: Audit;
+            accessibility: Audit;
+            'best-practices': Audit;
+            seo: Audit;
+        };
         audits: {
-            "final-screenshot": {
+            'final-screenshot': {
                 details: {
                     data: string;
-                }
-            }
-        }
-    }
+                };
+            };
+        };
+    };
 }
 
 interface Audit {
-    id: string
-    title: string
-    description: string
-    score: number
-    manualDescription: string
+    id: string;
+    title: string;
+    description: string;
+    score: number;
+    manualDescription: string;
 }
 
 function base64ToArrayBuffer(base64: string) {

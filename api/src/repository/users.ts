@@ -1,16 +1,22 @@
-import { Notification, NotificationCreation } from "../../../frontend/src/types/notification";
-import { Drizzle, schema } from '../db'
+import {
+    Notification,
+    NotificationCreation,
+} from '../../../frontend/src/types/notification';
+import { Drizzle, schema } from '../db';
 import { eq } from 'drizzle-orm';
-import Teams from "./teams";
+import Teams from './teams';
 
 export default class Users {
-    static async existsByEmail(con: Drizzle, email: string): Promise<number | null> {
+    static async existsByEmail(
+        con: Drizzle,
+        email: string,
+    ): Promise<number | null> {
         const result = await con.query.user.findFirst({
             columns: {
                 id: true,
             },
-            where: eq(schema.user.email, email)
-        })
+            where: eq(schema.user.email, email),
+        });
 
         return result ? result.id : null;
     }
@@ -20,8 +26,8 @@ export default class Users {
             columns: {
                 id: true,
             },
-            where: eq(schema.user.id, id)
-        })
+            where: eq(schema.user.id, id),
+        });
 
         return result !== undefined;
     }
@@ -31,19 +37,16 @@ export default class Users {
             columns: {
                 id: true,
             },
-            where: eq(schema.team.owner_id, id)
+            where: eq(schema.team.owner_id, id),
         });
 
-        const deletePromises = ownerTeams.map(row =>
-            Teams.delete(con, row.id)
+        const deletePromises = ownerTeams.map((row) =>
+            Teams.delete(con, row.id),
         );
 
         await Promise.all(deletePromises);
 
-        await con
-            .delete(schema.user)
-            .where(eq(schema.user.id, id))
-            .execute();
+        await con.delete(schema.user).where(eq(schema.user.id, id)).execute();
 
         await con
             .delete(schema.userToTeam)
@@ -51,7 +54,10 @@ export default class Users {
             .execute();
     }
 
-    static async revokeUserSessions(session: KVNamespace, id: number): Promise<void> {
+    static async revokeUserSessions(
+        session: KVNamespace,
+        id: number,
+    ): Promise<void> {
         const accessToken = await session.list({ prefix: `u-${id}-` });
 
         for (const key of accessToken.keys) {
@@ -65,7 +71,12 @@ export default class Users {
         }
     }
 
-    static async createNotification(con: Drizzle, userId: number, key: string, notification: NotificationCreation): Promise<Notification> {
+    static async createNotification(
+        con: Drizzle,
+        userId: number,
+        key: string,
+        notification: NotificationCreation,
+    ): Promise<Notification> {
         const result = await con
             .insert(schema.userNotification)
             .values({
@@ -75,13 +86,16 @@ export default class Users {
                 title: notification.title,
                 message: notification.message,
                 link: JSON.stringify(notification.link),
-                created_at: (new Date()).toISOString(),
+                created_at: new Date().toISOString(),
             })
             .onConflictDoUpdate({
-                target: [schema.userNotification.user_id, schema.userNotification.key],
+                target: [
+                    schema.userNotification.user_id,
+                    schema.userNotification.key,
+                ],
                 set: {
-                    read: 0
-                }
+                    read: 0,
+                },
             })
             .execute();
 
