@@ -11,7 +11,7 @@ import { schema } from '../../db';
 import { TRPCError } from '@trpc/server';
 import Shops from '../../repository/shops';
 import { decrypt, encrypt } from '../../crypto';
-import { HttpClient, SimpleShop } from '@friendsofshopware/app-server-sdk';
+import { HttpClient, HttpClientResponse, SimpleShop } from '@friendsofshopware/app-server-sdk';
 
 export const shopRouter = router({
     list: publicProcedure
@@ -142,7 +142,7 @@ export const shopRouter = router({
 
             const client = new HttpClient(shop);
 
-            let resp;
+            let resp: HttpClientResponse;
             try {
                 resp = await client.get('/_info/config');
             } catch (e) {
@@ -157,40 +157,32 @@ export const shopRouter = router({
                 input.clientSecret,
             );
 
-            try {
-                const id = await Shops.createShop(ctx.drizzle, {
-                    team_id: input.orgId,
-                    name: input.name,
-                    client_id: input.clientId,
-                    client_secret: clientSecret,
-                    shop_url: input.shopUrl,
-                    version: resp.body.version,
-                });
+            const id = await Shops.createShop(ctx.drizzle, {
+                team_id: input.orgId,
+                name: input.name,
+                client_id: input.clientId,
+                client_secret: clientSecret,
+                shop_url: input.shopUrl,
+                version: resp.body.version,
+            });
 
-                const scrapeObject = ctx.env.SHOPS_SCRAPE.get(
-                    ctx.env.SHOPS_SCRAPE.idFromName(id.toString()),
-                );
+            const scrapeObject = ctx.env.SHOPS_SCRAPE.get(
+                ctx.env.SHOPS_SCRAPE.idFromName(id.toString()),
+            );
 
-                await scrapeObject.fetch(
-                    `http://localhost/now?id=${id.toString()}`,
-                );
+            await scrapeObject.fetch(
+                `http://localhost/now?id=${id.toString()}`,
+            );
 
-                const pagespeedObject = ctx.env.PAGESPEED_SCRAPE.get(
-                    ctx.env.PAGESPEED_SCRAPE.idFromName(id.toString()),
-                );
+            const pagespeedObject = ctx.env.PAGESPEED_SCRAPE.get(
+                ctx.env.PAGESPEED_SCRAPE.idFromName(id.toString()),
+            );
 
-                await pagespeedObject.fetch(
-                    `http://localhost/now?id=${id.toString()}`,
-                );
+            await pagespeedObject.fetch(
+                `http://localhost/now?id=${id.toString()}`,
+            );
 
-                return id;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (e: any) {
-                throw new TRPCError({
-                    code: 'BAD_REQUEST',
-                    message: e.message,
-                });
-            }
+            return id;
         }),
     delete: publicProcedure
         .input(
@@ -392,14 +384,7 @@ export const shopRouter = router({
             shop.setShopCredentials(shopData.client_id, clientSecret);
             const client = new HttpClient(shop);
 
-            try {
-                await client.delete('/_action/cache');
-            } catch (e: any) {
-                throw new TRPCError({
-                    code: 'BAD_REQUEST',
-                    message: e.response.body.errors[0].detail,
-                });
-            }
+            await client.delete('/_action/cache');
 
             return true;
         }),
@@ -439,48 +424,41 @@ export const shopRouter = router({
             shop.setShopCredentials(shopData.client_id, clientSecret);
             const client = new HttpClient(shop);
 
-            try {
-                const nextExecutionTime: string = new Date().toISOString();
-                await client.patch(`/scheduled-task/${input.taskId}`, {
-                    status: 'scheduled',
-                    nextExecutionTime: nextExecutionTime,
+            const nextExecutionTime: string = new Date().toISOString();
+            await client.patch(`/scheduled-task/${input.taskId}`, {
+                status: 'scheduled',
+                nextExecutionTime: nextExecutionTime,
+            });
+
+            const scrapeResult =
+                await ctx.drizzle.query.shopScrapeInfo.findFirst({
+                    columns: {
+                        scheduled_task: true,
+                    },
+                    where: eq(schema.shopScrapeInfo.shop, input.shopId),
                 });
 
-                const scrapeResult =
-                    await ctx.drizzle.query.shopScrapeInfo.findFirst({
-                        columns: {
-                            scheduled_task: true,
-                        },
-                        where: eq(schema.shopScrapeInfo.shop, input.shopId),
-                    });
-
-                // If there is no scrape result, we don't need to update the scheduled task
-                if (scrapeResult === undefined) {
-                    return true;
-                }
-
-                const scheduledTasks = JSON.parse(
-                    scrapeResult.scheduled_task || '{}',
-                );
-
-                for (const task of scheduledTasks) {
-                    if (task.id === input.taskId) {
-                        task.status = 'scheduled';
-                        task.nextExecutionTime = nextExecutionTime;
-                        task.overdue = false;
-                    }
-                }
-
-                await ctx.drizzle
-                    .update(schema.shopScrapeInfo)
-                    .set({ scheduled_task: JSON.stringify(scheduledTasks) })
-                    .where(eq(schema.shopScrapeInfo.shop, input.shopId))
-                    .execute();
-            } catch (e: any) {
-                throw new TRPCError({
-                    code: 'BAD_REQUEST',
-                    message: e.response.body.errors[0].detail,
-                });
+            // If there is no scrape result, we don't need to update the scheduled task
+            if (scrapeResult === undefined) {
+                return true;
             }
+
+            const scheduledTasks = JSON.parse(
+                scrapeResult.scheduled_task || '{}',
+            );
+
+            for (const task of scheduledTasks) {
+                if (task.id === input.taskId) {
+                    task.status = 'scheduled';
+                    task.nextExecutionTime = nextExecutionTime;
+                    task.overdue = false;
+                }
+            }
+
+            await ctx.drizzle
+                .update(schema.shopScrapeInfo)
+                .set({ scheduled_task: JSON.stringify(scheduledTasks) })
+                .where(eq(schema.shopScrapeInfo.shop, input.shopId))
+                .execute();
         }),
 });

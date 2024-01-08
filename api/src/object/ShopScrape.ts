@@ -1,4 +1,4 @@
-import { SimpleShop, HttpClient } from '@friendsofshopware/app-server-sdk';
+import { SimpleShop, HttpClient, ApiClientRequestFailed, ApiClientAuthenticationFailed, HttpClientResponse } from '@friendsofshopware/app-server-sdk';
 import { Drizzle, getConnection, schema } from '../db';
 import versionCompare from 'version-compare';
 import {
@@ -6,7 +6,7 @@ import {
     ExtensionDiff,
     ExtensionChangelog,
 } from '../../../frontend/src/types/shop';
-import promiseAllProperties from '../helper/promise';
+import promiseAllProperties from 'promise-all-properties';
 import { CheckerInput, check } from './status/registery';
 import { createSentry } from '../toucan';
 import Shops from '../repository/shops';
@@ -20,10 +20,10 @@ interface SQLShop {
     name: string;
     team_id: number;
     url: string;
-    shopware_version: string;
     client_id: string;
     client_secret: string;
-    ignores: string | string[];
+    shopware_version: string;
+    ignores: string[];
 }
 
 interface ShopwareScheduledTask {
@@ -116,16 +116,19 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const shop = (await con.query.shop.findFirst({
+        const shop = await con.query.shop.findFirst({
             columns: {
                 id: true,
+                name: true,
                 ignores: true,
                 url: true,
                 client_id: true,
                 client_secret: true,
+                shopware_version: true,
+                team_id: true,
             },
             where: eq(schema.shop.id, parseInt(id)),
-        })) as SQLShop | undefined;
+        });
 
         // Shop is missing, so we can't do anything
         if (shop === undefined) {
@@ -134,10 +137,10 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        shop.ignores = JSON.parse((shop.ignores as string) || '[]');
+        const convertedShop: SQLShop = {...shop, ignores: JSON.parse((shop.ignores as string) || '[]') as string[]};
 
         try {
-            await this.updateShop(shop, con);
+            await this.updateShop(convertedShop, con);
         } catch (e) {
             const sentry = createSentry(this.state, this.env);
 
@@ -184,15 +187,13 @@ export class ShopScrape implements DurableObject {
 
         try {
             await client.getToken();
-        } catch (e: any) {
-            let error = '';
+        } catch (e) {
+            let error = e;
 
-            if (typeof e?.response.body === 'object') {
-                if (e?.response.body.errors) {
-                    error = JSON.stringify(e?.response.body.errors[0]);
-                } else {
-                    error = JSON.stringify(e?.response.body);
-                }
+            if (e instanceof ApiClientRequestFailed) {
+                error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+            } else if (e instanceof ApiClientAuthenticationFailed) {
+                error = `Authentication failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
             }
 
             await Shops.notify(
@@ -230,7 +231,14 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        let responses;
+        let responses: {
+            config: HttpClientResponse;
+            plugin: HttpClientResponse;
+            app: HttpClientResponse;
+            scheduledTask: HttpClientResponse;
+            queue: HttpClientResponse;
+            cacheInfo: HttpClientResponse;
+        };
 
         try {
             responses = await promiseAllProperties({
@@ -244,13 +252,13 @@ export class ShopScrape implements DurableObject {
                         : client.get('/_info/queue.json'),
                 cacheInfo: client.get('/_action/cache_info'),
             });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            let error = e;
+        } catch (e) {
+            let error = "";
 
-            if (e.response) {
-                error = `Request failed with status code: ${e.response.statusCode
-                    }: Body: ${JSON.stringify(e.response.body)}`;
+            if (e instanceof ApiClientRequestFailed) {
+                error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+            } else if (e instanceof Error) {
+                error = e.toString();
             }
 
             await Shops.notify(
@@ -275,7 +283,7 @@ export class ShopScrape implements DurableObject {
 
             await con
                 .update(schema.shop)
-                .set({ status: 'red', last_scraped_error: error })
+                .set({ status: 'red', last_scraped_error: error.toString() })
                 .where(eq(schema.shop.id, shop.id))
                 .execute();
 
