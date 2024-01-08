@@ -25,18 +25,6 @@ declare global {
         shopmonDB: D1Database;
         sendMail: SendEmail;
     }
-
-    interface Team {
-        id: string;
-        ownerId: number;
-    }
-
-    interface Request {
-        userId: number;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        params: any;
-        team: Team;
-    }
 }
 
-export {};
+export { };

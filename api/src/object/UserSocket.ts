@@ -42,9 +42,9 @@ export class UserSocket implements DurableObject {
         if (pathname === '/api/send') {
             const data = await req.text();
 
-            this.sessions.forEach((session) => {
+            for (const session of this.sessions) {
                 session.send(data);
-            });
+            }
 
             return new Response(null, { status: 202 });
         }
@@ -53,8 +53,8 @@ export class UserSocket implements DurableObject {
     }
 }
 
-export class UserSocketHelper {
-    static async sendNotification(
+export const UserSocketHelper = {
+    async sendNotification(
         namespace: DurableObjectNamespace,
         userId: string,
         notification: WebsocketMessage,
