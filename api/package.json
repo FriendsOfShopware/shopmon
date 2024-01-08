@@ -8,8 +8,6 @@
     "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
     "dev:local": "TZ=UTC wrangler dev --port 5789",
     "api:deploy": "wrangler deploy",
-    "eslint": "eslint 'src/**/*.ts'",
-    "eslint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "biome format --write src",
     "lint": "biome lint src",
     "tslint": "tsc --noEmit",
