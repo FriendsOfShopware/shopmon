@@ -28,18 +28,18 @@ const showShopDeletionModal = ref(false)
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    team_id: Yup.number().required('Team is required'),
-    client_id: Yup.string().when('url', {
+    newOrgId: Yup.number().required('Team is required'),
+    clientId: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
         then: () => Yup.string().required("If you change the URL you need to provide Client-ID")
     }),
-    client_secret: Yup.string().when('url', {
+    clientSecret: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
         then: () => Yup.string().required("If you change the URL you need to provide Client-Secret")
     })
 });
 
-async function onSubmit(values: any) {
+async function onSubmit(values: Yup.InferType<typeof schema>) {
     if (shopStore.shop) {
         try {
             await shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, values);
@@ -93,23 +93,23 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="team_id" class="block text-sm font-medium mb-1"> Team </label>
-                    <Field as="select" id="team_id" name="team_id" class="field">
+                    <label for="newOrgId" class="block text-sm font-medium mb-1"> Team </label>
+                    <Field as="select" id="newOrgId" name="newOrgId" class="field">
                         <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">
                             {{ team.name }}
                         </option>
                     </Field>
                     <div class="text-red-700">
-                        {{ errors.teamId }}
+                        {{ errors.newOrgId }}
                     </div>
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="url" class="block text-sm font-medium mb-1"> URL </label>
-                    <Field type="text" name="url" id="url" autocomplete="url" class="field"
-                        v-bind:class="{ 'is-invalid': errors.url }" />
+                    <label for="shopUrl" class="block text-sm font-medium mb-1"> URL </label>
+                    <Field type="text" name="shopUrl" id="shopUrl" autocomplete="url" class="field"
+                        v-bind:class="{ 'is-invalid': errors.shopUrl }" />
                     <div class="text-red-700">
-                        {{ errors.url }}
+                        {{ errors.shopUrl }}
                     </div>
                 </div>
 
@@ -118,21 +118,21 @@ async function deleteShop() {
             <FormGroup title="Integration"
                 info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
                 <div class="sm:col-span-6">
-                    <label for="client_id" class="block text-sm font-medium mb-1"> Client-ID </label>
-                    <Field type="text" name="client_id" id="client_id" class="field"
-                        v-bind:class="{ 'is-invalid': errors.client_id }" />
+                    <label for="clientId" class="block text-sm font-medium mb-1"> Client-ID </label>
+                    <Field type="text" name="clientId" id="clientId" class="field"
+                        v-bind:class="{ 'is-invalid': errors.clientId }" />
                     <div class="text-red-700">
-                        {{ errors.client_id }}
+                        {{ errors.clientId }}
                     </div>
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="client_secret" class="block text-sm font-medium mb-1"> Client-Secret
+                    <label for="clientSecret" class="block text-sm font-medium mb-1"> Client-Secret
                     </label>
-                    <Field type="text" name="client_secret" id="client_secret" class="field"
-                        v-bind:class="{ 'is-invalid': errors.client_secret }" />
+                    <Field type="text" name="clientSecret" id="clientSecret" class="field"
+                        v-bind:class="{ 'is-invalid': errors.clientSecret }" />
                     <div class="text-red-700">
-                        {{ errors.client_secret }}
+                        {{ errors.clientSecret }}
                     </div>
                 </div>
             </FormGroup>

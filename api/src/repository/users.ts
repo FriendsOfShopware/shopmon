@@ -1,4 +1,4 @@
-import { Notification, NotificationCreation } from "../../../shared/notification";
+import { Notification, NotificationCreation } from "../../../frontend/src/types/notification";
 import { Drizzle, schema } from '../db'
 import { eq } from 'drizzle-orm';
 import Teams from "./teams";

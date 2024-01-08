@@ -1,12 +1,7 @@
-import { Router } from "itty-router";
-import teamRouter from './api/team';
-import { JsonResponse } from "./api/common/response";
 import { Hono } from "hono";
 import { sentry } from './middleware/sentry';
 import { trpcServer } from "./middleware/trpc";
 import { appRouter } from './trpc/router'
-
-const router = Router();
 
 export type Bindings = {
     MAIL_ACTIVE: 'true' | 'false';
@@ -41,7 +36,31 @@ app.use(
     trpcServer({ router: appRouter }),
 )
 
-router.all('/api/team/*', teamRouter.handle);
+// serve screenshots
+app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
+    const uuid = c.req.param('uuid');
+
+    if (uuid.indexOf('/') !== -1) {
+        return new Response('', {
+            status: 404
+        });
+    }
+
+    const file = await c.env.FILES.get(`pagespeed/${uuid}/screenshot.jpg`)
+
+    if (uuid.indexOf('/') !== -1) {
+        return new Response('', {
+            status: 404
+        });
+    }
+
+    return new Response(file?.body, {
+        status: 200,
+        headers: {
+            "content-type": "image/jpeg"
+        }
+    });
+});
 
 app.get('/api/ws', async (c) => {
     const authToken = new URL(c.req.url).searchParams.get('auth_token');
@@ -60,12 +79,6 @@ app.get('/api/ws', async (c) => {
 
     return c.env.USER_SOCKET.get(c.env.USER_SOCKET.idFromName(data.id.toString())).fetch(c.req.raw)
 });
-
-router.all('*', () => new JsonResponse({ message: 'Not found' }, 404));
-
-app.all('*', async (c) => {
-    return await router.handle(c.req.raw, c.env, c.executionCtx, c.get('sentry'))
-})
 
 export default app;
 

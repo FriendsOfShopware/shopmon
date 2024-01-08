@@ -1,4 +1,4 @@
-import { NotificationCreation } from "../../../shared/notification";
+import { NotificationCreation } from "../../../frontend/src/types/notification";
 import { UserSocketHelper } from "../object/UserSocket";
 import Users from "./users";
 import { sendAlert } from "../mail/mail";
@@ -6,7 +6,7 @@ import { Drizzle, schema } from "../db";
 import { eq } from "drizzle-orm";
 
 interface CreateShopRequest {
-    team_id: string;
+    team_id: number;
     name: string;
     version: string;
     shop_url: string;
@@ -36,7 +36,7 @@ export default class Shops {
         const result = await con
             .insert(schema.shop)
             .values({
-                team_id: parseInt(params.team_id),
+                team_id: params.team_id,
                 name: params.name,
                 url: params.shop_url,
                 client_id: params.client_id,

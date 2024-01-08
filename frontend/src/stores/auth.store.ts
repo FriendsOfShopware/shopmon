@@ -1,6 +1,4 @@
 import { defineStore } from 'pinia';
-
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
 import { useNotificationStore } from './notification.store';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';

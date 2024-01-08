@@ -18,19 +18,19 @@ const router = useRouter();
 
 const schema = Yup.object().shape({
   name: Yup.string().required('Shop name is required'),
-  shop_url: Yup.string().required('Shop URL is required').url(),
-  teamId: Yup.number().required('Team is required'),
+  shopUrl: Yup.string().required('Shop URL is required').url(),
+  orgId: Yup.number().required('Team is required'),
   client_id: Yup.string().required('Client ID is required'),
   client_secret: Yup.string().required('Client Secret is required'),
 });
 
 const shops = {
-  teamId: authStore.user?.teams[0]?.id,
+  orgId: authStore.user?.teams[0]?.id,
 }
 
-async function onSubmit(values: any) {
+async function onSubmit(values: Yup.InferType<typeof schema>) {
   try {
-    await shopStore.createShop(values.teamId, values);
+    await shopStore.createShop(values);
 
     router.push('/account/shops');
   } catch (e: any) {
@@ -54,42 +54,43 @@ async function onSubmit(values: any) {
         </div>
 
         <div class="sm:col-span-6">
-          <label for="teamId" class="block text-sm font-medium mb-1"> Team </label>
-          <Field as="select" id="teamId" name="teamId" class="field">
+          <label for="orgId" class="block text-sm font-medium mb-1"> Team </label>
+          <Field as="select" id="orgId" name="orgId" class="field">
             <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">{{ team.name }}</option>
           </Field>
           <div class="text-red-700">
-            {{ errors.teamId }}
+            {{ errors.orgId }}
           </div>
         </div>
 
         <div class="sm:col-span-6">
-          <label for="shop_url" class="block text-sm font-medium mb-1"> URL </label>
-          <Field type="text" name="shop_url" id="shop_url" autocomplete="url" class="field"
+          <label for="shopUrl" class="block text-sm font-medium mb-1"> URL </label>
+          <Field type="text" name="shopUrl" id="shopUrl" autocomplete="url" class="field"
             v-bind:class="{ 'is-invalid': errors.shop_url }" />
           <div class="text-red-700">
-            {{ errors.shop_url }}
+            {{ errors.shopUrl }}
           </div>
         </div>
 
       </FormGroup>
 
-      <FormGroup title="Integration" info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
+      <FormGroup title="Integration"
+        info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
         <div class="sm:col-span-6">
-          <label for="client_id" class="block text-sm font-medium mb-1"> Client-ID </label>
-          <Field type="text" name="client_id" id="client_id" class="field"
-            v-bind:class="{ 'is-invalid': errors.client_id }" />
+          <label for="clientId" class="block text-sm font-medium mb-1"> Client-ID </label>
+          <Field type="text" name="clientId" id="clientId" class="field"
+            v-bind:class="{ 'is-invalid': errors.clientId }" />
           <div class="text-red-700">
-            {{ errors.client_id }}
+            {{ errors.clientId }}
           </div>
         </div>
 
         <div class="sm:col-span-6">
-          <label for="client_secret" class="block text-sm font-medium mb-1"> Client-Secret </label>
-          <Field type="text" name="client_secret" id="client_secret" class="field"
-            v-bind:class="{ 'is-invalid': errors.client_secret }" />
+          <label for="clientSecret" class="block text-sm font-medium mb-1"> Client-Secret </label>
+          <Field type="text" name="clientSecret" id="clientSecret" class="field"
+            v-bind:class="{ 'is-invalid': errors.clientSecret }" />
           <div class="text-red-700">
-            {{ errors.client_secret }}
+            {{ errors.clientSecret }}
           </div>
         </div>
       </FormGroup>
@@ -97,13 +98,9 @@ async function onSubmit(values: any) {
       <div class="flex justify-end group">
         <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
           <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-          <icon-fa6-solid:floppy-disk
-            class="h-5 w-5" 
-            aria-hidden="true"
-            v-if="!isSubmitting" 
-          />
-          <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
-        </span>
+            <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
+            <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
+          </span>
           Save
         </button>
       </div>

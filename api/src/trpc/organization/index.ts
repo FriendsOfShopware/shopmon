@@ -2,8 +2,10 @@ import { router, publicProcedure } from '..';
 import { z } from 'zod';
 import { loggedInUserMiddleware, organizationAdminMiddleware, organizationMiddleware } from '../middleware';
 import Teams from '../../repository/teams';
+import { shopRouter } from './shop';
 
 export const organizationRouter = router({
+    shop: shopRouter,
     create: publicProcedure.input(z.string()).use(loggedInUserMiddleware).mutation(async ({ input, ctx }) => {
         return await Teams.create(ctx.drizzle, input, ctx.user!!)
     }),

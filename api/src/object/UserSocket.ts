@@ -1,4 +1,4 @@
-import { WebsocketMessage } from "../../../shared/notification";
+import { WebsocketMessage } from "../../../frontend/src/types/notification";
 
 export class UserSocket implements DurableObject {
     state: DurableObjectState;

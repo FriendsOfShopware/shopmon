@@ -1,10 +1,8 @@
-import { fetchWrapper } from "@/helpers/fetch-wrapper";
 import { defineStore } from "pinia";
-import type { Shop, ShopDetailed } from '@apiTypes/shop';
-import { trpcClient, RouterOutput } from "@/helpers/trpc";
+import { trpcClient, RouterOutput, RouterInput } from "@/helpers/trpc";
 
 export const useShopStore = defineStore('shop', {
-    state: (): { shops: RouterOutput['account']['currentUserShops'], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: ShopDetailed | null } => ({
+    state: (): { shops: RouterOutput['account']['currentUserShops'], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: RouterOutput['organization']['shop']['get'] | null } => ({
         isLoading: false,
         isRefreshing: false,
         isCacheClearing: false,
@@ -13,10 +11,10 @@ export const useShopStore = defineStore('shop', {
         shop: null,
     }),
     actions: {
-        async createShop(teamId: number, payload: any) {
+        async createShop(payload: RouterInput['organization']['shop']['create']) {
             this.isLoading = true;
-            payload.shop_url = payload.shop_url.replace(/\/+$/, '');
-            await fetchWrapper.post(`/team/${teamId}/shops`, payload);
+            payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
+            await trpcClient.organization.shop.create.mutate(payload);
             this.isLoading = false;
 
             await this.loadShops();
@@ -32,42 +30,42 @@ export const useShopStore = defineStore('shop', {
             this.shops = enrichedShops;
         },
 
-        async loadShop(teamId: number, shopId: number) {
+        async loadShop(orgId: number, shopId: number) {
             this.isLoading = true;
-            this.shop = await fetchWrapper.get(`/team/${teamId}/shop/${shopId}`) as ShopDetailed;
+            this.shop = await trpcClient.organization.shop.get.query({ orgId, shopId })
             this.isLoading = false;
         },
 
-        async updateShop(teamId: number, id: number, payload: any) {
-            if (payload.shop_url) {
-                payload.shop_url = payload.shop_url.replace(/\/+$/, '');
+        async updateShop(orgId: number, shopId: number, payload: { name?: string, ignores?: string[], shopUrl?: string, clientId?: string, clientSecret?: string }) {
+            if (payload.shopUrl) {
+                payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
             }
-            await fetchWrapper.patch(`/team/${teamId}/shop/${id}`, payload);
+            await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...payload });
 
-            await this.loadShop(teamId, id);
+            await this.loadShop(orgId, shopId);
         },
 
-        async refreshShop(teamId: number, id: number, pagespeed: boolean) {
+        async refreshShop(orgId: number, id: number, pageSpeed: boolean) {
             this.isRefreshing = true;
-            await fetchWrapper.post(`/team/${teamId}/shop/${id}/refresh`, { 'pagespeed': pagespeed });
+            await trpcClient.organization.shop.refreshShop.mutate({ orgId, shopId: id, pageSpeed });
             this.isRefreshing = false;
         },
 
-        async clearCache(teamId: number, id: number) {
+        async clearCache(orgId: number, shopId: number) {
             this.isCacheClearing = true;
-            await fetchWrapper.post(`/team/${teamId}/shop/${id}/clear_cache`);
+            await trpcClient.organization.shop.clearShopCache.mutate({ orgId, shopId });
             this.isCacheClearing = false;
         },
 
-        async reScheduleTask(teamId: number, id: number, taskId: string) {
+        async reScheduleTask(orgId: number, shopId: number, taskId: string) {
             this.isReSchedulingTask = true;
-            await fetchWrapper.post(`/team/${teamId}/shop/${id}/reschedule_task/${taskId}`);
-            await this.loadShop(teamId, id);
+            await trpcClient.organization.shop.rescheduleTask.mutate({ orgId, shopId, taskId });
+            await this.loadShop(orgId, shopId);
             this.isReSchedulingTask = false;
         },
 
-        async delete(teamId: number, shopId: number) {
-            await fetchWrapper.delete(`/team/${teamId}/shop/${shopId}`);
+        async delete(orgId: number, shopId: number) {
+            await trpcClient.organization.shop.delete.mutate({ orgId, shopId });
         },
 
         setShopsInitials(shops: RouterOutput['account']['currentUserShops']) {

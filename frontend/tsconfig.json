@@ -6,11 +6,16 @@
     "moduleResolution": "Node",
     "module": "ES2020",
     "paths": {
-      "@/*": ["*"],
-      "@apiTypes/*": ["./../../shared/*"]
+      "@/*": [
+        "*"
+      ]
     },
     "strictNullChecks": true,
-    "lib": ["DOM", "ES2015", "ESNext"],
+    "lib": [
+      "DOM",
+      "ES2015",
+      "ESNext"
+    ],
     "jsx": "preserve",
     "types": [
       "unplugin-icons/types/vue",

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { WebsocketMessage } from "@apiTypes/notification";
+import type { WebsocketMessage } from "@/types/notification";
 import { useShopStore } from "./shop.store";
 import { useAlertStore } from "./alert.store";
 import { trpcClient, RouterOutput } from "@/helpers/trpc";

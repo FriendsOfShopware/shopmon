@@ -13,11 +13,10 @@ import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionCompatibilitys, ShopChangelog } from '@apiTypes/shop';
+import type { Extension, ExtensionCompatibilitys, ShopChangelog } from '@/types/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { sumChanges } from '@/helpers/changelog';
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 

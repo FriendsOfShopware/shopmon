@@ -42,3 +42,20 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{ i
 
     return next();
 });
+
+export const shopMiddleware = experimental_standaloneMiddleware<{ input: { orgId: number, shopId: number }, ctx: context }>().create(async ({ ctx, input, next }) => {
+    const result = await ctx.drizzle
+        .select({
+            orgId: schema.shop.team_id,
+        })
+        .from(schema.shop)
+        .where(eq(schema.shop.id, input.shopId))
+        .get()
+
+    if (!result || result.orgId !== input.orgId) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+    }
+
+    return next();
+});
+
