@@ -14,10 +14,11 @@ MAIL_DKIM_DOMAIN = "fos.gg"
 MAIL_DKIM_SELECTOR = "cf"
 MAIL_FROM = "shopmon@fos.gg"
 MAIL_FROM_NAME = "Shopmon"
-FRONTEND_URL = "https://shopmon.fos.gg"
+FRONTEND_URL = "http://localhost:3000"
 
 [build]
 command = "node esbuild.mjs"
+watch = ["src"]
 
 [durable_objects]
 bindings = [

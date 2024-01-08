@@ -32,6 +32,20 @@ async function onSubmit(values: any) {
     alertStore.error(e);
   }
 }
+
+async function webauthnLogin() {
+  try {
+    await authStore.loginWithPasskey();
+
+    // redirect to previous url or default to home page
+    router.push(authStore.returnUrl || '/');
+  } catch (e: unknown) {
+    const alertStore = useAlertStore();
+    
+    alertStore.error(e);
+  }
+}
+
 </script>
 
 <template>
@@ -72,7 +86,9 @@ async function onSubmit(values: any) {
             <icon-fa6-solid:eye-slash class="w-[18px]" v-else @click="passwordType = 'password'" />
           </div>      
         </div>
-      </div>      
+      </div>
+      
+      <button type="button" class="btn btn-primary" @click="webauthnLogin">Login using PassKey</button>
 
       <div>
         <router-link to="/account/forgot-password" class="font-medium">

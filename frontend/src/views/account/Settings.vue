@@ -9,9 +9,14 @@ import { ref } from 'vue';
 
 import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { trpcClient } from '@/helpers/trpc';
+import { client } from '@passwordless-id/webauthn'
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore();
 const alertStore = useAlertStore();
+
+authStore.loadPasskeys();
 
 const user = {
   displayName: authStore.user?.displayName,
@@ -47,6 +52,26 @@ async function deleteUser() {
 
   showAccountDeletionModal.value = false;
 }
+
+async function createPasskey() {
+  const challenge = await trpcClient.auth.passkey.challenge.mutate();
+
+  const registration = await client.register(authStore.user?.email!!, challenge, {
+    authenticatorType: "auto",
+    userVerification: "required",
+    timeout: 60000,
+    attestation: false,
+  })
+
+  await trpcClient.auth.passkey.registerDevice.mutate(registration)
+  await authStore.loadPasskeys();
+}
+
+async function removePasskey(id: string) {
+  await trpcClient.auth.passkey.removeDevice.mutate(id);
+  await authStore.loadPasskeys();
+}
+
 </script>
 
 <template>
@@ -58,8 +83,7 @@ async function deleteUser() {
           <div class="col-span-6">
             <label for="currentPassword" class="block text-sm font-medium mb-1">Current Password*</label>
             <Field id="currentPassword" type="password" name="currentPassword" autocomplete="current-password"
-              class="field"
-              :class="{ 'is-invalid': errors.currentPassword }" />
+              class="field" :class="{ 'is-invalid': errors.currentPassword }" />
             <div class="text-red-700">
               {{ errors.currentPassword }}
             </div>
@@ -67,8 +91,7 @@ async function deleteUser() {
 
           <div class="col-span-6">
             <label for="displayName" class="block text-sm font-medium mb-1">displayName</label>
-            <Field id="displayName" type="text" name="displayName" autocomplete="name"
-              class="field"
+            <Field id="displayName" type="text" name="displayName" autocomplete="name" class="field"
               :class="{ 'is-invalid': errors.displayName }" />
             <div class="text-red-700">
               {{ errors.displayName }}
@@ -77,8 +100,7 @@ async function deleteUser() {
 
           <div class="col-span-6">
             <label for="email" class="block text-sm font-medium mb-1">Email address</label>
-            <Field id="email" type="text" name="email" autocomplete="email"
-              class="field"
+            <Field id="email" type="text" name="email" autocomplete="email" class="field"
               :class="{ 'is-invalid': errors.email }" />
             <div class="text-red-700">
               {{ errors.email }}
@@ -87,19 +109,14 @@ async function deleteUser() {
 
           <div class="col-span-6">
             <label for="newPassword" class="block text-sm font-medium mb-1">New Password</label>
-            <Field id="newPassword" type="password" name="newPassword" autocomplete="new-password"
-              class="field"
+            <Field id="newPassword" type="password" name="newPassword" autocomplete="new-password" class="field"
               :class="{ 'is-invalid': errors.newPassword }" />
           </div>
         </div>
         <div class="text-right flex justify-end">
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary flex items-center group">
             <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-              <icon-fa6-solid:floppy-disk
-                class="h-5 w-5" 
-                aria-hidden="true" 
-                v-if="!isSubmitting" 
-              />
+              <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
               <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
             </span>
             Save
@@ -108,6 +125,23 @@ async function deleteUser() {
       </FormGroup>
     </Form>
 
+    <FormGroup title="Passkey Devices">
+      <DataTable
+          v-if="authStore.passkeys"
+          :labels="{ name: { name: 'Name' }, createdAt: { name: 'Created At' }, actions: { name: '', class: 'text-right' } }"
+          :data="authStore.passkeys">
+          <template #cell(actions)="{ item }">
+            <button type="button"
+              class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
+              @click="removePasskey(item.id)" data-tooltip="Delete">
+              <icon-fa6-solid:trash aria-hidden="true" />
+            </button>
+          </template>
+        </DataTable>
+
+      <button type="button" class="btn btn-primary" @click="createPasskey">Add a new Device</button>
+    </FormGroup>
+
     <FormGroup title="Deleting your Account">
       <form action="#" method="POST">
 
@@ -115,12 +149,8 @@ async function deleteUser() {
           deleted with all shops associated.</p>
 
         <div class="mt-5">
-          <button type="button"
-            class="btn btn-danger group flex items-center"
-            @click="showAccountDeletionModal = true">
-            <icon-fa6-solid:trash 
-              class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50"
-            />
+          <button type="button" class="btn btn-danger group flex items-center" @click="showAccountDeletionModal = true">
+            <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
             Delete account
           </button>
         </div>
@@ -128,20 +158,18 @@ async function deleteUser() {
     </FormGroup>
 
     <Modal :show="showAccountDeletionModal" @close="showAccountDeletionModal = false">
-      <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" /></template>
+      <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400"
+          aria-hidden="true" /></template>
       <template #title>Deactivate account</template>
-      <template #content>                
+      <template #content>
         Are you sure you want to deactivate your account? All of your data will be permanently removed
         from our servers forever. This action cannot be undone.
       </template>
       <template #footer>
-        <button type="button"
-          class="btn btn-danger w-full sm:ml-3 sm:w-auto"
-          @click="deleteUser">
+        <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="deleteUser">
           Deactivate
         </button>
-        <button ref="cancelButtonRef" type="button"
-          class="btn w-full mt-3 sm:w-auto sm:mt-0"
+        <button ref="cancelButtonRef" type="button" class="btn w-full mt-3 sm:w-auto sm:mt-0"
           @click="showAccountDeletionModal = false">
           Cancel
         </button>

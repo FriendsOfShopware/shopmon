@@ -8,6 +8,9 @@ dependencies:
   '@headlessui/vue':
     specifier: 1.7.16
     version: 1.7.16(vue@3.3.13)
+  '@passwordless-id/webauthn':
+    specifier: ^1.3.3
+    version: 1.3.3
   '@tailwindcss/forms':
     specifier: 0.5.7
     version: 0.5.7(tailwindcss@3.4.0)
@@ -789,6 +792,10 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
+
+  /@passwordless-id/webauthn@1.3.3:
+    resolution: {integrity: sha512-G3EXqhVisbX79r0xWXbFSkDB2AdIaBSFGogY8uTsyoFI4v8TVJ1G6dPQikWoWRf0zZWII+59fXJXrFDG/JHuaw==}
+    dev: false
 
   /@pkgjs/parseargs@0.11.0:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}

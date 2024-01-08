@@ -2,13 +2,21 @@ import { defineStore } from 'pinia';
 import { router } from '@/router';
 import { useNotificationStore } from './notification.store';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
+import { client } from '@passwordless-id/webauthn'
 
 export const useAuthStore = defineStore('auth', {
-    state: (): { user: RouterOutput['account']['currentUser'] | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
+    state: (): { 
+        user: RouterOutput['account']['currentUser'] | null, 
+        returnUrl: string | null, 
+        access_token: string | null, 
+        refresh_token: string | null,
+        passkeys: RouterOutput['auth']['passkey']['listDevices'] | null,
+    } => ({
         user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
         access_token: localStorage.getItem('access_token'),
         refresh_token: localStorage.getItem('refresh_token'),
+        passkeys: null,
     }),
     getters: {
         isAuthenticated(): boolean {
@@ -24,6 +32,12 @@ export const useAuthStore = defineStore('auth', {
             this.user = await trpcClient.account.currentUser.query();
 
             localStorage.setItem('user', JSON.stringify(this.user));
+        },
+
+        async loadPasskeys() {
+            this.passkeys = await trpcClient.auth.passkey.listDevices.query();
+
+            return this.passkeys;
         },
 
         async login(email: string, password: string) {
@@ -43,6 +57,29 @@ export const useAuthStore = defineStore('auth', {
             localStorage.setItem('user', JSON.stringify(user));
 
             useNotificationStore().connect(result.accessToken);
+            await useNotificationStore().loadNotifications();
+        },
+
+        async loginWithPasskey() {
+            const challenge = await trpcClient.auth.passkey.challenge.mutate();
+            const authentication = await client.authenticate([], challenge, {
+                authenticatorType: "auto",
+                userVerification: "required",
+                timeout: 60000
+            });
+
+            const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
+
+            this.setAccessToken(token);
+            const user = await trpcClient.account.currentUser.query();
+
+            // update pinia state
+            this.user = user;
+
+            // store user details and jwt in local storage to keep user logged in between page refreshes
+            localStorage.setItem('user', JSON.stringify(user));
+
+            useNotificationStore().connect(token);
             await useNotificationStore().loadNotifications();
         },
 

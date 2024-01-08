@@ -15,6 +15,7 @@ import {
     QueueInfo,
     ScheduledTask,
 } from './types';
+import type { RegistrationParsed } from '@passwordless-id/webauthn/src/types'
 
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
@@ -113,6 +114,16 @@ export const userNotification = sqliteTable('user_notification', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+export const userPasskeys = sqliteTable('user_passkeys', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    userId: integer('userId')
+        .notNull()
+        .references(() => user.id),
+    key: text('key', {mode: 'json'}).notNull().$type<RegistrationParsed>(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
 export const userToOrganization = sqliteTable(
     'user_to_organization',
     {
@@ -139,6 +150,7 @@ export const schema = {
     organization,
     userNotification,
     userToOrganization,
+    userPasskeys,
 };
 
 export type Drizzle = DrizzleD1Database<typeof schema>;
