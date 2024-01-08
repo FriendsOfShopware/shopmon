@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import Teams from "./teams";
 
 export default class Users {
-    static async existsByEmail(con: Drizzle, email: string): Promise<boolean> {
+    static async existsByEmail(con: Drizzle, email: string): Promise<number | null> {
         const result = await con.query.user.findFirst({
             columns: {
                 id: true,
@@ -12,7 +12,7 @@ export default class Users {
             where: eq(schema.user.email, email)
         })
 
-        return result !== undefined;
+        return result ? result.id : null;
     }
 
     static async existsById(con: Drizzle, id: number): Promise<boolean> {
@@ -35,7 +35,7 @@ export default class Users {
         });
 
         const deletePromises = ownerTeams.map(row =>
-            Teams.deleteTeam(con, row.id)
+            Teams.delete(con, row.id)
         );
 
         await Promise.all(deletePromises);

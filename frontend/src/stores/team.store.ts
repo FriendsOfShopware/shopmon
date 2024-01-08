@@ -1,49 +1,46 @@
-import {fetchWrapper} from "@/helpers/fetch-wrapper";
-import {defineStore} from "pinia";
-import {useAuthStore} from '@/stores/auth.store';
-import type {Team} from '@apiTypes/team';
-import type {User} from '@apiTypes/user';
+import { defineStore } from "pinia";
+import { useAuthStore } from '@/stores/auth.store';
+import { trpcClient, RouterOutput } from "@/helpers/trpc";
 
 const authStore = useAuthStore();
 
 export const useTeamStore = defineStore('team', {
-    state: (): { isLoading: boolean, isRefreshing: boolean, team: Team|null, members: User[] } => ({
+    state: (): { isLoading: boolean, isRefreshing: boolean, members: RouterOutput['organization']['listMembers'] } => ({
         isLoading: false,
         isRefreshing: false,
-        team: null,
         members: []
     }),
     actions: {
-        async loadMembers(teamId: number) {
+        async loadMembers(orgId: number) {
             this.isLoading = true;
-            this.members = await fetchWrapper.get(`/team/${teamId}/members`) as User[];
+            this.members = await trpcClient.organization.listMembers.query({ orgId });
             this.isLoading = false;
         },
 
-        async delete(teamId: number) {
-            await fetchWrapper.delete(`/team/${teamId}`);
+        async delete(orgId: number) {
+            await trpcClient.organization.delete.mutate({ orgId });
             await authStore.refreshUser();
         },
 
-        async addMember(teamId: number, payload: any) {
-            await fetchWrapper.post(`/team/${teamId}/members`, payload);
+        async addMember(orgId: number, email: string) {
+            await trpcClient.organization.addMember.mutate({ orgId, email });
             await authStore.refreshUser();
-            await this.loadMembers(teamId);
+            await this.loadMembers(orgId);
         },
 
-        async removeMember(teamId: number, memberId: number) {
-            await fetchWrapper.delete(`/team/${teamId}/members/${memberId}`);
+        async removeMember(orgId: number, userId: number) {
+            await trpcClient.organization.removeMember.mutate({ orgId, userId });
             await authStore.refreshUser();
-            await this.loadMembers(teamId);
+            await this.loadMembers(orgId);
         },
 
-        async createTeam(payload: any) {
-            await fetchWrapper.post(`/team`, payload);
+        async createTeam(name: string) {
+            await trpcClient.organization.create.mutate(name);
             await authStore.refreshUser();
         },
 
-        async updateTeam(teamId: number, payload: any) {
-            await fetchWrapper.patch(`/team/${teamId}`, payload);
+        async updateTeam(orgId: number, name: string) {
+            await trpcClient.organization.update.mutate({ orgId, name });
             await authStore.refreshUser();
         }
     }

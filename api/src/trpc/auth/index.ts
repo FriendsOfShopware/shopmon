@@ -117,7 +117,7 @@ export const authRouter = router({
             });
         }
 
-        await Teams.createTeam(ctx.drizzle, `${input.email}'s Team`, userInsertResult.meta.last_row_id);
+        await Teams.create(ctx.drizzle, `${input.email}'s Team`, userInsertResult.meta.last_row_id);
 
         await sendMailConfirmToUser(ctx.env, input.email, token);
 

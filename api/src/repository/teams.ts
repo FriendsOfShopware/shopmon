@@ -8,7 +8,7 @@ interface TeamMember {
 }
 
 export default class Teams {
-    static async createTeam(con: Drizzle, name: string, ownerId: number): Promise<string> {
+    static async create(con: Drizzle, name: string, ownerId: number): Promise<string> {
         const teamInsertResult = await con
             .insert(schema.team)
             .values({
@@ -41,30 +41,45 @@ export default class Teams {
         return result as TeamMember[];
     }
 
-    static async addMember(con: Drizzle, teamId: string, email: string): Promise<void> {
+    static async addMember(con: Drizzle, teamId: number, email: string): Promise<void> {
         const exists = await Users.existsByEmail(con, email);
 
-        if (exists === false) {
+        if (exists === null) {
             throw new Error("User not found");
         }
 
         await con
             .insert(schema.userToTeam)
             .values({
-                team_id: parseInt(teamId),
-                user_id: parseInt(email),
+                team_id: teamId,
+                user_id: exists,
             })
             .execute();
     }
 
-    static async removeMember(con: Drizzle, teamId: string, userId: string): Promise<void> {
+    static async removeMember(con: Drizzle, teamId: number, userId: number): Promise<void> {
+        const ownerTeam = await con.query.team.findFirst({
+            columns: {
+                owner_id: true,
+            },
+            where: eq(schema.team.id, userId)
+        });
+
+        if (ownerTeam === undefined) {
+            throw new Error("Team not found");
+        }
+
+        if (ownerTeam.owner_id === userId) {
+            throw new Error("Cannot remove owner from team");
+        }
+
         await con
             .delete(schema.userToTeam)
-            .where(and(eq(schema.userToTeam.team_id, parseInt(teamId)), eq(schema.userToTeam.user_id, parseInt(userId))))
+            .where(and(eq(schema.userToTeam.team_id, teamId), eq(schema.userToTeam.user_id, userId)))
             .execute();
     }
 
-    static async deleteTeam(con: Drizzle, teamId: number): Promise<void> {
+    static async delete(con: Drizzle, teamId: number): Promise<void> {
         const shops = await con.query.shop.findMany({
             columns: {
                 id: true,
@@ -99,13 +114,13 @@ export default class Teams {
             .execute();
     }
 
-    static async updateTeam(con: Drizzle, teamId: string, name: string): Promise<void> {
+    static async update(con: Drizzle, teamId: number, name: string): Promise<void> {
         await con
             .update(schema.team)
             .set({
                 name
             })
-            .where(eq(schema.team.id, parseInt(teamId)))
+            .where(eq(schema.team.id, teamId))
             .execute()
     }
 }

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import {storeToRefs} from 'pinia';
+import { storeToRefs } from 'pinia';
 
-import {useAlertStore} from '@/stores/alert.store';
-import {useAuthStore} from '@/stores/auth.store';
-import {useTeamStore} from '@/stores/team.store';
-import {useRoute, useRouter} from 'vue-router';
+import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
+import { useTeamStore } from '@/stores/team.store';
+import { useRoute, useRouter } from 'vue-router';
 
 import Header from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
-import {Field, Form} from 'vee-validate';
+import { Field, Form } from 'vee-validate';
 
-import {ref} from 'vue';
+import { ref } from 'vue';
 import * as Yup from "yup";
 
 const route = useRoute();
@@ -32,11 +32,11 @@ const schemaMembers = Yup.object().shape({
   email: Yup.string().email('Email address is not valid').required('Email address is required'),
 });
 
-async function onAddMember(values: any) {
+async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
   isSubmitting.value = true;
-  if ( team ) {
+  if (team) {
     try {
-      await teamStore.addMember(team.id, values);
+      await teamStore.addMember(team.id, values.email);
       showAddMemberModal.value = false;
       await router.push({
         name: 'account.teams.detail',
@@ -52,7 +52,7 @@ async function onAddMember(values: any) {
 }
 
 async function onRemoveMember(userId: number) {
-  if ( team ) {
+  if (team) {
     try {
       await teamStore.removeMember(team.id, userId);
       await router.push({
@@ -71,12 +71,9 @@ async function onRemoveMember(userId: number) {
 <template>
   <Header v-if="team" :title="team.name">
     <div class="flex gap-2">
-      <router-link
-        v-if="team.is_owner"
-        :to="{ name: 'account.teams.edit', params: { teamId } }"
-        type="button" class="group btn btn-primary flex items-center">
-        <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
-          aria-hidden="true" />
+      <router-link v-if="team.is_owner" :to="{ name: 'account.teams.edit', params: { teamId } }" type="button"
+        class="group btn btn-primary flex items-center">
+        <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50" aria-hidden="true" />
         Edit Team
       </router-link>
     </div>
@@ -97,7 +94,7 @@ async function onRemoveMember(userId: number) {
               {{ team.name }}
             </dd>
           </div>
-          
+
           <div class="sm:col-span-1">
             <dt class="font-medium">Member Count</dt>
             <dd class="mt-1 text-sm text-gray-500">{{ team.memberCount }}</dd>
@@ -115,64 +112,59 @@ async function onRemoveMember(userId: number) {
           Members
         </h3>
         <button class="btn btn-primary" @click="showAddMemberModal = true">
-            <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true" />
-            </span>
-            Add
+          <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+            <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true" />
+          </span>
+          Add
         </button>
       </div>
       <div class="border-t border-gray-200 dark:border-neutral-700">
-      <DataTable
-          :labels="{email: {name: 'Email'}, username: {name: 'Username'}, actions: {name: '', class: 'text-right'}}"
+        <DataTable
+          :labels="{ email: { name: 'Email' }, username: { name: 'Username' }, actions: { name: '', class: 'text-right' } }"
           :data="teamStore.members">
-          <template #cell(actions)="{ item }">            
-              <button type="button" 
-                      class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100" 
-                      @click="onRemoveMember(item.id)" 
-                      data-tooltip="Unassign"
-              >
-                <icon-fa6-solid:trash aria-hidden="true" />
-              </button>
+          <template #cell(actions)="{ item }">
+            <button type="button"
+              class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
+              @click="onRemoveMember(item.id)" data-tooltip="Unassign">
+              <icon-fa6-solid:trash aria-hidden="true" />
+            </button>
           </template>
-      </DataTable>
+        </DataTable>
       </div>
     </div>
 
 
-      <Modal :show="showAddMemberModal" :closeXMark="true" @close="showAddMemberModal = false">
-        <template #title>Add member</template>
-        <template #content>
-          <Form
-              v-slot="{ errors, isSubmitting }"
-              :validation-schema="schemaMembers"
-              @submit="onAddMember"
-              id="addMemberForm"
-          >
-            <label for="email" class="block text-sm font-medium mb-1"> Email </label>
-            <Field type="text" name="email" id="email" autocomplete="email" class="field"
-                   v-bind:class="{ 'is-invalid': errors.emailAddress }" />
-            <div class="text-red-700">
-              {{ errors.email }}
-            </div>
-          </Form>
-        </template>
-        <template #footer>
-            <button type="reset" class="btn w-full sm:ml-3 sm:w-auto" @click="showAddMemberModal = false" form="addMemberForm">
-              <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                  <icon-fa6-solid:xmark class="h-5 w-5" aria-hidden="true" />
-              </span>
-              Cancel
-            </button>
-            <button :disabled="isSubmitting" type="submit" class="btn btn-primary w-full sm:ml-3 sm:w-auto" form="addMemberForm">
-              <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                  <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true"
-                                       v-if="!isSubmitting" />
-                  <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
-              </span>
-              Add
-            </button>
-        </template>
-      </Modal>
+    <Modal :show="showAddMemberModal" :closeXMark="true" @close="showAddMemberModal = false">
+      <template #title>Add member</template>
+      <template #content>
+        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schemaMembers" @submit="onAddMember"
+          id="addMemberForm">
+          <label for="email" class="block text-sm font-medium mb-1"> Email </label>
+          <Field type="text" name="email" id="email" autocomplete="email" class="field"
+            v-bind:class="{ 'is-invalid': errors.emailAddress }" />
+          <div class="text-red-700">
+            {{ errors.email }}
+          </div>
+        </Form>
+      </template>
+      <template #footer>
+        <button type="reset" class="btn w-full sm:ml-3 sm:w-auto" @click="showAddMemberModal = false"
+          form="addMemberForm">
+          <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+            <icon-fa6-solid:xmark class="h-5 w-5" aria-hidden="true" />
+          </span>
+          Cancel
+        </button>
+        <button :disabled="isSubmitting" type="submit" class="btn btn-primary w-full sm:ml-3 sm:w-auto"
+          form="addMemberForm">
+          <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+            <icon-fa6-solid:plus class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
+            <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
+          </span>
+          Add
+        </button>
+      </template>
+    </Modal>
 
 
   </MainContainer>
