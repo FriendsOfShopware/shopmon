@@ -6,7 +6,7 @@ import {
     ExtensionDiff,
     ExtensionChangelog,
     lastUpdated,
-} from '../../../shared/shop';
+} from '../../../frontend/src/types/shop';
 import promiseAllProperties from '../helper/promise';
 import { CheckerInput, CheckerRegistery } from './status/registery';
 import { createSentry } from '../toucan';
@@ -14,6 +14,7 @@ import Shops from '../repository/shops';
 import { UserSocketHelper } from './UserSocket';
 import { decrypt } from '../crypto';
 import { eq } from 'drizzle-orm';
+import type { Bindings } from '../router';
 
 interface SQLShop {
     id: number;
@@ -61,9 +62,9 @@ const MINUTES = 60 * SECONDS;
 
 export class ShopScrape implements DurableObject {
     state: DurableObjectState;
-    env: Env;
+    env: Bindings;
 
-    constructor(state: DurableObjectState, env: Env) {
+    constructor(state: DurableObjectState, env: Bindings) {
         this.env = env;
         this.state = state;
     }
@@ -249,9 +250,8 @@ export class ShopScrape implements DurableObject {
             let error = e;
 
             if (e.response) {
-                error = `Request failed with status code: ${
-                    e.response.statusCode
-                }: Body: ${JSON.stringify(e.response.body)}`;
+                error = `Request failed with status code: ${e.response.statusCode
+                    }: Body: ${JSON.stringify(e.response.body)}`;
             }
 
             await Shops.notify(

@@ -1,5 +1,6 @@
 import { Toucan } from 'toucan-js';
 import { Context } from 'toucan-js/dist/types';
+import type { Bindings } from './router';
 
 interface SentryOptions {
     dsn: string;
@@ -12,7 +13,7 @@ interface SentryOptions {
 
 export function createSentry(
     ctx: ExecutionContext | Context,
-    env: Env,
+    env: Bindings,
     req: Request | null = null,
 ) {
     const options: SentryOptions = {

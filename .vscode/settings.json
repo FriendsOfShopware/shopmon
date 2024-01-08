@@ -8,9 +8,10 @@
         "api/worker.api.js": true,
         "api/worker.api.js.map": true
     },
-    "redhat.telemetry.enabled": false,
     "editor.renderWhitespace": "all",
     "editor.renderControlCharacters": true,
-    "editor.formatOnSave": true,
-    "files.insertFinalNewline": true
+    "files.insertFinalNewline": true,
+    "[javascript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    }
 }

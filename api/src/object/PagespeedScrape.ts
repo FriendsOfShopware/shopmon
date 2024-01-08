@@ -1,5 +1,6 @@
 import { Drizzle, getConnection, schema } from '../db';
 import Shops from '../repository/shops';
+import type { Bindings } from '../router';
 import { createSentry } from '../toucan';
 import { eq } from 'drizzle-orm';
 
@@ -16,9 +17,9 @@ const MINUTES = 60 * SECONDS;
 
 export class PagespeedScrape implements DurableObject {
     state: DurableObjectState;
-    env: Env;
+    env: Bindings;
 
-    constructor(state: DurableObjectState, env: Env) {
+    constructor(state: DurableObjectState, env: Bindings) {
         this.env = env;
         this.state = state;
     }

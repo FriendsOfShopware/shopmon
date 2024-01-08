@@ -1,11 +1,12 @@
 import { WebsocketMessage } from '../../../frontend/src/types/notification';
+import type { Bindings } from '../router';
 
 export class UserSocket implements DurableObject {
     state: DurableObjectState;
-    env: Env;
+    env: Bindings;
     sessions: WebSocket[];
 
-    constructor(state: DurableObjectState, env: Env) {
+    constructor(state: DurableObjectState, env: Bindings) {
         this.state = state;
         this.env = env;
 

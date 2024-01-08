@@ -2,6 +2,7 @@
     "recommendations": [
         "lukashass.volar",
         "johnsoncodehk.vscode-typescript-vue-plugin",
-        "redhat.vscode-xml"
+        "redhat.vscode-xml",
+        "biomejs.biome"
     ]
 }
