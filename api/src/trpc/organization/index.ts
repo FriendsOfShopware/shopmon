@@ -5,7 +5,7 @@ import {
     organizationAdminMiddleware,
     organizationMiddleware,
 } from '../middleware';
-import Teams from '../../repository/teams';
+import Teams from '../../repository/organization';
 import { shopRouter } from './shop';
 
 export const organizationRouter = router({

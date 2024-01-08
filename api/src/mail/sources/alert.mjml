@@ -5,7 +5,7 @@
         <mj-image width="128px" height="128px" src="${vars.FRONTEND_URL}/mstile-70x70.png"></mj-image>
 
         <mj-text color="#121826" font-size="16px" font-family="arial">
-          Hi ${vars.user.username},
+          Hi ${vars.user.displayName},
         </mj-text>
 
         <mj-text color="#121826" font-size="16px" font-family="arial">

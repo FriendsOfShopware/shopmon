@@ -1,10 +1,6 @@
-import {
-    Notification,
-    NotificationCreation,
-} from '../../../frontend/src/types/notification';
 import { Drizzle, schema } from '../db';
 import { eq } from 'drizzle-orm';
-import Teams from './teams';
+import Teams from './organization';
 
 async function existsByEmail(
     con: Drizzle,
@@ -32,11 +28,11 @@ async function existsById(con: Drizzle, id: number): Promise<boolean> {
 }
 
 async function deleteById(con: Drizzle, id: number): Promise<void> {
-    const ownerTeams = await con.query.team.findMany({
+    const ownerTeams = await con.query.organization.findMany({
         columns: {
             id: true,
         },
-        where: eq(schema.team.owner_id, id),
+        where: eq(schema.organization.ownerId, id),
     });
 
     const deletePromises = ownerTeams.map((row) =>
@@ -48,8 +44,8 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
     await con.delete(schema.user).where(eq(schema.user.id, id)).execute();
 
     await con
-        .delete(schema.userToTeam)
-        .where(eq(schema.userToTeam.user_id, id))
+        .delete(schema.userToOrganization)
+        .where(eq(schema.userToOrganization.userId, id))
         .execute();
 }
 
@@ -74,44 +70,51 @@ async function createNotification(
     con: Drizzle,
     userId: number,
     key: string,
-    notification: NotificationCreation,
-): Promise<Notification> {
+    notification: Omit<
+        typeof schema.userNotification.$inferInsert,
+        'createdAt' | 'key' | 'userId'
+    >,
+) {
     const result = await con
         .insert(schema.userNotification)
         .values({
-            user_id: userId,
+            userId: userId,
             key,
             level: notification.level,
             title: notification.title,
             message: notification.message,
-            link: JSON.stringify(notification.link),
-            created_at: new Date().toISOString(),
+            link: notification.link,
+            createdAt: new Date(),
         })
         .onConflictDoUpdate({
             target: [
-                schema.userNotification.user_id,
+                schema.userNotification.userId,
                 schema.userNotification.key,
             ],
             set: {
-                read: 0,
+                read: false,
             },
         })
         .execute();
-    const notificationResponse: Notification = {
+
+    schema.userNotification.$inferSelect;
+
+    const notificationResponse: typeof schema.userNotification.$inferSelect = {
         ...notification,
+        key,
+        userId,
         id: result.meta.last_row_id,
         read: false,
-        created_at: new Date().toISOString(),
+        createdAt: new Date(),
     };
-    
+
     return notificationResponse;
 }
 
-
-export default  {
+export default {
     existsByEmail,
     existsById,
     deleteById,
     revokeUserSessions,
     createNotification,
-}
+};

@@ -46,7 +46,7 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
       <FormGroup title="Shop information" subTitle="">
         <div class="sm:col-span-6">
           <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
-          <Field type="text" name="name" id="name" autocomplete="username" class="field"
+          <Field type="text" name="name" id="name" class="field"
             v-bind:class="{ 'is-invalid': errors.name }" />
           <div class="text-red-700">
             {{ errors.name }}

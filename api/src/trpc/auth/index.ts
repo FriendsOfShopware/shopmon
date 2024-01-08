@@ -8,7 +8,7 @@ import Users from '../../repository/users';
 import { context } from '../context';
 import { TRPCError } from '@trpc/server';
 import { loggedInUserMiddleware } from '../middleware';
-import Teams from '../../repository/teams';
+import Teams from '../../repository/organization';
 import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail';
 
 const REFRESH_TOKEN_TTL = 60 * 60 * 6; // 6 hours
@@ -39,7 +39,7 @@ export const authRouter = router({
                 },
                 where: and(
                     eq(schema.user.email, input.email.toLowerCase()),
-                    isNull(schema.user.verify_code),
+                    isNull(schema.user.verifyCode),
                 ),
             });
 
@@ -91,7 +91,7 @@ export const authRouter = router({
             z.object({
                 email: z.string().email(),
                 password: z.string().min(5),
-                username: z.string().min(8),
+                displayName: z.string(),
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -119,11 +119,11 @@ export const authRouter = router({
             const userInsertResult = await ctx.drizzle
                 .insert(schema.user)
                 .values({
-                    created_at: new Date().toISOString(),
                     email: input.email,
-                    username: input.username,
+                    displayName: input.displayName,
                     password: hashedPassword,
-                    verify_code: token,
+                    verifyCode: token,
+                    createdAt: new Date(),
                 });
 
             if (!userInsertResult.success) {
@@ -150,7 +150,7 @@ export const authRouter = router({
                 columns: {
                     id: true,
                 },
-                where: eq(schema.user.verify_code, input),
+                where: eq(schema.user.verifyCode, input),
             });
 
             if (result === undefined) {
@@ -162,7 +162,7 @@ export const authRouter = router({
 
             await ctx.drizzle
                 .update(schema.user)
-                .set({ verify_code: null })
+                .set({ verifyCode: null })
                 .where(eq(schema.user.id, result.id))
                 .execute();
 

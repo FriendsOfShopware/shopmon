@@ -51,6 +51,7 @@ export interface ExtensionCompatibilitys extends Extension {
 }
 
 export interface ScheduledTask {
+    id: string;
     name: string,
     status: string,
     interval: number,

@@ -1,12 +1,12 @@
-import { SimpleShop, HttpClient, ApiClientRequestFailed, ApiClientAuthenticationFailed, HttpClientResponse } from '@friendsofshopware/app-server-sdk';
+import {
+    SimpleShop,
+    HttpClient,
+    ApiClientRequestFailed,
+    ApiClientAuthenticationFailed,
+    HttpClientResponse,
+} from '@friendsofshopware/app-server-sdk';
 import { Drizzle, getConnection, schema } from '../db';
 import versionCompare from 'version-compare';
-import {
-    Extension,
-    ExtensionDiff,
-    ExtensionChangelog,
-} from '../../../frontend/src/types/shop';
-import promiseAllProperties from 'promise-all-properties';
 import { CheckerInput, check } from './status/registery';
 import { createSentry } from '../toucan';
 import Shops from '../repository/shops';
@@ -14,15 +14,16 @@ import { UserSocketHelper } from './UserSocket';
 import { decrypt } from '../crypto';
 import { eq } from 'drizzle-orm';
 import type { Bindings } from '../router';
+import { Extension, ExtensionChangelog, ExtensionDiff } from '../types';
 
 interface SQLShop {
     id: number;
     name: string;
-    team_id: number;
+    organizationId: number;
     url: string;
-    client_id: string;
-    client_secret: string;
-    shopware_version: string;
+    clientId: string;
+    clientSecret: string;
+    shopwareVersion: string;
     ignores: string[];
 }
 
@@ -122,10 +123,10 @@ export class ShopScrape implements DurableObject {
                 name: true,
                 ignores: true,
                 url: true,
-                client_id: true,
-                client_secret: true,
-                shopware_version: true,
-                team_id: true,
+                clientId: true,
+                clientSecret: true,
+                shopwareVersion: true,
+                organizationId: true,
             },
             where: eq(schema.shop.id, parseInt(id)),
         });
@@ -137,10 +138,8 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const convertedShop: SQLShop = {...shop, ignores: JSON.parse((shop.ignores as string) || '[]') as string[]};
-
         try {
-            await this.updateShop(convertedShop, con);
+            await this.updateShop(shop, con);
         } catch (e) {
             const sentry = createSentry(this.state, this.env);
 
@@ -162,7 +161,7 @@ export class ShopScrape implements DurableObject {
                 {
                     shopUpdate: {
                         id: shop.id,
-                        team_id: shop.team_id,
+                        organizationId: shop.organizationId,
                     },
                 },
             );
@@ -172,17 +171,17 @@ export class ShopScrape implements DurableObject {
     async updateShop(shop: SQLShop, con: Drizzle) {
         await con
             .update(schema.shop)
-            .set({ last_scraped_at: new Date().toUTCString() })
+            .set({ lastScrapedAt: new Date() })
             .where(eq(schema.shop.id, shop.id))
             .execute();
 
         const clientSecret = await decrypt(
             this.env.APP_SECRET,
-            shop.client_secret,
+            shop.clientSecret,
         );
 
         const apiShop = new SimpleShop('', shop.url, '');
-        apiShop.setShopCredentials(shop.client_id, clientSecret);
+        apiShop.setShopCredentials(shop.clientId, clientSecret);
         const client = new HttpClient(apiShop);
 
         try {
@@ -191,9 +190,13 @@ export class ShopScrape implements DurableObject {
             let error = e;
 
             if (e instanceof ApiClientRequestFailed) {
-                error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+                error = `Request failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
             } else if (e instanceof ApiClientAuthenticationFailed) {
-                error = `Authentication failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+                error = `Authentication failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
             }
 
             await Shops.notify(
@@ -209,7 +212,7 @@ export class ShopScrape implements DurableObject {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            teamId: shop.team_id.toString(),
+                            teamId: shop.organizationId.toString(),
                         },
                     },
                 },
@@ -241,14 +244,17 @@ export class ShopScrape implements DurableObject {
         };
 
         try {
-            const [config, plugin, app, scheduledTask, queue, cacheInfo] = await Promise.all([
-                client.get('/_info/config'),
-                client.post('/search/plugin'),
-                client.post('/search/app'),
-                client.post('/search/scheduled-task'),
-                versionCompare(shop.shopware_version, '6.4.7.0') < 0 ? client.post('/search/message-queue-stats') : client.get('/_info/queue.json'),
-                client.get('/_action/cache_info'),
-            ]);
+            const [config, plugin, app, scheduledTask, queue, cacheInfo] =
+                await Promise.all([
+                    client.get('/_info/config'),
+                    client.post('/search/plugin'),
+                    client.post('/search/app'),
+                    client.post('/search/scheduled-task'),
+                    versionCompare(shop.shopwareVersion, '6.4.7.0') < 0
+                        ? client.post('/search/message-queue-stats')
+                        : client.get('/_info/queue.json'),
+                    client.get('/_action/cache_info'),
+                ]);
 
             responses = {
                 config,
@@ -259,10 +265,12 @@ export class ShopScrape implements DurableObject {
                 cacheInfo,
             };
         } catch (e) {
-            let error = "";
+            let error = '';
 
             if (e instanceof ApiClientRequestFailed) {
-                error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+                error = `Request failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
             } else if (e instanceof Error) {
                 error = e.toString();
             }
@@ -281,7 +289,7 @@ export class ShopScrape implements DurableObject {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            teamId: shop.team_id.toString(),
+                            teamId: shop.organizationId.toString(),
                         },
                     },
                 },
@@ -289,7 +297,7 @@ export class ShopScrape implements DurableObject {
 
             await con
                 .update(schema.shop)
-                .set({ status: 'red', last_scraped_error: error.toString() })
+                .set({ status: 'red', lastScrapedError: error.toString() })
                 .where(eq(schema.shop.id, shop.id))
                 .execute();
 
@@ -349,7 +357,7 @@ export class ShopScrape implements DurableObject {
                 'https://api.shopware.com/pluginStore/pluginsByName',
             );
             url.searchParams.set('locale', 'en-GB');
-            url.searchParams.set('shopwareVersion', shop.shopware_version);
+            url.searchParams.set('shopwareVersion', shop.shopwareVersion);
 
             for (const extension of extensions) {
                 url.searchParams.append('technicalNames[]', extension.name);
@@ -417,16 +425,12 @@ export class ShopScrape implements DurableObject {
                 columns: {
                     extensions: true,
                 },
-                where: eq(schema.shopScrapeInfo.shop, shop.id),
+                where: eq(schema.shopScrapeInfo.shopId, shop.id),
             });
 
         const extensionsDiff: ExtensionDiff[] = [];
         if (resultCurrentExtensions) {
-            const currentExtensions = JSON.parse(
-                resultCurrentExtensions.extensions,
-            );
-
-            for (const oldExtension of currentExtensions) {
+            for (const oldExtension of resultCurrentExtensions.extensions) {
                 let exists = false;
 
                 for (const newExtension of extensions) {
@@ -480,7 +484,7 @@ export class ShopScrape implements DurableObject {
             for (const newExtension of extensions) {
                 let exists = false;
 
-                for (const oldExtension of currentExtensions) {
+                for (const oldExtension of resultCurrentExtensions.extensions) {
                     if (oldExtension.name === newExtension.name) {
                         exists = true;
                     }
@@ -506,8 +510,8 @@ export class ShopScrape implements DurableObject {
             to?: string;
         } = {};
 
-        if (shop.shopware_version !== responses.config.body.version) {
-            shopUpdate.from = shop.shopware_version;
+        if (shop.shopwareVersion !== responses.config.body.version) {
+            shopUpdate.from = shop.shopwareVersion;
             shopUpdate.to = responses.config.body.version;
             shopUpdate.date = new Date().toISOString();
         }
@@ -515,7 +519,7 @@ export class ShopScrape implements DurableObject {
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         let queue = null;
-        if (versionCompare(shop.shopware_version, '6.4.7.0') < 0) {
+        if (versionCompare(shop.shopwareVersion, '6.4.7.0') < 0) {
             queue = responses.queue.body.data.filter(
                 (entry: ShopwareQueue) => entry.size > 0,
             );
@@ -542,9 +546,9 @@ export class ShopScrape implements DurableObject {
             .update(schema.shop)
             .set({
                 status: checkerResult.status,
-                shopware_version: responses.config.body.version,
+                shopwareVersion: responses.config.body.version,
                 favicon: favicon,
-                last_scraped_error: null,
+                lastScrapedError: null,
             })
             .where(eq(schema.shop.id, shop.id))
             .execute();
@@ -552,16 +556,17 @@ export class ShopScrape implements DurableObject {
         // delete
         await con
             .delete(schema.shopScrapeInfo)
-            .where(eq(schema.shopScrapeInfo.shop, shop.id))
+            .where(eq(schema.shopScrapeInfo.shopId, shop.id))
             .execute();
+
         await con.insert(schema.shopScrapeInfo).values({
-            shop: shop.id,
-            extensions: JSON.stringify(input.extensions),
-            scheduled_task: JSON.stringify(input.scheduledTasks),
-            queue_info: JSON.stringify(input.queueInfo),
-            cache_info: JSON.stringify(input.cacheInfo),
-            checks: JSON.stringify(checkerResult.checks),
-            created_at: new Date().toISOString(),
+            shopId: shop.id,
+            extensions: input.extensions,
+            scheduledTask: input.scheduledTasks,
+            queueInfo: input.queueInfo,
+            cacheInfo: input.cacheInfo,
+            checks: checkerResult.checks,
+            createdAt: new Date(),
         });
 
         const hasShopUpdate = Object.keys(shopUpdate).length !== 0;
@@ -573,11 +578,11 @@ export class ShopScrape implements DurableObject {
             await con
                 .insert(schema.shopChangelog)
                 .values({
-                    shop_id: shop.id,
-                    extensions: JSON.stringify(extensionsDiff),
-                    old_shopware_version: oldShopwareVersion,
-                    new_shopware_version: newShopwareVersion,
-                    date: new Date().toISOString(),
+                    shopId: shop.id,
+                    extensions: extensionsDiff,
+                    oldShopwareVersion: oldShopwareVersion,
+                    newShopwareVersion: newShopwareVersion,
+                    date: new Date(),
                 })
                 .execute();
         }
@@ -585,7 +590,7 @@ export class ShopScrape implements DurableObject {
         if (hasShopUpdate) {
             await con
                 .update(schema.shop)
-                .set({ last_updated: new Date().toISOString() })
+                .set({ lastUpdated: new Date() })
                 .where(eq(schema.shop.id, shop.id))
                 .execute();
         }

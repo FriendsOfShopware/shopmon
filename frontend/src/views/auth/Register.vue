@@ -8,7 +8,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
-    username: Yup.string().required('Username is required'),
+    displayName: Yup.string().required('Display Name is required'),
     email: Yup.string().required('Email is required'),
     password: Yup.string()
         .required('Password is required')
@@ -39,14 +39,14 @@ async function onSubmit(values: any) {
   >
     <div class="mb-2">
       <Field
-        name="username"
-        placeholder="Username"
+        name="displayName"
+        placeholder="Display Name"
         type="text"
         class="field"
-        :class="{ 'is-invalid': errors.username }"
+        :class="{ 'is-invalid': errors.displayName }"
       />
       <div class="text-red-700">
-        {{ errors.username }}
+        {{ errors.displayName }}
       </div>
     </div>
     <div class="mb-2">

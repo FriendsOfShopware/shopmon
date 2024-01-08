@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
     "module": "esnext",
     "target": "esnext",
     "lib": [
@@ -10,6 +9,7 @@
     "strict": true,
     "preserveConstEnums": true,
     "moduleResolution": "node",
+    "skipLibCheck": true,
     "sourceMap": true,
     "esModuleInterop": true,
     "types": [
@@ -18,8 +18,7 @@
   },
   "include": [
     "types",
-    "src",
-    "workers"
+    "src"
   ],
   "exclude": [
     "node_modules",

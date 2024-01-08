@@ -120,7 +120,7 @@ async function onRemoveMember(userId: number) {
       </div>
       <div class="border-t border-gray-200 dark:border-neutral-700">
         <DataTable
-          :labels="{ email: { name: 'Email' }, username: { name: 'Username' }, actions: { name: '', class: 'text-right' } }"
+          :labels="{ email: { name: 'Email' }, displayName: { name: 'Display Name' }, actions: { name: '', class: 'text-right' } }"
           :data="teamStore.members">
           <template #cell(actions)="{ item }">
             <button type="button"

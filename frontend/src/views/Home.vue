@@ -14,9 +14,9 @@ import { formatDate, formatDateTime } from '@/helpers/formatter';
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-const teams = user.value?.teams.map(team => ({
-    ...team,
-    initials: team.name.substring(0, 2)
+const teams = user.value?.organizations.map(organization => ({
+    ...organization,
+    initials: organization.name.substring(0, 2)
 }));
 
 const shopStore = useShopStore();

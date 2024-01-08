@@ -13,17 +13,17 @@ async function create(
     ownerId: number,
 ): Promise<string> {
     const teamInsertResult = await con
-        .insert(schema.team)
+        .insert(schema.organization)
         .values({
             name,
-            owner_id: ownerId,
-            created_at: new Date().toISOString(),
+            ownerId: ownerId,
+            createdAt: new Date(),
         })
         .execute();
 
-    await con.insert(schema.userToTeam).values({
-        team_id: teamInsertResult.meta.last_row_id,
-        user_id: ownerId,
+    await con.insert(schema.userToOrganization).values({
+        organizationId: teamInsertResult.meta.last_row_id,
+        userId: ownerId,
     });
 
     return teamInsertResult.meta.last_row_id.toString();
@@ -36,15 +36,15 @@ async function listMembers(
     const result = await con
         .select({
             id: schema.user.id,
-            username: schema.user.username,
+            displayName: schema.user.displayName,
             email: schema.user.email,
         })
         .from(schema.user)
         .innerJoin(
-            schema.userToTeam,
-            eq(schema.userToTeam.user_id, schema.user.id),
+            schema.userToOrganization,
+            eq(schema.userToOrganization.userId, schema.user.id),
         )
-        .where(eq(schema.userToTeam.team_id, teamId))
+        .where(eq(schema.userToOrganization.organizationId, teamId))
         .all();
 
     return result as TeamMember[];
@@ -62,10 +62,10 @@ async function addMember(
     }
 
     await con
-        .insert(schema.userToTeam)
+        .insert(schema.userToOrganization)
         .values({
-            team_id: teamId,
-            user_id: exists,
+            organizationId: teamId,
+            userId: exists,
         })
         .execute();
 }
@@ -75,27 +75,27 @@ async function removeMember(
     teamId: number,
     userId: number,
 ): Promise<void> {
-    const ownerTeam = await con.query.team.findFirst({
+    const ownerTeam = await con.query.organization.findFirst({
         columns: {
-            owner_id: true,
+            ownerId: true,
         },
-        where: eq(schema.team.id, userId),
+        where: eq(schema.organization.id, userId),
     });
 
     if (ownerTeam === undefined) {
-        throw new Error('Team not found');
+        throw new Error('Organization not found');
     }
 
-    if (ownerTeam.owner_id === userId) {
+    if (ownerTeam.ownerId === userId) {
         throw new Error('Cannot remove owner from team');
     }
 
     await con
-        .delete(schema.userToTeam)
+        .delete(schema.userToOrganization)
         .where(
             and(
-                eq(schema.userToTeam.team_id, teamId),
-                eq(schema.userToTeam.user_id, userId),
+                eq(schema.userToOrganization.organizationId, teamId),
+                eq(schema.userToOrganization.userId, userId),
             ),
         )
         .execute();
@@ -106,7 +106,7 @@ async function deleteById(con: Drizzle, teamId: number): Promise<void> {
         columns: {
             id: true,
         },
-        where: eq(schema.shop.team_id, teamId),
+        where: eq(schema.shop.organizationId, teamId),
     });
 
     const shopIds = shops.map((shop) => shop.id);
@@ -114,25 +114,25 @@ async function deleteById(con: Drizzle, teamId: number): Promise<void> {
     // Delete shops associated with team
     await con
         .delete(schema.shop)
-        .where(eq(schema.shop.team_id, teamId))
+        .where(eq(schema.shop.organizationId, teamId))
         .execute();
 
     if (shopIds.length > 0) {
         await con
             .delete(schema.shopScrapeInfo)
-            .where(inArray(schema.shopScrapeInfo.shop, shopIds))
+            .where(inArray(schema.shopScrapeInfo.shopId, shopIds))
             .execute();
     }
 
     // Delete team
     await con
-        .delete(schema.team)
-        .where(eq(schema.team.id, teamId))
+        .delete(schema.organization)
+        .where(eq(schema.organization.id, teamId))
         .execute();
 
     await con
-        .delete(schema.userToTeam)
-        .where(eq(schema.userToTeam.team_id, teamId))
+        .delete(schema.userToOrganization)
+        .where(eq(schema.userToOrganization.organizationId, teamId))
         .execute();
 }
 
@@ -142,11 +142,11 @@ async function update(
     name: string,
 ): Promise<void> {
     await con
-        .update(schema.team)
+        .update(schema.organization)
         .set({
             name,
         })
-        .where(eq(schema.team.id, teamId))
+        .where(eq(schema.organization.id, teamId))
         .execute();
 }
 
@@ -157,4 +157,4 @@ export default {
     removeMember,
     deleteById,
     update,
-}
+};

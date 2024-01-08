@@ -1,15 +1,10 @@
 import { HttpClient } from '@friendsofshopware/app-server-sdk';
-import {
-    CacheInfo,
-    Extension,
-    QueueInfo,
-    ScheduledTask,
-} from '../../../../frontend/src/types/shop';
 import env from './checks/env';
 import frosh_tools from './checks/frosh_tools';
 import security from './checks/security';
 import task from './checks/task';
 import worker from './checks/worker';
+import { schema } from '../../db';
 
 enum SHOP_STATUS {
     GREEN = 'green',
@@ -18,16 +13,16 @@ enum SHOP_STATUS {
 }
 
 export interface CheckerInput {
-    extensions: Extension[];
+    extensions: typeof schema.shopScrapeInfo.$inferInsert.extensions;
     config: {
         version: string;
         adminWorker: {
             enableAdminWorker: boolean;
         };
     };
-    scheduledTasks: ScheduledTask[];
-    queueInfo: QueueInfo[];
-    cacheInfo: CacheInfo;
+    scheduledTasks: typeof schema.shopScrapeInfo.$inferInsert.scheduledTask;
+    queueInfo: typeof schema.shopScrapeInfo.$inferInsert.queueInfo;
+    cacheInfo: typeof schema.shopScrapeInfo.$inferInsert.cacheInfo;
     favicon: string | null;
     client: HttpClient;
     ignores: string[];

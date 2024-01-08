@@ -14,7 +14,7 @@ const authStore = useAuthStore();
 const alertStore = useAlertStore();
 
 const user = {
-  username: authStore.user?.username,
+  displayName: authStore.user?.displayName,
   email: authStore.user?.email,
 }
 
@@ -23,7 +23,7 @@ const showAccountDeletionModal = ref(false)
 const schema = Yup.object().shape({
   currentPassword: Yup.string().required('Current password is required'),
   email: Yup.string().email(),
-  username: Yup.string().min(5, 'Username must be at least 5 characters'),
+  displayName: Yup.string().min(5, 'Display Name must be at least 5 characters'),
   newPassword: Yup.string()
     .transform((x) => (x === '' ? undefined : x))
     .min(8, 'Password must be at least 8 characters'),
@@ -66,12 +66,12 @@ async function deleteUser() {
           </div>
 
           <div class="col-span-6">
-            <label for="username" class="block text-sm font-medium mb-1">Username</label>
-            <Field id="username" type="text" name="username" autocomplete="username"
+            <label for="displayName" class="block text-sm font-medium mb-1">displayName</label>
+            <Field id="displayName" type="text" name="displayName" autocomplete="name"
               class="field"
-              :class="{ 'is-invalid': errors.username }" />
+              :class="{ 'is-invalid': errors.displayName }" />
             <div class="text-red-700">
-              {{ errors.username }}
+              {{ errors.displayName }}
             </div>
           </div>
 

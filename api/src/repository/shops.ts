@@ -1,4 +1,3 @@
-import { NotificationCreation } from '../../../frontend/src/types/notification';
 import { UserSocketHelper } from '../object/UserSocket';
 import Users from './users';
 import { sendAlert } from '../mail/mail';
@@ -28,7 +27,7 @@ export interface Shop {
 
 export interface User {
     id: number;
-    username: string;
+    displayName: string;
     email: string;
 }
 
@@ -39,13 +38,13 @@ async function createShop(
     const result = await con
         .insert(schema.shop)
         .values({
-            team_id: params.team_id,
+            organizationId: params.team_id,
             name: params.name,
             url: params.shop_url,
-            client_id: params.client_id,
-            client_secret: params.client_secret,
-            created_at: new Date().toISOString(),
-            shopware_version: params.version,
+            clientId: params.client_id,
+            clientSecret: params.client_secret,
+            createdAt: new Date(),
+            shopwareVersion: params.version,
         })
         .execute();
 
@@ -56,30 +55,33 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
     await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
     await con
         .delete(schema.shopScrapeInfo)
-        .where(eq(schema.shopScrapeInfo.shop, id))
+        .where(eq(schema.shopScrapeInfo.shopId, id))
         .execute();
 }
 
 async function getUsersOfShop(con: Drizzle, shopId: number) {
     const result = await con
         .select({
-            id: schema.userToTeam.user_id,
-            username: schema.user.username,
+            id: schema.userToOrganization.userId,
+            displayName: schema.user.displayName,
             email: schema.user.email,
         })
-        .from(schema.userToTeam)
+        .from(schema.organization)
         .innerJoin(
             schema.shop,
-            eq(schema.shop.team_id, schema.userToTeam.team_id),
+            eq(
+                schema.shop.organizationId,
+                schema.userToOrganization.organizationId,
+            ),
         )
         .innerJoin(
             schema.user,
-            eq(schema.user.id, schema.userToTeam.user_id),
+            eq(schema.user.id, schema.userToOrganization.userId),
         )
         .where(eq(schema.shop.id, shopId))
         .all();
 
-    return result as User[];
+    return result;
 }
 
 async function notify(
@@ -87,7 +89,10 @@ async function notify(
     namespace: DurableObjectNamespace,
     shopId: number,
     key: string,
-    notification: NotificationCreation,
+    notification: Omit<
+        typeof schema.userNotification.$inferInsert,
+        'createdAt' | 'key' | 'userId'
+    >,
 ): Promise<void> {
     const users = await getUsersOfShop(con, shopId);
 
@@ -99,13 +104,9 @@ async function notify(
             notification,
         );
 
-        await UserSocketHelper.sendNotification(
-            namespace,
-            user.id.toString(),
-            {
-                notification: createdNotification,
-            },
-        );
+        await UserSocketHelper.sendNotification(namespace, user.id, {
+            notification: createdNotification,
+        });
     }
 }
 
@@ -143,10 +144,10 @@ async function alert(
     }
 }
 
-export default  {
+export default {
     createShop,
     deleteShop,
     getUsersOfShop,
     notify,
     alert,
-}
+};

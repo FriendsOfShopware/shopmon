@@ -12,7 +12,7 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     return next({
         ctx: {
             user: ctx.user,
-        }
+        },
     });
 });
 
@@ -20,11 +20,11 @@ export const organizationMiddleware = experimental_standaloneMiddleware<{
     input: { orgId: number };
     ctx: context;
 }>().create(async ({ ctx, input, next }) => {
-    const result = await ctx.drizzle.query.userToTeam.findFirst({
+    const result = await ctx.drizzle.query.userToOrganization.findFirst({
         columns: {
-            user_id: true,
+            userId: true,
         },
-        where: eq(schema.userToTeam.team_id, input.orgId),
+        where: eq(schema.userToOrganization.organizationId, input.orgId),
     });
 
     if (!result) {
@@ -40,10 +40,10 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
 }>().create(async ({ ctx, input, next }) => {
     const result = await ctx.drizzle
         .select({
-            ownerId: schema.team.owner_id,
+            ownerId: schema.organization.ownerId,
         })
-        .from(schema.team)
-        .where(eq(schema.team.id, input.orgId))
+        .from(schema.organization)
+        .where(eq(schema.organization.id, input.orgId))
         .get();
 
     if (!result || result.ownerId !== ctx.user) {
@@ -59,7 +59,7 @@ export const shopMiddleware = experimental_standaloneMiddleware<{
 }>().create(async ({ ctx, input, next }) => {
     const result = await ctx.drizzle
         .select({
-            orgId: schema.shop.team_id,
+            orgId: schema.shop.organizationId,
         })
         .from(schema.shop)
         .where(eq(schema.shop.id, input.shopId))

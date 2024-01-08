@@ -5,7 +5,7 @@ export type WebsocketMessage = {
 
 export type ShopUpdate = {
     id: number;
-    team_id: number;
+    organizationId: number;
 }
 
 export type Notification = {
@@ -15,7 +15,7 @@ export type Notification = {
     level: 'error'|'warning';
     title: string;
     message: string;
-    link: { name: string, params?: Record<string, string> }|false
+    link: { name: string, params?: Record<string, string> }|null
 }
 
 export type NotificationCreation = Omit<Notification, 'id' | 'read' | 'created_at'>

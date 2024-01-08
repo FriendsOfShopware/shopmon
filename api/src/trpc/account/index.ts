@@ -9,22 +9,6 @@ import Users from '../../repository/users';
 import bcryptjs from 'bcryptjs';
 import { notificationRouter } from './notification';
 
-type CurrentUser = {
-    id: number;
-    username: string;
-    email: string;
-    created_at: string;
-    avatar: string;
-    teams: {
-        id: number;
-        name: string;
-        created_at: string;
-        owner_id: number;
-        shopCount: number;
-        memberCount: number;
-    }[];
-};
-
 interface Extension {
     name: string;
     label: string;
@@ -67,9 +51,9 @@ export const accountRouter = router({
             const user = await ctx.drizzle
                 .select({
                     id: schema.user.id,
-                    username: schema.user.username,
+                    displayName: schema.user.displayName,
                     email: schema.user.email,
-                    created_at: schema.user.created_at,
+                    createdAt: schema.user.createdAt,
                 })
                 .from(schema.user)
                 .where(eq(schema.user.id, ctx.user))
@@ -86,26 +70,27 @@ export const accountRouter = router({
 
             const avatar = `https://seccdn.libravatar.org/avatar/${emailMd5}?d=identicon`;
 
-            const teamResult = await ctx.drizzle
+            const organizations = await ctx.drizzle
                 .select({
-                    id: schema.team.id,
-                    name: schema.team.name,
-                    created_at: schema.team.created_at,
-                    owner_id: schema.team.owner_id,
-                    shopCount: sql<number>`(SELECT COUNT(1) FROM shop WHERE team_id = ${schema.team.id})`,
-                    memberCount: sql<number>`(SELECT COUNT(1) FROM user_to_team WHERE team_id = ${schema.team.id})`,
+                    id: schema.organization.id,
+                    name: schema.organization.name,
+                    createdAt: schema.organization.createdAt,
+                    ownerId: schema.organization.ownerId,
+                    shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
+                    memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
                 })
-                .from(schema.team)
+                .from(schema.organization)
                 .innerJoin(
-                    schema.userToTeam,
-                    eq(schema.userToTeam.team_id, schema.team.id),
+                    schema.userToOrganization,
+                    eq(
+                        schema.userToOrganization.organizationId,
+                        schema.organization.id,
+                    ),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user))
                 .all();
 
-            const result: CurrentUser = { ...user, avatar, teams: teamResult };
-
-            return result;
+            return { ...user, avatar, organizations };
         }),
     updateCurrentUser: publicProcedure
         .use(loggedInUserMiddleware)
@@ -114,7 +99,7 @@ export const accountRouter = router({
                 currentPassword: z.string().min(8),
                 newPassword: z.string().min(8).optional(),
                 email: z.string().email().optional(),
-                username: z.string().min(5).optional(),
+                displayName: z.string().min(5).optional(),
             }),
         )
         .mutation(async ({ ctx, input }) => {
@@ -142,7 +127,7 @@ export const accountRouter = router({
 
             const updates: {
                 password?: string;
-                username?: string;
+                displayName?: string;
                 email?: string;
             } = {};
 
@@ -157,8 +142,8 @@ export const accountRouter = router({
                 updates.email = input.email;
             }
 
-            if (input.username !== undefined) {
-                updates.username = input.username;
+            if (input.displayName !== undefined) {
+                updates.displayName = input.displayName;
             }
 
             if (Object.keys(updates).length !== 0) {
@@ -189,20 +174,26 @@ export const accountRouter = router({
                     status: schema.shop.status,
                     url: schema.shop.url,
                     favicon: schema.shop.favicon,
-                    created_at: schema.shop.created_at,
-                    last_scraped_at: schema.shop.last_scraped_at,
-                    shopware_version: schema.shop.shopware_version,
-                    last_updated: schema.shop.last_updated,
-                    team_id: schema.shop.team_id,
-                    team_name: schema.team.name,
+                    createdAt: schema.shop.createdAt,
+                    lastScrapedAt: schema.shop.lastScrapedAt,
+                    shopwareVersion: schema.shop.shopwareVersion,
+                    lastUpdated: schema.shop.lastUpdated,
+                    organizationId: schema.shop.organizationId,
+                    organizationName: schema.organization.name,
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToTeam,
-                    eq(schema.userToTeam.team_id, schema.shop.team_id),
+                    schema.userToOrganization,
+                    eq(
+                        schema.userToOrganization.organizationId,
+                        schema.shop.organizationId,
+                    ),
                 )
-                .innerJoin(schema.team, eq(schema.team.id, schema.shop.team_id))
-                .where(eq(schema.userToTeam.user_id, ctx.user))
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
+                )
+                .where(eq(schema.userToOrganization.userId, ctx.user))
                 .orderBy(schema.shop.name)
                 .all();
         }),
@@ -212,32 +203,31 @@ export const accountRouter = router({
             const result = await ctx.drizzle
                 .select({
                     id: schema.shopChangelog.id,
-                    shop_id: schema.shopChangelog.shop_id,
+                    shop_id: schema.shopChangelog.shopId,
                     shop_name: schema.shop.name,
                     shop_favicon: schema.shop.favicon,
                     extensions: schema.shopChangelog.extensions,
                     old_shopware_version:
-                        schema.shopChangelog.old_shopware_version,
+                        schema.shopChangelog.oldShopwareVersion,
                     new_shopware_version:
-                        schema.shopChangelog.new_shopware_version,
+                        schema.shopChangelog.newShopwareVersion,
                     date: schema.shopChangelog.date,
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToTeam,
-                    eq(schema.userToTeam.team_id, schema.shop.team_id),
+                    schema.userToOrganization,
+                    eq(
+                        schema.userToOrganization.organizationId,
+                        schema.shop.organizationId,
+                    ),
                 )
                 .innerJoin(
                     schema.shopChangelog,
-                    eq(schema.shopChangelog.shop_id, schema.shop.id),
+                    eq(schema.shopChangelog.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user))
                 .limit(10)
                 .all();
-
-            for (const row of result) {
-                row.extensions = JSON.parse(row.extensions || '{}');
-            }
 
             return result;
         }),
@@ -248,31 +238,30 @@ export const accountRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
-                    team_id: schema.shop.team_id,
-                    shopware_version: schema.shop.shopware_version,
+                    team_id: schema.shop.organizationId,
+                    shopware_version: schema.shop.shopwareVersion,
                     extensions: schema.shopScrapeInfo.extensions,
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToTeam,
-                    eq(schema.userToTeam.team_id, schema.shop.team_id),
+                    schema.userToOrganization,
+                    eq(
+                        schema.userToOrganization.organizationId,
+                        schema.shop.organizationId,
+                    ),
                 )
                 .innerJoin(
                     schema.shopScrapeInfo,
-                    eq(schema.shopScrapeInfo.shop, schema.shop.id),
+                    eq(schema.shopScrapeInfo.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user))
                 .orderBy(schema.shop.name)
                 .all();
 
             const json = {} as { [key: string]: UserExtension };
 
             for (const row of result) {
-                const extensions = JSON.parse(
-                    row.extensions || '{}',
-                ) as Extension[];
-
-                for (const extension of extensions) {
+                for (const extension of row.extensions) {
                     if (json[extension.name] === undefined) {
                         json[extension.name] = extension as UserExtension;
                         json[extension.name].shops = {};
@@ -290,6 +279,6 @@ export const accountRouter = router({
                 }
             }
 
-            return result;
+            return Object.values(json);
         }),
 });

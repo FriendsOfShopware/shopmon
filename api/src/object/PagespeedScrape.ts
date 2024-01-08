@@ -8,8 +8,8 @@ interface SQLShop {
     id: number;
     name: string;
     url: string;
-    team_id: number;
-    shop_image: string | null;
+    organizationId: number;
+    shopImage: string | null;
 }
 
 const SECONDS = 1000;
@@ -72,7 +72,7 @@ export class PagespeedScrape implements DurableObject {
                 id: true,
                 name: true,
                 url: true,
-                team_id: true,
+                organizationId: true,
             },
             where: eq(schema.shop.id, parseInt(id)),
         });
@@ -115,7 +115,7 @@ export class PagespeedScrape implements DurableObject {
                             name: 'account.shops.detail',
                             params: {
                                 shopId: shop.id.toString(),
-                                teamId: shop.team_id.toString(),
+                                teamId: shop.organizationId.toString(),
                             },
                         },
                     },
@@ -136,7 +136,7 @@ export class PagespeedScrape implements DurableObject {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            teamId: shop.team_id.toString(),
+                            teamId: shop.organizationId.toString(),
                         },
                     },
                 },
@@ -172,31 +172,31 @@ export class PagespeedScrape implements DurableObject {
         await this.env.FILES.put(fileName, base64ToArrayBuffer(pageScreenshot));
 
         // Delete the previous image
-        if (shop.shop_image) {
-            await this.env.FILES.delete(shop.shop_image);
+        if (shop.shopImage) {
+            await this.env.FILES.delete(shop.shopImage);
         }
 
         await con
             .insert(schema.shopPageSpeed)
             .values({
-                shop_id: shop.id,
+                shopId: shop.id,
                 performance:
                     pagespeed.lighthouseResult.categories.performance.score *
                     100,
                 accessibility:
                     pagespeed.lighthouseResult.categories.accessibility.score *
                     100,
-                best_practices:
+                bestPractices:
                     pagespeed.lighthouseResult.categories['best-practices']
                         .score * 100,
                 seo: pagespeed.lighthouseResult.categories.seo.score * 100,
-                created_at: new Date().toISOString(),
+                createdAt: new Date(),
             })
             .execute();
 
         await con
             .update(schema.shop)
-            .set({ shop_image: fileName })
+            .set({ shopImage: fileName })
             .where(eq(schema.shop.id, shop.id))
             .execute();
     }

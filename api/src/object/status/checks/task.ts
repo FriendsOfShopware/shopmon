@@ -1,4 +1,4 @@
-import type { ScheduledTask } from '../../../../../frontend/src/types/shop';
+import { ScheduledTask } from '../../../types';
 import { Checker, CheckerInput, CheckerOutput } from '../registery';
 
 export default class implements Checker {

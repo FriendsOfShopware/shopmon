@@ -1,5 +1,13 @@
-import { WebsocketMessage } from '../../../frontend/src/types/notification';
+import { schema } from '../db';
 import type { Bindings } from '../router';
+
+type WebsocketMessage = {
+    notification?: typeof schema.userNotification.$inferSelect;
+    shopUpdate?: {
+        id: number;
+        organizationId: number;
+    };
+};
 
 export class UserSocket implements DurableObject {
     state: DurableObjectState;

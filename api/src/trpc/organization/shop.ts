@@ -11,7 +11,11 @@ import { schema } from '../../db';
 import { TRPCError } from '@trpc/server';
 import Shops from '../../repository/shops';
 import { decrypt, encrypt } from '../../crypto';
-import { HttpClient, HttpClientResponse, SimpleShop } from '@friendsofshopware/app-server-sdk';
+import {
+    HttpClient,
+    HttpClientResponse,
+    SimpleShop,
+} from '@friendsofshopware/app-server-sdk';
 
 export const shopRouter = router({
     list: publicProcedure
@@ -29,13 +33,13 @@ export const shopRouter = router({
                     name: true,
                     url: true,
                     favicon: true,
-                    created_at: true,
-                    last_scraped_at: true,
+                    createdAt: true,
+                    lastScrapedAt: true,
                     status: true,
-                    last_scraped_error: true,
-                    shopware_version: true,
+                    lastScrapedError: true,
+                    shopwareVersion: true,
                 },
-                where: eq(schema.shop.team_id, ctx.user),
+                where: eq(schema.shop.organizationId, ctx.user),
             });
 
             return result === undefined ? [] : result;
@@ -57,26 +61,29 @@ export const shopRouter = router({
                     name: schema.shop.name,
                     url: schema.shop.url,
                     status: schema.shop.status,
-                    created_at: schema.shop.created_at,
-                    shopware_version: schema.shop.shopware_version,
-                    last_scraped_at: schema.shop.last_scraped_at,
-                    last_scraped_error: schema.shop.last_scraped_error,
-                    last_updated: schema.shop.last_updated,
+                    createdAt: schema.shop.createdAt,
+                    shopware_version: schema.shop.shopwareVersion,
+                    lastScrapedAt: schema.shop.lastScrapedAt,
+                    lastScrapedError: schema.shop.lastScrapedError,
+                    lastUpdated: schema.shop.lastUpdated,
                     ignores: schema.shop.ignores,
-                    shop_image: schema.shop.shop_image,
+                    shopImage: schema.shop.shopImage,
                     extensions: schema.shopScrapeInfo.extensions,
-                    scheduled_task: schema.shopScrapeInfo.scheduled_task,
-                    queue_info: schema.shopScrapeInfo.queue_info,
-                    cache_info: schema.shopScrapeInfo.cache_info,
+                    scheduledTask: schema.shopScrapeInfo.scheduledTask,
+                    queueInfo: schema.shopScrapeInfo.queueInfo,
+                    cacheInfo: schema.shopScrapeInfo.cacheInfo,
                     checks: schema.shopScrapeInfo.checks,
-                    team_id: schema.shop.team_id,
-                    team_name: schema.team.name,
+                    organizationId: schema.shop.organizationId,
+                    organizationName: schema.organization.name,
                 })
                 .from(schema.shop)
-                .innerJoin(schema.team, eq(schema.team.id, schema.shop.team_id))
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
+                )
                 .leftJoin(
                     schema.shopScrapeInfo,
-                    eq(schema.shopScrapeInfo.shop, schema.shop.id),
+                    eq(schema.shopScrapeInfo.shopId, schema.shop.id),
                 )
                 .where(eq(schema.shop.id, input.shopId))
                 .get();
@@ -89,39 +96,17 @@ export const shopRouter = router({
             }
 
             const pageSpeed = await ctx.drizzle.query.shopPageSpeed.findMany({
-                where: eq(schema.shopPageSpeed.shop_id, input.shopId),
-                orderBy: [desc(schema.shopPageSpeed.created_at)],
+                where: eq(schema.shopPageSpeed.shopId, input.shopId),
+                orderBy: [desc(schema.shopPageSpeed.createdAt)],
             });
 
             const shopChangelog =
                 await ctx.drizzle.query.shopChangelog.findMany({
-                    where: eq(schema.shopChangelog.shop_id, input.shopId),
+                    where: eq(schema.shopChangelog.shopId, input.shopId),
                     orderBy: [desc(schema.shopChangelog.date)],
                 });
 
-            for (const row of shopChangelog) {
-                row.extensions = JSON.parse(row.extensions);
-            }
-
-            shop.extensions = JSON.parse(shop.extensions || '{}');
-            shop.scheduled_task = JSON.parse(shop.scheduled_task || '{}');
-            shop.queue_info = JSON.parse(shop.queue_info || '{}');
-            shop.cache_info = JSON.parse(shop.cache_info || '{}');
-            shop.checks = JSON.parse(shop.checks || '{}');
-            shop.ignores = JSON.parse(shop.ignores || '[]');
-
-            type AdditionalShopInfo = {
-                pagespeed: typeof pageSpeed;
-                changelog: typeof shopChangelog;
-            };
-
-            const result: typeof shop & AdditionalShopInfo = {
-                ...shop,
-                pagespeed: pageSpeed,
-                changelog: shopChangelog,
-            };
-
-            return result;
+            return { ...shop, pageSpeed: pageSpeed, changelog: shopChangelog };
         }),
     create: publicProcedure
         .input(
@@ -245,20 +230,20 @@ export const shopRouter = router({
             if (input.ignores) {
                 await ctx.drizzle
                     .update(schema.shop)
-                    .set({ ignores: JSON.stringify(input.ignores) })
+                    .set({ ignores: input.ignores })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }
 
             if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const team = await ctx.drizzle.query.team.findFirst({
+                const team = await ctx.drizzle.query.organization.findFirst({
                     columns: {
                         id: true,
-                        owner_id: true,
+                        ownerId: true,
                     },
                     where: and(
-                        eq(schema.team.id, input.newOrgId),
-                        eq(schema.team.owner_id, ctx.user),
+                        eq(schema.organization.id, input.newOrgId),
+                        eq(schema.organization.ownerId, ctx.user),
                     ),
                 });
 
@@ -269,7 +254,7 @@ export const shopRouter = router({
                     });
                 }
 
-                if (team.owner_id !== ctx.user) {
+                if (team.ownerId !== ctx.user) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'You are not the owner of this team',
@@ -278,7 +263,7 @@ export const shopRouter = router({
 
                 await ctx.drizzle
                     .update(schema.shop)
-                    .set({ team_id: input.newOrgId })
+                    .set({ organizationId: input.newOrgId })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }
@@ -308,8 +293,8 @@ export const shopRouter = router({
                     .update(schema.shop)
                     .set({
                         url: input.shopUrl,
-                        client_id: input.clientId,
-                        client_secret: clientSecret,
+                        clientId: input.clientId,
+                        clientSecret: clientSecret,
                     })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
@@ -363,8 +348,8 @@ export const shopRouter = router({
             const shopData = await ctx.drizzle.query.shop.findFirst({
                 columns: {
                     url: true,
-                    client_id: true,
-                    client_secret: true,
+                    clientId: true,
+                    clientSecret: true,
                 },
                 where: eq(schema.shop.id, input.shopId),
             });
@@ -378,10 +363,10 @@ export const shopRouter = router({
 
             const clientSecret = await decrypt(
                 ctx.env.APP_SECRET,
-                shopData.client_secret,
+                shopData.clientSecret,
             );
             const shop = new SimpleShop('', shopData.url, '');
-            shop.setShopCredentials(shopData.client_id, clientSecret);
+            shop.setShopCredentials(shopData.clientId, clientSecret);
             const client = new HttpClient(shop);
 
             await client.delete('/_action/cache');
@@ -403,8 +388,8 @@ export const shopRouter = router({
             const shopData = await ctx.drizzle.query.shop.findFirst({
                 columns: {
                     url: true,
-                    client_id: true,
-                    client_secret: true,
+                    clientId: true,
+                    clientSecret: true,
                 },
                 where: eq(schema.shop.id, input.shopId),
             });
@@ -418,10 +403,10 @@ export const shopRouter = router({
 
             const clientSecret = await decrypt(
                 ctx.env.APP_SECRET,
-                shopData.client_secret,
+                shopData.clientSecret,
             );
             const shop = new SimpleShop('', shopData.url, '');
-            shop.setShopCredentials(shopData.client_id, clientSecret);
+            shop.setShopCredentials(shopData.clientId, clientSecret);
             const client = new HttpClient(shop);
 
             const nextExecutionTime: string = new Date().toISOString();
@@ -433,9 +418,9 @@ export const shopRouter = router({
             const scrapeResult =
                 await ctx.drizzle.query.shopScrapeInfo.findFirst({
                     columns: {
-                        scheduled_task: true,
+                        scheduledTask: true,
                     },
-                    where: eq(schema.shopScrapeInfo.shop, input.shopId),
+                    where: eq(schema.shopScrapeInfo.shopId, input.shopId),
                 });
 
             // If there is no scrape result, we don't need to update the scheduled task
@@ -443,11 +428,7 @@ export const shopRouter = router({
                 return true;
             }
 
-            const scheduledTasks = JSON.parse(
-                scrapeResult.scheduled_task || '{}',
-            );
-
-            for (const task of scheduledTasks) {
+            for (const task of scrapeResult.scheduledTask) {
                 if (task.id === input.taskId) {
                     task.status = 'scheduled';
                     task.nextExecutionTime = nextExecutionTime;
@@ -457,8 +438,8 @@ export const shopRouter = router({
 
             await ctx.drizzle
                 .update(schema.shopScrapeInfo)
-                .set({ scheduled_task: JSON.stringify(scheduledTasks) })
-                .where(eq(schema.shopScrapeInfo.shop, input.shopId))
+                .set({ scheduledTask: scrapeResult.scheduledTask })
+                .where(eq(schema.shopScrapeInfo.shopId, input.shopId))
                 .execute();
         }),
 });

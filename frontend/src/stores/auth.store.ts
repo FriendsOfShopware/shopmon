@@ -46,7 +46,7 @@ export const useAuthStore = defineStore('auth', {
             await useNotificationStore().loadNotifications();
         },
 
-        async register(user: { email: string, password: string, username: string }) {
+        async register(user: { email: string, password: string, displayName: string }) {
             trpcClient.auth.register.mutate(user);
         },
 
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore('auth', {
             return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
         },
 
-        async updateProfile(info: { username: string, email: string, currentPassword: string, newPassword: string }) {
+        async updateProfile(info: { displayName: string, email: string, currentPassword: string, newPassword: string }) {
             await trpcClient.account.updateCurrentUser.mutate(info);
 
             if (info.newPassword && info.email) {

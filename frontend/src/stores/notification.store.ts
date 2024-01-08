@@ -44,7 +44,7 @@ export const useNotificationStore = defineStore('notification', {
                 if (data.notification) {
                     for (const notification of this.notifications) {
                         if (notification.title === data.notification.title && notification.message === data.notification.message) {
-                            notification.read = 0;
+                            notification.read = false;
                             return;
                         }
                     }
@@ -58,7 +58,7 @@ export const useNotificationStore = defineStore('notification', {
                     const alertStore = useAlertStore();
 
                     if (shopStore.shop?.id === data.shopUpdate.id) {
-                        shopStore.loadShop(shopStore.shop.team_id, data.shopUpdate.id);
+                        shopStore.loadShop(shopStore.shop.organizationId, data.shopUpdate.id);
 
                         alertStore.success('Shop has been updated');
                     }
@@ -77,7 +77,7 @@ export const useNotificationStore = defineStore('notification', {
         async markAllRead() {
             let allRead = true;
             for (const notification of this.notifications) {
-                if (notification.read === 0) {
+                if (notification.read === false) {
                     allRead = false;
                     break;
                 }
@@ -90,7 +90,7 @@ export const useNotificationStore = defineStore('notification', {
             await trpcClient.account.notification.markAllRead.mutate();
 
             for (const notification of this.notifications) {
-                notification.read = 1;
+                notification.read = true;
             }
         },
 

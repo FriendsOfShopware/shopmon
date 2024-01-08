@@ -7,16 +7,8 @@ import { schema } from '../../db';
 export const notificationRouter = router({
     list: publicProcedure.use(loggedInUserMiddleware).query(async ({ ctx }) => {
         const results = await ctx.drizzle.query.userNotification.findMany({
-            where: eq(schema.userNotification.user_id, ctx.user),
+            where: eq(schema.userNotification.userId, ctx.user),
         });
-
-        if (results === undefined) {
-            return [];
-        }
-
-        for (const row of results) {
-            row.link = JSON.parse(row.link);
-        }
 
         return results;
     }),
@@ -30,7 +22,7 @@ export const notificationRouter = router({
                     .where(
                         and(
                             eq(schema.userNotification.id, input),
-                            eq(schema.userNotification.user_id, ctx.user),
+                            eq(schema.userNotification.userId, ctx.user),
                         ),
                     )
                     .execute();
@@ -40,7 +32,7 @@ export const notificationRouter = router({
 
             await ctx.drizzle
                 .delete(schema.userNotification)
-                .where(eq(schema.userNotification.user_id, ctx.user))
+                .where(eq(schema.userNotification.userId, ctx.user))
                 .execute();
 
             return true;
@@ -50,8 +42,8 @@ export const notificationRouter = router({
         .mutation(async ({ ctx }) => {
             await ctx.drizzle
                 .update(schema.userNotification)
-                .set({ read: 1 })
-                .where(eq(schema.userNotification.user_id, ctx.user))
+                .set({ read: true })
+                .where(eq(schema.userNotification.userId, ctx.user))
                 .execute();
         }),
 });
