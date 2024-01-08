@@ -13,5 +13,6 @@
     "files.insertFinalNewline": true,
     "[javascript]": {
         "editor.defaultFormatter": "biomejs.biome"
-    }
+    },
+    "biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome"
 }
