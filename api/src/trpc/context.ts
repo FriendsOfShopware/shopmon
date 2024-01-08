@@ -10,7 +10,7 @@ export type context = {
 };
 
 export function createContext(bindings: Bindings) {
-    return async function ({ req, resHeaders }: FetchCreateContextFnOptions) {
+    return async ({ req }: FetchCreateContextFnOptions) => {
         const auth = req.headers.get('authorization');
 
         let user = null;

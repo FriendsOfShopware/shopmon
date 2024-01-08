@@ -16,7 +16,7 @@ export class UserSocket implements DurableObject {
         const { pathname } = new URL(req.url);
 
         if (pathname === '/api/ws') {
-            if (req.headers.get('Upgrade') != 'websocket') {
+            if (req.headers.get('Upgrade') !== 'websocket') {
                 return new Response('Expected websocket', { status: 400 });
             }
 

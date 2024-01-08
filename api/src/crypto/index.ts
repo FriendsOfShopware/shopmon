@@ -27,7 +27,7 @@ export async function encrypt(key: string, payload: string) {
 
     const buffer = new Uint8Array(encryptedShit);
 
-    return uintToBase64(iv) + ':' + uintToBase64(buffer);
+    return `${uintToBase64(iv)}:${uintToBase64(buffer)}`;
 }
 
 function uintToBase64(uint: Uint8Array) {

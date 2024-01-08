@@ -12,7 +12,7 @@ export default class implements Checker {
             }
         }
 
-        result.success('task.all', `All scheduled tasks are running correctly`);
+        result.success('task.all', 'All scheduled tasks are running correctly');
     }
 }
 

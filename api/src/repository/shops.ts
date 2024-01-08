@@ -89,7 +89,7 @@ export default class Shops {
         key: string,
         notification: NotificationCreation,
     ): Promise<void> {
-        const users = await this.getUsersOfShop(con, shopId);
+        const users = await Shops.getUsersOfShop(con, shopId);
 
         for (const user of users) {
             const createdNotification = await Users.createNotification(
@@ -114,7 +114,7 @@ export default class Shops {
         env: Env,
         alert: ShopAlert,
     ): Promise<void> {
-        const users = await this.getUsersOfShop(con, parseInt(alert.shopId));
+        const users = await Shops.getUsersOfShop(con, parseInt(alert.shopId));
         const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
         const foundAlert = await env.kvStorage.get(alertKey);

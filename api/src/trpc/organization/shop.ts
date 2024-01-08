@@ -35,7 +35,7 @@ export const shopRouter = router({
                     last_scraped_error: true,
                     shopware_version: true,
                 },
-                where: eq(schema.shop.team_id, ctx.user!!),
+                where: eq(schema.shop.team_id, ctx.user!),
             });
 
             return result === undefined ? [] : result;
@@ -266,7 +266,7 @@ export const shopRouter = router({
                     },
                     where: and(
                         eq(schema.team.id, input.newOrgId),
-                        eq(schema.team.owner_id, ctx.user!!),
+                        eq(schema.team.owner_id, ctx.user!),
                     ),
                 });
 
@@ -277,7 +277,7 @@ export const shopRouter = router({
                     });
                 }
 
-                if (team.owner_id !== ctx.user!!) {
+                if (team.owner_id !== ctx.user!) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'You are not the owner of this team',
@@ -340,7 +340,7 @@ export const shopRouter = router({
             );
 
             await obj.fetch(
-                `http://localhost/now?id=${input.shopId.toString()}&userId=${ctx.user!!.toString()}`,
+                `http://localhost/now?id=${input.shopId.toString()}&userId=${ctx.user?.toString()}`,
             );
 
             if (input.pageSpeed) {

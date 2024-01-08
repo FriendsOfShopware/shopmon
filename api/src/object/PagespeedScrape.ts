@@ -39,12 +39,14 @@ export class PagespeedScrape implements DurableObject {
             }
 
             return new Response('OK');
-        } else if (url.pathname === '/now') {
+        }
+        if (url.pathname === '/now') {
             await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
             console.log(`Set alarm for shop ${id} to 5 seconds`);
 
             return new Response('OK');
-        } else if (url.pathname === '/delete') {
+        }
+        if (url.pathname === '/delete') {
             await this.state.storage.deleteAll();
 
             return new Response('OK');

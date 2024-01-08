@@ -72,7 +72,7 @@ export const accountRouter = router({
                     created_at: schema.user.created_at,
                 })
                 .from(schema.user)
-                .where(eq(schema.user.id, ctx.user!!))
+                .where(eq(schema.user.id, ctx.user!))
                 .get();
 
             if (user === undefined) {
@@ -100,7 +100,7 @@ export const accountRouter = router({
                     schema.userToTeam,
                     eq(schema.userToTeam.team_id, schema.team.id),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user!!))
+                .where(eq(schema.userToTeam.user_id, ctx.user!))
                 .all();
 
             const result: CurrentUser = { ...user, avatar, teams: teamResult };
@@ -123,7 +123,7 @@ export const accountRouter = router({
                     id: true,
                     password: true,
                 },
-                where: eq(schema.user.id, ctx.user!!),
+                where: eq(schema.user.id, ctx.user!),
             });
 
             if (user === undefined) {
@@ -149,23 +149,23 @@ export const accountRouter = router({
             if (input.newPassword !== undefined) {
                 const hash = bcryptjs.hashSync(input.newPassword, 10);
 
-                await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user!!);
-                updates['password'] = hash;
+                await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user!);
+                updates.password = hash;
             }
 
             if (input.email !== undefined) {
-                updates['email'] = input.email;
+                updates.email = input.email;
             }
 
             if (input.username !== undefined) {
-                updates['username'] = input.username;
+                updates.username = input.username;
             }
 
             if (Object.keys(updates).length !== 0) {
                 await ctx.drizzle
                     .update(schema.user)
                     .set(updates)
-                    .where(eq(schema.user.id, ctx.user!!))
+                    .where(eq(schema.user.id, ctx.user!))
                     .execute();
             }
 
@@ -174,8 +174,8 @@ export const accountRouter = router({
     deleteCurrentUser: publicProcedure
         .use(loggedInUserMiddleware)
         .mutation(async ({ ctx }) => {
-            await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user!!);
-            await Users.delete(ctx.drizzle, ctx.user!!);
+            await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user!);
+            await Users.delete(ctx.drizzle, ctx.user!);
 
             return true;
         }),
@@ -202,7 +202,7 @@ export const accountRouter = router({
                     eq(schema.userToTeam.team_id, schema.shop.team_id),
                 )
                 .innerJoin(schema.team, eq(schema.team.id, schema.shop.team_id))
-                .where(eq(schema.userToTeam.user_id, ctx.user!!))
+                .where(eq(schema.userToTeam.user_id, ctx.user!))
                 .orderBy(schema.shop.name)
                 .all();
         }),
@@ -231,7 +231,7 @@ export const accountRouter = router({
                     schema.shopChangelog,
                     eq(schema.shopChangelog.shop_id, schema.shop.id),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user!!))
+                .where(eq(schema.userToTeam.user_id, ctx.user!))
                 .limit(10)
                 .all();
 
@@ -261,7 +261,7 @@ export const accountRouter = router({
                     schema.shopScrapeInfo,
                     eq(schema.shopScrapeInfo.shop, schema.shop.id),
                 )
-                .where(eq(schema.userToTeam.user_id, ctx.user!!))
+                .where(eq(schema.userToTeam.user_id, ctx.user!))
                 .orderBy(schema.shop.name)
                 .all();
 

@@ -5,13 +5,13 @@ export default class implements Checker {
         if (input.config.adminWorker.enableAdminWorker) {
             result.warning(
                 'admin.worker',
-                `Admin-Worker should be disabled`,
+                'Admin-Worker should be disabled',
                 'Shopmon',
                 'https://developer.shopware.com/docs/guides/plugins/plugins/framework/message-queue/add-message-handler#the-admin-worker',
             );
             return;
         }
 
-        result.success('admin.worker', `Admin-Worker is disabled`);
+        result.success('admin.worker', 'Admin-Worker is disabled');
     }
 }

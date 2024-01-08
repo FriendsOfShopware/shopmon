@@ -82,7 +82,8 @@ export class ShopScrape implements DurableObject {
             }
 
             return new Response('OK');
-        } else if (url.pathname === '/now') {
+        }
+        if (url.pathname === '/now') {
             await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
             console.log(`Set alarm for shop ${id} to 5 seconds`);
 
@@ -94,7 +95,8 @@ export class ShopScrape implements DurableObject {
             }
 
             return new Response('OK');
-        } else if (url.pathname === '/delete') {
+        }
+        if (url.pathname === '/delete') {
             await this.state.storage.deleteAll();
 
             return new Response('OK');
@@ -201,9 +203,7 @@ export class ShopScrape implements DurableObject {
                 {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
-                    message:
-                        'Could not connect to shop. Please check your credentials and try again.' +
-                        error,
+                    message: `Could not connect to shop. Please check your credentials and try again.${error}`,
                     link: {
                         name: 'account.shops.detail',
                         params: {
@@ -218,9 +218,7 @@ export class ShopScrape implements DurableObject {
                 key: `shop.update-auth-error.${shop.id}`,
                 shopId: shop.id.toString(),
                 subject: 'Shop Update Error',
-                message:
-                    'The Shop could not be updated. Please check your credentials and try again.' +
-                    error,
+                message: `The Shop could not be updated. Please check your credentials and try again.${error}`,
             });
 
             await con
@@ -264,7 +262,8 @@ export class ShopScrape implements DurableObject {
                 {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
-                    message: `Could not connect to shop. Please check your credentials and try again.`,
+                    message:
+                        'Could not connect to shop. Please check your credentials and try again.',
                     link: {
                         name: 'account.shops.detail',
                         params: {
@@ -367,7 +366,7 @@ export class ShopScrape implements DurableObject {
                             'https://store.shopware.com',
                         );
 
-                        if (storePlugin.latestVersion != extension.version) {
+                        if (storePlugin.latestVersion !== extension.version) {
                             const changelogs: ExtensionChangelog[] = [];
 
                             for (const changelog of storePlugin.changelog) {

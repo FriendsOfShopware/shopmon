@@ -21,7 +21,7 @@ async function sendMail(env: Bindings, mail: MaiLRequest) {
     }
 
     // https://blog.cloudflare.com/sending-email-from-workers-with-mailchannels
-    const response = await fetch(`https://api.mailchannels.net/tx/v1/send`, {
+    const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
         method: 'POST',
         headers: {
             'content-type': 'application/json',

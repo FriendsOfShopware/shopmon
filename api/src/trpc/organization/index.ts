@@ -14,7 +14,7 @@ export const organizationRouter = router({
         .input(z.string())
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
-            return await Teams.create(ctx.drizzle, input, ctx.user!!);
+            return await Teams.create(ctx.drizzle, input, ctx.user!);
         }),
     update: publicProcedure
         .input(
