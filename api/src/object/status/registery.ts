@@ -4,13 +4,18 @@ import {
     Extension,
     QueueInfo,
     ScheduledTask,
-    SHOP_STATUS,
-} from '../../../../shared/shop';
+} from '../../../../frontend/src/types/shop';
 import env from './checks/env';
 import frosh_tools from './checks/frosh_tools';
 import security from './checks/security';
 import task from './checks/task';
 import worker from './checks/worker';
+
+enum SHOP_STATUS {
+    GREEN = 'green',
+    YELLOW = 'yellow',
+    RED = 'red',
+}
 
 export interface CheckerInput {
     extensions: Extension[];
@@ -107,18 +112,16 @@ export interface Checker {
     check(input: CheckerInput, result: CheckerOutput): Promise<void>;
 }
 
-export class CheckerRegistery {
-    static async check(input: CheckerInput) {
-        const result = new CheckerOutput(input.ignores);
+export async function check(input: CheckerInput) {
+    const result = new CheckerOutput(input.ignores);
 
-        await Promise.all([
-            new security().check(input, result),
-            new env().check(input, result),
-            new task().check(input, result),
-            new worker().check(input, result),
-            new frosh_tools().check(input, result),
-        ]);
+    await Promise.all([
+        new security().check(input, result),
+        new env().check(input, result),
+        new task().check(input, result),
+        new worker().check(input, result),
+        new frosh_tools().check(input, result),
+    ]);
 
-        return result;
-    }
+    return result;
 }

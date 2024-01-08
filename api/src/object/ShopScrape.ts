@@ -5,10 +5,9 @@ import {
     Extension,
     ExtensionDiff,
     ExtensionChangelog,
-    lastUpdated,
 } from '../../../frontend/src/types/shop';
 import promiseAllProperties from '../helper/promise';
-import { CheckerInput, CheckerRegistery } from './status/registery';
+import { CheckerInput, check } from './status/registery';
 import { createSentry } from '../toucan';
 import Shops from '../repository/shops';
 import { UserSocketHelper } from './UserSocket';
@@ -487,11 +486,15 @@ export class ShopScrape implements DurableObject {
             }
         }
 
-        const shopUpdate: lastUpdated = {};
+        const shopUpdate: {
+            date?: string;
+            from?: string;
+            to?: string;
+        } = {};
 
         if (shop.shopware_version !== responses.config.body.version) {
-            (shopUpdate.from = shop.shopware_version),
-                (shopUpdate.to = responses.config.body.version);
+            shopUpdate.from = shop.shopware_version;
+            shopUpdate.to = responses.config.body.version;
             shopUpdate.date = new Date().toISOString();
         }
 
@@ -519,7 +522,7 @@ export class ShopScrape implements DurableObject {
             ignores: shop.ignores as string[],
         };
 
-        const checkerResult = await CheckerRegistery.check(input);
+        const checkerResult = await check(input);
 
         await con
             .update(schema.shop)
