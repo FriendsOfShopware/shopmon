@@ -7,7 +7,7 @@ import { schema } from '../../db';
 export const notificationRouter = router({
     list: publicProcedure.use(loggedInUserMiddleware).query(async ({ ctx }) => {
         const results = await ctx.drizzle.query.userNotification.findMany({
-            where: eq(schema.userNotification.user_id, ctx.user!),
+            where: eq(schema.userNotification.user_id, ctx.user),
         });
 
         if (results === undefined) {
@@ -30,7 +30,7 @@ export const notificationRouter = router({
                     .where(
                         and(
                             eq(schema.userNotification.id, input),
-                            eq(schema.userNotification.user_id, ctx.user!),
+                            eq(schema.userNotification.user_id, ctx.user),
                         ),
                     )
                     .execute();
@@ -40,7 +40,7 @@ export const notificationRouter = router({
 
             await ctx.drizzle
                 .delete(schema.userNotification)
-                .where(eq(schema.userNotification.user_id, ctx.user!))
+                .where(eq(schema.userNotification.user_id, ctx.user))
                 .execute();
 
             return true;
@@ -51,7 +51,7 @@ export const notificationRouter = router({
             await ctx.drizzle
                 .update(schema.userNotification)
                 .set({ read: 1 })
-                .where(eq(schema.userNotification.user_id, ctx.user!))
+                .where(eq(schema.userNotification.user_id, ctx.user))
                 .execute();
         }),
 });

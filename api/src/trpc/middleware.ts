@@ -1,6 +1,6 @@
 import { TRPCError, experimental_standaloneMiddleware } from '@trpc/server';
 import { t } from '.';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { context } from './context';
 import { schema } from '../db';
 
@@ -9,7 +9,11 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return next();
+    return next({
+        ctx: {
+            user: ctx.user,
+        }
+    });
 });
 
 export const organizationMiddleware = experimental_standaloneMiddleware<{

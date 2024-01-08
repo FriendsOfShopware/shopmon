@@ -14,5 +14,9 @@
     "[javascript]": {
         "editor.defaultFormatter": "biomejs.biome"
     },
-    "biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome"
+    "biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome",
+    "cSpell.words": [
+        "trpc",
+        "TRPC"
+    ]
 }

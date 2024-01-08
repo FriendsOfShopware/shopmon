@@ -66,5 +66,5 @@ export const UserSocketHelper = {
                 method: 'POST',
                 body: JSON.stringify(notification),
             });
-    }
-}
+    },
+};

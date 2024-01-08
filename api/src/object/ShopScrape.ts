@@ -241,17 +241,23 @@ export class ShopScrape implements DurableObject {
         };
 
         try {
-            responses = await promiseAllProperties({
-                config: client.get('/_info/config'),
-                plugin: client.post('/search/plugin'),
-                app: client.post('/search/app'),
-                scheduledTask: client.post('/search/scheduled-task'),
-                queue:
-                    versionCompare(shop.shopware_version, '6.4.7.0') < 0
-                        ? client.post('/search/message-queue-stats')
-                        : client.get('/_info/queue.json'),
-                cacheInfo: client.get('/_action/cache_info'),
-            });
+            const [config, plugin, app, scheduledTask, queue, cacheInfo] = await Promise.all([
+                client.get('/_info/config'),
+                client.post('/search/plugin'),
+                client.post('/search/app'),
+                client.post('/search/scheduled-task'),
+                versionCompare(shop.shopware_version, '6.4.7.0') < 0 ? client.post('/search/message-queue-stats') : client.get('/_info/queue.json'),
+                client.get('/_action/cache_info'),
+            ]);
+
+            responses = {
+                config,
+                plugin,
+                app,
+                scheduledTask,
+                queue,
+                cacheInfo,
+            };
         } catch (e) {
             let error = "";
 

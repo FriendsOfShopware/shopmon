@@ -14,7 +14,7 @@ export const organizationRouter = router({
         .input(z.string())
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
-            return await Teams.create(ctx.drizzle, input, ctx.user!);
+            return await Teams.create(ctx.drizzle, input, ctx.user);
         }),
     update: publicProcedure
         .input(
@@ -39,7 +39,7 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Teams.delete(ctx.drizzle, input.orgId);
+            await Teams.deleteById(ctx.drizzle, input.orgId);
         }),
     listMembers: publicProcedure
         .input(
