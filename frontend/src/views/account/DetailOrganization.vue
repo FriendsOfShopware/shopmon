@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia';
 
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useTeamStore } from '@/stores/team.store';
+import { useOrganizationStore } from '@/stores/organization.store';
 import { useRoute, useRouter } from 'vue-router';
 
 import Header from '@/components/layout/Header.vue';
@@ -16,17 +16,18 @@ import * as Yup from "yup";
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const teamStore = useTeamStore();
+const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const { user } = storeToRefs(authStore);
 
-const teamId = parseInt(route.params.teamId as string, 10);
-const team = user.value?.teams.find(team => team.id == teamId);
+const organizationId = parseInt(route.params.organizationId as string, 10);
+const organization = user.value?.organizations.find(organization => organization.id == organizationId);
+const isOwner = organization?.ownerId === user.value!!.id;
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
 
-teamStore.loadMembers(teamId);
+organizationStore.loadMembers(organizationId);
 
 const schemaMembers = Yup.object().shape({
   email: Yup.string().email('Email address is not valid').required('Email address is required'),
@@ -34,14 +35,14 @@ const schemaMembers = Yup.object().shape({
 
 async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
   isSubmitting.value = true;
-  if (team) {
+  if (organization) {
     try {
-      await teamStore.addMember(team.id, values.email);
+      await organizationStore.addMember(organization.id, values.email);
       showAddMemberModal.value = false;
       await router.push({
-        name: 'account.teams.detail',
+        name: 'account.organizations.detail',
         params: {
-          teamId: team.id
+          organizationId: organization.id
         }
       })
     } catch (error: any) {
@@ -52,13 +53,13 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
 }
 
 async function onRemoveMember(userId: number) {
-  if (team) {
+  if (organization) {
     try {
-      await teamStore.removeMember(team.id, userId);
+      await organizationStore.removeMember(organization.id, userId);
       await router.push({
-        name: 'account.teams.detail',
+        name: 'account.organizations.detail',
         params: {
-          teamId: team.id
+          organizationId: organization.id
         }
       })
     } catch (error: any) {
@@ -69,39 +70,39 @@ async function onRemoveMember(userId: number) {
 </script>
 
 <template>
-  <Header v-if="team" :title="team.name">
+  <Header v-if="organization" :title="organization.name">
     <div class="flex gap-2">
-      <router-link v-if="team.is_owner" :to="{ name: 'account.teams.edit', params: { teamId } }" type="button"
+      <router-link v-if="isOwner" :to="{ name: 'account.organizations.edit', params: { organizationId } }" type="button"
         class="group btn btn-primary flex items-center">
         <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50" aria-hidden="true" />
-        Edit Team
+        Edit Organization
       </router-link>
     </div>
   </Header>
 
-  <MainContainer v-if="team">
+  <MainContainer v-if="organization">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:shadow-none dark:bg-neutral-800">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
-          Team Information
+          Organization Information
         </h3>
       </div>
       <div class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700">
         <dl class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div class="sm:col-span-1">
-            <dt class="text-sm font-medium">Team Name</dt>
+            <dt class="text-sm font-medium">Organization Name</dt>
             <dd class="mt-1 text-sm text-gray-500">
-              {{ team.name }}
+              {{ organization.name }}
             </dd>
           </div>
 
           <div class="sm:col-span-1">
             <dt class="font-medium">Member Count</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ team.memberCount }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">{{ organization.memberCount }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="font-medium">Shop Count</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ team.shopCount }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">{{ organization.shopCount }}</dd>
           </div>
         </dl>
       </div>
@@ -121,9 +122,12 @@ async function onRemoveMember(userId: number) {
       <div class="border-t border-gray-200 dark:border-neutral-700">
         <DataTable
           :labels="{ email: { name: 'Email' }, displayName: { name: 'Display Name' }, actions: { name: '', class: 'text-right' } }"
-          :data="teamStore.members">
+          :data="organizationStore.members">
+          <template #cell(displayName)="{ item }">
+            {{ item.displayName }} <template v-if="isOwner">(Owner)</template>
+          </template>
           <template #cell(actions)="{ item }">
-            <button type="button"
+            <button v-if="!isOwner" type="button"
               class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
               @click="onRemoveMember(item.id)" data-tooltip="Unassign">
               <icon-fa6-solid:trash aria-hidden="true" />
@@ -132,7 +136,6 @@ async function onRemoveMember(userId: number) {
         </DataTable>
       </div>
     </div>
-
 
     <Modal :show="showAddMemberModal" :closeXMark="true" @close="showAddMemberModal = false">
       <template #title>Add member</template>

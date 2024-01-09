@@ -30,7 +30,7 @@ const navigation = [
   { name: 'Dashboard', route: '/' },
   { name: 'My Shops', route: '/account/shops' },
   { name: 'My Apps', route: '/account/extensions' },
-  { name: 'My Teams', route: '/account/teams' },
+  { name: 'My Organizations', route: '/account/organizations' },
 ];
 
 const userNavigation = [
@@ -120,7 +120,7 @@ function toggleDarkMode() {
                         {{ notification.title }}
                       </div>
                       <div class="text-xs mb-[0.15rem] text-gray-500 dark:text-neutral-500">
-                        {{ formatDateTime(notification.created_at) }}
+                        {{ formatDateTime(notification.createdAt) }}
                       </div>
                       <div class="text-gray-500 dark:text-neutral-500">
                         {{ notification.message }} <router-link :to="notification.link" type="a"

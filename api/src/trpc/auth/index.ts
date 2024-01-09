@@ -7,7 +7,7 @@ import { randomString } from "../../util";
 import Users from "../../repository/users";
 import { TRPCError } from "@trpc/server";
 import { loggedInUserMiddleware } from "../middleware";
-import Teams from "../../repository/organization";
+import Organizations from "../../repository/organization";
 import { sendMailConfirmToUser, sendMailResetPassword } from "../../mail/mail";
 import { passkeyRouter } from "./passkey";
 
@@ -116,9 +116,9 @@ export const authRouter = router({
 				});
 			}
 
-			await Teams.create(
+			await Organizations.create(
 				ctx.drizzle,
-				`${input.email}'s Team`,
+				`${input.displayName}'s Organization`,
 				userInsertResult.meta.last_row_id,
 			);
 

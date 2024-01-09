@@ -143,11 +143,11 @@ export const shopRouter = router({
             );
 
             const id = await Shops.createShop(ctx.drizzle, {
-                team_id: input.orgId,
+                organizationId: input.orgId,
                 name: input.name,
-                client_id: input.clientId,
-                client_secret: clientSecret,
-                shop_url: input.shopUrl,
+                clientId: input.clientId,
+                clientSecret: clientSecret,
+                shopUrl: input.shopUrl,
                 version: resp.body.version,
             });
 
@@ -236,7 +236,7 @@ export const shopRouter = router({
             }
 
             if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const team = await ctx.drizzle.query.organization.findFirst({
+                const organization = await ctx.drizzle.query.organization.findFirst({
                     columns: {
                         id: true,
                         ownerId: true,
@@ -247,17 +247,17 @@ export const shopRouter = router({
                     ),
                 });
 
-                if (team === undefined) {
+                if (organization === undefined) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'You are not a member of this team',
+                        message: 'You are not a member of this organization',
                     });
                 }
 
-                if (team.ownerId !== ctx.user) {
+                if (organization.ownerId !== ctx.user) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'You are not the owner of this team',
+                        message: 'You are not the owner of this organization',
                     });
                 }
 

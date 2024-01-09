@@ -5,7 +5,7 @@ import {
     organizationAdminMiddleware,
     organizationMiddleware,
 } from '../middleware';
-import Teams from '../../repository/organization';
+import Organizations from '../../repository/organization';
 import { shopRouter } from './shop';
 
 export const organizationRouter = router({
@@ -14,7 +14,7 @@ export const organizationRouter = router({
         .input(z.string())
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
-            return await Teams.create(ctx.drizzle, input, ctx.user);
+            return await Organizations.create(ctx.drizzle, input, ctx.user);
         }),
     update: publicProcedure
         .input(
@@ -27,7 +27,7 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Teams.update(ctx.drizzle, input.orgId, input.name);
+            await Organizations.update(ctx.drizzle, input.orgId, input.name);
         }),
     delete: publicProcedure
         .input(
@@ -39,7 +39,7 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Teams.deleteById(ctx.drizzle, input.orgId);
+            await Organizations.deleteById(ctx.drizzle, input.orgId);
         }),
     listMembers: publicProcedure
         .input(
@@ -50,7 +50,7 @@ export const organizationRouter = router({
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
         .query(async ({ input, ctx }) => {
-            return await Teams.listMembers(ctx.drizzle, input.orgId);
+            return await Organizations.listMembers(ctx.drizzle, input.orgId);
         }),
     addMember: publicProcedure
         .input(
@@ -63,7 +63,7 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Teams.addMember(ctx.drizzle, input.orgId, input.email);
+            await Organizations.addMember(ctx.drizzle, input.orgId, input.email);
         }),
     removeMember: publicProcedure
         .input(
@@ -76,6 +76,6 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Teams.removeMember(ctx.drizzle, input.orgId, input.userId);
+            await Organizations.removeMember(ctx.drizzle, input.orgId, input.userId);
         }),
 });

@@ -212,7 +212,7 @@ export class ShopScrape implements DurableObject {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            teamId: shop.organizationId.toString(),
+                            organizationId: shop.organizationId.toString(),
                         },
                     },
                 },
@@ -289,7 +289,7 @@ export class ShopScrape implements DurableObject {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            teamId: shop.organizationId.toString(),
+                            organizationId: shop.organizationId.toString(),
                         },
                     },
                 },
