@@ -13,7 +13,7 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
                 const headers: { Authorization?: string } = {};
 
                 if (localStorage.getItem('access_token')) {
-                    headers['Authorization'] = `${localStorage.getItem('access_token')}`;
+                    headers.Authorization = `${localStorage.getItem('access_token')}`;
                 }
 
                 return headers;

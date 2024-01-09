@@ -18,7 +18,6 @@ FRONTEND_URL = "http://localhost:3000"
 
 [build]
 command = "node esbuild.mjs"
-watch = ["src"]
 
 [durable_objects]
 bindings = [

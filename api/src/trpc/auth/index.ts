@@ -5,15 +5,13 @@ import { z } from "zod";
 import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
 import Users from "../../repository/users";
-import { context } from "../context";
 import { TRPCError } from "@trpc/server";
 import { loggedInUserMiddleware } from "../middleware";
 import Teams from "../../repository/organization";
 import { sendMailConfirmToUser, sendMailResetPassword } from "../../mail/mail";
 import { passkeyRouter } from "./passkey";
 
-export const REFRESH_TOKEN_TTL = 60 * 60 * 6; // 6 hours
-export const ACCESS_TOKEN_TTL = 60 * 30; // 30 minutes
+export const ACCESS_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 
 export interface Token {
 	id: number;
@@ -58,31 +56,19 @@ export const authRouter = router({
 				throw loginError;
 			}
 
-			const refreshToken = `r-${result.id}-${randomString(32)}`;
+			const token = `u-${result.id}-${randomString(32)}`;
 			await ctx.env.kvStorage.put(
-				refreshToken,
+				token,
 				JSON.stringify({
 					id: result.id,
-				}),
+				} as Token),
 				{
-					expirationTtl: REFRESH_TOKEN_TTL,
+					expirationTtl: ACCESS_TOKEN_TTL,
 				},
 			);
 
-			const accessToken = await getAuthentifikationToken(ctx, refreshToken);
-
 			return {
-				accessToken,
-				refreshToken,
-			};
-		}),
-	refreshToken: publicProcedure
-		.input(z.string())
-		.mutation(async ({ input, ctx }) => {
-			const accessToken = await getAuthentifikationToken(ctx, input);
-
-			return {
-				accessToken,
+				token,
 			};
 		}),
 	register: publicProcedure
@@ -187,7 +173,7 @@ export const authRouter = router({
 				expirationTtl: 60 * 60, // 1 hour
 			});
 
-			await sendMailResetPassword(ctx.env, input, token);
+			ctx.executionCtx.waitUntil(sendMailResetPassword(ctx.env, input, token));
 
 			return true;
 		}),
@@ -236,32 +222,3 @@ export const authRouter = router({
 			}
 		}),
 });
-
-export async function getAuthentifikationToken(ctx: context, refreshToken: string) {
-	const token = await ctx.env.kvStorage.get(refreshToken);
-
-	if (token === null) {
-		throw new Error("Invalid refresh token");
-	}
-
-	const data = JSON.parse(token) as Token;
-
-	const existence = await Users.existsById(ctx.drizzle, data.id);
-
-	if (existence === false) {
-		throw new Error("Invalid refresh token");
-	}
-
-	const accessToken = `u-${data.id}-${randomString(32)}`;
-	await ctx.env.kvStorage.put(
-		accessToken,
-		JSON.stringify({
-			id: data.id,
-		} as Token),
-		{
-			expirationTtl: ACCESS_TOKEN_TTL,
-		},
-	);
-
-	return accessToken;
-}

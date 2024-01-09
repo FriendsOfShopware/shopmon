@@ -6,9 +6,7 @@ import { schema } from "../../db";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { randomString } from "../../util";
-import { context } from "../context";
-import { Token } from ".";
-import Users from "../../repository/users";
+import { ACCESS_TOKEN_TTL, Token } from ".";
 
 export const passkeyRouter = router({
 	challenge: publicProcedure.mutation(async ({ ctx }) => {
@@ -149,49 +147,17 @@ export const passkeyRouter = router({
 				expected,
 			);
 
-			const refreshToken = `r-${credential.userId}-${randomString(32)}`;
+			const token = `u-${credential.userId}-${randomString(32)}`;
 			await ctx.env.kvStorage.put(
-				refreshToken,
+				token,
 				JSON.stringify({
 					id: credential.userId,
-				}),
+				} as Token),
 				{
-					expirationTtl: 60 * 60 * 6,
+					expirationTtl: ACCESS_TOKEN_TTL,
 				},
 			);
 
-			return await getAuthentifikationToken(ctx, refreshToken);
+			return token;
 		}),
 });
-
-export async function getAuthentifikationToken(
-	ctx: context,
-	refreshToken: string,
-) {
-	const token = await ctx.env.kvStorage.get(refreshToken);
-
-	if (token === null) {
-		throw new Error("Invalid refresh token");
-	}
-
-	const data = JSON.parse(token) as Token;
-
-	const existence = await Users.existsById(ctx.drizzle, data.id);
-
-	if (existence === false) {
-		throw new Error("Invalid refresh token");
-	}
-
-	const accessToken = `u-${data.id}-${randomString(32)}`;
-	await ctx.env.kvStorage.put(
-		accessToken,
-		JSON.stringify({
-			id: data.id,
-		} as Token),
-		{
-			expirationTtl: 60 * 60,
-		},
-	);
-
-	return accessToken;
-}

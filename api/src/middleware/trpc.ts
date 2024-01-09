@@ -19,7 +19,7 @@ export const trpcServer = ({
             ...rest,
             endpoint,
             req: c.req.raw,
-            createContext: createContext(c.env),
+            createContext: createContext(c.env, c.executionCtx),
         });
         return res;
     };
