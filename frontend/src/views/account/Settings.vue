@@ -28,7 +28,7 @@ const showAccountDeletionModal = ref(false)
 const schema = Yup.object().shape({
   currentPassword: Yup.string().required('Current password is required'),
   email: Yup.string().email(),
-  displayName: Yup.string().min(5, 'Display Name must be at least 5 characters'),
+  displayName: Yup.string().min(5, 'Display name must be at least 5 characters'),
   newPassword: Yup.string()
     .transform((x) => (x === '' ? undefined : x))
     .min(8, 'Password must be at least 8 characters'),
@@ -38,7 +38,7 @@ async function onSubmit(values: any) {
   try {
     await authStore.updateProfile(values);
     alertStore.success("User updated");
-  } catch (error: Error) {
+  } catch (error: any) {
     alertStore.error(error);
   }
 }
@@ -46,7 +46,7 @@ async function onSubmit(values: any) {
 async function deleteUser() {
   try {
     await authStore.delete();
-  } catch (error: Error) {
+  } catch (error: any) {
     alertStore.error(error);
   }
 
@@ -145,7 +145,7 @@ async function removePasskey(id: string) {
     <FormGroup title="Deleting your Account">
       <form action="#" method="POST">
 
-        <p>Once you delete your account, you will lose all data associated with it. All owning Teams will be also
+        <p>Once you delete your account, you will lose all data associated with it. All owning organization will be also
           deleted with all shops associated.</p>
 
         <div class="mt-5">

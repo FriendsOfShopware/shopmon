@@ -1,6 +1,6 @@
 import { Drizzle, schema } from '../db';
 import { eq } from 'drizzle-orm';
-import Teams from './organization';
+import Organization from './organization';
 
 async function existsByEmail(
     con: Drizzle,
@@ -28,15 +28,15 @@ async function existsById(con: Drizzle, id: number): Promise<boolean> {
 }
 
 async function deleteById(con: Drizzle, id: number): Promise<void> {
-    const ownerTeams = await con.query.organization.findMany({
+    const ownerOrganizations = await con.query.organization.findMany({
         columns: {
             id: true,
         },
         where: eq(schema.organization.ownerId, id),
     });
 
-    const deletePromises = ownerTeams.map((row) =>
-        Teams.deleteById(con, row.id),
+    const deletePromises = ownerOrganizations.map((row) =>
+        Organization.deleteById(con, row.id),
     );
 
     await Promise.all(deletePromises);

@@ -10,6 +10,7 @@ import { useShopStore } from '@/stores/shop.store';
 import { Form, Field } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
+import {  RouterInput } from "@/helpers/trpc";
 
 const authStore = useAuthStore();
 const shopStore = useShopStore();
@@ -19,16 +20,16 @@ const router = useRouter();
 const schema = Yup.object().shape({
   name: Yup.string().required('Shop name is required'),
   shopUrl: Yup.string().required('Shop URL is required').url(),
-  orgId: Yup.number().required('Team is required'),
+  orgId: Yup.number().required('Organization is required'),
   client_id: Yup.string().required('Client ID is required'),
   client_secret: Yup.string().required('Client Secret is required'),
 });
 
 const shops = {
-  orgId: authStore.user?.teams[0]?.id,
+  orgId: authStore.user?.organizations[0]?.id,
 }
 
-async function onSubmit(values: Yup.InferType<typeof schema>) {
+async function onSubmit(values: RouterInput['organization']['shop']['create']) {
   try {
     await shopStore.createShop(values);
 
@@ -54,9 +55,11 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
         </div>
 
         <div class="sm:col-span-6">
-          <label for="orgId" class="block text-sm font-medium mb-1"> Team </label>
+          <label for="orgId" class="block text-sm font-medium mb-1"> Organization </label>
           <Field as="select" id="orgId" name="orgId" class="field">
-            <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">{{ team.name }}</option>
+            <option v-for="organization in authStore.user.organizations" :value="organization.id" :key="organization.id">
+              {{ organization.name }}
+            </option>
           </Field>
           <div class="text-red-700">
             {{ errors.orgId }}

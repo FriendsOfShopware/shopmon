@@ -7,7 +7,7 @@ import FormGroup from '@/components/layout/FormGroup.vue';
 
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useTeamStore } from '@/stores/team.store';
+import { useOrganizationStore } from '@/stores/organization.store';
 
 import { Field, Form } from 'vee-validate';
 import { useRoute, useRouter } from 'vue-router';
@@ -15,30 +15,30 @@ import * as Yup from 'yup';
 import { ref } from 'vue';
 
 const authStore = useAuthStore();
-const teamStore = useTeamStore();
+const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
 const { user } = storeToRefs(authStore);
 
-const teamId = parseInt(route.params.teamId as string, 10);
-const team = user.value?.teams.find(team => team.id == teamId);
+const organizationId = parseInt(route.params.organizationId as string, 10);
+const organization = user.value?.organizations.find(organization => organization.id == organizationId);
 
-const showTeamDeletionModal = ref(false)
+const showOrganizationDeletionModal = ref(false)
 
 const schema = Yup.object().shape({
-    name: Yup.string().required('Team name is required'),
+    name: Yup.string().required('Name of organization is required'),
 });
 
-async function onSaveTeam(values: Yup.InferType<typeof schema>) {
-    if (team) {
+async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
+    if (organization) {
         try {
-            await teamStore.updateTeam(team.id, values.name);
+            await organizationStore.updateOrganization(organization.id, values.name);
             await router.push({
-                name: 'account.teams.detail',
+                name: 'account.organizations.detail',
                 params: {
-                    teamId: team.id
+                    organizationId: organization.id
                 }
             })
         } catch (error: any) {
@@ -47,12 +47,12 @@ async function onSaveTeam(values: Yup.InferType<typeof schema>) {
     }
 }
 
-async function deleteTeam() {
-    if (team) {
+async function deleteOrganization() {
+    if (organization) {
         try {
-            await teamStore.delete(team.id);
+            await organizationStore.delete(organization.id);
 
-            await router.push({ name: 'account.teams.list' })
+            await router.push({ name: 'account.organizations.list' })
         } catch (error: any) {
             alertStore.error(error);
         }
@@ -62,14 +62,14 @@ async function deleteTeam() {
 </script>
         
 <template>
-    <Header :title="'Edit ' + team.name" v-if="team">
-        <router-link :to="{ name: 'account.teams.detail', params: { teamId: team.id } }" type="button" class="group btn">
+    <Header :title="'Edit ' + organization.name" v-if="organization">
+        <router-link :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }" type="button" class="group btn">
             Cancel
         </router-link>
     </Header>
-    <MainContainer v-if="team && authStore.user">
-        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="team" @submit="onSaveTeam">
-            <FormGroup title="Team Information" subTitle="">
+    <MainContainer v-if="organization && authStore.user">
+        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="organization" @submit="onSaveOrganization">
+            <FormGroup title="Organization Information" subTitle="">
                 <div class="sm:col-span-6">
                     <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
                     <Field type="text" name="name" id="name" autocomplete="name" class="field"
@@ -91,37 +91,36 @@ async function deleteTeam() {
             </div>
         </Form>
 
-        <FormGroup :title="'Deleting team ' + team.name">
+        <FormGroup :title="'Deleting organization ' + organization.name">
             <form action="#" method="POST">
 
-                <p>Once you delete your team, you will lose all data associated with it. </p>
+                <p>Once you delete your organization, you will lose all data associated with it. </p>
 
                 <div class="mt-5">
                     <button type="button" class="btn btn-danger group flex items-center"
-                        @click="showTeamDeletionModal = true">
+                        @click="showOrganizationDeletionModal = true">
                         <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
-                        Delete team
+                        Delete organization
                     </button>
                 </div>
             </form>
         </FormGroup>
 
-        <Modal :show="showTeamDeletionModal" @close="showTeamDeletionModal = false">
+        <Modal :show="showOrganizationDeletionModal" @close="showOrganizationDeletionModal = false">
             <template #icon>
                 <icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
             </template>
-            <template #title>Delete team</template>
+            <template #title>Delete organization</template>
             <template #content>
-                Are you sure you want to delete your Team? All of your data will
-                be permanently removed
-                from our servers forever. This action cannot be undone.
+                Are you sure you want to delete your organization?
+                All your data will be permanently deleted from our servers. This action cannot be undone.
             </template>
             <template #footer>
-                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="deleteTeam">
+                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="deleteOrganization">
                     Delete
                 </button>
                 <button ref="cancelButtonRef" type="button" class="btn w-full mt-3 sm:w-auto sm:mt-0"
-                    @click="showTeamDeletionModal = false">
+                    @click="showOrganizationDeletionModal = false">
                     Cancel
                 </button>
             </template>

@@ -4,7 +4,7 @@ import { trpcClient, RouterOutput } from "@/helpers/trpc";
 
 const authStore = useAuthStore();
 
-export const useTeamStore = defineStore('team', {
+export const useOrganizationStore = defineStore('organization', {
     state: (): { isLoading: boolean, isRefreshing: boolean, members: RouterOutput['organization']['listMembers'] } => ({
         isLoading: false,
         isRefreshing: false,
@@ -34,12 +34,12 @@ export const useTeamStore = defineStore('team', {
             await this.loadMembers(orgId);
         },
 
-        async createTeam(name: string) {
+        async createOrganization(name: string) {
             await trpcClient.organization.create.mutate(name);
             await authStore.refreshUser();
         },
 
-        async updateTeam(orgId: number, name: string) {
+        async updateOrganization(orgId: number, name: string) {
             await trpcClient.organization.update.mutate({ orgId, name });
             await authStore.refreshUser();
         }

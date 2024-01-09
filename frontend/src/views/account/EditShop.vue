@@ -18,17 +18,17 @@ const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-const teamId = parseInt(route.params.teamId as string, 10);
+const organizationId = parseInt(route.params.organizationId as string, 10);
 const shopId = parseInt(route.params.shopId as string, 10);
 
-shopStore.loadShop(teamId, shopId);
+shopStore.loadShop(organizationId, shopId);
 
 const showShopDeletionModal = ref(false)
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    newOrgId: Yup.number().required('Team is required'),
+    newOrgId: Yup.number().required('Organization is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
         then: () => Yup.string().required("If you change the URL you need to provide Client-ID")
@@ -42,12 +42,12 @@ const schema = Yup.object().shape({
 async function onSubmit(values: Yup.InferType<typeof schema>) {
     if (shopStore.shop) {
         try {
-            await shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, values);
+            await shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, values);
 
             router.push({
                 name: 'account.shops.detail',
                 params: {
-                    teamId: shopStore.shop.team_id,
+                    organizationId: shopStore.shop.organizationId,
                     shopId: shopStore.shop.id
                 }
             })
@@ -60,10 +60,10 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
 async function deleteShop() {
     if (shopStore.shop) {
         try {
-            await shopStore.delete(shopStore.shop.team_id, shopStore.shop.id);
+            await shopStore.delete(shopStore.shop.organizationId, shopStore.shop.id);
 
             router.push('/account/shops');
-        } catch (error: Error) {
+        } catch (error: any) {
             alertStore.error(error);
         }
     }
@@ -74,7 +74,7 @@ async function deleteShop() {
 <template>
     <Header :title="'Edit ' + shopStore.shop.name" v-if="shopStore.shop">
         <router-link
-            :to="{ name: 'account.shops.detail', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
+            :to="{ name: 'account.shops.detail', params: { organizationId: shopStore.shop.organizationId, shopId: shopStore.shop.id } }"
             type="button" class="group btn">
             Cancel
         </router-link>
@@ -93,10 +93,10 @@ async function deleteShop() {
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="newOrgId" class="block text-sm font-medium mb-1"> Team </label>
+                    <label for="newOrgId" class="block text-sm font-medium mb-1"> Organization </label>
                     <Field as="select" id="newOrgId" name="newOrgId" class="field">
-                        <option v-for="team in authStore.user.teams" :value="team.id" :key="team.id">
-                            {{ team.name }}
+                        <option v-for="organization in authStore.user.organizations" :value="organization.id" :key="organization.id">
+                            {{ organization.name }}
                         </option>
                     </Field>
                     <div class="text-red-700">

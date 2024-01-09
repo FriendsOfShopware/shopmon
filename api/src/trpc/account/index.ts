@@ -34,7 +34,7 @@ export interface UserExtension extends Extension {
         [key: string]: {
             id: number;
             name: string;
-            team_id: number;
+            organizationId: number;
             shopware_version: string;
             installed: boolean;
             active: boolean;
@@ -238,7 +238,7 @@ export const accountRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
-                    team_id: schema.shop.organizationId,
+                    organizationId: schema.shop.organizationId,
                     shopware_version: schema.shop.shopwareVersion,
                     extensions: schema.shopScrapeInfo.extensions,
                 })
@@ -270,7 +270,7 @@ export const accountRouter = router({
                     json[extension.name].shops[row.id] = {
                         id: row.id,
                         name: row.name,
-                        team_id: row.team_id,
+                        organizationId: row.organizationId,
                         shopware_version: row.shopware_version,
                         installed: extension.installed,
                         active: extension.active,

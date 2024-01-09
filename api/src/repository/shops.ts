@@ -6,12 +6,12 @@ import { eq } from 'drizzle-orm';
 import type { Bindings } from '../router';
 
 interface CreateShopRequest {
-    team_id: number;
+    organizationId: number;
     name: string;
     version: string;
-    shop_url: string;
-    client_id: string;
-    client_secret: string;
+    shopUrl: string;
+    clientId: string;
+    clientSecret: string;
 }
 
 export interface ShopAlert {
@@ -38,11 +38,11 @@ async function createShop(
     const result = await con
         .insert(schema.shop)
         .values({
-            organizationId: params.team_id,
+            organizationId: params.organizationId,
             name: params.name,
-            url: params.shop_url,
-            clientId: params.client_id,
-            clientSecret: params.client_secret,
+            url: params.shopUrl,
+            clientId: params.clientId,
+            clientSecret: params.clientSecret,
             createdAt: new Date(),
             shopwareVersion: params.version,
         })
