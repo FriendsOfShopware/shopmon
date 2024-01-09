@@ -1,5 +1,5 @@
 <template>
-    <table class="min-w-full divide-y-2 divide-gray-300 dark:divide-neutral-900" v-if="sortedFilteredData.length > 0">
+    <table class="min-w-full divide-y-2 divide-gray-300 dark:divide-neutral-900" v-if="sortedFilteredData?.length ?? 0 > 0">
         <thead class="bg-gray-50 dark:bg-neutral-800">
             <tr>
                 <th v-for="(label, key, index) in labels" :key="key" class="py-3.5" :class="[
@@ -37,9 +37,14 @@
         </tbody>
     </table>
     <div class="p-6 text-center text-gray-400" v-else>
-        <template v-if="sortedFilteredData.length === 0">
+        <template v-if="sortedFilteredData?.length ?? 0 === 0">
             <span class="text-lg">
-                <icon-fa6-solid:circle-xmark /> no search result for <strong>{{ term }}</strong>
+                <template v-if="term">
+                    <icon-fa6-solid:circle-xmark /> no search result for <strong>{{ term }}</strong>
+                </template>
+                <template v-else>
+                    <icon-fa6-solid:circle-info /> no data
+                </template>
             </span>
         </template>
         <template v-else>
@@ -68,7 +73,7 @@ const props = defineProps<{
         desc?: boolean
     },
     term?: string,
-    data: Record<string, any>[]
+    data?: Record<string, any>[]
 }>()
 
 const term = toRef(props, 'term');

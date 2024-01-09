@@ -267,10 +267,10 @@ async function notificateIgnoreUpdate() {
     </div>
 
     <Tabs :labels="{
-      checks: { title: 'Checks', count: shopStore.shop.checks?.length || 0, icon: FaCircleCheck },
-      extensions: { title: 'Extensions', count: shopStore.shop.extensions?.length || 0, icon: FaPlug },
-      tasks: { title: 'Scheduled Tasks', count: shopStore.shop.scheduledTask?.length || 0, icon: FaListCheck },
-      queue: { title: 'Queue', count: shopStore.shop.queueInfo?.length || 0, icon: FaCircleCheck },
+      checks: { title: 'Checks', count: shopStore.shop.checks?.length ?? 0, icon: FaCircleCheck },
+      extensions: { title: 'Extensions', count: shopStore.shop.extensions?.length ?? 0, icon: FaPlug },
+      tasks: { title: 'Scheduled Tasks', count: shopStore.shop.scheduledTask?.length ?? 0, icon: FaListCheck },
+      queue: { title: 'Queue', count: shopStore.shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
       pagespeed: { title: 'Pagespeed', count: shopStore.shop.pageSpeed.length, icon: FaRocket },
       changelog: { title: 'Changelog', count: shopStore.shop.changelog.length, icon: FaFileWaverform }
     }">
@@ -458,7 +458,7 @@ async function notificateIgnoreUpdate() {
     <Modal :show="viewChangelogDialog" :closeXMark="true" @close="viewChangelogDialog = false">
       <template #title>Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span></template>
       <template #content>
-        <ul v-if="dialogExtension?.changelog && dialogExtension.changelog.length > 0">
+        <ul v-if="dialogExtension?.changelog?.length ?? 0 > 0">
           <li class="mb-2" v-for="changeLog in dialogExtension.changelog" :key="changeLog.version">
             <div class="font-medium mb-1">
               <span data-tooltip="not compatible with your version" v-if="!changeLog.isCompatible">
