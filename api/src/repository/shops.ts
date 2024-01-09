@@ -66,9 +66,9 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
             displayName: schema.user.displayName,
             email: schema.user.email,
         })
-        .from(schema.organization)
+        .from(schema.shop)
         .innerJoin(
-            schema.shop,
+            schema.userToOrganization,
             eq(
                 schema.shop.organizationId,
                 schema.userToOrganization.organizationId,

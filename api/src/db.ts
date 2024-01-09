@@ -3,6 +3,8 @@ import {
     text,
     integer,
     primaryKey,
+    unique,
+    uniqueKeyName,
 } from 'drizzle-orm/sqlite-core';
 import { drizzle, DrizzleD1Database } from 'drizzle-orm/d1';
 import type { Bindings } from './router';
@@ -112,6 +114,10 @@ export const userNotification = sqliteTable('user_notification', {
     link: text('link', { mode: 'json' }).notNull().$type<NotificationLink>(),
     read: integer('read', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (table) => {
+    return {
+        keyUnique: unique().on(table.userId, table.key)
+    }
 });
 
 export const userPasskeys = sqliteTable('user_passkeys', {

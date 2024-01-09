@@ -275,6 +275,8 @@ export class ShopScrape implements DurableObject {
                 error = e.toString();
             }
 
+            console.log(error);
+
             await Shops.notify(
                 con,
                 this.env.USER_SOCKET,
