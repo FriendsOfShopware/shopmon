@@ -41,12 +41,12 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async login(email: string, password: string) {
-            const result = await trpcClient.auth.loginWithPassword.mutate({
+            const token = await trpcClient.auth.loginWithPassword.mutate({
                 email,
                 password
             })
 
-            this.setAccessToken(result.accessToken, result.refreshToken);
+            localStorage.setItem('access_token', token);
 
             const user = await trpcClient.account.currentUser.query();
 
@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', {
             // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
 
-            useNotificationStore().connect(result.accessToken);
+            useNotificationStore().connect(token);
             await useNotificationStore().loadNotifications();
         },
 
@@ -70,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
 
             const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
 
-            this.setAccessToken(token);
+            localStorage.setItem('access_token', token);
             const user = await trpcClient.account.currentUser.query();
 
             // update pinia state
@@ -111,16 +111,6 @@ export const useAuthStore = defineStore('auth', {
             }
 
             await this.refreshUser();
-        },
-
-        setAccessToken(access_token: string, refresh_token: string | null = null) {
-            this.access_token = access_token;
-            localStorage.setItem('access_token', access_token);
-
-            if (refresh_token) {
-                this.refresh_token = refresh_token;
-                localStorage.setItem('refresh_token', refresh_token);
-            }
         },
 
         async logout() {

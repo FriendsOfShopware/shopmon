@@ -128,7 +128,7 @@ async function removePasskey(id: string) {
     <FormGroup title="Passkey Devices">
       <DataTable
           v-if="authStore.passkeys"
-          :labels="{ name: { name: 'Name' }, createdAt: { name: 'Created At' }, actions: { name: '', class: 'text-right' } }"
+          :labels="{ name: { name: 'Name', sortable: true }, createdAt: { name: 'Created At', sortable: true, sortBy: 'bla' }, actions: { name: '', class: 'text-right' } }"
           :data="authStore.passkeys">
           <template #cell(actions)="{ item }">
             <button type="button"

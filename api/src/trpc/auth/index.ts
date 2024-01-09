@@ -67,9 +67,7 @@ export const authRouter = router({
 				},
 			);
 
-			return {
-				token,
-			};
+			return token;
 		}),
 	register: publicProcedure
 		.input(
