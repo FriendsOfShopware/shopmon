@@ -6,7 +6,7 @@ import {
     organizationMiddleware,
     shopMiddleware,
 } from '../middleware';
-import { and, eq, desc } from 'drizzle-orm';
+import { and, eq, desc, sql } from 'drizzle-orm';
 import { schema } from '../../db';
 import { TRPCError } from '@trpc/server';
 import Shops from '../../repository/shops';
@@ -74,7 +74,7 @@ export const shopRouter = router({
                     cacheInfo: schema.shopScrapeInfo.cacheInfo,
                     checks: schema.shopScrapeInfo.checks,
                     organizationId: schema.shop.organizationId,
-                    organizationName: schema.organization.name,
+                    organizationName: sql<string>`${schema.organization.name}`.as('organization_name'),
                 })
                 .from(schema.shop)
                 .innerJoin(
