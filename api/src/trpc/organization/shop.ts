@@ -131,9 +131,9 @@ export const shopRouter = router({
             try {
                 resp = await client.get('/_info/config');
             } catch (e) {
-                return new TRPCError({
+                throw new TRPCError({
                     code: 'BAD_REQUEST',
-                    message: 'Cannot reach shop',
+                    message: 'Cannot reach shop. Check your credentials and shop URL.',
                 });
             }
 
@@ -278,9 +278,9 @@ export const shopRouter = router({
                 try {
                     await client.get('/_info/config');
                 } catch (e) {
-                    return new TRPCError({
+                    throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'Cannot reach shop',
+                        message: 'Cannot reach shop. Check your credentials and shop URL.',
                     });
                 }
 
