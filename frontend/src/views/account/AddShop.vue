@@ -19,10 +19,10 @@ const router = useRouter();
 
 const schema = Yup.object().shape({
   name: Yup.string().required('Shop name is required'),
-  shopUrl: Yup.string().required('Shop URL is required').url(),
+  shopUrl: Yup.string().required('Shop URL is required'),
   orgId: Yup.number().required('Organization is required'),
-  client_id: Yup.string().required('Client ID is required'),
-  client_secret: Yup.string().required('Client Secret is required'),
+  clientId: Yup.string().required('Client ID is required'),
+  clientSecret: Yup.string().required('Client Secret is required'),
 });
 
 const shops = {
