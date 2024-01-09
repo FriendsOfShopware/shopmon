@@ -28,7 +28,7 @@ export const authRouter = router({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const loginError = new TRPCError({
-				code: "UNAUTHORIZED",
+				code: "BAD_REQUEST",
 				message: "Invalid email or password",
 			});
 

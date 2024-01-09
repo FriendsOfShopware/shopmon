@@ -6,7 +6,7 @@ import { schema } from '../db';
 
 export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     if (!ctx.user) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Token expired' });
     }
 
     return next({

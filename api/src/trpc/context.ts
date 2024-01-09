@@ -22,7 +22,7 @@ export function createContext(bindings: Bindings, executionCtx: ExecutionContext
             if (token === null) {
                 throw new TRPCError({
                     code: 'UNAUTHORIZED',
-                    message: 'Invalid token',
+                    message: 'Token expired',
                 });
             }
 
