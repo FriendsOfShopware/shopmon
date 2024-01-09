@@ -17,9 +17,18 @@ const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 
+const isValidUrl = (url: string) => {
+    try {
+        new URL(url);
+    } catch (e) {
+        return false;
+    }
+    return true;
+};
+
 const schema = Yup.object().shape({
   name: Yup.string().required('Shop name is required'),
-  shopUrl: Yup.string().required('Shop URL is required'),
+  shopUrl: Yup.string().required('Shop URL is required').test('is-url-valid', 'Shop URL is not valid', (value) => isValidUrl(value)),
   orgId: Yup.number().required('Organization is required'),
   clientId: Yup.string().required('Client ID is required'),
   clientSecret: Yup.string().required('Client Secret is required'),
