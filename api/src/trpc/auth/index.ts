@@ -36,15 +36,22 @@ export const authRouter = router({
 				columns: {
 					id: true,
 					password: true,
+					verifyCode: true,
 				},
 				where: and(
 					eq(schema.user.email, input.email.toLowerCase()),
-					isNull(schema.user.verifyCode),
 				),
 			});
 
 			if (result === undefined) {
 				throw loginError;
+			}
+
+			if (result.verifyCode !== null) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Please confirm your email address first",
+				});
 			}
 
 			const passwordIsValid = await bcryptjs.compare(
