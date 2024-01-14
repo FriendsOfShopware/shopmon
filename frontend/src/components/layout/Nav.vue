@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
+import { useDarkModeStore } from '@/stores/darkMode.store';
 
 import Logo from '@/components/layout/Logo.vue';
 
@@ -25,6 +25,7 @@ import { formatDateTime } from '@/helpers/formatter';
 
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
+const darkModeStore = useDarkModeStore();
 
 const navigation = [
   { name: 'Dashboard', route: '/' },
@@ -37,17 +38,6 @@ const userNavigation = [
   { name: 'Settings', route: '/account/settings', icon: FaGear, },
   { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
-
-const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-function toggleDarkMode() {
-  if (darkMode.value) {
-    document.documentElement.classList.remove('dark');
-  } else {
-    document.documentElement.classList.add('dark');
-  }
-  darkMode.value = !darkMode.value;
-}
 
 </script>
 
@@ -78,8 +68,8 @@ function toggleDarkMode() {
       <div class="flex ml-4 md:ml-6 items-center gap-3">
         <button
           class="text-sky-200 h-8 w-8 bg-sky-400 p-1 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
-          @click="toggleDarkMode">
-          <icon-fa6-regular:moon class="w-5 h-5" v-if="darkMode" />
+          @click="darkModeStore.toggleDarkMode">
+          <icon-fa6-regular:moon class="w-5 h-5" v-if="darkModeStore.darkMode" />
           <icon-fa6-regular:sun class="w-5 h-5" v-else />
         </button>
         <Popover v-slot="{ open }" class="md:relative">
