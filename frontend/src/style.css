@@ -127,3 +127,13 @@ svg {
   @apply inline;
   vertical-align: -0.2em;
 }
+
+.text-divider {
+  @apply flex items-center gap-2;
+}
+
+.text-divider::before,
+.text-divider::after {
+  @apply h-px flex-1 bg-gray-300 dark:bg-neutral-800 ;
+  content: '\00a0';
+}
