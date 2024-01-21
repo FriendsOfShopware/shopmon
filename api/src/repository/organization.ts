@@ -2,11 +2,6 @@ import { Drizzle, schema } from "../db";
 import { eq, and, inArray } from "drizzle-orm";
 import Users from "./users";
 
-interface OrganizationMember {
-	id: number;
-	email: string;
-}
-
 async function create(
 	con: Drizzle,
 	name: string,
@@ -32,7 +27,7 @@ async function create(
 async function listMembers(
 	con: Drizzle,
 	organizationId: number,
-): Promise<OrganizationMember[]> {
+) {
 	const result = await con
 		.select({
 			id: schema.user.id,
@@ -47,7 +42,7 @@ async function listMembers(
 		.where(eq(schema.userToOrganization.organizationId, organizationId))
 		.all();
 
-	return result as OrganizationMember[];
+	return result;
 }
 
 async function addMember(

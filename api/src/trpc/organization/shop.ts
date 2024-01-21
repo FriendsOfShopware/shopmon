@@ -42,7 +42,7 @@ export const shopRouter = router({
                 where: eq(schema.shop.organizationId, ctx.user),
             });
 
-            return result === undefined ? [] : result;
+            return result ? [] : result;
         }),
     get: publicProcedure
         .input(

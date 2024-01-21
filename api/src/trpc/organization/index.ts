@@ -1,4 +1,6 @@
 import { router, publicProcedure } from '..';
+import { schema } from '../../db';
+import { eq, sql, and } from 'drizzle-orm';
 import { z } from 'zod';
 import {
     loggedInUserMiddleware,
@@ -10,6 +12,34 @@ import { shopRouter } from './shop';
 
 export const organizationRouter = router({
     shop: shopRouter,
+    get: publicProcedure
+        .input(z.number())
+        .use(loggedInUserMiddleware)
+        .query(async ({ input, ctx }) => {
+            return await ctx.drizzle
+            .select({
+                id: schema.organization.id,
+                name: schema.organization.name,
+                createdAt: schema.organization.createdAt,
+                ownerId: schema.organization.ownerId,
+                shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
+                memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
+            })
+            .from(schema.organization)
+            .innerJoin(
+                schema.userToOrganization,
+                eq(
+                    schema.userToOrganization.organizationId,
+                    schema.organization.id,
+                ),
+            )
+            .where(
+                and(
+                    eq(schema.userToOrganization.userId, ctx.user),
+                    eq(schema.organization.id, input),
+                ),
+            ).get();
+        }),
     create: publicProcedure
         .input(z.string())
         .use(loggedInUserMiddleware)

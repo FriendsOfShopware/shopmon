@@ -8,9 +8,11 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Alert: typeof import('./src/components/Alert.vue')['default']
+    copy: typeof import('./src/components/fields/TextField copy.vue')['default']
     DataTable: typeof import('./src/components/layout/DataTable.vue')['default']
     FormGroup: typeof import('./src/components/layout/FormGroup.vue')['default']
     Header: typeof import('./src/components/layout/Header.vue')['default']
+    HeaderContainer: typeof import('./src/components/layout/HeaderContainer.vue')['default']
     'IconFa6Regular:circle': typeof import('~icons/fa6-regular/circle')['default']
     'IconFa6Regular:moon': typeof import('~icons/fa6-regular/moon')['default']
     'IconFa6Regular:star': typeof import('~icons/fa6-regular/star')['default']
@@ -55,14 +57,16 @@ declare module 'vue' {
     'IconLineMd:loadingTwotoneLoop': typeof import('~icons/line-md/loading-twotone-loop')['default']
     'IconMaterialSymbols:passkey': typeof import('~icons/material-symbols/passkey')['default']
     LoginContainer: typeof import('./src/components/layout/LoginContainer.vue')['default']
-    Logo: typeof import('./src/components/layout/Logo.vue')['default']
+    Logo: typeof import('./src/components/Logo.vue')['default']
     MainContainer: typeof import('./src/components/layout/MainContainer.vue')['default']
     Modal: typeof import('./src/components/layout/Modal.vue')['default']
-    Nav: typeof import('./src/components/layout/Nav.vue')['default']
-    PasswordField: typeof import('./src/components/layout/PasswordField.vue')['default']
-    RatingStars: typeof import('./src/components/layout/RatingStars.vue')['default']
+    Navigation: typeof import('./src/components/layout/Navigation.vue')['default']
+    PasswordField: typeof import('./src/components/fields/PasswordField.vue')['default']
+    RatingStars: typeof import('./src/components/RatingStars.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SelectField: typeof import('./src/components/fields/SelectField.vue')['default']
     Tabs: typeof import('./src/components/layout/Tabs.vue')['default']
+    TextField: typeof import('./src/components/fields/TextField.vue')['default']
   }
 }

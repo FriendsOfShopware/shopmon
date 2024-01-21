@@ -1,8 +1,6 @@
-import { defineStore } from "pinia";
-import type { WebsocketMessage } from "@/types/notification";
-import { useShopStore } from "./shop.store";
-import { useAlertStore } from "./alert.store";
-import { trpcClient, RouterOutput } from "@/helpers/trpc";
+import { defineStore } from 'pinia';
+import type { WebsocketMessage } from '@/types/notification';
+import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 export const useNotificationStore = defineStore('notification', {
     state: () => ({
@@ -19,7 +17,7 @@ export const useNotificationStore = defineStore('notification', {
         },
         unreadNotificationCount(): number {
             return this.notifications.filter((n) => !n.read).length;
-        }
+        },
     },
     actions: {
         connect(access_token: string) {
@@ -43,16 +41,17 @@ export const useNotificationStore = defineStore('notification', {
 
                 if (data.notification) {
                     for (const notification of this.notifications) {
-                        if (notification.title === data.notification.title && notification.message === data.notification.message) {
+                        if (notification.title === data.notification.title &&
+                             notification.message === data.notification.message) {
                             notification.read = false;
                             return;
                         }
                     }
 
-                    // @ts-expect-error
                     this.notifications.unshift(data.notification);
                 }
 
+                /*
                 if (data.shopUpdate) {
                     const shopStore = useShopStore();
                     const alertStore = useAlertStore();
@@ -63,7 +62,8 @@ export const useNotificationStore = defineStore('notification', {
                         alertStore.success('Shop has been updated');
                     }
                 }
-            }
+                */
+            };
         },
 
         async loadNotifications() {
@@ -111,6 +111,6 @@ export const useNotificationStore = defineStore('notification', {
 
             this.websocket.close();
             this.websocket = null;
-        }
-    }
-})
+        },
+    },
+});

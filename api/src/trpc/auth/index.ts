@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "..";
 import { schema } from "../../db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import bcryptjs from "bcryptjs";
 import { randomString } from "../../util";
