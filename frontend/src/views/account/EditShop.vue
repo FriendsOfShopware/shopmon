@@ -1,188 +1,309 @@
 <script setup lang="ts">
-import Header from '@/components/layout/Header.vue';
+import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
 
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useShopStore } from '@/stores/shop.store';
-
-import { Form, Field } from 'vee-validate';
 import { useRouter, useRoute } from 'vue-router';
-import * as Yup from 'yup';
+
+import { useForm } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
+
 import { ref } from 'vue';
 
 const authStore = useAuthStore();
-const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-const organizationId = parseInt(route.params.organizationId as string, 10);
+const orgId = parseInt(route.params.organizationId as string, 10);
 const shopId = parseInt(route.params.shopId as string, 10);
 
-shopStore.loadShop(organizationId, shopId);
+const shop = await trpcClient.organization.shop.get.query({ orgId, shopId });
 
-const showShopDeletionModal = ref(false)
+const showShopDeletionModal = ref(false);
 
-const schema = Yup.object().shape({
-    name: Yup.string().required('Shop name is required'),
-    url: Yup.string().required('Shop URL is required').url(),
-    newOrgId: Yup.number().required('Organization is required'),
-    clientId: Yup.string().when('url', {
-        is: (url: string) => url !== shopStore.shop?.url,
-        then: () => Yup.string().required("If you change the URL you need to provide Client-ID")
-    }),
-    clientSecret: Yup.string().when('url', {
-        is: (url: string) => url !== shopStore.shop?.url,
-        then: () => Yup.string().required("If you change the URL you need to provide Client-Secret")
-    })
+const { values, handleSubmit, errors, isSubmitting  } = useForm({
+    validationSchema: toTypedSchema(z.object({
+        name: z.string().min(1, 'Name of organization is required'),
+        url: z.string().url('URL of shop is required'),
+        newOrgId: z.number().min(1, 'Organization is required'),
+        shopUrl: z.string().url('URL of shop is required'),
+
+        // todo: only required if url exists
+        clientId: z.string().min(1, 'Client-ID is required'),
+        clientSecret: z.string().min(1, 'Client-Secret is required'),
+        /*
+        clientId: Yup.string().when('url', {
+            is: (url: string) => url !== shopStore.shop?.url,
+            then: () => Yup.string().required('If you change the URL you need to provide Client-ID'),
+        }),
+        clientSecret: Yup.string().when('url', {
+            is: (url: string) => url !== shopStore.shop?.url,
+            then: () => Yup.string().required('If you change the URL you need to provide Client-Secret'),
+        }),
+        */
+    })),
+    initialValues: shop,
 });
 
-async function onSubmit(values: Yup.InferType<typeof schema>) {
-    if (shopStore.shop) {
-        try {
-            await shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, values);
 
-            router.push({
-                name: 'account.shops.detail',
-                params: {
-                    organizationId: shopStore.shop.organizationId,
-                    shopId: shopStore.shop.id
-                }
-            })
-        } catch (e: any) {
-            alertStore.error(e);
-        }
+const onSubmit = handleSubmit(async (values) => {
+    try {
+        values.shopUrl = values.shopUrl.replace(/\/+$/, '');
+            
+        await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...values });
+
+        router.push({
+            name: 'account.shops.detail',
+            params: {
+                organizationId: orgId,
+                shopId: shopId,
+            },
+        });
+    } catch (e: any) {
+        alertStore.error(e);
     }
-}
+});
 
 async function deleteShop() {
-    if (shopStore.shop) {
-        try {
-            await shopStore.delete(shopStore.shop.organizationId, shopStore.shop.id);
+    try {
+        await trpcClient.organization.shop.delete.mutate({ orgId, shopId });
 
-            router.push('/account/shops');
-        } catch (error: any) {
-            alertStore.error(error);
-        }
+        router.push('/account/shops');
+    } catch (error: any) {
+        alertStore.error(error);
     }
 }
+
 
 </script>
     
 <template>
-    <Header :title="'Edit ' + shopStore.shop.name" v-if="shopStore.shop">
+    <header-container
+        :title="'Edit ' + shop.name"
+    >
         <router-link
-            :to="{ name: 'account.shops.detail', params: { organizationId: shopStore.shop.organizationId, shopId: shopStore.shop.id } }"
-            type="button" class="group btn">
+            :to="{ 
+                name: 'account.shops.detail',
+                params: { 
+                    organizationId: orgId,
+                    shopId: shopId 
+                } 
+            }"
+            type="button"
+            class="group btn"
+        >
             Cancel
         </router-link>
-    </Header>
-    <MainContainer v-if="shopStore.shop && authStore.user">
-        <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="shopStore.shop"
-            @submit="onSubmit">
-            <FormGroup title="Shop information" subTitle="">
+    </header-container>
+    <main-container v-if="authStore.user">
+        <form
+            @submit="onSubmit"
+        >
+            <form-group
+                title="Shop information"
+            >
                 <div class="sm:col-span-6">
-                    <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
-                    <Field type="text" name="name" id="name" autocomplete="name" class="field"
-                        v-bind:class="{ 'is-invalid': errors.name }" />
+                    <label
+                        for="Name"
+                        class="block text-sm font-medium mb-1"
+                    >
+                        Name
+                    </label>
+                    <input
+                        id="name"
+                        v-model="values.name"
+                        type="text"
+                        name="name"
+                        autocomplete="name"
+                        class="field"
+                        :class="{ 'is-invalid': errors.name }"
+                    >
                     <div class="text-red-700">
                         {{ errors.name }}
                     </div>
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="newOrgId" class="block text-sm font-medium mb-1"> Organization </label>
-                    <Field as="select" id="newOrgId" name="newOrgId" class="field">
-                        <option v-for="organization in authStore.user.organizations" :value="organization.id" :key="organization.id">
+                    <label
+                        for="newOrgId"
+                        class="block text-sm font-medium mb-1"
+                    >
+                        Organization
+                    </label>
+                    <select
+                        id="newOrgId"
+                        name="newOrgId"
+                        class="field"
+                        :value="shop.organizationId"
+                        @change="values.newOrgId = parseInt($event.target!.value)"
+                    >
+                        <option
+                            v-for="organization in authStore.user.organizations"
+                            :key="organization.id"
+                            :value="organization.id"
+                        >
                             {{ organization.name }}
                         </option>
-                    </Field>
+                    </select>
                     <div class="text-red-700">
                         {{ errors.newOrgId }}
                     </div>
                 </div>
 
                 <div class="sm:col-span-6">
-                    <label for="shopUrl" class="block text-sm font-medium mb-1"> URL </label>
-                    <Field type="text" name="shopUrl" id="shopUrl" autocomplete="url" class="field"
-                        v-bind:class="{ 'is-invalid': errors.shopUrl }" />
+                    <label
+                        for="shopUrl"
+                        class="block text-sm font-medium mb-1"
+                    >
+                        URL
+                    </label>
+                    <input
+                        id="shopUrl"
+                        v-model="values.shopUrl"
+                        type="text"
+                        name="shopUrl"
+                        autocomplete="url"
+                        class="field"
+                        :class="{ 'is-invalid': errors.shopUrl }"
+                    >
                     <div class="text-red-700">
                         {{ errors.shopUrl }}
                     </div>
                 </div>
+            </form-group>
 
-            </FormGroup>
-
-            <FormGroup title="Integration"
-                info="<p>The created integration must have access to following <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>permissions</a></p>">
-                <div class="sm:col-span-6">
-                    <label for="clientId" class="block text-sm font-medium mb-1"> Client-ID </label>
-                    <Field type="text" name="clientId" id="clientId" class="field"
-                        v-bind:class="{ 'is-invalid': errors.clientId }" />
-                    <div class="text-red-700">
-                        {{ errors.clientId }}
+            <form-group
+                title="Integration"
+            >
+                <template #info>
+                    <p>
+                        The created integration must have access to following 
+                        <a href="https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18">permissions</a>
+                    </p>
+                </template>
+                <template #default>
+                    <div class="sm:col-span-6">
+                        <label
+                            for="clientId"
+                            class="block text-sm font-medium mb-1"
+                        > Client-ID </label>
+                        <Field
+                            id="clientId"
+                            type="text"
+                            name="clientId"
+                            class="field"
+                            :class="{ 'is-invalid': errors.clientId }"
+                        />
+                        <div class="text-red-700">
+                            {{ errors.clientId }}
+                        </div>
                     </div>
-                </div>
 
-                <div class="sm:col-span-6">
-                    <label for="clientSecret" class="block text-sm font-medium mb-1"> Client-Secret
-                    </label>
-                    <Field type="text" name="clientSecret" id="clientSecret" class="field"
-                        v-bind:class="{ 'is-invalid': errors.clientSecret }" />
-                    <div class="text-red-700">
-                        {{ errors.clientSecret }}
+                    <div class="sm:col-span-6">
+                        <label
+                            for="clientSecret"
+                            class="block text-sm font-medium mb-1"
+                        >
+                            Client-Secret
+                        </label>
+                        <Field
+                            id="clientSecret"
+                            type="text"
+                            name="clientSecret"
+                            class="field"
+                            :class="{ 'is-invalid': errors.clientSecret }"
+                        />
+                        <div class="text-red-700">
+                            {{ errors.clientSecret }}
+                        </div>
                     </div>
-                </div>
-            </FormGroup>
+                </template>
+            </form-group>
 
             <div class="flex justify-end pb-12">
-                <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+                <button
+                    :disabled="isSubmitting"
+                    type="submit"
+                    class="btn btn-primary"
+                >
                     <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                        <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
-                        <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
+                        <icon-fa6-solid:floppy-disk
+                            v-if="!isSubmitting"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        />
+                        <icon-line-md:loading-twotone-loop
+                            v-else
+                            class="w-5 h-5"
+                        />
                     </span>
                     Save
                 </button>
             </div>
         </Form>
 
-        <FormGroup :title="'Deleting shop ' + shopStore.shop.name">
-            <form action="#" method="POST">
-
+        <form-group :title="'Deleting shop ' + shop.name">
+            <form
+                action="#"
+                method="POST"
+            >
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
                 <div class="mt-5">
-                    <button type="button" class="btn btn-danger group flex items-center"
-                        @click="showShopDeletionModal = true">
+                    <button
+                        type="button"
+                        class="btn btn-danger group flex items-center"
+                        @click="showShopDeletionModal = true"
+                    >
                         <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
                         Delete shop
                     </button>
                 </div>
             </form>
-        </FormGroup>
+        </form-group>
 
-        <Modal :show="showShopDeletionModal" :closeXMark="true" @close="showShopDeletionModal = false">
-            <template #icon><icon-fa6-solid:triangle-exclamation class="h-6 w-6 text-red-600 dark:text-red-400"
-                    aria-hidden="true" /></template>
-            <template #title>Delete shop</template>
+        <Modal
+            :show="showShopDeletionModal"
+            close-x-mark
+            @close="showShopDeletionModal = false"
+        >
+            <template #icon>
+                <icon-fa6-solid:triangle-exclamation
+                    class="h-6 w-6 text-red-600 dark:text-red-400"
+                    aria-hidden="true"
+                />
+            </template>
+            <template #title>
+                Delete shop
+            </template>
             <template #content>
                 Are you sure you want to delete your Shop? All of your data will
                 be permanently removed
                 from our servers forever. This action cannot be undone.
             </template>
             <template #footer>
-                <button type="button" class="btn btn-danger w-full sm:ml-3 sm:w-auto" @click="deleteShop">
+                <button
+                    type="button"
+                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
+                    @click="deleteShop"
+                >
                     Delete
                 </button>
-                <button ref="cancelButtonRef" type="button" class="btn w-full mt-3 sm:w-auto sm:mt-0"
-                    @click="showShopDeletionModal = false">
+                <button
+                    ref="cancelButtonRef"
+                    type="button"
+                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    @click="showShopDeletionModal = false"
+                >
                     Cancel
                 </button>
             </template>
         </Modal>
-
-    </MainContainer>
+    </main-container>
 </template>
     
