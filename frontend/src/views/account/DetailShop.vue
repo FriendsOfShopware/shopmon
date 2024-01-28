@@ -10,7 +10,6 @@ import RatingStars from '@/components/layout/RatingStars.vue';
 import { compareVersions } from 'compare-versions';
 import { createNewSortInstance } from 'fast-sort';
 
-import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
@@ -31,7 +30,6 @@ type Extension = RouterOutput['account']['currentUserApps'][0];
 type ExtensionCompatibilitys = RouterOutput['info']['checkExtensionCompatibility'][0];
 
 const route = useRoute();
-const shopStore = useShopStore();
 const alertStore = useAlertStore();
 
 const viewChangelogDialog = ref(false);
@@ -64,54 +62,62 @@ function openUpdateWizard() {
     viewUpdateWizardDialog.value = true;
 }
 
-async function loadShop() {
-    const organizationId = parseInt(route.params.organizationId as string, 10);
-    const shopId = parseInt(route.params.shopId as string, 10);
+const organizationId = parseInt(route.params.organizationId as string, 10);
+const shopId = parseInt(route.params.shopId as string, 10);
 
-    await shopStore.loadShop(organizationId, shopId);
-    const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
-    shopwareVersions.value = Object.keys(shopwareVersionsData).reverse()
-        .filter((version) => compareVersions(shopStore.shop!.shopware_version, version) < 0);
-    latestShopwareVersion.value = shopwareVersions.value[0];
-}
+const shop = ref(await trpcClient.organization.shop.get.query({ orgId: organizationId, shopId }));
 
-loadShop().then(function () {
-    if (shopStore?.shop?.name) {
-        document.title = shopStore.shop.name;
-    }
-});
+const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
+shopwareVersions.value = Object.keys(shopwareVersionsData).reverse()
+    .filter((version) => compareVersions(shop.value.shopware_version, version) < 0);
+latestShopwareVersion.value = shopwareVersions.value[0];
 
-async function onRefresh(pagespeed: boolean) {
+document.title = shop.value.name;
+
+
+const isRefreshing = ref(false);
+async function onRefresh(pageSpeed: boolean) {
     showShopRefreshModal.value = false;
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        try {
-            await shopStore.refreshShop(shopStore.shop.organizationId, shopStore.shop.id, pagespeed);
-            alertStore.success('Your Shop will refresh soon!');
-        } catch (e: any) {
-            alertStore.error(e);
-        }
+    isRefreshing.value = true;
+    try {
+        await trpcClient.organization.shop.refreshShop.mutate({ 
+            orgId: organizationId,
+            shopId, 
+            pageSpeed,
+        });
+        alertStore.success('Your Shop will refresh soon!');
+    } catch (e: any) {
+        alertStore.error(e);
+    } finally {
+        isRefreshing.value = false;
     }
 }
 
+const isCacheClearing = ref(false);
 async function onCacheClear() {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        try {
-            await shopStore.clearCache(shopStore.shop.organizationId, shopStore.shop.id);
-            alertStore.success('Your Shop cache was cleared successfully');
-        } catch (e: any) {
-            alertStore.error(e);
-        }
+    isCacheClearing.value = true;
+    try {
+        await trpcClient.organization.shop.clearShopCache.mutate({ orgId: organizationId, shopId });
+        alertStore.success('Your Shop cache was cleared successfully');
+    } catch (e: any) {
+        alertStore.error(e);
+    } finally {
+        isCacheClearing.value = false;
     }
 }
 
+const isReSchedulingTask = ref(false);
 async function onReScheduleTask(taskId: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        try {
-            await shopStore.reScheduleTask(shopStore.shop.organizationId, shopStore.shop.id, taskId);
-            alertStore.success('Task is re-scheduled');
-        } catch (e: any) {
-            alertStore.error(e);
-        }
+    isReSchedulingTask.value = true;
+    try {
+        await trpcClient.organization.shop.rescheduleTask.mutate({ orgId: organizationId, shopId, taskId });
+        shop.value = await trpcClient.organization.shop.get.query({ orgId: organizationId, shopId });
+
+        alertStore.success('Task is re-scheduled');
+    } catch (e: any) {
+        alertStore.error(e);
+    } finally {
+        isReSchedulingTask.value = false;
     }
 }
 
@@ -119,14 +125,17 @@ async function loadUpdateWizard(version: string) {
     loadingUpdateWizard.value = true;
 
     const body = {
-        currentVersion: shopStore.shop!.shopware_version,
+        currentVersion: shop.value.shopware_version,
         futureVersion: version,
-        extensions: shopStore.shop!.extensions,
+        extensions: shop.value.extensions?.map(extension => ({
+            name: extension.name,
+            version: extension.version,
+        })) || [],
     };
 
     const pluginCompatibilitys = await trpcClient.info.checkExtensionCompatibility.query(body);
 
-    const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
+    const extensions = JSON.parse(JSON.stringify(shop.value.extensions));
 
     for (const extension of extensions) {
         const compatibility = pluginCompatibilitys.find((plugin) => plugin.name === extension.name);
@@ -145,22 +154,36 @@ async function loadUpdateWizard(version: string) {
     loadingUpdateWizard.value = false;
 }
 
-async function ignoreCheck(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore?.shop?.ignores.push(id);
-
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores || '' });
-        notificateIgnoreUpdate();
+async function updateShop(
+    orgId: number,
+    shopId: number, 
+    payload: {
+     name?: string,
+     ignores?: string[],
+     shopUrl?: string,
+     clientId?: string,
+     clientSecret?: string
+    }) {
+    if (payload.shopUrl) {
+        payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
     }
+    await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...payload });
+    shop.value = await trpcClient.organization.shop.get.query({ orgId, shopId });
+}
+
+
+async function ignoreCheck(id: string) {
+    shop.value?.ignores.push(id);
+
+    await updateShop(organizationId, shopId, { ignores: shop.value.ignores || '' });
+    notificateIgnoreUpdate();
 }
 
 async function removeIgnore(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore.shop.ignores = shopStore.shop.ignores.filter((aid: string) => aid !== id);
+    shop.value.ignores = shop.value.ignores.filter((aid: string) => aid !== id);
 
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores || '' });
-        notificateIgnoreUpdate();
-    }
+    await updateShop(organizationId, shopId, { ignores: shop.value?.ignores || '' });
+    notificateIgnoreUpdate();
 }
 
 async function notificateIgnoreUpdate() {
@@ -171,19 +194,18 @@ async function notificateIgnoreUpdate() {
 
 <template>
     <header-container
-        v-if="shopStore.shop"
-        :title="shopStore.shop.name"
+        :title="shop.name"
     >
         <div class="flex gap-2">
             <button
                 type="button"
                 class="btn"
                 data-tooltip="Clear shop cache"
-                :disabled="shopStore.isCacheClearing"
+                :disabled="isCacheClearing"
                 @click="onCacheClear"
             >
                 <icon-ic:baseline-cleaning-services
-                    :class="{ 'animate-pulse': shopStore.isCacheClearing }"
+                    :class="{ 'animate-pulse': isCacheClearing }"
                     class="w-4 h-4"
                 />
             </button>
@@ -191,18 +213,18 @@ async function notificateIgnoreUpdate() {
                 class="btn"
                 type="button"
                 data-tooltip="Refresh shop data"
-                :disabled="shopStore.isRefreshing"
+                :disabled="isRefreshing"
                 @click="showShopRefreshModal = true"
             >
-                <icon-fa6-solid:rotate :class="{ 'animate-spin': shopStore.isRefreshing }" />
+                <icon-fa6-solid:rotate :class="{ 'animate-spin': isRefreshing }" />
             </button>
 
             <router-link
                 :to="{ 
                     name: 'account.shops.edit',
                     params: { 
-                        organizationId: shopStore.shop.organizationId,
-                        shopId: shopStore.shop.id
+                        organizationId: shop.organizationId,
+                        shopId: shop.id
                     }
                 }"
                 type="button"
@@ -217,16 +239,16 @@ async function notificateIgnoreUpdate() {
         </div>
     </header-container>
 
-    <main-container v-if="shopStore.shop && shopStore.shop.lastScrapedAt">
+    <main-container v-if="shop.lastScrapedAt">
         <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark:shadow-none">
             <div class="py-5 px-4 sm:px-6 lg:px-8">
                 <h3 class="text-lg leading-6 font-medium">
                     <icon-fa6-solid:circle-xmark
-                        v-if="shopStore.shop.status == 'red'"
+                        v-if="shop.status == 'red'"
                         class="text-red-600 mr-1 dark:text-red-400 "
                     />
                     <icon-fa6-solid:circle-info
-                        v-else-if="shopStore.shop.status === 'yellow'"
+                        v-else-if="shop.status === 'yellow'"
                         class="text-yellow-400 mr-1 dark:text-yellow-200"
                     />
                     <icon-fa6-solid:circle-check
@@ -246,10 +268,10 @@ async function notificateIgnoreUpdate() {
                             Shopware Version
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            {{ shopStore.shop.shopware_version }}
+                            {{ shop.shopware_version }}
                             <template
                                 v-if="latestShopwareVersion &&
-                                    latestShopwareVersion != shopStore.shop.shopware_version"
+                                    latestShopwareVersion != shop.shopware_version"
                             >
                                 <a
                                     class="badge badge-warning"
@@ -274,8 +296,8 @@ async function notificateIgnoreUpdate() {
                             Last Shop Update
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            <template v-if="shopStore.shop.lastUpdated">
-                                {{ formatDate(shopStore.shop.lastUpdated) }}
+                            <template v-if="shop.lastUpdated">
+                                {{ formatDate(shop.lastUpdated) }}
                             </template>
                             <template v-else>
                                 never
@@ -287,7 +309,7 @@ async function notificateIgnoreUpdate() {
                             Organization
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            {{ shopStore.shop.organizationName }}
+                            {{ shop.organizationName }}
                         </dd>
                     </div>
                     <div class="md:col-span-1">
@@ -295,7 +317,7 @@ async function notificateIgnoreUpdate() {
                             Last Checked At
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            {{ formatDateTime(shopStore.shop.lastScrapedAt) }}
+                            {{ formatDateTime(shop.lastScrapedAt) }}
                         </dd>
                     </div>
                     <div class="md:col-span-1">
@@ -303,7 +325,7 @@ async function notificateIgnoreUpdate() {
                             Environment
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            {{ shopStore.shop.cacheInfo?.environment }}
+                            {{ shop.cacheInfo?.environment }}
                         </dd>
                     </div>
                     <div class="md:col-span-1">
@@ -311,7 +333,7 @@ async function notificateIgnoreUpdate() {
                             HTTP Cache
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
-                            {{ shopStore.shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
+                            {{ shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
                         </dd>
                     </div>
                     <div class="md:col-span-1">
@@ -320,7 +342,7 @@ async function notificateIgnoreUpdate() {
                         </dt>
                         <dd class="mt-1 text-sm text-gray-500">
                             <a
-                                :href="shopStore.shop.url"
+                                :href="shop.url"
                                 data-tooltip="Go to storefront"
                                 target="_blank"
                             >
@@ -328,7 +350,7 @@ async function notificateIgnoreUpdate() {
                             </a>
                             &nbsp;/&nbsp;
                             <a
-                                :href="shopStore.shop.url + '/admin'"
+                                :href="shop.url + '/admin'"
                                 data-tooltip="Go to shopware admin"
                                 target="_blank"
                             >
@@ -342,8 +364,8 @@ async function notificateIgnoreUpdate() {
                     md:col-start-3 md:row-span-full md:row-start-1"
                 >
                     <img
-                        v-if="shopStore.shop.shopImage"
-                        :src="`/api/organization/${shopStore.shop.shopImage}`"
+                        v-if="shop.shopImage"
+                        :src="`/api/organization/${shop.shopImage}`"
                         class="h-[200px] sm:h-[400px] md:h-[200px]"
                     >
                     <icon-fa6-solid:image
@@ -356,18 +378,18 @@ async function notificateIgnoreUpdate() {
 
         <tabs
             :labels="{
-                checks: { title: 'Checks', count: shopStore.shop.checks?.length ?? 0, icon: FaCircleCheck },
-                extensions: { title: 'Extensions', count: shopStore.shop.extensions?.length ?? 0, icon: FaPlug },
-                tasks: { title: 'Scheduled Tasks', count: shopStore.shop.scheduledTask?.length ?? 0, icon: FaListCheck },
-                queue: { title: 'Queue', count: shopStore.shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
-                pagespeed: { title: 'Pagespeed', count: shopStore.shop.pageSpeed.length, icon: FaRocket },
-                changelog: { title: 'Changelog', count: shopStore.shop.changelog.length, icon: FaFileWaverform }
+                checks: { title: 'Checks', count: shop.checks?.length ?? 0, icon: FaCircleCheck },
+                extensions: { title: 'Extensions', count: shop.extensions?.length ?? 0, icon: FaPlug },
+                tasks: { title: 'Scheduled Tasks', count: shop.scheduledTask?.length ?? 0, icon: FaListCheck },
+                queue: { title: 'Queue', count: shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
+                pagespeed: { title: 'Pagespeed', count: shop.pageSpeed.length, icon: FaRocket },
+                changelog: { title: 'Changelog', count: shop.changelog.length, icon: FaFileWaverform }
             }"
         >
             <template #panel(checks)="{ label }">
                 <data-table
                     :labels="{ message: { name: 'Message' }, actions: { name: 'Ignore', class: 'px-3 text-right' } }"
-                    :data="shopStore.shop.checks"
+                    :data="shop.checks"
                 >
                     <template #cell(message)="{ item }">
                         <icon-fa6-solid:circle-xmark
@@ -396,7 +418,7 @@ async function notificateIgnoreUpdate() {
                     </template>
                     <template #cell(actions)="{ item }">
                         <button
-                            v-if="shopStore.shop.ignores.includes(item.id)"
+                            v-if="shop.ignores.includes(item.id)"
                             data-tooltip="check is ignored"
                             class="text-red-600 opacity-25 tooltip-position-left dark:text-red-400 group-hover:opacity-100"
                             type="button"
@@ -427,7 +449,7 @@ async function notificateIgnoreUpdate() {
                         installedAt: { name: 'Installed at', sortable: true },
                         issue: { name: 'Known Issue', class: 'px-3 text-right' }
                     }"
-                    :data="shopStore.shop.extensions"
+                    :data="shop.extensions"
                     :default-sorting="{ by: 'label' }"
                 >
                     <template #cell(label)="{ item }">
@@ -518,7 +540,7 @@ async function notificateIgnoreUpdate() {
                         status: { name: 'Status' },
                         actions: { name: '', class: 'px-3 text-right w-16' }
                     }"
-                    :data="shopStore.shop.scheduledTask"
+                    :data="shop.scheduledTask"
                     :default-sorting="{ by: 'nextExecutionTime' }"
                 >
                     <template #cell(lastExecutionTime)="{ item }">
@@ -585,7 +607,7 @@ async function notificateIgnoreUpdate() {
             <template #panel(queue)="{ label }">
                 <data-table
                     :labels="{ name: { name: 'Name', sortable: true }, size: { name: 'Size', sortable: true } }"
-                    :data="shopStore.shop.queueInfo"
+                    :data="shop.queueInfo"
                 />
             </template>
 
@@ -598,12 +620,12 @@ async function notificateIgnoreUpdate() {
                         bestpractices: { name: 'Best Practices' },
                         seo: { name: 'SEO' } 
                     }"
-                    :data="shopStore.shop.pageSpeed"
+                    :data="shop.pageSpeed"
                 >
                     <template #cell(created)="{ item }">
                         <a
                             target="_blank"
-                            :href="'https://pagespeed.web.dev/analysis?url=' + shopStore.shop.url"
+                            :href="'https://pagespeed.web.dev/analysis?url=' + shop.url"
                         >{{
                             formatDateTime(item.created_at) }}</a>
                     </template>
@@ -637,7 +659,7 @@ async function notificateIgnoreUpdate() {
             <template #panel(changelog)="{ label }">
                 <data-table
                     :labels="{ date: { name: 'Date', sortable: true }, changes: { name: 'Changes' } }"
-                    :data="shopStore.shop.changelog"
+                    :data="shop.changelog"
                 >
                     <template #cell(date)="{ item }">
                         {{ formatDateTime(item.date) }}
@@ -860,10 +882,10 @@ async function notificateIgnoreUpdate() {
                 />
             </template>
             <template #title>
-                Refresh {{ shopStore.shop.name }}
+                Refresh {{ shop.name }}
             </template>
             <template #content>
-                Do you also want to have a new pagespeed test?
+                Do you also want to run a new pagespeed test?
             </template>
             <template #footer>
                 <button

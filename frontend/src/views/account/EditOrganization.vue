@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
 
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 
 import { useRoute, useRouter } from 'vue-router';
 import { useForm } from 'vee-validate';
@@ -16,15 +14,12 @@ import * as z from 'zod';
 import { ref } from 'vue';
 
 const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-const { user } = storeToRefs(authStore);
-
 const organizationId = parseInt(route.params.organizationId as string, 10);
-const organization = user.value?.organizations.find(organization => organization.id == organizationId);
+const organization = await trpcClient.organization.get.query(organizationId);
 
 const showOrganizationDeletionModal = ref(false);
 
@@ -40,7 +35,7 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
 const onSaveOrganization = handleSubmit(async (values) => {
     if (organization) {
         try {
-            await organizationStore.updateOrganization(organization.id, values.name);
+            await trpcClient.organization.update.mutate({ orgId: organization.id, name: values.name });
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
@@ -56,7 +51,7 @@ const onSaveOrganization = handleSubmit(async (values) => {
 async function deleteOrganization() {
     if (organization) {
         try {
-            await organizationStore.delete(organization.id);
+            await trpcClient.organization.delete.mutate({ orgId: organization.id });
 
             await router.push({ name: 'account.organizations.list' });
         } catch (error: any) {

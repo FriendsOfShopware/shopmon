@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { trpcClient } from '@/helpers/trpc';
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 
 import MainContainer from '@/components/layout/MainContainer.vue';
@@ -6,12 +7,7 @@ import DataTable from '@/components/layout/DataTable.vue';
 
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
-import { useShopStore } from '@/stores/shop.store';
-
-const shopStore = useShopStore();
-
-shopStore.loadShops();
-
+const shops = await trpcClient.account.currentUserShops.query();
 </script>
   
 <template>
@@ -28,9 +24,9 @@ shopStore.loadShops();
             Add Shop
         </router-link>
     </header-container>
-    <main-container v-if="!shopStore.isLoading">
+    <main-container>
         <div
-            v-if="shopStore.shops.length === 0"
+            v-if="shops.length === 0"
             class="text-center"
         >
             <svg
@@ -82,7 +78,7 @@ shopStore.loadShops();
                     organizationName: {name: 'Organization', sortable: true},
                     lastScrapedAt: {name: 'last checked at', sortable: true}
                 }"
-                :data="shopStore.shops"
+                :data="shops"
                 :default-sorting="{by: 'name'}"
             >
                 <template #cell(favicon)="{ item }">

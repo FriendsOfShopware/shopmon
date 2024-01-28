@@ -4,18 +4,19 @@ import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
 import { useRouter } from 'vue-router';
 
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useShopStore } from '@/stores/shop.store';
 
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 
 const authStore = useAuthStore();
-const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const router = useRouter();
+
+const organizations = await trpcClient.account.currentUserOrganizations.query();
 
 const { values, handleSubmit, errors, isSubmitting  } = useForm({
     validationSchema: toTypedSchema(z.object({
@@ -26,13 +27,14 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
         clientSecret: z.string().min(1, 'Client Secret is required'),
     })),
     initialValues: {
-        orgId: authStore.user?.organizations[0]?.id,
+        orgId: organizations[0]?.id,
     },
 });
 
 const submit = handleSubmit(async (values) => {
     try {
-        await shopStore.createShop(values);
+        values.shopUrl = values.shopUrl.replace(/\/+$/, '');
+        await trpcClient.organization.shop.create.mutate(values);
 
         router.push('/account/shops');
     } catch (e: any) {
@@ -81,7 +83,7 @@ const submit = handleSubmit(async (values) => {
                         class="field"
                     >
                         <option
-                            v-for="organization in authStore.user.organizations"
+                            v-for="organization in organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >

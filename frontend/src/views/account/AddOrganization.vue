@@ -3,9 +3,9 @@ import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
 
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 
 import { useRouter } from 'vue-router';
 
@@ -14,7 +14,6 @@ import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 
 const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 
@@ -26,7 +25,7 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
 
 const submit = handleSubmit(async (values) => {
     try {
-        await organizationStore.createOrganization(values.name);
+        await trpcClient.organization.create.mutate(values.name);
         await router.push({ name: 'account.organizations.list' });
     } catch (e: any) {
         alertStore.error(e);

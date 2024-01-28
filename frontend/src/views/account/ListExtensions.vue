@@ -4,22 +4,19 @@ import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
 
-import { useExtensionStore } from '@/stores/extension.store';
-
-const extensionStore = useExtensionStore();
+import { trpcClient } from '@/helpers/trpc';
 
 const term = ref('');
 
-extensionStore.loadExtensions();
-
+const extensions = await trpcClient.account.currentUserApps.query();
 </script>
   
 <template>
     <header-container title="My Apps" />
   
-    <main-container v-if="!extensionStore.isLoading">
+    <main-container>
         <div
-            v-if="extensionStore.extensions.length === 0"
+            v-if="extensions.length === 0"
             class="text-center"
         >
             <svg
@@ -76,7 +73,7 @@ extensionStore.loadExtensions();
                         ratingAverage: {name: 'Rating', sortable: true},
                         issue: {name: 'Known Issue', class: 'px-3 text-right'}
                     }"
-                    :data="extensionStore.extensions"
+                    :data="extensions"
                     :default-sorting="{by: 'label'}"
                     :term="term"
                 >

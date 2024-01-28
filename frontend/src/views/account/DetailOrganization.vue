@@ -3,7 +3,6 @@ import { storeToRefs } from 'pinia';
 
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 import { useRoute, useRouter } from 'vue-router';
 
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
@@ -13,21 +12,22 @@ import { ref } from 'vue';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
+import { trpcClient } from '@/helpers/trpc';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const { user } = storeToRefs(authStore);
 
 const organizationId = parseInt(route.params.organizationId as string, 10);
-const organization = user.value?.organizations.find(organization => organization.id == organizationId);
+const organization = await trpcClient.organization.get.query(organizationId);
+const members = await trpcClient.organization.listMembers.query({ orgId: organizationId });
+
 const isOwner = organization?.ownerId === user.value!.id;
 
 const showAddMemberModal = ref(false);
 
-organizationStore.loadMembers(organizationId);
 
 const { values, handleSubmit, errors, isSubmitting  } = useForm({
     validationSchema: toTypedSchema(z.object({
@@ -37,7 +37,7 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
 
 const submit = handleSubmit(async (values) => {
     try {
-        await organizationStore.addMember(organizationId, values.email);
+        await trpcClient.organization.addMember.mutate({ orgId: organizationId, email: values.email });
         showAddMemberModal.value = false;
         await router.push({
             name: 'account.organizations.detail',
@@ -53,7 +53,7 @@ const submit = handleSubmit(async (values) => {
 async function onRemoveMember(userId: number) {
     if (organization) {
         try {
-            await organizationStore.removeMember(organization.id, userId);
+            await trpcClient.organization.removeMember.mutate({ orgId: organization.id, userId: userId});
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
@@ -151,7 +151,7 @@ async function onRemoveMember(userId: number) {
                         displayName: { name: 'Display Name' },
                         actions: { name: '', class: 'text-right' }
                     }"
-                    :data="organizationStore.members"
+                    :data="members"
                 >
                     <template #cell(displayName)="{ item }">
                         {{ item.displayName }} <template v-if="isOwner">

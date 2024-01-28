@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 
-import Nav from '@/components/layout/Nav.vue';
+import Navigation from '@/components/layout/Navigation.vue';
 import Alert from '@/components/Alert.vue';
 
 import { useAuthStore } from '@/stores/auth.store';
@@ -32,7 +32,7 @@ darkModeStore.updateDarkModeClass();
 </script>
 
 <template>
-    <nav v-if="authStore.user" />
+    <navigation v-if="authStore.user" />
     <alert />
     <router-view />
 </template>

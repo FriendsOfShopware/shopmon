@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import {storeToRefs} from 'pinia';
-import {useAuthStore} from '@/stores/auth.store';
+import { trpcClient } from '@/helpers/trpc';
 
 import HeaderContainer from '@/components/layout/Header.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import DataTable from '@/components/layout/DataTable.vue';
 
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
-
-const organizations = user.value?.organizations;
+const organizations = await trpcClient.account.currentUserOrganizations.query();
 </script>
 
 <template>
@@ -26,9 +22,9 @@ const organizations = user.value?.organizations;
             Add Organization
         </router-link>
     </header-container>
-    <main-container v-if="user">
+    <main-container>
         <div
-            v-if="organizations && organizations.length === 0"
+            v-if="organizations.length === 0"
             class="text-center"
         >
             <svg

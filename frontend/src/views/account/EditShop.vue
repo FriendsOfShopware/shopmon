@@ -23,6 +23,7 @@ const orgId = parseInt(route.params.organizationId as string, 10);
 const shopId = parseInt(route.params.shopId as string, 10);
 
 const shop = await trpcClient.organization.shop.get.query({ orgId, shopId });
+const organizations = await trpcClient.account.currentUserOrganizations.query();
 
 const showShopDeletionModal = ref(false);
 
@@ -78,8 +79,6 @@ async function deleteShop() {
         alertStore.error(error);
     }
 }
-
-
 </script>
     
 <template>
@@ -140,10 +139,10 @@ async function deleteShop() {
                         name="newOrgId"
                         class="field"
                         :value="shop.organizationId"
-                        @change="values.newOrgId = parseInt($event.target!.value)"
+                        @change="values.newOrgId = parseInt(($event.target! as HTMLSelectElement).value)"
                     >
                         <option
-                            v-for="organization in authStore.user.organizations"
+                            v-for="organization in organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >
