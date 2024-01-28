@@ -69,34 +69,34 @@ const shops = await trpcClient.account.currentUserShops.query();
             class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white dark:bg-neutral-800 dark:shadow-none"
         >
             <data-table
-                :labels="{
-                    favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'},
-                    name: {name: 'Name', sortable: true},
-                    url: {name: 'URL'},
-                    shopwareVersion: {name: 'Version', sortable: true},
-                    lastUpdated: {name: 'Last update', sortable: true, sortBy: 'lastUpdated.date'},
-                    organizationName: {name: 'Organization', sortable: true},
-                    lastScrapedAt: {name: 'last checked at', sortable: true}
-                }"
+                :columns="[
+                    { key: 'favicon', name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'},
+                    { key: 'name', name: 'Name', sortable: true},
+                    { key: 'url', name: 'URL'},
+                    { key: 'shopwareVersion', name: 'Version', sortable: true},
+                    { key: 'lastUpdated', name: 'Last update', sortable: true, sortPath: 'lastUpdated.date'},
+                    { key: 'organizationName', name: 'Organization', sortable: true},
+                    { key: 'lastScrapedAt', name: 'last checked at', sortable: true}
+                ]"
                 :data="shops"
-                :default-sorting="{by: 'name'}"
+                :sorting="{sortBy: 'name', sortDesc: false}"
             >
-                <template #cell(favicon)="{ item }">
+                <template #cell-favicon="{ row }">
                     <img
-                        v-if="item.favicon"
-                        :src="item.favicon"
+                        v-if="row.favicon"
+                        :src="row.favicon"
                         alt="Shop Logo"
                         class="inline-block w-5 h-5 align-middle"
                     >
                 </template>
 
-                <template #cell(name)="{ item }">
+                <template #cell-name="{ row }">
                     <icon-fa6-solid:circle-xmark
-                        v-if="item.status == 'red'"
+                        v-if="row.status == 'red'"
                         class="text-red-600 mr-2 text-base dark:text-red-400 "
                     />
                     <icon-fa6-solid:circle-info
-                        v-else-if="item.status === 'yellow'"
+                        v-else-if="row.status === 'yellow'"
                         class="text-yellow-400 mr-2 text-base dark:text-yellow-200"
                     />
                     <icon-fa6-solid:circle-check
@@ -107,18 +107,18 @@ const shops = await trpcClient.account.currentUserShops.query();
                         :to="{
                             name: 'account.shops.detail',
                             params: {
-                                organizationId: item.organizationId,
-                                shopId: item.id
+                                organizationId: row.organizationId,
+                                shopId: row.id
                             }
                         }"
                     >
-                        {{ item.name }}
+                        {{ row.name }}
                     </router-link>
                 </template>
 
-                <template #cell(url)="{ item }">
+                <template #cell-url="{ row }">
                     <a
-                        :href="item.url"
+                        :href="row.url"
                         data-tooltip="Go to shopware storefront"
                         target="_blank"
                     >
@@ -126,7 +126,7 @@ const shops = await trpcClient.account.currentUserShops.query();
                     </a>
           &nbsp;
                     <a
-                        :href="item.url + '/admin'"
+                        :href="row.url + '/admin'"
                         data-tooltip="Go to shopware admin"
                         target="_blank"
                     >
@@ -134,20 +134,20 @@ const shops = await trpcClient.account.currentUserShops.query();
                     </a>
                 </template>
 
-                <template #cell(lastUpdated)="{ item }">
+                <template #cell-lastUpdated="{ row }">
                     <p
-                        v-if="item.lastUpdated?.date"
-                        :data-tooltip="'from ' + item.lastUpdated.from + ' to ' + item.lastUpdated.to"
+                        v-if="row.lastUpdated?.date"
+                        :data-tooltip="'from ' + row.lastUpdated.from + ' to ' + row.lastUpdated.to"
                     >
-                        {{ formatDate(item.lastUpdated.date) }}
+                        {{ formatDate(row.lastUpdated.date) }}
                     </p>
                     <p v-else>
                         {{ null }}
                     </p>
                 </template>
 
-                <template #cell(lastScrapedAt)="{ item }">
-                    {{ formatDateTime(item.lastScrapedAt) }}
+                <template #cell-lastScrapedAt="{ row }">
+                    {{ formatDateTime(row.lastScrapedAt) }}
                 </template>
             </data-table>
         </div>

@@ -66,46 +66,47 @@ const extensions = await trpcClient.account.currentUserApps.query();
             dark:bg-neutral-800 dark:shadow-none"
             >
                 <data-table
-                    :labels="{
-                        label: {name: 'Name', sortable: true},
-                        shop: {name: 'Shop'}, version: {name: 'Version'},
-                        latestVersion: {name: 'Latest'},
-                        ratingAverage: {name: 'Rating', sortable: true},
-                        issue: {name: 'Known Issue', class: 'px-3 text-right'}
-                    }"
+                    :columns="[
+                        { key: 'label', name: 'Name', sortable: true},
+                        { key: 'shops', name: 'Shop'},
+                        { key: 'version', name: 'Version'},
+                        { key: 'latestVersion', name: 'Latest'},
+                        { key: 'ratingAverage', name: 'Rating', sortable: true},
+                        { key: 'installedAt', name: 'Installed', sortable: true},
+                    ]"
                     :data="extensions"
-                    :default-sorting="{by: 'label'}"
+                    :sorting="{sortBy: 'label', sortDesc: false}"
                     :term="term"
                 >
-                    <template #cell(label)="{ item }">
-                        <div v-if="item.storeLink">
+                    <template #cell-label="{ row }">
+                        <div v-if="row.storeLink">
                             <a
-                                :href="item.storeLink"
+                                :href="row.storeLink"
                                 target="_blank"
                             >
                                 <div
-                                    v-if="item.label"
+                                    v-if="row.label"
                                     class="font-bold whitespace-normal"
-                                >{{ item.label }}</div>
-                                <div class="dark:opacity-50">{{ item.name }}</div>
+                                >{{ row.label }}</div>
+                                <div class="dark:opacity-50">{{ row.name }}</div>
                             </a>
                         </div>
                         <div v-else>
                             <div
-                                v-if="item.label"
+                                v-if="row.label"
                                 class="font-bold whitespace-normal"
                             >
-                                {{ item.label }}
+                                {{ row.label }}
                             </div>
                             <div class="dark:opacity-50">
-                                {{ item.name }}
+                                {{ row.name }}
                             </div>
                         </div>
                     </template>
 
-                    <template #cell(shop)="{ item }">
+                    <template #cell-shops="{ row }">
                         <div
-                            v-for="shop in item.shops"
+                            v-for="shop in row.shops"
                             :key="shop.id"
                             class="mb-1"
                         >
@@ -144,15 +145,15 @@ const extensions = await trpcClient.account.currentUserApps.query();
                         </div>
                     </template>
 
-                    <template #cell(version)="{ item }">
+                    <template #cell-version="{ row }">
                         <div
-                            v-for="shop in item.shops"
+                            v-for="shop in row.shops"
                             :key="shop.id"
                             class="mb-1"
                         >
                             {{ shop.version }}
                             <span
-                                v-if="item.latestVersion && shop.version < item.latestVersion"
+                                v-if="row.latestVersion && shop.version < row.latestVersion"
                                 data-tooltip="Update available"
                             >
                                 <icon-fa6-solid:rotate class="ml-1 text-base text-amber-600 dark:text-amber-400" />
@@ -160,17 +161,17 @@ const extensions = await trpcClient.account.currentUserApps.query();
                         </div>
                     </template>
 
-                    <template #cell(ratingAverage)="{ item }">
-                        <RatingStars :rating="item.ratingAverage" />
+                    <template #cell-ratingAverage="{ row }">
+                        <RatingStars :rating="row.ratingAverage" />
                     </template>
 
-                    <template #cell(installedAt)="{ item }">
-                        <template v-if="item.installedAt">
-                            {{ formatDateTime(item.installedAt) }}
+                    <template #cell-installedAt="{ row }">
+                        <template v-if="row.installedAt">
+                            {{ formatDateTime(row.installedAt) }}
                         </template>
                     </template>
 
-                    <template #cell(issue)="{ item }">
+                    <template #cell-actions>
                         No known issues. <a href="#">Report issue</a>
                     </template>
                 </data-table>

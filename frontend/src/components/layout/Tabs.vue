@@ -6,8 +6,8 @@
                             cols-3 lg:grid-cols-none lg:auto-cols-min lg:grid-flow-col"
             >
                 <tab
-                    v-for="(label, key) in labels"
-                    :key="key"
+                    v-for="label in props.labels"
+                    :key="label.key"
                     v-slot="{ selected }"
                     as="template"
                 >
@@ -40,12 +40,12 @@
 
             <tab-panels class="mt-px">
                 <tab-panel
-                    v-for="(label, key) in labels"
-                    :key="key"
+                    v-for="label in props.labels"
+                    :key="label.key"
                     class="overflow-y-auto"
                 >
                     <slot
-                        :name="`panel(${key})`"
+                        :name="`panel-${label.key}`"
                         :label="label"
                     >
                         <div class="p-6">
@@ -53,7 +53,7 @@
                             Use
                             <pre
                                 class="bg-gray-200 inline-block text-xs px-1 py-0.5 rounded"
-                            >&lt;template #panel({{ key }})="{ label }"&gt;...&lt;/template&gt;</pre>
+                            >&lt;template #panel-{{ label.key }}="{ label }"&gt;...&lt;/template&gt;</pre>
                             to fill with content
                         </div>
                     </slot>
@@ -63,9 +63,14 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string">
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue';
 import type { FunctionalComponent } from 'vue';
 
-defineProps<{ labels: Record<string, { title: string, count?: number, icon?: FunctionalComponent }> }>();
+const props = defineProps<{ labels: Array<{
+    key: string,
+    title: string,
+    count?: number,
+    icon?: FunctionalComponent
+}>}>();
 </script>

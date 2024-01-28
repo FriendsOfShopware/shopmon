@@ -146,7 +146,7 @@ async function onRemoveMember(userId: number) {
             </div>
             <div class="border-t border-gray-200 dark:border-neutral-700">
                 <DataTable
-                    :labels="{
+                    :columns="{
                         email: { name: 'Email' },
                         displayName: { name: 'Display Name' },
                         actions: { name: '', class: 'text-right' }

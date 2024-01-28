@@ -114,7 +114,7 @@ const changelogs = await trpcClient.account.currentUserChangelogs.query();
                  dark:shadow-none mb-10"
             >
                 <DataTable
-                    :labels="{
+                    :columns="{
                         name: {name: 'Shop'},
                         changes: {name: 'Changes'},
                         date: {name: 'Date'}

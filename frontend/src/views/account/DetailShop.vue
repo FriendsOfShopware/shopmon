@@ -13,7 +13,6 @@ import { createNewSortInstance } from 'fast-sort';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { ShopChangelog } from '@/types/shop';
 import { ref } from 'vue';
 
 import { sumChanges } from '@/helpers/changelog';
@@ -26,8 +25,9 @@ import FaRocket from '~icons/fa6-solid/rocket';
 import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
-type Extension = RouterOutput['account']['currentUserApps'][0];
+type Extension = Pick<RouterOutput['account']['currentUserApps'][0],  'active' | 'name' | 'changelog'>;
 type ExtensionCompatibilitys = RouterOutput['info']['checkExtensionCompatibility'][0];
+type ShopChangelog = RouterOutput['organization']['shop']['get']['changelog'][0];
 
 const route = useRoute();
 const alertStore = useAlertStore();
@@ -377,27 +377,33 @@ async function notificateIgnoreUpdate() {
         </div>
 
         <tabs
-            :labels="{
-                checks: { title: 'Checks', count: shop.checks?.length ?? 0, icon: FaCircleCheck },
-                extensions: { title: 'Extensions', count: shop.extensions?.length ?? 0, icon: FaPlug },
-                tasks: { title: 'Scheduled Tasks', count: shop.scheduledTask?.length ?? 0, icon: FaListCheck },
-                queue: { title: 'Queue', count: shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
-                pagespeed: { title: 'Pagespeed', count: shop.pageSpeed.length, icon: FaRocket },
-                changelog: { title: 'Changelog', count: shop.changelog.length, icon: FaFileWaverform }
-            }"
+            :labels="[
+                { key: 'checks', title: 'Checks', count: shop.checks?.length ?? 0, icon: FaCircleCheck },
+                { key: 'extensions', title: 'Extensions', count: shop.extensions?.length ?? 0, icon: FaPlug },
+                { key: 'tasks', title: 'Scheduled Tasks', count: shop.scheduledTask?.length ?? 0, icon: FaListCheck },
+                { key: 'queue', title: 'Queue', count: shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
+                { key: 'pagespeed', title: 'Pagespeed', count: shop.pageSpeed.length, icon: FaRocket },
+                { key: 'changelog', title: 'Changelog', count: shop.changelog.length, icon: FaFileWaverform }
+            ]"
         >
-            <template #panel(checks)="">
+            <template #panel-checks>
                 <data-table
-                    :labels="{ message: { name: 'Message' }, actions: { name: 'Ignore', class: 'px-3 text-right' } }"
-                    :data="shop.checks"
+                    :columns="[
+                        { key: 'message', name: 'Message' },
+                    ]"
+                    :sorting="{
+                        sortBy: 'message',
+                        sortDesc: false
+                    }"
+                    :data="shop.checks || []"
                 >
-                    <template #cell(message)="{ item }">
+                    <template #cell-message="{ row }">
                         <icon-fa6-solid:circle-xmark
-                            v-if="item.level == 'red'"
+                            v-if="row.level == 'red'"
                             class="text-red-600 mr-2 text-base dark:text-red-400 "
                         />
                         <icon-fa6-solid:circle-info
-                            v-else-if="item.level === 'yellow'"
+                            v-else-if="row.level === 'yellow'"
                             class="text-yellow-400 mr-2 text-base dark:text-yellow-200 "
                         />
                         <icon-fa6-solid:circle-check
@@ -405,24 +411,24 @@ async function notificateIgnoreUpdate() {
                             class="text-green-400 mr-2 text-base dark:text-green-300"
                         />
                         <a
-                            v-if="item.link"
-                            :href="item.link"
+                            v-if="row.link"
+                            :href="row.link"
                             target="_blank"
                         >
-                            {{ item.message }}
+                            {{ row.message }}
                             <icon-fa6-solid:up-right-from-square class="text-xs" />
                         </a>
                         <template v-else>
-                            {{ item.message }}
+                            {{ row.message }}
                         </template>
                     </template>
-                    <template #cell(actions)="{ item }">
+                    <template #cell-actions="{ row }">
                         <button
-                            v-if="shop.ignores.includes(item.id)"
+                            v-if="shop.ignores.includes(row.id)"
                             data-tooltip="check is ignored"
                             class="text-red-600 opacity-25 tooltip-position-left dark:text-red-400 group-hover:opacity-100"
                             type="button"
-                            @click="removeIgnore(item.id)"
+                            @click="removeIgnore(row.id)"
                         >
                             <icon-fa6-solid:eye-slash />
                         </button>
@@ -431,7 +437,7 @@ async function notificateIgnoreUpdate() {
                             data-tooltip="check used"
                             class="opacity-25 tooltip-position-left group-hover:opacity-100"
                             type="button"
-                            @click="ignoreCheck(item.id)"
+                            @click="ignoreCheck(row.id)"
                         >
                             <icon-fa6-solid:eye />
                         </button>
@@ -439,30 +445,29 @@ async function notificateIgnoreUpdate() {
                 </data-table>
             </template>
 
-            <template #panel(extensions)="">
+            <template #panel-extensions>
                 <data-table
-                    :labels="{
-                        label: { name: 'Name', sortable: true },
-                        version: { name: 'Version' },
-                        latestVersion: { name: 'Latest' },
-                        ratingAverage: { name: 'Rating', sortable: true },
-                        installedAt: { name: 'Installed at', sortable: true },
-                        issue: { name: 'Known Issue', class: 'px-3 text-right' }
-                    }"
-                    :data="shop.extensions"
-                    :default-sorting="{ by: 'label' }"
+                    :columns="[
+                        { key: 'label', name: 'Name', sortable: true },
+                        { key: 'version', name: 'Version' },
+                        { key: 'latestVersion', name: 'Latest' },
+                        { key: 'ratingAverage', name: 'Rating', sortable: true },
+                        { key: 'installedAt', name: 'Installed at', sortable: true },
+                    ]"
+                    :data="shop.extensions || []"
+                    :sorting="{ sortBy: 'label', sortDesc: false }"
                 >
-                    <template #cell(label)="{ item }">
+                    <template #cell-label="{ row }">
                         <div class="flex items-start">
                             <span
-                                v-if="!item.installed"
+                                v-if="!row.installed"
                                 class="leading-5 text-gray-400 mr-2 text-base dark:text-neutral-500"
                                 data-tooltip="Not installed"
                             >
                                 <icon-fa6-regular:circle />
                             </span>
                             <span
-                                v-else-if="item.active"
+                                v-else-if="row.active"
                                 class="leading-5 text-green-400 mr-2 text-base dark:text-green-300"
                                 data-tooltip="Active"
                             >
@@ -475,38 +480,38 @@ async function notificateIgnoreUpdate() {
                             >
                                 <icon-fa6-solid:circle-xmark />
                             </span>
-                            <div v-if="item.storeLink">
+                            <div v-if="row.storeLink">
                                 <a
-                                    :href="item.storeLink"
+                                    :href="row.storeLink"
                                     target="_blank"
                                 >
                                     <div
-                                        v-if="item.label"
+                                        v-if="row.label"
                                         class="font-bold whitespace-normal"
-                                    >{{ item.label }}</div>
-                                    <div class="dark:opacity-50">{{ item.name }}</div>
+                                    >{{ row.label }}</div>
+                                    <div class="dark:opacity-50">{{ row.name }}</div>
                                 </a>
                             </div>
                             <div v-else>
                                 <div
-                                    v-if="item.label"
+                                    v-if="row.label"
                                     class="font-bold whitespace-normal"
                                 >
-                                    {{ item.label }}
+                                    {{ row.label }}
                                 </div>
                                 <div class="dark:opacity-50">
-                                    {{ item.name }}
+                                    {{ row.name }}
                                 </div>
                             </div>
                         </div>
                     </template>
 
-                    <template #cell(version)="{ item }">
-                        {{ item.version }}
+                    <template #cell-version="{ row }">
+                        {{ row.version }}
                         <span
-                            v-if="item.latestVersion && item.version < item.latestVersion"
+                            v-if="row.latestVersion && row.version < row.latestVersion"
                             data-tooltip="Update available"
-                            @click="openExtensionChangelog(item as Extension)"
+                            @click="openExtensionChangelog(row)"
                         >
                             <icon-fa6-solid:rotate
                                 class="ml-1 text-base text-amber-600 dark:text-amber-400 cursor-pointer"
@@ -514,89 +519,88 @@ async function notificateIgnoreUpdate() {
                         </span>
                     </template>
 
-                    <template #cell(ratingAverage)="{ item }">
-                        <rating-stars :rating="item.ratingAverage" />
+                    <template #cell-ratingAverage="{ row }">
+                        <rating-stars :rating="row.ratingAverage" />
                     </template>
 
-                    <template #cell(installedAt)="{ item }">
-                        <template v-if="item.installedAt">
-                            {{ formatDateTime(item.installedAt) }}
+                    <template #cell-installedAt="{ row }">
+                        <template v-if="row.installedAt">
+                            {{ formatDateTime(row.installedAt) }}
                         </template>
                     </template>
 
-                    <template #cell(issue)="">
+                    <template #cell-actions>
                         No known issues. <a href="#">Report issue</a>
                     </template>
                 </data-table>
             </template>
 
-            <template #panel(tasks)="">
+            <template #panel-tasks>
                 <data-table
-                    :labels="{
-                        name: { name: 'Name', sortable: true },
-                        interval: { name: 'Interval' },
-                        lastExecutionTime: { name: 'Last Executed', sortable: true },
-                        nextExecutionTime: { name: 'Next Execution', sortable: true },
-                        status: { name: 'Status' },
-                        actions: { name: '', class: 'px-3 text-right w-16' }
-                    }"
-                    :data="shop.scheduledTask"
-                    :default-sorting="{ by: 'nextExecutionTime' }"
+                    :columns="[
+                        { key: 'name', name: 'Name', sortable: true },
+                        { key: 'interval', name: 'Interval' },
+                        { key: 'lastExecutionTime', name: 'Last Executed', sortable: true },
+                        { key: 'nextExecutionTime', name: 'Next Execution', sortable: true },
+                        { key: 'status', name: 'Status' },
+                    ]"
+                    :data="shop.scheduledTask || []"
+                    :sorting="{ sortBy: 'nextExecutionTime', sortDesc: false }"
                 >
-                    <template #cell(lastExecutionTime)="{ item }">
-                        {{ formatDateTime(item.lastExecutionTime) }}
+                    <template #cell-lastExecutionTime="{ row }">
+                        {{ formatDateTime(row.lastExecutionTime) }}
                     </template>
 
-                    <template #cell(nextExecutionTime)="{ item }">
-                        {{ formatDateTime(item.nextExecutionTime) }}
+                    <template #cell-nextExecutionTime="{ row }">
+                        {{ formatDateTime(row.nextExecutionTime) }}
                     </template>
 
-                    <template #cell(status)="{ item }">
+                    <template #cell-status="{ row }">
                         <span
-                            v-if="item.status === 'scheduled' && !item.overdue"
+                            v-if="row.status === 'scheduled' && !row.overdue"
                             class="pill pill-success"
                         >
                             <icon-fa6-solid:check />
-                            {{ item.status }}
+                            {{ row.status }}
                         </span>
                         <span
-                            v-else-if="item.status === 'queued' || item.status === 'running' && !item.overdue"
+                            v-else-if="row.status === 'queued' || row.status === 'running' && !row.overdue"
                             class="pill pill-info"
                         >
                             <icon-fa6-solid:rotate />
-                            {{ item.status }}
+                            {{ row.status }}
                         </span>
                         <span
-                            v-else-if="item.status === 'scheduled' ||
-                                item.status === 'running' && item.overdue ||
-                                item.status === 'queued'
+                            v-else-if="row.status === 'scheduled' ||
+                                row.status === 'running' && row.overdue ||
+                                row.status === 'queued'
                             "
                             class="pill pill-warning"
                         >
                             <icon-fa6-solid:info class="align-[-0.1em]" />
-                            {{ item.status }}
+                            {{ row.status }}
                         </span>
                         <span
-                            v-else-if="item.status === 'inactive'"
+                            v-else-if="row.status === 'inactive'"
                             class="pill"
                         >
                             <icon-fa6-solid:pause />
-                            {{ item.status }}
+                            {{ row.status }}
                         </span>
                         <span
                             v-else
                             class="pill pill-error"
                         >
                             <icon-fa6-solid:xmark />
-                            {{ item.status }}
+                            {{ row.status }}
                         </span>
                     </template>
 
-                    <template #cell(actions)="{ item }">
+                    <template #cell-actions="{ row }">
                         <span
                             class="cursor-pointer opacity-25 hover:opacity-100 tooltip-position-left"
                             data-tooltip="Re-schedule task"
-                            @click="onReScheduleTask(item.id)"
+                            @click="onReScheduleTask(row.id)"
                         >
                             <icon-fa6-solid:arrow-rotate-right class="text-base leading-3" />
                         </span>
@@ -604,43 +608,40 @@ async function notificateIgnoreUpdate() {
                 </data-table>
             </template>
 
-            <template #panel(queue)="">
+            <template #panel-queue>
                 <data-table
-                    :labels="{ name: { name: 'Name', sortable: true }, size: { name: 'Size', sortable: true } }"
-                    :data="shop.queueInfo"
+                    :columns="[
+                        { key: 'name', name: 'Name', sortable: true },
+                        { key: 'size', name: 'Size', sortable: true }
+                    ]"
+                    :data="shop.queueInfo || []"
+                    :sorting="{ sortBy: 'size', sortDesc: true }"
                 />
             </template>
 
-            <template #panel(pagespeed)="">
+            <template #panel-pagespeed>
                 <data-table
-                    :labels="{
-                        created: { name: 'Checked At' },
-                        performance: { name: 'Performance' },
-                        accessibility: { name: 'Accessibility' },
-                        bestpractices: { name: 'Best Practices' },
-                        seo: { name: 'SEO' }
-                    }"
-                    :data="shop.pageSpeed"
+                    :columns="[
+                        { key: 'createdAt', name: 'Checked At' },
+                        { key: 'performance', name: 'Performance' },
+                        { key: 'accessibility', name: 'Accessibility' },
+                        { key: 'bestPractices', name: 'Best Practices' },
+                        { key: 'seo', name: 'SEO' }
+                    ]"
+                    :data="shop.pageSpeed || []"
+                    :sorting="{ sortBy: 'createdAt', sortDesc: true }"
                 >
-                    <template #cell(created)="{ item }">
+                    <template #cell-createdAt="{ row }">
                         <a
                             target="_blank"
                             :href="'https://pagespeed.web.dev/analysis?url=' + shop.url"
                         >{{
-                            formatDateTime(item.created_at) }}</a>
+                            formatDateTime(row.createdAt) }}</a>
                     </template>
 
-                    <template
-                        v-for="(cell, cellKey) in {
-                            'performance': 'cell(performance)',
-                            'accessibility': 'cell(accessibility)',
-                            'bestpractices': 'cell(bestpractices)',
-                            'seo': 'cell(seo)'
-                        }"
-                        #[cell]="{ item, data, itemKey }"
-                        :key="cell"
-                    >
-                        <span class="mr-2">{{ item[cellKey] }}</span>
+                    <template #cell-performance="{ row }">
+                        <span class="mr-2">{{ row.performance }}</span>
+                        <!-- todo: move to separate component
                         <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
                             <icon-fa6-solid:arrow-right
                                 :class="[{
@@ -652,24 +653,38 @@ async function notificateIgnoreUpdate() {
                             />
                         </template>
                         <icon-fa6-solid:minus v-else />
+                        -->
+                    </template>
+                    <template #cell-accessibility="{ row }">
+                        <span class="mr-2">{{ row.accessibility }}</span>
+                    </template>
+                    <template #cell-bestPractices="{ row }">
+                        <span class="mr-2">{{ row.bestPractices }}</span>
+                    </template>
+                    <template #cell-seo="{ row }">
+                        <span class="mr-2">{{ row.seo }}</span>
                     </template>
                 </data-table>
             </template>
 
-            <template #panel(changelog)="">
+            <template #panel-changelog>
                 <data-table
-                    :labels="{ date: { name: 'Date', sortable: true }, changes: { name: 'Changes' } }"
+                    :columns="[
+                        { key: 'date', name: 'Date', sortable: true },
+                        { key: 'extensions', name: 'Changes' }
+                    ]"
                     :data="shop.changelog"
+                    :sorting="{ sortBy: 'date', sortDesc: true }"
                 >
-                    <template #cell(date)="{ item }">
-                        {{ formatDateTime(item.date) }}
+                    <template #cell-date="{ row }">
+                        {{ formatDateTime(row.date) }}
                     </template>
 
-                    <template #cell(changes)="{ item }">
+                    <template #cell-extensions="{ row }">
                         <span
                             class="cursor-pointer"
-                            @click="openShopChangelog(item)"
-                        >{{ sumChanges(item) }}</span>
+                            @click="openShopChangelog(row)"
+                        >{{ sumChanges(row) }}</span>
                     </template>
                 </data-table>
             </template>
@@ -740,9 +755,9 @@ async function notificateIgnoreUpdate() {
                     formatDateTime(dialogShopChangelog.date) }}</span>
             </template>
             <template #content>
-                <template v-if="dialogShopChangelog?.old_shopware_version && dialogShopChangelog?.new_shopware_version">
-                    Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{
-                        dialogShopChangelog.new_shopware_version }}</strong>
+                <template v-if="dialogShopChangelog?.oldShopwareVersion && dialogShopChangelog?.newShopwareVersion">
+                    Shopware update from <strong>{{ dialogShopChangelog.oldShopwareVersion }}</strong> to <strong>{{
+                        dialogShopChangelog.newShopwareVersion }}</strong>
                 </template>
 
                 <div

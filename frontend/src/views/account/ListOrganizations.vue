@@ -67,24 +67,29 @@ const organizations = await trpcClient.account.currentUserOrganizations.query();
             class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden dark:shadow-none"
         >
             <data-table
-                :labels="{name: {name: 'Name'}, memberCount: {name: 'Members'}, shopCount: {name: 'Shops'}}"
+                :columns="[
+                    { key: 'name', name: 'Name' },
+                    { key: 'memberCount', name: 'Members' },
+                    { key: 'shopCount', name: 'Shops' }
+                ]"
+                :sorting="{ sortBy: 'name', sortDesc: false }"
                 :data="organizations || []"
                 class="bg-white dark:bg-neutral-800"
             >
-                <template #cell(name)="{ item }">
-                    <router-link :to="{ name: 'account.organizations.detail', params: { organizationId: item.id } }">
-                        {{ item.name }}
+                <template #cell-name="{ row }">
+                    <router-link :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }">
+                        {{ row.name }}
                     </router-link>
                 </template>
 
-                <template #cell(memberCount)="{ item }">
+                <template #cell-memberCount="{ row }">
                     <icon-fa6-solid:people-group />
-                    {{ item.memberCount }}
+                    {{ row.memberCount }}
                 </template>
 
-                <template #cell(shopsCount)="{ item }">
+                <template #cell-shopCount="{ row }">
                     <icon-fa6-solid:cart-shopping />
-                    {{ item.shopCount }}
+                    {{ row.shopCount }}
                 </template>
             </data-table>
         </div>
