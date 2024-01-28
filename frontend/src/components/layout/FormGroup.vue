@@ -3,7 +3,7 @@ import { useSlots } from 'vue';
 
 defineProps<{ title: string, subTitle?: string }>();
 
-const slots = useSlots(); 
+const slots = useSlots();
 </script>
 
 <template>

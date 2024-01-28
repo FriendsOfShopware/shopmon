@@ -21,7 +21,7 @@ const { alert } = storeToRefs(alertStore);
                 v-if="alert"
                 class="relative w-screen rounded-md shadow-lg p-3 border border-l-4 border-gray-300 flex
                 gap-2 mr-3 mb-4 bg-white dark:bg-neutral-800 dark:border-neutral-700"
-                :class="{ 
+                :class="{
                     'border-l-red-600 dark:border-l-red-600': alert.type === 'error' ,
                     'border-l-yellow-400 dark:border-l-yellow-400': alert.type === 'warning' ,
                     'border-l-green-400 dark:border-l-green-400': alert.type === 'success' ,

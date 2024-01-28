@@ -5,10 +5,10 @@ import { trpcClient, RouterOutput } from '@/helpers/trpc';
 import { client } from '@passwordless-id/webauthn';
 
 export const useAuthStore = defineStore('auth', {
-    state: (): { 
-        user: RouterOutput['account']['currentUser'] | null, 
-        returnUrl: string | null, 
-        access_token: string | null, 
+    state: (): {
+        user: RouterOutput['account']['currentUser'] | null,
+        returnUrl: string | null,
+        access_token: string | null,
         refresh_token: string | null,
         passkeys: RouterOutput['auth']['passkey']['listDevices'] | null,
     } => ({

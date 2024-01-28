@@ -16,8 +16,8 @@ const organizations = await trpcClient.account.currentUserOrganizations.query();
             class="group btn btn-primary flex items-center align-middle"
         >
             <icon-fa6-solid:plus
-                class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
-                aria-hidden="true" 
+                class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50"
+                aria-hidden="true"
             />
             Add Organization
         </router-link>
@@ -54,8 +54,8 @@ const organizations = await trpcClient.account.currentUserOrganizations.query();
                     class="btn btn-primary group flex items-center"
                 >
                     <icon-fa6-solid:plus
-                        class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50" 
-                        aria-hidden="true" 
+                        class="-ml-1 mr-2 h-4 w-4 opacity-25 group-hover:opacity-50"
+                        aria-hidden="true"
                     />
                     Add Organization
                 </router-link>

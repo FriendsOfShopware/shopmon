@@ -61,7 +61,7 @@ async function deleteOrganization() {
 }
 
 </script>
-        
+
 <template>
     <header-container
         v-if="organization"

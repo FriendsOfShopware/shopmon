@@ -35,11 +35,11 @@ const changelogs = await trpcClient.account.currentUserChangelogs.query();
                      dark:bg-neutral-800 hover:bg-sky-50 dark:hover:bg-[#2a2b2f]"
             >
                 <router-link
-                    :to="{ 
+                    :to="{
                         name: 'account.shops.detail',
-                        params: { 
-                            organizationId: shop.organizationId, 
-                            shopId: shop.id 
+                        params: {
+                            organizationId: shop.organizationId,
+                            shopId: shop.id
                         }
                     }"
                     class="flex"
@@ -123,9 +123,9 @@ const changelogs = await trpcClient.account.currentUserChangelogs.query();
                 >
                     <template #cell(name)="{ item }">
                         <router-link
-                            :to="{ 
-                                name: 'account.shops.detail', 
-                                params: { 
+                            :to="{
+                                name: 'account.shops.detail',
+                                params: {
                                     organizationId: item.organizationId,
                                     shopId: item.shopId
                                 }
@@ -137,7 +137,7 @@ const changelogs = await trpcClient.account.currentUserChangelogs.query();
 
                     <template #cell(changes)="{ item }">
                         {{ sumChanges(item) }}
-                    </template>          
+                    </template>
 
                     <template #cell(date)="{ item }">
                         {{ formatDateTime(item.date) }}

@@ -305,7 +305,7 @@ const userNavigation = [
                     :class="[
                         item.route == $route.path
                             ? 'bg-sky-700 text-white hover:text-white dark:text-white dark:hover:text-white'
-                            : 'text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75' + 
+                            : 'text-white hover:text-white hover:bg-sky-400 hover:bg-opacity-75' +
                                 'dark:text-white dark:hover:text-white',
                         'block px-3 py-2 rounded-md text-base font-medium',
                     ]"

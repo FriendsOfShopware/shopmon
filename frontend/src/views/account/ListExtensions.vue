@@ -10,10 +10,10 @@ const term = ref('');
 
 const extensions = await trpcClient.account.currentUserApps.query();
 </script>
-  
+
 <template>
     <header-container title="My Apps" />
-  
+
     <main-container>
         <div
             v-if="extensions.length === 0"
@@ -77,7 +77,7 @@ const extensions = await trpcClient.account.currentUserApps.query();
                     :default-sorting="{by: 'label'}"
                     :term="term"
                 >
-                    <template #cell(label)="{ item }">            
+                    <template #cell(label)="{ item }">
                         <div v-if="item.storeLink">
                             <a
                                 :href="item.storeLink"
@@ -110,7 +110,7 @@ const extensions = await trpcClient.account.currentUserApps.query();
                             class="mb-1"
                         >
                             <router-link
-                                :to="{ 
+                                :to="{
                                     name: 'account.shops.detail',
                                     params: {
                                         organizationId: shop.organizationId,

@@ -80,9 +80,9 @@ async function onRefresh(pageSpeed: boolean) {
     showShopRefreshModal.value = false;
     isRefreshing.value = true;
     try {
-        await trpcClient.organization.shop.refreshShop.mutate({ 
+        await trpcClient.organization.shop.refreshShop.mutate({
             orgId: organizationId,
-            shopId, 
+            shopId,
             pageSpeed,
         });
         alertStore.success('Your Shop will refresh soon!');
@@ -156,13 +156,13 @@ async function loadUpdateWizard(version: string) {
 
 async function updateShop(
     orgId: number,
-    shopId: number, 
+    shopId: number,
     payload: {
-     name?: string,
-     ignores?: string[],
-     shopUrl?: string,
-     clientId?: string,
-     clientSecret?: string
+        name?: string,
+        ignores?: string[],
+        shopUrl?: string,
+        clientId?: string,
+        clientSecret?: string
     }) {
     if (payload.shopUrl) {
         payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
@@ -220,9 +220,9 @@ async function notificateIgnoreUpdate() {
             </button>
 
             <router-link
-                :to="{ 
+                :to="{
                     name: 'account.shops.edit',
-                    params: { 
+                    params: {
                         organizationId: shop.organizationId,
                         shopId: shop.id
                     }
@@ -386,7 +386,7 @@ async function notificateIgnoreUpdate() {
                 changelog: { title: 'Changelog', count: shop.changelog.length, icon: FaFileWaverform }
             }"
         >
-            <template #panel(checks)="{ label }">
+            <template #panel(checks)="">
                 <data-table
                     :labels="{ message: { name: 'Message' }, actions: { name: 'Ignore', class: 'px-3 text-right' } }"
                     :data="shop.checks"
@@ -439,9 +439,9 @@ async function notificateIgnoreUpdate() {
                 </data-table>
             </template>
 
-            <template #panel(extensions)="{ label }">
+            <template #panel(extensions)="">
                 <data-table
-                    :labels="{ 
+                    :labels="{
                         label: { name: 'Name', sortable: true },
                         version: { name: 'Version' },
                         latestVersion: { name: 'Latest' },
@@ -524,15 +524,15 @@ async function notificateIgnoreUpdate() {
                         </template>
                     </template>
 
-                    <template #cell(issue)="{ item }">
+                    <template #cell(issue)="">
                         No known issues. <a href="#">Report issue</a>
                     </template>
                 </data-table>
             </template>
 
-            <template #panel(tasks)="{ label }">
+            <template #panel(tasks)="">
                 <data-table
-                    :labels="{ 
+                    :labels="{
                         name: { name: 'Name', sortable: true },
                         interval: { name: 'Interval' },
                         lastExecutionTime: { name: 'Last Executed', sortable: true },
@@ -569,7 +569,7 @@ async function notificateIgnoreUpdate() {
                         <span
                             v-else-if="item.status === 'scheduled' ||
                                 item.status === 'running' && item.overdue ||
-                                item.status === 'queued' 
+                                item.status === 'queued'
                             "
                             class="pill pill-warning"
                         >
@@ -604,21 +604,21 @@ async function notificateIgnoreUpdate() {
                 </data-table>
             </template>
 
-            <template #panel(queue)="{ label }">
+            <template #panel(queue)="">
                 <data-table
                     :labels="{ name: { name: 'Name', sortable: true }, size: { name: 'Size', sortable: true } }"
                     :data="shop.queueInfo"
                 />
             </template>
 
-            <template #panel(pagespeed)="{ label }">
+            <template #panel(pagespeed)="">
                 <data-table
-                    :labels="{ 
+                    :labels="{
                         created: { name: 'Checked At' },
                         performance: { name: 'Performance' },
                         accessibility: { name: 'Accessibility' },
                         bestpractices: { name: 'Best Practices' },
-                        seo: { name: 'SEO' } 
+                        seo: { name: 'SEO' }
                     }"
                     :data="shop.pageSpeed"
                 >
@@ -644,7 +644,7 @@ async function notificateIgnoreUpdate() {
                         <template v-if="data[(itemKey + 1)] && data[(itemKey + 1)][cellKey] !== item[cellKey]">
                             <icon-fa6-solid:arrow-right
                                 :class="[{
-                                    'text-green-400 -rotate-45 dark:text-green-300': 
+                                    'text-green-400 -rotate-45 dark:text-green-300':
                                         data[(itemKey + 1)][cellKey] < item[cellKey],
                                     'text-red-600 rotate-45 dark:text-red-400':
                                         data[(itemKey + 1)][cellKey] > item[cellKey]
@@ -656,7 +656,7 @@ async function notificateIgnoreUpdate() {
                 </data-table>
             </template>
 
-            <template #panel(changelog)="{ label }">
+            <template #panel(changelog)="">
                 <data-table
                     :labels="{ date: { name: 'Date', sortable: true }, changes: { name: 'Changes' } }"
                     :data="shop.changelog"

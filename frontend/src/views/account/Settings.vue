@@ -58,7 +58,14 @@ async function deleteUser() {
 async function createPasskey() {
     const challenge = await trpcClient.auth.passkey.challenge.mutate();
 
-    const registration = await client.register(authStore.user?.email!, challenge, {
+    const email = authStore.user?.email;
+
+    if (!email) {
+        alertStore.error('Cannot create passkey without email');
+        throw new Error('No email found');
+    }
+
+    const registration = await client.register(email, challenge, {
         authenticatorType: 'auto',
         userVerification: 'required',
         timeout: 60000,
@@ -190,7 +197,7 @@ async function removePasskey(id: string) {
                 v-if="authStore.passkeys"
                 :labels="{
                     name: { name: 'Name', sortable: true },
-                    createdAt: { name: 'Created At', sortable: true, sortBy: 'bla' }, 
+                    createdAt: { name: 'Created At', sortable: true, sortBy: 'bla' },
                     actions: { name: '', class: 'text-right' }
                 }"
                 :data="authStore.passkeys"
@@ -222,7 +229,7 @@ async function removePasskey(id: string) {
                 method="POST"
             >
                 <p>
-                    Once you delete your account, you will lose all data associated with it. 
+                    Once you delete your account, you will lose all data associated with it.
                     All owning organization will be also deleted with all shops associated.
                 </p>
 

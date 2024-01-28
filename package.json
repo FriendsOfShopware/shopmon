@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@stylistic/eslint-plugin-migrate": "^1.5.4"
+  }
+}

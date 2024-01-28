@@ -9,7 +9,7 @@ import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 const shops = await trpcClient.account.currentUserShops.query();
 </script>
-  
+
 <template>
     <header-container title="My Shops">
         <router-link
@@ -104,9 +104,9 @@ const shops = await trpcClient.account.currentUserShops.query();
                         class="text-green-400 mr-2 text-base dark:text-green-300"
                     />
                     <router-link
-                        :to="{ 
+                        :to="{
                             name: 'account.shops.detail',
-                            params: { 
+                            params: {
                                 organizationId: item.organizationId,
                                 shopId: item.id
                             }

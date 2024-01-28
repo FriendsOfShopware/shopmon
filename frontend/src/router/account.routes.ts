@@ -1,4 +1,4 @@
-/* eslint-disable max-len */
+/* eslint-disable @stylistic/max-len */
 import Layout from '@/views/auth/Layout.vue';
 
 export default {

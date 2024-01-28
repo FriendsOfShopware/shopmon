@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-defineProps<{ 
+defineProps<{
     modelValue: string | undefined,
     name: string, error: string | undefined
 }>();

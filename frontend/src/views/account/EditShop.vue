@@ -55,7 +55,7 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
 const onSubmit = handleSubmit(async (values) => {
     try {
         values.shopUrl = values.shopUrl.replace(/\/+$/, '');
-            
+
         await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...values });
 
         router.push({
@@ -80,18 +80,18 @@ async function deleteShop() {
     }
 }
 </script>
-    
+
 <template>
     <header-container
         :title="'Edit ' + shop.name"
     >
         <router-link
-            :to="{ 
+            :to="{
                 name: 'account.shops.detail',
-                params: { 
+                params: {
                     organizationId: orgId,
-                    shopId: shopId 
-                } 
+                    shopId: shopId
+                }
             }"
             type="button"
             class="group btn"
@@ -181,7 +181,7 @@ async function deleteShop() {
             >
                 <template #info>
                     <p>
-                        The created integration must have access to following 
+                        The created integration must have access to following
                         <a href="https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18">permissions</a>
                     </p>
                 </template>
@@ -305,4 +305,3 @@ async function deleteShop() {
         </Modal>
     </main-container>
 </template>
-    

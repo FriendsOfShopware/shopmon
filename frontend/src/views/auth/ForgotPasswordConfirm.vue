@@ -12,9 +12,8 @@ import { useAlertStore } from '@/stores/alert.store';
 
 const { values, handleSubmit, errors, isSubmitting  } = useForm({
     validationSchema: toTypedSchema(z.object({
-        
         password: z.string().min(8, 'Password must be at least 8 characters'),
-        
+
         //.matches(/^(?=.*[0-9])/, 'Password must Contain One Number Character')
         //.matches(/^(?=.*[!@#\$%\^&\*])/, 'Password must Contain  One Special Case Character'),
     })),
@@ -80,7 +79,7 @@ function goToResend() {
             class="space-y-4"
             @submit="onSubmit"
         >
-            <password-field 
+            <password-field
                 v-model="values.password"
                 name="password"
                 :error="errors.password"

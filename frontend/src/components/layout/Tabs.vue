@@ -14,7 +14,7 @@
                     <button
                         class="flex items-center focus:outline-none whitespace-nowrap pt-4 pb-3 px-3 font-medium text-base
                         relative before:block before:z-1 before:w-0 before:absolute before:left-1/2 before:-translate-x-1/2
-                        before:-bottom-[1px] before:h-[3px] before:bg-sky-500 before:hover:w-full before:transition-all 
+                        before:-bottom-[1px] before:h-[3px] before:bg-sky-500 before:hover:w-full before:transition-all
                         after:block after:absolute after:-bottom-[1px] after:h-px after:bg-gray-200 dark:after:bg-neutral-700
                         after:-left-6 after:-right-6"
                         :class="{
@@ -62,11 +62,10 @@
         </tab-group>
     </div>
 </template>
-  
+
 <script setup lang="ts">
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue';
 import type { FunctionalComponent } from 'vue';
 
 defineProps<{ labels: Record<string, { title: string, count?: number, icon?: FunctionalComponent }> }>();
 </script>
-  

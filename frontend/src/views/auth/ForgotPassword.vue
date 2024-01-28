@@ -15,7 +15,7 @@ const { values, handleSubmit, errors, isSubmitting  } = useForm({
 const onSubmit = handleSubmit(async (values) => {
     const usersStore = useAuthStore();
     const alertStore = useAlertStore();
-  
+
     try {
         await usersStore.resetPassword(values.email);
         alertStore.success('Password reset email sent');

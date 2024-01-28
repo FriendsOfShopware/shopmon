@@ -25,7 +25,7 @@ router.beforeEach(async (to) => {
     // redirect to login page if not logged in and trying to access a restricted page
     const publicPages = [
         'account.login',
-        'account.register', 
+        'account.register',
         'account.confirm',
         'account.forgot.password',
         'account.forgot.password.confirm',
@@ -49,12 +49,12 @@ router.beforeEach(async (to) => {
 const DEFAULT_TITLE = 'Shopware Monitoring';
 router.afterEach(async (to) => {
     await nextTick();
-    
+
     const title = to.meta.title;
     if(typeof title === 'string') {
         document.title = title;
         return;
-    } 
-    
+    }
+
     document.title = DEFAULT_TITLE;
 });
