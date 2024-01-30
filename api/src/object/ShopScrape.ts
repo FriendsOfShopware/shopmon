@@ -6,13 +6,14 @@ import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../..
 import promiseAllProperties from '../helper/promise'
 import { CheckerInput, CheckerRegistery } from "./status/registery";
 import { createSentry } from "../toucan";
-import Shops from "../repository/shops";
+import Shops, { User } from "../repository/shops";
 import { UserSocketHelper } from "./UserSocket";
 import { decrypt } from "../crypto";
 
 interface SQLShop {
     id: string;
     name: string;
+    status: string;
     team_id: string;
     url: string;
     shopware_version: string;
@@ -53,6 +54,11 @@ interface ShopwareStoreExtension {
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
+const STATES: { [key: string]: number }  = {
+    'green': 1,
+    'yellow': 2,
+    'red': 3
+};
 
 export class ShopScrape implements DurableObject {
     state: DurableObjectState;
@@ -106,7 +112,7 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id, ignores FROM shop WHERE id = ?';
+        const fetchShopSQL = 'SELECT id, name,status, url, shopware_version, client_id, client_secret, team_id, ignores FROM shop WHERE id = ?';
 
         const shops = await con.execute(fetchShopSQL, [id]);
 
@@ -148,6 +154,23 @@ export class ShopScrape implements DurableObject {
                 }
             )
         }
+    }
+
+    async shouldNotify(user: User, notificationKey: string): Promise<boolean> {
+        const con = getConnection(this.env);
+        const notificationResult = await con.execute('SELECT id, read, created_at FROM user_notification WHERE user_id = ? AND key = ? AND read = 0', [
+            user.id,
+            notificationKey
+        ]);
+    
+        if (notificationResult.rows.length === 0) {
+            return true;
+        }
+    
+        const lastNotification = new Date(notificationResult.rows[0].created_at);
+        const timeDifference = lastNotification.getTime() - new Date().getTime();
+    
+        return timeDifference >= (24 * 60 * 60 * 1000);
     }
 
     async updateShop(shop: SQLShop, con: Connection) {
@@ -421,7 +444,7 @@ export class ShopScrape implements DurableObject {
 
         if (shop.shopware_version !== responses.config.body.version) {
             shopUpdate.from = shop.shopware_version,
-                shopUpdate.to = responses.config.body.version;
+            shopUpdate.to = responses.config.body.version;
             shopUpdate.date = new Date().toISOString();
         }
 
@@ -446,6 +469,47 @@ export class ShopScrape implements DurableObject {
         }
 
         const checkerResult = await CheckerRegistery.check(input);
+
+        if (STATES[shop.status] < STATES[checkerResult.status]) {
+            const users = await Shops.getUsersOfShop(con, shop.id);
+            const statusChangeKey = `shop.change-status.${shop.id}`;
+            let mustNotify = false;
+
+            for (const user of users) {
+                const shouldUserBeNotified = await this.shouldNotify(user, statusChangeKey);
+
+                if (shouldUserBeNotified) {
+                    mustNotify = true;
+                }
+            }
+
+            if (mustNotify) {
+                await Shops.notify(
+                    con,
+                    this.env.USER_SOCKET,
+                    shop.id,
+                    statusChangeKey,
+                    {
+                        level: 'warning',
+                        title: `Shop: ${shop.name} status changed`,
+                        message: `Status changed from ${shop.status} to ${checkerResult.status}`,
+                        link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
+                    }
+                )
+
+                await Shops.alert(
+                    con,
+                    this.env,
+                    {
+                        key: statusChangeKey,
+                        shopId: shop.id,
+                        subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
+                        message: `The Shop ${shop.name} has change its status from ${shop.status} to ${checkerResult.status}. Pleas visit Shopmon for details.`
+
+                    }
+                )
+            }
+        }
 
         await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
             checkerResult.status,
@@ -472,11 +536,11 @@ export class ShopScrape implements DurableObject {
 
             await con.execute(
                 'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
-                shop.id,
-                JSON.stringify(extensionsDiff),
-                oldShopwareVersion,
-                newShopwareVersion
-            ]
+                    shop.id,
+                    JSON.stringify(extensionsDiff),
+                    oldShopwareVersion,
+                    newShopwareVersion
+                ]
             );
         }
 
