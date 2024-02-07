@@ -8,10 +8,10 @@ const authStore = useAuthStore();
 </script>
 
 <template>
-  <LoginContainer v-if="!authStore.user">
-    <router-view />
-  </LoginContainer>
-  <template v-else>
-    <router-view />
-  </template>
+    <login-container v-if="!authStore.user">
+        <router-view />
+    </login-container>
+    <template v-else>
+        <router-view />
+    </template>
 </template>

@@ -1,63 +1,88 @@
 <script setup lang="ts">
-import Header from '@/components/layout/Header.vue';
+import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 import FormGroup from '@/components/layout/FormGroup.vue';
 
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 
-import { Field, Form } from 'vee-validate';
 import { useRouter } from 'vue-router';
-import * as Yup from 'yup';
+
+import { useForm } from 'vee-validate';
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
 
 const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 
-const schema = Yup.object().shape({
-  name: Yup.string().required('Name for organization is required')
+const { values, handleSubmit, errors, isSubmitting  } = useForm({
+    validationSchema: toTypedSchema(z.object({
+        name: z.string().min(1, 'Team name is required'),
+    })),
 });
 
-const owner = {
-  ownerId: authStore.user?.id
-}
-
-async function onCreateOrganization(values: Yup.InferType<typeof schema>) {
-  try {
-    await organizationStore.createOrganization(values.name);
-    await router.push({ name: 'account.organizations.list' });
-  } catch (e: any) {
-    alertStore.error(e);
-  }
-}
+const submit = handleSubmit(async (values) => {
+    try {
+        await trpcClient.organization.create.mutate(values.name);
+        await router.push({ name: 'account.organizations.list' });
+    } catch (e: any) {
+        alertStore.error(e);
+    }
+});
 </script>
 
 <template>
-  <Header title="New Organization" />
-  <MainContainer v-if="authStore.user">
-    <Form v-slot="{ errors, isSubmitting }" :validation-schema="schema" :initial-values="owner" @submit="onCreateOrganization">
-      <FormGroup title="Organization Information" subTitle="">
-        <div class="sm:col-span-6">
-          <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
-          <Field type="text" name="name" id="name" autocomplete="name" class="field"
-            v-bind:class="{ 'is-invalid': errors.name }" />
-          <div class="text-red-700">
-            {{ errors.name }}
-          </div>
-        </div>
-      </FormGroup>
+    <header-container title="New Organization" />
+    <main-container v-if="authStore.user">
+        <form
+            @submit="submit"
+        >
+            <form-group
+                title="Team Information"
+                sub-title=""
+            >
+                <div class="sm:col-span-6">
+                    <label
+                        for="Name"
+                        class="block text-sm font-medium mb-1"
+                    > Name </label>
+                    <input
+                        id="name"
+                        v-model="values.name"
+                        type="text"
+                        name="name"
+                        autocomplete="name"
+                        class="field"
+                        :class="{ 'is-invalid': errors.name }"
+                    >
+                    <div class="text-red-700">
+                        {{ errors.name }}
+                    </div>
+                </div>
+            </form-group>
 
-      <div class="flex justify-end group">
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-          <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-            <icon-fa6-solid:floppy-disk class="h-5 w-5" aria-hidden="true" v-if="!isSubmitting" />
-            <icon-line-md:loading-twotone-loop class="w-5 h-5" v-else />
-          </span>
-          Save
-        </button>
-      </div>
-    </Form>
-  </MainContainer>
+            <div class="flex justify-end group">
+                <button
+                    :disabled="isSubmitting"
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
+                        <icon-fa6-solid:floppy-disk
+                            v-if="!isSubmitting"
+                            class="h-5 w-5"
+                            aria-hidden="true"
+                        />
+                        <icon-line-md:loading-twotone-loop
+                            v-else
+                            class="w-5 h-5"
+                        />
+                    </span>
+                    Save
+                </button>
+            </div>
+        </Form>
+    </main-container>
 </template>

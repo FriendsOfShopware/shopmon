@@ -9,20 +9,20 @@ interface Alert {
 export const useAlertStore = defineStore({
     id: 'alert',
     state: () => ({
-        alert: null as Alert|null
+        alert: null as Alert|null,
     }),
     actions: {
         success(message: string) {
             this.alert = { title: 'Action success', message, type: 'success' };
             setTimeout(() => {
-                this.clear()
+                this.clear();
             }, 5000);
         },
 
         info(message: string) {
             this.alert = { title: 'Information', message, type: 'info' };
             setTimeout(() => {
-                this.clear()
+                this.clear();
             }, 5000);
         },
 
@@ -36,6 +36,6 @@ export const useAlertStore = defineStore({
 
         clear() {
             this.alert = null;
-        }
-    }
+        },
+    },
 });

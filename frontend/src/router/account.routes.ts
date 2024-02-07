@@ -1,3 +1,4 @@
+/* eslint-disable @stylistic/max-len */
 import Layout from '@/views/auth/Layout.vue';
 
 export default {
@@ -22,5 +23,5 @@ export default {
         { name: 'account.organizations.detail', path: 'organizations/:organizationId(\\d+)', component: () => import('@/views/account/DetailOrganization.vue') },
         { name: 'account.organizations.edit', path: 'organizations/edit/:organizationId(\\d+)', component: () => import('@/views/account/EditOrganization.vue') },
         { name: 'account.extension.list', path: 'extensions', component: () => import('@/views/account/ListExtensions.vue') },
-    ]
+    ],
 };
