@@ -6,7 +6,8 @@
 	"features": {
 		"ghcr.io/shyim/devcontainers-features/bun:latest": {}
 	},
-	"onCreateCommand": "cd api; corepack prepare",
+	"onCreateCommand": "make setup",
+	"updateContentCommand": "make migrate",
 	"customizations": {
 		"vscode": {
 			"extensions": [
