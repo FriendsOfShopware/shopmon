@@ -42,6 +42,7 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
     await Promise.all(deletePromises);
 
     await con.delete(schema.user).where(eq(schema.user.id, id)).execute();
+    await con.delete(schema.userNotification).where(eq(schema.userNotification.userId, id)).execute();
 
     await con
         .delete(schema.userToOrganization)

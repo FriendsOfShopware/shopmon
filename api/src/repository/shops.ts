@@ -57,6 +57,14 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
         .delete(schema.shopScrapeInfo)
         .where(eq(schema.shopScrapeInfo.shopId, id))
         .execute();
+    await con
+        .delete(schema.shopChangelog)
+        .where(eq(schema.shopChangelog.shopId, id))
+        .execute();
+    await con
+        .delete(schema.shopPageSpeed)
+        .where(eq(schema.shopPageSpeed.shopId, id))
+        .execute();
 }
 
 async function getUsersOfShop(con: Drizzle, shopId: number) {
@@ -104,7 +112,7 @@ async function notify(
             notification,
         );
 
-        await UserSocketHelper.sendNotification(namespace, user.id, {
+        await UserSocketHelper.sendNotification(namespace, user.id.toString(), {
             notification: createdNotification,
         });
     }
