@@ -9,11 +9,8 @@ setup: # Setup the project
 	pnpm install --prefix api
 	pnpm install --prefix frontend
 
-migrate: $(current_dir)/api/drizzle/*.sql # Run migrations
-	for file in $^ ; do \
-		echo "Running $$file" ; \
-		pnpm --prefix api run wrangler d1 execute --local --yes shopmon --file $$file ; \
-	done
+migrate:
+	yes | pnpm --prefix api run wrangler d1 migrations apply --local shopmonDB
 
 dev: # Run the project locally
 	npx concurrently -- 'npm --prefix api run  dev:local' 'npm --prefix frontend run dev:local'
