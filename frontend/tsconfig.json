@@ -4,7 +4,7 @@
     "baseUrl": "src",
     "target": "esnext",
     "moduleResolution": "Node",
-    "module": "ESNext",
+    "module": "ES2020",
     "paths": {
       "@/*": [
         "*"

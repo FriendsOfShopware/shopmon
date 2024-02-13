@@ -70,7 +70,27 @@ export const accountRouter = router({
 
             const avatar = `https://seccdn.libravatar.org/avatar/${emailMd5}?d=identicon`;
 
-            return { ...user, avatar };
+            const organizations = await ctx.drizzle
+                .select({
+                    id: schema.organization.id,
+                    name: schema.organization.name,
+                    createdAt: schema.organization.createdAt,
+                    ownerId: schema.organization.ownerId,
+                    shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
+                    memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
+                })
+                .from(schema.organization)
+                .innerJoin(
+                    schema.userToOrganization,
+                    eq(
+                        schema.userToOrganization.organizationId,
+                        schema.organization.id,
+                    ),
+                )
+                .where(eq(schema.userToOrganization.userId, ctx.user))
+                .all();
+
+            return { ...user, avatar, organizations };
         }),
     updateCurrentUser: publicProcedure
         .use(loggedInUserMiddleware)
@@ -143,29 +163,6 @@ export const accountRouter = router({
             await Users.deleteById(ctx.drizzle, ctx.user);
 
             return true;
-        }),
-    currentUserOrganizations: publicProcedure
-        .use(loggedInUserMiddleware)
-        .query(async ({ ctx }) => {
-            return await ctx.drizzle
-            .select({
-                id: schema.organization.id,
-                name: schema.organization.name,
-                createdAt: schema.organization.createdAt,
-                ownerId: schema.organization.ownerId,
-                shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
-                memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
-            })
-            .from(schema.organization)
-            .innerJoin(
-                schema.userToOrganization,
-                eq(
-                    schema.userToOrganization.organizationId,
-                    schema.organization.id,
-                ),
-            )
-            .where(eq(schema.userToOrganization.userId, ctx.user))
-            .all();
         }),
     currentUserShops: publicProcedure
         .use(loggedInUserMiddleware)
