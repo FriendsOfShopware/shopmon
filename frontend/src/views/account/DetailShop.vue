@@ -7,17 +7,16 @@ import Modal from '@/components/layout/Modal.vue';
 import RatingStars from '@/components/layout/RatingStars.vue';
 
 import { compareVersions } from 'compare-versions';
-import { sort, createNewSortInstance } from 'fast-sort';
+import { createNewSortInstance } from 'fast-sort';
 
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
 
-import type { Extension, ExtensionCompatibilitys, ShopChangelog, ShopwareVersion } from '@apiTypes/shop';
+import type { Extension, ExtensionCompatibilitys, ShopChangelog } from '@/types/shop';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { sumChanges } from '@/helpers/changelog';
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
@@ -26,6 +25,7 @@ import FaPlug from '~icons/fa6-solid/plug';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaRocket from '~icons/fa6-solid/rocket';
 import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import { trpcClient } from '@/helpers/trpc';
 
 const route = useRoute();
 const shopStore = useShopStore();
@@ -62,12 +62,12 @@ function openUpdateWizard() {
 }
 
 async function loadShop() {
-  const teamId = parseInt(route.params.teamId as string, 10);
+  const organizationId = parseInt(route.params.organizationId as string, 10);
   const shopId = parseInt(route.params.shopId as string, 10);
 
-  await shopStore.loadShop(teamId, shopId);
-  const shopwareVersionsData = await fetchWrapper.get('/info/latest-shopware-version') as ShopwareVersion[];
-  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop.shopware_version, version) < 0);
+  await shopStore.loadShop(organizationId, shopId);
+  const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
+  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop!!.shopware_version, version) < 0);
   latestShopwareVersion.value = shopwareVersions.value[0];
 }
 
@@ -79,9 +79,9 @@ loadShop().then(function () {
 
 async function onRefresh(pagespeed: boolean) {
   showShopRefreshModal.value = false;
-  if (shopStore?.shop?.team_id && shopStore?.shop?.id) {
+  if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
     try {
-      await shopStore.refreshShop(shopStore.shop.team_id, shopStore.shop.id, pagespeed);
+      await shopStore.refreshShop(shopStore.shop.organizationId, shopStore.shop.id, pagespeed);
       alertStore.success('Your Shop will refresh soon!');
     } catch (e: any) {
       alertStore.error(e);
@@ -90,9 +90,9 @@ async function onRefresh(pagespeed: boolean) {
 }
 
 async function onCacheClear() {
-  if (shopStore?.shop?.team_id && shopStore?.shop?.id) {
+  if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
     try {
-      await shopStore.clearCache(shopStore.shop.team_id, shopStore.shop.id);
+      await shopStore.clearCache(shopStore.shop.organizationId, shopStore.shop.id);
       alertStore.success('Your Shop cache was cleared successfully');
     } catch (e: any) {
       alertStore.error(e);
@@ -101,9 +101,9 @@ async function onCacheClear() {
 }
 
 async function onReScheduleTask(taskId: string) {
-  if (shopStore?.shop?.team_id && shopStore?.shop?.id) {
+  if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
     try {
-      await shopStore.reScheduleTask(shopStore.shop.team_id, shopStore.shop.id, taskId);
+      await shopStore.reScheduleTask(shopStore.shop.organizationId, shopStore.shop.id, taskId);
       alertStore.success('Task is re-scheduled');
     } catch (e: any) {
       alertStore.error(e);
@@ -115,16 +115,17 @@ async function loadUpdateWizard(version: string) {
   loadingUpdateWizard.value = true;
 
   const body = {
-    "currentVersion": shopStore.shop?.shopware_version,
-    "futureVersion": version,
-    "plugins": shopStore.shop?.extensions
+    currentVersion: shopStore.shop!!.shopware_version,
+    futureVersion: version,
+    extensions: shopStore.shop!!.extensions
   }
 
-  const pluginCompatibilitys = await fetchWrapper.post('/info/check-extension-compatibility', body);
+  const pluginCompatibilitys = await trpcClient.info.checkExtensionCompatibility.query(body)
+
   const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
 
   for (const extension of extensions) {
-    const compatibility = pluginCompatibilitys.find((plugin: Extension) => plugin.name === extension.name)
+    const compatibility = pluginCompatibilitys.find((plugin) => plugin.name === extension.name)
     extension.compatibility = null;
     if (compatibility) {
       extension.compatibility = compatibility.status;
@@ -141,19 +142,19 @@ async function loadUpdateWizard(version: string) {
 }
 
 async function ignoreCheck(id: string) {
-  if (shopStore?.shop?.team_id && shopStore?.shop?.id) {
+  if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
     shopStore?.shop?.ignores.push(id);
 
-    shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
+    shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
     notificateIgnoreUpdate();
   }
 }
 
 async function removeIgnore(id: string) {
-  if (shopStore?.shop?.team_id && shopStore?.shop?.id) {
+  if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
     shopStore.shop.ignores = shopStore.shop.ignores.filter((aid: string) => aid !== id);
 
-    shopStore.updateShop(shopStore.shop.team_id, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
+    shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
     notificateIgnoreUpdate();
   }
 }
@@ -176,7 +177,7 @@ async function notificateIgnoreUpdate() {
       </button>
 
       <router-link
-        :to="{ name: 'account.shops.edit', params: { teamId: shopStore.shop.team_id, shopId: shopStore.shop.id } }"
+        :to="{ name: 'account.shops.edit', params: { organizationId: shopStore.shop.organizationId, shopId: shopStore.shop.id } }"
         type="button" class="group btn btn-primary flex items-center">
         <icon-fa6-solid:pencil class="-ml-1 mr-2 opacity-25 group-hover:opacity-50" aria-hidden="true" />
         Edit Shop
@@ -184,7 +185,7 @@ async function notificateIgnoreUpdate() {
     </div>
   </Header>
 
-  <MainContainer v-if="shopStore.shop && shopStore.shop.last_scraped_at">
+  <MainContainer v-if="shopStore.shop && shopStore.shop.lastScrapedAt">
     <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark:shadow-none">
       <div class="py-5 px-4 sm:px-6 lg:px-8">
         <h3 class="text-lg leading-6 font-medium">
@@ -218,8 +219,8 @@ async function notificateIgnoreUpdate() {
           <div class="md:col-span-1">
             <dt class="font-medium">Last Shop Update</dt>
             <dd class="mt-1 text-sm text-gray-500">
-              <template v-if="shopStore.shop.last_updated?.date">
-                {{ formatDate(shopStore.shop.last_updated.date) }}
+              <template v-if="shopStore.shop.lastUpdated">
+                {{ formatDate(shopStore.shop.lastUpdated) }}
               </template>
               <template v-else>
                 never
@@ -227,20 +228,20 @@ async function notificateIgnoreUpdate() {
             </dd>
           </div>
           <div class="md:col-span-1">
-            <dt class="font-medium">Team</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.team_name }}</dd>
+            <dt class="font-medium">Organization</dt>
+            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.organizationName }}</dd>
           </div>
           <div class="md:col-span-1">
             <dt class="font-medium">Last Checked At</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ formatDateTime(shopStore.shop.last_scraped_at) }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">{{ formatDateTime(shopStore.shop.lastScrapedAt) }}</dd>
           </div>
           <div class="md:col-span-1">
             <dt class="font-medium">Environment</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cache_info.environment }}</dd>
+            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cacheInfo?.environment }}</dd>
           </div>
           <div class="md:col-span-1">
             <dt class="font-medium">HTTP Cache</dt>
-            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cache_info.httpCache ? 'Enabled' : 'Disabled' }}
+            <dd class="mt-1 text-sm text-gray-500">{{ shopStore.shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
             </dd>
           </div>
           <div class="md:col-span-1">
@@ -258,19 +259,19 @@ async function notificateIgnoreUpdate() {
         </dl>
         <div
           class="mt-6 sm:mt-0 sm:col-span-1 sm:row-span-full sm:col-start-2 sm:row-start-1 md:col-start-3 md:row-span-full md:row-start-1">
-          <img :src="`/api/team/${shopStore.shop.shop_image}`" class="h-[200px] sm:h-[400px] md:h-[200px]"
-            v-if="shopStore.shop.shop_image">
+          <img :src="`/api/organization/${shopStore.shop.shopImage}`" class="h-[200px] sm:h-[400px] md:h-[200px]"
+            v-if="shopStore.shop.shopImage">
           <icon-fa6-solid:image v-else class="text-gray-100 text-9xl" />
         </div>
       </div>
     </div>
 
     <Tabs :labels="{
-      checks: { title: 'Checks', count: shopStore.shop.checks.length, icon: FaCircleCheck },
-      extensions: { title: 'Extensions', count: shopStore.shop.extensions.length, icon: FaPlug },
-      tasks: { title: 'Scheduled Tasks', count: shopStore.shop.scheduled_task.length, icon: FaListCheck },
-      queue: { title: 'Queue', count: shopStore.shop.queue_info.length, icon: FaCircleCheck },
-      pagespeed: { title: 'Pagespeed', count: shopStore.shop.pagespeed.length, icon: FaRocket },
+      checks: { title: 'Checks', count: shopStore.shop.checks?.length ?? 0, icon: FaCircleCheck },
+      extensions: { title: 'Extensions', count: shopStore.shop.extensions?.length ?? 0, icon: FaPlug },
+      tasks: { title: 'Scheduled Tasks', count: shopStore.shop.scheduledTask?.length ?? 0, icon: FaListCheck },
+      queue: { title: 'Queue', count: shopStore.shop.queueInfo?.length ?? 0, icon: FaCircleCheck },
+      pagespeed: { title: 'Pagespeed', count: shopStore.shop.pageSpeed.length, icon: FaRocket },
       changelog: { title: 'Changelog', count: shopStore.shop.changelog.length, icon: FaFileWaverform }
     }">
 
@@ -362,7 +363,7 @@ async function notificateIgnoreUpdate() {
       <template #panel(tasks)="{ label }">
         <DataTable
           :labels="{ name: { name: 'Name', sortable: true }, interval: { name: 'Interval' }, lastExecutionTime: { name: 'Last Executed', sortable: true }, nextExecutionTime: { name: 'Next Execution', sortable: true }, status: { name: 'Status' }, actions: { name: '', class: 'px-3 text-right w-16' } }"
-          :data="shopStore.shop.scheduled_task" :default-sorting="{ by: 'nextExecutionTime' }">
+          :data="shopStore.shop.scheduledTask" :default-sorting="{ by: 'nextExecutionTime' }">
 
           <template #cell(lastExecutionTime)="{ item }">
             {{ formatDateTime(item.lastExecutionTime) }}
@@ -409,14 +410,14 @@ async function notificateIgnoreUpdate() {
 
       <template #panel(queue)="{ label }">
         <DataTable :labels="{ name: { name: 'Name', sortable: true }, size: { name: 'Size', sortable: true } }"
-          :data="shopStore.shop.queue_info">
+          :data="shopStore.shop.queueInfo">
         </DataTable>
       </template>
 
       <template #panel(pagespeed)="{ label }">
         <DataTable
           :labels="{ created: { name: 'Checked At' }, performance: { name: 'Performance' }, accessibility: { name: 'Accessibility' }, bestpractices: { name: 'Best Practices' }, seo: { name: 'SEO' } }"
-          :data="shopStore.shop.pagespeed">
+          :data="shopStore.shop.pageSpeed">
           <template #cell(created)="{ item }">
             <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url=' + shopStore.shop.url">{{
               formatDateTime(item.created_at) }}</a>
@@ -457,7 +458,7 @@ async function notificateIgnoreUpdate() {
     <Modal :show="viewChangelogDialog" :closeXMark="true" @close="viewChangelogDialog = false">
       <template #title>Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span></template>
       <template #content>
-        <ul v-if="dialogExtension?.changelog && dialogExtension.changelog.length > 0">
+        <ul v-if="dialogExtension?.changelog?.length ?? 0 > 0">
           <li class="mb-2" v-for="changeLog in dialogExtension.changelog" :key="changeLog.version">
             <div class="font-medium mb-1">
               <span data-tooltip="not compatible with your version" v-if="!changeLog.isCompatible">

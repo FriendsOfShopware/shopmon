@@ -1,11 +1,20 @@
-import { WebsocketMessage } from "../../../shared/notification";
+import { schema } from '../db';
+import type { Bindings } from '../router';
+
+type WebsocketMessage = {
+    notification?: typeof schema.userNotification.$inferSelect;
+    shopUpdate?: {
+        id: number;
+        organizationId: number;
+    };
+};
 
 export class UserSocket implements DurableObject {
     state: DurableObjectState;
-    env: Env;
+    env: Bindings;
     sessions: WebSocket[];
 
-    constructor(state: DurableObjectState, env: Env) {
+    constructor(state: DurableObjectState, env: Bindings) {
         this.state = state;
         this.env = env;
 
@@ -16,8 +25,8 @@ export class UserSocket implements DurableObject {
         const { pathname } = new URL(req.url);
 
         if (pathname === '/api/ws') {
-            if (req.headers.get("Upgrade") != "websocket") {
-                return new Response("Expected websocket", { status: 400 });
+            if (req.headers.get('Upgrade') !== 'websocket') {
+                return new Response('Expected websocket', { status: 400 });
             }
 
             const { 0: client, 1: server } = new WebSocketPair();
@@ -27,12 +36,14 @@ export class UserSocket implements DurableObject {
             server.accept();
 
             const closeOrErrorHandler = () => {
-                this.sessions = this.sessions.filter(member => member !== server);
+                this.sessions = this.sessions.filter(
+                    (member) => member !== server,
+                );
             };
 
             // Cleanup when the client closes the connection
-            server.addEventListener("close", closeOrErrorHandler);
-            server.addEventListener("error", closeOrErrorHandler);
+            server.addEventListener('close', closeOrErrorHandler);
+            server.addEventListener('error', closeOrErrorHandler);
 
             return new Response(null, { status: 101, webSocket: client });
         }
@@ -40,9 +51,9 @@ export class UserSocket implements DurableObject {
         if (pathname === '/api/send') {
             const data = await req.text();
 
-            this.sessions.forEach((session) => {
+            for (const session of this.sessions) {
                 session.send(data);
-            });
+            }
 
             return new Response(null, { status: 202 });
         }
@@ -51,11 +62,17 @@ export class UserSocket implements DurableObject {
     }
 }
 
-export class UserSocketHelper {
-    static async sendNotification(namespace: DurableObjectNamespace, userId: string, notification: WebsocketMessage) {
-        await namespace.get(namespace.idFromName(userId)).fetch('http://localhost/api/send', {
-            method: 'POST',
-            body: JSON.stringify(notification)
-        });
-    }
-}
+export const UserSocketHelper = {
+    async sendNotification(
+        namespace: DurableObjectNamespace,
+        userId: string,
+        notification: WebsocketMessage,
+    ) {
+        await namespace
+            .get(namespace.idFromName(userId))
+            .fetch('http://localhost/api/send', {
+                method: 'POST',
+                body: JSON.stringify(notification),
+            });
+    },
+};

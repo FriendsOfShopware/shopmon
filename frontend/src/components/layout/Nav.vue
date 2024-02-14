@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
+import { useDarkModeStore } from '@/stores/darkMode.store';
 
 import Logo from '@/components/layout/Logo.vue';
 
@@ -25,29 +25,19 @@ import { formatDateTime } from '@/helpers/formatter';
 
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
+const darkModeStore = useDarkModeStore();
 
 const navigation = [
   { name: 'Dashboard', route: '/' },
   { name: 'My Shops', route: '/account/shops' },
   { name: 'My Apps', route: '/account/extensions' },
-  { name: 'My Teams', route: '/account/teams' },
+  { name: 'My Organizations', route: '/account/organizations' },
 ];
 
 const userNavigation = [
   { name: 'Settings', route: '/account/settings', icon: FaGear, },
   { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
-
-const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-function toggleDarkMode() {
-  if (darkMode.value) {
-    document.documentElement.classList.remove('dark');
-  } else {
-    document.documentElement.classList.add('dark');
-  }
-  darkMode.value = !darkMode.value;
-}
 
 </script>
 
@@ -78,8 +68,8 @@ function toggleDarkMode() {
       <div class="flex ml-4 md:ml-6 items-center gap-3">
         <button
           class="text-sky-200 h-8 w-8 bg-sky-400 p-1 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
-          @click="toggleDarkMode">
-          <icon-fa6-regular:moon class="w-5 h-5" v-if="darkMode" />
+          @click="darkModeStore.toggleDarkMode">
+          <icon-fa6-regular:moon class="w-5 h-5" v-if="darkModeStore.darkMode" />
           <icon-fa6-regular:sun class="w-5 h-5" v-else />
         </button>
         <Popover v-slot="{ open }" class="md:relative">
@@ -120,7 +110,7 @@ function toggleDarkMode() {
                         {{ notification.title }}
                       </div>
                       <div class="text-xs mb-[0.15rem] text-gray-500 dark:text-neutral-500">
-                        {{ formatDateTime(notification.created_at) }}
+                        {{ formatDateTime(notification.createdAt) }}
                       </div>
                       <div class="text-gray-500 dark:text-neutral-500">
                         {{ notification.message }} <router-link :to="notification.link" type="a"
@@ -163,7 +153,7 @@ function toggleDarkMode() {
                 class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white focus:outline-none z-10 dark:bg-neutral-800">
                 <div class="px-4 py-2 border-b dark:border-neutral-700">
                   <div class="text-base font-medium">
-                    Hi {{ authStore.user.username }}
+                    Hi {{ authStore.user.displayName }}
                   </div>
                 </div>
                 <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
@@ -221,7 +211,7 @@ function toggleDarkMode() {
           </div>
           <div class="ml-3">
             <div class="text-base font-medium text-white">
-              {{ authStore.user.username }}
+              {{ authStore.user.displayName }}
             </div>
             <div class="text-sm font-medium text-sky-200">
               {{ authStore.user.email }}

@@ -1,16 +1,22 @@
 import { defineStore } from 'pinia';
-
-import { fetchWrapper } from '@/helpers/fetch-wrapper';
 import { router } from '@/router';
-import type { User } from '@apiTypes/user';
 import { useNotificationStore } from './notification.store';
+import { trpcClient, RouterOutput } from '@/helpers/trpc';
+import { client } from '@passwordless-id/webauthn'
 
 export const useAuthStore = defineStore('auth', {
-    state: (): { user: User | null, returnUrl: string | null, access_token: string | null, refresh_token: string | null } => ({
+    state: (): { 
+        user: RouterOutput['account']['currentUser'] | null, 
+        returnUrl: string | null, 
+        access_token: string | null, 
+        refresh_token: string | null,
+        passkeys: RouterOutput['auth']['passkey']['listDevices'] | null,
+    } => ({
         user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
         access_token: localStorage.getItem('access_token'),
         refresh_token: localStorage.getItem('refresh_token'),
+        passkeys: null,
     }),
     getters: {
         isAuthenticated(): boolean {
@@ -23,22 +29,26 @@ export const useAuthStore = defineStore('auth', {
                 return;
             }
 
-            this.user = await fetchWrapper.get(`/account/me`);
+            this.user = await trpcClient.account.currentUser.query();
 
             localStorage.setItem('user', JSON.stringify(this.user));
         },
 
+        async loadPasskeys() {
+            this.passkeys = await trpcClient.auth.passkey.listDevices.query();
+
+            return this.passkeys;
+        },
+
         async login(email: string, password: string) {
-            const login = await fetchWrapper.post(`/auth/token`, {
-                client_id: 'shopmon',
-                grant_type: 'password',
-                username: email,
-                password: password,
-            });
+            const token = await trpcClient.auth.loginWithPassword.mutate({
+                email,
+                password
+            })
 
-            this.setAccessToken(login.access_token, login.refresh_token);
+            localStorage.setItem('access_token', token);
 
-            const user = await fetchWrapper.get(`/account/me`);
+            const user = await trpcClient.account.currentUser.query();
 
             // update pinia state
             this.user = user;
@@ -46,32 +56,55 @@ export const useAuthStore = defineStore('auth', {
             // store user details and jwt in local storage to keep user logged in between page refreshes
             localStorage.setItem('user', JSON.stringify(user));
 
-            useNotificationStore().connect(login.access_token);
+            useNotificationStore().connect(token);
             await useNotificationStore().loadNotifications();
         },
 
-        async register(user: object) {
-            await fetchWrapper.post(`/auth/register`, user);
+        async loginWithPasskey() {
+            const challenge = await trpcClient.auth.passkey.challenge.mutate();
+            const authentication = await client.authenticate([], challenge, {
+                authenticatorType: "auto",
+                userVerification: "required",
+                timeout: 60000
+            });
+
+            const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
+
+            localStorage.setItem('access_token', token);
+            const user = await trpcClient.account.currentUser.query();
+
+            // update pinia state
+            this.user = user;
+
+            // store user details and jwt in local storage to keep user logged in between page refreshes
+            localStorage.setItem('user', JSON.stringify(user));
+
+            useNotificationStore().connect(token);
+            await useNotificationStore().loadNotifications();
+        },
+
+        async register(user: { email: string, password: string, displayName: string }) {
+            trpcClient.auth.register.mutate(user);
         },
 
         async confirmMail(token: string) {
-            await fetchWrapper.post(`/auth/confirm/${token}`);
+            await trpcClient.auth.confirmVerification.mutate(token);
         },
 
         async resetPassword(email: string) {
-            await fetchWrapper.post(`/auth/reset`, { email });
+            await trpcClient.auth.passwordResetRequest.mutate(email);
         },
 
         async resetAvailable(token: string) {
-            await fetchWrapper.get(`/auth/reset/${token}`);
+            return await trpcClient.auth.passwordResetAvailable.mutate(token);
         },
 
         async confirmResetPassword(token: string, password: string) {
-            await fetchWrapper.post(`/auth/reset/${token}`, { password });
+            return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
         },
 
-        async updateProfile(info: { username: string, email: string, currentPassword: string, newPassword: string }) {
-            await fetchWrapper.patch(`/account/me`, info);
+        async updateProfile(info: { displayName: string, email: string, currentPassword: string, newPassword: string }) {
+            await trpcClient.account.updateCurrentUser.mutate(info);
 
             if (info.newPassword && info.email) {
                 await this.login(info.email, info.newPassword);
@@ -80,17 +113,12 @@ export const useAuthStore = defineStore('auth', {
             await this.refreshUser();
         },
 
-        setAccessToken(access_token: string, refresh_token: string | null = null) {
-            this.access_token = access_token;
-            localStorage.setItem('access_token', access_token);
+        async logout() {
+            // If session expired, it's fine that trpc fails
+            try {
+                await trpcClient.auth.logout.mutate();
+            } catch (e) { }
 
-            if (refresh_token) {
-                this.refresh_token = refresh_token;
-                localStorage.setItem('refresh_token', refresh_token);
-            }
-        },
-
-        logout() {
             this.user = null;
             this.refresh_token = null;
             this.access_token = null;
@@ -102,7 +130,7 @@ export const useAuthStore = defineStore('auth', {
 
         async delete() {
             useNotificationStore().disconnect();
-            await fetchWrapper.delete(`/account/me`);
+            await trpcClient.account.deleteCurrentUser.mutate();
             this.logout();
         }
     },

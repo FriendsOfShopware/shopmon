@@ -1,5 +1,11 @@
-import type { Shop, ShopAlert, User } from "../repository/shops";
-import { createSentry } from "../toucan";
+import type { Shop, ShopAlert, User } from '../repository/shops';
+// @ts-expect-error
+import passwordResetTemplate from './sources/password-reset.mjml';
+// @ts-expect-error
+import alertTemplate from './sources/alert.mjml';
+// @ts-expect-error
+import accountConfirmationTemplate from './sources/confirmation.mjml';
+import { Bindings } from '../router';
 
 interface MaiLRequest {
     to: string;
@@ -7,15 +13,15 @@ interface MaiLRequest {
     body: string;
 }
 
-async function sendMail(env: Env, mail: MaiLRequest) {
+async function sendMail(env: Bindings, mail: MaiLRequest) {
     if (env.MAIL_ACTIVE === 'false') {
-        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`)
+        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`);
         console.log(mail.body);
         return;
     }
 
     // https://blog.cloudflare.com/sending-email-from-workers-with-mailchannels
-    const response = await fetch(`https://api.mailchannels.net/tx/v1/send`, {
+    const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
@@ -56,51 +62,50 @@ async function sendMail(env: Env, mail: MaiLRequest) {
     }
 }
 
-export async function sendMailConfirmToUser(env: Env, email: string, token: string) {
-    const mailBody = `
-        <p>Hi,</p>
-        <p>Thank you for registering with us. Please click the link below to confirm your email address.</p>
-
-        <p><a href="${env.FRONTEND_URL}/account/confirm/${token}">Confirm email</a></p>
-
-        <p>Best regards,</p>
-        <p>FriendsOfShopware</p>
-    `;
-
+export async function sendMailConfirmToUser(
+    env: Bindings,
+    email: string,
+    token: string,
+) {
     await sendMail(env, {
         to: email,
         subject: 'Confirm your email address',
-        body: mailBody
+        body: accountConfirmationTemplate({
+            FRONTEND_URL: env.FRONTEND_URL,
+            token: token,
+        }),
     });
 }
 
-export async function sendMailResetPassword(env: Env, email: string, token: string) {
-    const mailBody = `
-        <p>Hi,</p>
-        <p>Please click the link below to reset your password.</p>
-
-        <p><a href="${env.FRONTEND_URL}/account/forgot-password/${token}">Reset password</a></p>
-
-        <p>Best regards,</p>
-        <p>FriendsOfShopware</p>
-    `;
-
+export async function sendMailResetPassword(
+    env: Bindings,
+    email: string,
+    token: string,
+) {
     await sendMail(env, {
         to: email,
         subject: 'Reset your password',
-        body: mailBody
+        body: passwordResetTemplate({
+            FRONTEND_URL: env.FRONTEND_URL,
+            token: token,
+        }),
     });
 }
 
-export async function sendAlert(env: Env, shop: Shop, user: User, alert: ShopAlert) {
+export async function sendAlert(
+    env: Bindings,
+    shop: Shop,
+    user: User,
+    alert: ShopAlert,
+) {
     await sendMail(env, {
         to: user.email,
         subject: `Shop Alert: ${alert.subject} - ${shop.name}`,
-        body: `Hello ${user.username},<br><br>
-
-        The Shop ${shop.name} has an new alert: <br><br>
-
-        ${alert.message}.
-        `
-    })
+        body: alertTemplate({
+            FRONTEND_URL: env.FRONTEND_URL,
+            shop,
+            alert,
+            user,
+        }),
+    });
 }

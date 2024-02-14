@@ -41,7 +41,7 @@ shopStore.loadShops();
       class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white dark:bg-neutral-800 dark:shadow-none"
       v-else>
       <DataTable
-        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopware_version: {name: 'Version', sortable: true}, last_updated: {name: 'Last update', sortable: true, sortBy: 'last_updated.date'}, team_name: {name: 'Team', sortable: true}, last_scraped_at: {name: 'last checked at', sortable: true}}"
+        :labels="{favicon: {name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3'}, name: {name: 'Name', sortable: true}, url: {name: 'URL'}, shopwareVersion: {name: 'Version', sortable: true}, lastUpdated: {name: 'Last update', sortable: true, sortBy: 'lastUpdated.date'}, organizationName: {name: 'Organization', sortable: true}, lastScrapedAt: {name: 'last checked at', sortable: true}}"
         :data="shopStore.shops"
         :default-sorting="{by: 'name'}">
         <template #cell(favicon)="{ item }">
@@ -54,7 +54,7 @@ shopStore.loadShops();
           <icon-fa6-solid:circle-info class="text-yellow-400 mr-2 text-base dark:text-yellow-200"
             v-else-if="item.status === 'yellow'" />
           <icon-fa6-solid:circle-check class="text-green-400 mr-2 text-base dark:text-green-300" v-else />
-          <router-link :to="{ name: 'account.shops.detail', params: { teamId: item.team_id, shopId: item.id } }">
+          <router-link :to="{ name: 'account.shops.detail', params: { organizationId: item.organizationId, shopId: item.id } }">
             {{ item.name }}
           </router-link>
         </template>
@@ -69,17 +69,17 @@ shopStore.loadShops();
           </a>
         </template>
 
-        <template #cell(last_updated)="{ item }">
-          <template v-if="item.last_updated?.date" :data-tooltip="'from ' + item.last_updated.from + ' to ' + item.last_updated.to">
-            {{ formatDate(item.last_updated.date) }}
+        <template #cell(lastUpdated)="{ item }">
+          <template v-if="item.lastUpdated?.date" :data-tooltip="'from ' + item.lastUpdated.from + ' to ' + item.lastUpdated.to">
+            {{ formatDate(item.lastUpdated.date) }}
           </template>
           <template v-else>
             {{ null }}
           </template>
         </template>
 
-        <template #cell(last_scraped_at)="{ item }">
-          {{ formatDateTime(item.last_scraped_at) }}
+        <template #cell(lastScrapedAt)="{ item }">
+          {{ formatDateTime(item.lastScrapedAt) }}
         </template>
       </DataTable>
     </div>

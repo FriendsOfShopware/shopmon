@@ -1,24 +1,31 @@
-import { Connection } from "@planetscale/database/dist";
-import { SimpleShop, HttpClient } from "@friendsofshopware/app-server-sdk"
-import { getConnection } from "../db";
-import versionCompare from 'version-compare'
-import { Extension, ExtensionDiff, ExtensionChangelog, lastUpdated } from "../../../shared/shop";
-import promiseAllProperties from '../helper/promise'
-import { CheckerInput, CheckerRegistery } from "./status/registery";
-import { createSentry } from "../toucan";
-import Shops from "../repository/shops";
-import { UserSocketHelper } from "./UserSocket";
-import { decrypt } from "../crypto";
+import {
+    SimpleShop,
+    HttpClient,
+    ApiClientRequestFailed,
+    ApiClientAuthenticationFailed,
+    HttpClientResponse,
+} from '@friendsofshopware/app-server-sdk';
+import { Drizzle, getConnection, schema } from '../db';
+import versionCompare from 'version-compare';
+import { CheckerInput, check } from './status/registery';
+import { createSentry } from '../toucan';
+import Shops, { User } from '../repository/shops';
+import { UserSocketHelper } from './UserSocket';
+import { decrypt } from '../crypto';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import type { Bindings } from '../router';
+import { Extension, ExtensionChangelog, ExtensionDiff } from '../types';
 
 interface SQLShop {
-    id: string;
+    id: number;
     name: string;
-    team_id: string;
+    status: string;
+    organizationId: number;
     url: string;
-    shopware_version: string;
-    client_id: string;
-    client_secret: string;
-    ignores: string | string[];
+    clientId: string;
+    clientSecret: string;
+    shopwareVersion: string;
+    ignores: string[];
 }
 
 interface ShopwareScheduledTask {
@@ -32,8 +39,8 @@ interface ShopwareScheduledTask {
 }
 
 interface ShopwareQueue {
-    name: string,
-    size: number
+    name: string;
+    size: number;
 }
 
 interface ShopwareStoreExtension {
@@ -46,47 +53,57 @@ interface ShopwareStoreExtension {
         version: string;
         text: string;
         creationDate: {
-            date: string
-        }
+            date: string;
+        };
     }[];
 }
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
+const STATES: { [key: string]: number }  = {
+    'green': 1,
+    'yellow': 2,
+    'red': 3
+};
 
 export class ShopScrape implements DurableObject {
     state: DurableObjectState;
-    env: Env;
+    env: Bindings;
 
-    constructor(state: DurableObjectState, env: Env) {
+    constructor(state: DurableObjectState, env: Bindings) {
         this.env = env;
         this.state = state;
     }
 
     async fetch(request: Request): Promise<Response> {
         const url = new URL(request.url);
-        const id = url.searchParams.get('id')
+        const id = url.searchParams.get('id');
 
-        await this.state.storage.put('id', id)
+        await this.state.storage.put('id', id);
 
         if (url.pathname === '/cron') {
             const currentAlarm = await this.state.storage.getAlarm();
             if (currentAlarm === null) {
                 await this.state.storage.setAlarm(Date.now() + 60 * MINUTES);
-                console.log(`Set alarm for shop ${id} to one hour`)
+                console.log(`Set alarm for shop ${id} to one hour`);
             }
 
             return new Response('OK');
-        } else if (url.pathname === '/now') {
+        }
+        if (url.pathname === '/now') {
             await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
-            console.log(`Set alarm for shop ${id} to 5 seconds`)
+            console.log(`Set alarm for shop ${id} to 5 seconds`);
 
             if (url.searchParams.has('userId')) {
-                await this.state.storage.put('triggeredBy', url.searchParams.get('userId'))
+                await this.state.storage.put(
+                    'triggeredBy',
+                    url.searchParams.get('userId'),
+                );
             }
 
             return new Response('OK');
-        } else if (url.pathname === '/delete') {
+        }
+        if (url.pathname === '/delete') {
             await this.state.storage.deleteAll();
 
             return new Response('OK');
@@ -98,7 +115,7 @@ export class ShopScrape implements DurableObject {
     async alarm(): Promise<void> {
         const con = getConnection(this.env);
 
-        const id = await this.state.storage.get('id')
+        const id = (await this.state.storage.get('id')) as string | undefined;
 
         // ID is missing, so we can't do anything
         if (id === undefined) {
@@ -106,19 +123,27 @@ export class ShopScrape implements DurableObject {
             return;
         }
 
-        const fetchShopSQL = 'SELECT id, name, url, shopware_version, client_id, client_secret, team_id, ignores FROM shop WHERE id = ?';
-
-        const shops = await con.execute(fetchShopSQL, [id]);
+        const shop = await con.query.shop.findFirst({
+            columns: {
+                id: true,
+                name: true,
+                status: true,
+                ignores: true,
+                url: true,
+                clientId: true,
+                clientSecret: true,
+                shopwareVersion: true,
+                organizationId: true,
+            },
+            where: eq(schema.shop.id, parseInt(id)),
+        });
 
         // Shop is missing, so we can't do anything
-        if (shops.rows.length === 0) {
-            console.log(`cannot find shop: ${id}. Destroy self`)
+        if (shop === undefined) {
+            console.log(`cannot find shop: ${id}. Destroy self`);
             await this.state.storage.deleteAll();
             return;
         }
-
-        const shop = shops.rows[0] as SQLShop;
-        shop.ignores = JSON.parse(shop.ignores as string || '[]')
 
         try {
             await this.updateShop(shop, con);
@@ -129,7 +154,7 @@ export class ShopScrape implements DurableObject {
             sentry.captureException(e);
         }
 
-        console.log(`Updated shop ${id}`)
+        console.log(`Updated shop ${id}`);
 
         this.state.storage.setAlarm(Date.now() + 60 * MINUTES);
 
@@ -142,35 +167,70 @@ export class ShopScrape implements DurableObject {
                 triggeredBy,
                 {
                     shopUpdate: {
-                        id: parseInt(shop.id),
-                        team_id: parseInt(shop.team_id),
-                    }
-                }
-            )
+                        id: shop.id,
+                        organizationId: shop.organizationId,
+                    },
+                },
+            );
         }
     }
 
-    async updateShop(shop: SQLShop, con: Connection) {
+    async shouldNotify(users: User[], notificationKey: string): Promise<boolean> {
+        const con = getConnection(this.env);
+        const notificationResult = await con
+            .select({
+                created_at: schema.userNotification.createdAt
+            })
+            .from(schema.userNotification)
+            .where(
+                and(
+                    inArray(schema.userNotification.userId, users.map(user => user.id)),
+                    eq(schema.userNotification.key, notificationKey),
+                    eq(schema.userNotification.read, false)
+                )
+            )
+            .orderBy(asc(schema.userNotification.createdAt))
+            .all();
 
-        await con.execute('UPDATE shop SET last_scraped_at = NOW() WHERE id = ?', [shop.id]);
+        if (notificationResult.length === 0) {
+            return true;
+        }
 
-        const clientSecret = await decrypt(this.env.APP_SECRET, shop.client_secret);
+        const lastNotification = new Date(notificationResult[0].created_at);
+        const timeDifference = lastNotification.getTime() - new Date().getTime();
+
+        return timeDifference >= (24 * 60 * 60 * 1000);
+    }
+
+    async updateShop(shop: SQLShop, con: Drizzle) {
+        await con
+            .update(schema.shop)
+            .set({ lastScrapedAt: new Date() })
+            .where(eq(schema.shop.id, shop.id))
+            .execute();
+
+        const clientSecret = await decrypt(
+            this.env.APP_SECRET,
+            shop.clientSecret,
+        );
 
         const apiShop = new SimpleShop('', shop.url, '');
-        apiShop.setShopCredentials(shop.client_id, clientSecret);
+        apiShop.setShopCredentials(shop.clientId, clientSecret);
         const client = new HttpClient(apiShop);
 
         try {
             await client.getToken();
-        } catch (e: any) {
-            let error = "";
+        } catch (e) {
+            let error = e;
 
-            if (typeof e?.response.body === "object") {
-                if (e?.response.body.errors) {
-                    error = JSON.stringify(e?.response.body.errors[0]);
-                } else {
-                    error = JSON.stringify(e?.response.body);
-                }
+            if (e instanceof ApiClientRequestFailed) {
+                error = `Request failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
+            } else if (e instanceof ApiClientAuthenticationFailed) {
+                error = `Authentication failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
             }
 
             await Shops.notify(
@@ -181,48 +241,75 @@ export class ShopScrape implements DurableObject {
                 {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
-                    message: 'Could not connect to shop. Please check your credentials and try again.' + error,
-                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
-                }
+                    message: `Could not connect to shop. Please check your credentials and try again.${error}`,
+                    link: {
+                        name: 'account.shops.detail',
+                        params: {
+                            shopId: shop.id.toString(),
+                            organizationId: shop.organizationId.toString(),
+                        },
+                    },
+                },
             );
 
-            await Shops.alert(
-                con,
-                this.env,
-                {
-                    key: `shop.update-auth-error.${shop.id}`,
-                    shopId: shop.id,
-                    subject: 'Shop Update Error',
-                    message: 'The Shop could not be updated. Please check your credentials and try again.' + error
+            await Shops.alert(con, this.env, {
+                key: `shop.update-auth-error.${shop.id}`,
+                shopId: shop.id.toString(),
+                subject: 'Shop Update Error',
+                message: `The Shop could not be updated. Please check your credentials and try again.${error}`,
+            });
 
-                }
-            )
+            await con
+                .update(schema.shop)
+                .set({ status: 'red' })
+                .where(eq(schema.shop.id, shop.id))
+                .execute();
 
-            await con.execute('UPDATE shop SET status = ? WHERE id = ?', [
-                'red',
-                shop.id,
-            ]);
             return;
         }
 
-        let responses;
+        let responses: {
+            config: HttpClientResponse;
+            plugin: HttpClientResponse;
+            app: HttpClientResponse;
+            scheduledTask: HttpClientResponse;
+            queue: HttpClientResponse;
+            cacheInfo: HttpClientResponse;
+        };
 
         try {
-            responses = await promiseAllProperties({
-                config: client.get('/_info/config'),
-                plugin: client.post('/search/plugin'),
-                app: client.post('/search/app'),
-                scheduledTask: client.post('/search/scheduled-task'),
-                queue: versionCompare(shop.shopware_version, '6.4.7.0') < 0 ? client.post('/search/message-queue-stats') : client.get('/_info/queue.json'),
-                cacheInfo: client.get('/_action/cache_info')
-            })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            let error = e;
+            const [config, plugin, app, scheduledTask, queue, cacheInfo] =
+                await Promise.all([
+                    client.get('/_info/config'),
+                    client.post('/search/plugin'),
+                    client.post('/search/app'),
+                    client.post('/search/scheduled-task'),
+                    versionCompare(shop.shopwareVersion, '6.4.7.0') < 0
+                        ? client.post('/search/message-queue-stats')
+                        : client.get('/_info/queue.json'),
+                    client.get('/_action/cache_info'),
+                ]);
 
-            if (e.response) {
-                error = `Request failed with status code: ${e.response.statusCode}: Body: ${JSON.stringify(e.response.body)}`;
+            responses = {
+                config,
+                plugin,
+                app,
+                scheduledTask,
+                queue,
+                cacheInfo,
+            };
+        } catch (e) {
+            let error = '';
+
+            if (e instanceof ApiClientRequestFailed) {
+                error = `Request failed with status code: ${
+                    e.response.statusCode
+                }: Body: ${JSON.stringify(e.response.body)}`;
+            } else if (e instanceof Error) {
+                error = e.toString();
             }
+
+            console.log(error);
 
             await Shops.notify(
                 con,
@@ -232,16 +319,24 @@ export class ShopScrape implements DurableObject {
                 {
                     level: 'error',
                     title: `Shop: ${shop.name} could not be updated`,
-                    message: `Could not connect to shop. Please check your credentials and try again.`,
-                    link: { name: 'account.shops.detail', params: { shopId: shop.id, teamId: shop.team_id } }
-                }
-            )
+                    message:
+                        'Could not connect to shop. Please check your credentials and try again.',
+                    link: {
+                        name: 'account.shops.detail',
+                        params: {
+                            shopId: shop.id.toString(),
+                            organizationId: shop.organizationId.toString(),
+                        },
+                    },
+                },
+            );
 
-            await con.execute('UPDATE shop SET status = ?, last_scraped_error = ? WHERE id = ?', [
-                'red',
-                error,
-                shop.id,
-            ]);
+            await con
+                .update(schema.shop)
+                .set({ status: 'red', lastScrapedError: error.toString() })
+                .where(eq(schema.shop.id, shop.id))
+                .execute();
+
             return;
         }
 
@@ -259,7 +354,7 @@ export class ShopScrape implements DurableObject {
                 changelog: null,
                 installed: plugin.installedAt !== null,
                 installedAt: plugin.installedAt,
-            } as Extension)
+            } as Extension);
         }
 
         for (const app of responses.app.body.data) {
@@ -274,25 +369,31 @@ export class ShopScrape implements DurableObject {
                 changelog: null,
                 installed: true, // When it's in DB its always installed
                 installedAt: app.createdAt,
-            } as Extension)
+            } as Extension);
         }
 
-        const scheduledTasks = responses.scheduledTask.body.data.map((task: ShopwareScheduledTask) => {
-            return {
-                id: task.id,
-                name: task.name,
-                status: task.status,
-                interval: task.runInterval,
-                overdue: new Date(task.nextExecutionTime).getTime() < new Date().getTime(),
-                lastExecutionTime: task.lastExecutionTime,
-                nextExecutionTime: task.nextExecutionTime,
-            };
-        });
+        const scheduledTasks = responses.scheduledTask.body.data.map(
+            (task: ShopwareScheduledTask) => {
+                return {
+                    id: task.id,
+                    name: task.name,
+                    status: task.status,
+                    interval: task.runInterval,
+                    overdue:
+                        new Date(task.nextExecutionTime).getTime() <
+                        new Date().getTime(),
+                    lastExecutionTime: task.lastExecutionTime,
+                    nextExecutionTime: task.nextExecutionTime,
+                };
+            },
+        );
 
         if (extensions.length) {
-            const url = new URL('https://api.shopware.com/pluginStore/pluginsByName')
+            const url = new URL(
+                'https://api.shopware.com/pluginStore/pluginsByName',
+            );
             url.searchParams.set('locale', 'en-GB');
-            url.searchParams.set('shopwareVersion', shop.shopware_version);
+            url.searchParams.set('shopwareVersion', shop.shopwareVersion);
 
             for (const extension of extensions) {
                 url.searchParams.append('technicalNames[]', extension.name);
@@ -300,34 +401,51 @@ export class ShopScrape implements DurableObject {
 
             const storeResp = await fetch(url.toString(), {
                 cf: {
-                    cacheTtl: 60 * 60 * 6 // 6 hours
-                }
-            })
+                    cacheTtl: 60 * 60 * 6, // 6 hours
+                },
+            });
 
             if (storeResp.ok) {
-                const storePlugins = await storeResp.json() as ShopwareStoreExtension[];
+                const storePlugins =
+                    (await storeResp.json()) as ShopwareStoreExtension[];
 
                 for (const extension of extensions) {
-                    const storePlugin = storePlugins.find((plugin: ShopwareStoreExtension) => plugin.name === extension.name);
+                    const storePlugin = storePlugins.find(
+                        (plugin: ShopwareStoreExtension) =>
+                            plugin.name === extension.name,
+                    );
 
                     if (storePlugin) {
                         extension.latestVersion = storePlugin.version;
                         extension.ratingAverage = storePlugin.ratingAverage;
-                        extension.storeLink = storePlugin.link.replace('http://store.shopware.com:80', 'https://store.shopware.com');
+                        extension.storeLink = storePlugin.link.replace(
+                            'http://store.shopware.com:80',
+                            'https://store.shopware.com',
+                        );
 
-                        if (storePlugin.latestVersion != extension.version) {
+                        if (storePlugin.latestVersion !== extension.version) {
                             const changelogs: ExtensionChangelog[] = [];
 
                             for (const changelog of storePlugin.changelog) {
-                                if (versionCompare(changelog.version, extension.version) > 0) {
-                                    const compare = versionCompare(changelog.version, extension.latestVersion);
+                                if (
+                                    versionCompare(
+                                        changelog.version,
+                                        extension.version,
+                                    ) > 0
+                                ) {
+                                    const compare = versionCompare(
+                                        changelog.version,
+                                        extension.latestVersion,
+                                    );
 
                                     changelogs.push({
                                         version: changelog.version,
                                         text: changelog.text,
-                                        creationDate: changelog.creationDate.date,
-                                        isCompatible: compare < 0 || compare === 0,
-                                    } as ExtensionChangelog)
+                                        creationDate:
+                                            changelog.creationDate.date,
+                                        isCompatible:
+                                            compare < 0 || compare === 0,
+                                    } as ExtensionChangelog);
                                 }
                             }
 
@@ -338,16 +456,17 @@ export class ShopScrape implements DurableObject {
             }
         }
 
-        const resultCurrentExtensions = await con.execute('SELECT extensions FROM shop_scrape_info WHERE shop_id = ?', [
-            shop.id
-        ]);
+        const resultCurrentExtensions =
+            await con.query.shopScrapeInfo.findFirst({
+                columns: {
+                    extensions: true,
+                },
+                where: eq(schema.shopScrapeInfo.shopId, shop.id),
+            });
 
         const extensionsDiff: ExtensionDiff[] = [];
-        if (resultCurrentExtensions.rows.length > 0) {
-
-            const currentExtensions = JSON.parse(resultCurrentExtensions.rows[0].extensions);
-
-            for (const oldExtension of currentExtensions) {
+        if (resultCurrentExtensions) {
+            for (const oldExtension of resultCurrentExtensions.extensions) {
                 let exists = false;
 
                 for (const newExtension of extensions) {
@@ -357,11 +476,15 @@ export class ShopScrape implements DurableObject {
                         if (oldExtension.version !== newExtension.version) {
                             state = 'updated';
                             changelog = oldExtension.changelog;
-                        }
-                        else if (oldExtension.active === true && newExtension.active === false) {
+                        } else if (
+                            oldExtension.active === true &&
+                            newExtension.active === false
+                        ) {
                             state = 'deactivated';
-                        }
-                        else if (oldExtension.active === false && newExtension.active === true) {
+                        } else if (
+                            oldExtension.active === false &&
+                            newExtension.active === true
+                        ) {
                             state = 'activated';
                         }
 
@@ -373,7 +496,7 @@ export class ShopScrape implements DurableObject {
                                 old_version: oldExtension.version,
                                 new_version: newExtension.version,
                                 changelog: changelog,
-                                active: newExtension.active
+                                active: newExtension.active,
                             });
                         }
 
@@ -389,7 +512,7 @@ export class ShopScrape implements DurableObject {
                         old_version: oldExtension.version,
                         new_version: null,
                         changelog: null,
-                        active: oldExtension.active
+                        active: oldExtension.active,
                     });
                 }
             }
@@ -397,7 +520,7 @@ export class ShopScrape implements DurableObject {
             for (const newExtension of extensions) {
                 let exists = false;
 
-                for (const oldExtension of currentExtensions) {
+                for (const oldExtension of resultCurrentExtensions.extensions) {
                     if (oldExtension.name === newExtension.name) {
                         exists = true;
                     }
@@ -411,27 +534,35 @@ export class ShopScrape implements DurableObject {
                         old_version: null,
                         new_version: newExtension.version,
                         changelog: null,
-                        active: newExtension.active
+                        active: newExtension.active,
                     });
                 }
             }
         }
 
-        const shopUpdate: lastUpdated = {};
+        const shopUpdate: {
+            date?: string;
+            from?: string;
+            to?: string;
+        } = {};
 
-        if (shop.shopware_version !== responses.config.body.version) {
-            shopUpdate.from = shop.shopware_version,
-                shopUpdate.to = responses.config.body.version;
+        if (shop.shopwareVersion !== responses.config.body.version) {
+            shopUpdate.from = shop.shopwareVersion;
+            shopUpdate.to = responses.config.body.version;
             shopUpdate.date = new Date().toISOString();
         }
 
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
         let queue = null;
-        if (versionCompare(shop.shopware_version, '6.4.7.0') < 0) {
-            queue = responses.queue.body.data.filter((entry: ShopwareQueue) => entry.size > 0);
+        if (versionCompare(shop.shopwareVersion, '6.4.7.0') < 0) {
+            queue = responses.queue.body.data.filter(
+                (entry: ShopwareQueue) => entry.size > 0,
+            );
         } else {
-            queue = responses.queue.body.filter((entry: ShopwareQueue) => entry.size > 0);
+            queue = responses.queue.body.filter(
+                (entry: ShopwareQueue) => entry.size > 0,
+            );
         }
 
         const input: CheckerInput = {
@@ -443,26 +574,67 @@ export class ShopScrape implements DurableObject {
             favicon: favicon,
             client,
             ignores: shop.ignores as string[],
+        };
+
+        const checkerResult = await check(input);
+
+        if (STATES[shop.status] < STATES[checkerResult.status]) {
+            const users = await Shops.getUsersOfShop(con, shop.id);
+            const statusChangeKey = `shop.change-status.${shop.id}`;
+
+            if (await this.shouldNotify(users, statusChangeKey)) {
+                await Shops.notify(
+                    con,
+                    this.env.USER_SOCKET,
+                    shop.id,
+                    statusChangeKey,
+                    {
+                        level: 'warning',
+                        title: `Shop: ${shop.name} status changed`,
+                        message: `Status changed from ${shop.status} to ${checkerResult.status}`,
+                        link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), organizationId: shop.organizationId.toString(), } }
+                    }
+                )
+
+                await Shops.alert(
+                    con,
+                    this.env,
+                    {
+                        key: statusChangeKey,
+                        shopId: shop.id.toString(),
+                        subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
+                        message: `The Shop ${shop.name} has change its status from ${shop.status} to ${checkerResult.status}. Pleas visit Shopmon for details.`
+                    }
+                )
+            }
         }
 
-        const checkerResult = await CheckerRegistery.check(input);
+        await con
+            .update(schema.shop)
+            .set({
+                status: checkerResult.status,
+                shopwareVersion: responses.config.body.version,
+                favicon: favicon,
+                lastScrapedError: null,
+            })
+            .where(eq(schema.shop.id, shop.id))
+            .execute();
 
-        await con.execute('UPDATE shop SET status = ?, shopware_version = ?, favicon = ?, last_scraped_error = null WHERE id = ?', [
-            checkerResult.status,
-            responses.config.body.version,
-            favicon,
-            shop.id,
-        ]);
+        // delete
+        await con
+            .delete(schema.shopScrapeInfo)
+            .where(eq(schema.shopScrapeInfo.shopId, shop.id))
+            .execute();
 
-        await con.execute('REPLACE INTO shop_scrape_info(shop_id, extensions, scheduled_task, queue_info, cache_info, checks, created_at) VALUES(?, ?, ?, ?, ?, ?, NOW())', [
-            shop.id,
-            JSON.stringify(input.extensions),
-            JSON.stringify(input.scheduledTasks),
-            JSON.stringify(input.queueInfo),
-            JSON.stringify(input.cacheInfo),
-            JSON.stringify(checkerResult.checks),
-            favicon
-        ]);
+        await con.insert(schema.shopScrapeInfo).values({
+            shopId: shop.id,
+            extensions: input.extensions,
+            scheduledTask: input.scheduledTasks,
+            queueInfo: input.queueInfo,
+            cacheInfo: input.cacheInfo,
+            checks: checkerResult.checks,
+            createdAt: new Date(),
+        });
 
         const hasShopUpdate = Object.keys(shopUpdate).length !== 0;
 
@@ -470,21 +642,24 @@ export class ShopScrape implements DurableObject {
             const oldShopwareVersion = hasShopUpdate ? shopUpdate.from : null;
             const newShopwareVersion = hasShopUpdate ? shopUpdate.to : null;
 
-            await con.execute(
-                'INSERT INTO shop_changelog(shop_id, extensions, old_shopware_version, new_shopware_version, date) VALUES(?, ?, ?, ?, NOW())', [
-                shop.id,
-                JSON.stringify(extensionsDiff),
-                oldShopwareVersion,
-                newShopwareVersion
-            ]
-            );
+            await con
+                .insert(schema.shopChangelog)
+                .values({
+                    shopId: shop.id,
+                    extensions: extensionsDiff,
+                    oldShopwareVersion: oldShopwareVersion,
+                    newShopwareVersion: newShopwareVersion,
+                    date: new Date(),
+                })
+                .execute();
         }
 
         if (hasShopUpdate) {
-            await con.execute('UPDATE shop SET last_updated = ? WHERE id = ?', [
-                JSON.stringify(shopUpdate),
-                shop.id,
-            ]);
+            await con
+                .update(schema.shop)
+                .set({ lastUpdated: new Date() })
+                .where(eq(schema.shop.id, shop.id))
+                .execute();
         }
     }
 }

@@ -1,14 +1,24 @@
 {
     "css.lint.unknownAtRules": "ignore",
     "search.exclude": {
+        ".devenv": true,
+        ".direnv": true,
         "**/node_modules": true,
         "**/bower_components": true,
         "**/*.code-search": true,
-        "api/worker.js": true
+        "**/.wrangler": true,
+        "api/worker.api.js": true,
+        "api/worker.api.js.map": true
     },
-    "redhat.telemetry.enabled": false,
     "editor.renderWhitespace": "all",
     "editor.renderControlCharacters": true,
-    "editor.formatOnSave": true,
-    "files.insertFinalNewline": true
+    "files.insertFinalNewline": true,
+    "[javascript]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome",
+    "cSpell.words": [
+        "trpc",
+        "TRPC"
+    ]
 }

@@ -2,7 +2,7 @@ name = "shopmon"
 main = "worker.api.js"
 workers_dev = false
 compatibility_date = "2022-03-04"
-routes = ["shopmon.fos.gg/api/*"]
+routes = ["shopmon.fos.gg/trpc/*"]
 
 minify = true
 node_compat = false
@@ -47,3 +47,9 @@ preview_id = "61a260743f17482e92fa5cb2c340edec"
 binding = "FILES"
 bucket_name = "shopmon"
 preview_bucket_name = "shopmon"
+
+[[d1_databases]]
+binding = "shopmonDB"
+database_name = "shopmon"
+database_id = "cb4155f9-ade9-4035-925a-e483b953c18d"
+migrations_dir = "drizzle"

@@ -31,14 +31,14 @@ export default defineConfig({
         Vue(),
         Components({
             resolvers: [
-              IconsResolver({
-                prefix: 'icon',
-              }),
+                IconsResolver({
+                    prefix: 'icon',
+                }),
             ],
-          }),
+        }),
         Icons({
-           autoInstall: true,
-           scale: 1,
+            autoInstall: true,
+            scale: 1,
         }),
     ],
     resolve: {
@@ -55,6 +55,10 @@ export default defineConfig({
                 changeOrigin: true
             },
             '/api': {
+                target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
+                changeOrigin: true
+            },
+            '/trpc': {
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
                 changeOrigin: true
             }

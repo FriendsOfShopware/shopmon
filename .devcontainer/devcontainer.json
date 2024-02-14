@@ -6,14 +6,19 @@
 	"features": {
 		"ghcr.io/shyim/devcontainers-features/bun:latest": {}
 	},
-	"onCreateCommand": "cd api; corepack prepare",
+	"updateContentCommand": {
+		"setup": "make setup",
+		"migration": "make migrate"
+	},
+	"postStartCommand": "make dev",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"Vue.volar",
 				"Vue.vscode-typescript-vue-plugin",
 				"redhat.vscode-xml",
-				"github.vscode-github-actions"
+				"github.vscode-github-actions",
+				"biomejs.biome"
 			]
 		}
 	}

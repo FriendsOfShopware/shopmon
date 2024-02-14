@@ -15,12 +15,12 @@ export default {
         { name: 'account.settings', path: 'settings', component: () => import('@/views/account/Settings.vue') },
         { name: 'account.shops.list', path: 'shops', component: () => import('@/views/account/ListShops.vue') },
         { name: 'account.shops.new', path: 'shops/new', component: () => import('@/views/account/AddShop.vue') },
-        { name: 'account.shops.edit', path: 'teams/edit/:teamId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/EditShop.vue') },
-        { name: 'account.shops.detail', path: 'teams/:teamId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/DetailShop.vue') },
-        { name: 'account.teams.list', path: 'teams', component: () => import('@/views/account/ListTeams.vue') },
-        { name: 'account.teams.new', path: 'teams/new', component: () => import('@/views/account/AddTeam.vue') },
-        { name: 'account.teams.detail', path: 'teams/:teamId(\\d+)', component: () => import('@/views/account/DetailTeam.vue') },
-        { name: 'account.teams.edit', path: 'teams/edit/:teamId(\\d+)', component: () => import('@/views/account/EditTeam.vue') },
+        { name: 'account.shops.edit', path: 'organizations/edit/:organizationId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/EditShop.vue') },
+        { name: 'account.shops.detail', path: 'organizations/:organizationId(\\d+)/:shopId(\\d+)', component: () => import('@/views/account/DetailShop.vue') },
+        { name: 'account.organizations.list', path: 'organizations', component: () => import('@/views/account/ListOrganizations.vue') },
+        { name: 'account.organizations.new', path: 'organizations/new', component: () => import('@/views/account/AddOrganization.vue') },
+        { name: 'account.organizations.detail', path: 'organizations/:organizationId(\\d+)', component: () => import('@/views/account/DetailOrganization.vue') },
+        { name: 'account.organizations.edit', path: 'organizations/edit/:organizationId(\\d+)', component: () => import('@/views/account/EditOrganization.vue') },
         { name: 'account.extension.list', path: 'extensions', component: () => import('@/views/account/ListExtensions.vue') },
     ]
 };

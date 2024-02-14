@@ -2,10 +2,10 @@
 
 Shopmon is a hosted application from FriendsOfShopware to manage multiple Shopware instances.
 
-* Credentials are saved on a [planetscale](https://planetscale.com/) database
-  * Clientsecret ist encrypted by [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)
-* API runs on cloudflare workers (serverless)
-* Mails are sent via Mailgun
+* Credentials are saved on a [Cloudflare D1](https://developers.cloudflare.com/d1/) SQLite database
+  * Client secret are encrypted by [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
+* API runs on Cloudflare workers (serverless)
+* Mails are sent using [MailChannels](https://www.mailchannels.com)
 
 ## Features
 
@@ -17,92 +17,65 @@ Overview of all your Shopware instances to see:
 - Run a daily check with pagespeed to see decreasing performance
 - Clear shop cache
 
-## Requirements (selfhosted)
+## Requirements (self hosted)
 
-- Cloudflare Worker
-- Planet Scale Database
-- Mailgun
+- Cloudflare Worker aka Wrangler
 
 ## Managed / SaaS
 
 https://shopmon.fos.gg
 
-#### Frontend
+## Setup Local
 
-> If you want to test around a little locally you can run the frontend on your machine, but data is saved on the managed database by friendsofshopware
+Requirements: 
+  - Node 20 or higher
+  - PNPM installed as Package manager or Node Corepack enabled
 
-- Go to `cd frontend`
-- Run  `npm i` and `npm run dev`
-- Open `localhost:3000` to see the page
+### Install dependencies
 
-
-## Install Selfhosted
-
-### Setup
-
-#### Planetscale
-
-- Create an own [Planet Scale Account](https://auth.planetscale.com/sign-up) + Database
-- Create [a serverless access key](https://planetscale.com/blog/introducing-the-planetscale-serverless-driver-for-javascript)
-  - https://app.planetscale.com/PROJECT/DATABASE/settings/beta-features
-- Import schema `db.sql` using some MySQL Client or use the console in planetscale (https://app.planetscale.com/PROJECT/DATABASE/main/console)
-
-```
-HOST: eu-central.connect.psdb.cloud
-PORT: 3306
-USERNAME: check /settings/passwords
-PASSWORD: check /settings/passwords
+```bash
+make setup
 ```
 
-#### Cloudflare worker
-- Install [wrangler](https://developers.cloudflare.com/workers/wrangler/get-started/)
-- Set all secrets in the UI or using wrangler cli
-- Adjust `routes` inside `wrangler.toml` to your domain
+### Run migrations
 
+```bash
+make migrate
+```
 
-#### Mailgun
-- Create an own [Mailgun Account](https://signup.mailgun.com/new/signup) or copy verify code from Database entries
-> Currently restricted to EU API
+### Run the app
 
+Run the API and the frontend in local development mode
 
-#### Pagespeed
-- Activate [Google Pagespeed API](https://developers.google.com/speed/docs/insights/v5/get-started)
+```bash
+make dev
+```
 
-#### Enviroment variables
-- Go to `api` create a file `.dev.vars` and fill in the just created credentials of each service
+### Page speed
+
+If you want to trace the performance of your shop you need to activate the Google Pagespeed API.
+
+- Go to https://developers.google.com/speed/docs/insights/v5/get-started
+
+and create a `.dev.vars` file in `api` folder with your API key like:
 
 ```text
-DATABASE_HOST=aws.connect.psdb.cloud
-DATABASE_USER=USER
-DATABASE_PASSWORD=PW
-MAILGUN_KEY=KEY
-MAILGUN_DOMAIN=DOMAIN
 PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
 APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
 ```
 
-#### Frontend
-
-- Go to `cd frontend`
-- Run  `npm i` and `npm run dev:local`
-- Open `localhost:3000` to see the page
-
-#### Backend / API
-
-- Go to `cd api`
-- Run  `npm i` and `npm run dev:local`
-> Check your console output for request infos and console.logs
-
 ## Configuration
+
 ### Disable registration
 To disable user registrations set the following variables:
 
 `frontend/.env` To disable the frontend registration route:
+
 ```text 
 VITE_DISABLE_REGISTRATION=1
 ```
 
-`api/.dev.vars` The disable the app functionality:
+`api/.dev.vars` To disable the app functionality:
 ```text 
 DISABLE_REGISTRATION=1
 ```
