@@ -9,12 +9,12 @@ node_compat = false
 logpush = true
 
 [vars]
-MAIL_ACTIVE = "false"
+MAIL_ACTIVE = "true"
 MAIL_DKIM_DOMAIN = "fos.gg"
 MAIL_DKIM_SELECTOR = "cf"
 MAIL_FROM = "shopmon@fos.gg"
 MAIL_FROM_NAME = "Shopmon"
-FRONTEND_URL = "http://localhost:3000"
+FRONTEND_URL = "https://shopmon.fos.gg"
 
 [build]
 command = "node esbuild.mjs"

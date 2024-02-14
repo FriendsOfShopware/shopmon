@@ -90,16 +90,6 @@ const structure = {
         date: {name: 'date', date: true},
     },
 
-    shop_scrape_info: {
-        shop_id: {name: 'shop_id'},
-        extensions: {name: 'extensions'},
-        scheduled_task: {name: 'scheduled_task'},
-        queue_info: {name: 'queue_info'},
-        cache_info: {name: 'cache_info'},
-        checks: {name: 'checks'},
-        created_at: {name: 'created_at', date: true},
-    },
-
     shop_pagespeed: {
         id: {name: 'id'},
         shop_id: {name: 'shop_id'},

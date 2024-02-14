@@ -52,6 +52,10 @@ jobs:
         sourcemaps: './api/'
         ignore_empty: true
 
+    - name: Run migrations
+      working-directory: api
+      run: yes | pnpm run wrangler d1 migrations apply shopmonDB
+
     - name: Publish API
       working-directory: api
       run: pnpm run wrangler deploy
