@@ -69,7 +69,7 @@ export const shopScrapeInfo = sqliteTable('shop_scrape_info', {
     cacheInfo: text('cache_info', { mode: 'json' })
         .notNull()
         .$type<CacheInfo>(),
-    checks: text('checks').notNull().$type<CheckerChecks[]>(),
+    checks: text('checks', { mode: 'json' }).notNull().$type<CheckerChecks[]>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
