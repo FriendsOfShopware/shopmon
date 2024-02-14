@@ -2,7 +2,7 @@ name = "shopmon"
 main = "worker.api.js"
 workers_dev = false
 compatibility_date = "2022-03-04"
-routes = ["shopmon.fos.gg/trpc/*"]
+routes = ["shopmon.fos.gg/trpc/*", "shopmon.fos.gg/pagespeed/*"]
 
 minify = true
 node_compat = false

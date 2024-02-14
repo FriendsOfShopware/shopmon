@@ -259,7 +259,7 @@ async function notificateIgnoreUpdate() {
         </dl>
         <div
           class="mt-6 sm:mt-0 sm:col-span-1 sm:row-span-full sm:col-start-2 sm:row-start-1 md:col-start-3 md:row-span-full md:row-start-1">
-          <img :src="`/api/organization/${shopStore.shop.shopImage}`" class="h-[200px] sm:h-[400px] md:h-[200px]"
+          <img :src="`/${shopStore.shop.shopImage}`" class="h-[200px] sm:h-[400px] md:h-[200px]"
             v-if="shopStore.shop.shopImage">
           <icon-fa6-solid:image v-else class="text-gray-100 text-9xl" />
         </div>
