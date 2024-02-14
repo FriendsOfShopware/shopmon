@@ -9,16 +9,17 @@ import { Drizzle, getConnection, schema } from '../db';
 import versionCompare from 'version-compare';
 import { CheckerInput, check } from './status/registery';
 import { createSentry } from '../toucan';
-import Shops from '../repository/shops';
+import Shops, { User } from '../repository/shops';
 import { UserSocketHelper } from './UserSocket';
 import { decrypt } from '../crypto';
-import { eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Bindings } from '../router';
 import { Extension, ExtensionChangelog, ExtensionDiff } from '../types';
 
 interface SQLShop {
     id: number;
     name: string;
+    status: string;
     organizationId: number;
     url: string;
     clientId: string;
@@ -59,6 +60,11 @@ interface ShopwareStoreExtension {
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
+const STATES: { [key: string]: number }  = {
+    'green': 1,
+    'yellow': 2,
+    'red': 3
+};
 
 export class ShopScrape implements DurableObject {
     state: DurableObjectState;
@@ -121,6 +127,7 @@ export class ShopScrape implements DurableObject {
             columns: {
                 id: true,
                 name: true,
+                status: true,
                 ignores: true,
                 url: true,
                 clientId: true,
@@ -166,6 +173,33 @@ export class ShopScrape implements DurableObject {
                 },
             );
         }
+    }
+
+    async shouldNotify(users: User[], notificationKey: string): Promise<boolean> {
+        const con = getConnection(this.env);
+        const notificationResult = await con
+            .select({
+                created_at: schema.userNotification.createdAt
+            })
+            .from(schema.userNotification)
+            .where(
+                and(
+                    inArray(schema.userNotification.userId, users.map(user => user.id)),
+                    eq(schema.userNotification.key, notificationKey),
+                    eq(schema.userNotification.read, false)
+                )
+            )
+            .orderBy(asc(schema.userNotification.createdAt))
+            .all();
+
+        if (notificationResult.length === 0) {
+            return true;
+        }
+
+        const lastNotification = new Date(notificationResult[0].created_at);
+        const timeDifference = lastNotification.getTime() - new Date().getTime();
+
+        return timeDifference >= (24 * 60 * 60 * 1000);
     }
 
     async updateShop(shop: SQLShop, con: Drizzle) {
@@ -543,6 +577,37 @@ export class ShopScrape implements DurableObject {
         };
 
         const checkerResult = await check(input);
+
+        if (STATES[shop.status] < STATES[checkerResult.status]) {
+            const users = await Shops.getUsersOfShop(con, shop.id);
+            const statusChangeKey = `shop.change-status.${shop.id}`;
+
+            if (await this.shouldNotify(users, statusChangeKey)) {
+                await Shops.notify(
+                    con,
+                    this.env.USER_SOCKET,
+                    shop.id,
+                    statusChangeKey,
+                    {
+                        level: 'warning',
+                        title: `Shop: ${shop.name} status changed`,
+                        message: `Status changed from ${shop.status} to ${checkerResult.status}`,
+                        link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), organizationId: shop.organizationId.toString(), } }
+                    }
+                )
+
+                await Shops.alert(
+                    con,
+                    this.env,
+                    {
+                        key: statusChangeKey,
+                        shopId: shop.id.toString(),
+                        subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
+                        message: `The Shop ${shop.name} has change its status from ${shop.status} to ${checkerResult.status}. Pleas visit Shopmon for details.`
+                    }
+                )
+            }
+        }
 
         await con
             .update(schema.shop)
