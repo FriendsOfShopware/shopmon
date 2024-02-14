@@ -112,12 +112,21 @@ async function onReScheduleTask(taskId: string) {
 }
 
 async function loadUpdateWizard(version: string) {
+  if (!shopStore.shop || !shopStore.shop.extensions) {
+    return;
+  }
+
   loadingUpdateWizard.value = true;
 
   const body = {
     currentVersion: shopStore.shop!!.shopware_version,
     futureVersion: version,
-    extensions: shopStore.shop!!.extensions
+    extensions: shopStore.shop.extensions.map((extension) => {
+      return {
+        name: extension.name,
+        version: extension.version,
+      };
+    }),
   }
 
   const pluginCompatibilitys = await trpcClient.info.checkExtensionCompatibility.query(body)
