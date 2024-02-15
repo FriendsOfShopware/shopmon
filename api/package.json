@@ -17,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@friendsofshopware/app-server-sdk": "0.0.46",
+    "@friendsofshopware/app-server-sdk": "0.0.47",
     "@passwordless-id/webauthn": "^1.3.3",
     "@trpc/server": "^10.45.1",
     "bcryptjs": "2.4.3",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
-    "@cloudflare/workers-types": "4.20231218.0",
+    "@cloudflare/workers-types": "4.20240208.0",
     "@types/bcryptjs": "2.4.6",
     "drizzle-kit": "^0.20.14",
     "mjml": "^4.15.3",
