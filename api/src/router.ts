@@ -18,6 +18,9 @@ export type Bindings = {
     APP_SECRET: string;
     DISABLE_REGISTRATION: boolean;
 
+    LIBSQL_URL?: string;
+    LIBSQL_AUTH_TOKEN?: string;
+
     // cloudflare bindings
     kvStorage: KVNamespace;
     SHOPS_SCRAPE: DurableObjectNamespace;

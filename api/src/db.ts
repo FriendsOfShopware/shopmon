@@ -4,9 +4,10 @@ import {
     integer,
     primaryKey,
     unique,
-    uniqueKeyName,
 } from 'drizzle-orm/sqlite-core';
-import { drizzle, DrizzleD1Database } from 'drizzle-orm/d1';
+import { drizzle as drizzleD1, DrizzleD1Database } from 'drizzle-orm/d1';
+import {drizzle as drizzleLibSQL } from 'drizzle-orm/libsql';
+import { createClient  } from '@libsql/client';
 import type { Bindings } from './router';
 import {
     CacheInfo,
@@ -162,5 +163,11 @@ export const schema = {
 export type Drizzle = DrizzleD1Database<typeof schema>;
 
 export function getConnection(env: Bindings) {
-    return drizzle(env.shopmonDB, { schema });
+    if (typeof env.LIBSQL_URL === 'string' && typeof env.LIBSQL_AUTH_TOKEN === 'string') {
+        const client = createClient({ url: env.LIBSQL_URL, authToken: env.LIBSQL_AUTH_TOKEN });
+
+        return drizzleLibSQL(client, { schema });
+    }
+
+    return drizzleD1(env.shopmonDB, { schema });
 }
