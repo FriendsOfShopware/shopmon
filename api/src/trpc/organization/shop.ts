@@ -55,7 +55,7 @@ export const shopRouter = router({
         .use(organizationMiddleware)
         .use(shopMiddleware)
         .query(async ({ input, ctx }) => {
-            const shop = await ctx.drizzle
+            const shopQuery = ctx.drizzle
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
@@ -88,23 +88,29 @@ export const shopRouter = router({
                 .where(eq(schema.shop.id, input.shopId))
                 .get();
 
+            const pageSpeedQuery = ctx.drizzle.query.shopPageSpeed.findMany({
+                where: eq(schema.shopPageSpeed.shopId, input.shopId),
+                orderBy: [desc(schema.shopPageSpeed.createdAt)],
+            });
+
+            const shopChangelogQuery =
+                ctx.drizzle.query.shopChangelog.findMany({
+                    where: eq(schema.shopChangelog.shopId, input.shopId),
+                    orderBy: [desc(schema.shopChangelog.date)],
+                });
+
+            const [shop, pageSpeed, shopChangelog] = await Promise.all([
+                shopQuery,
+                pageSpeedQuery,
+                shopChangelogQuery,
+            ]);
+
             if (shop === undefined) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
                     message: 'Not Found.',
                 });
             }
-
-            const pageSpeed = await ctx.drizzle.query.shopPageSpeed.findMany({
-                where: eq(schema.shopPageSpeed.shopId, input.shopId),
-                orderBy: [desc(schema.shopPageSpeed.createdAt)],
-            });
-
-            const shopChangelog =
-                await ctx.drizzle.query.shopChangelog.findMany({
-                    where: eq(schema.shopChangelog.shopId, input.shopId),
-                    orderBy: [desc(schema.shopChangelog.date)],
-                });
 
             return { ...shop, pageSpeed: pageSpeed, changelog: shopChangelog };
         }),
