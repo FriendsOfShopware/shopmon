@@ -37,10 +37,6 @@ jobs:
       working-directory: api
       run: pnpm install
 
-    - name: Build API
-      working-directory: api
-      run: node esbuild.mjs
-
     - name: Create Sentry release
       uses: getsentry/action-release@v1
       env:
