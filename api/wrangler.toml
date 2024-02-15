@@ -1,5 +1,5 @@
 name = "shopmon"
-main = "worker.api.js"
+main = "src/index.ts"
 workers_dev = false
 compatibility_date = "2022-03-04"
 routes = ["shopmon.fos.gg/trpc/*", "shopmon.fos.gg/pagespeed/*"]
@@ -15,9 +15,6 @@ MAIL_DKIM_SELECTOR = "cf"
 MAIL_FROM = "shopmon@fos.gg"
 MAIL_FROM_NAME = "Shopmon"
 FRONTEND_URL = "https://shopmon.fos.gg"
-
-[build]
-command = "node esbuild.mjs"
 
 [durable_objects]
 bindings = [

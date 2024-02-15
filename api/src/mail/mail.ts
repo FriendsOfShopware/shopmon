@@ -1,10 +1,10 @@
 import type { Shop, ShopAlert, User } from '../repository/shops';
 // @ts-expect-error
-import passwordResetTemplate from './sources/password-reset.mjml';
+import passwordResetTemplate from './sources/password-reset.js';
 // @ts-expect-error
-import alertTemplate from './sources/alert.mjml';
+import alertTemplate from './sources/alert.js';
 // @ts-expect-error
-import accountConfirmationTemplate from './sources/confirmation.mjml';
+import accountConfirmationTemplate from './sources/confirmation.js';
 import { Bindings } from '../router';
 
 interface MaiLRequest {

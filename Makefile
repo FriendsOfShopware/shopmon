@@ -13,4 +13,4 @@ migrate:
 	yes | pnpm --prefix api run wrangler d1 migrations apply --local shopmonDB
 
 dev: # Run the project locally
-	npx concurrently -- 'npm --prefix api run  dev:local' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'npm --prefix api run dev:local' 'npm --prefix frontend run dev:local'

@@ -6,12 +6,13 @@
   "packageManager": "pnpm@8.14.0",
   "scripts": {
     "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
-    "dev:local": "TZ=UTC wrangler dev --port 5789",
+    "dev:local": "TZ=UTC wrangler dev --port 5789 --define SENTRY_RELEASE:\"'local'\"",
     "api:deploy": "wrangler deploy",
     "format": "biome format --write src",
     "lint": "biome lint src",
     "tslint": "tsc --noEmit",
-    "wrangler": "wrangler"
+    "wrangler": "wrangler",
+    "generate:mail": "node generate-mjml.js"
   },
   "author": "",
   "license": "MIT",
@@ -21,9 +22,9 @@
     "@trpc/server": "^10.45.1",
     "bcryptjs": "2.4.3",
     "drizzle-orm": "^0.29.3",
-    "hono": "~4.0.1",
+    "hono": "~4.0.2",
     "toucan-js": "3.3.1",
-    "version-compare": "3.8.0",
+    "version-compare": "3.11.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -31,7 +32,6 @@
     "@cloudflare/workers-types": "4.20231218.0",
     "@types/bcryptjs": "2.4.6",
     "drizzle-kit": "^0.20.14",
-    "esbuild": "0.19.10",
     "mjml": "^4.15.3",
     "typescript": "5.3.3",
     "wrangler": "^3.28.2"
