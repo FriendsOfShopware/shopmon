@@ -1,6 +1,6 @@
 import { TRPCError, experimental_standaloneMiddleware } from '@trpc/server';
 import { t } from '.';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { context } from './context';
 import { schema } from '../db';
 
@@ -24,7 +24,10 @@ export const organizationMiddleware = experimental_standaloneMiddleware<{
         columns: {
             userId: true,
         },
-        where: eq(schema.userToOrganization.organizationId, input.orgId),
+        where: and(
+            eq(schema.userToOrganization.organizationId, input.orgId),
+            eq(schema.userToOrganization.userId, ctx.user as number)
+        ),
     });
 
     if (!result) {
