@@ -14,3 +14,6 @@ migrate:
 
 dev: # Run the project locally
 	npx concurrently -- 'npm --prefix api run dev:local' 'npm --prefix frontend run dev:local'
+
+dev-to-prod:
+	npm --prefix frontend run dev

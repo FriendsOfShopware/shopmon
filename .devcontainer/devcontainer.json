@@ -6,10 +6,6 @@
 	"features": {
 		"ghcr.io/shyim/devcontainers-features/bun:latest": {}
 	},
-	"updateContentCommand": {
-		"setup": "make setup",
-		"migration": "make migrate"
-	},
 	"postStartCommand": "make dev",
 	"customizations": {
 		"vscode": {
