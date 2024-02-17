@@ -67,7 +67,7 @@ async function loadShop() {
 
   await shopStore.loadShop(organizationId, shopId);
   const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
-  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop!!.shopware_version, version) < 0);
+  shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop!!.shopwareVersion, version) < 0);
   latestShopwareVersion.value = shopwareVersions.value[0];
 }
 
@@ -119,7 +119,7 @@ async function loadUpdateWizard(version: string) {
   loadingUpdateWizard.value = true;
 
   const body = {
-    currentVersion: shopStore.shop!!.shopware_version,
+    currentVersion: shopStore.shop!!.shopwareVersion,
     futureVersion: version,
     extensions: shopStore.shop.extensions.map((extension) => {
       return {
@@ -212,8 +212,8 @@ async function notificateIgnoreUpdate() {
           <div class="md:col-span-1">
             <dt class="text-sm font-medium">Shopware Version</dt>
             <dd class="mt-1 text-sm text-gray-500">
-              {{ shopStore.shop.shopware_version }}
-              <template v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopware_version">
+              {{ shopStore.shop.shopwareVersion }}
+              <template v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopwareVersion">
                 <a class="badge badge-warning"
                   :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion" target="_blank">
                   {{ latestShopwareVersion }}
@@ -429,7 +429,7 @@ async function notificateIgnoreUpdate() {
           :data="shopStore.shop.pageSpeed">
           <template #cell(created)="{ item }">
             <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url=' + shopStore.shop.url">{{
-              formatDateTime(item.created_at) }}</a>
+              formatDateTime(item.createdAt) }}</a>
           </template>
 
           <template v-slot:[cell]="{ item, data, itemKey }"

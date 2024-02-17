@@ -62,7 +62,7 @@ export const shopRouter = router({
                     url: schema.shop.url,
                     status: schema.shop.status,
                     createdAt: schema.shop.createdAt,
-                    shopware_version: schema.shop.shopwareVersion,
+                    shopwareVersion: schema.shop.shopwareVersion,
                     lastScrapedAt: schema.shop.lastScrapedAt,
                     lastScrapedError: schema.shop.lastScrapedError,
                     lastUpdated: schema.shop.lastUpdated,
