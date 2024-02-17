@@ -35,7 +35,7 @@ export interface UserExtension extends Extension {
             id: number;
             name: string;
             organizationId: number;
-            shopware_version: string;
+            shopwareVersion: string;
             installed: boolean;
             active: boolean;
             version: string;
@@ -203,14 +203,14 @@ export const accountRouter = router({
             const result = await ctx.drizzle
                 .select({
                     id: schema.shopChangelog.id,
-                    shop_id: schema.shopChangelog.shopId,
-                    shop_organization_id: schema.shop.organizationId,
-                    shop_name: schema.shop.name,
-                    shop_favicon: schema.shop.favicon,
+                    shopId: schema.shopChangelog.shopId,
+                    shopOrganizationId: schema.shop.organizationId,
+                    shopName: schema.shop.name,
+                    shopFavicon: schema.shop.favicon,
                     extensions: schema.shopChangelog.extensions,
-                    old_shopware_version:
+                    oldShopwareVersion:
                         schema.shopChangelog.oldShopwareVersion,
-                    new_shopware_version:
+                    newShopwareVersion:
                         schema.shopChangelog.newShopwareVersion,
                     date: schema.shopChangelog.date,
                 })
@@ -240,7 +240,7 @@ export const accountRouter = router({
                     id: schema.shop.id,
                     name: schema.shop.name,
                     organizationId: schema.shop.organizationId,
-                    shopware_version: schema.shop.shopwareVersion,
+                    shopwareVersion: schema.shop.shopwareVersion,
                     extensions: schema.shopScrapeInfo.extensions,
                 })
                 .from(schema.shop)
@@ -272,7 +272,7 @@ export const accountRouter = router({
                         id: row.id,
                         name: row.name,
                         organizationId: row.organizationId,
-                        shopware_version: row.shopware_version,
+                        shopwareVersion: row.shopwareVersion,
                         installed: extension.installed,
                         active: extension.active,
                         version: extension.version,

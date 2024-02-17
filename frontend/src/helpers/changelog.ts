@@ -4,9 +4,9 @@ import type { Changelogs } from '@/types/dashboard';
 export function sumChanges(changes: ShopChangelog | Changelogs) {
   const messages: string[] = [];
 
-  if (changes.old_shopware_version && changes.new_shopware_version) {
+  if (changes.oldShopwareVersion && changes.newShopwareVersion) {
     messages.push(
-      `Shopware Update from ${changes.old_shopware_version} to ${changes.new_shopware_version}`
+      `Shopware Update from ${changes.oldShopwareVersion} to ${changes.newShopwareVersion}`
     );
   }
 

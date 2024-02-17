@@ -2,8 +2,8 @@ export interface ExtensionDiff {
     name: string,
     label: string,
     state: string,
-    old_version: string | null,
-    new_version: string | null,
+    oldVersion: string | null,
+    newVersion: string | null,
     changelog: ExtensionChangelog[] | null,
     active: boolean,
 }
@@ -17,9 +17,10 @@ export interface ExtensionChangelog {
 
 export interface ShopChangelog {
     id: number;
-    shop_id: number;
+    shopId: number;
+    shopOrganizationId: number;
     extensions: ExtensionDiff[];
-    old_shopware_version: string | null;
-    new_shopware_version: string | null;
+    oldShopwareVersion: string | null;
+    newShopwareVersion: string | null;
     date: string;
 }
