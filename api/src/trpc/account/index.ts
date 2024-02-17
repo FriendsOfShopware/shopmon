@@ -3,7 +3,7 @@ import { router, publicProcedure } from '..';
 import { md5 } from '../../crypto';
 import { schema } from '../../db';
 import { loggedInUserMiddleware } from '../middleware';
-import { eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import Users from '../../repository/users';
 import bcryptjs from 'bcryptjs';
@@ -227,6 +227,7 @@ export const accountRouter = router({
                     eq(schema.shopChangelog.shopId, schema.shop.id),
                 )
                 .where(eq(schema.userToOrganization.userId, ctx.user))
+                .orderBy(desc(schema.shopChangelog.date))
                 .limit(10)
                 .all();
 
