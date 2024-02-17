@@ -66,14 +66,10 @@ async function loadShop() {
   const shopId = parseInt(route.params.shopId as string, 10);
 
   await shopStore.loadShop(organizationId, shopId);
-
   const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
   shopwareVersions.value = Object.keys(shopwareVersionsData).reverse().filter((version) => compareVersions(shopStore.shop!!.shopwareVersion, version) < 0);
-  
-  const latestStableVersions = shopwareVersions.value.filter(version => !version.includes("-RC"));
-  latestShopwareVersion.value = latestStableVersions[0];
+  latestShopwareVersion.value = shopwareVersions.value[0];
 }
-
 
 loadShop().then(function () {
   if (shopStore?.shop?.name) {
