@@ -72,7 +72,6 @@ async function loadShop() {
   latestShopwareVersion.value = shopwareVersions.value[0];
 }
 
-
 loadShop().then(function () {
   if (shopStore?.shop?.name) {
     document.title = shopStore.shop.name;
