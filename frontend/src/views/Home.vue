@@ -86,7 +86,7 @@ dashboardStore.loadChangelogs();
             :data="dashboardStore.changelogs">
 
             <template #cell(name)="{ item }">
-              <router-link :to="{ name: 'account.shops.detail', params: { organizationId: item.organizationId, shopId: item.shopId } }">
+              <router-link :to="{ name: 'account.shops.detail', params: { organizationId: item.shopOrganizationId, shopId: item.shopId } }">
                 {{ item.shopName }}
               </router-link>
             </template>
