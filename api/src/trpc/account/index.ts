@@ -204,6 +204,7 @@ export const accountRouter = router({
                 .select({
                     id: schema.shopChangelog.id,
                     shop_id: schema.shopChangelog.shopId,
+                    shop_organization_id: schema.shop.organizationId,
                     shop_name: schema.shop.name,
                     shop_favicon: schema.shop.favicon,
                     extensions: schema.shopChangelog.extensions,
