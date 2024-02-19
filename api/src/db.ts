@@ -176,8 +176,11 @@ type ResultSet = {lastInsertRowid: bigint|undefined} | {meta: { last_row_id: num
 
 export function getLastInsertId(result: ResultSet): number {
   if ('lastInsertRowid' in result) {
-    // @ts-expect-error
-    return result.lastInsertRowid as number;
+    if (result.lastInsertRowid === undefined) {
+      throw new Error('lastInsertRowid is undefined');
+    }
+
+    return new Number(result.lastInsertRowid).valueOf();
   }
 
   return result.meta.last_row_id;
