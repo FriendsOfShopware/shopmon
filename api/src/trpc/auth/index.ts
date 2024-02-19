@@ -1,5 +1,5 @@
 import { router, publicProcedure } from "..";
-import { schema } from "../../db";
+import { getLastInsertId, schema } from "../../db";
 import { eq, and, isNull } from "drizzle-orm";
 import { z } from "zod";
 import bcryptjs from "bcryptjs";
@@ -114,17 +114,12 @@ export const authRouter = router({
 				createdAt: new Date(),
 			});
 
-			if (!userInsertResult.success) {
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to create user",
-				});
-			}
+			const lastId = getLastInsertId(userInsertResult);
 
 			await Organizations.create(
 				ctx.drizzle,
 				`${input.displayName}'s Organization`,
-				userInsertResult.meta.last_row_id,
+				lastId,
 			);
 
 			await sendMailConfirmToUser(ctx.env, input.email, token);

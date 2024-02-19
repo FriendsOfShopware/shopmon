@@ -1,7 +1,7 @@
 import { UserSocketHelper } from '../object/UserSocket';
 import Users from './users';
 import { sendAlert } from '../mail/mail';
-import { Drizzle, schema } from '../db';
+import { Drizzle, getLastInsertId, schema } from '../db';
 import { eq } from 'drizzle-orm';
 import type { Bindings } from '../router';
 
@@ -48,7 +48,7 @@ async function createShop(
         })
         .execute();
 
-    return result.meta.last_row_id;
+    return getLastInsertId(result);
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {

@@ -1,4 +1,4 @@
-import { Drizzle, schema } from '../db';
+import { Drizzle, getLastInsertId, schema } from '../db';
 import { eq } from 'drizzle-orm';
 import Organization from './organization';
 
@@ -98,13 +98,13 @@ async function createNotification(
         })
         .execute();
 
-    schema.userNotification.$inferSelect;
+    const lastId = getLastInsertId(result);
 
     const notificationResponse: typeof schema.userNotification.$inferSelect = {
         ...notification,
         key,
         userId,
-        id: result.meta.last_row_id,
+        id: lastId,
         read: false,
         createdAt: new Date(),
     };

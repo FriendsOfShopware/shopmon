@@ -6,8 +6,8 @@ import {
     unique,
 } from 'drizzle-orm/sqlite-core';
 import { drizzle as drizzleD1, DrizzleD1Database } from 'drizzle-orm/d1';
-import {drizzle as drizzleLibSQL } from 'drizzle-orm/libsql';
-import { createClient  } from '@libsql/client';
+import {drizzle as drizzleLibSQL, LibSQLDatabase } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
 import type { Bindings } from './router';
 import {
     CacheInfo,
@@ -160,7 +160,7 @@ export const schema = {
     userPasskeys,
 };
 
-export type Drizzle = DrizzleD1Database<typeof schema>;
+export type Drizzle = LibSQLDatabase<typeof schema>;
 
 export function getConnection(env: Bindings) {
     if (typeof env.LIBSQL_URL === 'string' && typeof env.LIBSQL_AUTH_TOKEN === 'string') {
@@ -170,4 +170,15 @@ export function getConnection(env: Bindings) {
     }
 
     return drizzleD1(env.shopmonDB, { schema });
+}
+
+type ResultSet = {lastInsertRowid: bigint|undefined} | {meta: { last_row_id: number }}
+
+export function getLastInsertId(result: ResultSet): number {
+  if ('lastInsertRowid' in result) {
+    // @ts-expect-error
+    return result.lastInsertRowid as number;
+  }
+
+  return result.meta.last_row_id;
 }

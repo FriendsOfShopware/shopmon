@@ -1,4 +1,4 @@
-import { Drizzle, schema } from "../db";
+import { Drizzle, getLastInsertId, schema } from "../db";
 import { eq, and, inArray } from "drizzle-orm";
 import Users from "./users";
 
@@ -21,12 +21,14 @@ async function create(
 		})
 		.execute();
 
+	const lastId = getLastInsertId(organizationInsertResult);
+
 	await con.insert(schema.userToOrganization).values({
-		organizationId: organizationInsertResult.meta.last_row_id,
+		organizationId: lastId,
 		userId: ownerId,
 	});
 
-	return organizationInsertResult.meta.last_row_id.toString();
+	return lastId.toString();
 }
 
 async function listMembers(
