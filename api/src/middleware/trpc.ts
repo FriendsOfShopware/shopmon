@@ -20,6 +20,11 @@ export const trpcServer = ({
             endpoint,
             req: c.req.raw,
             createContext: createContext(c.env, c.executionCtx),
+            onError: (err) => {
+              if (err.error.code === 'INTERNAL_SERVER_ERROR') {
+                c.get('sentry').captureException(err.error)
+              }
+            }
         });
         return res;
     };
