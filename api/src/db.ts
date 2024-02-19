@@ -35,7 +35,7 @@ export const shop = sqliteTable('shop', {
     lastScrapedAt: integer('last_scraped_at', { mode: 'timestamp' }),
     lastScrapedError: text('last_scraped_error'),
     ignores: text('ignores', { mode: 'json' })
-        .default('[]')
+        .default([])
         .$type<string[]>()
         .notNull(),
     shopImage: text('shop_image'),
