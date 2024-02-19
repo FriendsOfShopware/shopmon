@@ -5,17 +5,15 @@ import { trpcClient, RouterOutput } from '@/helpers/trpc';
 import { client } from '@passwordless-id/webauthn'
 
 export const useAuthStore = defineStore('auth', {
-    state: (): { 
-        user: RouterOutput['account']['currentUser'] | null, 
-        returnUrl: string | null, 
-        access_token: string | null, 
-        refresh_token: string | null,
+    state: (): {
+        user: RouterOutput['account']['currentUser'] | null,
+        returnUrl: string | null,
+        access_token: string | null,
         passkeys: RouterOutput['auth']['passkey']['listDevices'] | null,
     } => ({
         user: JSON.parse(localStorage.getItem('user') as string),
         returnUrl: null,
         access_token: localStorage.getItem('access_token'),
-        refresh_token: localStorage.getItem('refresh_token'),
         passkeys: null,
     }),
     getters: {
@@ -120,11 +118,9 @@ export const useAuthStore = defineStore('auth', {
             } catch (e) { }
 
             this.user = null;
-            this.refresh_token = null;
             this.access_token = null;
             localStorage.removeItem('user');
             localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
             router.push('/account/login');
         },
 

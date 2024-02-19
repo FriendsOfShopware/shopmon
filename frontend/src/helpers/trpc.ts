@@ -15,11 +15,17 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
 
                 if (resp.status === 401 && localStorage.getItem('access_token')) {
                     const clonedResp = resp.clone()
-                    const json = await clonedResp.json() as { error: { message: string }}[];
+                    let json = await clonedResp.json() as { error: { message: string }}[];
+
+                    // check is json is a array
+                    if (!Array.isArray(json)) {
+                      json = [json];
+                    }
 
                     for (const error of json) {
                         if (error.error.message === 'Token expired') {
                             localStorage.removeItem('access_token');
+                            localStorage.removeItem('user');
                             window.location.reload();
                         }
                     }
