@@ -28,7 +28,7 @@ const showShopDeletionModal = ref(false)
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    newOrgId: Yup.number().required('Organization is required'),
+    organizationId: Yup.number().required('Organization is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
         then: () => Yup.string().required("If you change the URL you need to provide Client-ID")
@@ -85,7 +85,7 @@ async function deleteShop() {
             <FormGroup title="Shop information" subTitle="">
                 <div class="sm:col-span-6">
                     <label for="Name" class="block text-sm font-medium mb-1"> Name </label>
-                    <Field type="text" name="name" id="name" autocomplete="name" class="field"
+                    <Field type="text" name="name" id="name" autocomplete="name" class="field" :value="shopStore.shop.name"
                         v-bind:class="{ 'is-invalid': errors.name }" />
                     <div class="text-red-700">
                         {{ errors.name }}
@@ -94,7 +94,7 @@ async function deleteShop() {
 
                 <div class="sm:col-span-6">
                     <label for="newOrgId" class="block text-sm font-medium mb-1"> Organization </label>
-                    <Field as="select" id="newOrgId" name="newOrgId" class="field">
+                    <Field as="select" id="newOrgId" name="newOrgId" class="field" :value="shopStore.shop.organizationId">
                         <option v-for="organization in authStore.user.organizations" :value="organization.id" :key="organization.id">
                             {{ organization.name }}
                         </option>
@@ -106,7 +106,7 @@ async function deleteShop() {
 
                 <div class="sm:col-span-6">
                     <label for="shopUrl" class="block text-sm font-medium mb-1"> URL </label>
-                    <Field type="text" name="shopUrl" id="shopUrl" autocomplete="url" class="field"
+                    <Field type="text" name="shopUrl" id="shopUrl" autocomplete="url" class="field" :value="shopStore.shop.url"
                         v-bind:class="{ 'is-invalid': errors.shopUrl }" />
                     <div class="text-red-700">
                         {{ errors.shopUrl }}
