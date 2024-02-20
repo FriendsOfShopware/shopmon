@@ -37,6 +37,13 @@ jobs:
       working-directory: api
       run: pnpm install
 
+    - name: Run Migrations
+      working-directory: api
+      run: node_modules/.bin/tsx migrate.ts
+      env:
+        LIBSQL_URL: "${{ secrets.LIBSQL_URL }}"
+        LIBSQL_AUTH_TOKEN: "${{ secrets.LIBSQL_AUTH_TOKEN }}"
+
     - name: Generate JS
       working-directory: api
       run: pnpm run wrangler deploy --define SENTRY_RELEASE:"'${{ github.sha }}'" --dry-run --outdir=.
