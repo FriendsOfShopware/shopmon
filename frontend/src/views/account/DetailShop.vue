@@ -229,8 +229,8 @@ async function notificateIgnoreUpdate() {
           <div class="md:col-span-1">
             <dt class="font-medium">Last Shop Update</dt>
             <dd class="mt-1 text-sm text-gray-500">
-              <template v-if="shopStore.shop.lastUpdated">
-                {{ formatDate(shopStore.shop.lastUpdated) }}
+              <template v-if="shopStore.shop.lastChangelog && shopStore.shop.lastChangelog.date">
+                {{ formatDate(shopStore.shop.lastChangelog.date) }}
               </template>
               <template v-else>
                 never

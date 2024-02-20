@@ -177,7 +177,7 @@ export const accountRouter = router({
                     createdAt: schema.shop.createdAt,
                     lastScrapedAt: schema.shop.lastScrapedAt,
                     shopwareVersion: schema.shop.shopwareVersion,
-                    lastUpdated: schema.shop.lastUpdated,
+                    lastChangelog: schema.shop.lastChangelog,
                     organizationId: schema.shop.organizationId,
                     organizationName: sql<string>`${schema.organization.name}`.as('organization_name'),
                 })

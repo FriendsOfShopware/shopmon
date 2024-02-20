@@ -20,6 +20,12 @@ import {
 } from './types';
 import type { RegistrationParsed } from '@passwordless-id/webauthn/src/types'
 
+type LastChangelog = {
+  date: Date;
+  from: string;
+  to: string;
+}
+
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     organizationId: integer('organization_id')
@@ -39,7 +45,9 @@ export const shop = sqliteTable('shop', {
         .$type<string[]>()
         .notNull(),
     shopImage: text('shop_image'),
-    lastUpdated: integer('last_updated', { mode: 'timestamp' }),
+    lastChangelog: text('last_changelog', { mode: 'json' })
+      .default('{}')
+      .$type<LastChangelog>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 

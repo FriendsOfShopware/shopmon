@@ -12,7 +12,6 @@ const shopStore = useShopStore();
 shopStore.loadShops();
 
 </script>
-  
   <template>
   <Header title="My Shops">
     <router-link to="/account/shops/new" type="button" class="group btn btn-primary flex items-center align-middle">
@@ -70,8 +69,10 @@ shopStore.loadShops();
         </template>
 
         <template #cell(lastUpdated)="{ item }">
-          <template v-if="item.lastUpdated?.date" :data-tooltip="'from ' + item.lastUpdated.from + ' to ' + item.lastUpdated.to">
-            {{ formatDate(item.lastUpdated.date) }}
+          <template v-if="item.lastChangelog?.date">
+            <span :data-tooltip="'from ' + item.lastChangelog.from + ' to ' + item.lastChangelog.to">
+                {{ formatDate(item.lastChangelog.date) }}
+            </span>
           </template>
           <template v-else>
             {{ null }}

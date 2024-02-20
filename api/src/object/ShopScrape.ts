@@ -654,12 +654,16 @@ export class ShopScrape implements DurableObject {
                 .execute();
         }
 
-        if (hasShopUpdate) {
-            await con
-                .update(schema.shop)
-                .set({ lastUpdated: new Date() })
-                .where(eq(schema.shop.id, shop.id))
-                .execute();
+        if (hasShopUpdate && shopUpdate.from && shopUpdate.to) {
+          await con
+              .update(schema.shop)
+              .set({ lastChangelog: {
+                  date: new Date(),
+                  from: shopUpdate.from,
+                  to: shopUpdate.to,
+              }})
+              .where(eq(schema.shop.id, shop.id))
+              .execute();
         }
     }
 }
