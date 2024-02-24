@@ -1,2 +1,3 @@
 /*
   Content-Security-Policy: default-src 'self'; img-src 'self' t2.gstatic.com seccdn.libravatar.org; frame-src 'none'; upgrade-insecure-requests; block-all-mixed-content; disown-opener
+  Strict-Transport-Security: max-age=31536000;
