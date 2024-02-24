@@ -1,0 +1,2 @@
+/*
+  Content-Security-Policy: default-src 'self'; frame-src 'none'; upgrade-insecure-requests; block-all-mixed-content; disown-opener
