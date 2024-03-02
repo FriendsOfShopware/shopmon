@@ -1,6 +1,6 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 import { useAuthStore } from '@/stores/auth.store';
-import { trpcClient, RouterOutput } from "@/helpers/trpc";
+import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 const authStore = useAuthStore();
 
@@ -8,7 +8,7 @@ export const useOrganizationStore = defineStore('organization', {
     state: (): { isLoading: boolean, isRefreshing: boolean, members: RouterOutput['organization']['listMembers'] } => ({
         isLoading: false,
         isRefreshing: false,
-        members: []
+        members: [],
     }),
     actions: {
         async loadMembers(orgId: number) {
@@ -42,6 +42,6 @@ export const useOrganizationStore = defineStore('organization', {
         async updateOrganization(orgId: number, name: string) {
             await trpcClient.organization.update.mutate({ orgId, name });
             await authStore.refreshUser();
-        }
-    }
-})
+        },
+    },
+});
