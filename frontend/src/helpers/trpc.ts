@@ -1,6 +1,5 @@
-import { createTRPCProxyClient, httpBatchLink, getFetch } from '@trpc/client'
-import type { FetchEsque } from '@trpc/client/src/internals/types'
-import type { AppRouter } from '../../../api/src/trpc/router'
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../../../api/src/trpc/router';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export type RouterOutput = inferRouterOutputs<AppRouter>;
@@ -10,16 +9,16 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
     links: [
         httpBatchLink({
             url: '/trpc',
-            fetch: async (requestInfo: RequestInfo | URL | string, init?: RequestInit) => {
+            fetch: async(requestInfo: RequestInfo | URL | string, init?: RequestInit) => {
                 const resp = await fetch(requestInfo, init);
 
                 if (resp.status === 401 && localStorage.getItem('access_token')) {
-                    const clonedResp = resp.clone()
-                    let json = await clonedResp.json() as { error: { message: string }}[];
+                    const clonedResp = resp.clone();
+                    let json = await clonedResp.json() as { error: { message: string } }[];
 
                     // check is json is a array
                     if (!Array.isArray(json)) {
-                      json = [json];
+                        json = [json];
                     }
 
                     for (const error of json) {
@@ -41,8 +40,8 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
                 }
 
                 return headers;
-            }
+            },
         }),
     ],
 
-})
+});

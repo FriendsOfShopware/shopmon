@@ -1,8 +1,15 @@
-import { defineStore } from "pinia";
-import { trpcClient, RouterOutput, RouterInput } from "@/helpers/trpc";
+import { defineStore } from 'pinia';
+import { trpcClient, RouterOutput, RouterInput } from '@/helpers/trpc';
 
 export const useShopStore = defineStore('shop', {
-    state: (): { shops: RouterOutput['account']['currentUserShops'], isLoading: boolean, isRefreshing: boolean, isCacheClearing: boolean, isReSchedulingTask: boolean, shop: RouterOutput['organization']['shop']['get'] | null } => ({
+    state: (): {
+        shops: RouterOutput['account']['currentUserShops'],
+        isLoading: boolean,
+        isRefreshing: boolean,
+        isCacheClearing: boolean,
+        isReSchedulingTask: boolean,
+        shop: RouterOutput['organization']['shop']['get'] | null
+    } => ({
         isLoading: false,
         isRefreshing: false,
         isCacheClearing: false,
@@ -32,11 +39,20 @@ export const useShopStore = defineStore('shop', {
 
         async loadShop(orgId: number, shopId: number) {
             this.isLoading = true;
-            this.shop = await trpcClient.organization.shop.get.query({ orgId, shopId })
+            this.shop = await trpcClient.organization.shop.get.query({ orgId, shopId });
             this.isLoading = false;
         },
 
-        async updateShop(orgId: number, shopId: number, payload: { name?: string, ignores?: string[], shopUrl?: string, clientId?: string, clientSecret?: string }) {
+        async updateShop(
+            orgId: number,
+            shopId: number,
+            payload: {
+                name?: string,
+                ignores?: string[],
+                shopUrl?: string,
+                clientId?: string,
+                clientSecret?: string
+            }) {
             if (payload.shopUrl) {
                 payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
             }
@@ -71,18 +87,18 @@ export const useShopStore = defineStore('shop', {
         setShopsInitials(shops: RouterOutput['account']['currentUserShops']) {
             return shops?.map(shop => ({
                 ...shop,
-                initials: this.getShopInitias(shop.name)
+                initials: this.getShopInitias(shop.name),
             }));
         },
 
         getShopInitias(name: string) {
-            let initials = name.split(/\s/).slice(0, 2).reduce((response, word) => response += word.slice(0, 1), '');
+            const initials = name.split(/\s/).slice(0, 2).reduce((response, word) => response += word.slice(0, 1), '');
 
             if (initials && initials.length > 1) {
                 return initials.toUpperCase();
             }
 
             return name.slice(0, 2).toUpperCase();
-        }
-    }
-})
+        },
+    },
+});

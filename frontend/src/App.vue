@@ -1,7 +1,13 @@
+<template>
+    <nav-bar v-if="authStore.user" />
+    <alert />
+    <router-view />
+</template>
+
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 
-import Nav from '@/components/layout/Nav.vue';
+import NavBar from '@/components/layout/NavBar.vue';
 import Alert from '@/components/Alert.vue';
 
 import { useAuthStore } from '@/stores/auth.store';
@@ -14,25 +20,19 @@ const notificationStore = useNotificationStore();
 const darkModeStore = useDarkModeStore();
 
 if (authStore.isAuthenticated) {
-  authStore.refreshUser();
+    authStore.refreshUser();
 
-  const authToken = authStore.access_token;
+    const authToken = authStore.access_token;
 
-  if (authToken) {
-    notificationStore.connect(authToken);
-    notificationStore.loadNotifications();
-  }
+    if (authToken) {
+        notificationStore.connect(authToken);
+        notificationStore.loadNotifications();
+    }
 }
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-  darkModeStore.setDarkMode(e.matches);
+    darkModeStore.setDarkMode(e.matches);
 });
 
 darkModeStore.updateDarkModeClass();
 </script>
-
-<template>
-  <Nav v-if="authStore.user" />
-  <Alert />
-  <RouterView />
-</template>
