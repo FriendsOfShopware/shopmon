@@ -1,0 +1,14 @@
+:root {
+    --primary-color: #0ea5e9;
+    --background-color: #f3f4f6;
+    --text-color: #111827;
+    --link-color: #0369a1;
+    --link-hover-color: #0284c7;
+
+    .dark& {
+        --background-color: #171717;
+        --text-color: #a3a3a3;
+        --link-color: #0369a1;
+        --link-hover-color: #0284c7;
+    }
+}
