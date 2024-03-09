@@ -1,7 +1,13 @@
 <template>
     <main>
-        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <div class="container container-main">
             <slot />
         </div>
     </main>
 </template>
+
+<style>
+.container-main {
+    padding: 1.5rem 0;
+}
+</style>

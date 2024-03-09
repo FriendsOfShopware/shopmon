@@ -1,0 +1,61 @@
+:root {
+    --container-width: 80rem;
+    --primary-color: #0ea5e9;
+    --background-color: #f3f4f6;
+    --text-color: #111827;
+    --link-color: #0369a1;
+    --link-hover-color: #0284c7;
+    --success-color: #86efac;
+    --error-color: #dc2626;
+    --warning-color: #facc15;
+    --panel-background: #ffffff;
+    --item-background: #f9fafb;
+    --item-odd-background: #f3f4f6;
+    --item-hover-background: #f0f9ff;
+    --item-title-color: #1f2937;
+    --item-sub-background: #e5e7eb80;
+    --item-icon-color: #4b5563;
+    --section-title-color: #6b7280;
+    --section-title-border-color: #cbd5e1;
+    --notification-border-color: #e5e7eb;
+    --notification-item-date-color: #6b7280;
+    --notification-item-message-color: #6b7280;
+    --user-menu-border-color: #e5e7eb;
+    --user-menu-item-active-background-color:#f3f4f6;
+    --user-menu-icon-color:#0c84c2;
+    --data-table-head-background: #f8fafc;
+    --data-table-head-color: #4b5563;
+    --data-table-row-background: #f9fafb;
+    --data-table-row-odd-background: #e5e7eb;
+    --data-table-row-hover-background: #f0f9ff;
+
+    .dark& {
+        --background-color: #171717;
+        --text-color: #a3a3a3;
+        --link-color: #38bdf8;
+        --link-hover-color: #0ea5e9;
+        --success-color: #86efac;
+        --error-color: #f87171;
+        --warning-color: #fef08a;
+        --panel-background: #262626;
+        --item-background: #262626;
+        --item-odd-background: #2b2b2b;
+        --item-hover-background: #2a2b2f;
+        --item-title-color: #d1d5db;
+        --item-sub-background: #40404040;
+        --item-icon-color: #d1d5db;
+        --section-title-color: #6b7280;
+        --section-title-border-color: #262626;
+        --notification-border-color: #404040;
+        --notification-item-date-color: #737373;
+        --notification-item-message-color: #737373;
+        --user-menu-border-color: #404040;
+        --user-menu-item-active-background-color:#374151;
+        --user-menu-icon-color:#60a5fa;
+        --data-table-head-background: #262626;
+        --data-table-head-color: #d1d5db;
+        --data-table-row-background: #2b2b2b;
+        --data-table-row-odd-background: #262626;
+        --data-table-row-hover-background: #2a2b2f;
+    }
+}

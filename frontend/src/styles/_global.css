@@ -1,0 +1,117 @@
+body {
+    color: var(--text-color);
+    font-size: 0.875rem;
+    background-color: var(--background-color);
+    height: 100%;
+}
+
+a {
+    color: var(--link-color);
+    transition: color 0.2s ease-in-out;
+
+    &:hover {
+        color: var(--link-hover-color);
+    }
+}
+
+table th {
+    font-weight: 600;
+    color: #111827;
+
+    .dark & {
+        color: #9ca3af;
+    }
+}
+
+#app {
+    height: 100%;
+}
+
+.container {
+    width: 94%;
+    max-width: var(--container-width);
+    margin: 0 auto;
+}
+
+*[data-tooltip] {
+    position: relative;
+
+    &:before {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: absolute;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        background-color: #374151;
+        color: #FFF;
+        font-size: 0.875rem;
+        bottom: calc(100% + 2px);
+        left: -0.75rem;
+        content: attr(data-tooltip);
+        display: none;
+    }
+
+    &:after {
+        pointer-events: none;
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        margin-bottom: -8px;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: #374151;
+        display: none;
+    }
+
+    &:hover:before,
+    &:hover:after {
+        display: block;
+    }
+}
+
+.tooltip-position-left[data-tooltip]:before {
+    left: auto;
+    right: -0.75rem;
+}
+
+.tooltip-position-center[data-tooltip]:before {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+svg {
+    display: inline;
+    vertical-align: -0.2em;
+}
+
+.text-divider {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.text-divider::before,
+.text-divider::after {
+    flex: 1 1 0%;
+    height: 1px;
+    background-color: #D1D5DB;
+    content: '\00a0';
+
+    .dark & {
+        background-color: #262626;
+    }
+}
+
+.icon {
+    &-success {
+        color: var(--success-color);
+    }
+
+    &-error {
+        color: var(--error-color);
+    }
+    
+    &-warning {
+        color: var(--warning-color);
+    }
+}
