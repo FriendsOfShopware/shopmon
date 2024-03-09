@@ -66,9 +66,9 @@ export const accountRouter = router({
                 });
             }
 
-            const emailMd5 = await md5(user.email);
+            const emailMd5 = await md5(user.displayName + user.email);
 
-            const avatar = `https://seccdn.libravatar.org/avatar/${emailMd5}?d=identicon`;
+            const avatar = `https://api.dicebear.com/7.x/personas/svg/?seed=${emailMd5}?d=identicon`;
 
             const organizations = await ctx.drizzle
                 .select({
