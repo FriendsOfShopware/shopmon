@@ -66,19 +66,25 @@ const userNavigation = [
       </div>
 
       <div class="flex ml-4 md:ml-6 items-center gap-3">
+        <a href="https://github.com/FriendsOfShopware/shopmon/" target="_blank" 
+          class="text-sky-200 h-5 w-5 rounded-full hover:text-white flex justify-center items-center">
+          <icon-fa-brands:github class="w-5 h-5" />
+        </a>
+
         <button
-          class="text-sky-200 h-8 w-8 bg-sky-400 p-1 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
+          class="text-sky-200 h-5 w-5 rounded-full hover:text-white focus:outline-none flex justify-center items-center"
           @click="darkModeStore.toggleDarkMode">
           <icon-fa6-regular:moon class="w-5 h-5" v-if="darkModeStore.darkMode" />
           <icon-fa6-regular:sun class="w-5 h-5" v-else />
         </button>
+
         <Popover v-slot="{ open }" class="md:relative">
           <PopoverButton @click="notificationStore.markAllRead"
-            class="h-8 w-8 bg-sky-400 p-1 rounded-full text-sky-200 hover:text-white focus:outline-none flex justify-center items-center">
+            class="relative h-5 w-5 rounded-full text-sky-200 hover:text-white focus:outline-none flex justify-center items-center">
             <span class="sr-only">View notifications</span>
             <icon-fa6-solid:bell class="h-5 w-5" aria-hidden="true" />
             <div v-if="notificationStore.unreadNotificationCount > 0"
-              class="absolute -right-2 -top-1 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[20px] text-xs font-medium text-white">
+              class="absolute -right-2 -top-2 ml-2 bg-red-500 rounded-full px-0.5 py-0.5 min-w-[16px] text-[10px] leading-tight font-medium text-white">
               {{ notificationStore.unreadNotificationCount }}
             </div>
           </PopoverButton>
@@ -140,7 +146,7 @@ const userNavigation = [
           <Menu as="div" class="relative">
             <div>
               <MenuButton
-                class="max-w-xs bg-sky-400 rounded-full flex items-center text-sm text-white focus:outline-none">
+                class="ml-4 max-w-xs bg-sky-400 rounded-full flex items-center text-sm text-white focus:outline-none">
                 <span class="sr-only">Open user menu</span>
                 <img class="h-8 w-8 rounded-full" :src="authStore.user.avatar" alt="">
               </MenuButton>

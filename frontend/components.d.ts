@@ -51,6 +51,7 @@ declare module 'vue' {
     'IconFa6Solid:upRightFromSquare': typeof import('~icons/fa6-solid/up-right-from-square')['default']
     'IconFa6Solid:userPlus': typeof import('~icons/fa6-solid/user-plus')['default']
     'IconFa6Solid:xmark': typeof import('~icons/fa6-solid/xmark')['default']
+    'IconFaBrands:github': typeof import('~icons/fa-brands/github')['default']
     'IconIc:baselineCleaningServices': typeof import('~icons/ic/baseline-cleaning-services')['default']
     'IconLineMd:loadingTwotoneLoop': typeof import('~icons/line-md/loading-twotone-loop')['default']
     'IconMaterialSymbols:passkey': typeof import('~icons/material-symbols/passkey')['default']
