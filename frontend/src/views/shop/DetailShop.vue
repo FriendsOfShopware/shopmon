@@ -183,14 +183,41 @@
         </div>
 
         <tabs
-            :labels="[
-                { key: 'checks', title: 'Checks', icon: FaCircleCheck },
-                { key: 'extensions', title: 'Extensions', icon: FaPlug },
-                { key: 'tasks', title: 'Scheduled Tasks', icon: FaListCheck },
-                { key: 'queue', title: 'Queue', icon: FaCircleCheck },
-                { key: 'pagespeed', title: 'Pagespeed', icon: FaRocket },
-                { key: 'changelog', title: 'Changelog', icon: FaFileWaverform }
-            ]"
+            :labels="
+                [{
+                     key: 'checks',
+                     title: 'Checks',
+                     count: shopStore.shop.checks?.length ?? 0,
+                     icon: FaCircleCheck,
+                 },
+                 {
+                     key: 'extensions',
+                     title: 'Extensions',
+                     count: shopStore.shop.extensions?.length ?? 0,
+                     icon: FaPlug
+                 },
+                 {
+                     key: 'tasks',
+                     title: 'Scheduled Tasks',
+                     count: shopStore.shop.scheduledTask?.length ?? 0,
+                     icon: FaListCheck
+                 },
+                 {
+                     key: 'queue',
+                     title: 'Queue',
+                     count: shopStore.shop.queueInfo?.length ?? 0
+                     , icon: FaCircleCheck },
+                 {
+                     key: 'pagespeed',
+                     title: 'Pagespeed',
+                     count: shopStore.shop.pageSpeed?.length ?? 0
+                     ,icon: FaRocket },
+                 {
+                     key: 'changelog',
+                     title: 'Changelog',
+                     count: shopStore.shop.changelog?.length ?? 0,
+                     icon: FaFileWaverform
+                 }]"
         >
             <template #panel-checks>
                 <data-table
@@ -257,8 +284,11 @@
                         { key: 'installedAt', name: 'Installed at', sortable: true },
                     ]"
                     :data="shopStore.shop.extensions || []"
-                    :default-sorting="{ by: 'label' }"
+                    :default-sort="{ key: 'label', desc: false }"
                 >
+                    <template #cell-actions-header>
+                        Known Issues
+                    </template>
                     <template #cell-label="{ row }">
                         <div class="flex items-start">
                             <span
@@ -451,13 +481,16 @@
                         :key="cellKey"
                     >
                         <span class="mr-2">{{ row[cellKey] }}</span>
-                        <template v-if="shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] !== row[cellKey]">
+                        <template
+                            v-if="shopStore.shop.pageSpeed[(rowIndex + 1)] &&
+                                shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] !== row[cellKey]"
+                        >
                             <icon-fa6-solid:arrow-right
                                 :class="[{
                                     'text-green-400 -rotate-45 dark:text-green-300':
                                         shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
                                     'text-red-600 rotate-45 dark:text-red-400':
-                                        shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey]
+                                        shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
                                 }]"
                             />
                         </template>

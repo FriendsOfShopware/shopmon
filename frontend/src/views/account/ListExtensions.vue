@@ -54,7 +54,7 @@
             >
                 <data-table
                     :columns="[
-                        { key: 'label', name: 'Name', sortable: true },
+                        { key: 'label', name: 'Name', sortable: true, searchable: true},
                         { key: 'shops', name: 'Shop' },
                         { key: 'version', name: 'Version' },
                         { key: 'latestVersion', name: 'Latest' },
@@ -62,9 +62,12 @@
                         { key: 'installedAt', name: 'Installed At', sortable: true },
                     ]"
                     :data="extensionStore.extensions"
-                    :default-sorting="{by: 'label'}"
+                    :default-sort="{ key: 'label', desc: false }"
                     :search-term="term"
                 >
+                    <template #cell-actions-header>
+                        Known Issues
+                    </template>
                     <template #cell-label="{ row }">
                         <div v-if="row.storeLink">
                             <a

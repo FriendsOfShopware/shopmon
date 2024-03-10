@@ -29,8 +29,10 @@
                 </th>
                 <th
                     v-if="slots['cell-actions']"
-                    class="py-3.5 px-3 text-left whitespace-nowrap pr-4 sm:pr-6 lg:pr-8"
-                />
+                    class="py-3.5 px-3 text-left whitespace-nowrap pr-4 sm:pr-6 lg:pr-8 text-right"
+                >
+                    <slot name="cell-actions-header" />
+                </th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-none">
@@ -111,6 +113,10 @@ const props = withDefaults(defineProps<{
         sortable?: boolean,
         sortPath?: string,
     }>,
+    defaultSort?: {
+        key: RowKey,
+        desc?: boolean,
+    },
     data: RowData[]
     searchTerm?: string,
 }>(), {
@@ -118,8 +124,8 @@ const props = withDefaults(defineProps<{
 });
 
 const sorting = reactive({
-    sortBy: '',
-    sortDesc: false,
+    sortBy: props.defaultSort?.key ?? '',
+    sortDesc: props.defaultSort?.desc ?? false,
 });
 
 const naturalSort = createNewSortInstance({
@@ -137,6 +143,7 @@ const naturalSort = createNewSortInstance({
 });
 
 function setSort(key: string) {
+    console.log('setSort', key);
     if (sorting.sortBy !== key) {
         sorting.sortBy = key;
         sorting.sortDesc = false;
@@ -169,7 +176,7 @@ const sortedFilteredData = computed(() => {
     if (props.searchTerm.length >= 3) {
         const fuse = new Fuse(data, {
             keys: searchableRows.value,
-            threshold: 0,
+            threshold: .5,
         });
 
         data = fuse.search(props.searchTerm).map(result => result.item);
@@ -185,7 +192,7 @@ const sortedFilteredData = computed(() => {
         if (sortDesc) {
             data = naturalSort(data).desc(d => getSortByValue(d, rowConfig.sortPath ?? sortBy));
         } else {
-            data = naturalSort(data).desc(d => getSortByValue(d, rowConfig.sortPath ?? sortBy));
+            data = naturalSort(data).asc(d => getSortByValue(d, rowConfig.sortPath ?? sortBy));
         }
     }
 

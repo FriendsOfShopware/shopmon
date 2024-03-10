@@ -58,7 +58,7 @@
         >
             <data-table
                 :columns="[
-                    { key: 'favicon', name: 'Logo' },
+                    { key: 'favicon', name: '', classOverride: true, class: 'w-11 min-w-[44px] py-3.5 px-3' },
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'url', name: 'URL' },
                     { key: 'shopwareVersion', name: 'version', sortable: true },
