@@ -1,6 +1,7 @@
 import { Drizzle, getLastInsertId, schema } from "../db";
 import { eq, and, inArray } from "drizzle-orm";
 import Users from "./users";
+import { TRPCError } from "@trpc/server";
 
 interface OrganizationMember {
 	id: number;
@@ -60,16 +61,26 @@ async function addMember(
 	const exists = await Users.existsByEmail(con, email);
 
 	if (exists === null) {
-		throw new Error("User not found");
+		throw new TRPCError({
+			message: "User not found",
+			code: "NOT_FOUND",
+		})
 	}
 
-	await con
-		.insert(schema.userToOrganization)
-		.values({
-			organizationId,
-			userId: exists,
+	try {
+		await con
+				.insert(schema.userToOrganization)
+				.values({
+					organizationId,
+					userId: exists,
+				})
+				.execute();
+	} catch (e) {
+		throw new TRPCError({
+			code: 'BAD_REQUEST',
+			message: 'User already in organization',
 		})
-		.execute();
+	}
 }
 
 async function removeMember(

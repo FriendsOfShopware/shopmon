@@ -50,7 +50,7 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
         .get();
 
     if (!result || result.ownerId !== ctx.user) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Your are not the owner of the organization' });
     }
 
     return next();
