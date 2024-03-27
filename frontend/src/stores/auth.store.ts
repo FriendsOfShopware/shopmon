@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { router } from '@/router';
 import { useNotificationStore } from './notification.store';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
-import { client } from '@passwordless-id/webauthn'
+import { client } from '@passwordless-id/webauthn';
 
 export const useAuthStore = defineStore('auth', {
     state: (): {
@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
     getters: {
         isAuthenticated(): boolean {
             return this.user !== null && this.access_token !== null && this.refresh_token !== null;
-        }
+        },
     },
     actions: {
         async refreshUser() {
@@ -41,8 +41,8 @@ export const useAuthStore = defineStore('auth', {
         async login(email: string, password: string) {
             const token = await trpcClient.auth.loginWithPassword.mutate({
                 email,
-                password
-            })
+                password,
+            });
 
             localStorage.setItem('access_token', token);
 
@@ -61,9 +61,9 @@ export const useAuthStore = defineStore('auth', {
         async loginWithPasskey() {
             const challenge = await trpcClient.auth.passkey.challenge.mutate();
             const authentication = await client.authenticate([], challenge, {
-                authenticatorType: "auto",
-                userVerification: "required",
-                timeout: 60000
+                authenticatorType: 'auto',
+                userVerification: 'required',
+                timeout: 60000,
             });
 
             const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
@@ -128,6 +128,6 @@ export const useAuthStore = defineStore('auth', {
             useNotificationStore().disconnect();
             await trpcClient.account.deleteCurrentUser.mutate();
             this.logout();
-        }
+        },
     },
 });
