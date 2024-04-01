@@ -63,6 +63,7 @@ table th {
         bottom: calc(100% + 2px);
         left: -0.75rem;
         content: attr(data-tooltip);
+        white-space: nowrap;
         display: none;
     }
 
