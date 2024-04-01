@@ -89,10 +89,6 @@
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth.store';
 
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import DataTable from '@/components/layout/DataTable.vue';
-
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 

@@ -104,7 +104,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import PasswordField from '@/components/form/PasswordField.vue';
 
 import { Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';

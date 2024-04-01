@@ -196,10 +196,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
-
 import { Form as VeeForm, Field } from 'vee-validate';
 import * as Yup from 'yup';
 import { ref } from 'vue';

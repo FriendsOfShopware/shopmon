@@ -182,9 +182,6 @@ import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOrganizationStore } from '@/stores/organization.store';
 import { useRoute, useRouter } from 'vue-router';
-
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
 import { Field, Form as VeeForm } from 'vee-validate';
 
 import { ref } from 'vue';

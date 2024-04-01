@@ -758,13 +758,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import DataTable from '@/components/layout/DataTable.vue';
-import Tabs from '@/components/layout/Tabs.vue';
-import Modal from '@/components/layout/Modal.vue';
-import RatingStars from '@/components/RatingStars.vue';
-
 import { compareVersions } from 'compare-versions';
 import { createNewSortInstance } from 'fast-sort';
 

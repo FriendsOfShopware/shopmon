@@ -172,10 +172,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import DataTable from '@/components/layout/DataTable.vue';
-
 import { useExtensionStore } from '@/stores/extension.store';
 
 const extensionStore = useExtensionStore();

@@ -287,8 +287,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useDarkModeStore } from '@/stores/darkMode.store';
 
-import Logo from '@/components/Logo.vue';
-
 import {
     Disclosure,
     DisclosureButton,

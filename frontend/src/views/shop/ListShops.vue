@@ -89,10 +89,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import DataTable from '@/components/layout/DataTable.vue';
-
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 import { useShopStore } from '@/stores/shop.store';

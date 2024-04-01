@@ -7,7 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    Alert: typeof import('./src/components/Alert.vue')['default']
+    Alert: typeof import('./src/components/layout/Alert.vue')['default']
     DataTable: typeof import('./src/components/layout/DataTable.vue')['default']
     FormGroup: typeof import('./src/components/layout/FormGroup.vue')['default']
     HeaderContainer: typeof import('./src/components/layout/HeaderContainer.vue')['default']
@@ -59,6 +59,7 @@ declare module 'vue' {
     Modal: typeof import('./src/components/layout/Modal.vue')['default']
     Nav: typeof import('./src/components/layout/Nav.vue')['default']
     NavBar: typeof import('./src/components/layout/NavBar.vue')['default']
+    Notification: typeof import('./src/components/Notification.vue')['default']
     PasswordField: typeof import('./src/components/form/PasswordField.vue')['default']
     RatingStars: typeof import('./src/components/RatingStars.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
