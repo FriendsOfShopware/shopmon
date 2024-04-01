@@ -12,9 +12,20 @@
     outline: none;
     transition: border-color 0.4s ease-in-out;
 
+    .icon {
+        width: 1rem;
+        height: 1rem;
+        margin: 0 .5rem 0 -.25rem;
+        opacity: .25;
+    }
+
     &:hover {
         border-color: var(--primary-color);
         color: var(--text-color);
+
+        .icon {
+            opacity: .5;
+        }
     }
 
     &.btn-primary {

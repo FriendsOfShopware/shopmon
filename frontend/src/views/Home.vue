@@ -84,7 +84,7 @@
                     Last Changes
                 </h2>
                 
-                <div class="changelog-container">
+                <div class="table-container">
                     <data-table
                         :columns="[
                             { key: 'shopName', name: 'Shop', sortable: true },
@@ -248,22 +248,6 @@ dashboardStore.loadChangelogs();
         color: #6b7280;
         font-size: 0.875rem;
         line-height: 1.25rem;
-    }
-}
-
-.changelog-container {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    border-radius: 0.375rem;
-    background-color: var(--panel-background);
-    overflow-y: auto;
-    overflow-x: hidden;
-    
-    @media (min-width: 768px) {
-        overflow-y: hidden;
-    }
-
-    .dark & {
-        box-shadow: none;
     }
 }
 </style>

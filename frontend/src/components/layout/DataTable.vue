@@ -95,7 +95,6 @@ const props = withDefaults(defineProps<{
         key: RowKey,
         name: string,
         class?: string,
-        classOverride?: boolean,
         searchable?: boolean,
         sortable?: boolean,
         sortPath?: string,
