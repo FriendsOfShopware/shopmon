@@ -23,7 +23,7 @@
             </div>
         </div>
 
-        <div v-else class="shops-table-container">
+        <div v-else class="panel panel-table">
             <data-table
                 :columns="[
                     { key: 'favicon', name: '', class: 'favicon-col' },

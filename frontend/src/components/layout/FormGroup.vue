@@ -1,46 +1,74 @@
 <template>
-    <div class="md:grid md:grid-cols-3 md:gap-6 pb-12">
-        <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6">
-                {{ title }}
-            </h3>
-            <p
-                v-if="subTitle"
-                class="text-gray-600"
-            >
-                {{ subTitle }}
-            </p>
+    <div class="form-group">
+        <div class="sidebar">
+            <h3 class="sidebar-title">{{ title }}</h3>
 
-            <div
-                v-if="info"
-                class="rounded-md bg-blue-0 p-4 border border-blue-300 flex mt-3 dark:bg-gray-900 dark:border-sky-400"
-            >
-                <div class="flex-shrink-0">
-                    <icon-fa6-solid:circle-info
-                        class="h-5 w-5 text-sky-400"
-                        aria-hidden="true"
-                    />
-                </div>
-                <!-- eslint-disable vue/no-v-html -->
-                <div
-                    class="ml-3 flex-1 md:flex md:justify-between text-sky-900 dark:text-sky-600"
-                    v-html="info"
-                />
-                <!-- eslint-enable vue/no-v-html -->
-            </div>
+            <p v-if="subTitle" class="sidebar-subtitle">{{ subTitle }}</p>
+
+            <Alert type="info" :content="info" v-if="info" />
         </div>
-
-        <div class="mt-5 md:mt-0 md:col-span-2">
-            <div
-                class="px-4 py-5 bg-white space-y-6 sm:p-6 shadow
-                overflow-hidden rounded-md dark:bg-neutral-800 dark:shadow-none"
-            >
-                <slot />
-            </div>
+        <div class="content">
+            <slot />
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string, subTitle?: string, info?: string }>();
+defineProps<{ title: string; subTitle?: string; info?: string }>();
 </script>
+
+<style scoped>
+.form-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding-bottom: 3rem;
+    
+    @media (min-width: 768px) {
+        grid-template-columns: 1fr 2fr;
+    }
+}
+
+.sidebar {
+    order: 2;
+    
+    @media (min-width: 768px) {
+        order: 1;
+    }
+
+    &-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+    
+    &-subtitle {
+        color: #6b7280;
+    }
+}
+
+.content {
+    order: 1;
+    background-color: var(--panel-background);
+    padding: 1.25rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    
+    @media (min-width: 768px) {
+        order: 2;
+    }
+    
+    @media (min-width: 640px) {
+        padding: 1.5rem;
+    }
+
+    > :not(:first-child) {
+        margin-top: 1.5rem;;
+    }
+
+    .dark & {
+        box-shadow: none;
+    }
+    
+    
+}
+</style>

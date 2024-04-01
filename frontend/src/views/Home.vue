@@ -84,7 +84,7 @@
                     Last Changes
                 </h2>
                 
-                <div class="table-container">
+                <div class="panel panel-table">
                     <data-table
                         :columns="[
                             { key: 'shopName', name: 'Shop', sortable: true },
