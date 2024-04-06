@@ -17,7 +17,7 @@
 defineProps<{ title: string; subTitle?: string; info?: string }>();
 </script>
 
-<style scoped>
+<style>
 .form-group {
     display: grid;
     grid-template-columns: 1fr;
@@ -69,6 +69,11 @@ defineProps<{ title: string; subTitle?: string; info?: string }>();
         box-shadow: none;
     }
     
-    
+    label {
+        display: block;
+        margin-bottom: .25rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
 }
 </style>
