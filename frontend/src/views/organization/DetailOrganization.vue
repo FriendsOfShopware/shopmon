@@ -85,13 +85,13 @@
                 >
                     <template #cell-displayName="{ row }">
                         {{ row.displayName }}
-                        <template v-if="isOwner">
+                        <template v-if="row.id === organization?.ownerId">
                             (Owner)
                         </template>
                     </template>
                     <template #cell-actions="{ row }">
                         <button
-                            v-if="!isOwner"
+                            v-if="isOwner && row.id !== organization?.ownerId"
                             type="button"
                             class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
                             data-tooltip="Unassign"
