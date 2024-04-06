@@ -4,15 +4,15 @@
     display: block;
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border: 1px solid #D1D5DB;
-    color: #1A202C;
-    background-color: #fff;
+    border: 1px solid var(--field-border-color);
+    color: var(--field-color);
+    background-color: var(--field-background);
     outline: none;
     box-shadow: none !important;
     border-radius: 0.375rem;
 
     &::placeholder {
-        color: #4A5568;
+        color: #6b7280;
     }
 
     &:focus {
@@ -35,24 +35,6 @@
 
     &.has-error {
         border-color: #DC2626;
-    }
-
-    .dark & {
-        background-color: #171717;
-        border-color: #262626;
-        color: #a3a3a3;
-
-        &::placeholder {
-            color: #4A5568;
-        }
-
-        &:focus {
-            border-color: var(--primary-color);
-        }
-
-        &.has-error {
-            border-color: #DC2626;
-        }
     }
 
     @media (min-width: 640px) {

@@ -33,6 +33,9 @@
     --data-table-row-background: #f9fafb;
     --data-table-row-odd-background: #e5e7eb;
     --data-table-row-hover-background: #f0f9ff;
+    --field-background: #fff;
+    --field-color: #1a202c;
+    --field-border-color: #d1d5db;
 
     .dark& {
         --background-color: #171717;
@@ -67,5 +70,8 @@
         --data-table-row-background: #2b2b2b;
         --data-table-row-odd-background: #262626;
         --data-table-row-hover-background: #2a2b2f;
+        --field-background: #171717;
+        --field-color: #a3a3a3;
+        --field-border-color: #262626;
     }
 }
