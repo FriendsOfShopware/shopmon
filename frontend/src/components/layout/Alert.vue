@@ -6,15 +6,15 @@
             <icon-fa6-solid:circle-info aria-hidden="true" class="icon-warning" v-if="type === 'warning'" />
             <icon-fa6-solid:circle-xmark aria-hidden="true" class="icon-error" v-if="type === 'error'" />
         </div>
-        
-        <!-- eslint-disable vue/no-v-html -->
-        <div class="alert-content" v-html="content" />
-        <!-- eslint-enable vue/no-v-html -->
+
+        <div class="alert-content">
+            <slot />
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ type: string; content: string }>();
+defineProps<{ type: string; }>();
 
 </script>
 
@@ -39,11 +39,6 @@ defineProps<{ type: string; content: string }>();
     &-content {
         flex: 1;
         margin-left: 0.75rem;
-        
-        @media (min-width: 768px) {
-            display: flex;
-            justify-content: space-between;
-        }
     }
 
     &-info {

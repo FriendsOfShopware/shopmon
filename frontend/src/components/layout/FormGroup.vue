@@ -5,8 +5,13 @@
 
             <p v-if="subTitle" class="sidebar-subtitle">{{ subTitle }}</p>
 
-            <Alert type="info" :content="info" v-if="info" />
+            <Alert type="info" v-if="info">
+                <!-- eslint-disable vue/no-v-html -->
+                <span v-html="info"></span>
+                <!-- eslint-enable vue/no-v-html -->
+            </Alert>
         </div>
+        
         <div class="content">
             <slot />
         </div>
