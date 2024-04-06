@@ -11,76 +11,54 @@
                 title="Account"
                 sub-title="Manage Your Account"
             >
-                <div class="grid grid-cols-6 gap-6">
-                    <div class="col-span-6">
-                        <label
-                            for="currentPassword"
-                            class="block text-sm font-medium mb-1"
-                        >Current Password*</label>
-                        <field
-                            id="currentPassword"
-                            type="password"
-                            name="currentPassword"
-                            autocomplete="current-password"
-                            class="field"
-                            :class="{ 'is-invalid': errors.currentPassword }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.currentPassword }}
-                        </div>
-                    </div>
+                <PasswordField
+                    name="currentPassword"
+                    label="Current Password"
+                    :error="errors.currentPassword"
+                />
 
-                    <div class="col-span-6">
-                        <label
-                            for="displayName"
-                            class="block text-sm font-medium mb-1"
-                        >displayName</label>
-                        <field
-                            id="displayName"
-                            type="text"
-                            name="displayName"
-                            autocomplete="name"
-                            class="field"
-                            :class="{ 'is-invalid': errors.displayName }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.displayName }}
-                        </div>
-                    </div>
-
-                    <div class="col-span-6">
-                        <label
-                            for="email"
-                            class="block text-sm font-medium mb-1"
-                        >Email address</label>
-                        <field
-                            id="email"
-                            type="text"
-                            name="email"
-                            autocomplete="email"
-                            class="field"
-                            :class="{ 'is-invalid': errors.email }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.email }}
-                        </div>
-                    </div>
-
-                    <div class="col-span-6">
-                        <label
-                            for="newPassword"
-                            class="block text-sm font-medium mb-1"
-                        >New Password</label>
-                        <field
-                            id="newPassword"
-                            type="password"
-                            name="newPassword"
-                            autocomplete="new-password"
-                            class="field"
-                            :class="{ 'is-invalid': errors.newPassword }"
-                        />
+                <div>
+                    <label
+                        for="displayName"
+                        class="block text-sm font-medium mb-1"
+                    >displayName</label>
+                    <field
+                        id="displayName"
+                        type="text"
+                        name="displayName"
+                        autocomplete="name"
+                        class="field"
+                        :class="{ 'is-invalid': errors.displayName }"
+                    />
+                    <div class="text-red-700">
+                        {{ errors.displayName }}
                     </div>
                 </div>
+
+                <div>
+                    <label
+                        for="email"
+                        class="block text-sm font-medium mb-1"
+                    >Email address</label>
+                    <field
+                        id="email"
+                        type="text"
+                        name="email"
+                        autocomplete="email"
+                        class="field"
+                        :class="{ 'is-invalid': errors.email }"
+                    />
+                    <div class="text-red-700">
+                        {{ errors.email }}
+                    </div>
+                </div>
+
+                <PasswordField
+                    name="newPassword"
+                    label="New Password"
+                    :error="errors.newPassword"
+                />
+
                 <div class="text-right flex justify-end">
                     <button
                         :disabled="isSubmitting"
