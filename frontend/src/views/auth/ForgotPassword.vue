@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="login-header">
         <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">
             Forgot password
         </h4>
@@ -8,7 +8,7 @@
 
     <vee-form
         v-slot="{ errors, isSubmitting }"
-        class="space-y-4"
+        class="login-form-container"
         :validation-schema="schema"
         @submit="onSubmit"
     >
@@ -18,38 +18,36 @@
                 placeholder="Email address"
                 type="text"
                 class="field"
-                :class="{ 'is-invalid': errors.email }"
+                :class="{ 'has-error': errors.email }"
             />
-            <div class="text-red-700">
+            <div class="field-error-message">
                 {{ errors.email }}
             </div>
         </div>
 
         <button
-            class="btn btn-primary w-full group"
+            class="btn btn-primary btn-block"
             :disabled="isSubmitting"
             type="submit"
         >
-            <span class="relative -ml-7 mr-2 opacity-40 group-hover:opacity-60">
-                <icon-fa6-solid:envelope
-                    v-if="!isSubmitting"
-                    class="h-5 w-5"
-                    aria-hidden="true"
-                />
-                <icon-line-md:loading-twotone-loop
-                    v-else
-                    class="w-5 h-5"
-                />
-            </span>
+            <icon-fa6-solid:envelope
+                v-if="!isSubmitting"
+                class="icon"
+                aria-hidden="true"
+            />
+            <icon-line-md:loading-twotone-loop
+                v-else
+                class="icon"
+            />
             Send email
         </button>
 
-        <router-link
-            to="login"
-            class="inline-block center text-center w-full"
-        >
-            Cancel
-        </router-link>
+        <div>
+            <router-link to="login">
+                Cancel
+            </router-link>
+        </div>
+        
     </vee-form>
 </template>
 
@@ -76,3 +74,11 @@ async function onSubmit(values): Promise<void> {
     }
 }
 </script>
+
+<style scoped>
+.login-header {
+    p {
+        text-align: left;
+    }
+}
+</style>

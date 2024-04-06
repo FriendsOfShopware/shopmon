@@ -3,6 +3,7 @@
     --primary-color: #0ea5e9;
     --background-color: #f3f4f6;
     --text-color: #111827;
+    --text-color-muted: #6b7280;
     --link-color: #0369a1;
     --link-hover-color: #0284c7;
     --info-color: #3b82f6;
@@ -23,8 +24,6 @@
     --section-title-color: #6b7280;
     --section-title-border-color: #cbd5e1;
     --notification-border-color: #e5e7eb;
-    --notification-item-date-color: #6b7280;
-    --notification-item-message-color: #6b7280;
     --user-menu-border-color: #e5e7eb;
     --user-menu-item-active-background-color:#f3f4f6;
     --user-menu-icon-color:#0c84c2;
@@ -40,6 +39,7 @@
     .dark& {
         --background-color: #171717;
         --text-color: #a3a3a3;
+        --text-color-muted: #737373;
         --link-color: #38bdf8;
         --link-hover-color: #0ea5e9;
         --info-color: #38bdf8;
@@ -60,8 +60,6 @@
         --section-title-color: #6b7280;
         --section-title-border-color: #262626;
         --notification-border-color: #404040;
-        --notification-item-date-color: #737373;
-        --notification-item-message-color: #737373;
         --user-menu-border-color: #404040;
         --user-menu-item-active-background-color:#374151;
         --user-menu-icon-color:#60a5fa;

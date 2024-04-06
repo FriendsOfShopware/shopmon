@@ -1,14 +1,15 @@
 <template>
-    <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">
-        Create account
-    </h4>
+    <div class="login-header">
+        <h2>Create account</h2>
+    </div>
+    
     <vee-form
         v-slot="{ errors, isSubmitting }"
-        class="space-y-6"
+        class="login-form-container"
         :validation-schema="schema"
         @submit="onSubmit"
     >
-        <div class="space-y-2">
+        <div class="login-form-group">
             <div>
                 <field
                     name="displayName"
@@ -17,7 +18,7 @@
                     class="field"
                     :class="{ 'has-error': errors.displayName }"
                 />
-                <div class="text-red-700">
+                <div class="field-error-message">
                     {{ errors.displayName }}
                 </div>
             </div>
@@ -30,42 +31,42 @@
                     class="field"
                     :class="{ 'has-error': errors.email }"
                 />
-                <div class="text-red-700">
+
+                <div class="field-error-message">
                     {{ errors.email }}
                 </div>
             </div>
 
             <PasswordField
                 name="password"
+                placeholder="Password"
                 :error="errors.password"
             />
         </div>
 
         <button
-            class="btn btn-primary w-full group"
+            class="btn btn-primary btn-block"
             :disabled="isSubmitting"
             type="submit"
         >
-            <span class="relative -ml-7 mr-2 opacity-40 group-hover:opacity-60">
-                <icon-fa6-solid:user-plus
-                    v-if="!isSubmitting"
-                    class="h-5 w-5"
-                    aria-hidden="true"
-                />
-                <icon-line-md:loading-twotone-loop
-                    v-else
-                    class="w-5 h-5"
-                />
-            </span>
+            <icon-fa6-solid:user-plus
+                v-if="!isSubmitting"
+                class="icon"
+                aria-hidden="true"
+            />
+            <icon-line-md:loading-twotone-loop
+                v-else
+                class="icon"
+            />
             Register
         </button>
 
-        <router-link
-            to="login"
-            class="inline-block mt-2 center text-center w-full"
-        >
-            Cancel
-        </router-link>
+        <div>
+            <router-link to="login">
+                Cancel
+            </router-link>
+        </div>
+        
     </vee-form>
 </template>
 

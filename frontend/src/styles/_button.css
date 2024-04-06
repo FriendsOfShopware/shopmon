@@ -16,7 +16,8 @@
         width: 1rem;
         height: 1rem;
         margin: 0 .5rem 0 -.25rem;
-        opacity: .25;
+        opacity: .4;
+        transition: opacity .4s;
     }
 
     &:hover {
@@ -24,7 +25,7 @@
         color: var(--text-color);
 
         .icon {
-            opacity: .5;
+            opacity: .6;
         }
     }
 
@@ -56,6 +57,14 @@
 
         &:hover {
             border-color: #b91c1c;
+        }
+    }
+
+    &-block {
+        width: 100%;
+
+        .icon {
+            margin-left: -1.75rem;
         }
     }
 }

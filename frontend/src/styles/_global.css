@@ -1,6 +1,7 @@
 body {
     color: var(--text-color);
     font-size: 0.875rem;
+    line-height: 1.2;
     background-color: var(--background-color);
     height: 100%;
 }

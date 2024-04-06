@@ -537,13 +537,13 @@ const userNavigation = [
     }
 
     .notification-item-message {
-        color: var(--notification-item-message-color);
+        color: var(--text-color-muted);
     }
 
     .notification-item-date {
         font-size: 0.75rem;
         margin-bottom: 0.375rem;
-        color: var(--notification-item-date-color);
+        color: var(--text-color-muted);
     }
 
     .notification-delete {

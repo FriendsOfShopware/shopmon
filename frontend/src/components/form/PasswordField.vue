@@ -12,12 +12,12 @@
              />
 
             <div class="password-toggle">
-                <icon-fa6-solid:eye v-if="passwordType == 'password'" class="password-toggle-icon"
+                <icon-fa6-solid:eye v-if="passwordType == 'password'" class="icon"
                     @click="passwordType = 'text'" />
-                <icon-fa6-solid:eye-slash v-else class="password-toggle-icon" @click="passwordType = 'password'" />
+                <icon-fa6-solid:eye-slash v-else class="icon" @click="passwordType = 'password'" />
             </div>
         </div>
-        <div class="error-message">{{ error }}</div>
+        <div class="field-error-message">{{ error }}</div>
     </div>
 </template>
 
@@ -61,16 +61,18 @@ const passwordLabel = props.label || 'Password';
     bottom: 0;
     display: flex;
     align-items: center;
-    padding-right: 8px;
+    padding-right: 0.75rem;
     cursor: pointer;
     z-index: 10;
-}
+    opacity: .4;
+    transition: opacity .4s;
 
-.password-toggle-icon {
-    width: 18px;
-}
-
-.error-message {
-    color: #dc3545;
+    &:hover {
+        opacity: 1;
+    }
+    
+    &-icon {
+        width: 1.25rem;
+    }
 }
 </style>

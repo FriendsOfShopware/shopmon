@@ -11,6 +11,11 @@
     box-shadow: none !important;
     border-radius: 0.375rem;
 
+    @media (min-width: 640px) {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
     &::placeholder {
         color: #6b7280;
     }
@@ -34,11 +39,11 @@
     }
 
     &.has-error {
-        border-color: #DC2626;
+        border-color: var(--error-color);
     }
-
-    @media (min-width: 640px) {
-        font-size: 0.875rem;
-        line-height: 1.25rem;
+    
+    &-error-message {
+        color: var(--error-color);
+        text-align: left;
     }
 }

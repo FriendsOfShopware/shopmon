@@ -1,30 +1,102 @@
 <template>
-    <button
-        class="absolute top-2 right-2 text-gray-800 h-8 w-8 opacity-80 hover:opacity-100 focus:outline-none dark:text-white"
-        type="button"
-        @click="darkModeStore.toggleDarkMode"
-    >
-        <icon-fa6-regular:moon
-            v-if="darkModeStore.darkMode"
-            class="w-5 h-5"
-        />
-        <icon-fa6-regular:sun
-            v-else
-            class="w-5 h-5"
-        />
-    </button>
-
-    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full space-y-8">
-            <logo class="mx-auto h-36 w-auto" />
+    <div class="login-container">
+        <button class="dark-mode-toggle" type="button" @click="darkModeStore.toggleDarkMode">
+            <icon-fa6-regular:moon v-if="darkModeStore.darkMode" class="icon" />
+            <icon-fa6-regular:sun v-else class="icon" />
+        </button>
+        
+        <div class="login-content">
+            <logo class="logo" />
             <slot />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import Logo from '@/components/Logo.vue';
 import { useDarkModeStore } from '@/stores/darkMode.store';
 
 const darkModeStore = useDarkModeStore();
 </script>
+
+<style>
+.login-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+}
+
+.dark-mode-toggle {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    height: 2rem;
+    width: 2rem;
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    
+    &:hover {
+        opacity: 1;
+    }
+
+    .icon {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}
+
+.login-content {
+    max-width: 28rem;
+    width: 100%;
+    min-height: 37rem;
+}
+
+.logo {
+    height: 9rem;
+    width: auto;
+    margin: 0 auto;
+}
+
+.login-header {
+    text-align: center;
+    margin: 2rem 0;
+    
+    h2 {
+        font-size: 1.875rem;
+        font-weight: bold;
+        line-height: 1.25;
+        margin-bottom: 0.5rem;
+    }
+
+    p {
+        color: var(--text-color-muted);
+    }
+}
+
+.login-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    text-align: center;
+}
+
+.login-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn {
+    .icon {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}
+</style>
