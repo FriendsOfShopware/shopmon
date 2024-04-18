@@ -10,10 +10,14 @@
         transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
     }
 
+    &.duration-300 {
+        transition-duration: 300ms;
+    }
+
     &.duration-200 {
         transition-duration: 200ms;
     }
-
+    
     &.duration-100 {
         transition-duration: 100ms;
     }
@@ -36,8 +40,16 @@
         transform: scale(0.95);
     }
 
+    &.scale-80 {
+        transform: scale(0.8);
+    }
+
     &.scale-100 {
         transform: scale(1);
+    }
+
+    &.scale-200 {
+        transform: scale(2);
     }
 
     &.translate-x-full {
@@ -46,5 +58,13 @@
 
     &.translate-x-0 {
         transform: translateX(0);
+    }
+
+    &.translate-y-0 {
+        transform: translateY(0);
+    }
+
+    &.translate-y-4 {
+        transform: translateY(1rem);
     }
 }
