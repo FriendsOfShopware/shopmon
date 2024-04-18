@@ -141,4 +141,12 @@ svg {
     &-warning {
         color: var(--warning-color);
     }
+
+    &-passkey {
+        transform: translateX(-0.125rem) scale(1.3);
+    }
+
+    &-trash {
+        transform: scale(.8);
+    }
 }

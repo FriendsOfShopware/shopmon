@@ -147,8 +147,4 @@ async function webauthnLogin() {
         color: #6b7280;
     }
 }
-
-.icon-passkey {
-    transform: translateX(-0.125rem) scale(1.4);
-}
 </style>

@@ -47,3 +47,8 @@
         text-align: left;
     }
 }
+
+.form-submit {
+    display: flex;
+    justify-content: flex-end;
+}

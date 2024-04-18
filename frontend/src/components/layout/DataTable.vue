@@ -251,6 +251,14 @@ const sortedFilteredData = computed(() => {
             @media (min-width: 1024px) {
                 padding-right: 2rem;
             }
+
+            .icon {
+                opacity: .5;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
         }
     }
 }

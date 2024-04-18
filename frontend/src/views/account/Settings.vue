@@ -18,37 +18,31 @@
                 />
 
                 <div>
-                    <label
-                        for="displayName"
-                        class="block text-sm font-medium mb-1"
-                    >displayName</label>
+                    <label for="displayName">displayName</label>
                     <field
                         id="displayName"
                         type="text"
                         name="displayName"
                         autocomplete="name"
                         class="field"
-                        :class="{ 'is-invalid': errors.displayName }"
+                        :class="{ 'has-error': errors.displayName }"
                     />
-                    <div class="text-red-700">
+                    <div class="field-error-message">
                         {{ errors.displayName }}
                     </div>
                 </div>
 
                 <div>
-                    <label
-                        for="email"
-                        class="block text-sm font-medium mb-1"
-                    >Email address</label>
+                    <label for="email">Email address</label>
                     <field
                         id="email"
                         type="text"
                         name="email"
                         autocomplete="email"
                         class="field"
-                        :class="{ 'is-invalid': errors.email }"
+                        :class="{ 'has-error': errors.email }"
                     />
-                    <div class="text-red-700">
+                    <div class="field-error-message">
                         {{ errors.email }}
                     </div>
                 </div>
@@ -59,23 +53,21 @@
                     :error="errors.newPassword"
                 />
 
-                <div class="text-right flex justify-end">
+                <div class="form-submit">
                     <button
                         :disabled="isSubmitting"
                         type="submit"
-                        class="btn btn-primary flex items-center group"
+                        class="btn btn-primary"
                     >
-                        <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                            <icon-fa6-solid:floppy-disk
-                                v-if="!isSubmitting"
-                                class="h-5 w-5"
-                                aria-hidden="true"
-                            />
-                            <icon-line-md:loading-twotone-loop
-                                v-else
-                                class="w-5 h-5"
-                            />
-                        </span>
+                        <icon-fa6-solid:floppy-disk
+                            v-if="!isSubmitting"
+                            class="icon"
+                            aria-hidden="true"
+                        />
+                        <icon-line-md:loading-twotone-loop
+                            v-else
+                            class="icon"
+                        />
                         Save
                     </button>
                 </div>
@@ -94,11 +86,11 @@
                 <template #cell-actions="{ row }">
                     <button
                         type="button"
-                        class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
+                        class="tooltip-position-left"
                         data-tooltip="Delete"
                         @click="removePasskey(row.id)"
                     >
-                        <icon-fa6-solid:trash aria-hidden="true" />
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
                     </button>
                 </template>
             </data-table>
@@ -108,6 +100,11 @@
                 class="btn btn-primary"
                 @click="createPasskey"
             >
+                <icon-material-symbols:passkey
+                    v-if="!isAuthenticated"
+                    class="icon icon-passkey"
+                    aria-hidden="true"
+                />
                 Add a new Device
             </button>
         </form-group>
@@ -125,10 +122,10 @@
                 <div class="mt-5">
                     <button
                         type="button"
-                        class="btn btn-danger group flex items-center"
+                        class="btn btn-danger"
                         @click="showAccountDeletionModal = true"
                     >
-                        <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
+                        <icon-fa6-solid:trash class="icon icon-trash" />
                         Delete account
                     </button>
                 </div>
@@ -141,29 +138,33 @@
         >
             <template #icon>
                 <icon-fa6-solid:triangle-exclamation
-                    class="h-6 w-6 text-red-600 dark:text-red-400"
+                    class="icon icon-error"
                     aria-hidden="true"
                 />
             </template>
+
             <template #title>
                 Deactivate account
             </template>
+
             <template #content>
                 Are you sure you want to deactivate your account? All of your data will be permanently removed
                 from our servers forever. This action cannot be undone.
             </template>
+            
             <template #footer>
                 <button
                     type="button"
-                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
+                    class="btn btn-danger"
                     @click="deleteUser"
                 >
                     Deactivate
                 </button>
+
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    class="btn btn-cancel"
                     @click="showAccountDeletionModal = false"
                 >
                     Cancel
