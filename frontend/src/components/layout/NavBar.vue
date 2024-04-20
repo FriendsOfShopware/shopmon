@@ -438,9 +438,7 @@ const userNavigation = [
 
 /* Benachrichtigungen */
 .notifications {
-    @media (min-width: 768px) {
-        position: relative;
-    }
+    position: relative;
 
     &-count {
         position: absolute;
