@@ -66,6 +66,7 @@ declare module 'vue' {
     RatingStars: typeof import('./src/components/RatingStars.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ShopsEmpty: typeof import('./src/components/layout/ShopsEmpty.vue')['default']
     Tabs: typeof import('./src/components/layout/Tabs.vue')['default']
   }
 }
