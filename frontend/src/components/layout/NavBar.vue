@@ -582,7 +582,7 @@ const userNavigation = [
 
     &-header {
         padding: 0.5rem 1rem;
-        border-bottom: 1px solid var(--user-menu-border-color);
+        border-bottom: 1px solid var(--panel-border-color);
     }
 
     &-name {

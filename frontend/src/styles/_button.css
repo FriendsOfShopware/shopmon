@@ -15,9 +15,10 @@
     .icon {
         width: 1rem;
         height: 1rem;
+    }
 
-        &:not(:only-child) {
-
+    &:not(:has(+ *)) {
+        .icon {
             transition: opacity .4s;
             opacity: .4;
             margin: 0 .5rem 0 -.25rem;

@@ -2,7 +2,10 @@
     <header>
         <div class="container header">
             <h1 class="header-title">{{ title }}</h1>
-            <slot />
+            <div class="header-actions">
+                <slot />
+            </div>
+
         </div>
     </header>
 </template>
@@ -34,5 +37,10 @@ header {
     font-size: 1.875rem;
     line-height: 2.25rem;
     font-weight: 700;
+}
+
+.header-actions {
+    display: flex;
+    gap: .5rem;
 }
 </style>

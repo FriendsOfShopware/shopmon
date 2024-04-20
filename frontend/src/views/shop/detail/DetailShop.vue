@@ -3,71 +3,59 @@
         v-if="shopStore.shop"
         :title="shopStore.shop.name"
     >
-        <div class="flex gap-2">
-            <button
-                class="btn"
-                data-tooltip="Clear shop cache"
-                :disabled="shopStore.isCacheClearing"
-                type="button"
-                @click="onCacheClear"
-            >
-                <icon-ic:baseline-cleaning-services
-                    :class="{ 'animate-pulse': shopStore.isCacheClearing }"
-                    class="w-4 h-4"
-                />
-            </button>
-            <button
-                class="btn"
-                data-tooltip="Refresh shop data"
-                :disabled="shopStore.isRefreshing"
-                type="button"
-                @click="showShopRefreshModal = true"
-            >
-                <icon-fa6-solid:rotate :class="{ 'animate-spin': shopStore.isRefreshing }" />
-            </button>
+        <button
+            class="btn"
+            data-tooltip="Clear shop cache"
+            :disabled="shopStore.isCacheClearing"
+            type="button"
+            @click="onCacheClear"
+        >
+            <icon-ic:baseline-cleaning-services
+                :class="{ 'animate-pulse': shopStore.isCacheClearing }"
+                class="icon"
+            />
+        </button>
+        <button
+            class="btn"
+            data-tooltip="Refresh shop data"
+            :disabled="shopStore.isRefreshing"
+            type="button"
+            @click="showShopRefreshModal = true"
+        >
+            <icon-fa6-solid:rotate :class="{ 'icon': true, 'animate-spin': shopStore.isRefreshing }" />
+        </button>
 
-            <router-link
-                :to="{
-                    name: 'account.shops.edit',
-                    params: {
-                        organizationId: shopStore.shop.organizationId,
-                        shopId: shopStore.shop.id
-                    }
-                }"
-                type="button"
-                class="group btn btn-primary flex items-center"
-            >
-                <icon-fa6-solid:pencil
-                    class="-ml-1 mr-2 opacity-25 group-hover:opacity-50"
-                    aria-hidden="true"
-                />
-                Edit Shop
-            </router-link>
-        </div>
+        <router-link
+            :to="{
+                name: 'account.shops.edit',
+                params: {
+                    organizationId: shopStore.shop.organizationId,
+                    shopId: shopStore.shop.id
+                }
+            }"
+            type="button"
+            class="btn btn-primary"
+        >
+            <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
+            Edit Shop
+        </router-link>
     </header-container>
 
     <main-container v-if="shopStore.shop && shopStore.shop.lastScrapedAt">
-        <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark:shadow-none">
-            <div class="py-5 px-4 sm:px-6 lg:px-8">
-                <h3 class="text-lg leading-6 font-medium">
-                    <status-icon :status="shopStore.shop.status" />
-                    Shop Information
-                </h3>
-            </div>
-            <div
-                class="border-t border-gray-200 px-4 py-5 sm:px-6 lg:px-8 dark:border-neutral-700
-                 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
-            >
-                <dl class="grid grid-cols-1 auto-rows-min gap-x-6 gap-y-2 md:col-span-2 md:grid-cols-2">
-                    <div class="md:col-span-1">
-                        <dt class="text-sm font-medium">
+        <div class="panel shop-info">
+            <h3 class="shop-info-heading">
+                <status-icon :status="shopStore.shop.status" />
+                Shop Information
+            </h3>
+            <div class="shop-info-grid">
+                <dl class="shop-info-list">
+                    <div class="shop-info-item">
+                        <dt>
                             Shopware Version
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             {{ shopStore.shop.shopwareVersion }}
-                            <template
-                                v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopwareVersion"
-                            >
+                            <template v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopwareVersion">
                                 <a
                                     class="badge badge-warning"
                                     :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion"
@@ -86,11 +74,11 @@
                             </template>
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             Last Shop Update
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             <template v-if="shopStore.shop.lastChangelog && shopStore.shop.lastChangelog.date">
                                 {{ formatDate(shopStore.shop.lastChangelog.date) }}
                             </template>
@@ -99,43 +87,43 @@
                             </template>
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             Organization
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             {{ shopStore.shop.organizationName }}
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             Last Checked At
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             {{ formatDateTime(shopStore.shop.lastScrapedAt) }}
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             Environment
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             {{ shopStore.shop.cacheInfo?.environment }}
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             HTTP Cache
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             {{ shopStore.shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
                         </dd>
                     </div>
-                    <div class="md:col-span-1">
-                        <dt class="font-medium">
+                    <div class="shop-info-item">
+                        <dt>
                             URL
                         </dt>
-                        <dd class="mt-1 text-sm text-gray-500">
+                        <dd>
                             <a
                                 :href="shopStore.shop.url"
                                 data-tooltip="Go to storefront"
@@ -154,18 +142,15 @@
                         </dd>
                     </div>
                 </dl>
-                <div
-                    class="mt-6 sm:mt-0 sm:col-span-1 sm:row-span-full sm:col-start-2 sm:row-start-1
-                     md:col-start-3 md:row-span-full md:row-start-1"
-                >
+                <div class="shop-image-container">
                     <img
                         v-if="shopStore.shop.shopImage"
                         :src="`/${shopStore.shop.shopImage}`"
-                        class="h-[200px] sm:h-[400px] md:h-[200px]"
+                        class="shop-image"
                     >
                     <icon-fa6-solid:image
                         v-else
-                        class="text-gray-100 text-9xl"
+                        class="placeholder-image"
                     />
                 </div>
             </div>
@@ -234,6 +219,7 @@
         </tabs>
 
         <modal
+            class="update-wizard"
             :show="viewUpdateWizardDialog"
             close-x-mark
             @close="viewUpdateWizardDialog = false"
@@ -241,17 +227,16 @@
             <template #title>
                 <icon-fa6-solid:rotate /> Shopware Plugin Compatibility Check
             </template>
+
             <template #content>
                 <select
-                    class="field mb-2"
+                    class="field"
                     @change="event => loadUpdateWizard((event.target as HTMLSelectElement).value)"
                 >
-                    <option
-                        disabled
-                        selected
-                    >
+                    <option disabled selected>
                         Select update Version
                     </option>
+
                     <option
                         v-for="version in shopwareVersions"
                         :key="version"
@@ -261,16 +246,16 @@
                 </select>
 
                 <template v-if="loadingUpdateWizard">
-                    <div class="text-center">
+                    <div class="update-wizard-loader">
                         Loading <icon-fa6-solid:rotate class="animate-spin" />
                     </div>
                 </template>
 
                 <div
                     v-if="dialogUpdateWizard"
-                    :class="{ 'opacity-20': loadingUpdateWizard }"
+                    :class="{ 'update-wizard-refresh': loadingUpdateWizard }"
                 >
-                    <h2 class="text-lg mb-1 font-medium">
+                    <h2 class="update-wizard-plugins-heading">
                         Plugin Compatibility
                     </h2>
 
@@ -278,41 +263,46 @@
                         <li
                             v-for="extension in dialogUpdateWizard"
                             :key="extension.name"
-                            class="p-2 odd:bg-gray-100 dark:odd:bg-[#2e2e2e]"
+                            class="update-wizard-plugin"
                         >
-                            <div class="flex">
-                                <div class="mr-2 w-4">
-                                    <icon-fa6-regular:circle
-                                        v-if="!extension.active"
-                                        class="text-base text-gray-400 dark:text-neutral-500"
-                                    />
-                                    <icon-fa6-solid:circle-info
-                                        v-else-if="!extension.compatibility"
-                                        class="text-base text-yellow-400 dark:text-yellow-200"
-                                    />
-                                    <icon-fa6-solid:circle-xmark
-                                        v-else-if="extension.compatibility.type == 'red'"
-                                        class="text-base text-red-600 dark:text-red-400"
-                                    />
-                                    <icon-fa6-solid:rotate
-                                        v-else-if="extension.compatibility.label === 'Available now'"
-                                        class="text-base text-sky-500 dark:text-sky-400"
-                                    />
-                                    <icon-fa6-solid:circle-check
-                                        v-else
-                                        class="text-base text-green-400 dark:text-green-300"
-                                    />
-                                </div>
-                                <div>
+                            <div class="mr-2 w-4">
+                                <icon-fa6-regular:circle
+                                    v-if="!extension.active"
+                                    class="icon-muted"
+                                />
+                                <icon-fa6-solid:circle-info
+                                    v-else-if="!extension.compatibility"
+                                    class="icon-warning"
+                                />
+                                <icon-fa6-solid:circle-xmark
+                                    v-else-if="extension.compatibility.type == 'red'"
+                                    class="icon-error"
+                                />
+                                <icon-fa6-solid:rotate
+                                    v-else-if="extension.compatibility.label === 'Available now'"
+                                    class="icon-info"
+                                />
+                                <icon-fa6-solid:circle-check
+                                    v-else
+                                    class="icon-success"
+                                />
+                            </div>
+
+                            <div>
+                                <component
+                                    :is="extension.storeLink ? 'a' : 'span'"
+                                    v-bind="extension.storeLink ? {href: extension.storeLink, target: '_blank'} : {}"
+                                >
                                     <strong>{{ extension.label }}</strong>
-                                    <span class="opacity-60">({{ extension.name }})</span>
-                                    <div v-if="!extension.compatibility">
-                                        This plugin is not available in the Store. Please contact the
-                                        plugin manufacturer.
-                                    </div>
-                                    <div v-else>
-                                        {{ extension.compatibility.label }}
-                                    </div>
+                                </component>
+                                <span class="update-wizard-plugin-technical-name"> ({{ extension.name }})</span>
+
+                                <div v-if="!extension.compatibility || !extension.storeLink">
+                                    This plugin is not available in the Store. Please contact the
+                                    plugin manufacturer.
+                                </div>
+                                <div v-else>
+                                    {{ extension.compatibility.label }}
                                 </div>
                             </div>
                         </li>
@@ -328,28 +318,32 @@
         >
             <template #icon>
                 <icon-fa6-solid:rotate
-                    class="h-6 w-6 text-sky-500"
+                    class="icon icon-info"
                     aria-hidden="true"
                 />
             </template>
+
             <template #title>
                 Refresh {{ shopStore.shop.name }}
             </template>
+
             <template #content>
                 Do you also want to have a new pagespeed test?
             </template>
+
             <template #footer>
                 <button
                     type="button"
-                    class="btn w-full sm:ml-3 sm:w-auto"
+                    class="btn btn-primary"
                     @click="onRefresh(true)"
                 >
                     Yes
                 </button>
+
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    class="btn btn-danger"
                     @click="onRefresh(false)"
                 >
                     No
@@ -399,11 +393,6 @@ const shopwareVersions: Ref<string[] | null> = ref(null);
 
 const latestShopwareVersion: Ref<string | null> = ref(null);
 
-function openUpdateWizard() {
-    dialogUpdateWizard.value = null;
-    viewUpdateWizardDialog.value = true;
-}
-
 async function loadShop() {
     const organizationId = parseInt(route.params.organizationId as string, 10);
     const shopId = parseInt(route.params.shopId as string, 10);
@@ -445,6 +434,11 @@ async function onCacheClear() {
     }
 }
 
+function openUpdateWizard() {
+    dialogUpdateWizard.value = null;
+    viewUpdateWizardDialog.value = true;
+}
+
 async function loadUpdateWizard(version: string) {
     if (!shopStore.shop || !shopStore.shop.extensions) {
         return;
@@ -463,12 +457,12 @@ async function loadUpdateWizard(version: string) {
         }),
     };
 
-    const pluginCompatibilitys = await trpcClient.info.checkExtensionCompatibility.query(body);
+    const pluginCompatibility = await trpcClient.info.checkExtensionCompatibility.query(body);
 
     const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
 
     for (const extension of extensions) {
-        const compatibility = pluginCompatibilitys.find((plugin) => plugin.name === extension.name);
+        const compatibility = pluginCompatibility.find((plugin) => plugin.name === extension.name);
         extension.compatibility = null;
         if (compatibility) {
             extension.compatibility = compatibility.status;
@@ -484,3 +478,152 @@ async function loadUpdateWizard(version: string) {
     loadingUpdateWizard.value = false;
 }
 </script>
+
+<style scoped>
+.shop-info {
+    padding: 0;
+    margin-bottom: 3rem;
+
+    &-heading {
+        padding: 1.25rem 1rem;
+        font-size: 1.125rem;
+        font-weight: 500;
+
+        @media (min-width: 1024px) {
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+
+        [class^="icon"] {
+            margin-right: 0.25rem;
+        }
+    }
+}
+
+.shop-info-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    border-top: 1px solid var(--panel-border-color);
+    padding: 1.25rem 1rem;
+
+    @media (min-width: 640px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 960px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+.shop-info-list {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-auto-rows: min-content;
+    gap: 0.5rem 1.5rem;
+
+    @media (min-width: 960px) {
+        grid-column: 1 / span 2;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.shop-info-item {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-auto-rows: min-content;
+
+    @media (min-width: 960px) {
+        grid-column: span 1;
+    }
+    
+    dt {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    dd {
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: var(--text-color-muted);
+    }
+}
+
+.shop-image-container {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+
+    @media (min-width: 640px) {
+        grid-column: 2 / span 1;
+        grid-row: 1 / span 1;
+        margin-top: 0;
+    }
+
+    @media (min-width: 960px) {
+        grid-column: 3 / span 1;
+        grid-row: 1 / span 1;
+    }
+}
+
+.shop-image {
+    height: 6.25rem;
+
+    @media (min-width: 640px) {
+        height: 25rem;
+    }
+
+    @media (min-width: 960px) {
+        height: 12.5rem;
+    }
+}
+
+.placeholder-image {
+    color: #e5e7eb;
+    font-size: 9rem;
+}
+
+.update-wizard {
+    .field {
+        margin-bottom: .75rem;
+    }
+
+    &-loader {
+        text-align:center;
+    }
+
+    &-refresh {
+        opacity: .2;
+    }
+
+    &-plugins {
+        &-heading {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: .5rem;
+        }
+    }
+
+    &-plugin {
+        background-color: var(--item-background);
+        padding: .5rem;
+        display: flex;
+
+        &:nth-child(odd) {
+            background-color: var(--item-odd-background);
+        }
+
+        &:hover {
+            background-color: var(--item-hover-background);
+        }
+
+        &-technical-name {
+            opacity: .6;
+        }
+    }
+}
+</style>

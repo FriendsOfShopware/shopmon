@@ -15,8 +15,9 @@
     --warning-color: #facc15;
     --warning-background: #fff3cd;
     --panel-background: #ffffff;
+    --panel-border-color: #e5e7eb;
     --item-background: #f9fafb;
-    --item-odd-background: #f3f4f6;
+    --item-odd-background: #ededed;
     --item-hover-background: #f0f9ff;
     --item-title-color: #1f2937;
     --item-sub-background: #e5e7eb80;
@@ -24,7 +25,6 @@
     --section-title-color: #6b7280;
     --section-title-border-color: #cbd5e1;
     --notification-border-color: #e5e7eb;
-    --user-menu-border-color: #e5e7eb;
     --user-menu-item-active-background-color:#f3f4f6;
     --user-menu-icon-color:#0c84c2;
     --data-table-head-background: #f8fafc;
@@ -51,6 +51,7 @@
         --warning-color: #fef08a;
         --warning-background: #332701;
         --panel-background: #262626;
+        --panel-border-color: #404040;
         --item-background: #262626;
         --item-odd-background: #2b2b2b;
         --item-hover-background: #2a2b2f;
@@ -60,7 +61,6 @@
         --section-title-color: #6b7280;
         --section-title-border-color: #262626;
         --notification-border-color: #404040;
-        --user-menu-border-color: #404040;
         --user-menu-item-active-background-color:#374151;
         --user-menu-icon-color:#60a5fa;
         --data-table-head-background: #262626;
