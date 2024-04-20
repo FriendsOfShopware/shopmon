@@ -577,7 +577,7 @@ const userNavigation = [
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
         background-color: var(--panel-background);
-        z-index: 10;
+        z-index: 20;
     }
 
     &-header {
