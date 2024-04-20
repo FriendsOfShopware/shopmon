@@ -50,18 +50,7 @@
         <div class="mb-12 bg-white shadow overflow-hidden sm:rounded-lg dark:bg-neutral-800 dark:shadow-none">
             <div class="py-5 px-4 sm:px-6 lg:px-8">
                 <h3 class="text-lg leading-6 font-medium">
-                    <icon-fa6-solid:circle-xmark
-                        v-if="shopStore.shop.status == 'red'"
-                        class="text-red-600 mr-1 dark:text-red-400 "
-                    />
-                    <icon-fa6-solid:circle-info
-                        v-else-if="shopStore.shop.status === 'yellow'"
-                        class="text-yellow-400 mr-1 dark:text-yellow-200"
-                    />
-                    <icon-fa6-solid:circle-check
-                        v-else
-                        class="text-green-400 mr-1 dark:text-green-300"
-                    />
+                    <status-icon :status="shopStore.shop.status" />
                     Shop Information
                 </h3>
             </div>

@@ -33,18 +33,7 @@
                             </div>
 
                             <div class="item-state">
-                                <icon-fa6-solid:circle-xmark
-                                    v-if="shop.status == 'red'"
-                                    class="icon-error"
-                                />
-                                <icon-fa6-solid:circle-info
-                                    v-else-if="shop.status === 'yellow'"
-                                    class="icon-warning"
-                                />
-                                <icon-fa6-solid:circle-check
-                                    v-else
-                                    class="icon-success"
-                                />
+                                <status-icon :status="shop.status" />
                             </div>
                         </div>
                     </router-link>

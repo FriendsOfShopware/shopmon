@@ -62,19 +62,19 @@
                                     v-if="!shop.installed"
                                     data-tooltip="Not installed"
                                 >
-                                    <icon-fa6-regular:circle class="icon icon-muted icon-state" />
+                                    <icon-fa6-regular:circle class="icon-muted icon-state" />
                                 </span>
                                 <span
                                     v-else-if="shop.active"
                                     data-tooltip="Active"
                                 >
-                                    <icon-fa6-solid:circle-check class="icon icon-success icon-state"/>
+                                    <icon-fa6-solid:circle-check class="icon-success icon-state"/>
                                 </span>
                                 <span
                                     v-else
                                     data-tooltip="Inactive"
                                 >
-                                    <icon-fa6-solid:circle-xmark class="icon icon-muted icon-state"/>
+                                    <icon-fa6-solid:circle-xmark class="icon-muted icon-state"/>
                                 </span>
                                 {{ shop.name }}
                             </router-link>

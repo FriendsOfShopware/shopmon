@@ -29,9 +29,7 @@
                 </template>
 
                 <template #cell-name="{ row }">
-                    <icon-fa6-solid:circle-xmark v-if="row.status == 'red'" class="icon-error" />
-                    <icon-fa6-solid:circle-info v-else-if="row.status === 'yellow'" class="icon-warning" />
-                    <icon-fa6-solid:circle-check v-else class="icon-success" />
+                    <status-icon :status="row.status" />
                     <router-link
                         :to="{
                             name: 'account.shops.detail',
