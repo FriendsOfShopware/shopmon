@@ -126,6 +126,10 @@ svg {
 }
 
 .icon {
+    &-muted {
+        color: var(--text-color-muted);
+    }
+
     &-info {
         color: var(--info-color);
     }

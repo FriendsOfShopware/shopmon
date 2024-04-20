@@ -110,7 +110,4 @@ const { alert } = storeToRefs(alertStore);
         box-shadow: none;
     }
 }
-
-
-
 </style>

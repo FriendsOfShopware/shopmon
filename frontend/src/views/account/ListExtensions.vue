@@ -12,17 +12,16 @@
         <template v-else>
             <input
                 v-model="term"
-                class="field field-search mb-3"
+                class="field field-search"
                 placeholder="Search ..."
             >
 
             <div
-                class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white
-            dark:bg-neutral-800 dark:shadow-none"
+                class="panel panel-table"
             >
                 <data-table
                     :columns="[
-                        { key: 'label', name: 'Name', sortable: true, searchable: true},
+                        { key: 'label', name: 'Name', class: 'app-label', sortable: true, searchable: true},
                         { key: 'shops', name: 'Shop' },
                         { key: 'version', name: 'Version' },
                         { key: 'latestVersion', name: 'Latest' },
@@ -36,37 +35,19 @@
                     <template #cell-actions-header>
                         Known Issues
                     </template>
+
                     <template #cell-label="{ row }">
-                        <div v-if="row.storeLink">
-                            <a
-                                :href="row.storeLink"
-                                target="_blank"
-                            >
-                                <div
-                                    v-if="row.label"
-                                    class="font-bold whitespace-normal"
-                                >{{ row.label }}</div>
-                                <div class="dark:opacity-50">{{ row.name }}</div>
-                            </a>
-                        </div>
-                        <div v-else>
-                            <div
-                                v-if="row.label"
-                                class="font-bold whitespace-normal"
-                            >
-                                {{ row.label }}
-                            </div>
-                            <div class="dark:opacity-50">
-                                {{ row.name }}
-                            </div>
-                        </div>
+                        <component :is="row.storeLink ? 'a' : 'span'" v-bind="row.storeLink ? {href: row.storeLink, target: '_blank'} : {}">
+                            <div class="app-name">{{ row.label }}</div>
+                            <span class="app-technical-name">{{ row.name }}</span>
+                        </component>
                     </template>
 
                     <template #cell-shops="{ row }">
                         <div
                             v-for="(shop, rowIndex) in row.shops"
                             :key="rowIndex"
-                            class="mb-1"
+                            class="shops-row"
                         >
                             <router-link
                                 :to="{
@@ -79,24 +60,21 @@
                             >
                                 <span
                                     v-if="!shop.installed"
-                                    class="leading-5 text-gray-400 mr-1 text-base dark:text-neutral-500"
                                     data-tooltip="Not installed"
                                 >
-                                    <icon-fa6-regular:circle />
+                                    <icon-fa6-regular:circle class="icon icon-muted icon-state" />
                                 </span>
                                 <span
                                     v-else-if="shop.active"
-                                    class="leading-5 text-green-400 mr-1 text-base dark:text-green-300"
                                     data-tooltip="Active"
                                 >
-                                    <icon-fa6-solid:circle-check />
+                                    <icon-fa6-solid:circle-check class="icon icon-success icon-state"/>
                                 </span>
                                 <span
                                     v-else
-                                    class="leading-5 text-gray-300 mr-1 text-base dark:text-neutral-500"
                                     data-tooltip="Inactive"
                                 >
-                                    <icon-fa6-solid:circle-xmark />
+                                    <icon-fa6-solid:circle-xmark class="icon icon-muted icon-state"/>
                                 </span>
                                 {{ shop.name }}
                             </router-link>
@@ -107,14 +85,14 @@
                         <div
                             v-for="(shop, rowIndex) in row.shops"
                             :key="rowIndex"
-                            class="mb-1"
+                            class="shops-row"
                         >
                             {{ shop.version }}
                             <span
-                                v-if="shop.latestVersion && shop.version < shop.latestVersion"
+                                v-if="row.latestVersion && shop.version < row.latestVersion"
                                 data-tooltip="Update available"
                             >
-                                <icon-fa6-solid:rotate class="ml-1 text-base text-amber-600 dark:text-amber-400" />
+                                <icon-fa6-solid:rotate class="icon icon-warning icon-update" />
                             </span>
                         </div>
                     </template>
@@ -141,12 +119,47 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useExtensionStore } from '@/stores/extension.store';
+import { formatDateTime } from '@/helpers/formatter';
 
 const extensionStore = useExtensionStore();
-
 const term = ref('');
 
 extensionStore.loadExtensions();
-
-import { formatDateTime } from '@/helpers/formatter';
 </script>
+
+<style scoped>
+.field-search {
+    margin-bottom: 0.75rem;
+}
+
+.app-label {
+    .app-name {
+        font-weight: bold;
+        white-space: normal;
+    }
+
+    .app-technical-name {
+        font-weight: normal;
+        opacity: .6;
+    }
+}
+
+.shops-row {
+    white-space: nowrap;
+    line-height: 1.2rem;
+
+    &:not(:last-child) {
+        margin-bottom: .35rem;
+    }
+
+    .icon-state {
+        font-size: 1rem;
+        margin-right: .25rem;
+    }
+
+    .icon-update {
+        vertical-align: -.1em;
+        margin-left: .15rem;
+    }
+}
+</style>
