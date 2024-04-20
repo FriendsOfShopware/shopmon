@@ -66,7 +66,7 @@ export const router = createRouter({
                 {
                     name: 'account.shops.detail',
                     path: 'organizations/:organizationId(\\d+)/:shopId(\\d+)',
-                    component: () => import('@/views/shop/DetailShop.vue'),
+                    component: () => import('@/views/shop/detail/DetailShop.vue'),
                 },
                 {
                     name: 'account.organizations.list',

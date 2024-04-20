@@ -209,416 +209,29 @@
                  }]"
         >
             <template #panel-checks>
-                <data-table
-                    :columns="[
-                        { key: 'message', name: 'Message' },
-                    ]"
-                    :data="shopStore.shop.checks || []"
-                >
-                    <template #cell-message="{ row }">
-                        <icon-fa6-solid:circle-xmark
-                            v-if="row.level == 'red'"
-                            class="text-red-600 mr-2 text-base dark:text-red-400 "
-                        />
-                        <icon-fa6-solid:circle-info
-                            v-else-if="row.level === 'yellow'"
-                            class="text-yellow-400 mr-2 text-base dark:text-yellow-200 "
-                        />
-                        <icon-fa6-solid:circle-check
-                            v-else
-                            class="text-green-400 mr-2 text-base dark:text-green-300"
-                        />
-                        <a
-                            v-if="row.link"
-                            :href="row.link"
-                            target="_blank"
-                        >
-                            {{ row.message }}
-                            <icon-fa6-solid:up-right-from-square class="text-xs" />
-                        </a>
-                        <template v-else>
-                            {{ row.message }}
-                        </template>
-                    </template>
-                    <template #cell-actions="{ row }">
-                        <button
-                            v-if="shopStore.shop.ignores.includes(row.id)"
-                            data-tooltip="check is ignored"
-                            class="text-red-600 opacity-25 tooltip-position-left dark:text-red-400 group-hover:opacity-100"
-                            type="button"
-                            @click="removeIgnore(row.id)"
-                        >
-                            <icon-fa6-solid:eye-slash />
-                        </button>
-                        <button
-                            v-else
-                            data-tooltip="check used"
-                            class="opacity-25 tooltip-position-left group-hover:opacity-100"
-                            type="button"
-                            @click="ignoreCheck(row.id)"
-                        >
-                            <icon-fa6-solid:eye />
-                        </button>
-                    </template>
-                </data-table>
+                <detail-checks-tab />
             </template>
 
             <template #panel-extensions>
-                <data-table
-                    :columns="[
-                        { key: 'label', name: 'Name', sortable: true },
-                        { key: 'version', name: 'Version' },
-                        { key: 'latestVersion', name: 'Latest' },
-                        { key: 'ratingAverage', name: 'Rating', sortable: true },
-                        { key: 'installedAt', name: 'Installed at', sortable: true },
-                    ]"
-                    :data="shopStore.shop.extensions || []"
-                    :default-sort="{ key: 'label', desc: false }"
-                >
-                    <template #cell-actions-header>
-                        Known Issues
-                    </template>
-                    <template #cell-label="{ row }">
-                        <div class="flex items-start">
-                            <span
-                                v-if="!row.installed"
-                                class="leading-5 text-gray-400 mr-2 text-base dark:text-neutral-500"
-                                data-tooltip="Not installed"
-                            >
-                                <icon-fa6-regular:circle />
-                            </span>
-                            <span
-                                v-else-if="row.active"
-                                class="leading-5 text-green-400 mr-2 text-base dark:text-green-300"
-                                data-tooltip="Active"
-                            >
-                                <icon-fa6-solid:circle-check />
-                            </span>
-                            <span
-                                v-else
-                                class="leading-5 text-gray-300 mr-2 text-base dark:text-neutral-500"
-                                data-tooltip="Inactive"
-                            >
-                                <icon-fa6-solid:circle-xmark />
-                            </span>
-                            <div v-if="row.storeLink">
-                                <a
-                                    :href="row.storeLink"
-                                    target="_blank"
-                                >
-                                    <div
-                                        v-if="row.label"
-                                        class="font-bold whitespace-normal"
-                                    >{{ row.label }}</div>
-                                    <div class="dark:opacity-50">{{ row.name }}</div>
-                                </a>
-                            </div>
-                            <div v-else>
-                                <div
-                                    v-if="row.label"
-                                    class="font-bold whitespace-normal"
-                                >
-                                    {{ row.label }}
-                                </div>
-                                <div class="dark:opacity-50">
-                                    {{ row.name }}
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <template #cell-version="{ row }">
-                        {{ row.version }}
-                        <span
-                            v-if="row.latestVersion && row.version < row.latestVersion"
-                            data-tooltip="Update available"
-                            @click="openExtensionChangelog(row as Extension)"
-                        >
-                            <icon-fa6-solid:rotate
-                                class="ml-1 text-base text-amber-600 dark:text-amber-400 cursor-pointer"
-                            />
-                        </span>
-                    </template>
-
-                    <template #cell-ratingAverage="{ row }">
-                        <rating-stars :rating="row.ratingAverage" />
-                    </template>
-
-                    <template #cell-installedAt="{ row }">
-                        <template v-if="row.installedAt">
-                            {{ formatDateTime(row.installedAt) }}
-                        </template>
-                    </template>
-
-                    <template #cell-actions>
-                        No known issues. <a href="#">Report issue</a>
-                    </template>
-                </data-table>
+                <detail-extensions-tab />
             </template>
 
             <template #panel-tasks>
-                <data-table
-                    :columns="[
-                        { key: 'name', name: 'Name', sortable: true },
-                        { key: 'interval', name: 'Interval' },
-                        { key: 'lastExecutionTime', name: 'Last Executed', sortable: true },
-                        { key: 'nextExecutionTime', name: 'Next Execution', sortable: true },
-                        { key: 'status', name: 'Status' },
-                    ]"
-                    :data="shopStore.shop.scheduledTask || []"
-                    :default-sorting="{ by: 'nextExecutionTime' }"
-                >
-                    <template #cell-lastExecutionTime="{ row }">
-                        {{ formatDateTime(row.lastExecutionTime) }}
-                    </template>
-
-                    <template #cell-nextExecutionTime="{ row }">
-                        {{ formatDateTime(row.nextExecutionTime) }}
-                    </template>
-
-                    <template #cell-status="{ row }">
-                        <span
-                            v-if="row.status === 'scheduled' && !row.overdue"
-                            class="pill pill-success"
-                        >
-                            <icon-fa6-solid:check />
-                            {{ row.status }}
-                        </span>
-                        <span
-                            v-else-if="row.status === 'queued' || row.status === 'running' && !row.overdue"
-                            class="pill pill-info"
-                        >
-                            <icon-fa6-solid:rotate />
-                            {{ row.status }}
-                        </span>
-                        <span
-                            v-else-if="
-                                row.status === 'scheduled' ||
-                                    row.status === 'queued' ||
-                                    row.status === 'running' &&
-                                    row.overdue"
-                            class="pill pill-warning"
-                        >
-                            <icon-fa6-solid:info class="align-[-0.1em]" />
-                            {{ row.status }}
-                        </span>
-                        <span
-                            v-else-if="row.status === 'inactive'"
-                            class="pill"
-                        >
-                            <icon-fa6-solid:pause />
-                            {{ row.status }}
-                        </span>
-                        <span
-                            v-else
-                            class="pill pill-error"
-                        >
-                            <icon-fa6-solid:xmark />
-                            {{ row.status }}
-                        </span>
-                    </template>
-
-                    <template #cell-actions="{ row }">
-                        <span
-                            class="cursor-pointer opacity-25 hover:opacity-100 tooltip-position-left"
-                            data-tooltip="Re-schedule task"
-                            @click="onReScheduleTask(row.id)"
-                        >
-                            <icon-fa6-solid:arrow-rotate-right class="text-base leading-3" />
-                        </span>
-                    </template>
-                </data-table>
+                <detail-scheduled-tasks-tab />
             </template>
 
             <template #panel-queue>
-                <data-table
-                    :columns="[
-                        { key: 'name', name: 'Name', sortable: true },
-                        { key: 'size', name: 'Size', sortable: true },
-                    ]"
-                    :data="shopStore.shop.queueInfo || []"
-                />
+                <detail-queue-tab />
             </template>
 
             <template #panel-pagespeed>
-                <data-table
-                    :columns="[
-                        { key: 'createdAt', name: 'Checked At' },
-                        { key: 'performance', name: 'Performance' },
-                        { key: 'accessibility', name: 'Accessibility' },
-                        { key: 'bestPractices', name: 'Best Practices' },
-                        { key: 'seo', name: 'SEO' },
-                    ]"
-                    :data="shopStore.shop.pageSpeed"
-                >
-                    <template #cell-createdAt="{ row }">
-                        <a
-                            target="_blank"
-                            :href="'https://pagespeed.web.dev/analysis?url=' + shopStore.shop.url"
-                        >{{
-                            formatDateTime(row.createdAt) }}</a>
-                    </template>
-
-                    <template
-                        v-for="(cell, cellKey) in {
-                            'performance': 'cell-performance',
-                            'accessibility': 'cell-accessibility',
-                            'bestPractices': 'cell-bestPractices',
-                            'seo': 'cell-seo'
-                        } as const"
-                        #[cell]="{ row, rowIndex }"
-                        :key="cellKey"
-                    >
-                        <span class="mr-2">{{ row[cellKey] }}</span>
-                        <template
-                            v-if="shopStore.shop.pageSpeed[(rowIndex + 1)] &&
-                                shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] !== row[cellKey]"
-                        >
-                            <icon-fa6-solid:arrow-right
-                                :class="[{
-                                    'text-green-400 -rotate-45 dark:text-green-300':
-                                        shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
-                                    'text-red-600 rotate-45 dark:text-red-400':
-                                        shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
-                                }]"
-                            />
-                        </template>
-                        <icon-fa6-solid:minus v-else />
-                    </template>
-                </data-table>
+                <detail-pagespeed-tab />
             </template>
 
             <template #panel-changelog>
-                <data-table
-                    :columns="[
-                        { key: 'date', name: 'Date', sortable: true },
-                    ]"
-                    :data="shopStore.shop.changelog"
-                >
-                    <template #cell-date="{ row }">
-                        {{ formatDateTime(row.date) }}
-                    </template>
-
-                    <template #cell-actions="{ row }">
-                        <span
-                            class="cursor-pointer"
-                            @click="openShopChangelog(row)"
-                        >
-                            {{ sumChanges(row) }}
-                        </span>
-                    </template>
-                </data-table>
+                <detail-changelog-tab />
             </template>
         </tabs>
-
-        <modal
-            :show="viewChangelogDialog"
-            close-x-mark
-            @close="viewChangelogDialog = false"
-        >
-            <template #title>
-                Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span>
-            </template>
-            <template #content>
-                <ul v-if="dialogExtension?.changelog?.length ?? 0 > 0">
-                    <li
-                        v-for="changeLog in dialogExtension.changelog"
-                        :key="changeLog.version"
-                        class="mb-2"
-                    >
-                        <div class="font-medium mb-1">
-                            <span
-                                v-if="!changeLog.isCompatible"
-                                data-tooltip="not compatible with your version"
-                            >
-                                <icon-fa6-solid:circle-info class="text-yellow-400 text-base dark:text-yellow-200" />
-                            </span>
-                            {{ changeLog.version }} -
-                            <span class="text-xs font-normal text-gray-500">
-                                {{ formatDate(changeLog.creationDate) }}
-                            </span>
-                        </div>
-                        <!-- eslint-disable vue/no-v-html -->
-                        <div
-                            class="pl-3"
-                            v-html="changeLog.text"
-                        />
-                        <!-- eslint-enable vue/no-v-html -->
-                    </li>
-                </ul>
-                <div
-                    v-else
-                    class="rounded-md bg-red-50 p-4 border border-red-200"
-                >
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <icon-fa6-solid:circle-xmark
-                                class="h-5 w-5 text-red-600 dark:text-red-400 "
-                                aria-hidden="true"
-                            />
-                        </div>
-                        <div class="ml-3 text-red-900">
-                            No Changelog data provided
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </modal>
-
-        <modal
-            :show="viewShopChangelogDialog"
-            close-x-mark
-            @close="viewShopChangelogDialog = false"
-        >
-            <template #title>
-                Shop changelog - <span
-                    v-if="dialogShopChangelog?.date"
-                    class="font-normal"
-                >{{
-                    formatDateTime(dialogShopChangelog.date) }}</span>
-            </template>
-            <template #content>
-                <template v-if="dialogShopChangelog?.old_shopware_version && dialogShopChangelog?.new_shopware_version">
-                    Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{
-                        dialogShopChangelog.new_shopware_version }}</strong>
-                </template>
-
-                <div
-                    v-if="dialogShopChangelog?.extensions?.length"
-                    class="mt-4"
-                >
-                    <h2 class="text-lg mb-1 font-medium">
-                        Shop Plugin Changelog:
-                    </h2>
-                    <ul class="list-disc">
-                        <li
-                            v-for="extension in dialogShopChangelog?.extensions"
-                            :key="extension.name"
-                            class="ml-4 mb-1"
-                        >
-                            <div>
-                                <strong>{{ extension.label }}</strong>
-                                <span class="opacity-60">
-                                    ({{ extension.name }})
-                                </span>
-                            </div>
-                            {{ extension.state }} <template v-if="extension.state === 'installed' && extension.active">
-                                and activated
-                            </template>
-                            <template v-if="extension.state === 'updated'">
-                                from {{ extension.old_version }} to {{ extension.new_version }}
-                            </template>
-                            <template v-else>
-                                {{ extension.new_version }}
-                                <template v-if="!extension.new_version">
-                                    {{ extension.old_version }}
-                                </template>
-                            </template>
-                        </li>
-                    </ul>
-                </div>
-            </template>
-        </modal>
 
         <modal
             :show="viewUpdateWizardDialog"
@@ -753,12 +366,10 @@ import { createNewSortInstance } from 'fast-sort';
 import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
 import { useRoute } from 'vue-router';
+import { ref, Ref } from 'vue';
 
-import type { Extension, ExtensionCompatibilitys, ShopChangelog } from '@/types/shop';
-import { ref } from 'vue';
-import type { Ref } from 'vue';
+import type { Extension, ExtensionCompatibilitys } from '@/types/shop';
 
-import { sumChanges } from '@/helpers/changelog';
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
@@ -768,15 +379,16 @@ import FaRocket from '~icons/fa6-solid/rocket';
 import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 import { trpcClient } from '@/helpers/trpc';
 
+import DetailChecksTab from "@/views/shop/detail/tabs/DetailChecksTab.vue";
+import DetailExtensionsTab from "@/views/shop/detail/tabs/DetailExtensionsTab.vue";
+import DetailScheduledTasksTab from "@/views/shop/detail/tabs/DetailScheduledTasksTab.vue";
+import DetailQueueTab from "@/views/shop/detail/tabs/DetailQueueTab.vue";
+import DetailPagespeedTab from "@/views/shop/detail/tabs/DetailPagespeedTab.vue";
+import DetailChangelogTab from "@/views/shop/detail/tabs/DetailChangelogTab.vue";
+
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
-
-const viewChangelogDialog: Ref<boolean> = ref(false);
-const dialogExtension: Ref<Extension | null> = ref(null);
-
-const viewShopChangelogDialog: Ref<boolean> = ref(false);
-const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
@@ -786,16 +398,6 @@ const showShopRefreshModal: Ref<boolean> = ref(false);
 const shopwareVersions: Ref<string[] | null> = ref(null);
 
 const latestShopwareVersion: Ref<string | null> = ref(null);
-
-function openExtensionChangelog(extension: Extension | null) {
-    dialogExtension.value = extension;
-    viewChangelogDialog.value = true;
-}
-
-function openShopChangelog(shopChangelog: ShopChangelog | null) {
-    dialogShopChangelog.value = shopChangelog;
-    viewShopChangelogDialog.value = true;
-}
 
 function openUpdateWizard() {
     dialogUpdateWizard.value = null;
@@ -843,17 +445,6 @@ async function onCacheClear() {
     }
 }
 
-async function onReScheduleTask(taskId: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        try {
-            await shopStore.reScheduleTask(shopStore.shop.organizationId, shopStore.shop.id, taskId);
-            alertStore.success('Task is re-scheduled');
-        } catch (e: any) {
-            alertStore.error(e);
-        }
-    }
-}
-
 async function loadUpdateWizard(version: string) {
     if (!shopStore.shop || !shopStore.shop.extensions) {
         return;
@@ -892,27 +483,4 @@ async function loadUpdateWizard(version: string) {
 
     loadingUpdateWizard.value = false;
 }
-
-async function ignoreCheck(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore?.shop?.ignores.push(id);
-
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
-        notificateIgnoreUpdate();
-    }
-}
-
-async function removeIgnore(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore.shop.ignores = shopStore.shop.ignores.filter((aid: string) => aid !== id);
-
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
-        notificateIgnoreUpdate();
-    }
-}
-
-async function notificateIgnoreUpdate() {
-    alertStore.info('Ignore state updated. Will effect after next shop update');
-}
-
 </script>
