@@ -26,6 +26,12 @@ const darkModeStore = useDarkModeStore();
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
+    .btn {
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
 }
 
 .dark-mode-toggle {
@@ -91,12 +97,5 @@ const darkModeStore = useDarkModeStore();
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-}
-
-.btn {
-    .icon {
-        width: 1.25rem;
-        height: 1.25rem;
-    }
 }
 </style>
