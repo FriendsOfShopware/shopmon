@@ -19,23 +19,23 @@
   "dependencies": {
     "@friendsofshopware/app-server-sdk": "0.0.47",
     "@libsql/client": "^0.6.0",
-    "@passwordless-id/webauthn": "^1.5.0",
+    "@passwordless-id/webauthn": "^1.6.1",
     "@trpc/server": "^10.45.2",
     "bcryptjs": "2.4.3",
-    "drizzle-orm": "^0.30.8",
-    "hono": "~4.2.4",
+    "drizzle-orm": "^0.30.9",
+    "hono": "~4.2.6",
     "toucan-js": "3.3.1",
     "tsx": "^4.7.2",
     "version-compare": "3.11.0",
-    "zod": "^3.22.4"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.6.4",
-    "@cloudflare/workers-types": "4.20240405.0",
+    "@biomejs/biome": "^1.7.0",
+    "@cloudflare/workers-types": "4.20240419.0",
     "@types/bcryptjs": "2.4.6",
-    "drizzle-kit": "^0.20.14",
+    "drizzle-kit": "^0.20.17",
     "mjml": "^4.15.3",
     "typescript": "5.4.5",
-    "wrangler": "^3.50.0"
+    "wrangler": "^3.51.2"
   }
 }
