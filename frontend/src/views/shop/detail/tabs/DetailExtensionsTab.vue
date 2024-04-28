@@ -136,7 +136,7 @@ function getExtensionState(extension) {
 .extension-technical-name,
 .extension-changelog-name {
     font-weight: normal;
-    opacity: .6;
+    color: var(--text-color-muted);
 }
 
 .extension-changelog {

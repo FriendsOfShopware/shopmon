@@ -2,6 +2,7 @@
     <data-table
         :columns="[
             { key: 'date', name: 'Date', sortable: true },
+            { key: 'log', name: 'Log', sortable: false },
         ]"
         :data="shopStore.shop.changelog"
     >
@@ -9,8 +10,8 @@
             {{ formatDateTime(row.date) }}
         </template>
 
-        <template #cell-actions="{ row }">
-            <span class="cursor-pointer" @click="openShopChangelog(row)">
+        <template #cell-log="{ row }">
+            <span class="modal-open-changelog" @click="openShopChangelog(row)">
                 {{ sumChanges(row) }}
             </span>
         </template>
@@ -22,40 +23,32 @@
         @close="viewShopChangelogDialog = false"
     >
         <template #title>
-            Shop changelog - <span
-            v-if="dialogShopChangelog?.date"
-            class="font-normal"
-        >{{
-                formatDateTime(dialogShopChangelog.date) }}</span>
+            Shop changelog - <span v-if="dialogShopChangelog?.date" class="modal-changelog-title-date">{{ formatDateTime(dialogShopChangelog.date) }}</span>
         </template>
+
         <template #content>
-            <template v-if="dialogShopChangelog?.old_shopware_version && dialogShopChangelog?.new_shopware_version">
-                Shopware update from <strong>{{ dialogShopChangelog.old_shopware_version }}</strong> to <strong>{{
-                    dialogShopChangelog.new_shopware_version }}</strong>
+            <template v-if="dialogShopChangelog?.oldShopwareVersion && dialogShopChangelog?.newShopwareVersion">
+                Shopware update from <strong>{{ dialogShopChangelog.oldShopwareVersion }}</strong> to <strong>{{ dialogShopChangelog.newShopwareVersion }}</strong>
             </template>
 
-            <div
-                v-if="dialogShopChangelog?.extensions?.length"
-                class="mt-4"
-            >
-                <h2 class="text-lg mb-1 font-medium">
+            <div v-if="dialogShopChangelog?.extensions?.length">
+                <h2 class="modal-changelog-subtitle">
                     Shop Plugin Changelog:
                 </h2>
-                <ul class="list-disc">
+
+                <ul class="modal-changelog-logs">
                     <li
                         v-for="extension in dialogShopChangelog?.extensions"
                         :key="extension.name"
-                        class="ml-4 mb-1"
                     >
-                        <div>
-                            <strong>{{ extension.label }}</strong>
-                            <span class="opacity-60">
-                                    ({{ extension.name }})
-                                </span>
+                        <div class="modal-changelog-extension-name">
+                            {{ extension.label }} <span>({{ extension.name }})</span>
                         </div>
-                        {{ extension.state }} <template v-if="extension.state === 'installed' && extension.active">
-                        and activated
-                    </template>
+
+                        {{ extension.state }}
+                        <template v-if="extension.state === 'installed' && extension.active">
+                            and activated
+                        </template>
                         <template v-if="extension.state === 'updated'">
                             from {{ extension.old_version }} to {{ extension.new_version }}
                         </template>
@@ -89,3 +82,41 @@ function openShopChangelog(shopChangelog: ShopChangelog | null) {
     viewShopChangelogDialog.value = true;
 }
 </script>
+
+<style scoped>
+.modal-open-changelog {
+    cursor: pointer;
+}
+
+.modal-changelog {
+    &-title-date {
+        font-weight: normal;
+        color: var(--text-color-muted);
+    }
+
+    &-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: .5rem;
+        margin-top: .5rem;
+    }
+
+    &-logs {
+        list-style: disc;
+
+        li {
+            margin-left: 1rem;
+            margin-bottom: .5rem;
+        }
+    }
+
+    &-extension-name {
+        font-weight: 500;
+
+        span {
+            font-weight: normal;
+            color: var(--text-color-muted);
+        }
+
+    }
+}
+</style>
