@@ -16,51 +16,12 @@
 
         <template #cell-label="{ row }">
             <div class="flex items-start">
-                <span
-                    v-if="!row.installed"
-                    class="leading-5 text-gray-400 mr-2 text-base dark:text-neutral-500"
-                    data-tooltip="Not installed"
-                >
-                    <icon-fa6-regular:circle />
-                </span>
-                <span
-                    v-else-if="row.active"
-                    class="leading-5 text-green-400 mr-2 text-base dark:text-green-300"
-                    data-tooltip="Active"
-                >
-                    <icon-fa6-solid:circle-check />
-                </span>
-                <span
-                    v-else
-                    class="leading-5 text-gray-300 mr-2 text-base dark:text-neutral-500"
-                    data-tooltip="Inactive"
-                >
-                    <icon-fa6-solid:circle-xmark />
-                </span>
+                <status-icon :status="getExtensionState(row)" :tooltip="true" />
 
-                <div v-if="row.storeLink">
-                    <a
-                        :href="row.storeLink"
-                        target="_blank"
-                    >
-                        <div
-                            v-if="row.label"
-                            class="font-bold whitespace-normal"
-                        >{{ row.label }}</div>
-                        <div class="dark:opacity-50">{{ row.name }}</div>
-                    </a>
-                </div>
-                <div v-else>
-                    <div
-                        v-if="row.label"
-                        class="font-bold whitespace-normal"
-                    >
-                        {{ row.label }}
-                    </div>
-                    <div class="dark:opacity-50">
-                        {{ row.name }}
-                    </div>
-                </div>
+                <component :is="row.storeLink ? 'a' : 'span'" v-bind="row.storeLink ? {href: row.storeLink, target: '_blank'} : {}">
+                    <div class="extension-name">{{ row.label }}</div>
+                    <span class="extension-technical-name">{{ row.name }}</span>
+                </component>
             </div>
         </template>
 
@@ -72,7 +33,7 @@
                 @click="openExtensionChangelog(row as Extension)"
             >
                 <icon-fa6-solid:rotate
-                    class="ml-1 text-base text-amber-600 dark:text-amber-400 cursor-pointer"
+                    class="icon icon-warning"
                 />
             </span>
         </template>
@@ -98,51 +59,42 @@
         @close="viewExtensionChangelogDialog = false"
     >
         <template #title>
-            Changelog - <span class="font-normal">{{ dialogExtension?.name }}</span>
+            Changelog - <span class="extension-changelog-name">{{ dialogExtension?.name }}</span>
         </template>
+
         <template #content>
-            <ul v-if="dialogExtension?.changelog?.length ?? 0 > 0">
+            <ul v-if="dialogExtension?.changelog?.length > 0" class="extension-changelog">
                 <li
                     v-for="changeLog in dialogExtension.changelog"
                     :key="changeLog.version"
-                    class="mb-2"
+                    class="extension-changelog-item"
                 >
-                    <div class="font-medium mb-1">
-                            <span
-                                v-if="!changeLog.isCompatible"
-                                data-tooltip="not compatible with your version"
-                            >
-                                <icon-fa6-solid:circle-info class="text-yellow-400 text-base dark:text-yellow-200" />
-                            </span>
+                    <div class="extension-changelog-title">
+                        <span
+                            v-if="!changeLog.isCompatible"
+                            data-tooltip="not compatible with your version"
+                        >
+                            <icon-fa6-solid:circle-info class="icon icon-warning" />
+                        </span>
+
                         {{ changeLog.version }} -
-                        <span class="text-xs font-normal text-gray-500">
-                                {{ formatDate(changeLog.creationDate) }}
-                            </span>
+                        <span class="extension-changelog-date">
+                            {{ formatDate(changeLog.creationDate) }}
+                        </span>
                     </div>
+
                     <!-- eslint-disable vue/no-v-html -->
                     <div
-                        class="pl-3"
+                        class="extension-changelog-content"
                         v-html="changeLog.text"
                     />
                     <!-- eslint-enable vue/no-v-html -->
                 </li>
             </ul>
-            <div
-                v-else
-                class="rounded-md bg-red-50 p-4 border border-red-200"
-            >
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <icon-fa6-solid:circle-xmark
-                            class="h-5 w-5 text-red-600 dark:text-red-400 "
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <div class="ml-3 text-red-900">
-                        No Changelog data provided
-                    </div>
-                </div>
-            </div>
+
+            <alert type="error" v-else>
+                No Changelog data provided
+            </alert>
         </template>
     </modal>
 </template>
@@ -162,4 +114,49 @@ function openExtensionChangelog(extension: Extension | null) {
     dialogExtension.value = extension;
     viewExtensionChangelogDialog.value = true;
 }
+
+function getExtensionState(extension) {
+    if (!extension.installed) {
+        return 'not installed';
+    }
+    else if (extension.active) {
+        return 'active';
+    }
+
+    return 'inactive';
+}
 </script>
+
+<style scoped>
+.extension-name {
+    font-weight: bold;
+    white-space: normal;
+}
+
+.extension-technical-name,
+.extension-changelog-name {
+    font-weight: normal;
+    opacity: .6;
+}
+
+.extension-changelog {
+    &-item {
+        margin-bottom: .75rem;
+    }
+
+    &-title {
+        font-weight: 600;
+        margin-bottom: .25rem;
+    }
+
+    &-date {
+        color: var(--text-color-muted);
+        font-weight: normal;
+    }
+
+    &-content {
+        padding-left: 1.5rem;
+    }
+
+}
+</style>

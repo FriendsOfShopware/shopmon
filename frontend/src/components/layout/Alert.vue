@@ -1,10 +1,11 @@
 <template>
     <div :class="['alert', `alert-${type}`]">
         <div class="alert-icon">
-            <icon-fa6-solid:circle-info aria-hidden="true" class="icon-info" v-if="type === 'info'" />
-            <icon-fa6-solid:circle-check aria-hidden="true" class="icon-success" v-if="type === 'success'" />
-            <icon-fa6-solid:circle-info aria-hidden="true" class="icon-warning" v-if="type === 'warning'" />
-            <icon-fa6-solid:circle-xmark aria-hidden="true" class="icon-error" v-if="type === 'error'" />
+            <component
+                class="icon-status"
+                :is="getIconComponent(type)"
+                :class="`icon-${type}`"
+            />
         </div>
 
         <div class="alert-content">
@@ -14,7 +15,23 @@
 </template>
 
 <script lang="ts" setup>
+import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
+import FaCircleInfo from '~icons/fa6-solid/circle-info';
+import FaCircleCheck from '~icons/fa6-solid/circle-check';
+
 defineProps<{ type: string; }>();
+
+function getIconComponent(type) {
+    switch (type) {
+        case 'error':
+            return FaCircleXmark;
+        case 'info':
+        case 'warning':
+            return FaCircleInfo;
+        default:
+            return FaCircleCheck;
+    }
+}
 
 </script>
 
@@ -39,6 +56,7 @@ defineProps<{ type: string; }>();
     &-content {
         flex: 1;
         margin-left: 0.75rem;
+        padding-top: .15rem;
     }
 
     &-info {

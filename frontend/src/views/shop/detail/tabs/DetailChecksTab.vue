@@ -8,34 +8,31 @@
         <template #cell-message="{ row }">
             <status-icon :status="row.level" />
 
-            <a v-if="row.link" :href="row.link" target="_blank">
+            <component :is="row.link ? 'a' : 'span'" v-bind="row.link ? {href: row.link, target: '_blank'} : {}">
                 {{ row.message }}
-                <icon-fa6-solid:up-right-from-square class="text-xs" />
-            </a>
-
-            <template v-else>
-                {{ row.message }}
-            </template>
+                <icon-fa6-solid:up-right-from-square class="icon icon-xs" v-if="row.link"/>
+            </component>
         </template>
 
         <template #cell-actions="{ row }">
             <button
                 v-if="shopStore.shop.ignores.includes(row.id)"
                 data-tooltip="check is ignored"
-                class="text-red-600 opacity-25 tooltip-position-left dark:text-red-400 group-hover:opacity-100"
+                class="tooltip-position-left"
                 type="button"
                 @click="removeIgnore(row.id)"
             >
-                <icon-fa6-solid:eye-slash />
+                <icon-fa6-solid:eye-slash class="icon icon-error"/>
             </button>
+
             <button
                 v-else
                 data-tooltip="check used"
-                class="opacity-25 tooltip-position-left group-hover:opacity-100"
+                class="tooltip-position-left"
                 type="button"
                 @click="ignoreCheck(row.id)"
             >
-                <icon-fa6-solid:eye />
+                <icon-fa6-solid:eye class="icon"/>
             </button>
         </template>
     </data-table>

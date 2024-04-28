@@ -104,7 +104,7 @@ table th {
 
 svg {
     display: inline;
-    vertical-align: -0.2em;
+    vertical-align: -0.1em;
 }
 
 .text-divider {
@@ -152,5 +152,10 @@ svg {
 
     &-trash {
         transform: scale(.8);
+    }
+
+    &-xs {
+        font-size: .65rem;
+        vertical-align: 0;
     }
 }

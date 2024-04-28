@@ -21,7 +21,7 @@
             >
                 <data-table
                     :columns="[
-                        { key: 'label', name: 'Name', class: 'app-label', sortable: true, searchable: true},
+                        { key: 'label', name: 'Name', class: 'extension-label', sortable: true, searchable: true},
                         { key: 'shops', name: 'Shop' },
                         { key: 'version', name: 'Version' },
                         { key: 'latestVersion', name: 'Latest' },
@@ -38,8 +38,8 @@
 
                     <template #cell-label="{ row }">
                         <component :is="row.storeLink ? 'a' : 'span'" v-bind="row.storeLink ? {href: row.storeLink, target: '_blank'} : {}">
-                            <div class="app-name">{{ row.label }}</div>
-                            <span class="app-technical-name">{{ row.name }}</span>
+                            <div class="extension-name">{{ row.label }}</div>
+                            <span class="extension-technical-name">{{ row.name }}</span>
                         </component>
                     </template>
 
@@ -58,24 +58,7 @@
                                     }
                                 }"
                             >
-                                <span
-                                    v-if="!shop.installed"
-                                    data-tooltip="Not installed"
-                                >
-                                    <icon-fa6-regular:circle class="icon-muted icon-state" />
-                                </span>
-                                <span
-                                    v-else-if="shop.active"
-                                    data-tooltip="Active"
-                                >
-                                    <icon-fa6-solid:circle-check class="icon-success icon-state"/>
-                                </span>
-                                <span
-                                    v-else
-                                    data-tooltip="Inactive"
-                                >
-                                    <icon-fa6-solid:circle-xmark class="icon-muted icon-state"/>
-                                </span>
+                                <status-icon :status="getExtensionState(row)" :tooltip="true" />
                                 {{ shop.name }}
                             </router-link>
                         </div>
@@ -125,6 +108,17 @@ const extensionStore = useExtensionStore();
 const term = ref('');
 
 extensionStore.loadExtensions();
+
+function getExtensionState(extension) {
+    if (!extension.installed) {
+        return 'not installed';
+    }
+    else if (extension.active) {
+        return 'active';
+    }
+
+    return 'inactive';
+}
 </script>
 
 <style scoped>
@@ -132,13 +126,13 @@ extensionStore.loadExtensions();
     margin-bottom: 0.75rem;
 }
 
-.app-label {
-    .app-name {
+.extension-label {
+    .extension-name {
         font-weight: bold;
         white-space: normal;
     }
 
-    .app-technical-name {
+    .extension-technical-name {
         font-weight: normal;
         opacity: .6;
     }
@@ -152,14 +146,17 @@ extensionStore.loadExtensions();
         margin-bottom: .35rem;
     }
 
-    .icon-state {
-        font-size: 1rem;
-        margin-right: .25rem;
-    }
-
     .icon-update {
         vertical-align: -.1em;
         margin-left: .15rem;
+    }
+}
+</style>
+
+<style>
+.shops-row {
+    .icon-status {
+        vertical-align: -.2em;
     }
 }
 </style>

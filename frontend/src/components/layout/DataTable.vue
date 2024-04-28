@@ -260,6 +260,11 @@ const sortedFilteredData = computed(() => {
                 }
             }
         }
+
+        .icon-status {
+            font-size: 1rem;
+            margin-right: .5rem;
+        }
     }
 }
 

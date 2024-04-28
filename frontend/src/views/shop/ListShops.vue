@@ -97,10 +97,5 @@ shopStore.loadShops();
             vertical-align: middle;
         }
     }
-
-    [class^="icon"] {
-        font-size: 1rem;
-        margin-right: .5rem;
-    }
 }
 </style>
