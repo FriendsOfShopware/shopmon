@@ -31,14 +31,14 @@
             >
                 <icon-fa6-solid:arrow-right
                     :class="[{
-                        'text-green-400 -rotate-45 dark:text-green-300':
+                        'icon icon-success':
                             shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
-                        'text-red-600 rotate-45 dark:text-red-400':
+                        'icon icon-error':
                             shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
                     }]"
                 />
             </template>
-            <icon-fa6-solid:minus v-else />
+            <icon-fa6-solid:minus class="icon" v-else />
 
             <span class="ml-2">{{ row[cellKey] }}</span>
         </template>
@@ -51,3 +51,13 @@ import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
 </script>
+
+<style scoped>
+.icon-success {
+    transform: rotate(-45deg);
+}
+
+.icon-error {
+    transform: rotate(45deg);
+}
+</style>
