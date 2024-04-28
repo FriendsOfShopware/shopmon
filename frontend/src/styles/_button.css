@@ -17,7 +17,7 @@
         height: 1rem;
     }
 
-    &:not(:has(+ *)) {
+    &:not(.icon-only) {
         .icon {
             transition: opacity .4s;
             opacity: .4;

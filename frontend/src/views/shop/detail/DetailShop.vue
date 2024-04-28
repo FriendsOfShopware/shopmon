@@ -4,7 +4,7 @@
         :title="shopStore.shop.name"
     >
         <button
-            class="btn"
+            class="btn icon-only"
             data-tooltip="Clear shop cache"
             :disabled="shopStore.isCacheClearing"
             type="button"
@@ -16,7 +16,7 @@
             />
         </button>
         <button
-            class="btn"
+            class="btn icon-only"
             data-tooltip="Refresh shop data"
             :disabled="shopStore.isRefreshing"
             type="button"
