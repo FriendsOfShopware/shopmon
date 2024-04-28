@@ -252,6 +252,10 @@ const sortedFilteredData = computed(() => {
                 padding-right: 2rem;
             }
 
+            button {
+                line-height: 1.4;
+            }
+
             .icon {
                 opacity: .5;
 

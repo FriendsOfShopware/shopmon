@@ -2,50 +2,27 @@
     font-size: 0.75rem;
     display: inline-block;
     padding: 0.125rem 0.5rem;
-    height: 1.375rem;
     border-radius: 9999px;
     background-color: #d1d5db;
-    color: #11182a;
-
-    &:hover {
-        color: #11182a;
-    }
 
     .dark & {
-        color: #11182a;
-
-        &:hover {
-            color: #11182a;
-        }
+        color: #111827;
     }
 
     &-success {
-        background-color: #22c55e;
-
-        .dark & {
-            background-color: #6ee7b7;
-        }
+        background-color: var(--success-color);
     }
 
     &-info {
-        background-color: #0369fe;
-
-        .dark & {
-            background-color: #7dd3fc;
-        }
+        background-color: var(--info-color);
     }
 
     &-warning {
-        background-color: #fbbf24;
+        background-color: var(--warning-color);
     }
 
     &-error {
-        background-color: #dc2626;
+        background-color: var(--error-color);
         color: #ffffff;
-
-        .dark & {
-            background-color: #f87171;
-            color: #11182a;
-        }
     }
 }

@@ -61,13 +61,13 @@
         </template>
 
         <template #cell-actions="{ row }">
-            <span
-                class="cursor-pointer opacity-25 hover:opacity-100 tooltip-position-left"
+            <button
+                class="tooltip-position-left"
                 data-tooltip="Re-schedule task"
                 @click="onReScheduleTask(row.id)"
             >
-                <icon-fa6-solid:arrow-rotate-right class="text-base leading-3" />
-            </span>
+                <icon-fa6-solid:arrow-rotate-right class="icon" />
+            </button>
         </template>
     </data-table>
 </template>
