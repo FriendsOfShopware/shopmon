@@ -6,51 +6,23 @@
     margin-left: 0.5rem;
     border-radius: 0.25rem;
     background-color: #d1d5db;
-    color: #11182b;
-
-    &:hover {
-        color: #11182b;
-    }
+    color: var(--text-color);
 
     .dark & {
-        color: #11182b;
-
-        &:hover {
-            color: #11182b;
-        }
+        color: #111827;
     }
 
     &-info {
-        background-color: #0ea5e9;
-        color: #1e40af;
-
-        &:hover {
-            color: #1e40af;
-        }
-
-        .dark & {
-            color: #1e40af;
-
-            &:hover {
-                color: #1e40af;
-            }
-        }
+        background-color: var(--info-color);
+        color: #FFF;
     }
 
     &-warning {
-        background-color: #fdf2cd;
-        color: #b45309;
+        background-color: var(--warning-color);
+    }
 
-        &:hover {
-            color: #b45309;
-        }
-
-        .dark & {
-            color: #b45309;
-
-            &:hover {
-                color: #b45309;
-            }
-        }
+    &-error {
+        background-color: var(--error-color);
+        color: #FFF;
     }
 }
