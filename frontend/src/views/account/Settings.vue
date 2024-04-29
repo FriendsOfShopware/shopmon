@@ -110,26 +110,19 @@
         </form-group>
 
         <form-group title="Deleting your Account">
-            <form
-                action="#"
-                method="POST"
-            >
                 <p>
                     Once you delete your account, you will lose all data associated with it.
                     All owning organization will be also deleted with all shops associated.
                 </p>
 
-                <div class="mt-5">
-                    <button
-                        type="button"
-                        class="btn btn-danger"
-                        @click="showAccountDeletionModal = true"
-                    >
-                        <icon-fa6-solid:trash class="icon icon-trash" />
-                        Delete account
-                    </button>
-                </div>
-            </form>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    @click="showAccountDeletionModal = true"
+                >
+                    <icon-fa6-solid:trash class="icon icon-trash" />
+                    Delete account
+                </button>
         </form-group>
 
         <Modal
