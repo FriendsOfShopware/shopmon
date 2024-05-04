@@ -5,6 +5,7 @@
             Add Shop
         </router-link>
     </header-container>
+
     <main-container v-if="!shopStore.isLoading">
         <template v-if="shopStore.shops.length === 0">
             <element-empty title="No Shops" button="Add Shop" route="/account/shop/new">

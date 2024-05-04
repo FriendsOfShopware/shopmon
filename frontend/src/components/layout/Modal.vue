@@ -137,10 +137,10 @@ const emit = defineEmits<{ (e: 'close'): void }>();
     text-align: left;
     overflow: hidden;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    max-width: 32rem;
+    width:90%;
 
     @media (min-width: 640px) {
-        max-width: 32rem;
-        width: 100%;
         padding: 1.5rem;
     }
 }
