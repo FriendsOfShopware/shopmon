@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     Alert: typeof import('./src/components/layout/Alert.vue')['default']
     DataTable: typeof import('./src/components/layout/DataTable.vue')['default']
+    ElementEmpty: typeof import('./src/components/layout/ElementEmpty.vue')['default']
     FormGroup: typeof import('./src/components/layout/FormGroup.vue')['default']
     HeaderContainer: typeof import('./src/components/layout/HeaderContainer.vue')['default']
     'IconFa6Regular:circle': typeof import('~icons/fa6-regular/circle')['default']
@@ -66,7 +67,6 @@ declare module 'vue' {
     RatingStars: typeof import('./src/components/RatingStars.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    ShopsEmpty: typeof import('./src/components/layout/ShopsEmpty.vue')['default']
     StatusIcon: typeof import('./src/components/StatusIcon.vue')['default']
     Tabs: typeof import('./src/components/layout/Tabs.vue')['default']
   }

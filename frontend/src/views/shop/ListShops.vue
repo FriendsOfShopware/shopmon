@@ -6,9 +6,11 @@
         </router-link>
     </header-container>
     <main-container v-if="!shopStore.isLoading">
-        <div v-if="shopStore.shops.length === 0" class="shops-empty">
-            <shops-empty />
-        </div>
+        <template v-if="shopStore.shops.length === 0">
+            <element-empty title="No Shops" button="Add Shop" route="/account/shop/new">
+                Get started by adding your first Shop.
+            </element-empty>
+        </template>
 
         <div v-else class="panel panel-table">
             <data-table
@@ -77,6 +79,7 @@
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
 import { useShopStore } from '@/stores/shop.store';
+import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 
 const shopStore = useShopStore();
 

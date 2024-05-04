@@ -2,12 +2,11 @@
     <header-container title="My Apps" />
 
     <main-container v-if="!extensionStore.isLoading">
-        <div
-            v-if="extensionStore.extensions.length === 0"
-            class="text-center"
-        >
-            <shops-empty />
-        </div>
+        <template v-if="extensionStore.extensions.length === 0">
+            <element-empty title="No Apps" button="Add Shop" route="/account/shop/new">
+                Get started by adding your first Shop.
+            </element-empty>
+        </template>
 
         <template v-else>
             <input
@@ -16,9 +15,7 @@
                 placeholder="Search ..."
             >
 
-            <div
-                class="panel panel-table"
-            >
+            <div class="panel panel-table">
                 <data-table
                     :columns="[
                         { key: 'label', name: 'Name', class: 'extension-label', sortable: true, searchable: true},
@@ -103,6 +100,7 @@
 import { ref } from 'vue';
 import { useExtensionStore } from '@/stores/extension.store';
 import { formatDateTime } from '@/helpers/formatter';
+import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 
 const extensionStore = useExtensionStore();
 const term = ref('');
