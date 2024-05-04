@@ -52,29 +52,29 @@
                     label="New Password"
                     :error="errors.newPassword"
                 />
-
-                <div class="form-submit">
-                    <button
-                        :disabled="isSubmitting"
-                        type="submit"
-                        class="btn btn-primary"
-                    >
-                        <icon-fa6-solid:floppy-disk
-                            v-if="!isSubmitting"
-                            class="icon"
-                            aria-hidden="true"
-                        />
-                        <icon-line-md:loading-twotone-loop
-                            v-else
-                            class="icon"
-                        />
-                        Save
-                    </button>
-                </div>
             </form-group>
+
+            <div class="form-submit">
+                <button
+                    :disabled="isSubmitting"
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isSubmitting"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
+                    Save
+                </button>
+            </div>
         </vee-form>
 
-        <form-group title="Passkey Devices">
+        <form-group title="Passkey Devices" class="form-group-table">
             <data-table
                 v-if="authStore.passkeys"
                 :columns="[
@@ -94,7 +94,9 @@
                     </button>
                 </template>
             </data-table>
+        </form-group>
 
+        <div class="form-submit">
             <button
                 type="button"
                 class="btn btn-primary"
@@ -107,7 +109,7 @@
                 />
                 Add a new Device
             </button>
-        </form-group>
+        </div>
 
         <form-group title="Deleting your Account">
                 <p>

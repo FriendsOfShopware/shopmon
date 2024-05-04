@@ -268,23 +268,23 @@
                             <div class="mr-2 w-4">
                                 <icon-fa6-regular:circle
                                     v-if="!extension.active"
-                                    class="icon-muted"
+                                    class="icon icon-muted"
                                 />
                                 <icon-fa6-solid:circle-info
                                     v-else-if="!extension.compatibility"
-                                    class="icon-warning"
+                                    class="icon icon-warning"
                                 />
                                 <icon-fa6-solid:circle-xmark
                                     v-else-if="extension.compatibility.type == 'red'"
-                                    class="icon-error"
+                                    class="icon icon-error"
                                 />
                                 <icon-fa6-solid:rotate
                                     v-else-if="extension.compatibility.label === 'Available now'"
-                                    class="icon-info"
+                                    class="icon icon-info"
                                 />
                                 <icon-fa6-solid:circle-check
                                     v-else
-                                    class="icon-success"
+                                    class="icon icon-success"
                                 />
                             </div>
 
@@ -494,7 +494,7 @@ async function loadUpdateWizard(version: string) {
             padding-right: 2rem;
         }
 
-        [class^="icon"] {
+        .icon {
             margin-right: 0.25rem;
         }
     }

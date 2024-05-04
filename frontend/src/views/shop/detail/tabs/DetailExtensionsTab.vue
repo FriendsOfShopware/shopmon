@@ -15,7 +15,7 @@
         </template>
 
         <template #cell-label="{ row }">
-            <div class="flex items-start">
+            <div class="extension-label">
                 <status-icon :status="getExtensionState(row)" :tooltip="true" />
 
                 <component :is="row.storeLink ? 'a' : 'span'" v-bind="row.storeLink ? {href: row.storeLink, target: '_blank'} : {}">
@@ -128,6 +128,11 @@ function getExtensionState(extension) {
 </script>
 
 <style scoped>
+.extension-label {
+    display: flex;
+    justify-content: flex-start;
+}
+
 .extension-name {
     font-weight: bold;
     white-space: normal;

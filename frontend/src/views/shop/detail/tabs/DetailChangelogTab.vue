@@ -1,7 +1,7 @@
 <template>
     <data-table
         :columns="[
-            { key: 'date', name: 'Date', sortable: true },
+            { key: 'date', name: 'Date', class: 'changelog-date', sortable: true },
             { key: 'log', name: 'Log', sortable: false },
         ]"
         :data="shopStore.shop.changelog"
@@ -82,6 +82,12 @@ function openShopChangelog(shopChangelog: ShopChangelog | null) {
     viewShopChangelogDialog.value = true;
 }
 </script>
+
+<style>
+.changelog-date {
+    width: 200px;
+}
+</style>
 
 <style scoped>
 .modal-open-changelog {

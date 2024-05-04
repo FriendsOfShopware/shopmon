@@ -13,10 +13,10 @@
                     <icon-fa6-solid:xmark aria-hidden="true" />
                 </button>
                 <div class="notification-icon">
-                    <icon-fa6-solid:circle-xmark v-if="alert.type === 'error'" class="icon-error" />
-                    <icon-fa6-solid:circle-info v-else-if="alert.type === 'warning'" class="icon-warning" />
-                    <icon-fa6-solid:circle-info v-else-if="alert.type === 'info'" class="icon-info" />
-                    <icon-fa6-solid:circle-check v-else class="icon-success" />
+                    <icon-fa6-solid:circle-xmark v-if="alert.type === 'error'" class="icon icon-error" />
+                    <icon-fa6-solid:circle-info v-else-if="alert.type === 'warning'" class="icon icon-warning" />
+                    <icon-fa6-solid:circle-info v-else-if="alert.type === 'info'" class="icon icon-info" />
+                    <icon-fa6-solid:circle-check v-else class="icon icon-success" />
                 </div>
                 <div class="notification-content">
                     <div class="notification-title">{{ alert.title }}</div>

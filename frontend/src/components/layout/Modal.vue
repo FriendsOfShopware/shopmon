@@ -55,7 +55,6 @@
 
                                 <div
                                     class="modal-content"
-                                    :class="[{ 'ml-4': !!$slots.icon }]"
                                 >
                                     <dialog-title
                                         v-if="!!$slots.title"
@@ -171,6 +170,10 @@ const emit = defineEmits<{ (e: 'close'): void }>();
     .icon {
         width: 1.5rem;
         height: 1.5rem;
+    }
+
+    + .modal-content {
+        margin-left: 1rem;
     }
 }
 

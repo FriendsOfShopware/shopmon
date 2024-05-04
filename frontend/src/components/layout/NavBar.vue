@@ -105,11 +105,11 @@
                                     <div class="notification-icon">
                                         <icon-fa6-solid:circle-xmark
                                             v-if="notification.level === 'error'"
-                                            class="icon-error"
+                                            class="icon icon-error"
                                         />
                                         <icon-fa6-solid:circle-info
                                             v-else
-                                            class="icon-warning"
+                                            class="icon icon-warning"
                                         />
                                     </div>
 
@@ -354,7 +354,7 @@ const userNavigation = [
         @media (min-width: 768px) {
             display: flex;
             margin-left: 1.5rem;
-            align-items: baseline;
+            align-items: center;
             gap: 1rem;
         }
     }

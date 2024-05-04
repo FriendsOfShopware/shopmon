@@ -2,7 +2,7 @@
     <div :class="['alert', `alert-${type}`]">
         <div class="alert-icon">
             <component
-                class="icon-status"
+                class="icon icon-status"
                 :is="getIconComponent(type)"
                 :class="`icon-${type}`"
             />

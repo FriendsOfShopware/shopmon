@@ -236,7 +236,7 @@ const sortedFilteredData = computed(() => {
             padding-left: 1rem;
 
             @media (min-width: 1024px) {
-                padding-left: 2rem;
+                padding-left: 1.5rem;
             }
         }
 

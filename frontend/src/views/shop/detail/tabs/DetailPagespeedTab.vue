@@ -31,16 +31,17 @@
             >
                 <icon-fa6-solid:arrow-right
                     :class="[{
-                        'icon icon-success':
+                        'icon' : true,
+                        'icon-success':
                             shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
-                        'icon icon-error':
+                        'icon-error':
                             shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
                     }]"
                 />
             </template>
             <icon-fa6-solid:minus class="icon" v-else />
 
-            <span class="ml-2">{{ row[cellKey] }}</span>
+            <span class="ml-2">{{ parseInt(row[cellKey]) }}</span>
         </template>
     </data-table>
 </template>
@@ -53,6 +54,10 @@ const shopStore = useShopStore();
 </script>
 
 <style scoped>
+.icon {
+    margin-right: .25rem;
+}
+
 .icon-success {
     transform: rotate(-45deg);
 }

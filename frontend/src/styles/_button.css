@@ -1,3 +1,17 @@
+button,
+[type='button'],
+[type='reset'],
+[type='submit'] {
+    -webkit-appearance: button;
+    background-color: transparent;
+    background-image: none;
+}
+
+button,
+[role="button"] {
+    cursor: pointer;
+}
+
 .btn {
     position: relative;
     display: inline-flex;

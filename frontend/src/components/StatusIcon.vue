@@ -1,7 +1,7 @@
 <template>
     <span v-if="tooltip" :data-tooltip="status" class="has-tooltip">
         <component
-            class="icon-status"
+            class="icon icon-status"
             :is="getIconComponent(status)"
             :class="getIconClasses(status)"
         />
@@ -9,7 +9,7 @@
 
     <template v-else>
         <component
-            class="icon-status"
+            class="icon icon-status"
             :is="getIconComponent(status)"
             :class="getIconClasses(status)"
         />
