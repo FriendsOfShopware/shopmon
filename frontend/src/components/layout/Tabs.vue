@@ -1,59 +1,29 @@
 <template>
-    <div class="w-full rounded-lg bg-white mb-16 shadow overflow-hidden dark:bg-neutral-800">
+    <div class="panel tab-container">
         <tab-group>
-            <tab-list
-                class="border-b border-gray-200 px-6 gap-x-4 -mb-px grid dark:border-neutral-700 sm:grid-cols-2 md:grid-
-                            cols-3 lg:grid-cols-none lg:auto-cols-min lg:grid-flow-col"
-            >
-                <tab
-                    v-for="label in props.labels"
-                    :key="label.key"
-                    v-slot="{ selected }"
-                    as="template"
-                >
+            <tabs-list class="tabs-list">
+                <tab v-for="label in props.labels" :key="label.key" v-slot="{ selected }" as="template">
                     <button
-                        class="flex items-center focus:outline-none whitespace-nowrap pt-4 pb-3 px-3 font-medium text-base
-                        relative before:block before:z-1 before:w-0 before:absolute before:left-1/2 before:-translate-x-1/2
-                        before:-bottom-[1px] before:h-[3px] before:bg-sky-500 before:hover:w-full before:transition-all
-                        after:block after:absolute after:-bottom-[1px] after:h-px after:bg-gray-200 dark:after:bg-neutral-700
-                        after:-left-6 after:-right-6"
-                        :class="{
-                            'border-sky-500 text-sky-600 before:!w-full': selected
-                        }"
+                        class="tab"
+                        :class="{ 'tab-active': selected }"
                         type="button"
                     >
-                        <component
-                            :is="label.icon"
-                            v-if="label.icon"
-                            class="mr-2"
-                        />
+                        <component :is="label.icon" v-if="label.icon" class="icon"/>
                         {{ label.title }}
-                        <span
-                            v-if="label.count !== undefined"
-                            class="ml-2 bg-gray-300 rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-900"
-                        >
+                        <span v-if="label.count !== undefined" class="pill">
                             {{ label.count }}
                         </span>
                     </button>
                 </tab>
-            </tab-list>
+            </tabs-list>
 
-            <tab-panels class="mt-px">
-                <tab-panel
-                    v-for="label in props.labels"
-                    :key="label.key"
-                    class="overflow-y-auto"
-                >
-                    <slot
-                        :name="`panel-${label.key}`"
-                        :label="label"
-                    >
-                        <div class="p-6">
+            <tab-panels class="tab-panels">
+                <tab-panel v-for="label in props.labels" :key="label.key" class="tab-panel">
+                    <slot :name="`panel-${label.key}`" :label="label">
+                        <div class="tab-panel-default">
                             <strong>{{ label.title }} Tab Panel</strong>.
                             Use
-                            <pre
-                                class="bg-gray-200 inline-block text-xs px-1 py-0.5 rounded"
-                            >&lt;template #panel-{{ label.key }}="{ label }"&gt;...&lt;/template&gt;</pre>
+                            <pre class="tab-panel-code">&lt;template #panel-{{ label.key }}="{ label }"&gt;...&lt;/template&gt;</pre>
                             to fill with content
                         </div>
                     </slot>
@@ -64,15 +34,115 @@
 </template>
 
 <script setup lang="ts" generic="T extends string">
-import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue';
-import type { FunctionalComponent } from 'vue';
+import {TabGroup, TabList, Tab, TabPanels, TabPanel} from '@headlessui/vue';
+import type {FunctionalComponent} from 'vue';
 
 const props = defineProps<{
     labels: Array<{
-        key: string,
-        title: string,
-        count?: number,
-        icon?: FunctionalComponent
-    }>
+        key: string;
+        title: string;
+        count?: number;
+        icon?: FunctionalComponent;
+    }>;
 }>();
 </script>
+
+<style scoped>
+.tab-container {
+    width: 100%;
+    margin-bottom: 4rem;
+    padding: 0;
+    overflow: hidden;
+}
+
+.tabs-list {
+    border-bottom: 1px solid var(--panel-border-color);
+    padding: 0 1.5rem;
+    gap: 1rem;
+    margin-bottom: -1px;
+    display: grid;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    @media (min-width: 640px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (min-width: 1024px) {
+        grid-auto-columns: min-content;
+        grid-template-columns: none;
+        grid-auto-flow: column;
+    }
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+
+    &::before {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 3px;
+        background-color: var(--primary-color);
+        transition: all 0.2s ease-in-out;
+    }
+
+    &:after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: -1.5rem;
+        right: -1.5rem;
+        height: 1px;
+        background-color: var(--panel-border-color);
+    }
+
+    &:hover,
+    &-active {
+        color: #0ea5e9;
+
+        &::before {
+            width: 100%;
+        }
+    }
+
+    .icon {
+        margin-right: 0.5rem;
+    }
+
+    .pill {
+        margin-left: 0.5rem;
+    }
+}
+
+.tab-panels {
+    margin-top: 1px;
+}
+
+.tab-panel {
+    overflow-y: auto;
+
+    &-default {
+        padding: 1.5rem;
+    }
+
+    &-code {
+        background-color: var(--panel-border-color);
+        display: inline-block;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
