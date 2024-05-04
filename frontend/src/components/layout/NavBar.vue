@@ -18,13 +18,11 @@
                         v-for="item in navigation"
                         :key="item.name"
                         :to="item.route"
-                        :class="[
-                            'nav-link',
-                            item.route == $route.path
-                                ? 'active'
-                                : '',
-                        ]"
-                        :aria-current="item.route == $route.path ? 'page' : undefined"
+                        :class="{
+                            'nav-link': true,
+                            'active': isActive(item, $route),
+                        }"
+                        :aria-current="isActive(item, $route) ? 'page' : undefined"
                     >
                         {{ item.name }}
                     </router-link>
@@ -311,15 +309,26 @@ const darkModeStore = useDarkModeStore();
 
 const navigation = [
     { name: 'Dashboard', route: '/' },
-    { name: 'My Shops', route: '/account/shops' },
+    { name: 'My Shops', route: '/account/shops', active: 'shop' },
     { name: 'My Apps', route: '/account/extensions' },
-    { name: 'My Organizations', route: '/account/organizations' },
+    { name: 'My Organizations', route: '/account/organizations', active: 'organizations' },
 ];
 
 const userNavigation = [
     { name: 'Settings', route: '/account/settings', icon: FaGear },
     { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
+
+function isActive(item, $route) {
+    if (item.route == $route.path) {
+        return true;
+    }
+    else if ($route.name && item.active && $route.name.match(item.active)) {
+        return true;
+    }
+
+    return false;
+}
 </script>
 
 <style>
