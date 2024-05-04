@@ -1,8 +1,8 @@
 <template>
     <div class="login-header">
-        <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">
+        <h2>
             Forgot password
-        </h4>
+        </h2>
         <p>We will send you a confirmation email. Click on the link in it to change your password.</p>
     </div>
 
