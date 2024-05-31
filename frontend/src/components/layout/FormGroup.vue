@@ -5,10 +5,8 @@
 
             <p v-if="subTitle" class="sidebar-subtitle">{{ subTitle }}</p>
 
-            <Alert type="info" v-if="info">
-                <!-- eslint-disable vue/no-v-html -->
-                <span v-html="info"></span>
-                <!-- eslint-enable vue/no-v-html -->
+            <Alert type="info" v-if="$slots.info">
+                <slot name="info"></slot>
             </Alert>
         </div>
         
@@ -19,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string; subTitle?: string; info?: string }>();
+defineProps<{ title: string; subTitle?: string; }>();
 </script>
 
 <style>

@@ -65,14 +65,14 @@
                 </div>
             </form-group>
 
-            <form-group
-                title="Integration"
-                info="<p>The created integration must have access to following
+            <form-group title="Integration">
+                <template #info>
+                    The created integration must have access to following
                     <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>
                         permissions
                     </a>
-                </p>"
-            >
+                </template>
+
                 <div>
                     <label for="clientId">Client-ID</label>
 
