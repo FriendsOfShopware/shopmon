@@ -1,0 +1,75 @@
+.field {
+    appearance: none;
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--field-border-color);
+    color: var(--field-color);
+    background-color: var(--field-background);
+    outline: none;
+    box-shadow: none !important;
+    border-radius: 0.375rem;
+
+    @media (min-width: 640px) {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
+    &::placeholder {
+        color: #6b7280;
+    }
+
+    select& {
+        background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23111827" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
+        background-position: calc(100% - 1rem) calc(.75rem + 2px);
+        background-size: .6rem .6rem;
+        background-repeat: no-repeat;
+        padding-right: 25px;
+        cursor: pointer;
+
+        .dark & {
+            background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23a3a3a3" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
+        }
+    }
+
+    &:focus {
+        border-color: var(--primary-color);
+        z-index: 10;
+        box-shadow: none !important;
+    }
+
+    &.field-no-rounded {
+        border-radius: unset;
+    }
+
+    &.field-password {
+        padding-right: 2.25rem;
+    }
+
+    &.field-search {
+        font-size: 1.5rem;
+    }
+
+    &.has-error {
+        border-color: var(--error-color);
+    }
+    
+    &-error-message {
+        color: var(--error-color);
+        text-align: left;
+    }
+}
+
+.form-submit {
+    display: flex;
+    justify-content: flex-end;
+
+    .form-group + & {
+        padding-bottom: 3rem;
+    }
+
+    .form-group:has(+ &) {
+        padding-bottom: 1rem;
+    }
+}

@@ -2,7 +2,7 @@
     <span
         v-if="rating !== null"
         :data-tooltip="`${rating / 2} from 5`"
-        class="tooltip-position-center"
+        class="tooltip-position-center rating-stars"
     >
         <template
             v-for="n in 5"
@@ -18,3 +18,9 @@
 <script lang="ts" setup>
 defineProps<{ rating: number | null }>();
 </script>
+
+<style scoped>
+.rating-stars {
+    white-space: nowrap;
+}
+</style>

@@ -1,54 +1,42 @@
 <template>
     <table
         v-if="sortedFilteredData?.length ?? 0 > 0"
-        class="min-w-full divide-y-2 divide-gray-300 dark:divide-neutral-900"
+        class="data-table"
     >
-        <thead class="bg-gray-50 dark:bg-neutral-800">
+        <thead>
             <tr>
                 <th
-                    v-for="(column, index) in columns"
+                    v-for="column in columns"
                     :key="column.key"
-                    class="py-3.5"
-                    :class="[{
-                        'px-3 text-left whitespace-nowrap': !column.class && !column.classOverride,
-                        'pl-4 lg:pl-8': index === 0 && !column.classOverride,
-                        'cursor-pointer': column.sortable,
-                    }, column.class]"
+                    :class="[
+                        column.class,
+                        { sortable: 'sortable' },
+                    ]"
                     @click="column.sortable ? setSort(column.key) : false"
                 >
                     {{ column.name }}
-
                     <template v-if="column.key === sorting.sortBy">
                         <icon-fa6-solid:chevron-up v-if="sorting.sortDesc" />
                         <icon-fa6-solid:chevron-down v-else />
                     </template>
-                    <span
-                        v-else
-                        class="inline-block w-[14px]"
-                    />
                 </th>
                 <th
                     v-if="slots['cell-actions']"
-                    class="py-3.5 px-3 text-left whitespace-nowrap pr-4 sm:pr-6 lg:pr-8 text-right"
+                    class="actions"
                 >
                     <slot name="cell-actions-header" />
                 </th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-none">
+        <tbody>
             <tr
                 v-for="(row, rowIndex) in sortedFilteredData"
                 :key="rowIndex"
-                class="group even:bg-gray-50 hover:bg-sky-50 dark:even:bg-[#2b2b2b] dark:hover:bg-[#2a2b2f]"
             >
                 <td
-                    v-for="(column, columnIndex) in columns"
+                    v-for="column in columns"
                     :key="column.key"
-                    class="whitespace-nowrap py-4 align-middle"
-                    :class="[{
-                        'px-3': !column.class && !column.classOverride,
-                        'pl-4 lg:pl-8': columnIndex === 0 && !column.classOverride,
-                    }, column.class ]"
+                    :class="[column.class]"
                 >
                     <slot
                         :name="`cell-${column.key}`"
@@ -58,10 +46,9 @@
                         {{ row[column.key] }}
                     </slot>
                 </td>
-
                 <td
                     v-if="slots['cell-actions']"
-                    class="px-3 text-right pr-4 sm:pr-6 lg:pr-8"
+                    class="actions"
                 >
                     <slot
                         name="cell-actions"
@@ -73,10 +60,10 @@
     </table>
     <div
         v-else
-        class="p-6 text-center text-gray-400"
+        class="data-table-empty"
     >
         <template v-if="sortedFilteredData?.length ?? 0 === 0">
-            <span class="text-lg">
+            <span>
                 <template v-if="searchTerm">
                     <icon-fa6-solid:circle-xmark /> no search result for <strong>{{ searchTerm }}</strong>
                 </template>
@@ -86,8 +73,8 @@
             </span>
         </template>
         <template v-else>
-            <icon-fa6-solid:inbox class="text-9xl text-gray-200 mb-4" />
-            <h2 class="text-2xl font-bold text-gray-400 block">
+            <icon-fa6-solid:inbox class="empty-icon" />
+            <h2 class="empty-title">
                 No Data
             </h2>
             There is no data to display the table
@@ -108,7 +95,6 @@ const props = withDefaults(defineProps<{
         key: RowKey,
         name: string,
         class?: string,
-        classOverride?: boolean,
         searchable?: boolean,
         sortable?: boolean,
         sortPath?: string,
@@ -199,3 +185,108 @@ const sortedFilteredData = computed(() => {
     return data;
 });
 </script>
+
+<style>
+.data-table {
+    width: 100%;
+    border-spacing: 0;
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+
+    thead {
+        background-color: var(--data-table-head-background);
+    }
+
+    th {
+        padding: 1rem 0.75rem;
+        text-align: left;
+        font-weight: 500;
+        color: var(--data-table-head-color);
+        white-space: nowrap;
+        text-align: left;
+
+        &.sortable {
+            cursor: pointer;
+        }
+    }
+
+    tbody {
+        border-top: 2px solid var(--background-color);
+
+        tr {
+            background-color: var(--data-table-row-background);
+
+            &:nth-child(odd) {
+                background-color: var(--data-table-row-odd-background);
+            }
+
+            &:hover {
+                background-color: var(--data-table-row-hover-background);
+            }
+        }
+
+        td {
+            padding: 1rem 0.75rem;
+        }
+    }
+
+    th, td {
+        &:first-child {
+            padding-left: 1rem;
+
+            @media (min-width: 1024px) {
+                padding-left: 1.5rem;
+            }
+        }
+
+        &.actions {
+            text-align: right;
+            padding-right: 1rem;
+
+            @media (min-width: 640px) {
+                padding-right: 1.5rem;
+            }
+
+            @media (min-width: 1024px) {
+                padding-right: 2rem;
+            }
+
+            button {
+                line-height: 1.4;
+            }
+
+            .icon {
+                opacity: .5;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+
+        .icon-status {
+            font-size: 1rem;
+            margin-right: .5rem;
+        }
+    }
+}
+
+.data-table-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: #9ca3af;
+
+    .empty-icon {
+        font-size: 9rem;
+        color: #e5e7eb;
+        margin-bottom: 1rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #9ca3af;
+    }
+}
+</style>

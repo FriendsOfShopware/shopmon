@@ -11,100 +11,70 @@
                 title="Account"
                 sub-title="Manage Your Account"
             >
-                <div class="grid grid-cols-6 gap-6">
-                    <div class="col-span-6">
-                        <label
-                            for="currentPassword"
-                            class="block text-sm font-medium mb-1"
-                        >Current Password*</label>
-                        <field
-                            id="currentPassword"
-                            type="password"
-                            name="currentPassword"
-                            autocomplete="current-password"
-                            class="field"
-                            :class="{ 'is-invalid': errors.currentPassword }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.currentPassword }}
-                        </div>
-                    </div>
+                <PasswordField
+                    name="currentPassword"
+                    label="Current Password"
+                    :error="errors.currentPassword"
+                />
 
-                    <div class="col-span-6">
-                        <label
-                            for="displayName"
-                            class="block text-sm font-medium mb-1"
-                        >displayName</label>
-                        <field
-                            id="displayName"
-                            type="text"
-                            name="displayName"
-                            autocomplete="name"
-                            class="field"
-                            :class="{ 'is-invalid': errors.displayName }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.displayName }}
-                        </div>
-                    </div>
-
-                    <div class="col-span-6">
-                        <label
-                            for="email"
-                            class="block text-sm font-medium mb-1"
-                        >Email address</label>
-                        <field
-                            id="email"
-                            type="text"
-                            name="email"
-                            autocomplete="email"
-                            class="field"
-                            :class="{ 'is-invalid': errors.email }"
-                        />
-                        <div class="text-red-700">
-                            {{ errors.email }}
-                        </div>
-                    </div>
-
-                    <div class="col-span-6">
-                        <label
-                            for="newPassword"
-                            class="block text-sm font-medium mb-1"
-                        >New Password</label>
-                        <field
-                            id="newPassword"
-                            type="password"
-                            name="newPassword"
-                            autocomplete="new-password"
-                            class="field"
-                            :class="{ 'is-invalid': errors.newPassword }"
-                        />
+                <div>
+                    <label for="displayName">displayName</label>
+                    <field
+                        id="displayName"
+                        type="text"
+                        name="displayName"
+                        autocomplete="name"
+                        class="field"
+                        :class="{ 'has-error': errors.displayName }"
+                    />
+                    <div class="field-error-message">
+                        {{ errors.displayName }}
                     </div>
                 </div>
-                <div class="text-right flex justify-end">
-                    <button
-                        :disabled="isSubmitting"
-                        type="submit"
-                        class="btn btn-primary flex items-center group"
-                    >
-                        <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                            <icon-fa6-solid:floppy-disk
-                                v-if="!isSubmitting"
-                                class="h-5 w-5"
-                                aria-hidden="true"
-                            />
-                            <icon-line-md:loading-twotone-loop
-                                v-else
-                                class="w-5 h-5"
-                            />
-                        </span>
-                        Save
-                    </button>
+
+                <div>
+                    <label for="email">Email address</label>
+                    <field
+                        id="email"
+                        type="text"
+                        name="email"
+                        autocomplete="email"
+                        class="field"
+                        :class="{ 'has-error': errors.email }"
+                    />
+                    <div class="field-error-message">
+                        {{ errors.email }}
+                    </div>
                 </div>
+
+                <PasswordField
+                    name="newPassword"
+                    label="New Password"
+                    :error="errors.newPassword"
+                />
             </form-group>
+
+            <div class="form-submit">
+                <button
+                    :disabled="isSubmitting"
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isSubmitting"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
+                    Save
+                </button>
+            </div>
         </vee-form>
 
-        <form-group title="Passkey Devices">
+        <form-group title="Passkey Devices" class="form-group-table">
             <data-table
                 v-if="authStore.passkeys"
                 :columns="[
@@ -116,45 +86,45 @@
                 <template #cell-actions="{ row }">
                     <button
                         type="button"
-                        class="tooltip-position-left text-red-600 opacity-50 dark:text-red-400 hover:opacity-100"
+                        class="tooltip-position-left"
                         data-tooltip="Delete"
                         @click="removePasskey(row.id)"
                     >
-                        <icon-fa6-solid:trash aria-hidden="true" />
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
                     </button>
                 </template>
             </data-table>
+        </form-group>
 
+        <div class="form-submit">
             <button
                 type="button"
                 class="btn btn-primary"
                 @click="createPasskey"
             >
+                <icon-material-symbols:passkey
+                    v-if="!isAuthenticated"
+                    class="icon icon-passkey"
+                    aria-hidden="true"
+                />
                 Add a new Device
             </button>
-        </form-group>
+        </div>
 
         <form-group title="Deleting your Account">
-            <form
-                action="#"
-                method="POST"
-            >
                 <p>
                     Once you delete your account, you will lose all data associated with it.
                     All owning organization will be also deleted with all shops associated.
                 </p>
 
-                <div class="mt-5">
-                    <button
-                        type="button"
-                        class="btn btn-danger group flex items-center"
-                        @click="showAccountDeletionModal = true"
-                    >
-                        <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
-                        Delete account
-                    </button>
-                </div>
-            </form>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    @click="showAccountDeletionModal = true"
+                >
+                    <icon-fa6-solid:trash class="icon icon-trash" />
+                    Delete account
+                </button>
         </form-group>
 
         <Modal
@@ -163,29 +133,33 @@
         >
             <template #icon>
                 <icon-fa6-solid:triangle-exclamation
-                    class="h-6 w-6 text-red-600 dark:text-red-400"
+                    class="icon icon-error"
                     aria-hidden="true"
                 />
             </template>
+
             <template #title>
                 Deactivate account
             </template>
+
             <template #content>
                 Are you sure you want to deactivate your account? All of your data will be permanently removed
                 from our servers forever. This action cannot be undone.
             </template>
+            
             <template #footer>
                 <button
                     type="button"
-                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
+                    class="btn btn-danger"
                     @click="deleteUser"
                 >
                     Deactivate
                 </button>
+
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    class="btn btn-cancel"
                     @click="showAccountDeletionModal = false"
                 >
                     Cancel
@@ -196,10 +170,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
-
 import { Form as VeeForm, Field } from 'vee-validate';
 import * as Yup from 'yup';
 import { ref } from 'vue';

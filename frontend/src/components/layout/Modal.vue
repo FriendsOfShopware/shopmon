@@ -5,7 +5,7 @@
     >
         <headless-dialog
             as="div"
-            class="relative z-10"
+            class="modal"
             @close="emit('close')"
         >
             <transition-child
@@ -18,30 +18,27 @@
                 leave-to="opacity-0"
             >
                 <div
-                    class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity
-                    dark:bg-neutral-900 dark:bg-opacity-80"
+                    class="modal-overlay transform translate"
                 />
             </transition-child>
 
-            <div class="fixed z-10 inset-0 overflow-y-auto">
-                <div class="flex items-center justify-center min-h-full p-4 text-center sm:p-0">
+            <div class="modal-container">
+                <div class="modal-panel-wrapper">
                     <transition-child
                         as="template"
                         enter="ease-out duration-300"
-                        enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                        enter-to="opacity-100 translate-y-0 sm:scale-100"
+                        enter-from="opacity-0 scale-80"
+                        enter-to="opacity-100 scale-100"
                         leave="ease-in duration-200"
-                        leave-from="opacity-100 translate-y-0 sm:scale-100"
-                        leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        leave-from="opacity-100 scale-100"
+                        leave-to="opacity-0 scale-80"
                     >
                         <dialog-panel
-                            class="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left
-                             overflow-hidden shadow-xl transform transition-all
-                             sm:my-8 sm:max-w-lg sm:w-full sm:p-6 dark:bg-neutral-800"
+                            class="modal-panel transform transition"
                         >
                             <button
                                 v-if="closeXMark"
-                                class="absolute top-1 right-2.5 focus:outline-none text-base"
+                                class="modal-close-button"
                                 type="button"
                                 @click="emit('close')"
                             >
@@ -51,18 +48,18 @@
                                 />
                             </button>
 
-                            <div class="flex items-start">
-                                <div v-if="!!$slots.icon">
+                            <div class="modal-grid">
+                                <div v-if="!!$slots.icon" class="modal-icon">
                                     <slot name="icon" />
                                 </div>
+
                                 <div
-                                    class="text-left grow"
-                                    :class="[{ 'ml-4': !!$slots.icon }]"
+                                    class="modal-content"
                                 >
                                     <dialog-title
                                         v-if="!!$slots.title"
                                         as="h3"
-                                        class="text-lg leading-6 font-medium mb-2"
+                                        class="modal-title"
                                     >
                                         <slot name="title" />
                                     </dialog-title>
@@ -73,7 +70,7 @@
 
                             <div
                                 v-if="!!$slots.footer"
-                                class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse"
+                                class="modal-footer"
                             >
                                 <slot name="footer" />
                             </div>
@@ -92,3 +89,125 @@ defineProps<{ show: boolean, closeXMark?: boolean }>();
 
 const emit = defineEmits<{ (e: 'close'): void }>();
 </script>
+
+<style>
+.modal {
+    position: relative;
+    z-index: 10;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: #6b7280bf;
+    transition: opacity 0.3s ease;
+
+    .dark & {
+        background-color: #171717cc;
+    }
+}
+
+.modal-container {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+}
+
+.modal-panel-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    padding: 1rem;
+    text-align: center;
+
+    @media (min-width: 640px) {
+        padding: 0;
+    }
+}
+
+.modal-panel {
+    position: relative;
+    background-color: var(--panel-background);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+    text-align: left;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    max-width: 32rem;
+    width:90%;
+
+    @media (min-width: 640px) {
+        padding: 1.5rem;
+    }
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.625rem;
+    font-size: 1.25rem;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: opacity .4s;
+    opacity: .5;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.modal-grid {
+    display: flex;
+    align-items: flex-start;
+}
+
+.modal-icon {
+    .icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    + .modal-content {
+        margin-left: 1rem;
+    }
+}
+
+.modal-content {
+    text-align: left;
+    flex-grow: 1;
+}
+
+.modal-title {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.modal-footer {
+    margin-top: 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+    flex-direction: column;
+    gap: 1rem;
+
+    @media (min-width: 640px) {
+        flex-direction: row;
+    }
+
+    .btn-cancel {
+        @media (min-width: 640px) {
+            order: -1
+        }
+    }
+
+    .btn {
+        display: block;
+    }
+}
+</style>

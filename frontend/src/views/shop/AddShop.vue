@@ -7,32 +7,26 @@
             :initial-values="shops"
             @submit="onSubmit"
         >
-            <form-group
-                title="Shop information"
-                sub-title=""
-            >
-                <div class="sm:col-span-6">
-                    <label
-                        for="Name"
-                        class="block text-sm font-medium mb-1"
-                    > Name </label>
+            <form-group title="Shop information">
+                <div>
+                    <label for="Name">Name</label>
+
                     <field
                         id="name"
                         type="text"
                         name="name"
                         class="field"
-                        :class="{ 'is-invalid': errors.name }"
+                        :class="{ 'has-error': errors.name }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.name }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="orgId"
-                        class="block text-sm font-medium mb-1"
-                    > Organization </label>
+                <div>
+                    <label for="orgId">Organization</label>
+
                     <field
                         id="orgId"
                         as="select"
@@ -47,90 +41,86 @@
                             {{ organization.name }}
                         </option>
                     </field>
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.orgId }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="shopUrl"
-                        class="block text-sm font-medium mb-1"
-                    > URL </label>
+                <div>
+                    <label for="shopUrl">URL</label>
+
                     <field
                         id="shopUrl"
                         type="text"
                         name="shopUrl"
                         autocomplete="url"
                         class="field"
-                        :class="{ 'is-invalid': errors.shop_url }"
+                        :class="{ 'has-error': errors.shop_url }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.shopUrl }}
                     </div>
                 </div>
             </form-group>
 
-            <form-group
-                title="Integration"
-                info="<p>The created integration must have access to following
+            <form-group title="Integration">
+                <template #info>
+                    The created integration must have access to following
                     <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>
                         permissions
                     </a>
-                </p>"
-            >
-                <div class="sm:col-span-6">
-                    <label
-                        for="clientId"
-                        class="block text-sm font-medium mb-1"
-                    > Client-ID </label>
+                </template>
+
+                <div>
+                    <label for="clientId">Client-ID</label>
+
                     <field
                         id="clientId"
                         type="text"
                         name="clientId"
                         class="field"
-                        :class="{ 'is-invalid': errors.clientId }"
+                        :class="{ 'has-error': errors.clientId }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.clientId }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="clientSecret"
-                        class="block text-sm font-medium mb-1"
-                    > Client-Secret </label>
+                <div>
+                    <label for="clientSecret">Client-Secret</label>
+
                     <field
                         id="clientSecret"
                         type="text"
                         name="clientSecret"
                         class="field"
-                        :class="{ 'is-invalid': errors.clientSecret }"
+                        :class="{ 'has-error': errors.clientSecret }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.clientSecret }}
                     </div>
                 </div>
             </form-group>
 
-            <div class="flex justify-end group">
+            <div class="form-submit">
                 <button
                     :disabled="isSubmitting"
                     type="submit"
                     class="btn btn-primary"
                 >
-                    <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                        <icon-fa6-solid:floppy-disk
-                            v-if="!isSubmitting"
-                            class="h-5 w-5"
-                            aria-hidden="true"
-                        />
-                        <icon-line-md:loading-twotone-loop
-                            v-else
-                            class="w-5 h-5"
-                        />
-                    </span>
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isSubmitting"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
                     Save
                 </button>
             </div>
@@ -139,10 +129,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
-
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';

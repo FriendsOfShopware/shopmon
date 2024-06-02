@@ -1,110 +1,76 @@
 <template>
-    <div>
-        <h4 class="mb-6 text-center text-3xl tracking-tight font-bold">
+    <div class="login-header">
+        <h2>
             Change Password
-        </h4>
-    </div>
-    <div
-        v-if="isLoading"
-        class="rounded-md bg-blue-50 p-4 border border-sky-200 dark:bg-gray-900 dark:border-sky-400"
-    >
-        <div class="flex">
-            <icon-fa6-solid:circle-info
-                class="h-5 w-5 text-sky-500"
-                aria-hidden="true"
-            />
-            <div class="ml-3 flex-1 md:flex md:justify-between ">
-                <p class="text-sky-900 dark:text-sky-600">
-                    Loading...
-                </p>
-            </div>
-        </div>
+        </h2>
     </div>
 
-    <div v-else>
+    <Alert type="info" v-if="isLoading">
+        Loading...
+    </Alert>
+
+    <template v-else>
         <vee-form
             v-if="tokenFound"
             v-slot="{ errors, isSubmitting }"
-            class="space-y-4"
+            class="login-form-container"
             :validation-schema="schema"
             @submit="onSubmit"
         >
             <password-field
                 name="password"
+                placeholder="Password"
                 :error="errors.password"
             />
 
             <button
-                class="w-full group btn btn-primary"
+                class="btn btn-primary btn-block"
                 :disabled="isSubmitting"
                 type="submit"
             >
-                <span class="relative -ml-7 mr-2 opacity-40 group-hover:opacity-60">
-                    <icon-fa6-solid:key
-                        v-if="!isSubmitting"
-                        class="w-5 h-5"
-                        aria-hidden="true"
-                    />
-                    <icon-line-md:loading-twotone-loop
-                        v-else
-                        class="w-5 h-5"
-                    />
-                </span>
+                <icon-fa6-solid:key
+                    v-if="isSubmitting"
+                    class="icon"
+                    aria-hidden="true"
+                />
+                <icon-line-md:loading-twotone-loop
+                    v-else
+                    class="icon"
+                />
                 Change Password
             </button>
 
-            <router-link
-                to="login"
-                class="inline-block mt-2 center text-center w-full"
-            >
-                Cancel
-            </router-link>
+            <div>
+                <router-link to="login">
+                    Cancel
+                </router-link>
+            </div>            
         </vee-form>
 
-        <div v-else>
-            <div
-                class="rounded-md bg-red-50 p-4 border border-red-200
-                dark:bg-red-900 dark:bg-opacity-30 dark:border-red-400"
-            >
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <icon-fa6-solid:circle-xmark
-                            class="h-5 w-5 text-red-600 dark:text-red-400"
-                            aria-hidden="true"
-                        />
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="font-medium text-red-900 dark:text-red-500">
-                            Invalid Token
-                        </h3>
-                        <div class="mt-1 text-red-800 dark:text-red-400">
-                            <p>It looks like your Token is expired.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="login-form-container login-resend-mail-container" v-else>
+            <Alert type="error">
+                <strong>Invalid Token</strong>
+                <p>It looks like your Token is expired.</p>
+            </Alert>
 
             <button
                 type="button"
-                class="mt-4 btn btn-primary w-full"
+                class="btn btn-primary btn-block"
                 @click="goToResend"
             >
-                <span class="relative -ml-7 mr-2 opacity-40 group-hover:opacity-60">
-                    <icon-fa6-solid:envelope
-                        class="h-5 w-5"
-                        aria-hidden="true"
-                    />
-                </span>
+                <icon-fa6-solid:envelope
+                    class="icon"
+                    aria-hidden="true"
+                />
                 Resend email
             </button>
         </div>
-    </div>
+    </template>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import PasswordField from '@/components/form/PasswordField.vue';
 
 import { Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
@@ -150,3 +116,9 @@ function goToResend() {
     router.push('/account/forgot-password');
 }
 </script>
+
+<style scoped>
+.login-resend-mail-container {
+    text-align: unset;
+}
+</style>

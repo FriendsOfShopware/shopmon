@@ -12,11 +12,12 @@
                 }
             }"
             type="button"
-            class="group btn"
+            class="btn"
         >
             Cancel
         </router-link>
     </header-container>
+
     <main-container v-if="shopStore.shop && authStore.user">
         <vee-form
             v-slot="{ errors, isSubmitting }"
@@ -24,15 +25,10 @@
             :initial-values="shopStore.shop"
             @submit="onSubmit"
         >
-            <form-group
-                title="Shop information"
-                sub-title=""
-            >
-                <div class="sm:col-span-6">
-                    <label
-                        for="Name"
-                        class="block text-sm font-medium mb-1"
-                    > Name </label>
+            <form-group title="Shop information">
+                <div>
+                    <label for="Name">Name</label>
+
                     <field
                         id="name"
                         type="text"
@@ -40,18 +36,17 @@
                         autocomplete="name"
                         class="field"
                         :value="shopStore.shop.name"
-                        :class="{ 'is-invalid': errors.name }"
+                        :class="{ 'has-error': errors.name }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.name }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="newOrgId"
-                        class="block text-sm font-medium mb-1"
-                    > Organization </label>
+                <div>
+                    <label for="newOrgId">Organization</label>
+
                     <field
                         id="newOrgId"
                         as="select"
@@ -67,16 +62,15 @@
                             {{ organization.name }}
                         </option>
                     </field>
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.newOrgId }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="shopUrl"
-                        class="block text-sm font-medium mb-1"
-                    > URL </label>
+                <div>
+                    <label for="shopUrl">URL</label>
+
                     <field
                         id="shopUrl"
                         type="text"
@@ -84,98 +78,87 @@
                         autocomplete="url"
                         class="field"
                         :value="shopStore.shop.url"
-                        :class="{ 'is-invalid': errors.shopUrl }"
+                        :class="{ 'has-error': errors.shopUrl }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.shopUrl }}
                     </div>
                 </div>
             </form-group>
 
-            <form-group
-                title="Integration"
-                info="<p>The created integration must have access to following
+            <form-group title="Integration">
+                <template #info>
+                    The created integration must have access to following
                     <a href='https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18'>
                         permissions
                     </a>
-                </p>"
-            >
-                <div class="sm:col-span-6">
-                    <label
-                        for="clientId"
-                        class="block text-sm font-medium mb-1"
-                    > Client-ID </label>
+                </template>
+
+                <div>
+                    <label for="clientId">Client-ID</label>
+
                     <field
                         id="clientId"
                         type="text"
                         name="clientId"
                         class="field"
-                        :class="{ 'is-invalid': errors.clientId }"
+                        :class="{ 'has-error': errors.clientId }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.clientId }}
                     </div>
                 </div>
 
-                <div class="sm:col-span-6">
-                    <label
-                        for="clientSecret"
-                        class="block text-sm font-medium mb-1"
-                    > Client-Secret
-                    </label>
+                <div>
+                    <label for="clientSecret">Client-Secret</label>
+
                     <field
                         id="clientSecret"
                         type="text"
                         name="clientSecret"
                         class="field"
-                        :class="{ 'is-invalid': errors.clientSecret }"
+                        :class="{ 'has-error': errors.clientSecret }"
                     />
-                    <div class="text-red-700">
+
+                    <div class="field-error-message">
                         {{ errors.clientSecret }}
                     </div>
                 </div>
             </form-group>
 
-            <div class="flex justify-end pb-12">
+            <div class="form-submit">
                 <button
                     :disabled="isSubmitting"
                     type="submit"
                     class="btn btn-primary"
                 >
-                    <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                        <icon-fa6-solid:floppy-disk
-                            v-if="!isSubmitting"
-                            class="h-5 w-5"
-                            aria-hidden="true"
-                        />
-                        <icon-line-md:loading-twotone-loop
-                            v-else
-                            class="w-5 h-5"
-                        />
-                    </span>
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isSubmitting"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
                     Save
                 </button>
             </div>
         </vee-form>
 
         <form-group :title="'Deleting shop ' + shopStore.shop.name">
-            <form
-                action="#"
-                method="POST"
-            >
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
-                <div class="mt-5">
-                    <button
-                        type="button"
-                        class="btn btn-danger group flex items-center"
-                        @click="showShopDeletionModal = true"
-                    >
-                        <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
-                        Delete shop
-                    </button>
-                </div>
-            </form>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    @click="showShopDeletionModal = true"
+                >
+                    <icon-fa6-solid:trash class="icon icon-delete" />
+                    Delete shop
+                </button>
         </form-group>
 
         <Modal
@@ -185,30 +168,34 @@
         >
             <template #icon>
                 <icon-fa6-solid:triangle-exclamation
-                    class="h-6 w-6 text-red-600 dark:text-red-400"
+                    class="icon icon-error"
                     aria-hidden="true"
                 />
             </template>
+
             <template #title>
                 Delete shop
             </template>
+
             <template #content>
                 Are you sure you want to delete your Shop? All of your data will
                 be permanently removed
                 from our servers forever. This action cannot be undone.
             </template>
+
             <template #footer>
                 <button
                     type="button"
-                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
+                    class="btn btn-danger"
                     @click="deleteShop"
                 >
                     Delete
                 </button>
+
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    class="btn"
                     @click="showShopDeletionModal = false"
                 >
                     Cancel
@@ -219,10 +206,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
-
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';

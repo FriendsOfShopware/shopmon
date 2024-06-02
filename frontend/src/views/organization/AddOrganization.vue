@@ -11,42 +11,37 @@
                 title="Organization Information"
                 sub-title=""
             >
-                <div class="sm:col-span-6">
-                    <label
-                        for="Name"
-                        class="block text-sm font-medium mb-1"
-                    > Name </label>
+                <div>
+                    <label for="Name">Name</label>
                     <field
                         id="name"
                         type="text"
                         name="name"
                         autocomplete="name"
                         class="field"
-                        :class="{ 'is-invalid': errors.name }"
+                        :class="{ 'has-error': errors.name }"
                     />
-                    <div class="text-red-700">
+                    <div class="field-error-message">
                         {{ errors.name }}
                     </div>
                 </div>
             </form-group>
 
-            <div class="flex justify-end group">
+            <div class="form-submit">
                 <button
                     :disabled="isSubmitting"
                     type="submit"
                     class="btn btn-primary"
                 >
-                    <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
-                        <icon-fa6-solid:floppy-disk
-                            v-if="!isSubmitting"
-                            class="h-5 w-5"
-                            aria-hidden="true"
-                        />
-                        <icon-line-md:loading-twotone-loop
-                            v-else
-                            class="w-5 h-5"
-                        />
-                    </span>
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isSubmitting"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
                     Save
                 </button>
             </div>
@@ -55,10 +50,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
-
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOrganizationStore } from '@/stores/organization.store';

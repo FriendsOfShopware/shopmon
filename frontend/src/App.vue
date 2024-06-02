@@ -1,14 +1,11 @@
 <template>
     <nav-bar v-if="authStore.user" />
-    <alert />
+    <Notification />
     <router-view />
 </template>
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-
-import NavBar from '@/components/layout/NavBar.vue';
-import Alert from '@/components/Alert.vue';
 
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from './stores/notification.store';

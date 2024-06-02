@@ -2,83 +2,64 @@
     <div v-if="user && !shopStore.isLoading">
         <header-container title="Dashboard" />
         <main-container>
-            <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+            <h2 class="section-title">
                 <icon-fa6-solid:shop />
                 My Shops's
             </h2>
-            <ul
-                role="list"
-                class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10"
-            >
-                <li
-                    v-for="shop in shopStore.shops"
-                    :key="shop.id"
-                    class="col-span-1 shadow-sm rounded-md bg-white dark:shadow-none dark:bg-neutral-800
-                     hover:bg-sky-50 dark:hover:bg-[#2a2b2f]"
-                >
-                    <router-link
+
+            <ul class="dashboard-grid-container">
+                <li v-for="shop in shopStore.shops" :key="shop.id" class="dashboard-grid-item">
+                    <router-link 
                         :to="{
                             name: 'account.shops.detail',
                             params: {
                                 organizationId: shop.organizationId,
                                 shopId: shop.id
                             }
-                        }"
-                        class="flex"
+                        }" class="item-link"
                     >
-                        <div
-                            class="flex-shrink-0 flex items-center justify-center w-16 rounded-l-md bg-gray-100
-                             bg-opacity-50 dark:bg-neutral-700 dark:bg-opacity-25"
-                        >
-                            <img
-                                v-if="shop.favicon"
-                                :src="shop.favicon"
-                                alt="Shop Logo"
-                                class="inline-block w-5 h-5 align-middle"
-                            >
+                        <div class="item-logo">
+                            <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img">
                         </div>
-                        <div class="flex-1 items-center justify-between px-4 py-2 truncate">
-                            <div class="text-gray-900 font-medium truncate dark:text-neutral-400">
+
+                        <div class="item-info">
+                            <div class="item-name">
                                 {{ shop.name }}
                             </div>
-                            <div class="text-gray-500">
+
+                            <div class="item-content">
                                 {{ shop.organizationName }}<br>
                                 {{ shop.shopwareVersion }}
+                            </div>
+
+                            <div class="item-state">
+                                <status-icon :status="shop.status" />
                             </div>
                         </div>
                     </router-link>
                 </li>
             </ul>
 
-            <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+            <h2 class="section-title">
                 <icon-fa6-solid:people-group />
                 My Organizations
             </h2>
-            <ul
-                role="list"
-                class="grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10"
-            >
-                <li
-                    v-for="organization in organizations"
-                    :key="organization.id"
-                    class="col-span-1 shadow-sm rounded-md bg-white dark:shadow-none dark:bg-neutral-800
-                     hover:bg-sky-50 dark:hover:bg-[#2a2b2f]"
-                >
+            <ul class="dashboard-grid-container">
+                <li v-for="organization in organizations" :key="organization.id" class="dashboard-grid-item item-item">
                     <router-link
                         :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
-                        class="flex"
+                        class="item-link"
                     >
-                        <div
-                            class="flex-shrink-0 flex items-center justify-center w-16 rounded-l-md bg-gray-100
-                        bg-opacity-50 dark:bg-neutral-700 dark:bg-opacity-25"
-                        >
-                            <icon-fa6-solid:people-group class="text-lg text-gray-900 dark:text-neutral-400" />
+                        <div class="item-logo">
+                            <icon-fa6-solid:people-group class="item-logo-icon" />
                         </div>
-                        <div class="flex-1 items-center justify-between px-4 py-2 truncate">
-                            <div class="text-gray-900 font-medium truncate dark:text-neutral-400">
+
+                        <div class="item-info">
+                            <div class="item-name">
                                 {{ organization.name }}
                             </div>
-                            <div class="text-gray-500">
+
+                            <div class="item-content">
                                 {{ organization.memberCount }} Members, {{ organization.shopCount }} Shops
                             </div>
                         </div>
@@ -87,14 +68,12 @@
             </ul>
 
             <template v-if="dashboardStore.changelogs.length > 0">
-                <h2 class="text-gray-500 text-lg font-medium pb-1 mb-4 border-b dark:border-neutral-800">
+                <h2 class="section-title">
                     <icon-fa6-solid:file-waveform />
                     Last Changes
                 </h2>
-                <div
-                    class="shadow rounded-md overflow-y-scroll md:overflow-y-hidden bg-white
-                 dark:bg-neutral-800 dark:shadow-none mb-10"
-                >
+                
+                <div class="panel panel-table">
                     <data-table
                         :columns="[
                             { key: 'shopName', name: 'Shop', sortable: true },
@@ -158,3 +137,106 @@ shopStore.loadShops();
 const dashboardStore = useDashboardStore();
 dashboardStore.loadChangelogs();
 </script>
+
+<style scoped>
+.section-title {
+    color: var(--section-title-color);
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--section-title-border-color);
+}
+
+.dashboard-grid {
+    &-container {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+
+        @media (min-width: 640px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (min-width: 1024px) {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    &-item {
+        position: relative;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border-radius: 0.375rem;
+        background-color: var(--item-background);
+
+        .dark & {
+            box-shadow: none;
+        }
+
+        &:hover {
+            background-color: var(--item-hover-background);
+        }
+
+        .item-state {
+            position: absolute;
+            right: 0.5rem;
+            bottom: 0.25rem;
+        }
+    }
+}
+
+.item {
+    &-link {
+        display: flex;
+        text-decoration: none;
+    }
+
+    &-logo {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 4rem;
+        border-top-left-radius: 0.375rem;
+        border-bottom-left-radius: 0.375rem;
+        background-color: var(--item-sub-background);
+
+        &-img {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        &-icon {
+            font-size: 1.25rem;
+            color: var(--item-icon-color);
+        }
+    }
+
+    &-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0.5rem 1rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &-name {
+        font-weight: 500;
+        color: var(--item-title-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &-content {
+        color: #6b7280;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+}
+</style>

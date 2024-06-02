@@ -6,11 +6,12 @@
         <router-link
             :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
             type="button"
-            class="group btn"
+            class="btn"
         >
             Cancel
         </router-link>
     </header-container>
+
     <main-container v-if="organization && authStore.user">
         <vee-form
             v-slot="{ errors, isSubmitting }"
@@ -18,68 +19,53 @@
             :initial-values="organization"
             @submit="onSaveOrganization"
         >
-            <form-group
-                title="Organization Information"
-                sub-title=""
-            >
-                <div class="sm:col-span-6">
-                    <label
-                        for="Name"
-                        class="block text-sm font-medium mb-1"
-                    > Name </label>
+            <form-group title="Organization Information">
+                <div>
+                    <label for="Name">Name</label>
                     <field
                         id="name"
                         type="text"
                         name="name"
                         autocomplete="name"
                         class="field"
-                        :class="{ 'is-invalid': errors.name }"
+                        :class="{ 'has-error': errors.name }"
                     />
-                    <div class="text-red-700">
+                    <div class="field-error-message">
                         {{ errors.name }}
                     </div>
                 </div>
             </form-group>
 
-            <div class="flex justify-end pb-12">
+            <div class="form-submit">
                 <button
                     type="submit"
                     class="btn btn-primary"
                 >
-                    <span class="-ml-1 mr-2 flex items-center opacity-25 group-hover:opacity-50 ">
                         <icon-fa6-solid:floppy-disk
                             v-if="!isSubmitting"
-                            class="h-5 w-5"
+                            class="icon"
                             aria-hidden="true"
                         />
                         <icon-line-md:loading-twotone-loop
                             v-else
-                            class="w-5 h-5"
+                            class="icon"
                         />
-                    </span>
                     Save
                 </button>
             </div>
         </vee-form>
 
         <form-group :title="'Deleting organization ' + organization.name">
-            <form
-                action="#"
-                method="POST"
-            >
-                <p>Once you delete your organization, you will lose all data associated with it. </p>
+            <p>Once you delete your organization, you will lose all data associated with it. </p>
 
-                <div class="mt-5">
-                    <button
-                        type="button"
-                        class="btn btn-danger group flex items-center"
-                        @click="showOrganizationDeletionModal = true"
-                    >
-                        <icon-fa6-solid:trash class="w-4 h-4 -ml-1 mr-2 opacity-25 group-hover:opacity-50" />
-                        Delete organization
-                    </button>
-                </div>
-            </form>
+            <button
+                type="button"
+                class="btn btn-danger"
+                @click="showOrganizationDeletionModal = true"
+            >
+                <icon-fa6-solid:trash class="icon" />
+                Delete organization
+            </button>
         </form-group>
 
         <Modal
@@ -88,29 +74,34 @@
         >
             <template #icon>
                 <icon-fa6-solid:triangle-exclamation
-                    class="h-6 w-6 text-red-600 dark:text-red-400"
+                    class="icon icon-error"
                     aria-hidden="true"
                 />
             </template>
+
             <template #title>
                 Delete organization
             </template>
+
             <template #content>
-                Are you sure you want to delete your organization?
-                All your data will be permanently deleted from our servers. This action cannot be undone.
+                Are you sure you want to delete your organization? All of your data will
+                be permanently removed
+                from our servers forever. This action cannot be undone.
             </template>
+
             <template #footer>
                 <button
                     type="button"
-                    class="btn btn-danger w-full sm:ml-3 sm:w-auto"
+                    class="btn btn-danger"
                     @click="deleteOrganization"
                 >
                     Delete
                 </button>
+
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn w-full mt-3 sm:w-auto sm:mt-0"
+                    class="btn"
                     @click="showOrganizationDeletionModal = false"
                 >
                     Cancel
@@ -122,10 +113,6 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-import FormGroup from '@/components/layout/FormGroup.vue';
 
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
