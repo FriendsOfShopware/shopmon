@@ -23,7 +23,7 @@
     "@trpc/server": "^10.45.2",
     "bcryptjs": "2.4.3",
     "drizzle-orm": "^0.31.2",
-    "hono": "~4.4.7",
+    "hono": "~4.5.8",
     "toucan-js": "3.4.0",
     "tsx": "^4.15.7",
     "version-compare": "3.11.0",
