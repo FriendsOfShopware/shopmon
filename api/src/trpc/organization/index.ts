@@ -63,7 +63,11 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Organizations.addMember(ctx.drizzle, input.orgId, input.email);
+            await Organizations.addMember(
+                ctx.drizzle,
+                input.orgId,
+                input.email,
+            );
         }),
     removeMember: publicProcedure
         .input(
@@ -76,6 +80,10 @@ export const organizationRouter = router({
         .use(organizationMiddleware)
         .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await Organizations.removeMember(ctx.drizzle, input.orgId, input.userId);
+            await Organizations.removeMember(
+                ctx.drizzle,
+                input.orgId,
+                input.userId,
+            );
         }),
 });

@@ -64,10 +64,7 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
         .delete(schema.shopPageSpeed)
         .where(eq(schema.shopPageSpeed.shopId, id))
         .execute();
-    await con
-      .delete(schema.shop)
-      .where(eq(schema.shop.id, id))
-      .execute();
+    await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
 }
 
 async function getUsersOfShop(con: Drizzle, shopId: number) {

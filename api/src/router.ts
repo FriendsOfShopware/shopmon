@@ -11,6 +11,8 @@ export type Bindings = {
     MAIL_DKIM_PRIVATE_KEY: string | undefined;
     MAIL_DKIM_DOMAIN: string;
     MAIL_DKIM_SELECTOR: string;
+    MAILGUN_DOMAIN: string;
+    MAILGUN_KEY: string;
 
     FRONTEND_URL: string;
     SENTRY_DSN: string;

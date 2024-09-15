@@ -60,10 +60,10 @@ interface ShopwareStoreExtension {
 
 const SECONDS = 1000;
 const MINUTES = 60 * SECONDS;
-const STATES: { [key: string]: number }  = {
-    'green': 1,
-    'yellow': 2,
-    'red': 3
+const STATES: { [key: string]: number } = {
+    green: 1,
+    yellow: 2,
+    red: 3,
 };
 
 export class ShopScrape implements DurableObject {
@@ -175,19 +175,25 @@ export class ShopScrape implements DurableObject {
         }
     }
 
-    async shouldNotify(users: User[], notificationKey: string): Promise<boolean> {
+    async shouldNotify(
+        users: User[],
+        notificationKey: string,
+    ): Promise<boolean> {
         const con = getConnection(this.env);
         const notificationResult = await con
             .select({
-                created_at: schema.userNotification.createdAt
+                created_at: schema.userNotification.createdAt,
             })
             .from(schema.userNotification)
             .where(
                 and(
-                    inArray(schema.userNotification.userId, users.map(user => user.id)),
+                    inArray(
+                        schema.userNotification.userId,
+                        users.map((user) => user.id),
+                    ),
                     eq(schema.userNotification.key, notificationKey),
-                    eq(schema.userNotification.read, false)
-                )
+                    eq(schema.userNotification.read, false),
+                ),
             )
             .orderBy(asc(schema.userNotification.createdAt))
             .all();
@@ -197,9 +203,10 @@ export class ShopScrape implements DurableObject {
         }
 
         const lastNotification = new Date(notificationResult[0].created_at);
-        const timeDifference = lastNotification.getTime() - new Date().getTime();
+        const timeDifference =
+            lastNotification.getTime() - new Date().getTime();
 
-        return timeDifference >= (24 * 60 * 60 * 1000);
+        return timeDifference >= 24 * 60 * 60 * 1000;
     }
 
     async updateShop(shop: SQLShop, con: Drizzle) {
@@ -592,20 +599,22 @@ export class ShopScrape implements DurableObject {
                         level: 'warning',
                         title: `Shop: ${shop.name} status changed`,
                         message: `Status changed from ${shop.status} to ${checkerResult.status}`,
-                        link: { name: 'account.shops.detail', params: { shopId: shop.id.toString(), organizationId: shop.organizationId.toString(), } }
-                    }
-                )
+                        link: {
+                            name: 'account.shops.detail',
+                            params: {
+                                shopId: shop.id.toString(),
+                                organizationId: shop.organizationId.toString(),
+                            },
+                        },
+                    },
+                );
 
-                await Shops.alert(
-                    con,
-                    this.env,
-                    {
-                        key: statusChangeKey,
-                        shopId: shop.id.toString(),
-                        subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
-                        message: `The Shop ${shop.name} has change its status from ${shop.status} to ${checkerResult.status}. Pleas visit Shopmon for details.`
-                    }
-                )
+                await Shops.alert(con, this.env, {
+                    key: statusChangeKey,
+                    shopId: shop.id.toString(),
+                    subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
+                    message: `The Shop ${shop.name} has change its status from ${shop.status} to ${checkerResult.status}. Pleas visit Shopmon for details.`,
+                });
             }
         }
 
@@ -655,15 +664,17 @@ export class ShopScrape implements DurableObject {
         }
 
         if (hasShopUpdate && shopUpdate.from && shopUpdate.to) {
-          await con
-              .update(schema.shop)
-              .set({ lastChangelog: {
-                  date: new Date(),
-                  from: shopUpdate.from,
-                  to: shopUpdate.to,
-              }})
-              .where(eq(schema.shop.id, shop.id))
-              .execute();
+            await con
+                .update(schema.shop)
+                .set({
+                    lastChangelog: {
+                        date: new Date(),
+                        from: shopUpdate.from,
+                        to: shopUpdate.to,
+                    },
+                })
+                .where(eq(schema.shop.id, shop.id))
+                .execute();
         }
     }
 }

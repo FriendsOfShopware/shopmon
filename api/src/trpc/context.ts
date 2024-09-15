@@ -10,7 +10,10 @@ export type context = {
     executionCtx: ExecutionContext;
 };
 
-export function createContext(bindings: Bindings, executionCtx: ExecutionContext) {
+export function createContext(
+    bindings: Bindings,
+    executionCtx: ExecutionContext,
+) {
     return async ({ req }: FetchCreateContextFnOptions) => {
         const auth = req.headers.get('authorization');
 
@@ -30,6 +33,11 @@ export function createContext(bindings: Bindings, executionCtx: ExecutionContext
             user = data.id;
         }
 
-        return { user, env: bindings, drizzle: getConnection(bindings), executionCtx };
+        return {
+            user,
+            env: bindings,
+            drizzle: getConnection(bindings),
+            executionCtx,
+        };
     };
 }

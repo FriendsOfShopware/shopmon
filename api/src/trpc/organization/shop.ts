@@ -74,7 +74,10 @@ export const shopRouter = router({
                     cacheInfo: schema.shopScrapeInfo.cacheInfo,
                     checks: schema.shopScrapeInfo.checks,
                     organizationId: schema.shop.organizationId,
-                    organizationName: sql<string>`${schema.organization.name}`.as('organization_name'),
+                    organizationName:
+                        sql<string>`${schema.organization.name}`.as(
+                            'organization_name',
+                        ),
                 })
                 .from(schema.shop)
                 .innerJoin(
@@ -93,11 +96,12 @@ export const shopRouter = router({
                 orderBy: [desc(schema.shopPageSpeed.createdAt)],
             });
 
-            const shopChangelogQuery =
-                ctx.drizzle.query.shopChangelog.findMany({
+            const shopChangelogQuery = ctx.drizzle.query.shopChangelog.findMany(
+                {
                     where: eq(schema.shopChangelog.shopId, input.shopId),
                     orderBy: [desc(schema.shopChangelog.date)],
-                });
+                },
+            );
 
             const [shop, pageSpeed, shopChangelog] = await Promise.all([
                 shopQuery,
@@ -139,7 +143,8 @@ export const shopRouter = router({
             } catch (e) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
-                    message: 'Cannot reach shop. Check your credentials and shop URL.',
+                    message:
+                        'Cannot reach shop. Check your credentials and shop URL.',
                 });
             }
 
@@ -242,16 +247,17 @@ export const shopRouter = router({
             }
 
             if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const organization = await ctx.drizzle.query.organization.findFirst({
-                    columns: {
-                        id: true,
-                        ownerId: true,
-                    },
-                    where: and(
-                        eq(schema.organization.id, input.newOrgId),
-                        eq(schema.organization.ownerId, ctx.user),
-                    ),
-                });
+                const organization =
+                    await ctx.drizzle.query.organization.findFirst({
+                        columns: {
+                            id: true,
+                            ownerId: true,
+                        },
+                        where: and(
+                            eq(schema.organization.id, input.newOrgId),
+                            eq(schema.organization.ownerId, ctx.user),
+                        ),
+                    });
 
                 if (organization === undefined) {
                     throw new TRPCError({
@@ -286,7 +292,8 @@ export const shopRouter = router({
                 } catch (e) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'Cannot reach shop. Check your credentials and shop URL.',
+                        message:
+                            'Cannot reach shop. Check your credentials and shop URL.',
                     });
                 }
 

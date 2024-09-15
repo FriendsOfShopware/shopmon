@@ -6,7 +6,7 @@ import {
     unique,
 } from 'drizzle-orm/sqlite-core';
 import { drizzle as drizzleD1, DrizzleD1Database } from 'drizzle-orm/d1';
-import {drizzle as drizzleLibSQL, LibSQLDatabase } from 'drizzle-orm/libsql';
+import { drizzle as drizzleLibSQL, LibSQLDatabase } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 import type { Bindings } from './router';
 import {
@@ -18,13 +18,13 @@ import {
     QueueInfo,
     ScheduledTask,
 } from './types';
-import type { RegistrationParsed } from '@passwordless-id/webauthn/src/types'
+import type { RegistrationParsed } from '@passwordless-id/webauthn/src/types';
 
 type LastChangelog = {
-  date: Date;
-  from: string;
-  to: string;
-}
+    date: Date;
+    from: string;
+    to: string;
+};
 
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
@@ -46,8 +46,8 @@ export const shop = sqliteTable('shop', {
         .notNull(),
     shopImage: text('shop_image'),
     lastChangelog: text('last_changelog', { mode: 'json' })
-      .default('{}')
-      .$type<LastChangelog>(),
+        .default('{}')
+        .$type<LastChangelog>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -111,23 +111,29 @@ export const user = sqliteTable('user', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const userNotification = sqliteTable('user_notification', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    userId: integer('user_id')
-        .notNull()
-        .references(() => user.id),
-    key: text('key').notNull(),
-    level: text('level').notNull(),
-    title: text('title').notNull(),
-    message: text('message').notNull(),
-    link: text('link', { mode: 'json' }).notNull().$type<NotificationLink>(),
-    read: integer('read', { mode: 'boolean' }).notNull().default(false),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-}, (table) => {
-    return {
-        keyUnique: unique().on(table.userId, table.key)
-    }
-});
+export const userNotification = sqliteTable(
+    'user_notification',
+    {
+        id: integer('id').primaryKey({ autoIncrement: true }),
+        userId: integer('user_id')
+            .notNull()
+            .references(() => user.id),
+        key: text('key').notNull(),
+        level: text('level').notNull(),
+        title: text('title').notNull(),
+        message: text('message').notNull(),
+        link: text('link', { mode: 'json' })
+            .notNull()
+            .$type<NotificationLink>(),
+        read: integer('read', { mode: 'boolean' }).notNull().default(false),
+        createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    },
+    (table) => {
+        return {
+            keyUnique: unique().on(table.userId, table.key),
+        };
+    },
+);
 
 export const userPasskeys = sqliteTable('user_passkeys', {
     id: text('id').primaryKey(),
@@ -135,7 +141,7 @@ export const userPasskeys = sqliteTable('user_passkeys', {
     userId: integer('userId')
         .notNull()
         .references(() => user.id),
-    key: text('key', {mode: 'json'}).notNull().$type<RegistrationParsed>(),
+    key: text('key', { mode: 'json' }).notNull().$type<RegistrationParsed>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -171,8 +177,14 @@ export const schema = {
 export type Drizzle = LibSQLDatabase<typeof schema>;
 
 export function getConnection(env: Bindings) {
-    if (typeof env.LIBSQL_URL === 'string' && typeof env.LIBSQL_AUTH_TOKEN === 'string') {
-        const client = createClient({ url: env.LIBSQL_URL, authToken: env.LIBSQL_AUTH_TOKEN });
+    if (
+        typeof env.LIBSQL_URL === 'string' &&
+        typeof env.LIBSQL_AUTH_TOKEN === 'string'
+    ) {
+        const client = createClient({
+            url: env.LIBSQL_URL,
+            authToken: env.LIBSQL_AUTH_TOKEN,
+        });
 
         return drizzleLibSQL(client, { schema });
     }
@@ -180,16 +192,18 @@ export function getConnection(env: Bindings) {
     return drizzleD1(env.shopmonDB, { schema });
 }
 
-type ResultSet = {lastInsertRowid: bigint|undefined} | {meta: { last_row_id: number }}
+type ResultSet =
+    | { lastInsertRowid: bigint | undefined }
+    | { meta: { last_row_id: number } };
 
 export function getLastInsertId(result: ResultSet): number {
-  if ('lastInsertRowid' in result) {
-    if (result.lastInsertRowid === undefined) {
-      throw new Error('lastInsertRowid is undefined');
+    if ('lastInsertRowid' in result) {
+        if (result.lastInsertRowid === undefined) {
+            throw new Error('lastInsertRowid is undefined');
+        }
+
+        return new Number(result.lastInsertRowid).valueOf();
     }
 
-    return new Number(result.lastInsertRowid).valueOf();
-  }
-
-  return result.meta.last_row_id;
+    return result.meta.last_row_id;
 }

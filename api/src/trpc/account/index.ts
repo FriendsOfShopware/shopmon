@@ -179,7 +179,10 @@ export const accountRouter = router({
                     shopwareVersion: schema.shop.shopwareVersion,
                     lastChangelog: schema.shop.lastChangelog,
                     organizationId: schema.shop.organizationId,
-                    organizationName: sql<string>`${schema.organization.name}`.as('organization_name'),
+                    organizationName:
+                        sql<string>`${schema.organization.name}`.as(
+                            'organization_name',
+                        ),
                 })
                 .from(schema.shop)
                 .innerJoin(
@@ -208,10 +211,8 @@ export const accountRouter = router({
                     shopName: schema.shop.name,
                     shopFavicon: schema.shop.favicon,
                     extensions: schema.shopChangelog.extensions,
-                    oldShopwareVersion:
-                        schema.shopChangelog.oldShopwareVersion,
-                    newShopwareVersion:
-                        schema.shopChangelog.newShopwareVersion,
+                    oldShopwareVersion: schema.shopChangelog.oldShopwareVersion,
+                    newShopwareVersion: schema.shopChangelog.newShopwareVersion,
                     date: schema.shopChangelog.date,
                 })
                 .from(schema.shop)

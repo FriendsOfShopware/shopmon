@@ -26,7 +26,7 @@ export const organizationMiddleware = experimental_standaloneMiddleware<{
         },
         where: and(
             eq(schema.userToOrganization.organizationId, input.orgId),
-            eq(schema.userToOrganization.userId, ctx.user as number)
+            eq(schema.userToOrganization.userId, ctx.user as number),
         ),
     });
 
@@ -50,7 +50,10 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
         .get();
 
     if (!result || result.ownerId !== ctx.user) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Your are not the owner of the organization' });
+        throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Your are not the owner of the organization',
+        });
     }
 
     return next();
