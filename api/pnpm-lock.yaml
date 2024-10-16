@@ -24,8 +24,8 @@ dependencies:
     specifier: ^0.31.2
     version: 0.31.2(@cloudflare/workers-types@4.20240620.0)(@libsql/client@0.6.2)
   hono:
-    specifier: ~4.5.8
-    version: 4.5.8
+    specifier: ~4.6.5
+    version: 4.6.5
   toucan-js:
     specifier: 3.4.0
     version: 3.4.0
@@ -1987,9 +1987,9 @@ packages:
     hasBin: true
     dev: true
 
-  /hono@4.5.8:
-    resolution: {integrity: sha512-pqpSlcdqGkpTTRpLYU1PnCz52gVr0zVR9H5GzMyJWuKQLLEBQxh96q45QizJ2PPX8NATtz2mu31/PKW/Jt+90Q==}
-    engines: {node: '>=16.0.0'}
+  /hono@4.6.5:
+    resolution: {integrity: sha512-qsmN3V5fgtwdKARGLgwwHvcdLKursMd+YOt69eGpl1dUCJb8mCd7hZfyZnBYjxCegBG7qkJRQRUy2oO25yHcyQ==}
+    engines: {node: '>=16.9.0'}
     dev: false
 
   /html-minifier@4.0.0:
