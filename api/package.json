@@ -18,24 +18,24 @@
   "license": "MIT",
   "dependencies": {
     "@friendsofshopware/app-server-sdk": "0.0.47",
-    "@libsql/client": "^0.6.2",
-    "@passwordless-id/webauthn": "^1.6.1",
+    "@libsql/client": "^0.14.0",
+    "@passwordless-id/webauthn": "^2.1.2",
     "@trpc/server": "^10.45.2",
     "bcryptjs": "2.4.3",
-    "drizzle-orm": "^0.31.2",
-    "hono": "~4.6.5",
-    "toucan-js": "3.4.0",
-    "tsx": "^4.15.7",
+    "drizzle-orm": "^0.37.0",
+    "hono": "~4.6.13",
+    "toucan-js": "4.0.0",
+    "tsx": "^4.19.2",
     "version-compare": "3.11.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.2",
-    "@cloudflare/workers-types": "4.20240620.0",
+    "@biomejs/biome": "^1.9.4",
+    "@cloudflare/workers-types": "4.20241205.0",
     "@types/bcryptjs": "2.4.6",
-    "drizzle-kit": "^0.22.7",
+    "drizzle-kit": "^0.29.1",
     "mjml": "^4.15.3",
-    "typescript": "5.5.2",
-    "wrangler": "^3.61.0"
+    "typescript": "5.7.2",
+    "wrangler": "^3.93.0"
   }
 }
