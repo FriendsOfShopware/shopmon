@@ -18,7 +18,7 @@ export const useAuthStore = defineStore('auth', {
     }),
     getters: {
         isAuthenticated(): boolean {
-            return this.user !== null && this.access_token !== null && this.refresh_token !== null;
+            return this.user !== null && this.access_token !== null;
         },
     },
     actions: {
@@ -60,11 +60,12 @@ export const useAuthStore = defineStore('auth', {
 
         async loginWithPasskey() {
             const challenge = await trpcClient.auth.passkey.challenge.mutate();
-            const authentication = await client.authenticate([], challenge, {
-                authenticatorType: 'auto',
+
+            const authentication = await client.authenticate({
+                challenge,
                 userVerification: 'required',
                 timeout: 60000,
-            });
+            })
 
             const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
 
