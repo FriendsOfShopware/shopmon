@@ -103,7 +103,6 @@
                 @click="createPasskey"
             >
                 <icon-material-symbols:passkey
-                    v-if="!isAuthenticated"
                     class="icon icon-passkey"
                     aria-hidden="true"
                 />
@@ -222,14 +221,15 @@ async function deleteUser() {
 async function createPasskey() {
     const challenge = await trpcClient.auth.passkey.challenge.mutate();
 
-    const registration = await client.register(authStore.user?.email!, challenge, {
-        authenticatorType: 'auto',
+    const registration = await client.register({
+        challenge,
+        user: authStore.user?.email!,
         userVerification: 'required',
         timeout: 60000,
         attestation: false,
     });
 
-    await trpcClient.auth.passkey.registerDevice.mutate(registration);
+    await trpcClient.auth.passkey.registerDevice.mutate(registration as any);
     await authStore.loadPasskeys();
 }
 

@@ -29,25 +29,38 @@ export const passkeyRouter = router({
         .use(loggedInUserMiddleware)
         .input(
             z.object({
-                id: z.string(),
-                rawId: z.string(),
-                type: z.string(),
+                // Credential ID fields
+                id: z.string(), // Base64URLString
+                rawId: z.string(), // Base64URLString
+                
+                // Response data
                 response: z.object({
-                    attestationObject: z.string(),
-                    authenticatorData: z.string(),
-                    clientDataJSON: z.string(),
-                    transports: z.array(z.string()),
-                    publicKey: z.string(),
-                    publicKeyAlgorithm: z.number(),
+                  attestationObject: z.string(), // Base64URLString
+                  authenticatorData: z.string(), // Base64URLString
+                  clientDataJSON: z.string(), // Base64URLString
+                  transports: z.array(
+                    z.enum(['ble', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])
+                  ),
+                  publicKey: z.string(), // Base64URLString
+                  publicKeyAlgorithm: z.number(), // COSEAlgorithmIdentifier
                 }),
-                authenticatorAttachment: z.string().optional(),
-                clientExtensionResults: z.record(z.any()),
+                
+                // Optional authenticator attachment
+                authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+                
+                // Client extension results
+                clientExtensionResults: z.record(z.unknown()),
+                
+                // Credential type
+                type: z.literal('public-key'),
+                
+                // User information
                 user: z.object({
-                    id: z.string(),
-                    name: z.string(),
-                    displayName: z.string(),
+                  id: z.string().optional(),
+                  name: z.string(),
+                  displayName: z.string().optional(),
                 }),
-            })
+            }),
         )
         .mutation(async ({ input, ctx }) => {
             const expected = {
