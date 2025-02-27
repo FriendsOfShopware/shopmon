@@ -1,30 +1,30 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
-interface DarkModeState {
-    darkMode: boolean;
-}
+export const useDarkModeStore = defineStore('darkMode', () => {
+    const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-export const useDarkModeStore = defineStore('darkMode', {
-    state: (): DarkModeState => ({
-        darkMode: window.matchMedia('(prefers-color-scheme: dark)').matches,
-    }),
+    function setDarkMode(isDarkMode: boolean) {
+        darkMode.value = isDarkMode;
+        updateDarkModeClass();
+    }
 
-    actions: {
-        setDarkMode(darkMode: boolean) {
-            this.darkMode = darkMode;
-            this.updateDarkModeClass();
-        },
+    function toggleDarkMode(): void {
+        setDarkMode(!darkMode.value);
+    }
 
-        toggleDarkMode(): void {
-            this.setDarkMode(!this.darkMode);
-        },
+    function updateDarkModeClass(): void {
+        if (darkMode.value) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }
 
-        updateDarkModeClass(): void {
-            if (this.darkMode) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        },
-    },
+    return {
+        darkMode,
+        setDarkMode,
+        toggleDarkMode,
+        updateDarkModeClass
+    };
 });
