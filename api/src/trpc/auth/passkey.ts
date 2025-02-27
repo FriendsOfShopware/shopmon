@@ -7,6 +7,7 @@ import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { randomString } from '../../util';
 import { ACCESS_TOKEN_TTL, Token } from '.';
+import type { RegistrationJSON, AuthenticationResponseJSON } from '@passwordless-id/webauthn/dist/esm/types';
 
 export const passkeyRouter = router({
     challenge: publicProcedure.mutation(async ({ ctx }) => {
@@ -28,18 +29,25 @@ export const passkeyRouter = router({
         .use(loggedInUserMiddleware)
         .input(
             z.object({
-                username: z.string().email(),
-                credential: z.object({
-                    id: z.string(),
+                id: z.string(),
+                rawId: z.string(),
+                type: z.string(),
+                response: z.object({
+                    attestationObject: z.string(),
+                    authenticatorData: z.string(),
+                    clientDataJSON: z.string(),
+                    transports: z.array(z.string()),
                     publicKey: z.string(),
-                    algorithm: z.union([
-                        z.literal('ES256'),
-                        z.literal('RS256'),
-                    ]),
+                    publicKeyAlgorithm: z.number(),
                 }),
-                authenticatorData: z.string(),
-                clientData: z.string(),
-            }),
+                authenticatorAttachment: z.string().optional(),
+                clientExtensionResults: z.record(z.any()),
+                user: z.object({
+                    id: z.string(),
+                    name: z.string(),
+                    displayName: z.string(),
+                }),
+            })
         )
         .mutation(async ({ input, ctx }) => {
             const expected = {
@@ -62,14 +70,14 @@ export const passkeyRouter = router({
             };
 
             const registrationParsed = await server.verifyRegistration(
-                input,
+                input as RegistrationJSON,
                 expected,
             );
 
             await ctx.drizzle
                 .insert(schema.userPasskeys)
                 .values({
-                    id: input.credential.id,
+                    id: input.id,
                     name: registrationParsed.authenticator.name,
                     userId: ctx.user,
                     key: registrationParsed,
@@ -111,22 +119,28 @@ export const passkeyRouter = router({
     authenticateDevice: publicProcedure
         .input(
             z.object({
-                authenticatorData: z.string(),
-                clientData: z.string(),
-                signature: z.string(),
-                credentialId: z.string(),
-            }),
+                id: z.string(),
+                rawId: z.string(),
+                type: z.string(),
+                response: z.object({
+                    clientDataJSON: z.string(),
+                    authenticatorData: z.string(),
+                    signature: z.string(),
+                    userHandle: z.string().optional(),
+                }),
+                authenticatorAttachment: z.string().optional(),
+                clientExtensionResults: z.record(z.any()),
+            })
         )
         .mutation(async ({ input, ctx }) => {
+            console.log(input);
             const credential = await ctx.drizzle.query.userPasskeys.findFirst({
                 columns: {
                     key: true,
                     userId: true,
                 },
-                where: eq(schema.userPasskeys.id, input.credentialId),
+                where: eq(schema.userPasskeys.id, input.id),
             });
-
-            console.log(credential?.key.credential.id);
 
             if (credential === undefined) {
                 throw new TRPCError({
@@ -159,7 +173,7 @@ export const passkeyRouter = router({
             };
 
             await server.verifyAuthentication(
-                input,
+                input as AuthenticationResponseJSON,
                 credential.key.credential,
                 expected,
             );
