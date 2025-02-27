@@ -133,7 +133,6 @@ export const passkeyRouter = router({
             })
         )
         .mutation(async ({ input, ctx }) => {
-            console.log(input);
             const credential = await ctx.drizzle.query.userPasskeys.findFirst({
                 columns: {
                     key: true,
