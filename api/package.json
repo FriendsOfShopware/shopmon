@@ -24,7 +24,7 @@
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.40.0",
     "hono": "~4.7.2",
-    "toucan-js": "4.1.0",
+    "toucan-js": "4.1.1",
     "tsx": "^4.19.3",
     "version-compare": "3.11.0",
     "zod": "^3.24.2"
@@ -35,7 +35,7 @@
     "@types/bcryptjs": "2.4.6",
     "drizzle-kit": "^0.30.5",
     "mjml": "^4.15.3",
-    "typescript": "5.7.3",
+    "typescript": "5.8.2",
     "wrangler": "^3.111.0"
   },
   "pnpm": {
