@@ -1,47 +1,60 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
-const authStore = useAuthStore();
+export const useOrganizationStore = defineStore('organization', () => {
+    const isLoading = ref(false);
+    const isRefreshing = ref(false);
+    const members = ref<RouterOutput['organization']['listMembers']>([]);
 
-export const useOrganizationStore = defineStore('organization', {
-    state: (): { isLoading: boolean, isRefreshing: boolean, members: RouterOutput['organization']['listMembers'] } => ({
-        isLoading: false,
-        isRefreshing: false,
-        members: [],
-    }),
-    actions: {
-        async loadMembers(orgId: number) {
-            this.isLoading = true;
-            this.members = await trpcClient.organization.listMembers.query({ orgId });
-            this.isLoading = false;
-        },
+    async function loadMembers(orgId: number) {
+        isLoading.value = true;
+        members.value = await trpcClient.organization.listMembers.query({ orgId });
+        isLoading.value = false;
+    }
 
-        async delete(orgId: number) {
-            await trpcClient.organization.delete.mutate({ orgId });
-            await authStore.refreshUser();
-        },
+    async function deleteOrganization(orgId: number) {
+        await trpcClient.organization.delete.mutate({ orgId });
+        const authStore = useAuthStore();
+        await authStore.refreshUser();
+    }
 
-        async addMember(orgId: number, email: string) {
-            await trpcClient.organization.addMember.mutate({ orgId, email });
-            await authStore.refreshUser();
-            await this.loadMembers(orgId);
-        },
+    async function addMember(orgId: number, email: string) {
+        await trpcClient.organization.addMember.mutate({ orgId, email });
+        const authStore = useAuthStore();
+        await authStore.refreshUser();
+        await loadMembers(orgId);
+    }
 
-        async removeMember(orgId: number, userId: number) {
-            await trpcClient.organization.removeMember.mutate({ orgId, userId });
-            await authStore.refreshUser();
-            await this.loadMembers(orgId);
-        },
+    async function removeMember(orgId: number, userId: number) {
+        await trpcClient.organization.removeMember.mutate({ orgId, userId });
+        const authStore = useAuthStore();
+        await authStore.refreshUser();
+        await loadMembers(orgId);
+    }
 
-        async createOrganization(name: string) {
-            await trpcClient.organization.create.mutate(name);
-            await authStore.refreshUser();
-        },
+    async function createOrganization(name: string) {
+        await trpcClient.organization.create.mutate(name);
+        const authStore = useAuthStore();
+        await authStore.refreshUser();
+    }
 
-        async updateOrganization(orgId: number, name: string) {
-            await trpcClient.organization.update.mutate({ orgId, name });
-            await authStore.refreshUser();
-        },
-    },
+    async function updateOrganization(orgId: number, name: string) {
+        await trpcClient.organization.update.mutate({ orgId, name });
+        const authStore = useAuthStore();
+        await authStore.refreshUser();
+    }
+
+    return {
+        isLoading,
+        isRefreshing,
+        members,
+        loadMembers,
+        deleteOrganization,
+        addMember,
+        removeMember,
+        createOrganization,
+        updateOrganization
+    };
 });
