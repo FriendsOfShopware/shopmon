@@ -23,7 +23,7 @@
     "@trpc/server": "^10.45.2",
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.40.0",
-    "hono": "~4.7.2",
+    "hono": "~4.7.4",
     "toucan-js": "4.1.1",
     "tsx": "^4.19.3",
     "version-compare": "3.11.0",
@@ -31,12 +31,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "4.20250224.0",
+    "@cloudflare/workers-types": "4.20250303.0",
     "@types/bcryptjs": "2.4.6",
     "drizzle-kit": "^0.30.5",
     "mjml": "^4.15.3",
     "typescript": "5.8.2",
-    "wrangler": "^3.111.0"
+    "wrangler": "^3.114.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
