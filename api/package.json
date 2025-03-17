@@ -19,7 +19,7 @@
   "dependencies": {
     "@friendsofshopware/app-server-sdk": "0.0.47",
     "@libsql/client": "^0.14.0",
-    "@passwordless-id/webauthn": "^2.2.0",
+    "@passwordless-id/webauthn": "^2.3.0",
     "@trpc/server": "^10.45.2",
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.40.0",
@@ -31,12 +31,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "4.20250303.0",
-    "@types/bcryptjs": "2.4.6",
+    "@cloudflare/workers-types": "4.20250313.0",
+    "@types/bcryptjs": "3.0.0",
     "drizzle-kit": "^0.30.5",
     "mjml": "^4.15.3",
     "typescript": "5.8.2",
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
