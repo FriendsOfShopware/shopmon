@@ -87,11 +87,11 @@ export const useShopStore = defineStore('shop', {
         setShopsInitials(shops: RouterOutput['account']['currentUserShops']) {
             return shops?.map(shop => ({
                 ...shop,
-                initials: this.getShopInitias(shop.name),
+                initials: this.getShopInitials(shop.name),
             }));
         },
 
-        getShopInitias(name: string) {
+        getShopInitials(name: string) {
             const initials = name.split(/\s/).slice(0, 2).reduce((response, word) => response += word.slice(0, 1), '');
 
             if (initials && initials.length > 1) {
