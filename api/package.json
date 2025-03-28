@@ -17,9 +17,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@friendsofshopware/app-server-sdk": "0.0.47",
     "@libsql/client": "^0.14.0",
     "@passwordless-id/webauthn": "^2.2.0",
+    "@shopware-ag/app-server-sdk": "^1.1.16",
     "@trpc/server": "^10.45.2",
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.40.0",

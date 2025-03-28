@@ -15,7 +15,7 @@ import {
     HttpClient,
     HttpClientResponse,
     SimpleShop,
-} from '@friendsofshopware/app-server-sdk';
+} from '@shopware-ag/app-server-sdk';
 
 export const shopRouter = router({
     list: publicProcedure
