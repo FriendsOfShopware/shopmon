@@ -1,4 +1,4 @@
-import { HttpClient } from '@friendsofshopware/app-server-sdk';
+import { HttpClient } from '@shopware-ag/app-server-sdk';
 import env from './checks/env';
 import frosh_tools from './checks/frosh_tools';
 import security from './checks/security';

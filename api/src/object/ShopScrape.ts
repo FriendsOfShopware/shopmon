@@ -4,7 +4,7 @@ import {
     ApiClientRequestFailed,
     ApiClientAuthenticationFailed,
     HttpClientResponse,
-} from '@friendsofshopware/app-server-sdk';
+} from '@shopware-ag/app-server-sdk';
 import { Drizzle, getConnection, schema } from '../db';
 import versionCompare from 'version-compare';
 import { CheckerInput, check } from './status/registery';
