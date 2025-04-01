@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 interface Alert {
     title: string,
@@ -6,36 +7,41 @@ interface Alert {
     type: 'success' | 'info' | 'error' | 'warning';
 }
 
-export const useAlertStore = defineStore({
-    id: 'alert',
-    state: () => ({
-        alert: null as Alert | null,
-    }),
-    actions: {
-        success(message: string) {
-            this.alert = { title: 'Action success', message, type: 'success' };
-            setTimeout(() => {
-                this.clear();
-            }, 5000);
-        },
+export const useAlertStore = defineStore('alert', () => {
+    const alert = ref<Alert | null>(null);
 
-        info(message: string) {
-            this.alert = { title: 'Information', message, type: 'info' };
-            setTimeout(() => {
-                this.clear();
-            }, 5000);
-        },
+    function success(message: string) {
+        alert.value = { title: 'Action success', message, type: 'success' };
+        setTimeout(() => {
+            clear();
+        }, 5000);
+    }
 
-        error(message: string) {
-            this.alert = { title: 'Something went wrong', message, type: 'error' };
-        },
+    function info(message: string) {
+        alert.value = { title: 'Information', message, type: 'info' };
+        setTimeout(() => {
+            clear();
+        }, 5000);
+    }
 
-        warning(message: string) {
-            this.alert = { title: 'Additional information', message, type: 'warning' };
-        },
+    function error(message: string) {
+        alert.value = { title: 'Something went wrong', message, type: 'error' };
+    }
 
-        clear() {
-            this.alert = null;
-        },
-    },
+    function warning(message: string) {
+        alert.value = { title: 'Additional information', message, type: 'warning' };
+    }
+
+    function clear() {
+        alert.value = null;
+    }
+
+    return {
+        alert,
+        success,
+        info,
+        error,
+        warning,
+        clear
+    };
 });

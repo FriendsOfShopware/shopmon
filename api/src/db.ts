@@ -18,7 +18,7 @@ import {
     QueueInfo,
     ScheduledTask,
 } from './types';
-import type { RegistrationParsed } from '@passwordless-id/webauthn/src/types';
+import type { RegistrationJSON } from '@passwordless-id/webauthn/dist/esm/types';
 
 type LastChangelog = {
     date: Date;
@@ -141,7 +141,7 @@ export const userPasskeys = sqliteTable('user_passkeys', {
     userId: integer('userId')
         .notNull()
         .references(() => user.id),
-    key: text('key', { mode: 'json' }).notNull().$type<RegistrationParsed>(),
+    key: text('key', { mode: 'json' }).notNull().$type<RegistrationJSON>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
