@@ -97,6 +97,22 @@ export const useAuthStore = defineStore('auth', () => {
         await loadPasskeys();
     }
 
+    async function confirmMail(token: string) {
+        await trpcClient.auth.confirmVerification.mutate(token);
+    }
+
+    async function resetPassword(email: string) {
+        await trpcClient.auth.passwordResetRequest.mutate(email);
+    }
+
+    async function resetAvailable(token: string) {
+        return await trpcClient.auth.passwordResetAvailable.mutate(token);
+    }
+
+    async function confirmResetPassword(token: string, password: string) {
+        return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
+    }
+
     return {
         user,
         returnUrl,
@@ -109,6 +125,10 @@ export const useAuthStore = defineStore('auth', () => {
         refreshUser,
         loadPasskeys,
         registerPasskey,
-        deletePasskey
+        deletePasskey,
+        resetPassword,
+        resetAvailable,
+        confirmResetPassword,
+        confirmMail
     };
 });
