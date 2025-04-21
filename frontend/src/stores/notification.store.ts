@@ -63,7 +63,7 @@ export const useNotificationStore = defineStore('notification', () => {
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}`;
-        websocket.value = new WebSocket(`${wsUrl}/ws?token=${token}`);
+        websocket.value = new WebSocket(`${wsUrl}/api/ws?token=${token}`);
 
         websocket.value.onmessage = async (event) => {
             const message = JSON.parse(event.data) as WebsocketMessage;
