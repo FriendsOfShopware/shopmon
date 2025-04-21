@@ -231,13 +231,25 @@ export class ShopScrape implements DurableObject {
             let error = e;
 
             if (e instanceof ApiClientRequestFailed) {
+                let body = JSON.stringify(e.response.body);
+
+                if (body.length > 50) {
+                    body = body.substring(0, 50) + '...';
+                }
+
                 error = `Request failed with status code: ${
                     e.response.statusCode
-                }: Body: ${JSON.stringify(e.response.body)}`;
+                }: Body: ${body}`;
             } else if (e instanceof ApiClientAuthenticationFailed) {
+                let body = JSON.stringify(e.response.body);
+
+                if (body.length > 50) {
+                    body = body.substring(0, 50) + '...';
+                }
+
                 error = `Authentication failed with status code: ${
                     e.response.statusCode
-                }: Body: ${JSON.stringify(e.response.body)}`;
+                }: Body: ${body}`;
             }
 
             await Shops.notify(

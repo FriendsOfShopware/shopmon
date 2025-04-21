@@ -1,22 +1,22 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
-export const useExtensionStore = defineStore('extension', {
-    state: (): {
-        isLoading: boolean,
-        isRefreshing: boolean,
-        extensions: RouterOutput['account']['currentUserApps']
-    } => ({
-        isLoading: false,
-        isRefreshing: false,
-        extensions: [],
-    }),
-    actions: {
+export const useExtensionStore = defineStore('extension', () => {
+    const isLoading = ref(false);
+    const isRefreshing = ref(false);
+    const extensions = ref<RouterOutput['account']['currentUserApps']>([]);
 
-        async loadExtensions() {
-            this.isLoading = true;
-            this.extensions = await trpcClient.account.currentUserApps.query();
-            this.isLoading = false;
-        },
-    },
+    async function loadExtensions() {
+        isLoading.value = true;
+        extensions.value = await trpcClient.account.currentUserApps.query();
+        isLoading.value = false;
+    }
+
+    return {
+        isLoading,
+        isRefreshing,
+        extensions,
+        loadExtensions
+    };
 });

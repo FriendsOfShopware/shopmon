@@ -1,134 +1,114 @@
 import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
 import { router } from '@/router';
 import { useNotificationStore } from './notification.store';
 import { trpcClient, RouterOutput } from '@/helpers/trpc';
 import { client } from '@passwordless-id/webauthn';
 
-export const useAuthStore = defineStore('auth', {
-    state: (): {
-        user: RouterOutput['account']['currentUser'] | null,
-        returnUrl: string | null,
-        access_token: string | null,
-        passkeys: RouterOutput['auth']['passkey']['listDevices'] | null,
-    } => ({
-        user: JSON.parse(localStorage.getItem('user') as string),
-        returnUrl: null,
-        access_token: localStorage.getItem('access_token'),
-        passkeys: null,
-    }),
-    getters: {
-        isAuthenticated(): boolean {
-            return this.user !== null && this.access_token !== null;
-        },
-    },
-    actions: {
-        async refreshUser() {
-            if (!this.user) {
-                return;
-            }
+export const useAuthStore = defineStore('auth', () => {
+    const user = ref<RouterOutput['account']['currentUser'] | null>(JSON.parse(localStorage.getItem('user') as string));
+    const returnUrl = ref<string | null>(null);
+    const access_token = ref<string | null>(localStorage.getItem('access_token'));
+    const passkeys = ref<RouterOutput['auth']['passkey']['listDevices'] | null>(null);
 
-            this.user = await trpcClient.account.currentUser.query();
+    const isAuthenticated = computed(() => {
+        return user.value !== null && access_token.value !== null;
+    });
 
-            localStorage.setItem('user', JSON.stringify(this.user));
-        },
+    async function login(email: string, password: string) {
+        const token = await trpcClient.auth.loginWithPassword.mutate({
+            email,
+            password,
+        });
 
-        async loadPasskeys() {
-            this.passkeys = await trpcClient.auth.passkey.listDevices.query();
+        localStorage.setItem('access_token', token);
+        access_token.value = token;
 
-            return this.passkeys;
-        },
+        const userData = await trpcClient.account.currentUser.query();
+        user.value = userData;
+        localStorage.setItem('user', JSON.stringify(userData));
 
-        async login(email: string, password: string) {
-            const token = await trpcClient.auth.loginWithPassword.mutate({
-                email,
-                password,
-            });
+        const notificationStore = useNotificationStore();
+        notificationStore.connect(token);
+        await notificationStore.loadNotifications();
+    }
 
-            localStorage.setItem('access_token', token);
+    async function loginWithPasskey() {
+        const challenge = await trpcClient.auth.passkey.challenge.mutate();
 
-            const user = await trpcClient.account.currentUser.query();
+        const authentication = await client.authenticate({
+            challenge,
+            userVerification: 'required',
+            timeout: 60000,
+        });
 
-            // update pinia state
-            this.user = user;
+        const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
 
-            // store user details and jwt in local storage to keep user logged in between page refreshes
-            localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('access_token', token);
+        access_token.value = token;
 
-            useNotificationStore().connect(token);
-            await useNotificationStore().loadNotifications();
-        },
+        const userData = await trpcClient.account.currentUser.query();
+        user.value = userData;
+        localStorage.setItem('user', JSON.stringify(userData));
 
-        async loginWithPasskey() {
-            const challenge = await trpcClient.auth.passkey.challenge.mutate();
+        const notificationStore = useNotificationStore();
+        notificationStore.connect(token);
+        await notificationStore.loadNotifications();
+    }
 
-            const authentication = await client.authenticate({
-                challenge,
-                userVerification: 'required',
-                timeout: 60000,
-            })
+    async function logout() {
+        user.value = null;
+        access_token.value = null;
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+        router.push('/account/login');
+    }
 
-            const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
+    async function refreshUser() {
+        try {
+            const userData = await trpcClient.account.currentUser.query();
+            user.value = userData;
+            localStorage.setItem('user', JSON.stringify(userData));
+        } catch (error) {
+            logout();
+        }
+    }
 
-            localStorage.setItem('access_token', token);
-            const user = await trpcClient.account.currentUser.query();
+    async function loadPasskeys() {
+        passkeys.value = await trpcClient.auth.passkey.listDevices.query();
+    }
 
-            // update pinia state
-            this.user = user;
+    async function registerPasskey(name: string) {
+        const challenge = await trpcClient.auth.passkey.registrationChallenge.mutate();
 
-            // store user details and jwt in local storage to keep user logged in between page refreshes
-            localStorage.setItem('user', JSON.stringify(user));
+        const registration = await client.register(name, challenge, {
+            authenticatorType: 'auto',
+            userVerification: 'required',
+            timeout: 60000,
+            debug: false,
+        });
 
-            useNotificationStore().connect(token);
-            await useNotificationStore().loadNotifications();
-        },
+        await trpcClient.auth.passkey.registerDevice.mutate(registration);
+        await loadPasskeys();
+    }
 
-        async register(user: { email: string, password: string, displayName: string }) {
-            trpcClient.auth.register.mutate(user);
-        },
+    async function deletePasskey(credentialId: string) {
+        await trpcClient.auth.passkey.deleteDevice.mutate({ credentialId });
+        await loadPasskeys();
+    }
 
-        async confirmMail(token: string) {
-            await trpcClient.auth.confirmVerification.mutate(token);
-        },
-
-        async resetPassword(email: string) {
-            await trpcClient.auth.passwordResetRequest.mutate(email);
-        },
-
-        async resetAvailable(token: string) {
-            return await trpcClient.auth.passwordResetAvailable.mutate(token);
-        },
-
-        async confirmResetPassword(token: string, password: string) {
-            return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
-        },
-
-        async updateProfile(info: { displayName: string, email: string, currentPassword: string, newPassword: string }) {
-            await trpcClient.account.updateCurrentUser.mutate(info);
-
-            if (info.newPassword && info.email) {
-                await this.login(info.email, info.newPassword);
-            }
-
-            await this.refreshUser();
-        },
-
-        async logout() {
-            // If session expired, it's fine that trpc fails
-            try {
-                await trpcClient.auth.logout.mutate();
-            } catch (e) { }
-
-            this.user = null;
-            this.access_token = null;
-            localStorage.removeItem('user');
-            localStorage.removeItem('access_token');
-            router.push('/account/login');
-        },
-
-        async delete() {
-            useNotificationStore().disconnect();
-            await trpcClient.account.deleteCurrentUser.mutate();
-            this.logout();
-        },
-    },
+    return {
+        user,
+        returnUrl,
+        access_token,
+        passkeys,
+        isAuthenticated,
+        login,
+        loginWithPasskey,
+        logout,
+        refreshUser,
+        loadPasskeys,
+        registerPasskey,
+        deletePasskey
+    };
 });

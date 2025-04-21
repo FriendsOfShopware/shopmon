@@ -1,104 +1,97 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import { trpcClient, RouterOutput, RouterInput } from '@/helpers/trpc';
 
-export const useShopStore = defineStore('shop', {
-    state: (): {
-        shops: RouterOutput['account']['currentUserShops'],
-        isLoading: boolean,
-        isRefreshing: boolean,
-        isCacheClearing: boolean,
-        isReSchedulingTask: boolean,
-        shop: RouterOutput['organization']['shop']['get'] | null
-    } => ({
-        isLoading: false,
-        isRefreshing: false,
-        isCacheClearing: false,
-        isReSchedulingTask: false,
-        shops: [],
-        shop: null,
-    }),
-    actions: {
-        async createShop(payload: RouterInput['organization']['shop']['create']) {
-            this.isLoading = true;
+export const useShopStore = defineStore('shop', () => {
+    const isLoading = ref(false);
+    const isRefreshing = ref(false);
+    const isCacheClearing = ref(false);
+    const isReSchedulingTask = ref(false);
+    const shops = ref<RouterOutput['account']['currentUserShops']>([]);
+    const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
+
+    async function createShop(payload: RouterInput['organization']['shop']['create']) {
+        isLoading.value = true;
+        payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
+        await trpcClient.organization.shop.create.mutate(payload);
+        isLoading.value = false;
+
+        await loadShops();
+    }
+
+    async function loadShops() {
+        isLoading.value = true;
+        shops.value = await trpcClient.account.currentUserShops.query();
+        isLoading.value = false;
+    }
+
+    async function loadShop(orgId: number, shopId: number) {
+        isLoading.value = true;
+        shop.value = await trpcClient.organization.shop.get.query({ orgId, shopId });
+        isLoading.value = false;
+    }
+
+    async function updateShop(
+        orgId: number,
+        shopId: number,
+        payload: {
+            name?: string,
+            ignores?: string[],
+            shopUrl?: string,
+            clientId?: string,
+            clientSecret?: string
+        }
+    ) {
+        if (payload.shopUrl) {
             payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
-            await trpcClient.organization.shop.create.mutate(payload);
-            this.isLoading = false;
+        }
+        await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...payload });
+        await loadShop(orgId, shopId);
+    }
 
-            await this.loadShops();
-        },
+    async function refreshShop(orgId: number, shopId: number, pageSpeed: boolean = false) {
+        isRefreshing.value = true;
+        await trpcClient.organization.shop.refreshShop.mutate({ orgId, shopId, pageSpeed });
+        isRefreshing.value = false;
 
-        async loadShops() {
-            this.isLoading = true;
-            const shops = await trpcClient.account.currentUserShops.query();
-            this.isLoading = false;
+        await loadShop(orgId, shopId);
+    }
 
-            const enrichedShops = this.setShopsInitials(shops);
+    async function clearCache(orgId: number, shopId: number) {
+        isCacheClearing.value = true;
+        await trpcClient.organization.shop.clearShopCache.mutate({ orgId, shopId });
+        isCacheClearing.value = false;
 
-            this.shops = enrichedShops;
-        },
+        await loadShop(orgId, shopId);
+    }
 
-        async loadShop(orgId: number, shopId: number) {
-            this.isLoading = true;
-            this.shop = await trpcClient.organization.shop.get.query({ orgId, shopId });
-            this.isLoading = false;
-        },
+    async function reScheduleTask(orgId: number, shopId: number, taskId: string) {
+        isReSchedulingTask.value = true;
+        await trpcClient.organization.shop.rescheduleTask.mutate({ orgId, shopId, taskId });
+        isReSchedulingTask.value = false;
 
-        async updateShop(
-            orgId: number,
-            shopId: number,
-            payload: {
-                name?: string,
-                ignores?: string[],
-                shopUrl?: string,
-                clientId?: string,
-                clientSecret?: string
-            }) {
-            if (payload.shopUrl) {
-                payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
-            }
-            await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...payload });
+        await loadShop(orgId, shopId);
+    }
 
-            await this.loadShop(orgId, shopId);
-        },
+    async function deleteShop(orgId: number, shopId: number) {
+        await trpcClient.organization.shop.delete.mutate({ orgId, shopId });
+        await loadShops();
+    }
 
-        async refreshShop(orgId: number, id: number, pageSpeed: boolean) {
-            this.isRefreshing = true;
-            await trpcClient.organization.shop.refreshShop.mutate({ orgId, shopId: id, pageSpeed });
-            this.isRefreshing = false;
-        },
-
-        async clearCache(orgId: number, shopId: number) {
-            this.isCacheClearing = true;
-            await trpcClient.organization.shop.clearShopCache.mutate({ orgId, shopId });
-            this.isCacheClearing = false;
-        },
-
-        async reScheduleTask(orgId: number, shopId: number, taskId: string) {
-            this.isReSchedulingTask = true;
-            await trpcClient.organization.shop.rescheduleTask.mutate({ orgId, shopId, taskId });
-            await this.loadShop(orgId, shopId);
-            this.isReSchedulingTask = false;
-        },
-
-        async delete(orgId: number, shopId: number) {
-            await trpcClient.organization.shop.delete.mutate({ orgId, shopId });
-        },
-
-        setShopsInitials(shops: RouterOutput['account']['currentUserShops']) {
-            return shops?.map(shop => ({
-                ...shop,
-                initials: this.getShopInitials(shop.name),
-            }));
-        },
-
-        getShopInitials(name: string) {
-            const initials = name.split(/\s/).slice(0, 2).reduce((response, word) => response += word.slice(0, 1), '');
-
-            if (initials && initials.length > 1) {
-                return initials.toUpperCase();
-            }
-
-            return name.slice(0, 2).toUpperCase();
-        },
-    },
+    return {
+        isLoading,
+        isRefreshing,
+        isCacheClearing,
+        isReSchedulingTask,
+        shops,
+        shop,
+        createShop,
+        loadShops,
+        loadShop,
+        updateShop,
+        refreshShop,
+        clearCache,
+        reScheduleTask,
+        deleteShop
+    };
 });
