@@ -61,7 +61,6 @@ declare module 'vue' {
     Logo: typeof import('./src/components/Logo.vue')['default']
     MainContainer: typeof import('./src/components/layout/MainContainer.vue')['default']
     Modal: typeof import('./src/components/layout/Modal.vue')['default']
-    Nav: typeof import('./src/components/layout/Nav.vue')['default']
     NavBar: typeof import('./src/components/layout/NavBar.vue')['default']
     Notification: typeof import('./src/components/Notification.vue')['default']
     PasswordField: typeof import('./src/components/form/PasswordField.vue')['default']
