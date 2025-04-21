@@ -8,9 +8,6 @@ export type Bindings = {
     MAIL_FROM: string;
     MAIL_FROM_NAME: string;
 
-    MAIL_DKIM_PRIVATE_KEY: string | undefined;
-    MAIL_DKIM_DOMAIN: string;
-    MAIL_DKIM_SELECTOR: string;
     MAILGUN_DOMAIN: string;
     MAILGUN_KEY: string;
 
