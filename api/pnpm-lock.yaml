@@ -49,8 +49,8 @@ importers:
         specifier: 4.20250421.0
         version: 4.20250421.0
       '@types/bcryptjs':
-        specifier: 2.4.6
-        version: 2.4.6
+        specifier: 3.0.0
+        version: 3.0.0
       drizzle-kit:
         specifier: ^0.31.0
         version: 0.31.0
@@ -843,8 +843,9 @@ packages:
     peerDependencies:
       typescript: '>=5.7.2'
 
-  '@types/bcryptjs@2.4.6':
-    resolution: {integrity: sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==}
+  '@types/bcryptjs@3.0.0':
+    resolution: {integrity: sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg==}
+    deprecated: This is a stub types definition. bcryptjs provides its own type definitions, so you do not need this installed.
 
   '@types/node@22.14.1':
     resolution: {integrity: sha512-u0HuPQwe/dHrItgHHpmw3N2fYCR6x4ivMNbPHRkBVP4CvN+kiRrKHWk3i8tXiO/joPwXLMYvF9TTF0eqgHIuOw==}
@@ -1322,7 +1323,6 @@ packages:
 
   libsql@0.5.7:
     resolution: {integrity: sha512-YbWW3YsGZl6PrBRNAtUVuMLqKRqYcYPa/QqhQCuR67SlcOHIhJ11ksTLAHxXkDRJs6kSrzr9JgGJGJQ91e1Bww==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lodash@4.17.21:
@@ -2259,7 +2259,9 @@ snapshots:
     dependencies:
       typescript: 5.8.3
 
-  '@types/bcryptjs@2.4.6': {}
+  '@types/bcryptjs@3.0.0':
+    dependencies:
+      bcryptjs: 3.0.2
 
   '@types/node@22.14.1':
     dependencies:

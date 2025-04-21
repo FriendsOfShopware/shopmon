@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "description": "",
-  "packageManager": "pnpm@10.5.2",
+  "packageManager": "pnpm@10.9.0",
   "scripts": {
     "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
     "dev:local": "TZ=UTC wrangler dev --port 5789 --define SENTRY_RELEASE:\"'local'\"",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@cloudflare/workers-types": "4.20250421.0",
-    "@types/bcryptjs": "2.4.6",
+    "@types/bcryptjs": "3.0.0",
     "drizzle-kit": "^0.31.0",
     "mjml": "^4.15.3",
     "typescript": "5.8.3",
