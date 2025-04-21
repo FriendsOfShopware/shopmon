@@ -1,11 +1,11 @@
 name = "shopmon"
 main = "src/index.ts"
 workers_dev = false
-compatibility_date = "2022-03-04"
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-09-23"
 routes = ["shopmon.fos.gg/trpc/*", "shopmon.fos.gg/pagespeed/*"]
 
 minify = true
-node_compat = false
 logpush = true
 
 [vars]
