@@ -3,7 +3,7 @@ main = "src/index.ts"
 workers_dev = false
 compatibility_flags = [ "nodejs_compat" ]
 compatibility_date = "2024-09-23"
-routes = ["shopmon.fos.gg/trpc/*", "shopmon.fos.gg/pagespeed/*"]
+routes = ["shopmon.fos.gg/trpc/*", "shopmon.fos.gg/pagespeed/*", "shopmon.fos.gg/api/ws"]
 
 minify = true
 logpush = true
