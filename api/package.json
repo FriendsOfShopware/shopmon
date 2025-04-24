@@ -20,7 +20,7 @@
     "@libsql/client": "^0.15.4",
     "@passwordless-id/webauthn": "^2.3.0",
     "@shopware-ag/app-server-sdk": "^1.1.16",
-    "@trpc/server": "^11.1.0",
+    "@trpc/server": "^11.1.1",
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.42.0",
     "hono": "~4.7.7",
