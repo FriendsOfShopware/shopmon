@@ -22,7 +22,7 @@
     "@shopware-ag/app-server-sdk": "^1.1.16",
     "@trpc/server": "^11.1.1",
     "bcryptjs": "3.0.2",
-    "drizzle-orm": "^0.42.0",
+    "drizzle-orm": "^0.43.1",
     "hono": "~4.7.7",
     "toucan-js": "4.1.1",
     "tsx": "^4.19.3",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "4.20250421.0",
+    "@cloudflare/workers-types": "4.20250428.0",
     "@types/bcryptjs": "3.0.0",
     "drizzle-kit": "^0.31.0",
     "mjml": "^4.15.3",
