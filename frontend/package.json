@@ -41,7 +41,7 @@
         "postcss": "^8.5.3",
         "postcss-nested": "^7.0.2",
         "typescript": "5.8.3",
-        "vite": "6.3.3",
+        "vite": "6.3.4",
         "wrangler": "^4.12.0"
     }
 }
