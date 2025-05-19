@@ -17,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@libsql/client": "^0.15.5",
+    "@libsql/client": "^0.15.6",
     "@passwordless-id/webauthn": "^2.3.0",
     "@shopware-ag/app-server-sdk": "^1.1.16",
     "@trpc/server": "^11.1.2",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "4.20250510.0",
+    "@cloudflare/workers-types": "4.20250519.0",
     "@types/bcryptjs": "3.0.0",
     "drizzle-kit": "^0.31.0",
     "mjml": "^4.15.3",
