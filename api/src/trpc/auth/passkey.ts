@@ -163,7 +163,6 @@ export const passkeyRouter = router({
 
             const expected = {
                 challenge: async (challange: string) => {
-                    console.log(`Looking for: ${challange}`);
                     const ret = await ctx.env.kvStorage.get(
                         `webauthn_challange_${challange}`,
                     );
@@ -171,8 +170,6 @@ export const passkeyRouter = router({
                     if (ret === null) {
                         return false;
                     }
-
-                    console.log(ret, challange);
 
                     await ctx.env.kvStorage.delete(
                         `webauthn_challange_${challange}`,
