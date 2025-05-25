@@ -9,8 +9,7 @@ minify = true
 
 [vars]
 MAIL_ACTIVE = "true"
-MAIL_FROM = "shopmon@fos.gg"
-MAIL_FROM_NAME = "Shopmon"
+MAIL_FROM = "Shopmon <info@shopmon.fos.gg>"
 FRONTEND_URL = "https://shopmon.fos.gg"
 
 [durable_objects]

@@ -24,6 +24,7 @@
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.43.1",
     "hono": "~4.7.7",
+    "resend": "^4.5.1",
     "toucan-js": "4.1.1",
     "tsx": "^4.19.3",
     "version-compare": "3.11.0",

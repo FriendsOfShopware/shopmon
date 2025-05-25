@@ -6,6 +6,7 @@ import alertTemplate from './sources/alert.js';
 // @ts-expect-error
 import accountConfirmationTemplate from './sources/confirmation.js';
 import { Bindings } from '../router';
+import { Resend } from 'resend';
 
 interface MaiLRequest {
     to: string;
@@ -20,26 +21,20 @@ async function sendMail(env: Bindings, mail: MaiLRequest) {
         return;
     }
 
-    const formData = new FormData();
-    formData.append('from', env.MAIL_FROM);
-    formData.append('to', mail.to);
-    formData.append('subject', mail.subject);
-    formData.append('html', mail.body);
+    const resend = new Resend(env.RESEND_API_KEY);
+    const resp = await resend.emails.send({
+        from: env.MAIL_FROM,
+        to: [mail.to],
+        subject: mail.subject,
+        html: mail.body,
+    });
 
-    const response = await fetch(
-        `https://api.eu.mailgun.net/v3/${env.MAILGUN_DOMAIN}/messages`,
-        {
-            method: 'POST',
-            body: formData,
-            headers: {
-                Authorization: 'Basic ' + btoa('api:' + env.MAILGUN_KEY),
-            },
-        },
-    );
-
-    if (!response.ok) {
-        throw new Error(`Failed to send mail: ${await response.text()}`);
+    if (resp.error) {
+        console.error(`Failed to send mail to ${mail.to} with subject ${mail.subject}`, resp.error);
+        throw new Error(`Failed to send mail: ${resp.error.message}`);
     }
+
+    console.log(`Mail sent to ${mail.to} with subject ${mail.subject}`);
 }
 
 export async function sendMailConfirmToUser(

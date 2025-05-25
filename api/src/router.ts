@@ -6,10 +6,8 @@ import { appRouter } from './trpc/router';
 export type Bindings = {
     MAIL_ACTIVE: 'true' | 'false';
     MAIL_FROM: string;
-    MAIL_FROM_NAME: string;
 
-    MAILGUN_DOMAIN: string;
-    MAILGUN_KEY: string;
+    RESEND_API_KEY: string;
 
     FRONTEND_URL: string;
     SENTRY_DSN: string;
