@@ -1,6 +1,7 @@
 import * as cron from 'node-cron';
 import { shopScrapeJob } from './jobs/shopScrape.js';
 import { pagespeedScrapeJob } from './jobs/pagespeedScrape.js';
+import { sessionCleanupJob } from './jobs/sessionCleanup.js';
 
 console.log('Starting cron jobs...');
 
@@ -21,6 +22,16 @@ cron.schedule('0 2 * * *', async () => {
     await pagespeedScrapeJob();
   } catch (error) {
     console.error('Pagespeed scrape job failed:', error);
+  }
+});
+
+// Run session cleanup every hour
+cron.schedule('0 * * * *', async () => {
+  console.log('Running session cleanup job...');
+  try {
+    await sessionCleanupJob();
+  } catch (error) {
+    console.error('Session cleanup job failed:', error);
   }
 });
 
