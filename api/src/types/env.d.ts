@@ -7,9 +7,7 @@ declare global {
       // Email
       MAIL_ACTIVE?: 'true' | 'false';
       MAIL_FROM: string;
-      RESEND_API_KEY?: string;
-      RESEND_API_TOKEN?: string;
-      
+
       // SMTP Configuration
       SMTP_HOST?: string;
       SMTP_PORT?: string;

@@ -6,8 +6,7 @@ help: # Show help
 setup: # Setup the project
 	@echo "Setting up the project"
 	@echo "Installing dependencies"
-	pnpm install --prefix api
-	pnpm install --prefix frontend
+	bun install
 
 migrate:
 	cd api && bun run migrate.ts

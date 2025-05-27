@@ -1,11 +1,11 @@
 # Shop Monitoring
 
-Shopmon is a hosted application from FriendsOfShopware to manage multiple Shopware instances.
+Shopmon is an application from FriendsOfShopware to manage multiple Shopware instances.
 
-* Credentials are saved on a [Cloudflare D1](https://developers.cloudflare.com/d1/) SQLite database
-  * Client secret are encrypted by [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
-* API runs on Cloudflare workers (serverless)
-* Mails are sent using [MailChannels](https://www.mailchannels.com)
+* Credentials are saved in a SQLite database
+  * Client secrets are encrypted using [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
+* API runs on Bun runtime
+* Mails are sent via SMTP
 
 ## Features
 
@@ -19,66 +19,145 @@ Overview of all your Shopware instances to see:
 
 ## Requirements (self hosted)
 
-- Cloudflare Worker aka Wrangler
+> [!NOTE]  
+> It's not recommended to self-host this application, we don't give any support for self-hosted installations. Please use the managed version at https://shopmon.fos.gg
+
+- Bun runtime (v1.0 or higher)
+- SQLite 3
+- Node.js 20+ and PNPM (for building frontend)
 
 ## Managed / SaaS
 
 https://shopmon.fos.gg
 
-## Setup Local
+## Local Installation
 
-Requirements: 
-  - Node 20 or higher
-  - PNPM installed as Package manager or Node Corepack enabled
+### Prerequisites
 
-### Install dependencies
+- Bun
+- Node.js 22 or higher
+
+### Step 1: Clone the repository
+
+```bash
+git clone https://github.com/FriendsOfShopware/shopmon.git
+cd shopmon
+```
+
+### Step 2: Install dependencies
 
 ```bash
 make setup
 ```
 
-### Run migrations
+This will install dependencies for both the API and frontend.
+
+### Step 3: Configure environment
+
+Copy the example environment file and configure it:
+
+```bash
+cp api/.env.example api/.env
+```
+
+Edit `api/.env` with your configuration:
+
+```env
+# Database
+# Security (generate a secure random string)
+APP_SECRET=your-secure-random-string-here
+
+# Email configuration
+SMTP_SERVER=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-password
+SMTP_FROM=noreply@yourdomain.com
+
+# External APIs (optional)
+PAGESPEED_API_KEY=your-google-pagespeed-api-key
+
+# Application
+FRONTEND_URL=http://localhost:5173
+DISABLE_REGISTRATION=false
+APP_FILES_DIR=./files
+
+# Monitoring (optional)
+SENTRY_DSN=
+```
+
+### Step 4: Run database migrations
 
 ```bash
 make migrate
 ```
 
-### Run the app
+### Step 5: Start the application
 
-Run the API and the frontend in local development mode
+For development:
 
 ```bash
 make dev
 ```
 
-### Page speed
+This will start:
+- API server on http://localhost:3000
+- Frontend dev server on http://localhost:5173
 
-If you want to trace the performance of your shop you need to activate the Google Pagespeed API.
+### Additional services
 
-- Go to https://developers.google.com/speed/docs/insights/v5/get-started
+To develop Shopmon easier, you can start a local mail catcher and a local Shopware installation with:
 
-and create a `.dev.vars` file in `api` folder with your API key like:
+```
+make up
+```
 
-```text
-PAGESPEED_API_KEY=AIzaSyCWNar-IbOaQT1WX_zfAjUxG01x7xErbSc
-APP_SECRET=MZRa9lEjACNhNhw40QXwRZANRx8f1WQa
+### Page Speed Monitoring
+
+To enable Google PageSpeed monitoring:
+
+1. Get an API key from https://developers.google.com/speed/docs/insights/v5/get-started
+2. Add the key to your `.env` file:
+
+```env
+PAGESPEED_API_KEY=your-api-key-here
 ```
 
 ## Configuration
 
 ### Disable registration
-To disable user registrations set the following variables:
 
-`frontend/.env` To disable the frontend registration route:
+To disable user registrations:
 
-```text 
+1. In your `api/.env` file:
+```env
+DISABLE_REGISTRATION=true
+```
+
+2. For the frontend, create a `frontend/.env` file:
+```env
 VITE_DISABLE_REGISTRATION=1
 ```
 
-`api/.dev.vars` To disable the app functionality:
-```text 
-DISABLE_REGISTRATION=1
+### Production Deployment
+
+For production deployment, you can use the provided Docker setup:
+
+1. Build the Docker image:
+```bash
+docker build -t shopmon .
 ```
+
+2. Run with docker compose:
+```bash
+docker compose -f compose.deploy.yml up -d
+```
+
+Make sure to:
+- Use a strong APP_SECRET
+- Configure proper email settings
+- Set up persistent volumes for database and uploads
+- Configure a reverse proxy (nginx, traefik, etc.) for HTTPS
 
 ## License
 
