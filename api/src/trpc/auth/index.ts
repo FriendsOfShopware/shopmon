@@ -10,7 +10,18 @@ import { loggedInUserMiddleware } from '../middleware.ts';
 import Organizations from '../../repository/organization.ts';
 import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail.ts';
 import { passkeyRouter } from './passkey.ts';
-const passwordReset = new Map<string, string>();
+const passwordReset = new Map<string, { userId: string; timestamp: number }>();
+
+// Clean up expired password reset tokens every 30 minutes
+setInterval(() => {
+    const now = Date.now();
+    const TTL = 60 * 60 * 1000; // 1 hour
+    for (const [key, value] of passwordReset.entries()) {
+        if (now - value.timestamp > TTL) {
+            passwordReset.delete(key);
+        }
+    }
+}, 30 * 60 * 1000);
 
 export const ACCESS_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 
@@ -167,11 +178,7 @@ export const authRouter = router({
                 return true;
             }
 
-            passwordReset.set(token, result.id.toString());
-
-            setTimeout(() => {
-                passwordReset.delete(token);
-            }, 60 * 60 * 1000); // 1 hour
+            passwordReset.set(token, { userId: result.id.toString(), timestamp: Date.now() });
 
             await sendMailResetPassword(input, token);
 
@@ -208,7 +215,7 @@ export const authRouter = router({
             await ctx.drizzle
                 .update(schema.user)
                 .set({ password: newPassword, verifyCode: null })
-                .where(eq(schema.user.id, parseInt(id)))
+                .where(eq(schema.user.id, parseInt(id.userId)))
                 .execute();
 
             return true;
