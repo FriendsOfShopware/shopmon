@@ -111,6 +111,7 @@ export const authRouter = router({
                     createdAt: new Date(),
                 });
 
+            // @ts-expect-error drizzle-lib-error
             const lastId = getLastInsertId(userInsertResult);
 
             await Organizations.create(

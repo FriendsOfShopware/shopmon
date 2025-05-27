@@ -48,6 +48,7 @@ async function createShop(
         })
         .execute();
 
+    // @ts-expect-error drizzle-lib-error
     return getLastInsertId(result);
 }
 

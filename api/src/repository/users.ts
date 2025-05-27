@@ -1,4 +1,4 @@
-import { type Drizzle, getLastInsertId, schema } from '../db';
+import { type Drizzle, getConnection, getLastInsertId, schema } from '../db';
 import { eq } from 'drizzle-orm';
 import Organization from './organization';
 
@@ -56,7 +56,9 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
 async function revokeUserSessions(
     id: number,
 ): Promise<void> {
-    // @todo: Implement session revocation logic
+    await getConnection().delete(schema.sessions).where(
+        eq(schema.sessions.userId, id)
+    ).execute();
 }
 
 async function createNotification(
@@ -90,6 +92,7 @@ async function createNotification(
         })
         .execute();
 
+    // @ts-expect-error drizzle-lib-error
     const lastId = getLastInsertId(result);
 
     const notificationResponse: typeof schema.userNotification.$inferSelect = {

@@ -22,6 +22,7 @@ async function create(
         })
         .execute();
 
+    // @ts-expect-error drizzle-lib-error
     const lastId = getLastInsertId(organizationInsertResult);
 
     await con.insert(schema.userToOrganization).values({
