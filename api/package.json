@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@passwordless-id/webauthn": "^2.3.0",
+    "@sentry/bun": "^9.22.0",
     "@shopware-ag/app-server-sdk": "^1.1.16",
     "@trpc/server": "^11.1.2",
     "bcryptjs": "3.0.2",

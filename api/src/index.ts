@@ -4,12 +4,19 @@ import { appRouter } from './trpc/router.ts';
 import { promises as fs, existsSync, readFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { serveStatic } from 'hono/bun';
+import * as Sentry from "@sentry/bun";
 
 const filesDir = process.env.APP_FILES_DIR || './files';
 
 if (!existsSync(filesDir)) {
     mkdirSync(filesDir, { recursive: true })
 }
+
+Sentry.init({
+    dsn: process.env.SENTRY_DSN || '',
+    release: process.env.SENTRY_RELEASE || 'unknown',
+    environment: process.env.SENTRY_ENVIRONMENT || 'development',
+})
 
 const app = new Hono();
 

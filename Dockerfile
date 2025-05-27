@@ -14,6 +14,9 @@ RUN rm -rf /app/frontend
 
 FROM oven/bun:latest AS final
 
+ARG SENTRY_RELEASE="unknown"
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+
 COPY --from=api /app/ /app/
 COPY --from=frontend /app/frontend/dist /app/api/dist/
 
