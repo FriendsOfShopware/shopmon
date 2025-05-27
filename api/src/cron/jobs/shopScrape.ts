@@ -7,7 +7,7 @@ import {
 } from '@shopware-ag/app-server-sdk';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { decrypt } from '../../crypto/index.js';
-import { getConnection, schema } from '../../db.js';
+import { type Drizzle, getConnection, schema } from '../../db.js';
 import { type CheckerInput, check } from '../../object/status/registery.js';
 import Shops, { type User } from '../../repository/shops.js';
 import type {
@@ -120,7 +120,7 @@ export async function scrapeSingleShop(shopId: number) {
 }
 
 async function shouldNotify(
-    con: any,
+    con: Drizzle,
     users: User[],
     notificationKey: string,
 ): Promise<boolean> {
@@ -152,7 +152,7 @@ async function shouldNotify(
     return timeDifference >= 24 * 60 * 60 * 1000;
 }
 
-async function updateShop(shop: SQLShop, con: any) {
+async function updateShop(shop: SQLShop, con: Drizzle) {
     try {
         await con
             .update(schema.shop)
@@ -178,7 +178,7 @@ async function updateShop(shop: SQLShop, con: any) {
                 let body = JSON.stringify(e.response.body);
 
                 if (body.length > 50) {
-                    body = body.substring(0, 50) + '...';
+                    body = `${body.substring(0, 50)}...`;
                 }
 
                 error = `Request failed with status code: ${
@@ -188,7 +188,7 @@ async function updateShop(shop: SQLShop, con: any) {
                 let body = JSON.stringify(e.response.body);
 
                 if (body.length > 50) {
-                    body = body.substring(0, 50) + '...';
+                    body = `${body.substring(0, 50)}...`;
                 }
 
                 error = `Authentication failed with status code: ${

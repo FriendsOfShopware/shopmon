@@ -1,5 +1,5 @@
-import { promises as fs, existsSync, mkdirSync, readFileSync } from 'fs';
-import path from 'path';
+import { promises as fs, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import * as Sentry from '@sentry/bun';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';

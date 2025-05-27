@@ -1,8 +1,8 @@
-import { promises as fs } from 'fs';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
-import { getConnection, schema } from '../../db.js';
+import { type Drizzle, getConnection, schema } from '../../db.js';
 import Shops from '../../repository/shops.js';
 
 interface SQLShop {
@@ -89,7 +89,7 @@ export async function scrapeSinglePagespeedShop(shopId: number) {
     await computePagespeed(shop as SQLShop, con);
 }
 
-async function computePagespeed(shop: SQLShop, con: any) {
+async function computePagespeed(shop: SQLShop, con: Drizzle) {
     try {
         const home = await fetch(shop.url);
 

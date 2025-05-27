@@ -83,7 +83,7 @@ export const passkeyRouter = router({
 
                     return true;
                 },
-                origin: process.env.FRONTEND_URL!,
+                origin: process.env.FRONTEND_URL,
             };
 
             const registrationParsed = await server.verifyRegistration(
@@ -175,7 +175,7 @@ export const passkeyRouter = router({
 
                     return true;
                 },
-                origin: process.env.FRONTEND_URL!,
+                origin: process.env.FRONTEND_URL,
                 userVerified: true,
             };
 

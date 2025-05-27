@@ -35,8 +35,8 @@ export default function versionCompare(
         const on = Number(op[depth]);
         if (cn > on) return VersionIs.GreaterThan;
         if (on > cn) return VersionIs.LessThan;
-        if (!isNaN(cn) && isNaN(on)) return VersionIs.GreaterThan;
-        if (isNaN(cn) && !isNaN(on)) return VersionIs.LessThan;
+        if (!Number.isNaN(cn) && Number.isNaN(on)) return VersionIs.GreaterThan;
+        if (Number.isNaN(cn) && !Number.isNaN(on)) return VersionIs.LessThan;
     }
     return VersionIs.EqualTo;
 }

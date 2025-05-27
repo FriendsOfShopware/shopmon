@@ -30,7 +30,7 @@ export function createContext() {
                 });
             }
 
-            if (token[0]!.expires < new Date()) {
+            if (token[0].expires < new Date()) {
                 await getConnection()
                     .delete(schema.sessions)
                     .where(eq(schema.sessions.id, auth));
@@ -41,7 +41,7 @@ export function createContext() {
                 });
             }
 
-            user = token[0]!.id as number;
+            user = token[0].id as number;
         }
 
         return {

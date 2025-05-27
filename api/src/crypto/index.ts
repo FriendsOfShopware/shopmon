@@ -58,7 +58,7 @@ export async function decrypt(key: string, payload: string) {
     const decrypted = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: iv },
         cryptoKey,
-        encrypted!,
+        encrypted,
     );
 
     return new TextDecoder().decode(decrypted);
