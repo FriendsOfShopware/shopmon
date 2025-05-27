@@ -11,9 +11,11 @@ import { type Drizzle, getConnection, schema } from '../../db.js';
 import { type CheckerInput, check } from '../../object/status/registery.js';
 import Shops, { type User } from '../../repository/shops.js';
 import type {
+    CacheInfo,
     Extension,
     ExtensionChangelog,
     ExtensionDiff,
+    QueueInfo,
 } from '../../types/index.js';
 import versionCompare from '../../util.ts';
 
@@ -57,6 +59,30 @@ interface ShopwareStoreExtension {
             date: string;
         };
     }[];
+}
+
+interface ShopwarePlugin {
+    name: string;
+    label: string;
+    active: boolean;
+    version: string;
+    upgradeVersion: string | null;
+    installedAt: string | null;
+}
+
+interface ShopwareApp {
+    name: string;
+    label: string;
+    active: boolean;
+    version: string;
+    createdAt: string;
+}
+
+interface ShopwareConfig {
+    version: string;
+    adminWorker: {
+        enableAdminWorker: boolean;
+    };
 }
 
 const STATES: { [key: string]: number } = {
@@ -231,25 +257,33 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         }
 
         let responses: {
-            config: HttpClientResponse<any>;
-            plugin: HttpClientResponse<any>;
-            app: HttpClientResponse<any>;
-            scheduledTask: HttpClientResponse<any>;
-            queue: HttpClientResponse<any>;
-            cacheInfo: HttpClientResponse<any>;
+            config: HttpClientResponse<ShopwareConfig>;
+            plugin: HttpClientResponse<{ data: ShopwarePlugin[] }>;
+            app: HttpClientResponse<{ data: ShopwareApp[] }>;
+            scheduledTask: HttpClientResponse<{
+                data: ShopwareScheduledTask[];
+            }>;
+            queue: HttpClientResponse<
+                ShopwareQueue[] | { data: ShopwareQueue[] }
+            >;
+            cacheInfo: HttpClientResponse<CacheInfo>;
         };
 
         try {
             const [config, plugin, app, scheduledTask, queue, cacheInfo] =
                 await Promise.all([
-                    client.get('/_info/config'),
-                    client.post('/search/plugin'),
-                    client.post('/search/app'),
-                    client.post('/search/scheduled-task'),
+                    client.get<ShopwareConfig>('/_info/config'),
+                    client.post<{ data: ShopwarePlugin[] }>('/search/plugin'),
+                    client.post<{ data: ShopwareApp[] }>('/search/app'),
+                    client.post<{ data: ShopwareScheduledTask[] }>(
+                        '/search/scheduled-task',
+                    ),
                     versionCompare(shop.shopwareVersion, '6.4.7.0') < 0
-                        ? client.post('/search/message-queue-stats')
-                        : client.get('/_info/queue.json'),
-                    client.get('/_action/cache_info'),
+                        ? client.post<{ data: ShopwareQueue[] }>(
+                              '/search/message-queue-stats',
+                          )
+                        : client.get<ShopwareQueue[]>('/_info/queue.json'),
+                    client.get<CacheInfo>('/_action/cache_info'),
                 ]);
 
             responses = {
@@ -506,15 +540,17 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
 
         const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
 
-        let queue = null;
+        let queue: QueueInfo[] = [];
         if (versionCompare(shop.shopwareVersion, '6.4.7.0') < 0) {
-            queue = responses.queue.body.data.filter(
+            // For older versions, the response has a data property
+            const queueData = responses.queue.body as { data: ShopwareQueue[] };
+            queue = queueData.data.filter(
                 (entry: ShopwareQueue) => entry.size > 0,
             );
         } else {
-            queue = responses.queue.body.filter(
-                (entry: ShopwareQueue) => entry.size > 0,
-            );
+            // For newer versions, the response is directly an array
+            const queueData = responses.queue.body as ShopwareQueue[];
+            queue = queueData.filter((entry: ShopwareQueue) => entry.size > 0);
         }
 
         const input: CheckerInput = {
