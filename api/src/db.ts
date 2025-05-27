@@ -198,18 +198,8 @@ export function getConnection() {
     return drizzle = drizzleSqlite(client, { schema });
 }
 
-type ResultSet =
-    | { lastInsertRowid: bigint | undefined }
-    | { meta: { last_row_id: number } };
+type ResultSet = { lastInsertRowid: number}
 
 export function getLastInsertId(result: ResultSet): number {
-    if ('lastInsertRowid' in result) {
-        if (result.lastInsertRowid === undefined) {
-            throw new Error('lastInsertRowid is undefined');
-        }
-
-        return new Number(result.lastInsertRowid).valueOf();
-    }
-
-    return result.meta.last_row_id;
+    return result.lastInsertRowid;
 }

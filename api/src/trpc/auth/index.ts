@@ -1,5 +1,5 @@
 import { router, publicProcedure } from '../index.ts';
-import { getLastInsertId, schema } from '../../db.ts';
+import { getLastInsertId, schema, user } from '../../db.ts';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import bcryptjs from 'bcryptjs';
@@ -88,9 +88,6 @@ export const authRouter = router({
                 },
                 where: eq(schema.user.email, input.email),
             });
-
-            console.log('Registering user with email:', input.email);
-            console.log('User already exists:', result);
 
             if (result !== undefined) {
                 throw new TRPCError({
@@ -209,7 +206,7 @@ export const authRouter = router({
 
             await ctx.drizzle
                 .update(schema.user)
-                .set({ password: newPassword })
+                .set({ password: newPassword, verifyCode: null })
                 .where(eq(schema.user.id, parseInt(id)))
                 .execute();
 
