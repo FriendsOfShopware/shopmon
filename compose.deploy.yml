@@ -46,7 +46,32 @@ services:
     command: ['src/cron/index.ts']
     volumes_from:
       - app
+
+  backup:
+    image: litestream/litestream
+    volumes:
+      - db:/data
+    command: ["replicate", "--config", "/etc/litestream.yml"]
+    configs:
+      - source: litestream
+        target: /etc/litestream.yml
+    environment:
+      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID}
+      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY}
+      ENVIRONMENT: ${ENVIRONMENT}
   
 volumes:
   db:
   uploads:
+
+configs:
+  litestream:
+    content: |
+      dbs:
+        - path: /data/shopmon.db
+          replicas:
+            - type: s3
+              bucket: shopmon-backups
+              path: db/$ENVIRONMENT/
+              endpoint: s3.eu-central-003.backblazeb2.com
+              force-path-style: true
