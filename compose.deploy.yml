@@ -14,7 +14,7 @@ x-env: &env
 
 services:
   migrate:
-    image: ghcr.io/friendsofshopware/shopmon:staging
+    image: ${IMAGE}
     environment:
       <<: *env
     command: "migrate.ts"
@@ -23,7 +23,7 @@ services:
       - uploads:/app/uploads
 
   app:
-    image: ghcr.io/friendsofshopware/shopmon:staging
+    image: ${IMAGE}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -35,7 +35,7 @@ services:
       - db:/app/db
       - uploads:/app/uploads
   cron:
-    image: ghcr.io/friendsofshopware/shopmon:staging
+    image: ${IMAGE}
     depends_on:
       migrate:
         condition: service_completed_successfully
