@@ -18,13 +18,7 @@ const darkModeStore = useDarkModeStore();
 
 if (authStore.isAuthenticated) {
     authStore.refreshUser();
-
-    const authToken = authStore.access_token;
-
-    if (authToken) {
-        notificationStore.connect(authToken);
-        notificationStore.loadNotifications();
-    }
+    notificationStore.loadNotifications();
 }
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {

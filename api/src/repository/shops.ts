@@ -1,4 +1,3 @@
-import { UserSocketHelper } from '../object/UserSocket';
 import Users from './users';
 import { sendAlert } from '../mail/mail';
 import { Drizzle, getLastInsertId, schema } from '../db';
@@ -94,7 +93,6 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
 
 async function notify(
     con: Drizzle,
-    namespace: DurableObjectNamespace,
     shopId: number,
     key: string,
     notification: Omit<
@@ -105,16 +103,12 @@ async function notify(
     const users = await getUsersOfShop(con, shopId);
 
     for (const user of users) {
-        const createdNotification = await Users.createNotification(
+        await Users.createNotification(
             con,
             user.id,
             key,
             notification,
         );
-
-        await UserSocketHelper.sendNotification(namespace, user.id.toString(), {
-            notification: createdNotification,
-        });
     }
 }
 
