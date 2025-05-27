@@ -263,7 +263,7 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
 async function deleteShop() {
     if (shopStore.shop) {
         try {
-            await shopStore.delete(shopStore.shop.organizationId, shopStore.shop.id);
+            await shopStore.deleteShop(shopStore.shop.organizationId, shopStore.shop.id);
 
             router.push('/account/shops');
         } catch (error: any) {
