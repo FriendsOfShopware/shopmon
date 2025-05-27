@@ -12,7 +12,6 @@
 	"dependencies": {
 		"@headlessui/vue": "1.7.23",
 		"@passwordless-id/webauthn": "catalog:",
-		"@tailwindcss/forms": "0.5.10",
 		"@trpc/client": "^11.1.0",
 		"compare-versions": "^6.1.1",
 		"fast-sort": "3.4.1",

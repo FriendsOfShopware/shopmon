@@ -3,3 +3,4 @@
 /api/.env
 /api/shopmon.db*
 /node_modules
+frontend/components.d.ts
