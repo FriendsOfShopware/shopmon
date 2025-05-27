@@ -173,8 +173,8 @@ async function onSubmit(values: RouterInput['organization']['shop']['create']) {
         await shopStore.createShop(values);
 
         router.push('/account/shops');
-    } catch (e: any) {
-        alertStore.error(e);
+    } catch (e) {
+        alertStore.error(e instanceof Error ? e.message : String(e));
     }
 }
 </script>

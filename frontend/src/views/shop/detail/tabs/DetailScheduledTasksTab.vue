@@ -89,8 +89,8 @@ async function onReScheduleTask(taskId: string) {
                 taskId,
             );
             alertStore.success('Task is re-scheduled');
-        } catch (e: any) {
-            alertStore.error(e);
+        } catch (e) {
+            alertStore.error(e instanceof Error ? e.message : String(e));
         }
     }
 }

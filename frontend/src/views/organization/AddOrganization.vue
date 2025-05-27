@@ -75,8 +75,8 @@ async function onCreateOrganization(values: Yup.InferType<typeof schema>) {
     try {
         await organizationStore.createOrganization(values.name);
         await router.push({ name: 'account.organizations.list' });
-    } catch (e: any) {
-        alertStore.error(e);
+    } catch (e) {
+        alertStore.error(e instanceof Error ? e.message : String(e));
     }
 }
 </script>

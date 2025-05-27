@@ -129,7 +129,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
 
     if (
         import.meta.env.VITE_DISABLE_REGISTRATION &&
-        (to.name as string) == 'account.register'
+        (to.name as string) === 'account.register'
     ) {
         return '/';
     }
@@ -137,7 +137,8 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     if (authRequired && !authStore.user) {
         authStore.returnUrl = to.fullPath;
         return '/account/login';
-    } else if (authStore.user && publicPages.includes(to.name as string)) {
+    }
+    if (authStore.user && publicPages.includes(to.name as string)) {
         // redirect to home page if logged in and trying to access a public page
         return '/';
     }

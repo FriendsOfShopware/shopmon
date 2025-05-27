@@ -83,7 +83,10 @@ const schema = Yup.object().shape({
         .required('Password is required')
         .min(8, 'Password must be at least 8 characters')
         .matches(/^(?=.*[0-9])/, 'Password must Contain One Number Character')
-        .matches(/^(?=.*[!@#\$%\^&\*])/, 'Password must Contain  One Special Case Character'),
+        .matches(
+            /^(?=.*[!@#\$%\^&\*])/,
+            'Password must Contain  One Special Case Character',
+        ),
 });
 
 const authStore = useAuthStore();
@@ -91,24 +94,33 @@ const route = useRoute();
 const router = useRouter();
 const alertStore = useAlertStore();
 
-async function onSubmit(values: any): Promise<void> {
+async function onSubmit(values: { password: string }): Promise<void> {
     try {
-        await authStore.confirmResetPassword(route.params.token as string, values.password);
-        alertStore.success('Password has been resetted. You will be redirected to login page in 2 seconds.');
+        await authStore.confirmResetPassword(
+            route.params.token as string,
+            values.password,
+        );
+        alertStore.success(
+            'Password has been resetted. You will be redirected to login page in 2 seconds.',
+        );
 
         setTimeout(() => {
             router.push('/account/login');
         }, 2000);
-    } catch (error: Error) {
-        alertStore.error(error.message);
+    } catch (error) {
+        alertStore.error(
+            error instanceof Error ? error.message : String(error),
+        );
     }
 }
 
 const isLoading = ref(true);
 const tokenFound = ref(false);
 
-onMounted(async() => {
-    tokenFound.value = await authStore.resetAvailable(route.params.token as string);
+onMounted(async () => {
+    tokenFound.value = await authStore.resetAvailable(
+        route.params.token as string,
+    );
     isLoading.value = false;
 });
 

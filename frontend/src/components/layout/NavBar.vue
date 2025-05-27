@@ -324,9 +324,10 @@ const userNavigation = [
 ];
 
 function isActive(item, $route) {
-    if (item.route == $route.path) {
+    if (item.route === $route.path) {
         return true;
-    } else if ($route.name && item.active && $route.name.match(item.active)) {
+    }
+    if ($route.name && item.active && $route.name.match(item.active)) {
         return true;
     }
 

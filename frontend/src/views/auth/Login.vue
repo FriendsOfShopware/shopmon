@@ -103,7 +103,7 @@ const schema = Yup.object().shape({
 
 const disableRegistration = import.meta.env.VITE_DISABLE_REGISTRATION;
 
-async function onSubmit(values: any) {
+async function onSubmit(values: { email: string; password: string }) {
     const { email, password } = values;
     try {
         await authStore.login(email, password);

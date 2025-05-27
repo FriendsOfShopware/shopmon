@@ -188,9 +188,9 @@ const organizationId = Number.parseInt(
     10,
 );
 const organization = user.value?.organizations.find(
-    (organization) => organization.id == organizationId,
+    (organization) => organization.id === organizationId,
 );
-const isOwner = organization?.ownerId === user.value!.id;
+const isOwner = organization?.ownerId === user.value?.id;
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
@@ -215,8 +215,10 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
                     organizationId: organization.id,
                 },
             });
-        } catch (error: any) {
-            alertStore.error(error);
+        } catch (error) {
+            alertStore.error(
+                error instanceof Error ? error.message : String(error),
+            );
         }
     }
     isSubmitting.value = false;
@@ -232,8 +234,10 @@ async function onRemoveMember(userId: number) {
                     organizationId: organization.id,
                 },
             });
-        } catch (error: any) {
-            alertStore.error(error);
+        } catch (error) {
+            alertStore.error(
+                error instanceof Error ? error.message : String(error),
+            );
         }
     }
 }

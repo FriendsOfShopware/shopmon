@@ -25,9 +25,7 @@ function dateTimeFormatter(
 
     const formatter = new Intl.DateTimeFormat('de-DE', options);
 
-    if (typeof date === 'string') {
-        date = new Date(date);
-    }
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
 
-    return formatter.format(date);
+    return formatter.format(dateObj);
 }

@@ -20,7 +20,7 @@ export function sumChanges(changes: ShopChangelog | Changelogs) {
     }
 
     for (const [state, count] of Object.entries(stateCounts)) {
-        messages.push(`${state} ${count} extension` + (count > 1 ? 's' : ''));
+        messages.push(`${state} ${count} extension${count > 1 ? 's' : ''}`);
     }
 
     return messages.join(', ');

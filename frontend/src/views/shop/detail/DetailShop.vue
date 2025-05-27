@@ -409,7 +409,7 @@ async function loadShop() {
         .filter(
             (version) =>
                 !version.includes('-RC') &&
-                compareVersions(shopStore.shop!.shopwareVersion, version) < 0,
+                compareVersions(shopStore.shop?.shopwareVersion, version) < 0,
         );
     latestShopwareVersion.value = shopwareVersions.value[0];
 }
@@ -430,8 +430,8 @@ async function onRefresh(pagespeed: boolean) {
                 pagespeed,
             );
             alertStore.success('Your Shop will refresh soon!');
-        } catch (e: any) {
-            alertStore.error(e);
+        } catch (e) {
+            alertStore.error(e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -444,8 +444,8 @@ async function onCacheClear() {
                 shopStore.shop.id,
             );
             alertStore.success('Your Shop cache was cleared successfully');
-        } catch (e: any) {
-            alertStore.error(e);
+        } catch (e) {
+            alertStore.error(e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -463,7 +463,7 @@ async function loadUpdateWizard(version: string) {
     loadingUpdateWizard.value = true;
 
     const body = {
-        currentVersion: shopStore.shop!.shopwareVersion,
+        currentVersion: shopStore.shop?.shopwareVersion,
         futureVersion: version,
         extensions: shopStore.shop.extensions.map((extension) => {
             return {

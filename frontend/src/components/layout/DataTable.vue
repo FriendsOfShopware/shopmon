@@ -122,7 +122,8 @@ const naturalSort = createNewSortInstance({
         // Always sort null values at last
         if (a === null || a === undefined) {
             return order;
-        } else if (b === null || b === undefined) {
+        }
+        if (b === null || b === undefined) {
             return order * -1;
         }
 

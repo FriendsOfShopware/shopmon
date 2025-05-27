@@ -92,7 +92,11 @@ const schema = Yup.object().shape({
         ),
 });
 
-async function onSubmit(values: any) {
+async function onSubmit(values: {
+    email: string;
+    password: string;
+    displayName: string;
+}) {
     const authStore = useAuthStore();
     const alertStore = useAlertStore();
     try {
@@ -101,8 +105,10 @@ async function onSubmit(values: any) {
         alertStore.success(
             'Registration successful. Please check your mailbox and confirm your email address.',
         );
-    } catch (error: any) {
-        alertStore.error(error);
+    } catch (error) {
+        alertStore.error(
+            error instanceof Error ? error.message : String(error),
+        );
     }
 }
 </script>

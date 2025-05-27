@@ -69,8 +69,10 @@ async function onSubmit(values): Promise<void> {
     try {
         await usersStore.resetPassword(values.email);
         alertStore.success('Password reset email sent');
-    } catch (error: Error) {
-        alertStore.error(error.message);
+    } catch (error) {
+        alertStore.error(
+            error instanceof Error ? error.message : String(error),
+        );
     }
 }
 </script>

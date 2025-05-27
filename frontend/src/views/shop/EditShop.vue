@@ -237,6 +237,7 @@ const schema = Yup.object().shape({
     organizationId: Yup.number().required('Organization is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
+        // biome-ignore lint/suspicious/noThenProperty: Yup schema method
         then: () =>
             Yup.string().required(
                 'If you change the URL you need to provide Client-ID',
@@ -244,6 +245,7 @@ const schema = Yup.object().shape({
     }),
     clientSecret: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
+        // biome-ignore lint/suspicious/noThenProperty: Yup schema method
         then: () =>
             Yup.string().required(
                 'If you change the URL you need to provide Client-Secret',
@@ -267,8 +269,8 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
                     shopId: shopStore.shop.id,
                 },
             });
-        } catch (e: any) {
-            alertStore.error(e);
+        } catch (e) {
+            alertStore.error(e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -282,8 +284,10 @@ async function deleteShop() {
             );
 
             router.push('/account/shops');
-        } catch (error: any) {
-            alertStore.error(error);
+        } catch (error) {
+            alertStore.error(
+                error instanceof Error ? error.message : String(error),
+            );
         }
     }
 }

@@ -1,4 +1,4 @@
-import { URL, fileURLToPath } from 'url';
+import { URL, fileURLToPath } from 'node:url';
 
 import Vue from '@vitejs/plugin-vue';
 import IconsResolver from 'unplugin-icons/resolver';

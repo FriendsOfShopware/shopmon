@@ -136,7 +136,7 @@ const organizationId = Number.parseInt(
     10,
 );
 const organization = user.value?.organizations.find(
-    (organization) => organization.id == organizationId,
+    (organization) => organization.id === organizationId,
 );
 
 const showOrganizationDeletionModal = ref(false);
@@ -158,8 +158,10 @@ async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
                     organizationId: organization.id,
                 },
             });
-        } catch (error: any) {
-            alertStore.error(error);
+        } catch (error) {
+            alertStore.error(
+                error instanceof Error ? error.message : String(error),
+            );
         }
     }
 }
@@ -170,8 +172,10 @@ async function deleteOrganization() {
             await organizationStore.delete(organization.id);
 
             await router.push({ name: 'account.organizations.list' });
-        } catch (error: any) {
-            alertStore.error(error);
+        } catch (error) {
+            alertStore.error(
+                error instanceof Error ? error.message : String(error),
+            );
         }
     }
 }

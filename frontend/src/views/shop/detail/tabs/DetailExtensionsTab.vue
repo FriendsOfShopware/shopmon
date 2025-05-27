@@ -118,7 +118,8 @@ function openExtensionChangelog(extension: Extension | null) {
 function getExtensionState(extension) {
     if (!extension.installed) {
         return 'not installed';
-    } else if (extension.active) {
+    }
+    if (extension.active) {
         return 'active';
     }
 
