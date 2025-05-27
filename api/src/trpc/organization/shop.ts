@@ -1,21 +1,23 @@
-import { router, publicProcedure } from '..';
+import { router, publicProcedure } from '../index.ts';
 import { z } from 'zod';
 import {
     loggedInUserMiddleware,
     organizationAdminMiddleware,
     organizationMiddleware,
     shopMiddleware,
-} from '../middleware';
+} from '../middleware.ts';
 import { and, eq, desc, sql } from 'drizzle-orm';
-import { schema } from '../../db';
+import { schema } from '../../db.ts';
 import { TRPCError } from '@trpc/server';
-import Shops from '../../repository/shops';
-import { decrypt, encrypt } from '../../crypto';
+import Shops from '../../repository/shops.ts';
+import { decrypt, encrypt } from '../../crypto/index.ts';
 import {
     HttpClient,
     HttpClientResponse,
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
+import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
+import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 
 export const shopRouter = router({
     list: publicProcedure
@@ -137,7 +139,7 @@ export const shopRouter = router({
 
             const client = new HttpClient(shop);
 
-            let resp: HttpClientResponse;
+            let resp: HttpClientResponse<{version: string}>;
             try {
                 resp = await client.get('/_info/config');
             } catch (e) {
@@ -149,7 +151,7 @@ export const shopRouter = router({
             }
 
             const clientSecret = await encrypt(
-                ctx.env.APP_SECRET,
+                process.env.APP_SECRET,
                 input.clientSecret,
             );
 
@@ -162,21 +164,7 @@ export const shopRouter = router({
                 version: resp.body.version,
             });
 
-            const scrapeObject = ctx.env.SHOPS_SCRAPE.get(
-                ctx.env.SHOPS_SCRAPE.idFromName(id.toString()),
-            );
-
-            await scrapeObject.fetch(
-                `http://localhost/now?id=${id.toString()}`,
-            );
-
-            const pagespeedObject = ctx.env.PAGESPEED_SCRAPE.get(
-                ctx.env.PAGESPEED_SCRAPE.idFromName(id.toString()),
-            );
-
-            await pagespeedObject.fetch(
-                `http://localhost/now?id=${id.toString()}`,
-            );
+            await scrapeSingleShop(id)
 
             return id;
         }),
@@ -194,21 +182,8 @@ export const shopRouter = router({
         .mutation(async ({ input, ctx }) => {
             await Shops.deleteShop(ctx.drizzle, input.shopId);
 
-            const scrapeObject = ctx.env.SHOPS_SCRAPE.get(
-                ctx.env.SHOPS_SCRAPE.idFromName(input.shopId.toString()),
-            );
-
-            await scrapeObject.fetch(
-                `http://localhost/delete?id=${input.shopId.toString()}`,
-            );
-
-            const pageSpeedObject = ctx.env.PAGESPEED_SCRAPE.get(
-                ctx.env.PAGESPEED_SCRAPE.idFromName(input.shopId.toString()),
-            );
-
-            await pageSpeedObject.fetch(
-                `http://localhost/delete?id=${input.shopId.toString()}`,
-            );
+            // Cleanup is handled by the delete operation
+            console.log(`Shop ${input.shopId} deleted`);
 
             return true;
         }),
@@ -298,7 +273,7 @@ export const shopRouter = router({
                 }
 
                 const clientSecret = await encrypt(
-                    ctx.env.APP_SECRET,
+                    process.env.APP_SECRET,
                     input.clientSecret,
                 );
 
@@ -325,24 +300,10 @@ export const shopRouter = router({
         .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
-            const obj = ctx.env.SHOPS_SCRAPE.get(
-                ctx.env.SHOPS_SCRAPE.idFromName(input.shopId.toString()),
-            );
-
-            await obj.fetch(
-                `http://localhost/now?id=${input.shopId.toString()}&userId=${ctx.user?.toString()}`,
-            );
+            await scrapeSingleShop(input.shopId)
 
             if (input.pageSpeed) {
-                const pagespeed = ctx.env.PAGESPEED_SCRAPE.get(
-                    ctx.env.PAGESPEED_SCRAPE.idFromName(
-                        input.shopId.toString(),
-                    ),
-                );
-
-                await pagespeed.fetch(
-                    `http://localhost/now?id=${input.shopId.toString()}`,
-                );
+                await scrapeSinglePagespeedShop(input.shopId);
             }
 
             return true;
@@ -375,7 +336,7 @@ export const shopRouter = router({
             }
 
             const clientSecret = await decrypt(
-                ctx.env.APP_SECRET,
+                process.env.APP_SECRET,
                 shopData.clientSecret,
             );
             const shop = new SimpleShop('', shopData.url, '');
@@ -415,7 +376,7 @@ export const shopRouter = router({
             }
 
             const clientSecret = await decrypt(
-                ctx.env.APP_SECRET,
+                process.env.APP_SECRET,
                 shopData.clientSecret,
             );
             const shop = new SimpleShop('', shopData.url, '');

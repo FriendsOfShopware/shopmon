@@ -1,8 +1,9 @@
-import Users from './users';
-import { sendAlert } from '../mail/mail';
-import { Drizzle, getLastInsertId, schema } from '../db';
+import Users from './users.ts';
+import { sendAlert } from '../mail/mail.ts';
+import { type Drizzle, getLastInsertId, schema } from '../db.ts';
 import { eq } from 'drizzle-orm';
-import type { Bindings } from '../router';
+
+const alertMap = new Map<string, string>();
 
 interface CreateShopRequest {
     organizationId: number;
@@ -114,21 +115,16 @@ async function notify(
 
 async function alert(
     con: Drizzle,
-    env: Bindings,
     alert: ShopAlert,
 ): Promise<void> {
     const users = await getUsersOfShop(con, parseInt(alert.shopId));
     const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
-    const foundAlert = await env.kvStorage.get(alertKey);
-
-    if (foundAlert !== null) {
+    if (alertMap.has(alertKey)) {
         return;
     }
 
-    await env.kvStorage.put(alertKey, '1', {
-        expirationTtl: 86400, // one day
-    });
+    alertMap.set(alertKey, '1');
 
     const result = await con.query.shop.findFirst({
         columns: {
@@ -142,7 +138,7 @@ async function alert(
     }
 
     for (const user of users) {
-        await sendAlert(env, result, user, alert);
+        await sendAlert(result, user, alert);
     }
 }
 

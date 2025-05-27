@@ -1,14 +1,11 @@
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { createClient } from '@libsql/client';
-import {drizzle} from 'drizzle-orm/libsql';
-import { schema } from './src/db';
+import { getConnection, schema } from './src/db.ts';
 
-const connection = createClient({
-  url: process.env.LIBSQL_URL as string,
-  authToken: process.env.LIBSQL_AUTH_TOKEN as string
-});
 
-const db = drizzle(connection, { schema })
+console.log('Running migrations...');
 
 // This will run migrations on the database, skipping the ones already applied
-await migrate(db, { migrationsFolder: './drizzle' });
+await migrate(getConnection(), { migrationsFolder: './drizzle' });
+
+console.log('Migrations completed successfully!');
+process.exit(0);

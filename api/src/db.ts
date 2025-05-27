@@ -5,11 +5,9 @@ import {
     primaryKey,
     unique,
 } from 'drizzle-orm/sqlite-core';
-import { drizzle as drizzleD1, DrizzleD1Database } from 'drizzle-orm/d1';
-import { drizzle as drizzleLibSQL, LibSQLDatabase } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
-import type { Bindings } from './router';
-import {
+import { Database } from "bun:sqlite";
+import { drizzle as drizzleSqlite, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
+import type {
     CacheInfo,
     CheckerChecks,
     Extension,
@@ -17,7 +15,7 @@ import {
     NotificationLink,
     QueueInfo,
     ScheduledTask,
-} from './types';
+} from './types/index.ts';
 import type { RegistrationJSON } from '@passwordless-id/webauthn/dist/esm/types';
 
 type LastChangelog = {
@@ -162,6 +160,18 @@ export const userToOrganization = sqliteTable(
     },
 );
 
+export const sessions = sqliteTable('sessions', {
+    id: text('id').primaryKey(),
+    userId: integer('user_id')
+        .notNull()
+        .references(() => user.id),
+    expires: integer('expires', { mode: 'timestamp' }).notNull(),
+}, (table) => {
+    return {
+        pk: primaryKey(table.id),
+    };
+});
+
 export const schema = {
     user,
     shop,
@@ -172,24 +182,20 @@ export const schema = {
     userNotification,
     userToOrganization,
     userPasskeys,
+    sessions,
 };
 
-export type Drizzle = LibSQLDatabase<typeof schema>;
+export type Drizzle = BunSQLiteDatabase<typeof schema>;
+let drizzle: Drizzle | undefined = undefined;
 
-export function getConnection(env: Bindings) {
-    if (
-        typeof env.LIBSQL_URL === 'string' &&
-        typeof env.LIBSQL_AUTH_TOKEN === 'string'
-    ) {
-        const client = createClient({
-            url: env.LIBSQL_URL,
-            authToken: env.LIBSQL_AUTH_TOKEN,
-        });
-
-        return drizzleLibSQL(client, { schema });
+export function getConnection() {
+    if (drizzle !== undefined) {
+        return drizzle;
     }
 
-    return drizzleD1(env.shopmonDB, { schema });
+    const client = new Database(process.env.APP_DATABASE_PATH || 'shopmon.db');
+
+    return drizzle = drizzleSqlite(client, { schema });
 }
 
 type ResultSet =

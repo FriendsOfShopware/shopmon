@@ -1,4 +1,4 @@
-import { Drizzle, getLastInsertId, schema } from '../db';
+import { type Drizzle, getLastInsertId, schema } from '../db';
 import { eq } from 'drizzle-orm';
 import Organization from './organization';
 
@@ -54,20 +54,9 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
 }
 
 async function revokeUserSessions(
-    session: KVNamespace,
     id: number,
 ): Promise<void> {
-    const accessToken = await session.list({ prefix: `u-${id}-` });
-
-    for (const key of accessToken.keys) {
-        await session.delete(key.name);
-    }
-
-    const refreshToken = await session.list({ prefix: `r-${id}-` });
-
-    for (const key of refreshToken.keys) {
-        await session.delete(key.name);
-    }
+    // @todo: Implement session revocation logic
 }
 
 async function createNotification(

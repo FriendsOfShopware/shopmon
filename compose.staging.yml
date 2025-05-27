@@ -1,0 +1,36 @@
+x-env: &env
+  FRONTEND_URL: https://shopmon-staging.fos.gg
+  MAIL_FROM: "Shopmon <contact@shopmon.fos.gg>"
+  APP_FILES_DIR: /app/uploads
+  APP_DATABASE_PATH: /app/db/shopmon.db
+  # From 1password
+  APP_SECRET: ${APP_SECRET}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_SECURE: ${SMTP_SECURE}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  PAGESPEED_API_KEY: ${PAGESPEED_API_KEY}
+
+services:
+  app:
+    image: ghcr.io/friendsofshopware/shopmon:staging
+    environment:
+      <<: *env
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - db:/app/db
+      - uploads:/app/uploads
+  cron:
+    image: ghcr.io/friendsofshopware/shopmon:staging
+    environment:
+      <<: *env
+    command: ['cron.js']
+    volumes:
+      - db:/app/db
+      - uploads:/app/uploads
+  
+volumes:
+  db:
+  uploads:

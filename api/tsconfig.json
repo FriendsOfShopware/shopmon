@@ -1,28 +1,43 @@
 {
   "compilerOptions": {
-    "module": "esnext",
-    "target": "esnext",
-    "lib": [
-      "esnext"
-    ],
-    "alwaysStrict": true,
-    "strict": true,
-    "preserveConstEnums": true,
-    "moduleResolution": "node",
+        // Environment setup & latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": false,
     "skipLibCheck": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
     "types": [
-      "@cloudflare/workers-types"
+      "@types/node",
+      "@types/bun"
     ]
   },
   "include": [
-    "types",
-    "src"
+    "*.ts",
+    "src/**/*",
+    "src/types/env.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "test"
-  ],
+  ]
 }

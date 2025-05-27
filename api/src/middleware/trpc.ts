@@ -2,7 +2,7 @@ import type { AnyRouter } from '@trpc/server';
 import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { MiddlewareHandler } from 'hono';
-import { createContext } from '../trpc/context';
+import { createContext } from '../trpc/context.ts';
 
 type tRPCOptions = Omit<
     FetchHandlerRequestOptions<AnyRouter>,
@@ -19,11 +19,9 @@ export const trpcServer = ({
             ...rest,
             endpoint,
             req: c.req.raw,
-            createContext: createContext(c.env, c.executionCtx),
+            createContext: createContext(),
             onError: (err) => {
-                if (err.error.code === 'INTERNAL_SERVER_ERROR') {
-                    c.get('sentry').captureException(err.error);
-                }
+                console.log('tRPC Error:', err.error);
             },
         });
         return res;

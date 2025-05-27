@@ -1,43 +1,47 @@
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { Bindings } from '../router';
-import { getConnection, Drizzle } from '../db';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { getConnection, type Drizzle, schema } from '../db.ts';
 import { TRPCError } from '@trpc/server';
+import { eq } from 'drizzle-orm';
 
 export type context = {
     user: number | null;
-    env: Bindings;
     drizzle: Drizzle;
-    executionCtx: ExecutionContext;
 };
 
-export function createContext(
-    bindings: Bindings,
-    executionCtx: ExecutionContext,
-) {
+export function createContext() {
     return async ({ req }: FetchCreateContextFnOptions) => {
         const auth = req.headers.get('authorization');
 
         let user = null;
 
         if (auth) {
-            const token = await bindings.kvStorage.get(auth);
+            const token = await getConnection()
+                .select({ id: schema.sessions.userId, expires: schema.sessions.expires })
+                .from(schema.sessions)
+                .where(eq(schema.sessions.id, auth))
 
-            if (token === null) {
+            if (token.length === 0) {
                 throw new TRPCError({
                     code: 'UNAUTHORIZED',
                     message: 'Token expired',
                 });
             }
 
-            const data = JSON.parse(token) as { id: number };
-            user = data.id;
+            if (token[0]!.expires < new Date()) {
+                await getConnection().delete(schema.sessions).where(eq(schema.sessions.id, auth));
+
+                throw new TRPCError({
+                    code: 'UNAUTHORIZED',
+                    message: 'Token expired',
+                });
+            }
+
+            user = token[0]!!.id as number;
         }
 
         return {
             user,
-            env: bindings,
-            drizzle: getConnection(bindings),
-            executionCtx,
+            drizzle: getConnection()
         };
     };
 }

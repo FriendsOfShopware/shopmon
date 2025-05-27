@@ -1,15 +1,16 @@
-import { router, publicProcedure } from '..';
-import { getLastInsertId, schema } from '../../db';
-import { eq, and, isNull } from 'drizzle-orm';
+import { router, publicProcedure } from '../index.ts';
+import { getLastInsertId, schema } from '../../db.ts';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import bcryptjs from 'bcryptjs';
-import { randomString } from '../../util';
-import Users from '../../repository/users';
+import { randomString } from '../../util.ts';
+import Users from '../../repository/users.ts';
 import { TRPCError } from '@trpc/server';
-import { loggedInUserMiddleware } from '../middleware';
-import Organizations from '../../repository/organization';
-import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail';
-import { passkeyRouter } from './passkey';
+import { loggedInUserMiddleware } from '../middleware.ts';
+import Organizations from '../../repository/organization.ts';
+import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail.ts';
+import { passkeyRouter } from './passkey.ts';
+const passwordReset = new Map<string, string>();
 
 export const ACCESS_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 
@@ -62,15 +63,11 @@ export const authRouter = router({
             }
 
             const token = `u-${result.id}-${randomString(32)}`;
-            await ctx.env.kvStorage.put(
-                token,
-                JSON.stringify({
-                    id: result.id,
-                } as Token),
-                {
-                    expirationTtl: ACCESS_TOKEN_TTL,
-                },
-            );
+            await ctx.drizzle.insert(schema.sessions).values({
+                id: token,
+                userId: result.id,
+                expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
+            }).execute();
 
             return token;
         }),
@@ -91,6 +88,9 @@ export const authRouter = router({
                 },
                 where: eq(schema.user.email, input.email),
             });
+
+            console.log('Registering user with email:', input.email);
+            console.log('User already exists:', result);
 
             if (result !== undefined) {
                 throw new TRPCError({
@@ -122,7 +122,7 @@ export const authRouter = router({
                 lastId,
             );
 
-            await sendMailConfirmToUser(ctx.env, input.email, token);
+            await sendMailConfirmToUser(input.email, token);
 
             return true;
         }),
@@ -169,26 +169,20 @@ export const authRouter = router({
                 return true;
             }
 
-            await ctx.env.kvStorage.put(
-                `reset_${token}`,
-                result.id.toString(),
-                {
-                    expirationTtl: 60 * 60, // 1 hour
-                },
-            );
+            passwordReset.set(token, result.id.toString());
 
-            ctx.executionCtx.waitUntil(
-                sendMailResetPassword(ctx.env, input, token),
-            );
+            setTimeout(() => {
+                passwordReset.delete(token);
+            }, 60 * 60 * 1000); // 1 hour
+
+            await sendMailResetPassword(input, token);
 
             return true;
         }),
     passwordResetAvailable: publicProcedure
         .input(z.string())
         .mutation(async ({ input, ctx }) => {
-            const result = await ctx.env.kvStorage.get(`reset_${input}`);
-
-            return result !== null;
+            return passwordReset.has(input);
         }),
     passwordResetConfirm: publicProcedure
         .input(
@@ -200,7 +194,8 @@ export const authRouter = router({
         .mutation(async ({ input, ctx }) => {
             const { token, password } = input;
 
-            const id = await ctx.env.kvStorage.get(`reset_${token}`);
+            const id = passwordReset.get(token);
+            passwordReset.delete(token);
 
             if (!id) {
                 throw new TRPCError({
@@ -224,7 +219,7 @@ export const authRouter = router({
         .use(loggedInUserMiddleware)
         .mutation(async ({ ctx }) => {
             if (ctx.user) {
-                await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user);
+                await Users.revokeUserSessions(ctx.user);
             }
         }),
 });

@@ -1,4 +1,4 @@
-import { Drizzle, getLastInsertId, schema } from '../db';
+import { type Drizzle, getLastInsertId, schema } from '../db';
 import { eq, and, inArray } from 'drizzle-orm';
 import Users from './users';
 import { TRPCError } from '@trpc/server';

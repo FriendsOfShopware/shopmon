@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '..';
+import { router, publicProcedure } from '../index.ts';
 import { z } from 'zod';
 
 export const infoRouter = router({
@@ -25,10 +25,6 @@ export const infoRouter = router({
             const checkExtensionCompatibilityApiResp = await fetch(
                 url.toString(),
                 {
-                    cf: {
-                        cacheEverything: true,
-                        cacheTtl: 60 * 60 * 2, // 2 hours
-                    },
                     method: 'POST',
                     body: JSON.stringify({
                         futureShopwareVersion: input.futureVersion,
@@ -43,10 +39,6 @@ export const infoRouter = router({
         const installApiResp = await fetch(
             'https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/all-supported-php-versions-by-shopware-version.json',
             {
-                cf: {
-                    cacheEverything: true,
-                    cacheTtl: 60 * 60 * 2, // 2 hours
-                },
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',
