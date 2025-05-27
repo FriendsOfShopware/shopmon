@@ -202,20 +202,28 @@ const schema = Yup.object().shape({
         .min(8, 'Password must be at least 8 characters'),
 });
 
-async function onSubmit(values: any) {
+async function onSubmit(values: {
+    displayName: string;
+    email: string;
+    password?: string;
+}) {
     try {
         await authStore.updateProfile(values);
         alertStore.success('User updated');
-    } catch (error: any) {
-        alertStore.error(error);
+    } catch (error) {
+        alertStore.error(
+            error instanceof Error ? error.message : String(error),
+        );
     }
 }
 
 async function deleteUser() {
     try {
         await authStore.delete();
-    } catch (error: any) {
-        alertStore.error(error);
+    } catch (error) {
+        alertStore.error(
+            error instanceof Error ? error.message : String(error),
+        );
     }
 
     showAccountDeletionModal.value = false;
@@ -226,13 +234,13 @@ async function createPasskey() {
 
     const registration = await client.register({
         challenge,
-        user: authStore.user?.email!,
+        user: authStore.user?.email || '',
         userVerification: 'required',
         timeout: 60000,
         attestation: false,
     });
 
-    await trpcClient.auth.passkey.registerDevice.mutate(registration as any);
+    await trpcClient.auth.passkey.registerDevice.mutate(registration);
     await authStore.loadPasskeys();
 }
 

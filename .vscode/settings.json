@@ -1,24 +1,20 @@
 {
-    "css.lint.unknownAtRules": "ignore",
-    "search.exclude": {
-        ".devenv": true,
-        ".direnv": true,
-        "**/node_modules": true,
-        "**/bower_components": true,
-        "**/*.code-search": true,
-        "**/.wrangler": true,
-        "api/worker.api.js": true,
-        "api/worker.api.js.map": true
-    },
-    "editor.renderWhitespace": "all",
-    "editor.renderControlCharacters": true,
-    "files.insertFinalNewline": true,
-    "[javascript]": {
-        "editor.defaultFormatter": "biomejs.biome"
-    },
-    "biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome",
-    "cSpell.words": [
-        "trpc",
-        "TRPC"
-    ]
+	"css.lint.unknownAtRules": "ignore",
+	"search.exclude": {
+		".devenv": true,
+		".direnv": true,
+		"**/node_modules": true,
+		"**/bower_components": true,
+		"**/*.code-search": true,
+		"**/.wrangler": true,
+		"api/worker.api.js": true,
+		"api/worker.api.js.map": true
+	},
+	"editor.renderWhitespace": "all",
+	"editor.renderControlCharacters": true,
+	"files.insertFinalNewline": true,
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"biome.lspBin": "api/node_modules/@biomejs/biome/bin/biome"
 }

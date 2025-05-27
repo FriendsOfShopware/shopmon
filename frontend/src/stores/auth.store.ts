@@ -85,20 +85,18 @@ export const useAuthStore = defineStore('auth', () => {
         passkeys.value = await trpcClient.auth.passkey.listDevices.query();
     }
 
-    async function registerPasskey(name: string) {
+    async function registerPasskey() {
         const challenge = await trpcClient.auth.passkey.challenge.mutate();
 
         const registration = await client.register({
             challenge,
-            user: user.value!.email,
+            user: user.value?.email || '',
             userVerification: 'required',
             timeout: 60000,
             attestation: false,
         });
 
-        await trpcClient.auth.passkey.registerDevice.mutate(
-            registration as any,
-        );
+        await trpcClient.auth.passkey.registerDevice.mutate(registration);
         await loadPasskeys();
     }
 

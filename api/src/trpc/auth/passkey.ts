@@ -1,8 +1,4 @@
 import { server } from '@passwordless-id/webauthn';
-import type {
-    AuthenticationResponseJSON,
-    RegistrationJSON,
-} from '@passwordless-id/webauthn/dist/esm/types';
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -58,13 +54,13 @@ export const passkeyRouter = router({
                     .enum(['cross-platform', 'platform'])
                     .optional(),
 
-                // Client extension results
-                clientExtensionResults: z.record(z.unknown()),
+                // Client extension results - use z.any() for compatibility
+                clientExtensionResults: z.any(),
 
                 // Credential type
                 type: z.literal('public-key'),
 
-                // User information
+                // User information - Added by @passwordless-id/webauthn library
                 user: z.object({
                     id: z.string().optional(),
                     name: z.string(),
@@ -87,13 +83,13 @@ export const passkeyRouter = router({
             };
 
             const registrationParsed = await server.verifyRegistration(
-                input as RegistrationJSON,
+                // biome-ignore lint/suspicious/noExplicitAny: library fuck up
+                input as any,
                 expected,
             );
 
             await ctx.drizzle
                 .insert(schema.userPasskeys)
-                // @ts-expect-error
                 .values({
                     id: input.id,
                     name: registrationParsed.authenticator.name,
@@ -139,15 +135,17 @@ export const passkeyRouter = router({
             z.object({
                 id: z.string(),
                 rawId: z.string(),
-                type: z.string(),
+                type: z.literal('public-key'),
                 response: z.object({
                     clientDataJSON: z.string(),
                     authenticatorData: z.string(),
                     signature: z.string(),
                     userHandle: z.string().optional(),
                 }),
-                authenticatorAttachment: z.string().optional(),
-                clientExtensionResults: z.record(z.any()),
+                authenticatorAttachment: z
+                    .enum(['cross-platform', 'platform'])
+                    .optional(),
+                clientExtensionResults: z.any(),
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -180,8 +178,8 @@ export const passkeyRouter = router({
             };
 
             await server.verifyAuthentication(
-                input as AuthenticationResponseJSON,
-                // @ts-expect-error
+                // biome-ignore lint/suspicious/noExplicitAny: library fuck up
+                input as any,
                 credential.key.credential,
                 expected,
             );

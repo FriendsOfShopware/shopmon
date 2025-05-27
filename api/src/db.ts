@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import type { RegistrationJSON } from '@passwordless-id/webauthn/dist/esm/types';
+import type { RegistrationInfo } from '@passwordless-id/webauthn/dist/esm/types';
 import {
     type BunSQLiteDatabase,
     drizzle as drizzleSqlite,
@@ -142,7 +142,7 @@ export const userPasskeys = sqliteTable('user_passkeys', {
     userId: integer('userId')
         .notNull()
         .references(() => user.id),
-    key: text('key', { mode: 'json' }).notNull().$type<RegistrationJSON>(),
+    key: text('key', { mode: 'json' }).notNull().$type<RegistrationInfo>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 

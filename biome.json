@@ -1,7 +1,14 @@
 {
 	"$schema": "https://biomejs.dev/schemas/1.5.0/schema.json",
 	"files": {
-		"ignore": ["*.mjml", "drizzle/meta/**", "dist/**", "frontend/src/types/vue.shyim.d.ts", "frontend/src/styles/*.css", "frontend/src/style.css"]
+		"ignore": [
+			"*.mjml",
+			"drizzle/meta/**",
+			"dist/**",
+			"frontend/src/types/vue.shyim.d.ts",
+			"frontend/src/styles/*.css",
+			"frontend/src/style.css"
+		]
 	},
 	"organizeImports": {
 		"enabled": true
