@@ -1,9 +1,15 @@
 import { Hono } from 'hono';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
-import { promises as fs, existsSync, readFileSync } from 'fs';
+import { promises as fs, existsSync, readFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { serveStatic } from 'hono/bun';
+
+const filesDir = process.env.APP_FILES_DIR || './files';
+
+if (!existsSync(filesDir)) {
+    mkdirSync(filesDir, { recursive: true })
+}
 
 const app = new Hono();
 
@@ -18,7 +24,6 @@ app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
         return c.json({ error: 'Invalid UUID' }, 404);
     }
 
-    const filesDir = process.env.APP_FILES_DIR || './files';
     const filePath = path.join(filesDir, 'pagespeed', uuid, 'screenshot.jpg');
 
     try {
