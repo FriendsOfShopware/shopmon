@@ -8,7 +8,7 @@
 
     <main-container v-if="!shopStore.isLoading">
         <template v-if="shopStore.shops.length === 0">
-            <element-empty title="No Shops" button="Add Shop" route="/account/shop/new">
+            <element-empty title="No Shops" button="Add Shop" route="/account/shops/new">
                 Get started by adding your first Shop.
             </element-empty>
         </template>
