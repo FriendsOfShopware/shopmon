@@ -2,6 +2,7 @@ import * as cron from 'node-cron';
 import { shopScrapeJob } from './jobs/shopScrape.js';
 import { pagespeedScrapeJob } from './jobs/pagespeedScrape.js';
 import { sessionCleanupJob } from './jobs/sessionCleanup.js';
+import { passwordResetCleanupJob } from './jobs/passwordResetCleanup.js';
 
 console.log('Starting cron jobs...');
 
@@ -32,6 +33,16 @@ cron.schedule('0 * * * *', async () => {
     await sessionCleanupJob();
   } catch (error) {
     console.error('Session cleanup job failed:', error);
+  }
+});
+
+// Run password reset cleanup every hour
+cron.schedule('0 * * * *', async () => {
+  console.log('Running password reset cleanup job...');
+  try {
+    await passwordResetCleanupJob();
+  } catch (error) {
+    console.error('Password reset cleanup job failed:', error);
   }
 });
 

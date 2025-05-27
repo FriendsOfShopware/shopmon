@@ -168,6 +168,16 @@ export const sessions = sqliteTable('sessions', {
     expires: integer('expires', { mode: 'timestamp' }).notNull(),
 });
 
+export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+    id: text('id').primaryKey(),
+    userId: integer('user_id')
+        .notNull()
+        .references(() => user.id),
+    token: text('token').notNull().unique(),
+    expires: integer('expires', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
 export const schema = {
     user,
     shop,
@@ -179,6 +189,7 @@ export const schema = {
     userToOrganization,
     userPasskeys,
     sessions,
+    passwordResetTokens,
 };
 
 export type Drizzle = BunSQLiteDatabase<typeof schema>;

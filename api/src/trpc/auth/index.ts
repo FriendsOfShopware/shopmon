@@ -1,6 +1,6 @@
 import { router, publicProcedure } from '../index.ts';
 import { getLastInsertId, schema, user } from '../../db.ts';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
 import bcryptjs from 'bcryptjs';
 import { randomString } from '../../util.ts';
@@ -10,18 +10,6 @@ import { loggedInUserMiddleware } from '../middleware.ts';
 import Organizations from '../../repository/organization.ts';
 import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail.ts';
 import { passkeyRouter } from './passkey.ts';
-const passwordReset = new Map<string, { userId: string; timestamp: number }>();
-
-// Clean up expired password reset tokens every 30 minutes
-setInterval(() => {
-    const now = Date.now();
-    const TTL = 60 * 60 * 1000; // 1 hour
-    for (const [key, value] of passwordReset.entries()) {
-        if (now - value.timestamp > TTL) {
-            passwordReset.delete(key);
-        }
-    }
-}, 30 * 60 * 1000);
 
 export const ACCESS_TOKEN_TTL = 60 * 60 * 6; // 6 hours
 
@@ -178,7 +166,15 @@ export const authRouter = router({
                 return true;
             }
 
-            passwordReset.set(token, { userId: result.id.toString(), timestamp: Date.now() });
+            const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+            
+            await ctx.drizzle.insert(schema.passwordResetTokens).values({
+                id: randomString(32),
+                userId: result.id,
+                token: token,
+                expires: expires,
+                createdAt: new Date(),
+            });
 
             await sendMailResetPassword(input, token);
 
@@ -187,7 +183,13 @@ export const authRouter = router({
     passwordResetAvailable: publicProcedure
         .input(z.string())
         .mutation(async ({ input, ctx }) => {
-            return passwordReset.has(input);
+            const result = await ctx.drizzle.query.passwordResetTokens.findFirst({
+                where: and(
+                    eq(schema.passwordResetTokens.token, input),
+                    gt(schema.passwordResetTokens.expires, new Date())
+                ),
+            });
+            return result !== undefined;
         }),
     passwordResetConfirm: publicProcedure
         .input(
@@ -199,15 +201,25 @@ export const authRouter = router({
         .mutation(async ({ input, ctx }) => {
             const { token, password } = input;
 
-            const id = passwordReset.get(token);
-            passwordReset.delete(token);
+            const tokenData = await ctx.drizzle.query.passwordResetTokens.findFirst({
+                where: and(
+                    eq(schema.passwordResetTokens.token, token),
+                    gt(schema.passwordResetTokens.expires, new Date())
+                ),
+            });
 
-            if (!id) {
+            if (!tokenData) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
                     message: 'Invalid token',
                 });
             }
+
+            // Delete the token
+            await ctx.drizzle
+                .delete(schema.passwordResetTokens)
+                .where(eq(schema.passwordResetTokens.id, tokenData.id))
+                .execute();
 
             const salt = await bcryptjs.genSalt(10);
             const newPassword = await bcryptjs.hash(password, salt);
@@ -215,7 +227,7 @@ export const authRouter = router({
             await ctx.drizzle
                 .update(schema.user)
                 .set({ password: newPassword, verifyCode: null })
-                .where(eq(schema.user.id, parseInt(id.userId)))
+                .where(eq(schema.user.id, tokenData.userId))
                 .execute();
 
             return true;
