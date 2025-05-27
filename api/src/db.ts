@@ -166,10 +166,6 @@ export const sessions = sqliteTable('sessions', {
         .notNull()
         .references(() => user.id),
     expires: integer('expires', { mode: 'timestamp' }).notNull(),
-}, (table) => {
-    return {
-        pk: primaryKey(table.id),
-    };
 });
 
 export const schema = {
