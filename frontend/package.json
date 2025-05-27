@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"@headlessui/vue": "1.7.23",
-		"@passwordless-id/webauthn": "^2.3.0",
+		"@passwordless-id/webauthn": "catalog:",
 		"@tailwindcss/forms": "0.5.10",
 		"@trpc/client": "^11.1.0",
 		"compare-versions": "^6.1.1",
@@ -39,7 +39,7 @@
 		"autoprefixer": "10.4.21",
 		"postcss": "^8.5.3",
 		"postcss-nested": "^7.0.2",
-		"typescript": "5.8.3",
+		"typescript": "catalog:",
 		"vite": "6.3.5"
 	}
 }

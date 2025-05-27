@@ -1,4 +1,17 @@
 {
-	"workspaces": ["api", "frontend"],
-	"trustedDependencies": ["@biomejs/biome", "esbuild", "sharp"]
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4"
+	},
+	"workspaces": {
+		"packages": ["api", "frontend"],
+		"catalog": {
+			"@passwordless-id/webauthn": "^2.3.0",
+			"typescript": "5.8.3"
+		}
+	},
+	"trustedDependencies": ["@biomejs/biome", "esbuild", "sharp"],
+	"scripts": {
+		"format": "biome format --write .",
+		"lint": "biome lint ."
+	}
 }
