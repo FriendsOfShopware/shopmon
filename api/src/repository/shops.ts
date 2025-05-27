@@ -1,7 +1,7 @@
-import Users from './users.ts';
-import { sendAlert } from '../mail/mail.ts';
-import { type Drizzle, getLastInsertId, schema } from '../db.ts';
 import { eq } from 'drizzle-orm';
+import { type Drizzle, getLastInsertId, schema } from '../db.ts';
+import { sendAlert } from '../mail/mail.ts';
+import Users from './users.ts';
 
 const alertMap = new Map<string, string>();
 
@@ -105,20 +105,12 @@ async function notify(
     const users = await getUsersOfShop(con, shopId);
 
     for (const user of users) {
-        await Users.createNotification(
-            con,
-            user.id,
-            key,
-            notification,
-        );
+        await Users.createNotification(con, user.id, key, notification);
     }
 }
 
-async function alert(
-    con: Drizzle,
-    alert: ShopAlert,
-): Promise<void> {
-    const users = await getUsersOfShop(con, parseInt(alert.shopId));
+async function alert(con: Drizzle, alert: ShopAlert): Promise<void> {
+    const users = await getUsersOfShop(con, Number.parseInt(alert.shopId));
     const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
     if (alertMap.has(alertKey)) {
@@ -131,7 +123,7 @@ async function alert(
         columns: {
             name: true,
         },
-        where: eq(schema.shop.id, parseInt(alert.shopId)),
+        where: eq(schema.shop.id, Number.parseInt(alert.shopId)),
     });
 
     if (result === undefined) {

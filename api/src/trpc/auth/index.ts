@@ -1,13 +1,16 @@
-import { router, publicProcedure } from '../index.ts';
-import { getLastInsertId, schema, user } from '../../db.ts';
-import { eq, and, gt } from 'drizzle-orm';
-import { z } from 'zod';
-import { randomString } from '../../util.ts';
-import Users from '../../repository/users.ts';
 import { TRPCError } from '@trpc/server';
-import { loggedInUserMiddleware } from '../middleware.ts';
+import { and, eq, gt } from 'drizzle-orm';
+import { z } from 'zod';
+import { getLastInsertId, schema, user } from '../../db.ts';
+import {
+    sendMailConfirmToUser,
+    sendMailResetPassword,
+} from '../../mail/mail.ts';
 import Organizations from '../../repository/organization.ts';
-import { sendMailConfirmToUser, sendMailResetPassword } from '../../mail/mail.ts';
+import Users from '../../repository/users.ts';
+import { randomString } from '../../util.ts';
+import { publicProcedure, router } from '../index.ts';
+import { loggedInUserMiddleware } from '../middleware.ts';
 import { passkeyRouter } from './passkey.ts';
 
 export const ACCESS_TOKEN_TTL = 60 * 60 * 6; // 6 hours
@@ -61,11 +64,14 @@ export const authRouter = router({
             }
 
             const token = `u-${result.id}-${randomString(32)}`;
-            await ctx.drizzle.insert(schema.sessions).values({
-                id: token,
-                userId: result.id,
-                expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
-            }).execute();
+            await ctx.drizzle
+                .insert(schema.sessions)
+                .values({
+                    id: token,
+                    userId: result.id,
+                    expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
+                })
+                .execute();
 
             return token;
         }),
@@ -167,7 +173,7 @@ export const authRouter = router({
             }
 
             const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-            
+
             await ctx.drizzle.insert(schema.passwordResetTokens).values({
                 id: randomString(32),
                 userId: result.id,
@@ -183,12 +189,13 @@ export const authRouter = router({
     passwordResetAvailable: publicProcedure
         .input(z.string())
         .mutation(async ({ input, ctx }) => {
-            const result = await ctx.drizzle.query.passwordResetTokens.findFirst({
-                where: and(
-                    eq(schema.passwordResetTokens.token, input),
-                    gt(schema.passwordResetTokens.expires, new Date())
-                ),
-            });
+            const result =
+                await ctx.drizzle.query.passwordResetTokens.findFirst({
+                    where: and(
+                        eq(schema.passwordResetTokens.token, input),
+                        gt(schema.passwordResetTokens.expires, new Date()),
+                    ),
+                });
             return result !== undefined;
         }),
     passwordResetConfirm: publicProcedure
@@ -201,12 +208,13 @@ export const authRouter = router({
         .mutation(async ({ input, ctx }) => {
             const { token, password } = input;
 
-            const tokenData = await ctx.drizzle.query.passwordResetTokens.findFirst({
-                where: and(
-                    eq(schema.passwordResetTokens.token, token),
-                    gt(schema.passwordResetTokens.expires, new Date())
-                ),
-            });
+            const tokenData =
+                await ctx.drizzle.query.passwordResetTokens.findFirst({
+                    where: and(
+                        eq(schema.passwordResetTokens.token, token),
+                        gt(schema.passwordResetTokens.expires, new Date()),
+                    ),
+                });
 
             if (!tokenData) {
                 throw new TRPCError({

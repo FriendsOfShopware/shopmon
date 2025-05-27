@@ -1,12 +1,16 @@
+import { Database } from 'bun:sqlite';
+import type { RegistrationJSON } from '@passwordless-id/webauthn/dist/esm/types';
 import {
-    sqliteTable,
-    text,
+    type BunSQLiteDatabase,
+    drizzle as drizzleSqlite,
+} from 'drizzle-orm/bun-sqlite';
+import {
     integer,
     primaryKey,
+    sqliteTable,
+    text,
     unique,
 } from 'drizzle-orm/sqlite-core';
-import { Database } from "bun:sqlite";
-import { drizzle as drizzleSqlite, BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import type {
     CacheInfo,
     CheckerChecks,
@@ -16,7 +20,6 @@ import type {
     QueueInfo,
     ScheduledTask,
 } from './types/index.ts';
-import type { RegistrationJSON } from '@passwordless-id/webauthn/dist/esm/types';
 
 type LastChangelog = {
     date: Date;
@@ -203,7 +206,7 @@ export function getConnection() {
 
     const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
     dbClient = new Database(dbPath);
-    
+
     // SQLite optimizations
     // Enable Write-Ahead Logging for better concurrency
     dbClient.exec('PRAGMA journal_mode = WAL');
@@ -221,11 +224,11 @@ export function getConnection() {
     dbClient.exec('PRAGMA optimize');
 
     drizzle = drizzleSqlite(dbClient, { schema });
-    
+
     // Graceful shutdown handling
     process.on('SIGINT', closeConnection);
     process.on('SIGTERM', closeConnection);
-    
+
     return drizzle;
 }
 
@@ -244,7 +247,7 @@ export function closeConnection() {
     }
 }
 
-type ResultSet = { lastInsertRowid: number}
+type ResultSet = { lastInsertRowid: number };
 
 export function getLastInsertId(result: ResultSet): number {
     return result.lastInsertRowid;

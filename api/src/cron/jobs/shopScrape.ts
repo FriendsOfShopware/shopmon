@@ -1,11 +1,21 @@
-import { SimpleShop, HttpClient, ApiClientRequestFailed, ApiClientAuthenticationFailed, HttpClientResponse } from '@shopware-ag/app-server-sdk';
+import {
+    ApiClientAuthenticationFailed,
+    ApiClientRequestFailed,
+    HttpClient,
+    type HttpClientResponse,
+    SimpleShop,
+} from '@shopware-ag/app-server-sdk';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import { decrypt } from '../../crypto/index.js';
 import { getConnection, schema } from '../../db.js';
-import versionCompare from '../../util.ts';
 import { type CheckerInput, check } from '../../object/status/registery.js';
 import Shops, { type User } from '../../repository/shops.js';
-import { decrypt } from '../../crypto/index.js';
-import { and, asc, eq, inArray } from 'drizzle-orm';
-import type { Extension, ExtensionChangelog, ExtensionDiff } from '../../types/index.js';
+import type {
+    Extension,
+    ExtensionChangelog,
+    ExtensionDiff,
+} from '../../types/index.js';
+import versionCompare from '../../util.ts';
 
 interface SQLShop {
     id: number;
@@ -109,7 +119,11 @@ export async function scrapeSingleShop(shopId: number) {
     await updateShop(shop, con);
 }
 
-async function shouldNotify(con: any, users: User[], notificationKey: string): Promise<boolean> {
+async function shouldNotify(
+    con: any,
+    users: User[],
+    notificationKey: string,
+): Promise<boolean> {
     const notificationResult = await con
         .select({
             created_at: schema.userNotification.createdAt,
@@ -259,24 +273,19 @@ async function updateShop(shop: SQLShop, con: any) {
 
             console.log(error);
 
-            await Shops.notify(
-                con,
-                shop.id,
-                `shop.not.updated_${shop.id}`,
-                {
-                    level: 'error',
-                    title: `Shop: ${shop.name} could not be updated`,
-                    message:
-                        'Could not connect to shop. Please check your credentials and try again.',
-                    link: {
-                        name: 'account.shops.detail',
-                        params: {
-                            shopId: shop.id.toString(),
-                            organizationId: shop.organizationId.toString(),
-                        },
+            await Shops.notify(con, shop.id, `shop.not.updated_${shop.id}`, {
+                level: 'error',
+                title: `Shop: ${shop.name} could not be updated`,
+                message:
+                    'Could not connect to shop. Please check your credentials and try again.',
+                link: {
+                    name: 'account.shops.detail',
+                    params: {
+                        shopId: shop.id.toString(),
+                        organizationId: shop.organizationId.toString(),
                     },
                 },
-            );
+            });
 
             await con
                 .update(schema.shop)
@@ -526,23 +535,18 @@ async function updateShop(shop: SQLShop, con: any) {
             const statusChangeKey = `shop.change-status.${shop.id}`;
 
             if (await shouldNotify(con, users, statusChangeKey)) {
-                await Shops.notify(
-                    con,
-                    shop.id,
-                    statusChangeKey,
-                    {
-                        level: 'warning',
-                        title: `Shop: ${shop.name} status changed`,
-                        message: `Status changed from ${shop.status} to ${checkerResult.status}`,
-                        link: {
-                            name: 'account.shops.detail',
-                            params: {
-                                shopId: shop.id.toString(),
-                                organizationId: shop.organizationId.toString(),
-                            },
+                await Shops.notify(con, shop.id, statusChangeKey, {
+                    level: 'warning',
+                    title: `Shop: ${shop.name} status changed`,
+                    message: `Status changed from ${shop.status} to ${checkerResult.status}`,
+                    link: {
+                        name: 'account.shops.detail',
+                        params: {
+                            shopId: shop.id.toString(),
+                            organizationId: shop.organizationId.toString(),
                         },
                     },
-                );
+                });
 
                 await Shops.alert(con, {
                     key: statusChangeKey,

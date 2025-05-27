@@ -1,10 +1,10 @@
-import { HttpClient } from '@shopware-ag/app-server-sdk';
+import type { HttpClient } from '@shopware-ag/app-server-sdk';
+import type { schema } from '../../db';
 import env from './checks/env';
 import frosh_tools from './checks/frosh_tools';
 import security from './checks/security';
 import task from './checks/task';
 import worker from './checks/worker';
-import { schema } from '../../db';
 
 enum SHOP_STATUS {
     GREEN = 'green',

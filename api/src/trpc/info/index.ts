@@ -1,5 +1,5 @@
-import { router, publicProcedure } from '../index.ts';
 import { z } from 'zod';
+import { publicProcedure, router } from '../index.ts';
 
 export const infoRouter = router({
     checkExtensionCompatibility: publicProcedure

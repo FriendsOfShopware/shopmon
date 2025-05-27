@@ -1,33 +1,33 @@
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      APP_DATABASE_PATH: string;
-      APP_SECRET: string;
+    namespace NodeJS {
+        interface ProcessEnv {
+            APP_DATABASE_PATH: string;
+            APP_SECRET: string;
 
-      // Email
-      MAIL_ACTIVE?: 'true' | 'false';
-      MAIL_FROM: string;
+            // Email
+            MAIL_ACTIVE?: 'true' | 'false';
+            MAIL_FROM: string;
 
-      // SMTP Configuration
-      SMTP_HOST?: string;
-      SMTP_PORT?: string;
-      SMTP_SECURE?: 'true' | 'false';
-      SMTP_USER?: string;
-      SMTP_PASS?: string;
+            // SMTP Configuration
+            SMTP_HOST?: string;
+            SMTP_PORT?: string;
+            SMTP_SECURE?: 'true' | 'false';
+            SMTP_USER?: string;
+            SMTP_PASS?: string;
 
-      // External APIs
-      PAGESPEED_API_KEY?: string;
+            // External APIs
+            PAGESPEED_API_KEY?: string;
 
-      // Application
-      FRONTEND_URL?: string;
-      DISABLE_REGISTRATION?: string;
-      APP_FILES_DIR?: string;
+            // Application
+            FRONTEND_URL?: string;
+            DISABLE_REGISTRATION?: string;
+            APP_FILES_DIR?: string;
 
-      // Monitoring (optional)
-      SENTRY_DSN?: string;
-      SENTRY_RELEASE?: string;
+            // Monitoring (optional)
+            SENTRY_DSN?: string;
+            SENTRY_RELEASE?: string;
+        }
     }
-  }
 }
 
 // Make this file a module

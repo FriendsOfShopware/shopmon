@@ -1,5 +1,5 @@
-import { type Drizzle, getConnection, getLastInsertId, schema } from '../db';
 import { eq } from 'drizzle-orm';
+import { type Drizzle, getConnection, getLastInsertId, schema } from '../db';
 import Organization from './organization';
 
 async function existsByEmail(
@@ -53,12 +53,11 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
         .execute();
 }
 
-async function revokeUserSessions(
-    id: number,
-): Promise<void> {
-    await getConnection().delete(schema.sessions).where(
-        eq(schema.sessions.userId, id)
-    ).execute();
+async function revokeUserSessions(id: number): Promise<void> {
+    await getConnection()
+        .delete(schema.sessions)
+        .where(eq(schema.sessions.userId, id))
+        .execute();
 }
 
 async function createNotification(

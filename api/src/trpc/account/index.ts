@@ -1,11 +1,11 @@
 import { TRPCError } from '@trpc/server';
-import { router, publicProcedure } from '../index.ts';
-import { sha256 } from '../../crypto/index.ts';
-import { schema } from '../../db.ts';
-import { loggedInUserMiddleware } from '../middleware.ts';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { sha256 } from '../../crypto/index.ts';
+import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
+import { publicProcedure, router } from '../index.ts';
+import { loggedInUserMiddleware } from '../middleware.ts';
 import { notificationRouter } from './notification.ts';
 
 interface Extension {
@@ -117,7 +117,12 @@ export const accountRouter = router({
                 });
             }
 
-            if (!await Bun.password.verify(input.currentPassword, user.password)) {
+            if (
+                !(await Bun.password.verify(
+                    input.currentPassword,
+                    user.password,
+                ))
+            ) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
                     message: 'Invalid password',

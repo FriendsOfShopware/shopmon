@@ -1,22 +1,22 @@
+import { promises as fs, existsSync, mkdirSync, readFileSync } from 'fs';
+import path from 'path';
+import * as Sentry from '@sentry/bun';
 import { Hono } from 'hono';
+import { serveStatic } from 'hono/bun';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
-import { promises as fs, existsSync, readFileSync, mkdirSync } from 'fs';
-import path from 'path';
-import { serveStatic } from 'hono/bun';
-import * as Sentry from "@sentry/bun";
 
 const filesDir = process.env.APP_FILES_DIR || './files';
 
 if (!existsSync(filesDir)) {
-    mkdirSync(filesDir, { recursive: true })
+    mkdirSync(filesDir, { recursive: true });
 }
 
 Sentry.init({
     dsn: process.env.SENTRY_DSN || '',
     release: process.env.SENTRY_RELEASE || 'unknown',
     environment: process.env.SENTRY_ENVIRONMENT || 'development',
-})
+});
 
 const app = new Hono();
 
@@ -53,7 +53,7 @@ app.get('/health', (c) => {
 });
 
 if (existsSync('./dist')) {
-    app.use('*', serveStatic({root: './dist'}));
+    app.use('*', serveStatic({ root: './dist' }));
     const indexHtml = readFileSync('./dist/index.html', 'utf-8');
     app.notFound((c) => {
         return c.html(indexHtml, 200, {

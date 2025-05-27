@@ -1,8 +1,8 @@
 import { TRPCError, experimental_standaloneMiddleware } from '@trpc/server';
-import { t } from '.';
 import { and, eq } from 'drizzle-orm';
-import type { context } from './context';
+import { t } from '.';
 import { schema } from '../db';
+import type { context } from './context';
 
 export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     if (!ctx.user) {

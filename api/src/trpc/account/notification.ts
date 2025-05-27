@@ -1,8 +1,8 @@
-import { router, publicProcedure } from '..';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { loggedInUserMiddleware } from '../middleware';
-import { eq, and } from 'drizzle-orm';
+import { publicProcedure, router } from '..';
 import { schema } from '../../db';
+import { loggedInUserMiddleware } from '../middleware';
 
 export const notificationRouter = router({
     list: publicProcedure.use(loggedInUserMiddleware).query(async ({ ctx }) => {

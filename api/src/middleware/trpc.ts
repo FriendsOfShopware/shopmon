@@ -1,9 +1,9 @@
+import { captureException } from '@sentry/bun';
 import type { AnyRouter } from '@trpc/server';
 import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { MiddlewareHandler } from 'hono';
 import { createContext } from '../trpc/context.ts';
-import { captureException } from '@sentry/bun';
 
 type tRPCOptions = Omit<
     FetchHandlerRequestOptions<AnyRouter>,
@@ -30,7 +30,7 @@ export const trpcServer = ({
                     extra: {
                         type: err.type,
                         path: err.path,
-                    }
+                    },
                 });
             },
         });

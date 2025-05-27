@@ -1,9 +1,9 @@
-import { getConnection, schema } from '../../db.js';
-import Shops from '../../repository/shops.js';
-import { eq } from 'drizzle-orm';
 import { promises as fs } from 'fs';
 import path from 'node:path';
+import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
+import { getConnection, schema } from '../../db.js';
+import Shops from '../../repository/shops.js';
 
 interface SQLShop {
     id: number;
@@ -59,7 +59,9 @@ export async function pagespeedScrapeJob() {
     const batchSize = 5; // Lower batch size for PageSpeed API
     for (let i = 0; i < shops.length; i += batchSize) {
         const batch = shops.slice(i, i + batchSize);
-        await Promise.all(batch.map((shop) => computePagespeed(shop as SQLShop, con)));
+        await Promise.all(
+            batch.map((shop) => computePagespeed(shop as SQLShop, con)),
+        );
     }
 }
 
@@ -137,11 +139,11 @@ async function computePagespeed(shop: SQLShop, con: any) {
     );
     params.searchParams.set('strategy', 'MOBILE');
     params.searchParams.set('url', shop.url);
-    
+
     if (process.env.PAGESPEED_API_KEY) {
         params.searchParams.set('key', process.env.PAGESPEED_API_KEY);
     }
-    
+
     params.searchParams.append('category', 'ACCESSIBILITY');
     params.searchParams.append('category', 'BEST_PRACTICES');
     params.searchParams.append('category', 'PERFORMANCE');
@@ -151,7 +153,9 @@ async function computePagespeed(shop: SQLShop, con: any) {
 
     if (pagespeedResponse.status !== 200) {
         // That can happen that the shop is in maintenance mode and the PageSpeed API returns a 503
-        console.log(`PageSpeed API returned ${pagespeedResponse.status} for shop ${shop.id}`);
+        console.log(
+            `PageSpeed API returned ${pagespeedResponse.status} for shop ${shop.id}`,
+        );
         return;
     }
 
@@ -171,9 +175,7 @@ async function computePagespeed(shop: SQLShop, con: any) {
 
     // Convert base64 to buffer and save with sharp for optimization
     const buffer = Buffer.from(pageScreenshot, 'base64');
-    await sharp(buffer)
-        .jpeg({ quality: 85 })
-        .toFile(fileName);
+    await sharp(buffer).jpeg({ quality: 85 }).toFile(fileName);
 
     // Delete the previous image
     if (shop.shopImage) {
@@ -193,14 +195,12 @@ async function computePagespeed(shop: SQLShop, con: any) {
         .values({
             shopId: shop.id,
             performance:
-                pagespeed.lighthouseResult.categories.performance.score *
-                100,
+                pagespeed.lighthouseResult.categories.performance.score * 100,
             accessibility:
-                pagespeed.lighthouseResult.categories.accessibility.score *
-                100,
+                pagespeed.lighthouseResult.categories.accessibility.score * 100,
             bestPractices:
-                pagespeed.lighthouseResult.categories['best-practices']
-                    .score * 100,
+                pagespeed.lighthouseResult.categories['best-practices'].score *
+                100,
             seo: pagespeed.lighthouseResult.categories.seo.score * 100,
             createdAt: new Date(),
         })

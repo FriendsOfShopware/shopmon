@@ -1,23 +1,23 @@
-import { router, publicProcedure } from '../index.ts';
+import {
+    HttpClient,
+    type HttpClientResponse,
+    SimpleShop,
+} from '@shopware-ag/app-server-sdk';
+import { TRPCError } from '@trpc/server';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
+import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
+import { decrypt, encrypt } from '../../crypto/index.ts';
+import { schema } from '../../db.ts';
+import Shops from '../../repository/shops.ts';
+import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
     organizationAdminMiddleware,
     organizationMiddleware,
     shopMiddleware,
 } from '../middleware.ts';
-import { and, eq, desc, sql } from 'drizzle-orm';
-import { schema } from '../../db.ts';
-import { TRPCError } from '@trpc/server';
-import Shops from '../../repository/shops.ts';
-import { decrypt, encrypt } from '../../crypto/index.ts';
-import {
-    HttpClient,
-    HttpClientResponse,
-    SimpleShop,
-} from '@shopware-ag/app-server-sdk';
-import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
-import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 
 export const shopRouter = router({
     list: publicProcedure
@@ -139,7 +139,7 @@ export const shopRouter = router({
 
             const client = new HttpClient(shop);
 
-            let resp: HttpClientResponse<{version: string}>;
+            let resp: HttpClientResponse<{ version: string }>;
             try {
                 resp = await client.get('/_info/config');
             } catch (e) {
@@ -164,7 +164,7 @@ export const shopRouter = router({
                 version: resp.body.version,
             });
 
-            await scrapeSingleShop(id)
+            await scrapeSingleShop(id);
 
             return id;
         }),
@@ -300,7 +300,7 @@ export const shopRouter = router({
         .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
-            await scrapeSingleShop(input.shopId)
+            await scrapeSingleShop(input.shopId);
 
             if (input.pageSpeed) {
                 await scrapeSinglePagespeedShop(input.shopId);

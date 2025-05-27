@@ -1,5 +1,5 @@
-import { type ScheduledTask } from '../../../types';
-import { type Checker, type CheckerInput, CheckerOutput } from '../registery';
+import type { ScheduledTask } from '../../../types';
+import type { Checker, CheckerInput, CheckerOutput } from '../registery';
 
 export default class implements Checker {
     async check(input: CheckerInput, result: CheckerOutput): Promise<void> {

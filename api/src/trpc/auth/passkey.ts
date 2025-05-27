@@ -1,13 +1,16 @@
-import { router, publicProcedure } from '../index.ts';
 import { server } from '@passwordless-id/webauthn';
-import { loggedInUserMiddleware } from '../middleware.ts';
-import { z } from 'zod';
-import { schema } from '../../db.ts';
+import type {
+    AuthenticationResponseJSON,
+    RegistrationJSON,
+} from '@passwordless-id/webauthn/dist/esm/types';
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
+import { z } from 'zod';
+import { schema } from '../../db.ts';
 import { randomString } from '../../util.ts';
+import { publicProcedure, router } from '../index.ts';
+import { loggedInUserMiddleware } from '../middleware.ts';
 import { ACCESS_TOKEN_TTL } from './index.ts';
-import type { RegistrationJSON, AuthenticationResponseJSON } from '@passwordless-id/webauthn/dist/esm/types';
 const webauthnChallanges = new Map<string, string>();
 
 export const passkeyRouter = router({
@@ -30,33 +33,42 @@ export const passkeyRouter = router({
                 // Credential ID fields
                 id: z.string(), // Base64URLString
                 rawId: z.string(), // Base64URLString
-                
+
                 // Response data
                 response: z.object({
-                  attestationObject: z.string(), // Base64URLString
-                  authenticatorData: z.string(), // Base64URLString
-                  clientDataJSON: z.string(), // Base64URLString
-                  transports: z.array(
-                    z.enum(['ble', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb'])
-                  ),
-                  publicKey: z.string(), // Base64URLString
-                  publicKeyAlgorithm: z.number(), // COSEAlgorithmIdentifier
+                    attestationObject: z.string(), // Base64URLString
+                    authenticatorData: z.string(), // Base64URLString
+                    clientDataJSON: z.string(), // Base64URLString
+                    transports: z.array(
+                        z.enum([
+                            'ble',
+                            'hybrid',
+                            'internal',
+                            'nfc',
+                            'smart-card',
+                            'usb',
+                        ]),
+                    ),
+                    publicKey: z.string(), // Base64URLString
+                    publicKeyAlgorithm: z.number(), // COSEAlgorithmIdentifier
                 }),
-                
+
                 // Optional authenticator attachment
-                authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
-                
+                authenticatorAttachment: z
+                    .enum(['cross-platform', 'platform'])
+                    .optional(),
+
                 // Client extension results
                 clientExtensionResults: z.record(z.unknown()),
-                
+
                 // Credential type
                 type: z.literal('public-key'),
-                
+
                 // User information
                 user: z.object({
-                  id: z.string().optional(),
-                  name: z.string(),
-                  displayName: z.string().optional(),
+                    id: z.string().optional(),
+                    name: z.string(),
+                    displayName: z.string().optional(),
                 }),
             }),
         )
@@ -71,7 +83,7 @@ export const passkeyRouter = router({
 
                     return true;
                 },
-                origin: process.env.FRONTEND_URL!!,
+                origin: process.env.FRONTEND_URL!,
             };
 
             const registrationParsed = await server.verifyRegistration(
@@ -136,7 +148,7 @@ export const passkeyRouter = router({
                 }),
                 authenticatorAttachment: z.string().optional(),
                 clientExtensionResults: z.record(z.any()),
-            })
+            }),
         )
         .mutation(async ({ input, ctx }) => {
             const credential = await ctx.drizzle.query.userPasskeys.findFirst({
@@ -161,10 +173,9 @@ export const passkeyRouter = router({
                     }
                     webauthnChallanges.delete(challange);
 
-
                     return true;
                 },
-                origin: process.env.FRONTEND_URL!!,
+                origin: process.env.FRONTEND_URL!,
                 userVerified: true,
             };
 
@@ -177,12 +188,11 @@ export const passkeyRouter = router({
 
             const token = `u-${credential.userId}-${randomString(32)}`;
 
-            await ctx.drizzle.insert(schema.sessions)
-                .values({
-                    id: token,
-                    userId: credential.userId,
-                    expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
-                });
+            await ctx.drizzle.insert(schema.sessions).values({
+                id: token,
+                userId: credential.userId,
+                expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
+            });
 
             return token;
         }),

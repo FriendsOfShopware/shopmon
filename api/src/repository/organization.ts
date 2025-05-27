@@ -1,7 +1,7 @@
-import { type Drizzle, getLastInsertId, schema } from '../db';
-import { eq, and, inArray } from 'drizzle-orm';
-import Users from './users';
 import { TRPCError } from '@trpc/server';
+import { and, eq, inArray } from 'drizzle-orm';
+import { type Drizzle, getLastInsertId, schema } from '../db';
+import Users from './users';
 
 interface OrganizationMember {
     id: number;

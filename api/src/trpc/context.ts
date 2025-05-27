@@ -1,7 +1,7 @@
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { getConnection, type Drizzle, schema } from '../db.ts';
 import { TRPCError } from '@trpc/server';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { eq } from 'drizzle-orm';
+import { type Drizzle, getConnection, schema } from '../db.ts';
 
 export type context = {
     user: number | null;
@@ -16,9 +16,12 @@ export function createContext() {
 
         if (auth) {
             const token = await getConnection()
-                .select({ id: schema.sessions.userId, expires: schema.sessions.expires })
+                .select({
+                    id: schema.sessions.userId,
+                    expires: schema.sessions.expires,
+                })
                 .from(schema.sessions)
-                .where(eq(schema.sessions.id, auth))
+                .where(eq(schema.sessions.id, auth));
 
             if (token.length === 0) {
                 throw new TRPCError({
@@ -28,7 +31,9 @@ export function createContext() {
             }
 
             if (token[0]!.expires < new Date()) {
-                await getConnection().delete(schema.sessions).where(eq(schema.sessions.id, auth));
+                await getConnection()
+                    .delete(schema.sessions)
+                    .where(eq(schema.sessions.id, auth));
 
                 throw new TRPCError({
                     code: 'UNAUTHORIZED',
@@ -36,12 +41,12 @@ export function createContext() {
                 });
             }
 
-            user = token[0]!!.id as number;
+            user = token[0]!.id as number;
         }
 
         return {
             user,
-            drizzle: getConnection()
+            drizzle: getConnection(),
         };
     };
 }

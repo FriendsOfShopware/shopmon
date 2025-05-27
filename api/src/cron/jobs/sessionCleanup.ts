@@ -1,5 +1,5 @@
-import { getConnection, schema } from '../../db.js';
 import { lt } from 'drizzle-orm';
+import { getConnection, schema } from '../../db.js';
 
 export async function sessionCleanupJob() {
     const con = getConnection();
