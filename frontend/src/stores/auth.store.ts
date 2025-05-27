@@ -1,15 +1,21 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { router } from '@/router';
-import { useNotificationStore } from './notification.store';
-import { trpcClient, RouterOutput } from '@/helpers/trpc';
 import { client } from '@passwordless-id/webauthn';
+import { defineStore } from 'pinia';
+import { computed, ref } from 'vue';
+import { useNotificationStore } from './notification.store';
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref<RouterOutput['account']['currentUser'] | null>(JSON.parse(localStorage.getItem('user') as string));
+    const user = ref<RouterOutput['account']['currentUser'] | null>(
+        JSON.parse(localStorage.getItem('user') as string),
+    );
     const returnUrl = ref<string | null>(null);
-    const access_token = ref<string | null>(localStorage.getItem('access_token'));
-    const passkeys = ref<RouterOutput['auth']['passkey']['listDevices'] | null>(null);
+    const access_token = ref<string | null>(
+        localStorage.getItem('access_token'),
+    );
+    const passkeys = ref<RouterOutput['auth']['passkey']['listDevices'] | null>(
+        null,
+    );
 
     const isAuthenticated = computed(() => {
         return user.value !== null && access_token.value !== null;
@@ -41,7 +47,10 @@ export const useAuthStore = defineStore('auth', () => {
             timeout: 60000,
         });
 
-        const token = await trpcClient.auth.passkey.authenticateDevice.mutate(authentication);
+        const token =
+            await trpcClient.auth.passkey.authenticateDevice.mutate(
+                authentication,
+            );
 
         localStorage.setItem('access_token', token);
         access_token.value = token;
@@ -79,15 +88,17 @@ export const useAuthStore = defineStore('auth', () => {
     async function registerPasskey(name: string) {
         const challenge = await trpcClient.auth.passkey.challenge.mutate();
 
-    const registration = await client.register({
-        challenge,
-        user: user.value!.email,
-        userVerification: 'required',
-        timeout: 60000,
-        attestation: false,
-    });
+        const registration = await client.register({
+            challenge,
+            user: user.value!.email,
+            userVerification: 'required',
+            timeout: 60000,
+            attestation: false,
+        });
 
-    await trpcClient.auth.passkey.registerDevice.mutate(registration as any);
+        await trpcClient.auth.passkey.registerDevice.mutate(
+            registration as any,
+        );
         await loadPasskeys();
     }
 
@@ -109,10 +120,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function confirmResetPassword(token: string, password: string) {
-        return await trpcClient.auth.passwordResetConfirm.mutate({ token, password });
+        return await trpcClient.auth.passwordResetConfirm.mutate({
+            token,
+            password,
+        });
     }
 
-    async function register(user: { email: string, password: string, displayName: string }) {
+    async function register(user: {
+        email: string;
+        password: string;
+        displayName: string;
+    }) {
         trpcClient.auth.register.mutate(user);
     }
 
@@ -133,6 +151,6 @@ export const useAuthStore = defineStore('auth', () => {
         resetAvailable,
         confirmResetPassword,
         confirmMail,
-        register
+        register,
     };
 });

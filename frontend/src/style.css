@@ -1,10 +1,10 @@
 @import "styles/_base.css";
-@import 'styles/_variables.css';
+@import "styles/_variables.css";
 
-@import 'styles/_transitions.css';
+@import "styles/_transitions.css";
 
-@import 'styles/_global.css';
-@import 'styles/_form.css';
-@import 'styles/_button.css';
-@import 'styles/_badge.css';
-@import 'styles/_pill.css';
+@import "styles/_global.css";
+@import "styles/_form.css";
+@import "styles/_button.css";
+@import "styles/_badge.css";
+@import "styles/_pill.css";

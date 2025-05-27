@@ -73,9 +73,9 @@
 </template>
 
 <script setup lang="ts">
-import { formatDateTime } from "@/helpers/formatter";
-import { useShopStore } from '@/stores/shop.store';
+import { formatDateTime } from '@/helpers/formatter';
 import { useAlertStore } from '@/stores/alert.store';
+import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
@@ -83,7 +83,11 @@ const alertStore = useAlertStore();
 async function onReScheduleTask(taskId: string) {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
         try {
-            await shopStore.reScheduleTask(shopStore.shop.organizationId, shopStore.shop.id, taskId);
+            await shopStore.reScheduleTask(
+                shopStore.shop.organizationId,
+                shopStore.shop.id,
+                taskId,
+            );
             alertStore.success('Task is re-scheduled');
         } catch (e: any) {
             alertStore.error(e);

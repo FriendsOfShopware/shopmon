@@ -79,13 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { Form as VeeForm, Field, configure } from 'vee-validate';
-import * as Yup from 'yup';
+import { Field, Form as VeeForm, configure } from 'vee-validate';
 import { ref } from 'vue';
+import * as Yup from 'yup';
 
+import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
-import { useAlertStore } from '@/stores/alert.store';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -133,7 +133,6 @@ async function webauthnLogin() {
         isAuthenticated.value = false;
     }
 }
-
 </script>
 
 <style scoped>

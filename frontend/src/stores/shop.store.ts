@@ -1,6 +1,10 @@
+import {
+    type RouterInput,
+    type RouterOutput,
+    trpcClient,
+} from '@/helpers/trpc';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { trpcClient, RouterOutput, RouterInput } from '@/helpers/trpc';
 
 export const useShopStore = defineStore('shop', () => {
     const isLoading = ref(false);
@@ -10,7 +14,9 @@ export const useShopStore = defineStore('shop', () => {
     const shops = ref<RouterOutput['account']['currentUserShops']>([]);
     const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 
-    async function createShop(payload: RouterInput['organization']['shop']['create']) {
+    async function createShop(
+        payload: RouterInput['organization']['shop']['create'],
+    ) {
         isLoading.value = true;
         payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
         await trpcClient.organization.shop.create.mutate(payload);
@@ -27,7 +33,10 @@ export const useShopStore = defineStore('shop', () => {
 
     async function loadShop(orgId: number, shopId: number) {
         isLoading.value = true;
-        shop.value = await trpcClient.organization.shop.get.query({ orgId, shopId });
+        shop.value = await trpcClient.organization.shop.get.query({
+            orgId,
+            shopId,
+        });
         isLoading.value = false;
     }
 
@@ -35,23 +44,35 @@ export const useShopStore = defineStore('shop', () => {
         orgId: number,
         shopId: number,
         payload: {
-            name?: string,
-            ignores?: string[],
-            shopUrl?: string,
-            clientId?: string,
-            clientSecret?: string
-        }
+            name?: string;
+            ignores?: string[];
+            shopUrl?: string;
+            clientId?: string;
+            clientSecret?: string;
+        },
     ) {
         if (payload.shopUrl) {
             payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
         }
-        await trpcClient.organization.shop.update.mutate({ orgId, shopId, ...payload });
+        await trpcClient.organization.shop.update.mutate({
+            orgId,
+            shopId,
+            ...payload,
+        });
         await loadShop(orgId, shopId);
     }
 
-    async function refreshShop(orgId: number, shopId: number, pageSpeed: boolean = false) {
+    async function refreshShop(
+        orgId: number,
+        shopId: number,
+        pageSpeed = false,
+    ) {
         isRefreshing.value = true;
-        await trpcClient.organization.shop.refreshShop.mutate({ orgId, shopId, pageSpeed });
+        await trpcClient.organization.shop.refreshShop.mutate({
+            orgId,
+            shopId,
+            pageSpeed,
+        });
         isRefreshing.value = false;
 
         await loadShop(orgId, shopId);
@@ -59,15 +80,26 @@ export const useShopStore = defineStore('shop', () => {
 
     async function clearCache(orgId: number, shopId: number) {
         isCacheClearing.value = true;
-        await trpcClient.organization.shop.clearShopCache.mutate({ orgId, shopId });
+        await trpcClient.organization.shop.clearShopCache.mutate({
+            orgId,
+            shopId,
+        });
         isCacheClearing.value = false;
 
         await loadShop(orgId, shopId);
     }
 
-    async function reScheduleTask(orgId: number, shopId: number, taskId: string) {
+    async function reScheduleTask(
+        orgId: number,
+        shopId: number,
+        taskId: string,
+    ) {
         isReSchedulingTask.value = true;
-        await trpcClient.organization.shop.rescheduleTask.mutate({ orgId, shopId, taskId });
+        await trpcClient.organization.shop.rescheduleTask.mutate({
+            orgId,
+            shopId,
+            taskId,
+        });
         isReSchedulingTask.value = false;
 
         await loadShop(orgId, shopId);
@@ -92,6 +124,6 @@ export const useShopStore = defineStore('shop', () => {
         refreshShop,
         clearCache,
         reScheduleTask,
-        deleteShop
+        deleteShop,
     };
 });

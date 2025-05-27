@@ -34,8 +34,8 @@
 </template>
 
 <script setup lang="ts" generic="T extends string">
-import {TabGroup, TabList, Tab, TabPanels, TabPanel} from '@headlessui/vue';
-import type {FunctionalComponent} from 'vue';
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue';
+import type { FunctionalComponent } from 'vue';
 
 const props = defineProps<{
     labels: Array<{

@@ -97,10 +97,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useExtensionStore } from '@/stores/extension.store';
+import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { formatDateTime } from '@/helpers/formatter';
-import ElementEmpty from "@/components/layout/ElementEmpty.vue";
+import { useExtensionStore } from '@/stores/extension.store';
+import { ref } from 'vue';
 
 const extensionStore = useExtensionStore();
 const term = ref('');
@@ -110,8 +110,7 @@ extensionStore.loadExtensions();
 function getExtensionState(extension) {
     if (!extension.installed) {
         return 'not installed';
-    }
-    else if (extension.active) {
+    } else if (extension.active) {
         return 'active';
     }
 

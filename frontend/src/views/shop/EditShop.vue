@@ -210,10 +210,10 @@ import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
 
-import { Form as VeeForm, Field } from 'vee-validate';
-import { useRouter, useRoute } from 'vue-router';
-import * as Yup from 'yup';
+import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import * as Yup from 'yup';
 
 const authStore = useAuthStore();
 const shopStore = useShopStore();
@@ -221,8 +221,11 @@ const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-const organizationId = parseInt(route.params.organizationId as string, 10);
-const shopId = parseInt(route.params.shopId as string, 10);
+const organizationId = Number.parseInt(
+    route.params.organizationId as string,
+    10,
+);
+const shopId = Number.parseInt(route.params.shopId as string, 10);
 
 shopStore.loadShop(organizationId, shopId);
 
@@ -234,18 +237,28 @@ const schema = Yup.object().shape({
     organizationId: Yup.number().required('Organization is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: () => Yup.string().required('If you change the URL you need to provide Client-ID'),
+        then: () =>
+            Yup.string().required(
+                'If you change the URL you need to provide Client-ID',
+            ),
     }),
     clientSecret: Yup.string().when('url', {
         is: (url: string) => url !== shopStore.shop?.url,
-        then: () => Yup.string().required('If you change the URL you need to provide Client-Secret'),
+        then: () =>
+            Yup.string().required(
+                'If you change the URL you need to provide Client-Secret',
+            ),
     }),
 });
 
 async function onSubmit(values: Yup.InferType<typeof schema>) {
     if (shopStore.shop) {
         try {
-            await shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, values);
+            await shopStore.updateShop(
+                shopStore.shop.organizationId,
+                shopStore.shop.id,
+                values,
+            );
 
             router.push({
                 name: 'account.shops.detail',
@@ -263,7 +276,10 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
 async function deleteShop() {
     if (shopStore.shop) {
         try {
-            await shopStore.deleteShop(shopStore.shop.organizationId, shopStore.shop.id);
+            await shopStore.deleteShop(
+                shopStore.shop.organizationId,
+                shopStore.shop.id,
+            );
 
             router.push('/account/shops');
         } catch (error: any) {
@@ -271,5 +287,4 @@ async function deleteShop() {
         }
     }
 }
-
 </script>

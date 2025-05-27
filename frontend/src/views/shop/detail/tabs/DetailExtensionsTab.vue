@@ -100,10 +100,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Extension } from "@/types/shop";
-import { formatDate, formatDateTime } from "@/helpers/formatter";
+import { formatDate, formatDateTime } from '@/helpers/formatter';
 import { useShopStore } from '@/stores/shop.store';
-import { ref, Ref } from "vue";
+import type { Extension } from '@/types/shop';
+import { type Ref, ref } from 'vue';
 
 const shopStore = useShopStore();
 
@@ -118,8 +118,7 @@ function openExtensionChangelog(extension: Extension | null) {
 function getExtensionState(extension) {
     if (!extension.installed) {
         return 'not installed';
-    }
-    else if (extension.active) {
+    } else if (extension.active) {
         return 'active';
     }
 

@@ -1,10 +1,14 @@
-import { createRouter, createWebHistory, RouteLocationNormalized } from 'vue-router';
+import {
+    type RouteLocationNormalized,
+    createRouter,
+    createWebHistory,
+} from 'vue-router';
 
+import Layout from '@/layouts/Layout.vue';
+import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
-import { useAlertStore } from '@/stores/alert.store';
 import { nextTick } from 'vue';
-import Layout from '@/layouts/Layout.vue';
 
 export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,7 +43,8 @@ export const router = createRouter({
                 {
                     name: 'account.forgot.password.confirm',
                     path: 'forgot-password/:token',
-                    component: () => import('@/views/auth/ForgotPasswordConfirm.vue'),
+                    component: () =>
+                        import('@/views/auth/ForgotPasswordConfirm.vue'),
                 },
 
                 // with login
@@ -66,33 +71,38 @@ export const router = createRouter({
                 {
                     name: 'account.shops.detail',
                     path: 'organizations/:organizationId(\\d+)/:shopId(\\d+)',
-                    component: () => import('@/views/shop/detail/DetailShop.vue'),
+                    component: () =>
+                        import('@/views/shop/detail/DetailShop.vue'),
                 },
                 {
                     name: 'account.organizations.list',
                     path: 'organizations',
-                    component: () => import('@/views/organization/ListOrganizations.vue'),
+                    component: () =>
+                        import('@/views/organization/ListOrganizations.vue'),
                 },
                 {
                     name: 'account.organizations.new',
                     path: 'organizations/new',
-                    component: () => import('@/views/organization/AddOrganization.vue'),
+                    component: () =>
+                        import('@/views/organization/AddOrganization.vue'),
                 },
                 {
                     name: 'account.organizations.detail',
                     path: 'organizations/:organizationId(\\d+)',
-                    component: () => import('@/views/organization/DetailOrganization.vue'),
+                    component: () =>
+                        import('@/views/organization/DetailOrganization.vue'),
                 },
                 {
-
                     name: 'account.organizations.edit',
                     path: 'organizations/edit/:organizationId(\\d+)',
-                    component: () => import('@/views/organization/EditOrganization.vue'),
+                    component: () =>
+                        import('@/views/organization/EditOrganization.vue'),
                 },
                 {
                     name: 'account.extension.list',
                     path: 'extensions',
-                    component: () => import('@/views/account/ListExtensions.vue'),
+                    component: () =>
+                        import('@/views/account/ListExtensions.vue'),
                 },
             ],
         },
@@ -101,7 +111,7 @@ export const router = createRouter({
     ],
 });
 
-router.beforeEach(async(to: RouteLocationNormalized) => {
+router.beforeEach(async (to: RouteLocationNormalized) => {
     // clear alert on route change
     const alertStore = useAlertStore();
     alertStore.clear();
@@ -117,7 +127,10 @@ router.beforeEach(async(to: RouteLocationNormalized) => {
     const authRequired = !publicPages.includes(to.name as string);
     const authStore = useAuthStore();
 
-    if (import.meta.env.VITE_DISABLE_REGISTRATION && to.name as string == 'account.register') {
+    if (
+        import.meta.env.VITE_DISABLE_REGISTRATION &&
+        (to.name as string) == 'account.register'
+    ) {
         return '/';
     }
 
@@ -131,7 +144,7 @@ router.beforeEach(async(to: RouteLocationNormalized) => {
 });
 
 const DEFAULT_TITLE = 'Shopware Monitoring';
-router.afterEach(async(to) => {
+router.afterEach(async (to) => {
     await nextTick();
 
     const title = to.meta.title;

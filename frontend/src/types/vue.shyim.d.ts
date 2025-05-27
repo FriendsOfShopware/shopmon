@@ -2,9 +2,8 @@
 /// <reference types="unplugin-icons/types/vue3" />
 
 declare module '*.vue' {
-    import type { DefineComponent } from 'vue'
+    import type { DefineComponent } from 'vue';
     // eslint-disable-line
-    const component: DefineComponent<{}, {}, any>
-    export default component
+    const component: DefineComponent<{}, {}, any>;
+    export default component;
 }
-  

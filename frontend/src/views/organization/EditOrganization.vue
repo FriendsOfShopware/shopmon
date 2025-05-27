@@ -119,9 +119,9 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useOrganizationStore } from '@/stores/organization.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
+import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
-import { ref } from 'vue';
 
 const authStore = useAuthStore();
 const organizationStore = useOrganizationStore();
@@ -131,8 +131,13 @@ const route = useRoute();
 
 const { user } = storeToRefs(authStore);
 
-const organizationId = parseInt(route.params.organizationId as string, 10);
-const organization = user.value?.organizations.find(organization => organization.id == organizationId);
+const organizationId = Number.parseInt(
+    route.params.organizationId as string,
+    10,
+);
+const organization = user.value?.organizations.find(
+    (organization) => organization.id == organizationId,
+);
 
 const showOrganizationDeletionModal = ref(false);
 
@@ -143,7 +148,10 @@ const schema = Yup.object().shape({
 async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
     if (organization) {
         try {
-            await organizationStore.updateOrganization(organization.id, values.name);
+            await organizationStore.updateOrganization(
+                organization.id,
+                values.name,
+            );
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
@@ -167,5 +175,4 @@ async function deleteOrganization() {
         }
     }
 }
-
 </script>

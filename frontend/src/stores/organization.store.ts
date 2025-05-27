@@ -1,7 +1,7 @@
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { useAuthStore } from '@/stores/auth.store';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useAuthStore } from '@/stores/auth.store';
-import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 export const useOrganizationStore = defineStore('organization', () => {
     const isLoading = ref(false);
@@ -10,7 +10,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 
     async function loadMembers(orgId: number) {
         isLoading.value = true;
-        members.value = await trpcClient.organization.listMembers.query({ orgId });
+        members.value = await trpcClient.organization.listMembers.query({
+            orgId,
+        });
         isLoading.value = false;
     }
 
@@ -55,6 +57,6 @@ export const useOrganizationStore = defineStore('organization', () => {
         addMember,
         removeMember,
         createOrganization,
-        updateOrganization
+        updateOrganization,
     };
 });

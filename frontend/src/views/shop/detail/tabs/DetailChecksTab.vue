@@ -39,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
@@ -49,16 +49,22 @@ async function ignoreCheck(id: string) {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
         shopStore?.shop?.ignores.push(id);
 
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
+        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, {
+            ignores: shopStore?.shop?.ignores,
+        });
         notificateIgnoreUpdate();
     }
 }
 
 async function removeIgnore(id: string) {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore.shop.ignores = shopStore.shop.ignores.filter((aid: string) => aid !== id);
+        shopStore.shop.ignores = shopStore.shop.ignores.filter(
+            (aid: string) => aid !== id,
+        );
 
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, { ignores: shopStore?.shop?.ignores });
+        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, {
+            ignores: shopStore?.shop?.ignores,
+        });
         notificateIgnoreUpdate();
     }
 }

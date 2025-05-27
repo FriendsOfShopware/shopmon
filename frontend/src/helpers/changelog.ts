@@ -1,5 +1,5 @@
-import type { ShopChangelog } from '@/types/shop';
 import type { Changelogs } from '@/types/dashboard';
+import type { ShopChangelog } from '@/types/shop';
 
 export function sumChanges(changes: ShopChangelog | Changelogs) {
     const messages: string[] = [];
@@ -20,9 +20,7 @@ export function sumChanges(changes: ShopChangelog | Changelogs) {
     }
 
     for (const [state, count] of Object.entries(stateCounts)) {
-        messages.push(
-            `${state} ${count} extension` + (count > 1 ? 's' : ''),
-        );
+        messages.push(`${state} ${count} extension` + (count > 1 ? 's' : ''));
     }
 
     return messages.join(', ');

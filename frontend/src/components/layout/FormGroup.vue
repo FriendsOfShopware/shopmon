@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string; subTitle?: string; }>();
+defineProps<{ title: string; subTitle?: string }>();
 </script>
 
 <style>

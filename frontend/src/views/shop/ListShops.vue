@@ -79,8 +79,8 @@
 <script setup lang="ts">
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
+import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { useShopStore } from '@/stores/shop.store';
-import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 
 const shopStore = useShopStore();
 

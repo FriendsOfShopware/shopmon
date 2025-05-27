@@ -1,11 +1,13 @@
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { trpcClient, RouterOutput } from '@/helpers/trpc';
+import { computed, ref } from 'vue';
 
 export const useNotificationStore = defineStore('notification', () => {
     const isLoading = ref(false);
     const isRefreshing = ref(false);
-    const notifications = ref<RouterOutput['account']['notification']['list']>([]);
+    const notifications = ref<RouterOutput['account']['notification']['list']>(
+        [],
+    );
 
     const unreadNotificationCount = computed(() => {
         return notifications.value.filter((n) => !n.read).length;
@@ -13,7 +15,8 @@ export const useNotificationStore = defineStore('notification', () => {
 
     async function loadNotifications() {
         isLoading.value = true;
-        notifications.value = await trpcClient.account.notification.list.query();
+        notifications.value =
+            await trpcClient.account.notification.list.query();
         isLoading.value = false;
     }
 
@@ -44,9 +47,8 @@ export const useNotificationStore = defineStore('notification', () => {
 
     async function deleteNotification(id: number) {
         await trpcClient.account.notification.delete.mutate(id);
-        notifications.value = notifications.value.filter(e => e.id !== id);
+        notifications.value = notifications.value.filter((e) => e.id !== id);
     }
-
 
     return {
         isLoading,
@@ -56,6 +58,6 @@ export const useNotificationStore = defineStore('notification', () => {
         loadNotifications,
         markAllRead,
         deleteAllNotifications,
-        deleteNotification
+        deleteNotification,
     };
 });

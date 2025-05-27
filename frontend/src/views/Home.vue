@@ -114,8 +114,8 @@
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores/auth.store';
-import { useShopStore } from '@/stores/shop.store';
 import { useDashboardStore } from '@/stores/dashboard.store';
+import { useShopStore } from '@/stores/shop.store';
 
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
@@ -126,7 +126,7 @@ import { formatDateTime } from '@/helpers/formatter';
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
-const organizations = user.value?.organizations.map(organization => ({
+const organizations = user.value?.organizations.map((organization) => ({
     ...organization,
     initials: organization.name.substring(0, 2),
 }));

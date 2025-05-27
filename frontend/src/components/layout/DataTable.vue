@@ -83,31 +83,34 @@
 </template>
 
 <script lang="ts" setup generic="RowData extends Record<string, any>, RowKey extends Extract<keyof RowData, string>">
-import { computed, useSlots } from 'vue';
 import { createNewSortInstance } from 'fast-sort';
 import Fuse from 'fuse.js';
+import { computed, useSlots } from 'vue';
 import { reactive } from 'vue';
 
 const slots = useSlots();
 
-const props = withDefaults(defineProps<{
-    columns: Array<{
-        key: RowKey,
-        name: string,
-        class?: string,
-        searchable?: boolean,
-        sortable?: boolean,
-        sortPath?: string,
-    }>,
-    defaultSort?: {
-        key: RowKey,
-        desc?: boolean,
+const props = withDefaults(
+    defineProps<{
+        columns: Array<{
+            key: RowKey;
+            name: string;
+            class?: string;
+            searchable?: boolean;
+            sortable?: boolean;
+            sortPath?: string;
+        }>;
+        defaultSort?: {
+            key: RowKey;
+            desc?: boolean;
+        };
+        data: RowData[];
+        searchTerm?: string;
+    }>(),
+    {
+        searchTerm: '',
     },
-    data: RowData[]
-    searchTerm?: string,
-}>(), {
-    searchTerm: '',
-});
+);
 
 const sorting = reactive({
     sortBy: props.defaultSort?.key ?? '',
@@ -120,10 +123,13 @@ const naturalSort = createNewSortInstance({
         if (a === null || a === undefined) {
             return order;
         } else if (b === null || b === undefined) {
-            return (order * -1);
+            return order * -1;
         }
 
-        const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+        const collator = new Intl.Collator(undefined, {
+            numeric: true,
+            sensitivity: 'base',
+        });
         return collator.compare(a, b);
     },
 });
@@ -140,7 +146,7 @@ function setSort(key: string) {
 }
 
 const searchableRows = computed(() => {
-    return props.columns.filter(row => row.searchable).map(row => row.key);
+    return props.columns.filter((row) => row.searchable).map((row) => row.key);
 });
 
 function getSortByValue(row: RowData, propertyPath: string): unknown {
@@ -162,23 +168,29 @@ const sortedFilteredData = computed(() => {
     if (props.searchTerm.length >= 3) {
         const fuse = new Fuse(data, {
             keys: searchableRows.value,
-            threshold: .5,
+            threshold: 0.5,
         });
 
-        data = fuse.search(props.searchTerm).map(result => result.item);
+        data = fuse.search(props.searchTerm).map((result) => result.item);
     }
 
     if (sortBy) {
-        const rowConfig = props.columns.find(row => row.key === sortBy);
+        const rowConfig = props.columns.find((row) => row.key === sortBy);
 
         if (!rowConfig) {
-            throw new Error(`Cannot find row with key ${sortBy}, falling to index row with key`);
+            throw new Error(
+                `Cannot find row with key ${sortBy}, falling to index row with key`,
+            );
         }
 
         if (sortDesc) {
-            data = naturalSort(data).desc(d => getSortByValue(d, rowConfig.sortPath ?? sortBy));
+            data = naturalSort(data).desc((d) =>
+                getSortByValue(d, rowConfig.sortPath ?? sortBy),
+            );
         } else {
-            data = naturalSort(data).asc(d => getSortByValue(d, rowConfig.sortPath ?? sortBy));
+            data = naturalSort(data).asc((d) =>
+                getSortByValue(d, rowConfig.sortPath ?? sortBy),
+            );
         }
     }
 

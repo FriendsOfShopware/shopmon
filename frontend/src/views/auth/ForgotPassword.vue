@@ -52,11 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import { Form as VeeForm, Field } from 'vee-validate';
+import { Field, Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
 
 const schema = Yup.object().shape({
     email: Yup.string().required('Email is required'),

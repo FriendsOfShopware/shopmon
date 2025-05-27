@@ -11,7 +11,10 @@ export function formatDateTime(date: string | Date) {
     });
 }
 
-function dateTimeFormatter(date: string | Date, customOptions?: Intl.DateTimeFormatOptions) {
+function dateTimeFormatter(
+    date: string | Date,
+    customOptions?: Intl.DateTimeFormatOptions,
+) {
     const defaultOptions: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: '2-digit',
@@ -22,7 +25,7 @@ function dateTimeFormatter(date: string | Date, customOptions?: Intl.DateTimeFor
 
     const formatter = new Intl.DateTimeFormat('de-DE', options);
 
-    if ( typeof date === 'string' ) {
+    if (typeof date === 'string') {
         date = new Date(date);
     }
 

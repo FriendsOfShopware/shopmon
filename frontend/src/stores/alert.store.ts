@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 interface Alert {
-    title: string,
+    title: string;
     message: string;
     type: 'success' | 'info' | 'error' | 'warning';
 }
@@ -29,7 +29,11 @@ export const useAlertStore = defineStore('alert', () => {
     }
 
     function warning(message: string) {
-        alert.value = { title: 'Additional information', message, type: 'warning' };
+        alert.value = {
+            title: 'Additional information',
+            message,
+            type: 'warning',
+        };
     }
 
     function clear() {
@@ -42,6 +46,6 @@ export const useAlertStore = defineStore('alert', () => {
         info,
         error,
         warning,
-        clear
+        clear,
     };
 });

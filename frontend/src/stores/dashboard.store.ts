@@ -1,15 +1,18 @@
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 export const useDashboardStore = defineStore('dashboard', () => {
     const isLoading = ref(false);
     const isRefreshing = ref(false);
-    const changelogs = ref<RouterOutput['account']['currentUserChangelogs']>([]);
+    const changelogs = ref<RouterOutput['account']['currentUserChangelogs']>(
+        [],
+    );
 
     async function loadChangelogs() {
         isLoading.value = true;
-        changelogs.value = await trpcClient.account.currentUserChangelogs.query();
+        changelogs.value =
+            await trpcClient.account.currentUserChangelogs.query();
         isLoading.value = false;
     }
 
@@ -17,6 +20,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
         isLoading,
         isRefreshing,
         changelogs,
-        loadChangelogs
+        loadChangelogs,
     };
 });

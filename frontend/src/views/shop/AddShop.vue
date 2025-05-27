@@ -133,10 +133,10 @@ import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
 
-import { Form as VeeForm, Field } from 'vee-validate';
+import type { RouterInput } from '@/helpers/trpc';
+import { Field, Form as VeeForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
-import { RouterInput } from '@/helpers/trpc';
 
 const authStore = useAuthStore();
 const shopStore = useShopStore();
@@ -154,8 +154,11 @@ const isValidUrl = (url: string) => {
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
-    shopUrl: Yup.string().required('Shop URL is required')
-        .test('is-url-valid', 'Shop URL is not valid', (value) => isValidUrl(value)),
+    shopUrl: Yup.string()
+        .required('Shop URL is required')
+        .test('is-url-valid', 'Shop URL is not valid', (value) =>
+            isValidUrl(value),
+        ),
     orgId: Yup.number().required('Organization is required'),
     clientId: Yup.string().required('Client ID is required'),
     clientSecret: Yup.string().required('Client Secret is required'),

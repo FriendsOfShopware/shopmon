@@ -48,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
+import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { useAuthStore } from '@/stores/auth.store';
-import ElementEmpty from "@/components/layout/ElementEmpty.vue";
+import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);

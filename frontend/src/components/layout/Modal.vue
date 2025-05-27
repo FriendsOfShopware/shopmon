@@ -83,11 +83,17 @@
 </template>
 
 <script setup lang="ts">
-import { Dialog as HeadlessDialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+import {
+    DialogPanel,
+    DialogTitle,
+    Dialog as HeadlessDialog,
+    TransitionChild,
+    TransitionRoot,
+} from '@headlessui/vue';
 
-defineProps<{ show: boolean, closeXMark?: boolean }>();
+defineProps<{ show: boolean; closeXMark?: boolean }>();
 
-const emit = defineEmits<{ (e: 'close'): void }>();
+const emit = defineEmits<(e: 'close') => void>();
 </script>
 
 <style>

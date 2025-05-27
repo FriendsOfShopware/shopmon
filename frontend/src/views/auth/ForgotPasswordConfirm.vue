@@ -75,8 +75,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
-import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
 
 const schema = Yup.object().shape({
     password: Yup.string()
@@ -104,8 +104,8 @@ async function onSubmit(values: any): Promise<void> {
     }
 }
 
-let isLoading = ref(true);
-let tokenFound = ref(false);
+const isLoading = ref(true);
+const tokenFound = ref(false);
 
 onMounted(async() => {
     tokenFound.value = await authStore.resetAvailable(route.params.token as string);

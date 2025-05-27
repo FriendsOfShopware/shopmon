@@ -169,13 +169,13 @@
 </template>
 
 <script setup lang="ts">
-import { Form as VeeForm, Field } from 'vee-validate';
-import * as Yup from 'yup';
+import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
+import * as Yup from 'yup';
 
-import { useAuthStore } from '@/stores/auth.store';
-import { useAlertStore } from '@/stores/alert.store';
 import { trpcClient } from '@/helpers/trpc';
+import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
 import { client } from '@passwordless-id/webauthn';
 
 const authStore = useAuthStore();
@@ -193,7 +193,10 @@ const showAccountDeletionModal = ref(false);
 const schema = Yup.object().shape({
     currentPassword: Yup.string().required('Current password is required'),
     email: Yup.string().email(),
-    displayName: Yup.string().min(5, 'Display name must be at least 5 characters'),
+    displayName: Yup.string().min(
+        5,
+        'Display name must be at least 5 characters',
+    ),
     newPassword: Yup.string()
         .transform((x) => (x === '' ? undefined : x))
         .min(8, 'Password must be at least 8 characters'),

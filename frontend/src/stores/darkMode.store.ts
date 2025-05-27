@@ -2,7 +2,9 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useDarkModeStore = defineStore('darkMode', () => {
-    const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const darkMode = ref(
+        window.matchMedia('(prefers-color-scheme: dark)').matches,
+    );
 
     function setDarkMode(isDarkMode: boolean) {
         darkMode.value = isDarkMode;
@@ -25,6 +27,6 @@ export const useDarkModeStore = defineStore('darkMode', () => {
         darkMode,
         setDarkMode,
         toggleDarkMode,
-        updateDarkModeClass
+        updateDarkModeClass,
     };
 });

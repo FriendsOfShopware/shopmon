@@ -24,17 +24,17 @@
 <script setup lang="ts" generic="T extends string">
 const props = defineProps<{
     title: {
-        type: String,
-        default: 'No elements'
-    },
+        type: string;
+        default: 'No elements';
+    };
     button: {
-        type: String,
-        default: 'Add element',
-    }
+        type: string;
+        default: 'Add element';
+    };
     route: {
-        type: String,
-        required: true
-    }
+        type: string;
+        required: true;
+    };
 }>();
 </script>
 

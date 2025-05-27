@@ -15,11 +15,11 @@
 </template>
 
 <script lang="ts" setup>
-import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
-import FaCircleInfo from '~icons/fa6-solid/circle-info';
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
+import FaCircleInfo from '~icons/fa6-solid/circle-info';
+import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
 
-defineProps<{ type: string; }>();
+defineProps<{ type: string }>();
 
 function getIconComponent(type) {
     switch (type) {
@@ -32,7 +32,6 @@ function getIconComponent(type) {
             return FaCircleCheck;
     }
 }
-
 </script>
 
 <style scoped>

@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatDateTime } from "@/helpers/formatter";
+import { formatDateTime } from '@/helpers/formatter';
 import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();

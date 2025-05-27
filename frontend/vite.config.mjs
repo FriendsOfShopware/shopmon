@@ -1,10 +1,10 @@
-import { fileURLToPath, URL } from 'url';
+import { URL, fileURLToPath } from 'url';
 
-import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
-import Icons from 'unplugin-icons/vite'
-import IconsResolver from 'unplugin-icons/resolver'
-import Components from 'unplugin-vue-components/vite'
+import IconsResolver from 'unplugin-icons/resolver';
+import Icons from 'unplugin-icons/vite';
+import Components from 'unplugin-vue-components/vite';
+import { defineConfig } from 'vite';
 
 const hmr = {};
 
@@ -43,8 +43,8 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
-        }
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+        },
     },
     server: {
         hmr,
@@ -52,16 +52,16 @@ export default defineConfig({
             '/api/ws': {
                 target: wssServer,
                 ws: true,
-                changeOrigin: true
+                changeOrigin: true,
             },
             '/api': {
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
-                changeOrigin: true
+                changeOrigin: true,
             },
             '/trpc': {
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
-                changeOrigin: true
-            }
-        }
-    }
+                changeOrigin: true,
+            },
+        },
+    },
 });

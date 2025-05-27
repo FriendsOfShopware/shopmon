@@ -71,13 +71,13 @@
 </template>
 
 <script setup lang="ts">
-import { Form as VeeForm, Field } from 'vee-validate';
+import { Field, Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
 import { router } from '@/router';
 
-import { useAuthStore } from '@/stores/auth.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
 
 const schema = Yup.object().shape({
     displayName: Yup.string().required('Display Name is required'),
@@ -86,7 +86,10 @@ const schema = Yup.object().shape({
         .required('Password is required')
         .min(8, 'Password must be at least 8 characters')
         .matches(/^(?=.*[0-9])/, 'Password must Contain One Number Character')
-        .matches(/^(?=.*[!@#\$%\^&\*])/, 'Password must Contain  One Special Case Character'),
+        .matches(
+            /^(?=.*[!@#\$%\^&\*])/,
+            'Password must Contain  One Special Case Character',
+        ),
 });
 
 async function onSubmit(values: any) {
@@ -95,7 +98,9 @@ async function onSubmit(values: any) {
     try {
         await authStore.register(values);
         await router.push('/account/login');
-        alertStore.success('Registration successful. Please check your mailbox and confirm your email address.');
+        alertStore.success(
+            'Registration successful. Please check your mailbox and confirm your email address.',
+        );
     } catch (error: any) {
         alertStore.error(error);
     }

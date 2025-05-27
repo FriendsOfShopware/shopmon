@@ -357,28 +357,28 @@
 import { compareVersions } from 'compare-versions';
 import { createNewSortInstance } from 'fast-sort';
 
-import { useShopStore } from '@/stores/shop.store';
 import { useAlertStore } from '@/stores/alert.store';
+import { useShopStore } from '@/stores/shop.store';
+import { type Ref, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { ref, Ref } from 'vue';
 
 import type { Extension, ExtensionCompatibilitys } from '@/types/shop';
 
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
-import FaCircleCheck from '~icons/fa6-solid/circle-check';
-import FaPlug from '~icons/fa6-solid/plug';
-import FaListCheck from '~icons/fa6-solid/list-check';
-import FaRocket from '~icons/fa6-solid/rocket';
-import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 import { trpcClient } from '@/helpers/trpc';
+import FaCircleCheck from '~icons/fa6-solid/circle-check';
+import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import FaListCheck from '~icons/fa6-solid/list-check';
+import FaPlug from '~icons/fa6-solid/plug';
+import FaRocket from '~icons/fa6-solid/rocket';
 
-import DetailChecksTab from "@/views/shop/detail/tabs/DetailChecksTab.vue";
-import DetailExtensionsTab from "@/views/shop/detail/tabs/DetailExtensionsTab.vue";
-import DetailScheduledTasksTab from "@/views/shop/detail/tabs/DetailScheduledTasksTab.vue";
-import DetailQueueTab from "@/views/shop/detail/tabs/DetailQueueTab.vue";
-import DetailPagespeedTab from "@/views/shop/detail/tabs/DetailPagespeedTab.vue";
-import DetailChangelogTab from "@/views/shop/detail/tabs/DetailChangelogTab.vue";
+import DetailChangelogTab from '@/views/shop/detail/tabs/DetailChangelogTab.vue';
+import DetailChecksTab from '@/views/shop/detail/tabs/DetailChecksTab.vue';
+import DetailExtensionsTab from '@/views/shop/detail/tabs/DetailExtensionsTab.vue';
+import DetailPagespeedTab from '@/views/shop/detail/tabs/DetailPagespeedTab.vue';
+import DetailQueueTab from '@/views/shop/detail/tabs/DetailQueueTab.vue';
+import DetailScheduledTasksTab from '@/views/shop/detail/tabs/DetailScheduledTasksTab.vue';
 
 const route = useRoute();
 const shopStore = useShopStore();
@@ -394,18 +394,27 @@ const shopwareVersions: Ref<string[] | null> = ref(null);
 const latestShopwareVersion: Ref<string | null> = ref(null);
 
 async function loadShop() {
-    const organizationId = parseInt(route.params.organizationId as string, 10);
-    const shopId = parseInt(route.params.shopId as string, 10);
+    const organizationId = Number.parseInt(
+        route.params.organizationId as string,
+        10,
+    );
+    const shopId = Number.parseInt(route.params.shopId as string, 10);
 
     await shopStore.loadShop(organizationId, shopId);
 
-    const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
-    shopwareVersions.value = Object.keys(shopwareVersionsData).reverse()
-        .filter((version) => !version.includes('-RC') && compareVersions(shopStore.shop!.shopwareVersion, version) < 0);
+    const shopwareVersionsData =
+        await trpcClient.info.getLatestShopwareVersion.query();
+    shopwareVersions.value = Object.keys(shopwareVersionsData)
+        .reverse()
+        .filter(
+            (version) =>
+                !version.includes('-RC') &&
+                compareVersions(shopStore.shop!.shopwareVersion, version) < 0,
+        );
     latestShopwareVersion.value = shopwareVersions.value[0];
 }
 
-loadShop().then(function() {
+loadShop().then(() => {
     if (shopStore?.shop?.name) {
         document.title = shopStore.shop.name;
     }
@@ -415,7 +424,11 @@ async function onRefresh(pagespeed: boolean) {
     showShopRefreshModal.value = false;
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
         try {
-            await shopStore.refreshShop(shopStore.shop.organizationId, shopStore.shop.id, pagespeed);
+            await shopStore.refreshShop(
+                shopStore.shop.organizationId,
+                shopStore.shop.id,
+                pagespeed,
+            );
             alertStore.success('Your Shop will refresh soon!');
         } catch (e: any) {
             alertStore.error(e);
@@ -426,7 +439,10 @@ async function onRefresh(pagespeed: boolean) {
 async function onCacheClear() {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
         try {
-            await shopStore.clearCache(shopStore.shop.organizationId, shopStore.shop.id);
+            await shopStore.clearCache(
+                shopStore.shop.organizationId,
+                shopStore.shop.id,
+            );
             alertStore.success('Your Shop cache was cleared successfully');
         } catch (e: any) {
             alertStore.error(e);
@@ -457,12 +473,15 @@ async function loadUpdateWizard(version: string) {
         }),
     };
 
-    const pluginCompatibility = await trpcClient.info.checkExtensionCompatibility.query(body);
+    const pluginCompatibility =
+        await trpcClient.info.checkExtensionCompatibility.query(body);
 
     const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
 
     for (const extension of extensions) {
-        const compatibility = pluginCompatibility.find((plugin) => plugin.name === extension.name);
+        const compatibility = pluginCompatibility.find(
+            (plugin) => plugin.name === extension.name,
+        );
         extension.compatibility = null;
         if (compatibility) {
             extension.compatibility = compatibility.status;
@@ -470,10 +489,16 @@ async function loadUpdateWizard(version: string) {
     }
 
     const naturalSort = createNewSortInstance({
-        comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare,
+        comparer: new Intl.Collator(undefined, {
+            numeric: true,
+            sensitivity: 'base',
+        }).compare,
     });
 
-    dialogUpdateWizard.value = naturalSort(extensions).by([{ desc: u => u.active }, { asc: u => u.label }]);
+    dialogUpdateWizard.value = naturalSort(extensions).by([
+        { desc: (u) => u.active },
+        { asc: (u) => u.label },
+    ]);
 
     loadingUpdateWizard.value = false;
 }

@@ -66,11 +66,11 @@
 </template>
 
 <script setup lang="ts">
-import { formatDateTime } from "@/helpers/formatter";
-import { sumChanges } from "@/helpers/changelog";
-import type { ShopChangelog } from "@/types/shop";
+import { sumChanges } from '@/helpers/changelog';
+import { formatDateTime } from '@/helpers/formatter';
 import { useShopStore } from '@/stores/shop.store';
-import { ref, Ref } from "vue";
+import type { ShopChangelog } from '@/types/shop';
+import { type Ref, ref } from 'vue';
 
 const shopStore = useShopStore();
 

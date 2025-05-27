@@ -1,6 +1,6 @@
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { trpcClient, RouterOutput } from '@/helpers/trpc';
 
 export const useExtensionStore = defineStore('extension', () => {
     const isLoading = ref(false);
@@ -17,6 +17,6 @@ export const useExtensionStore = defineStore('extension', () => {
         isLoading,
         isRefreshing,
         extensions,
-        loadExtensions
+        loadExtensions,
     };
 });

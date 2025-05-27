@@ -22,8 +22,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
 import { Field } from 'vee-validate';
+import { ref } from 'vue';
 
 const props = defineProps<{
     label?: string;

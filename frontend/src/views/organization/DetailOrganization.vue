@@ -170,8 +170,8 @@ import { storeToRefs } from 'pinia';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOrganizationStore } from '@/stores/organization.store';
-import { useRoute, useRouter } from 'vue-router';
 import { Field, Form as VeeForm } from 'vee-validate';
+import { useRoute, useRouter } from 'vue-router';
 
 import { ref } from 'vue';
 import * as Yup from 'yup';
@@ -183,8 +183,13 @@ const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const { user } = storeToRefs(authStore);
 
-const organizationId = parseInt(route.params.organizationId as string, 10);
-const organization = user.value?.organizations.find(organization => organization.id == organizationId);
+const organizationId = Number.parseInt(
+    route.params.organizationId as string,
+    10,
+);
+const organization = user.value?.organizations.find(
+    (organization) => organization.id == organizationId,
+);
 const isOwner = organization?.ownerId === user.value!.id;
 
 const showAddMemberModal = ref(false);
@@ -193,7 +198,9 @@ const isSubmitting = ref(false);
 organizationStore.loadMembers(organizationId);
 
 const schemaMembers = Yup.object().shape({
-    email: Yup.string().email('Email address is not valid').required('Email address is required'),
+    email: Yup.string()
+        .email('Email address is not valid')
+        .required('Email address is required'),
 });
 
 async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {

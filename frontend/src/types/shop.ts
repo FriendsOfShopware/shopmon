@@ -1,17 +1,17 @@
 export interface ExtensionDiff {
-    name: string,
-    label: string,
-    state: string,
-    oldVersion: string | null,
-    newVersion: string | null,
-    changelog: ExtensionChangelog[] | null,
-    active: boolean,
+    name: string;
+    label: string;
+    state: string;
+    oldVersion: string | null;
+    newVersion: string | null;
+    changelog: ExtensionChangelog[] | null;
+    active: boolean;
 }
 
 export interface ExtensionChangelog {
-    version: string
-    text: string
-    creationDate: string
+    version: string;
+    text: string;
+    creationDate: string;
     isCompatible: boolean;
 }
 

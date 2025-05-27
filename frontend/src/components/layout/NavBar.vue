@@ -282,15 +282,15 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth.store';
-import { useNotificationStore } from '@/stores/notification.store';
 import { useDarkModeStore } from '@/stores/darkMode.store';
+import { useNotificationStore } from '@/stores/notification.store';
 
 import {
     Disclosure,
     DisclosureButton,
     DisclosurePanel,
-    Menu as MenuContainer,
     MenuButton,
+    Menu as MenuContainer,
     MenuItem,
     MenuItems,
     Popover,
@@ -311,7 +311,11 @@ const navigation = [
     { name: 'Dashboard', route: '/' },
     { name: 'My Shops', route: '/account/shops', active: 'shop' },
     { name: 'My Apps', route: '/account/extensions' },
-    { name: 'My Organizations', route: '/account/organizations', active: 'organizations' },
+    {
+        name: 'My Organizations',
+        route: '/account/organizations',
+        active: 'organizations',
+    },
 ];
 
 const userNavigation = [
@@ -322,8 +326,7 @@ const userNavigation = [
 function isActive(item, $route) {
     if (item.route == $route.path) {
         return true;
-    }
-    else if ($route.name && item.active && $route.name.match(item.active)) {
+    } else if ($route.name && item.active && $route.name.match(item.active)) {
         return true;
     }
 

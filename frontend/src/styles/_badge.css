@@ -1,28 +1,28 @@
 .badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    margin-left: 0.5rem;
-    border-radius: 0.25rem;
-    background-color: #d1d5db;
-    color: var(--text-color);
+	font-size: 0.75rem;
+	font-weight: 600;
+	display: inline-block;
+	padding: 0.25rem 0.5rem;
+	margin-left: 0.5rem;
+	border-radius: 0.25rem;
+	background-color: #d1d5db;
+	color: var(--text-color);
 
-    .dark & {
-        color: #111827;
-    }
+	.dark & {
+		color: #111827;
+	}
 
-    &-info {
-        background-color: var(--info-color);
-        color: #FFF;
-    }
+	&-info {
+		background-color: var(--info-color);
+		color: #fff;
+	}
 
-    &-warning {
-        background-color: var(--warning-color);
-    }
+	&-warning {
+		background-color: var(--warning-color);
+	}
 
-    &-error {
-        background-color: var(--error-color);
-        color: #FFF;
-    }
+	&-error {
+		background-color: var(--error-color);
+		color: #fff;
+	}
 }

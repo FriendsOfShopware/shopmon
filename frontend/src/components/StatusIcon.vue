@@ -17,10 +17,10 @@
 </template>
 
 <script setup>
-import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
-import FaCircleInfo from '~icons/fa6-solid/circle-info';
-import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaCircle from '~icons/fa6-regular/circle';
+import FaCircleCheck from '~icons/fa6-solid/circle-check';
+import FaCircleInfo from '~icons/fa6-solid/circle-info';
+import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
 
 const props = defineProps({
     status: {
@@ -30,8 +30,8 @@ const props = defineProps({
     tooltip: {
         type: Boolean,
         required: false,
-        default: false
-    }
+        default: false,
+    },
 });
 
 function getIconComponent(status) {
