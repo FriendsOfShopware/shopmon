@@ -1,13 +1,3 @@
-export type WebsocketMessage = {
-    notification?: Notification;
-    shopUpdate?: ShopUpdate;
-}
-
-export type ShopUpdate = {
-    id: number;
-    organizationId: number;
-}
-
 export type Notification = {
     id: number;
     read: boolean;

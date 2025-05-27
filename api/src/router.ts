@@ -22,7 +22,6 @@ export type Bindings = {
     kvStorage: KVNamespace;
     SHOPS_SCRAPE: DurableObjectNamespace;
     PAGESPEED_SCRAPE: DurableObjectNamespace;
-    USER_SOCKET: DurableObjectNamespace;
     FILES: R2Bucket;
     shopmonDB: D1Database;
     sendMail: SendEmail;
@@ -57,26 +56,6 @@ app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
             'content-type': 'image/jpeg',
         },
     });
-});
-
-app.get('/api/ws', async (c) => {
-    const authToken = new URL(c.req.url).searchParams.get('auth_token');
-
-    if (!authToken) {
-        return new Response('Invalid token', { status: 400 });
-    }
-
-    const token = await c.env.kvStorage.get(authToken);
-
-    if (token === null) {
-        return new Response('Invalid token', { status: 400 });
-    }
-
-    const data = JSON.parse(token) as { id: number };
-
-    return c.env.USER_SOCKET.get(
-        c.env.USER_SOCKET.idFromName(data.id.toString()),
-    ).fetch(c.req.raw);
 });
 
 export default app;

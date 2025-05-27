@@ -29,7 +29,6 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('user', JSON.stringify(userData));
 
         const notificationStore = useNotificationStore();
-        notificationStore.connect(token);
         await notificationStore.loadNotifications();
     }
 
@@ -52,7 +51,6 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('user', JSON.stringify(userData));
 
         const notificationStore = useNotificationStore();
-        notificationStore.connect(token);
         await notificationStore.loadNotifications();
     }
 

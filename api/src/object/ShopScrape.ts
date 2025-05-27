@@ -10,7 +10,6 @@ import versionCompare from 'version-compare';
 import { CheckerInput, check } from './status/registery';
 import { createSentry } from '../toucan';
 import Shops, { User } from '../repository/shops';
-import { UserSocketHelper } from './UserSocket';
 import { decrypt } from '../crypto';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Bindings } from '../router';
@@ -161,17 +160,6 @@ export class ShopScrape implements DurableObject {
         const triggeredBy = await this.state.storage.get<string>('triggeredBy');
         if (triggeredBy !== undefined) {
             await this.state.storage.delete('triggeredBy');
-
-            await UserSocketHelper.sendNotification(
-                this.env.USER_SOCKET,
-                triggeredBy,
-                {
-                    shopUpdate: {
-                        id: shop.id,
-                        organizationId: shop.organizationId,
-                    },
-                },
-            );
         }
     }
 
