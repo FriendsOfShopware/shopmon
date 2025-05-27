@@ -6,7 +6,6 @@ import { loggedInUserMiddleware } from '../middleware.ts';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import Users from '../../repository/users.ts';
-import bcryptjs from 'bcryptjs';
 import { notificationRouter } from './notification.ts';
 
 interface Extension {
@@ -118,7 +117,7 @@ export const accountRouter = router({
                 });
             }
 
-            if (!bcryptjs.compareSync(input.currentPassword, user.password)) {
+            if (!await Bun.password.verify(input.currentPassword, user.password)) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
                     message: 'Invalid password',
@@ -132,7 +131,9 @@ export const accountRouter = router({
             } = {};
 
             if (input.newPassword !== undefined) {
-                const hash = bcryptjs.hashSync(input.newPassword, 10);
+                const hash = await Bun.password.hash(input.newPassword, {
+                    algorithm: 'bcrypt',
+                });
 
                 await Users.revokeUserSessions(ctx.user);
                 updates.password = hash;

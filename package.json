@@ -1,8 +1,8 @@
 {
-  "workspaces": {
-    "packages": ["api", "frontend"]
-  },
+  "workspaces": ["api", "frontend"],
   "trustedDependencies": [
-    "@biomejs/biome"
+    "@biomejs/biome",
+    "esbuild",
+    "sharp"
   ]
 }

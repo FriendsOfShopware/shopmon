@@ -2,7 +2,6 @@ import { router, publicProcedure } from '../index.ts';
 import { getLastInsertId, schema, user } from '../../db.ts';
 import { eq, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
-import bcryptjs from 'bcryptjs';
 import { randomString } from '../../util.ts';
 import Users from '../../repository/users.ts';
 import { TRPCError } from '@trpc/server';
@@ -52,7 +51,7 @@ export const authRouter = router({
                 });
             }
 
-            const passwordIsValid = await bcryptjs.compare(
+            const passwordIsValid = await Bun.password.verify(
                 input.password,
                 result.password,
             );
@@ -95,8 +94,9 @@ export const authRouter = router({
                 });
             }
 
-            const salt = bcryptjs.genSaltSync(10);
-            const hashedPassword = await bcryptjs.hash(input.password, salt);
+            const hashedPassword = await Bun.password.hash(input.password, {
+                algorithm: 'bcrypt',
+            });
 
             const token = randomString(32);
 
@@ -221,8 +221,9 @@ export const authRouter = router({
                 .where(eq(schema.passwordResetTokens.id, tokenData.id))
                 .execute();
 
-            const salt = await bcryptjs.genSalt(10);
-            const newPassword = await bcryptjs.hash(password, salt);
+            const newPassword = await Bun.password.hash(password, {
+                algorithm: 'bcrypt',
+            });
 
             await ctx.drizzle
                 .update(schema.user)
