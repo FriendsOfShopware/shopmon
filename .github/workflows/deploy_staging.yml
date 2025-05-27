@@ -59,3 +59,4 @@ jobs:
               run: op run --env-file .env.staging -- docker compose -f compose.deploy.yml up -d --pull=always
               env:
                 OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+                DOCKER_HOST: ssh://github@shea.shyim.de
