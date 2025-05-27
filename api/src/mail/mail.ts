@@ -1,12 +1,8 @@
 import type { Shop, ShopAlert, User } from '../repository/shops';
-// @ts-expect-error
 import passwordResetTemplate from './sources/password-reset.js';
-// @ts-expect-error
 import alertTemplate from './sources/alert.js';
-// @ts-expect-error
 import accountConfirmationTemplate from './sources/confirmation.js';
-import { Bindings } from '../router';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 interface MaiLRequest {
     to: string;
@@ -14,70 +10,70 @@ interface MaiLRequest {
     body: string;
 }
 
-async function sendMail(env: Bindings, mail: MaiLRequest) {
-    if (env.MAIL_ACTIVE === 'false') {
-        console.log(`Sending mail to ${mail.to} with subject ${mail.subject}`);
-        console.log(mail.body);
-        return;
-    }
+const transport = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "localhost",
+    port: parseInt(process.env.SMTP_PORT || "1025", 10),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    } : undefined,
+});
 
-    const resend = new Resend(env.RESEND_API_KEY);
-    const resp = await resend.emails.send({
-        from: env.MAIL_FROM,
-        to: [mail.to],
-        subject: mail.subject,
-        html: mail.body,
-    });
-
-    if (resp.error) {
-        console.error(`Failed to send mail to ${mail.to} with subject ${mail.subject}`, resp.error);
-        throw new Error(`Failed to send mail: ${resp.error.message}`);
+async function sendMail(mail: MaiLRequest) {
+    try {
+        await transport.sendMail({
+            from: process.env.MAIL_FROM,
+            to: mail.to,
+            subject: mail.subject,
+            html: mail.body,
+        });
+    } catch (error) {
+        console.error(`Failed to send mail to ${mail.to} with subject ${mail.subject}`, error);
+        throw new Error(`Failed to send mail: ${error.message}`);
     }
 
     console.log(`Mail sent to ${mail.to} with subject ${mail.subject}`);
 }
 
 export async function sendMailConfirmToUser(
-    env: Bindings,
     email: string,
     token: string,
 ) {
-    await sendMail(env, {
+    await sendMail({
         to: email,
         subject: 'Confirm your email address',
         body: accountConfirmationTemplate({
-            FRONTEND_URL: env.FRONTEND_URL,
+            FRONTEND_URL: process.env.FRONTEND_URL,
             token: token,
         }),
     });
 }
 
 export async function sendMailResetPassword(
-    env: Bindings,
     email: string,
     token: string,
 ) {
-    await sendMail(env, {
+    await sendMail({
         to: email,
         subject: 'Reset your password',
         body: passwordResetTemplate({
-            FRONTEND_URL: env.FRONTEND_URL,
+            FRONTEND_URL: process.env.FRONTEND_URL,
             token: token,
         }),
     });
 }
 
 export async function sendAlert(
-    env: Bindings,
     shop: Shop,
     user: User,
     alert: ShopAlert,
 ) {
-    await sendMail(env, {
+    await sendMail({
         to: user.email,
         subject: `Shop Alert: ${alert.subject} - ${shop.name}`,
         body: alertTemplate({
-            FRONTEND_URL: env.FRONTEND_URL,
+            FRONTEND_URL: process.env.FRONTEND_URL,
             shop,
             alert,
             user,

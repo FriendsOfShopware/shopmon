@@ -1,4 +1,4 @@
-import { Checker, CheckerInput, CheckerOutput } from '../registery';
+import { type Checker, type CheckerInput, CheckerOutput } from '../registery';
 
 export default class implements Checker {
     async check(input: CheckerInput, result: CheckerOutput): Promise<void> {
@@ -38,11 +38,6 @@ export default class implements Checker {
 async function getSecurityInfo(): Promise<Security> {
     const securityInfo = await fetch(
         'https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/security.json',
-        {
-            cf: {
-                cacheTtl: 60 * 60 * 2, // 2 hours
-            },
-        },
     );
 
     return (await securityInfo.json()) as Security;

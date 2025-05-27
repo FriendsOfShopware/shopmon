@@ -1,12 +1,12 @@
-import { router, publicProcedure } from '..';
+import { router, publicProcedure } from '../index.ts';
 import { z } from 'zod';
 import {
     loggedInUserMiddleware,
     organizationAdminMiddleware,
     organizationMiddleware,
-} from '../middleware';
-import Organizations from '../../repository/organization';
-import { shopRouter } from './shop';
+} from '../middleware.ts';
+import Organizations from '../../repository/organization.ts';
+import { shopRouter } from './shop.ts';
 
 export const organizationRouter = router({
     shop: shopRouter,

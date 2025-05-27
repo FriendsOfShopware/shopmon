@@ -1,6 +1,5 @@
 /.idea
-/*.http
 /http-client.private.env.json
-.direnv
-.devenv
-.devenv.flake.nix
+/api/.env
+/api/shopmon.db
+/node_modules

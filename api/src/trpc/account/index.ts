@@ -1,13 +1,13 @@
 import { TRPCError } from '@trpc/server';
-import { router, publicProcedure } from '..';
-import { md5 } from '../../crypto';
-import { schema } from '../../db';
-import { loggedInUserMiddleware } from '../middleware';
+import { router, publicProcedure } from '../index.ts';
+import { sha256 } from '../../crypto/index.ts';
+import { schema } from '../../db.ts';
+import { loggedInUserMiddleware } from '../middleware.ts';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import Users from '../../repository/users';
+import Users from '../../repository/users.ts';
 import bcryptjs from 'bcryptjs';
-import { notificationRouter } from './notification';
+import { notificationRouter } from './notification.ts';
 
 interface Extension {
     name: string;
@@ -66,7 +66,7 @@ export const accountRouter = router({
                 });
             }
 
-            const emailMd5 = await md5(user.displayName + user.email);
+            const emailMd5 = await sha256(user.displayName + user.email);
 
             const avatar = `https://api.dicebear.com/7.x/personas/svg/?seed=${emailMd5}?d=identicon`;
 
@@ -134,7 +134,7 @@ export const accountRouter = router({
             if (input.newPassword !== undefined) {
                 const hash = bcryptjs.hashSync(input.newPassword, 10);
 
-                await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user);
+                await Users.revokeUserSessions(ctx.user);
                 updates.password = hash;
             }
 
@@ -159,7 +159,7 @@ export const accountRouter = router({
     deleteCurrentUser: publicProcedure
         .use(loggedInUserMiddleware)
         .mutation(async ({ ctx }) => {
-            await Users.revokeUserSessions(ctx.env.kvStorage, ctx.user);
+            await Users.revokeUserSessions(ctx.user);
             await Users.deleteById(ctx.drizzle, ctx.user);
 
             return true;

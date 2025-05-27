@@ -1,6 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
+  "id": "96bdd0b6-499e-416a-a994-99cf841e7aa7",
+  "prevId": "643a88cb-97b2-4cd6-be4f-d2d7da0dd25c",
   "tables": {
     "organization": {
       "name": "organization",
@@ -39,15 +41,60 @@
         "organization_owner_id_user_id_fk": {
           "name": "organization_owner_id_user_id_fk",
           "tableFrom": "organization",
+          "tableTo": "user",
           "columnsFrom": [
             "owner_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "sessions": {
+      "name": "sessions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires": {
+          "name": "expires",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sessions_user_id_user_id_fk": {
+          "name": "sessions_user_id_user_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -158,13 +205,6 @@
           "autoincrement": false,
           "default": "'{}'"
         },
-        "last_updated": {
-          "name": "last_updated",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -178,15 +218,15 @@
         "shop_organization_id_organization_id_fk": {
           "name": "shop_organization_id_organization_id_fk",
           "tableFrom": "shop",
+          "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organization",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -244,15 +284,15 @@
         "shop_changelog_shop_id_shop_id_fk": {
           "name": "shop_changelog_shop_id_shop_id_fk",
           "tableFrom": "shop_changelog",
+          "tableTo": "shop",
           "columnsFrom": [
             "shop_id"
           ],
-          "tableTo": "shop",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -317,15 +357,15 @@
         "shop_pagespeed_shop_id_shop_id_fk": {
           "name": "shop_pagespeed_shop_id_shop_id_fk",
           "tableFrom": "shop_pagespeed",
+          "tableTo": "shop",
           "columnsFrom": [
             "shop_id"
           ],
-          "tableTo": "shop",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -390,15 +430,15 @@
         "shop_scrape_info_shop_id_shop_id_fk": {
           "name": "shop_scrape_info_shop_id_shop_id_fk",
           "tableFrom": "shop_scrape_info",
+          "tableTo": "shop",
           "columnsFrom": [
             "shop_id"
           ],
-          "tableTo": "shop",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -547,15 +587,15 @@
         "user_notification_user_id_user_id_fk": {
           "name": "user_notification_user_id_user_id_fk",
           "tableFrom": "user_notification",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -606,15 +646,15 @@
         "user_passkeys_userId_user_id_fk": {
           "name": "user_passkeys_userId_user_id_fk",
           "tableFrom": "user_passkeys",
+          "tableTo": "user",
           "columnsFrom": [
             "userId"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -644,35 +684,35 @@
         "user_to_organization_user_id_user_id_fk": {
           "name": "user_to_organization_user_id_user_id_fk",
           "tableFrom": "user_to_organization",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "user_to_organization_organization_id_organization_id_fk": {
           "name": "user_to_organization_organization_id_organization_id_fk",
           "tableFrom": "user_to_organization",
+          "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
           ],
-          "tableTo": "organization",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "user_to_organization_user_id_organization_id_pk": {
           "columns": [
-            "organization_id",
-            "user_id"
+            "user_id",
+            "organization_id"
           ],
           "name": "user_to_organization_user_id_organization_id_pk"
         }
@@ -681,12 +721,14 @@
       "checkConstraints": {}
     }
   },
+  "views": {},
   "enums": {},
   "_meta": {
+    "schemas": {},
     "tables": {},
     "columns": {}
   },
-  "id": "d38d3c5e-8557-4849-bd0e-cc5a22c27538",
-  "prevId": "97d0b11b-bf14-4828-9167-2d58f093569e",
-  "views": {}
+  "internal": {
+    "indexes": {}
+  }
 }

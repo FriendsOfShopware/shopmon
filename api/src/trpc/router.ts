@@ -1,8 +1,8 @@
-import { router } from '.';
-import { accountRouter } from './account';
-import { authRouter } from './auth';
-import { infoRouter } from './info';
-import { organizationRouter } from './organization';
+import { router } from './index.ts';
+import { accountRouter } from './account/index.ts';
+import { authRouter } from './auth/index.ts';
+import { infoRouter } from './info/index.ts';
+import { organizationRouter } from './organization/index.ts';
 
 export const appRouter = router({
     auth: authRouter,

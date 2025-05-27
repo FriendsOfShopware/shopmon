@@ -1,19 +1,11 @@
-import {
-    SimpleShop,
-    HttpClient,
-    ApiClientRequestFailed,
-    ApiClientAuthenticationFailed,
-    HttpClientResponse,
-} from '@shopware-ag/app-server-sdk';
-import { Drizzle, getConnection, schema } from '../db';
-import versionCompare from 'version-compare';
-import { CheckerInput, check } from './status/registery';
-import { createSentry } from '../toucan';
-import Shops, { User } from '../repository/shops';
-import { decrypt } from '../crypto';
+import { SimpleShop, HttpClient, ApiClientRequestFailed, ApiClientAuthenticationFailed, HttpClientResponse } from '@shopware-ag/app-server-sdk';
+import { getConnection, schema } from '../../db.js';
+import versionCompare from '../../util.ts';
+import { type CheckerInput, check } from '../../object/status/registery.js';
+import Shops, { type User } from '../../repository/shops.js';
+import { decrypt } from '../../crypto/index.js';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import type { Bindings } from '../router';
-import { Extension, ExtensionChangelog, ExtensionDiff } from '../types';
+import type { Extension, ExtensionChangelog, ExtensionDiff } from '../../types/index.js';
 
 interface SQLShop {
     id: number;
@@ -57,147 +49,97 @@ interface ShopwareStoreExtension {
     }[];
 }
 
-const SECONDS = 1000;
-const MINUTES = 60 * SECONDS;
 const STATES: { [key: string]: number } = {
     green: 1,
     yellow: 2,
     red: 3,
 };
 
-export class ShopScrape implements DurableObject {
-    state: DurableObjectState;
-    env: Bindings;
+export async function shopScrapeJob() {
+    const con = getConnection();
 
-    constructor(state: DurableObjectState, env: Bindings) {
-        this.env = env;
-        this.state = state;
+    // Get all shops that need to be scraped
+    const shops = await con.query.shop.findMany({
+        columns: {
+            id: true,
+            name: true,
+            status: true,
+            ignores: true,
+            url: true,
+            clientId: true,
+            clientSecret: true,
+            shopwareVersion: true,
+            organizationId: true,
+        },
+    });
+
+    console.log(`Found ${shops.length} shops to scrape`);
+
+    // Process shops in parallel with a limit
+    const batchSize = 10;
+    for (let i = 0; i < shops.length; i += batchSize) {
+        const batch = shops.slice(i, i + batchSize);
+        await Promise.all(batch.map((shop) => updateShop(shop, con)));
+    }
+}
+
+export async function scrapeSingleShop(shopId: number) {
+    const con = getConnection();
+
+    // Get the shop by ID
+    const shop = await con.query.shop.findFirst({
+        columns: {
+            id: true,
+            name: true,
+            status: true,
+            ignores: true,
+            url: true,
+            clientId: true,
+            clientSecret: true,
+            shopwareVersion: true,
+            organizationId: true,
+        },
+        where: eq(schema.shop.id, shopId),
+    });
+
+    if (!shop) {
+        throw new Error(`Shop with ID ${shopId} not found`);
     }
 
-    async fetch(request: Request): Promise<Response> {
-        const url = new URL(request.url);
-        const id = url.searchParams.get('id');
+    await updateShop(shop, con);
+}
 
-        await this.state.storage.put('id', id);
-
-        if (url.pathname === '/cron') {
-            const currentAlarm = await this.state.storage.getAlarm();
-            if (currentAlarm === null) {
-                await this.state.storage.setAlarm(Date.now() + 60 * MINUTES);
-                console.log(`Set alarm for shop ${id} to one hour`);
-            }
-
-            return new Response('OK');
-        }
-        if (url.pathname === '/now') {
-            await this.state.storage.setAlarm(Date.now() + 5 * SECONDS);
-            console.log(`Set alarm for shop ${id} to 5 seconds`);
-
-            if (url.searchParams.has('userId')) {
-                await this.state.storage.put(
-                    'triggeredBy',
-                    url.searchParams.get('userId'),
-                );
-            }
-
-            return new Response('OK');
-        }
-        if (url.pathname === '/delete') {
-            await this.state.storage.deleteAll();
-
-            return new Response('OK');
-        }
-
-        return new Response('', { status: 404 });
-    }
-
-    async alarm(): Promise<void> {
-        const con = getConnection(this.env);
-
-        const id = (await this.state.storage.get('id')) as string | undefined;
-
-        // ID is missing, so we can't do anything
-        if (id === undefined) {
-            await this.state.storage.deleteAll();
-            return;
-        }
-
-        const shop = await con.query.shop.findFirst({
-            columns: {
-                id: true,
-                name: true,
-                status: true,
-                ignores: true,
-                url: true,
-                clientId: true,
-                clientSecret: true,
-                shopwareVersion: true,
-                organizationId: true,
-            },
-            where: eq(schema.shop.id, parseInt(id)),
-        });
-
-        // Shop is missing, so we can't do anything
-        if (shop === undefined) {
-            console.log(`cannot find shop: ${id}. Destroy self`);
-            await this.state.storage.deleteAll();
-            return;
-        }
-
-        try {
-            await this.updateShop(shop, con);
-        } catch (e) {
-            const sentry = createSentry(this.state, this.env);
-
-            sentry.setExtra('shopId', id);
-            sentry.captureException(e);
-        }
-
-        console.log(`Updated shop ${id}`);
-
-        this.state.storage.setAlarm(Date.now() + 60 * MINUTES);
-
-        const triggeredBy = await this.state.storage.get<string>('triggeredBy');
-        if (triggeredBy !== undefined) {
-            await this.state.storage.delete('triggeredBy');
-        }
-    }
-
-    async shouldNotify(
-        users: User[],
-        notificationKey: string,
-    ): Promise<boolean> {
-        const con = getConnection(this.env);
-        const notificationResult = await con
-            .select({
-                created_at: schema.userNotification.createdAt,
-            })
-            .from(schema.userNotification)
-            .where(
-                and(
-                    inArray(
-                        schema.userNotification.userId,
-                        users.map((user) => user.id),
-                    ),
-                    eq(schema.userNotification.key, notificationKey),
-                    eq(schema.userNotification.read, false),
+async function shouldNotify(con: any, users: User[], notificationKey: string): Promise<boolean> {
+    const notificationResult = await con
+        .select({
+            created_at: schema.userNotification.createdAt,
+        })
+        .from(schema.userNotification)
+        .where(
+            and(
+                inArray(
+                    schema.userNotification.userId,
+                    users.map((user) => user.id),
                 ),
-            )
-            .orderBy(asc(schema.userNotification.createdAt))
-            .all();
+                eq(schema.userNotification.key, notificationKey),
+                eq(schema.userNotification.read, false),
+            ),
+        )
+        .orderBy(asc(schema.userNotification.createdAt))
+        .all();
 
-        if (notificationResult.length === 0) {
-            return true;
-        }
-
-        const lastNotification = new Date(notificationResult[0].created_at);
-        const timeDifference =
-            lastNotification.getTime() - new Date().getTime();
-
-        return timeDifference >= 24 * 60 * 60 * 1000;
+    if (notificationResult.length === 0) {
+        return true;
     }
 
-    async updateShop(shop: SQLShop, con: Drizzle) {
+    const lastNotification = new Date(notificationResult[0].created_at);
+    const timeDifference = lastNotification.getTime() - new Date().getTime();
+
+    return timeDifference >= 24 * 60 * 60 * 1000;
+}
+
+async function updateShop(shop: SQLShop, con: any) {
+    try {
         await con
             .update(schema.shop)
             .set({ lastScrapedAt: new Date() })
@@ -205,7 +147,7 @@ export class ShopScrape implements DurableObject {
             .execute();
 
         const clientSecret = await decrypt(
-            this.env.APP_SECRET,
+            process.env.APP_SECRET || '',
             shop.clientSecret,
         );
 
@@ -242,7 +184,6 @@ export class ShopScrape implements DurableObject {
 
             await Shops.notify(
                 con,
-                this.env.USER_SOCKET,
                 shop.id,
                 `shop.update-auth-error.${shop.id}`,
                 {
@@ -259,7 +200,7 @@ export class ShopScrape implements DurableObject {
                 },
             );
 
-            await Shops.alert(con, this.env, {
+            await Shops.alert(con, {
                 key: `shop.update-auth-error.${shop.id}`,
                 shopId: shop.id.toString(),
                 subject: 'Shop Update Error',
@@ -276,12 +217,12 @@ export class ShopScrape implements DurableObject {
         }
 
         let responses: {
-            config: HttpClientResponse;
-            plugin: HttpClientResponse;
-            app: HttpClientResponse;
-            scheduledTask: HttpClientResponse;
-            queue: HttpClientResponse;
-            cacheInfo: HttpClientResponse;
+            config: HttpClientResponse<any>;
+            plugin: HttpClientResponse<any>;
+            app: HttpClientResponse<any>;
+            scheduledTask: HttpClientResponse<any>;
+            queue: HttpClientResponse<any>;
+            cacheInfo: HttpClientResponse<any>;
         };
 
         try {
@@ -320,7 +261,6 @@ export class ShopScrape implements DurableObject {
 
             await Shops.notify(
                 con,
-                this.env.USER_SOCKET,
                 shop.id,
                 `shop.not.updated_${shop.id}`,
                 {
@@ -374,7 +314,7 @@ export class ShopScrape implements DurableObject {
                 ratingAverage: null,
                 storeLink: null,
                 changelog: null,
-                installed: true, // When it's in DB its always installed
+                installed: true,
                 installedAt: app.createdAt,
             } as Extension);
         }
@@ -406,11 +346,7 @@ export class ShopScrape implements DurableObject {
                 url.searchParams.append('technicalNames[]', extension.name);
             }
 
-            const storeResp = await fetch(url.toString(), {
-                cf: {
-                    cacheTtl: 60 * 60 * 6, // 6 hours
-                },
-            });
+            const storeResp = await fetch(url.toString());
 
             if (storeResp.ok) {
                 const storePlugins =
@@ -589,10 +525,9 @@ export class ShopScrape implements DurableObject {
             const users = await Shops.getUsersOfShop(con, shop.id);
             const statusChangeKey = `shop.change-status.${shop.id}`;
 
-            if (await this.shouldNotify(users, statusChangeKey)) {
+            if (await shouldNotify(con, users, statusChangeKey)) {
                 await Shops.notify(
                     con,
-                    this.env.USER_SOCKET,
                     shop.id,
                     statusChangeKey,
                     {
@@ -609,7 +544,7 @@ export class ShopScrape implements DurableObject {
                     },
                 );
 
-                await Shops.alert(con, this.env, {
+                await Shops.alert(con, {
                     key: statusChangeKey,
                     shopId: shop.id.toString(),
                     subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,
@@ -629,7 +564,6 @@ export class ShopScrape implements DurableObject {
             .where(eq(schema.shop.id, shop.id))
             .execute();
 
-        // delete
         await con
             .delete(schema.shopScrapeInfo)
             .where(eq(schema.shopScrapeInfo.shopId, shop.id))
@@ -676,5 +610,10 @@ export class ShopScrape implements DurableObject {
                 .where(eq(schema.shop.id, shop.id))
                 .execute();
         }
+
+        console.log(`Updated shop ${shop.id}`);
+    } catch (e) {
+        console.error(`Error updating shop ${shop.id}:`, e);
+        throw e;
     }
 }

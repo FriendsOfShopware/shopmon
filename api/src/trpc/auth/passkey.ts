@@ -1,13 +1,14 @@
-import { router, publicProcedure } from '..';
+import { router, publicProcedure } from '../index.ts';
 import { server } from '@passwordless-id/webauthn';
-import { loggedInUserMiddleware } from '../middleware';
+import { loggedInUserMiddleware } from '../middleware.ts';
 import { z } from 'zod';
-import { schema } from '../../db';
+import { schema } from '../../db.ts';
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
-import { randomString } from '../../util';
-import { ACCESS_TOKEN_TTL, Token } from '.';
+import { randomString } from '../../util.ts';
+import { ACCESS_TOKEN_TTL } from './index.ts';
 import type { RegistrationJSON, AuthenticationResponseJSON } from '@passwordless-id/webauthn/dist/esm/types';
+const webauthnChallanges = new Map<string, string>();
 
 export const passkeyRouter = router({
     challenge: publicProcedure.mutation(async ({ ctx }) => {
@@ -15,13 +16,10 @@ export const passkeyRouter = router({
             crypto.getRandomValues(new Uint32Array(4)).toString(),
         ).replaceAll('=', '');
 
-        await ctx.env.kvStorage.put(
-            `webauthn_challange_${challange}`,
-            challange,
-            {
-                expirationTtl: 120,
-            },
-        );
+        webauthnChallanges.set(challange, challange);
+        setTimeout(() => {
+            webauthnChallanges.delete(challange);
+        }, 120 * 1000);
 
         return challange;
     }),
@@ -65,21 +63,15 @@ export const passkeyRouter = router({
         .mutation(async ({ input, ctx }) => {
             const expected = {
                 challenge: async (challange: string) => {
-                    const ret = await ctx.env.kvStorage.get(
-                        `webauthn_challange_${challange}`,
-                    );
-
-                    if (ret === null) {
+                    if (!webauthnChallanges.has(challange)) {
                         return false;
                     }
 
-                    await ctx.env.kvStorage.delete(
-                        `webauthn_challange_${challange}`,
-                    );
+                    webauthnChallanges.delete(challange);
 
                     return true;
                 },
-                origin: ctx.env.FRONTEND_URL,
+                origin: process.env.FRONTEND_URL!!,
             };
 
             const registrationParsed = await server.verifyRegistration(
@@ -89,6 +81,7 @@ export const passkeyRouter = router({
 
             await ctx.drizzle
                 .insert(schema.userPasskeys)
+                // @ts-expect-error
                 .values({
                     id: input.id,
                     name: registrationParsed.authenticator.name,
@@ -163,40 +156,33 @@ export const passkeyRouter = router({
 
             const expected = {
                 challenge: async (challange: string) => {
-                    const ret = await ctx.env.kvStorage.get(
-                        `webauthn_challange_${challange}`,
-                    );
-
-                    if (ret === null) {
+                    if (!webauthnChallanges.has(challange)) {
                         return false;
                     }
+                    webauthnChallanges.delete(challange);
 
-                    await ctx.env.kvStorage.delete(
-                        `webauthn_challange_${challange}`,
-                    );
 
                     return true;
                 },
-                origin: ctx.env.FRONTEND_URL,
+                origin: process.env.FRONTEND_URL!!,
                 userVerified: true,
             };
 
             await server.verifyAuthentication(
                 input as AuthenticationResponseJSON,
+                // @ts-expect-error
                 credential.key.credential,
                 expected,
             );
 
             const token = `u-${credential.userId}-${randomString(32)}`;
-            await ctx.env.kvStorage.put(
-                token,
-                JSON.stringify({
-                    id: credential.userId,
-                } as Token),
-                {
-                    expirationTtl: ACCESS_TOKEN_TTL,
-                },
-            );
+
+            await ctx.drizzle.insert(schema.sessions)
+                .values({
+                    id: token,
+                    userId: credential.userId,
+                    expires: new Date(Date.now() + ACCESS_TOKEN_TTL * 1000),
+                });
 
             return token;
         }),

@@ -10,10 +10,16 @@ setup: # Setup the project
 	pnpm install --prefix frontend
 
 migrate:
-	yes | pnpm --prefix api run wrangler d1 migrations apply --local shopmonDB
+	cd api && bun run migrate.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'npm --prefix api run dev:local' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'npm run --prefix=api dev' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev
+
+up: # Build and run the demo shop
+	docker compose up -d
+	@echo "Demo shop is running at http://localhost:3889"
+	@echo "Integration: Key: SWIAUZL4OXRKEG1RR3PMCEVNMG, Secret: aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks"
+	@echo "Mailpit: http://localhost:8025"

@@ -5,6 +5,7 @@
     "target": "esnext",
     "moduleResolution": "Node",
     "module": "ES2020",
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "*"

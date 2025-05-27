@@ -1,0 +1,14 @@
+services:
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+  demoshop:
+    image: local/demoshop
+    build:
+      context: demoshop
+    environment:
+      APP_URL: "http://localhost:3889"
+    ports:
+      - "3889:8080"

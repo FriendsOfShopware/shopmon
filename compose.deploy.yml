@@ -1,0 +1,50 @@
+x-env: &env
+  MAIL_FROM: "Shopmon <contact@fos.gg>"
+  APP_FILES_DIR: /app/uploads
+  APP_DATABASE_PATH: /app/db/shopmon.db
+  # From 1password
+  FRONTEND_URL: ${FRONTEND_URL}
+  APP_SECRET: ${APP_SECRET}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_SECURE: ${SMTP_SECURE}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASS: ${SMTP_PASS}
+  PAGESPEED_API_KEY: ${PAGESPEED_API_KEY}
+
+services:
+  migrate:
+    image: ${IMAGE}
+    environment:
+      <<: *env
+    command: "migrate.ts"
+    volumes:
+      - db:/app/db
+      - uploads:/app/uploads
+
+  app:
+    image: ${IMAGE}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *env
+    ports:
+      - "127.0.0.1:${LOCAL_PORT}:3000"
+    volumes:
+      - db:/app/db
+      - uploads:/app/uploads
+  cron:
+    image: ${IMAGE}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *env
+    command: ['src/cron/index.ts']
+    volumes_from:
+      - app
+  
+volumes:
+  db:
+  uploads:

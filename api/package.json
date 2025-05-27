@@ -3,48 +3,47 @@
   "version": "0.0.1",
   "type": "module",
   "description": "",
-  "packageManager": "pnpm@10.9.0",
   "scripts": {
-    "prod:local": "TZ=UTC wrangler dev --port 5789 --remote",
-    "dev:local": "TZ=UTC wrangler dev --port 5789 --define SENTRY_RELEASE:\"'local'\"",
-    "api:deploy": "wrangler deploy",
+    "dev": "bun --watch --port 5789 src/index.ts",
     "format": "biome format --write src",
     "lint": "biome lint src",
     "tslint": "tsc --noEmit",
-    "wrangler": "wrangler",
-    "generate:mail": "node generate-mjml.js"
+    "generate:mail": "node generate-mjml.js",
+    "cron": "bun src/cron/index.ts",
+    "build:app": "bun build src/index.ts --production --target bun --sourcemap --outfile=app.js",
+    "build:cron": "bun build src/cron/index.ts --production --target bun --sourcemap --outfile=cron.js"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@libsql/client": "^0.15.7",
     "@passwordless-id/webauthn": "^2.3.0",
     "@shopware-ag/app-server-sdk": "^1.1.16",
     "@trpc/server": "^11.1.2",
     "bcryptjs": "3.0.2",
     "drizzle-orm": "^0.43.1",
     "hono": "~4.7.7",
-    "resend": "^4.5.1",
-    "toucan-js": "4.1.1",
-    "tsx": "^4.19.3",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^7.0.3",
+    "sharp": "^0.33.5",
     "version-compare": "3.11.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "4.20250525.0",
     "@types/bcryptjs": "3.0.0",
+    "@types/bun": "^1.2.14",
+    "@types/node": "^22.14.1",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
     "drizzle-kit": "^0.31.0",
     "mjml": "^4.15.3",
-    "typescript": "5.8.3",
-    "wrangler": "^4.12.0"
+    "typescript": "5.8.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@biomejs/biome",
       "esbuild",
-      "sharp",
-      "workerd"
+      "sharp"
     ]
   }
 }
