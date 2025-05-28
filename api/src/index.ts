@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as Sentry from '@sentry/bun';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
+import { logger } from 'hono/logger';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 
@@ -19,6 +20,7 @@ Sentry.init({
 });
 
 const app = new Hono();
+app.use(logger());
 
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));
