@@ -5,11 +5,14 @@ import { ref } from 'vue';
 export const useExtensionStore = defineStore('extension', () => {
     const isLoading = ref(false);
     const isRefreshing = ref(false);
-    const extensions = ref<RouterOutput['account']['currentUserExtensions']>([]);
+    const extensions = ref<RouterOutput['account']['currentUserExtensions']>(
+        [],
+    );
 
     async function loadExtensions() {
         isLoading.value = true;
-        extensions.value = await trpcClient.account.currentUserExtensions.query();
+        extensions.value =
+            await trpcClient.account.currentUserExtensions.query();
         isLoading.value = false;
     }
 

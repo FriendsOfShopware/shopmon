@@ -8,7 +8,8 @@
 			"frontend/src/types/vue.shyim.d.ts",
 			"frontend/src/styles/*.css",
 			"frontend/src/style.css",
-			"node_modules/**"
+			"node_modules/**",
+			"frontend/components.d.ts"
 		]
 	},
 	"organizeImports": {
