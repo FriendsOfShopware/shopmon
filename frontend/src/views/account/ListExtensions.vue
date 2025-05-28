@@ -3,7 +3,7 @@
 
     <main-container v-if="!extensionStore.isLoading">
         <template v-if="extensionStore.extensions.length === 0">
-            <element-empty title="No Apps" button="Add Shop" route="/account/shop/new">
+            <element-empty title="No Apps" button="Add Shop" route="/account/shops/new">
                 Get started by adding your first Shop.
             </element-empty>
         </template>
