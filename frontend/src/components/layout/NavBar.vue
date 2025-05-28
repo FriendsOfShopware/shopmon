@@ -310,7 +310,7 @@ const darkModeStore = useDarkModeStore();
 const navigation = [
     { name: 'Dashboard', route: '/' },
     { name: 'My Shops', route: '/account/shops', active: 'shop' },
-    { name: 'My Apps', route: '/account/extensions' },
+    { name: 'My Extensions', route: '/account/extensions' },
     {
         name: 'My Organizations',
         route: '/account/organizations',

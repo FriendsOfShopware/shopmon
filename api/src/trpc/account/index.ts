@@ -240,7 +240,7 @@ export const accountRouter = router({
 
             return result;
         }),
-    currentUserApps: publicProcedure
+    currentUserExtensions: publicProcedure
         .use(loggedInUserMiddleware)
         .query(async ({ ctx }) => {
             const result = await ctx.drizzle
