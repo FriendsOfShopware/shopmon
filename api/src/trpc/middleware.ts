@@ -1,4 +1,4 @@
-import { TRPCError, experimental_standaloneMiddleware } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { t } from '.';
 import { schema } from '../db';
@@ -16,17 +16,19 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     });
 });
 
-export const organizationMiddleware = experimental_standaloneMiddleware<{
-    input: { orgId: number };
-    ctx: context;
-}>().create(async ({ ctx, input, next }) => {
+export const organizationMiddleware = t.middleware(async (opts) => {
+    const { ctx, input, next } = opts as typeof opts & {
+        input: { orgId: number };
+        ctx: context & { user: number };
+    };
+
     const result = await ctx.drizzle.query.userToOrganization.findFirst({
         columns: {
             userId: true,
         },
         where: and(
             eq(schema.userToOrganization.organizationId, input.orgId),
-            eq(schema.userToOrganization.userId, ctx.user as number),
+            eq(schema.userToOrganization.userId, ctx.user),
         ),
     });
 
@@ -37,10 +39,12 @@ export const organizationMiddleware = experimental_standaloneMiddleware<{
     return next();
 });
 
-export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
-    input: { orgId: number };
-    ctx: context;
-}>().create(async ({ ctx, input, next }) => {
+export const organizationAdminMiddleware = t.middleware(async (opts) => {
+    const { ctx, input, next } = opts as typeof opts & {
+        input: { orgId: number };
+        ctx: context & { user: number };
+    };
+
     const result = await ctx.drizzle
         .select({
             ownerId: schema.organization.ownerId,
@@ -59,10 +63,12 @@ export const organizationAdminMiddleware = experimental_standaloneMiddleware<{
     return next();
 });
 
-export const shopMiddleware = experimental_standaloneMiddleware<{
-    input: { orgId: number; shopId: number };
-    ctx: context;
-}>().create(async ({ ctx, input, next }) => {
+export const shopMiddleware = t.middleware(async (opts) => {
+    const { ctx, input, next } = opts as typeof opts & {
+        input: { orgId: number; shopId: number };
+        ctx: context & { user: number };
+    };
+
     const result = await ctx.drizzle
         .select({
             orgId: schema.shop.organizationId,
