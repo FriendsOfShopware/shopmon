@@ -23,7 +23,10 @@ export const trpcServer = ({
             createContext: createContext(),
             onError: (err) => {
                 if (err.error.code === 'INTERNAL_SERVER_ERROR') {
-                    console.error(`[tRPC] Error on path: ${err.path}`, err.error);
+                    console.error(
+                        `[tRPC] Error on path: ${err.path}`,
+                        err.error,
+                    );
                     captureException(err.error, {
                         user: {
                             id: err.ctx.user || null,

@@ -4,8 +4,5 @@ Sentry.init({
     release: process.env.SENTRY_RELEASE || 'unknown',
     environment: process.env.SENTRY_ENVIRONMENT || 'development',
     tracesSampleRate: 1,
-    integrations: [
-        Sentry.nativeNodeFetchIntegration(),
-    ]
+    integrations: [Sentry.nativeNodeFetchIntegration()],
 });
-
