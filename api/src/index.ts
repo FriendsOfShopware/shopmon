@@ -1,9 +1,8 @@
+import './sentry.ts';
 import { promises as fs, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import * as Sentry from '@sentry/bun';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
-import { logger } from 'hono/logger';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 
@@ -13,15 +12,7 @@ if (!existsSync(filesDir)) {
     mkdirSync(filesDir, { recursive: true });
 }
 
-Sentry.init({
-    dsn: process.env.SENTRY_DSN || '',
-    release: process.env.SENTRY_RELEASE || 'unknown',
-    environment: process.env.SENTRY_ENVIRONMENT || 'development',
-    tracesSampleRate: 0.1,
-});
-
 const app = new Hono();
-app.use(logger());
 
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));
