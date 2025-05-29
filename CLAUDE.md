@@ -8,24 +8,24 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 
 ## Architecture
 
-### API (Cloudflare Workers)
+### API (Bun + TypeScript)
 - Located in `/api/`
 - Built with TypeScript, tRPC, Hono framework
-- Uses Drizzle ORM with Cloudflare D1 (SQLite)
-- Cloudflare Durable Objects for real-time features
-- Deployed via Wrangler to Cloudflare Workers
+- Uses Drizzle ORM with SQLite (Cloudflare D1 in production)
+- Sentry for error tracking
+- Deployed via Docker containers
 
 ### Frontend (Vue 3 SPA)
 - Located in `/frontend/`
 - Vue 3 with TypeScript, Pinia stores, Vue Router
 - tRPC client for type-safe API communication
-- Tailwind CSS for styling
+- PostCSS with nested syntax for styling
 - Built with Vite
 
 ### Database
-- Cloudflare D1 (SQLite in production)
+- SQLite with Drizzle ORM
 - Migrations in `/api/drizzle/`
-- Schema defined via Drizzle ORM
+- Schema defined in `/api/src/db.ts`
 
 ## Common Commands
 
@@ -37,31 +37,41 @@ make setup
 # Run database migrations
 make migrate
 
-# Start development servers (API on :8787, Frontend on :5173)
+# Start development servers (API on :5789, Frontend on :3000)
 make dev
 
 # Run frontend against production API
 make dev-to-prod
+
+# Start demo environment with Docker
+make up
 ```
 
 ### API-specific Commands
 ```bash
 cd api
-pnpm run dev:local        # Local development
-pnpm run generate         # Generate TypeScript types
-pnpm run db:generate      # Generate database migrations
-pnpm run migrate          # Apply migrations
-pnpm run api:deploy       # Deploy to Cloudflare
-pnpm run biome:check      # Lint/format check
-pnpm run biome:fix        # Auto-fix lint/format issues
+bun run dev               # Development server
+bun run db:generate       # Generate database migrations
+bun run db:migrate        # Apply migrations
+bun run cron              # Run cron jobs manually
+bun run build:app         # Build for production
+bun run build:cron        # Build cron worker
 ```
 
 ### Frontend-specific Commands
 ```bash
 cd frontend
-pnpm run dev              # Development server
-pnpm run build            # Production build
-pnpm run preview          # Preview production build
+bun run dev               # Development server
+bun run dev:local         # Dev with local API
+bun run build             # Production build
+bun run preview           # Preview production build
+```
+
+### Code Quality
+```bash
+# Run from root directory
+bun run biome:check       # Lint and format check
+bun run biome:fix         # Auto-fix issues
 ```
 
 ## Key Patterns & Conventions
@@ -70,36 +80,68 @@ pnpm run preview          # Preview production build
 - Main router: `/api/src/router.ts`
 - Feature routers in `/api/src/trpc/*/index.ts`
 - Context and middleware in `/api/src/trpc/`
+- Authentication middleware in `/api/src/trpc/middleware.ts`
 
 ### Frontend State Management
 - Pinia stores in `/frontend/src/stores/`
 - Each major feature has its own store
 - tRPC client configured in `/frontend/src/helpers/trpc.ts`
+- Persistent auth state in localStorage
 
 ### Authentication
-- JWT-based authentication
-- Passkey support
-- Auth logic in `/api/src/trpc/auth/`
+- JWT-based authentication with database sessions
+- Passkey/WebAuthn support in `/api/src/trpc/auth/passkey.ts`
+- Session cleanup via cron job
+- Password reset with expiring tokens
 
+### Database Schema
+- User management: `user`, `user_notification`, `sessions`, `user_passkeys`
+- Organization/Shop: `organization`, `shop`, `shop_scrape_info`
+- Monitoring data: `shop_changelog`, `shop_pagespeed`, `shop_extension`
+- Task tracking: `scheduled_task`, `scheduled_task_run`
 
 ### Email Templates
 - MJML templates in `/api/src/mail/sources/`
-- Compiled during build process
+- Compiled to JS during build process
+- Templates: alert, confirmation, password-reset
+
+### Cron Jobs
+- Located in `/api/src/cron/jobs/`
+- Jobs: shopScrape, pagespeedScrape, sessionCleanup, passwordResetCleanup
+- Configured in `/api/src/cron/index.ts`
 
 ## Environment Configuration
 
 ### API Environment Variables
-- `VITE_*` variables are exposed to frontend
-- Critical variables: DATABASE, JWT_SECRET, CRYPTO_KEY
-- Email: SMTP_* or RESEND_API_TOKEN
-- Optional: DISABLE_REGISTRATION, PAGESPEED_API_KEY
+```bash
+APP_SECRET              # Encryption key (required)
+APP_DATABASE_PATH       # SQLite database path
+APP_FILES_DIR           # File storage directory
+SMTP_HOST/PORT/USER/PASS # Email configuration
+PAGESPEED_API_KEY       # Google PageSpeed API
+DISABLE_REGISTRATION    # Disable new signups
+FRONTEND_URL            # Frontend URL for emails
+SENTRY_DSN              # Error tracking
+```
 
 ### Frontend Environment
-- API URL configured via VITE_API_URL
-- Defaults to production API if not set
+```bash
+SHOPMON_API_URL         # API URL (defaults to production)
+VITE_DISABLE_REGISTRATION # Hide registration UI
+```
 
 ## Deployment
 
-- API deploys to Cloudflare Workers via `wrangler`
-- Frontend can be deployed to any static hosting
-- Database migrations must be run before deployment
+- Docker multi-stage build in root `Dockerfile`
+- GitHub Actions workflow in `.github/workflows/`
+- Staging deployment to `shea.shyim.de`
+- Uses 1Password for secrets management
+- Production uses Docker Compose (`compose.deploy.yml`)
+
+## Security Patterns
+
+- Client secrets encrypted using Node crypto module
+- JWT tokens with configurable expiry
+- Foreign key constraints in SQLite
+- Session cleanup removes expired tokens
+- Password reset tokens expire after 24 hours
