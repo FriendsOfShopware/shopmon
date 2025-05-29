@@ -22,16 +22,18 @@ export const trpcServer = ({
             req: c.req.raw,
             createContext: createContext(),
             onError: (err) => {
-                console.error(`[tRPC] Error on path: ${err.path}`, err.error);
-                captureException(err.error, {
-                    user: {
-                        id: err.ctx.user || null,
-                    },
-                    extra: {
-                        type: err.type,
-                        path: err.path,
-                    },
-                });
+                if (err.error.code === 'INTERNAL_SERVER_ERROR') {
+                    console.error(`[tRPC] Error on path: ${err.path}`, err.error);
+                    captureException(err.error, {
+                        user: {
+                            id: err.ctx.user || null,
+                        },
+                        extra: {
+                            type: err.type,
+                            path: err.path,
+                        },
+                    });
+                }
             },
         });
         return res;
