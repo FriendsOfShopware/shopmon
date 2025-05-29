@@ -225,10 +225,6 @@ export function getConnection() {
 
     drizzle = drizzleSqlite(dbClient, { schema });
 
-    // Graceful shutdown handling
-    process.on('SIGINT', closeConnection);
-    process.on('SIGTERM', closeConnection);
-
     return drizzle;
 }
 
