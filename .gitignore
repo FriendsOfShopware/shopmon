@@ -1,6 +1,6 @@
 /.idea
 /http-client.private.env.json
 /api/.env
-/api/shopmon.db*
+/api/shopmon*.db*
 /node_modules
 frontend/components.d.ts
