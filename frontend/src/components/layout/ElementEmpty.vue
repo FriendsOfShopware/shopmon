@@ -21,18 +21,17 @@
     </div>
 </template>
 
-<script setup lang="ts" generic="T extends string">
-const props = defineProps<{
-    title: {
-        type: string;
-        default: 'No elements';
-    };
-    button: {
-        type: string;
-        default: 'Add element';
-    };
-    route: string | { name: string };
-}>();
+<script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
+
+withDefaults(defineProps<{
+    title?: string;
+    button?: string;
+    route: RouteLocationRaw;
+}>(), {
+    title: 'No elements',
+    button: 'Add element'
+});
 </script>
 
 <style scoped>
