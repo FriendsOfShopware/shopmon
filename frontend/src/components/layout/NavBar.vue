@@ -311,14 +311,21 @@ const userAvatar = ref(
     'https://api.dicebear.com/7.x/personas/svg/?seed=default?d=identicon',
 );
 
-crypto.subtle
-    .digest('SHA-256', new TextEncoder().encode(session.value.data.user.email))
-    .then((hash) => {
-        const seed = new Uint8Array(hash)
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('');
-        userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${seed}&d=identicon`;
-    });
+try {
+    crypto.subtle
+        .digest(
+            'SHA-256',
+            new TextEncoder().encode(session.value.data.user.email),
+        )
+        .then((hash) => {
+            const seed = new Uint8Array(hash)
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+            userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${seed}&d=identicon`;
+        });
+} catch (error) {
+    // Web crypto API is not supported, fallback to default avatar
+}
 
 const notificationStore = useNotificationStore();
 const darkModeStore = useDarkModeStore();
