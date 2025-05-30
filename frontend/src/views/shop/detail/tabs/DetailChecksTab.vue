@@ -3,7 +3,7 @@
         :columns="[
             { key: 'message', name: 'Message' },
         ]"
-        :data="shopStore.shop.checks || []"
+        :data="shop.checks || []"
     >
         <template #cell-message="{ row }">
             <status-icon :status="row.level" />
@@ -16,7 +16,7 @@
 
         <template #cell-actions="{ row }">
             <button
-                v-if="shopStore.shop.ignores.includes(row.id)"
+                v-if="shop.ignores.includes(row.id)"
                 data-tooltip="check is ignored"
                 class="tooltip-position-left"
                 type="button"
@@ -40,33 +40,40 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { useShopStore } from '@/stores/shop.store';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
+
 const { info } = useAlert();
 
 async function ignoreCheck(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore?.shop?.ignores.push(id);
-
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, {
-            ignores: shopStore?.shop?.ignores,
-        });
-        notificateIgnoreUpdate();
-    }
+    const updatedIgnores = [...shop.ignores, id];
+    
+    await trpcClient.organization.shop.update.mutate({
+        orgId: shop.organizationId,
+        shopId: shop.id,
+        ignores: updatedIgnores,
+    });
+    
+    // Update local shop data
+    shop.ignores = updatedIgnores;
+    notificateIgnoreUpdate();
 }
 
 async function removeIgnore(id: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        shopStore.shop.ignores = shopStore.shop.ignores.filter(
-            (aid: string) => aid !== id,
-        );
-
-        shopStore.updateShop(shopStore.shop.organizationId, shopStore.shop.id, {
-            ignores: shopStore?.shop?.ignores,
-        });
-        notificateIgnoreUpdate();
-    }
+    const updatedIgnores = shop.ignores.filter((aid: string) => aid !== id);
+    
+    await trpcClient.organization.shop.update.mutate({
+        orgId: shop.organizationId,
+        shopId: shop.id,
+        ignores: updatedIgnores,
+    });
+    
+    // Update local shop data
+    shop.ignores = updatedIgnores;
+    notificateIgnoreUpdate();
 }
 
 async function notificateIgnoreUpdate() {

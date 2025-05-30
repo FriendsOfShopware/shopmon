@@ -4,12 +4,14 @@
             { key: 'name', name: 'Name', sortable: true },
             { key: 'size', name: 'Size', sortable: true },
         ]"
-        :data="shopStore.shop.queueInfo || []"
+        :data="shop.queueInfo || []"
     />
 </template>
 
 <script setup lang="ts">
-import { useShopStore } from '@/stores/shop.store';
+import type { RouterOutput } from '@/helpers/trpc';
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
 </script>

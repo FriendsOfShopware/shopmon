@@ -7,10 +7,10 @@
             { key: 'bestPractices', name: 'Best Practices' },
             { key: 'seo', name: 'SEO' },
         ]"
-        :data="shopStore.shop.pageSpeed"
+        :data="shop.pageSpeed"
     >
         <template #cell-createdAt="{ row }">
-            <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url=' + shopStore.shop.url">
+            <a target="_blank" :href="'https://pagespeed.web.dev/analysis?url=' + shop.url">
                 {{ formatDateTime(row.createdAt) }}
             </a>
         </template>
@@ -26,8 +26,8 @@
             :key="cellKey"
         >
             <template v-if="
-                shopStore.shop.pageSpeed[(rowIndex + 1)] &&
-                shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] !== row[cellKey]"
+                shop.pageSpeed[(rowIndex + 1)] &&
+                shop.pageSpeed[(rowIndex + 1)][cellKey] !== row[cellKey]"
             >
                 <icon-fa6-solid:arrow-right
                     :class="[{
@@ -48,9 +48,11 @@
 
 <script setup lang="ts">
 import { formatDateTime } from '@/helpers/formatter';
-import { useShopStore } from '@/stores/shop.store';
+import type { RouterOutput } from '@/helpers/trpc';
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
 </script>
 
 <style scoped>

@@ -7,7 +7,7 @@
             { key: 'nextExecutionTime', name: 'Next Execution', sortable: true },
             { key: 'status', name: 'Status' },
         ]"
-        :data="shopStore.shop.scheduledTask || []"
+        :data="shop.scheduledTask || []"
         :default-sorting="{ by: 'nextExecutionTime' }"
     >
         <template #cell-lastExecutionTime="{ row }">
@@ -75,23 +75,24 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { formatDateTime } from '@/helpers/formatter';
-import { useShopStore } from '@/stores/shop.store';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
+
 const { success, error } = useAlert();
 
 async function onReScheduleTask(taskId: string) {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
-        try {
-            await shopStore.reScheduleTask(
-                shopStore.shop.organizationId,
-                shopStore.shop.id,
-                taskId,
-            );
-            success('Task is re-scheduled');
-        } catch (e) {
-            error(e instanceof Error ? e.message : String(e));
-        }
+    try {
+        await trpcClient.organization.shop.rescheduleTask.mutate({
+            orgId: shop.organizationId,
+            shopId: shop.id,
+            taskId,
+        });
+        success('Task is re-scheduled');
+    } catch (e) {
+        error(e instanceof Error ? e.message : String(e));
     }
 }
 </script>

@@ -4,7 +4,7 @@
             { key: 'date', name: 'Date', class: 'changelog-date', sortable: true },
             { key: 'log', name: 'Log', sortable: false },
         ]"
-        :data="shopStore.shop.changelog"
+        :data="shop.changelog"
     >
         <template #cell-date="{ row }">
             {{ formatDateTime(row.date) }}
@@ -68,11 +68,13 @@
 <script setup lang="ts">
 import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
-import { useShopStore } from '@/stores/shop.store';
+import type { RouterOutput } from '@/helpers/trpc';
 import type { ShopChangelog } from '@/types/shop';
 import { type Ref, ref } from 'vue';
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
 
 const viewShopChangelogDialog: Ref<boolean> = ref(false);
 const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);

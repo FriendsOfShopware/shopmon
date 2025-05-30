@@ -7,7 +7,7 @@
             { key: 'ratingAverage', name: 'Rating', sortable: true },
             { key: 'installedAt', name: 'Installed at', sortable: true },
         ]"
-        :data="shopStore.shop.extensions || []"
+        :data="shop.extensions || []"
         :default-sort="{ key: 'label', desc: false }"
     >
         <template #cell-actions-header>
@@ -102,12 +102,14 @@
 <script setup lang="ts">
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 import type { RouterOutput } from '@/helpers/trpc';
-import { useShopStore } from '@/stores/shop.store';
 
 import { type Ref, ref } from 'vue';
 type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
-const shopStore = useShopStore();
+const { shop } = defineProps<{
+    shop: RouterOutput['organization']['shop']['get'];
+}>();
+
 
 const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);

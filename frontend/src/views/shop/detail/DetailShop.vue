@@ -1,36 +1,36 @@
 <template>
     <header-container
-        v-if="shopStore.shop"
-        :title="shopStore.shop.name"
+        v-if="shop"
+        :title="shop.name"
     >
         <button
             class="btn icon-only"
             data-tooltip="Clear shop cache"
-            :disabled="shopStore.isCacheClearing"
+            :disabled="isCacheClearing"
             type="button"
             @click="onCacheClear"
         >
             <icon-ic:baseline-cleaning-services
-                :class="{ 'animate-pulse': shopStore.isCacheClearing }"
+                :class="{ 'animate-pulse': isCacheClearing }"
                 class="icon"
             />
         </button>
         <button
             class="btn icon-only"
             data-tooltip="Refresh shop data"
-            :disabled="shopStore.isRefreshing"
+            :disabled="isRefreshing"
             type="button"
             @click="showShopRefreshModal = true"
         >
-            <icon-fa6-solid:rotate :class="{ 'icon': true, 'animate-spin': shopStore.isRefreshing }" />
+            <icon-fa6-solid:rotate :class="{ 'icon': true, 'animate-spin': isRefreshing }" />
         </button>
 
         <router-link
             :to="{
                 name: 'account.shops.edit',
                 params: {
-                    organizationId: shopStore.shop.organizationId,
-                    shopId: shopStore.shop.id
+                    organizationId: shop.organizationId,
+                    shopId: shop.id
                 }
             }"
             type="button"
@@ -41,10 +41,10 @@
         </router-link>
     </header-container>
 
-    <main-container v-if="shopStore.shop && shopStore.shop.lastScrapedAt">
+    <main-container v-if="shop && shop.lastScrapedAt">
         <div class="panel shop-info">
             <h3 class="shop-info-heading">
-                <status-icon :status="shopStore.shop.status" />
+                <status-icon :status="shop.status" />
                 Shop Information
             </h3>
             <div class="shop-info-grid">
@@ -54,8 +54,8 @@
                             Shopware Version
                         </dt>
                         <dd>
-                            {{ shopStore.shop.shopwareVersion }}
-                            <template v-if="latestShopwareVersion && latestShopwareVersion != shopStore.shop.shopwareVersion">
+                            {{ shop.shopwareVersion }}
+                            <template v-if="latestShopwareVersion && latestShopwareVersion != shop.shopwareVersion">
                                 <a
                                     class="badge badge-warning"
                                     :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion"
@@ -79,8 +79,8 @@
                             Last Shop Update
                         </dt>
                         <dd>
-                            <template v-if="shopStore.shop.lastChangelog && shopStore.shop.lastChangelog.date">
-                                {{ formatDate(shopStore.shop.lastChangelog.date) }}
+                            <template v-if="shop.lastChangelog && shop.lastChangelog.date">
+                                {{ formatDate(shop.lastChangelog.date) }}
                             </template>
                             <template v-else>
                                 never
@@ -92,7 +92,7 @@
                             Organization
                         </dt>
                         <dd>
-                            {{ shopStore.shop.organizationName }}
+                            {{ shop.organizationName }}
                         </dd>
                     </div>
                     <div class="shop-info-item">
@@ -100,7 +100,7 @@
                             Last Checked At
                         </dt>
                         <dd>
-                            {{ formatDateTime(shopStore.shop.lastScrapedAt) }}
+                            {{ formatDateTime(shop.lastScrapedAt) }}
                         </dd>
                     </div>
                     <div class="shop-info-item">
@@ -108,7 +108,7 @@
                             Environment
                         </dt>
                         <dd>
-                            {{ shopStore.shop.cacheInfo?.environment }}
+                            {{ shop.cacheInfo?.environment }}
                         </dd>
                     </div>
                     <div class="shop-info-item">
@@ -116,7 +116,7 @@
                             HTTP Cache
                         </dt>
                         <dd>
-                            {{ shopStore.shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
+                            {{ shop.cacheInfo?.httpCache ? 'Enabled' : 'Disabled' }}
                         </dd>
                     </div>
                     <div class="shop-info-item">
@@ -125,7 +125,7 @@
                         </dt>
                         <dd>
                             <a
-                                :href="shopStore.shop.url"
+                                :href="shop.url"
                                 data-tooltip="Go to storefront"
                                 target="_blank"
                             >
@@ -133,7 +133,7 @@
                             </a>
                             &nbsp;/&nbsp;
                             <a
-                                :href="shopStore.shop.url + '/admin'"
+                                :href="shop.url + '/admin'"
                                 data-tooltip="Go to shopware admin"
                                 target="_blank"
                             >
@@ -144,8 +144,8 @@
                 </dl>
                 <div class="shop-image-container">
                     <img
-                        v-if="shopStore.shop.shopImage"
-                        :src="`/${shopStore.shop.shopImage}`"
+                        v-if="shop.shopImage"
+                        :src="`/${shop.shopImage}`"
                         class="shop-image"
                     >
                     <icon-fa6-solid:image
@@ -161,60 +161,60 @@
                 [{
                      key: 'checks',
                      title: 'Checks',
-                     count: shopStore.shop.checks?.length ?? 0,
+                     count: shop.checks?.length ?? 0,
                      icon: FaCircleCheck,
                  },
                  {
                      key: 'extensions',
                      title: 'Extensions',
-                     count: shopStore.shop.extensions?.length ?? 0,
+                     count: shop.extensions?.length ?? 0,
                      icon: FaPlug
                  },
                  {
                      key: 'tasks',
                      title: 'Scheduled Tasks',
-                     count: shopStore.shop.scheduledTask?.length ?? 0,
+                     count: shop.scheduledTask?.length ?? 0,
                      icon: FaListCheck
                  },
                  {
                      key: 'queue',
                      title: 'Queue',
-                     count: shopStore.shop.queueInfo?.length ?? 0
+                     count: shop.queueInfo?.length ?? 0
                      , icon: FaCircleCheck },
                  {
                      key: 'pagespeed',
                      title: 'Pagespeed',
-                     count: shopStore.shop.pageSpeed?.length ?? 0
+                     count: shop.pageSpeed?.length ?? 0
                      ,icon: FaRocket },
                  {
                      key: 'changelog',
                      title: 'Changelog',
-                     count: shopStore.shop.changelog?.length ?? 0,
+                     count: shop.changelog?.length ?? 0,
                      icon: FaFileWaverform
                  }]"
         >
             <template #panel-checks>
-                <detail-checks-tab />
+                <detail-checks-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-extensions>
-                <detail-extensions-tab />
+                <detail-extensions-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-tasks>
-                <detail-scheduled-tasks-tab />
+                <detail-scheduled-tasks-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-queue>
-                <detail-queue-tab />
+                <detail-queue-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-pagespeed>
-                <detail-pagespeed-tab />
+                <detail-pagespeed-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-changelog>
-                <detail-changelog-tab />
+                <detail-changelog-tab v-if="shop" :shop="shop" />
             </template>
         </tabs>
 
@@ -324,7 +324,7 @@
             </template>
 
             <template #title>
-                Refresh {{ shopStore.shop.name }}
+                Refresh {{ shop.name }}
             </template>
 
             <template #content>
@@ -359,7 +359,6 @@ import { createNewSortInstance } from 'fast-sort';
 
 import { useAlert } from '@/composables/useAlert';
 import type { RouterOutput } from '@/helpers/trpc';
-import { useShopStore } from '@/stores/shop.store';
 import { type Ref, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -388,8 +387,12 @@ type ExtensionWithCompatibility = NonNullable<
 };
 
 const route = useRoute();
-const shopStore = useShopStore();
 const { success, error } = useAlert();
+
+const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
+const isLoading = ref(false);
+const isRefreshing = ref(false);
+const isCacheClearing = ref(false);
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
@@ -407,7 +410,12 @@ async function loadShop() {
     );
     const shopId = Number.parseInt(route.params.shopId as string, 10);
 
-    await shopStore.loadShop(organizationId, shopId);
+    isLoading.value = true;
+    shop.value = await trpcClient.organization.shop.get.query({
+        orgId: organizationId,
+        shopId,
+    });
+    isLoading.value = false;
 
     const shopwareVersionsData =
         await trpcClient.info.getLatestShopwareVersion.query();
@@ -417,7 +425,7 @@ async function loadShop() {
             (version) =>
                 !version.includes('-RC') &&
                 compareVersions(
-                    shopStore.shop?.shopwareVersion || '',
+                    shop.value?.shopwareVersion || '',
                     version,
                 ) < 0,
         );
@@ -425,36 +433,44 @@ async function loadShop() {
 }
 
 loadShop().then(() => {
-    if (shopStore?.shop?.name) {
-        document.title = shopStore.shop.name;
+    if (shop.value?.name) {
+        document.title = shop.value.name;
     }
 });
 
 async function onRefresh(pagespeed: boolean) {
     showShopRefreshModal.value = false;
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
+    if (shop.value?.organizationId && shop.value?.id) {
         try {
-            await shopStore.refreshShop(
-                shopStore.shop.organizationId,
-                shopStore.shop.id,
-                pagespeed,
-            );
+            isRefreshing.value = true;
+            await trpcClient.organization.shop.refreshShop.mutate({
+                orgId: shop.value.organizationId,
+                shopId: shop.value.id,
+                pageSpeed: pagespeed,
+            });
+            isRefreshing.value = false;
+            await loadShop();
             success('Your Shop will refresh soon!');
         } catch (e) {
+            isRefreshing.value = false;
             error(e instanceof Error ? e.message : String(e));
         }
     }
 }
 
 async function onCacheClear() {
-    if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
+    if (shop.value?.organizationId && shop.value?.id) {
         try {
-            await shopStore.clearCache(
-                shopStore.shop.organizationId,
-                shopStore.shop.id,
-            );
+            isCacheClearing.value = true;
+            await trpcClient.organization.shop.clearShopCache.mutate({
+                orgId: shop.value.organizationId,
+                shopId: shop.value.id,
+            });
+            isCacheClearing.value = false;
+            await loadShop();
             success('Your Shop cache was cleared successfully');
         } catch (e) {
+            isCacheClearing.value = false;
             error(e instanceof Error ? e.message : String(e));
         }
     }
@@ -466,16 +482,16 @@ function openUpdateWizard() {
 }
 
 async function loadUpdateWizard(version: string) {
-    if (!shopStore.shop || !shopStore.shop.extensions) {
+    if (!shop.value || !shop.value.extensions) {
         return;
     }
 
     loadingUpdateWizard.value = true;
 
     const body = {
-        currentVersion: shopStore.shop?.shopwareVersion,
+        currentVersion: shop.value?.shopwareVersion,
         futureVersion: version,
-        extensions: shopStore.shop.extensions.map((extension) => {
+        extensions: shop.value.extensions.map((extension) => {
             return {
                 name: extension.name,
                 version: extension.version,
@@ -487,7 +503,7 @@ async function loadUpdateWizard(version: string) {
         await trpcClient.info.checkExtensionCompatibility.query(body);
 
     const extensions = JSON.parse(
-        JSON.stringify(shopStore.shop?.extensions),
+        JSON.stringify(shop.value?.extensions),
     ) as ExtensionWithCompatibility[];
 
     for (const extension of extensions) {

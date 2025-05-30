@@ -131,7 +131,6 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { useShopStore } from '@/stores/shop.store';
 
 import {
     type RouterInput,
@@ -143,7 +142,6 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
-const shopStore = useShopStore();
 const { error } = useAlert();
 const router = useRouter();
 
@@ -181,7 +179,8 @@ trpcClient.account.listOrganizations.query().then((data) => {
 
 async function onSubmit(values: RouterInput['organization']['shop']['create']) {
     try {
-        await shopStore.createShop(values);
+        values.shopUrl = values.shopUrl.replace(/\/+$/, '');
+        await trpcClient.organization.shop.create.mutate(values);
 
         router.push({ name: 'account.shops.list' });
     } catch (e) {
