@@ -1,8 +1,8 @@
 <template>
     <header-container title="My Extensions" />
 
-    <main-container v-if="!extensionStore.isLoading">
-        <template v-if="extensionStore.extensions.length === 0">
+    <main-container v-if="extensions">
+        <template v-if="extensions.length === 0">
             <element-empty title="No Extensions" button="Add Shop" :route="{ name: 'account.shops.new' }">
                 Get started by adding your first Shop.
             </element-empty>
@@ -25,7 +25,7 @@
                         { key: 'ratingAverage', name: 'Rating', sortable: true },
                         { key: 'installedAt', name: 'Installed At', sortable: true },
                     ]"
-                    :data="extensionStore.extensions"
+                    :data="extensions"
                     :default-sort="{ key: 'label', desc: false }"
                     :search-term="term"
                 >
@@ -99,14 +99,15 @@
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { formatDateTime } from '@/helpers/formatter';
-import type { RouterOutput } from '@/helpers/trpc';
-import { useExtensionStore } from '@/stores/extension.store';
+import { trpcClient, type RouterOutput } from '@/helpers/trpc';
 import { ref } from 'vue';
 
-const extensionStore = useExtensionStore();
 const term = ref('');
+const extensions = ref<RouterOutput['account']['currentUserExtensions']>([]);
 
-extensionStore.loadExtensions();
+trpcClient.account.currentUserExtensions.query().then((data) => {
+    extensions.value = data;
+});
 
 function getExtensionState(
     extension: RouterOutput['account']['currentUserExtensions'][number],
