@@ -175,13 +175,15 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { ref } from 'vue';
 import * as Yup from 'yup';
+import { authClient } from '@/helpers/auth-client';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
-const { user, organizations } = storeToRefs(authStore);
+const { organizations } = storeToRefs(authStore);
+const session = authClient.useSession();
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
@@ -190,7 +192,7 @@ const organizationId = Number.parseInt(
 const organization = organizations.value?.find(
     (organization) => organization.id === organizationId,
 );
-const isOwner = organization?.ownerId === user.value?.id;
+const isOwner = organization?.ownerId === session.value.data?.user.id;
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);

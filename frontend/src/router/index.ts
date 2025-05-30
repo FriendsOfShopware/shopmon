@@ -4,22 +4,28 @@ import {
     createWebHistory,
 } from 'vue-router';
 
-import Layout from '@/layouts/Layout.vue';
+import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
+import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
+import { authClient } from '@/helpers/auth-client';
+import { useAuthStore } from '@/stores/auth.store';
+
+const session = authClient.useSession();
 
 export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     linkActiveClass: 'active',
     routes: [
-        { path: '/', name: 'home', component: Home },
+        {
+            path: '/',
+            redirect: { name: 'home' },
+        },
         {
             path: '/account',
-            component: Layout,
+            component: UnauthenticatedLayout,
             children: [
-                // without login
                 {
                     name: 'account.login',
                     path: 'login',
@@ -46,8 +52,13 @@ export const router = createRouter({
                     component: () =>
                         import('@/views/auth/ForgotPasswordConfirm.vue'),
                 },
-
-                // with login
+            ],
+        },
+        {
+            path: '/app',
+            component: AuthenticatedLayout,
+            children: [
+                { path: '/', name: 'home', component: Home },
                 {
                     name: 'account.settings',
                     path: 'settings',
@@ -112,6 +123,17 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to: RouteLocationNormalized) => {
+    if (session.value.isPending) {
+        await new Promise((resolve) => {
+            const a = setInterval(() => {
+                if (!session.value.isPending) {
+                    clearInterval(a);
+                    resolve(true);
+                }
+            }, 100);
+        });
+    }
+
     // clear alert on route change
     const alertStore = useAlertStore();
     alertStore.clear();
@@ -134,11 +156,11 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         return { name: 'home' };
     }
 
-    if (authRequired && !authStore.user) {
+    if (authRequired && !session.value.data) {
         authStore.returnUrl = to.fullPath;
         return { name: 'account.login' };
     }
-    if (authStore.user && publicPages.includes(to.name as string)) {
+    if (session.value.data && publicPages.includes(to.name as string)) {
         // redirect to home page if logged in and trying to access a public page
         return { name: 'home' };
     }

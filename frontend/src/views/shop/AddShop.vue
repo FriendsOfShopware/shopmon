@@ -1,6 +1,6 @@
 <template>
     <header-container title="New Shop" />
-    <main-container v-if="authStore.user">
+    <main-container>
         <vee-form
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"

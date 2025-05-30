@@ -244,10 +244,10 @@ import * as Yup from 'yup';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import type { Session } from 'better-auth/types';
 
-const authStore = useAuthStore();
+const session = authClient.useSession();
+
 const alertStore = useAlertStore();
 const currentSessionId = ref<string | null>(null);
 
@@ -269,8 +269,8 @@ authClient.listSessions().then((data) => {
 });
 
 const user = {
-    displayName: authStore.user?.displayName,
-    email: authStore.user?.email,
+    displayName: session.value.data?.user?.name || '',
+    email: session.value.data?.user?.email || '',
     currentPassword: '',
 };
 

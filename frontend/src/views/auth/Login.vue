@@ -86,6 +86,7 @@ import * as Yup from 'yup';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
+import { authClient } from '@/helpers/auth-client';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -106,7 +107,10 @@ const disableRegistration = import.meta.env.VITE_DISABLE_REGISTRATION;
 async function onSubmit(values: { email: string; password: string }) {
     const { email, password } = values;
     try {
-        await authStore.login(email, password);
+        await authClient.signIn.email({
+            email,
+            password,
+        })
 
         // redirect to previous url or default to home page
         router.push(authStore.returnUrl || '/');
@@ -121,7 +125,7 @@ async function webauthnLogin() {
     isAuthenticated.value = true;
 
     try {
-        await authStore.loginWithPasskey();
+        await authClient.signIn.passkey();
 
         // redirect to previous url or default to home page
         router.push(authStore.returnUrl || '/');
