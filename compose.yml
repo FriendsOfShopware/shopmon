@@ -11,4 +11,4 @@ services:
     environment:
       APP_URL: "http://localhost:3889"
     ports:
-      - "3889:8080"
+      - "3889:8000"
