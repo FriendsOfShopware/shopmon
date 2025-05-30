@@ -4,11 +4,11 @@ import {
     createWebHistory,
 } from 'vue-router';
 
+import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
 
@@ -147,7 +147,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         'account.forgot.password.confirm',
     ];
     const authRequired = !publicPages.includes(to.name as string);
-    const authStore = useAuthStore();
+    const { setReturnUrl } = useReturnUrl();
 
     if (
         import.meta.env.VITE_DISABLE_REGISTRATION &&
@@ -157,7 +157,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     }
 
     if (authRequired && !session.value.data) {
-        authStore.returnUrl = to.fullPath;
+        setReturnUrl(to.fullPath);
         return { name: 'account.login' };
     }
     if (session.value.data && publicPages.includes(to.name as string)) {

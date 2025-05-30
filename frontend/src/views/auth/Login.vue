@@ -83,13 +83,13 @@ import { Field, Form as VeeForm, configure } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const { returnUrl, clearReturnUrl } = useReturnUrl();
 
 const isAuthenticated = ref(false);
 
@@ -113,7 +113,9 @@ async function onSubmit(values: { email: string; password: string }) {
         });
 
         // redirect to previous url or default to home page
-        router.push(authStore.returnUrl || '/');
+        const redirectUrl = returnUrl.value || '/';
+        clearReturnUrl();
+        router.push(redirectUrl);
     } catch (e: unknown) {
         const alertStore = useAlertStore();
 
@@ -128,7 +130,9 @@ async function webauthnLogin() {
         await authClient.signIn.passkey();
 
         // redirect to previous url or default to home page
-        router.push(authStore.returnUrl || '/');
+        const redirectUrl = returnUrl.value || '/';
+        clearReturnUrl();
+        router.push(redirectUrl);
     } catch (e: unknown) {
         const alertStore = useAlertStore();
 

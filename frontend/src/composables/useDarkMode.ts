@@ -1,4 +1,4 @@
-import { type Ref, onMounted, ref, watch } from 'vue';
+import { type Ref, ref, watch } from 'vue';
 
 const DARK_MODE_STORAGE_KEY = 'shopmon-dark-mode';
 
