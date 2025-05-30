@@ -18,17 +18,17 @@
                 />
 
                 <div>
-                    <label for="displayName">displayName</label>
+                    <label for="name">Name</label>
                     <field
-                        id="displayName"
+                        id="name"
                         type="text"
-                        name="displayName"
+                        name="name"
                         autocomplete="name"
                         class="field"
-                        :class="{ 'has-error': errors.displayName }"
+                        :class="{ 'has-error': errors.name }"
                     />
                     <div class="field-error-message">
-                        {{ errors.displayName }}
+                        {{ errors.name }}
                     </div>
                 </div>
 
@@ -124,7 +124,7 @@
                         type="button"
                         class="tooltip-position-left"
                         data-tooltip="Delete"
-                        v-if="row.token !== currentSessionId"
+                        v-if="row.token !== session.data?.session.token"
                         @click="removeSession(row)"
                     >
                         <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -249,11 +249,6 @@ import type { Session } from 'better-auth/types';
 const session = authClient.useSession();
 
 const alertStore = useAlertStore();
-const currentSessionId = ref<string | null>(null);
-
-authClient.getSession().then((session) => {
-    currentSessionId.value = session.data?.session.token || null;
-});
 
 const passKeyName = ref('');
 
@@ -269,9 +264,10 @@ authClient.listSessions().then((data) => {
 });
 
 const user = {
-    displayName: session.value.data?.user?.name || '',
+    name: session.value.data?.user?.name || '',
     email: session.value.data?.user?.email || '',
     currentPassword: '',
+    newPassword: '',
 };
 
 const showAccountDeletionModal = ref(false);
@@ -279,36 +275,31 @@ const showPasskeyCreationModal = ref(false);
 
 const schema = Yup.object().shape({
     currentPassword: Yup.string().required('Current password is required'),
-    email: Yup.string().email(),
-    displayName: Yup.string().min(
+    email: Yup.string().email().required(),
+    name: Yup.string().min(
         5,
-        'Display name must be at least 5 characters',
+        'Name must be at least 5 characters',
     ),
     newPassword: Yup.string()
         .transform((x) => (x === '' ? undefined : x))
         .min(8, 'Password must be at least 8 characters'),
 });
 
-async function onSubmit(values: {
-    currentPassword: string;
-    displayName?: string;
-    email: string;
-    password?: string;
-}) {
+async function onSubmit(values: Record<string, unknown>) {
     await authClient.changeEmail({
-        newEmail: values.email,
+        newEmail: values.email as string,
     });
 
     if (values.displayName) {
         await authClient.updateUser({
-            name: values.displayName,
+            name: values.displayName as string,
         });
     }
 
-    if (values.password) {
+    if (values.newPassword) {
         await authClient.changePassword({
-            currentPassword: values.currentPassword,
-            newPassword: values.password,
+            currentPassword: values.currentPassword as string,
+            newPassword: values.newPassword as string,
             revokeOtherSessions: true,
         });
     }
