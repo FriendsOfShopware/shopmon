@@ -33,18 +33,22 @@ export const useAuthStore = defineStore('auth', () => {
                 organizations.value = orgs;
             });
 
-            const userEmailSha256 = Array.from(
-                new Uint8Array(
-                    await crypto.subtle.digest(
-                        'SHA-256',
-                        new TextEncoder().encode(session.data.user.email),
+            try {
+                const userEmailSha256 = Array.from(
+                    new Uint8Array(
+                        await crypto.subtle.digest(
+                            'SHA-256',
+                            new TextEncoder().encode(session.data.user.email),
+                        ),
                     ),
-                ),
-            )
-                .map((b) => b.toString(16).padStart(2, '0'))
-                .join('');
+                )
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('');
 
-            userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${userEmailSha256}?d=identicon`;
+                userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${userEmailSha256}?d=identicon`;
+            } catch (error) {
+                console.error('Error generating user avatar:', error);
+            }
 
             trpcClient.account.currentUser.query().then((currentUser) => {
                 user.value = currentUser;
