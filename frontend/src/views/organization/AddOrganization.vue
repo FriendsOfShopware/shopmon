@@ -51,8 +51,8 @@
 
 <script setup lang="ts">
 import { authClient } from '@/helpers/auth-client';
+import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
@@ -60,7 +60,6 @@ import * as Yup from 'yup';
 
 const session = authClient.useSession();
 
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 
@@ -74,7 +73,7 @@ const owner = {
 
 async function onCreateOrganization(values: Yup.InferType<typeof schema>) {
     try {
-        await organizationStore.createOrganization(values.name);
+        await trpcClient.organization.create.mutate(values.name);
         await router.push({ name: 'account.organizations.list' });
     } catch (e) {
         alertStore.error(e instanceof Error ? e.message : String(e));

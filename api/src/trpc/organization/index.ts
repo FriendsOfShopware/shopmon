@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import Organizations from '../../repository/organization.ts';
 import { publicProcedure, router } from '../index.ts';
+import { schema } from '../../db.ts';
+import { eq, sql } from 'drizzle-orm';
 import {
     loggedInUserMiddleware,
     organizationAdminMiddleware,
@@ -15,6 +17,27 @@ export const organizationRouter = router({
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
             return await Organizations.create(ctx.drizzle, input, ctx.user.id);
+        }),
+    listSingleOrganization: publicProcedure
+        .input(z.object({
+            orgId: z.number(),
+        }))
+        .use(loggedInUserMiddleware)
+        .use(organizationMiddleware)
+        .query(async ({ input, ctx }) => {
+            console.log('called single org', input);
+            return ctx.drizzle
+                .select({
+                    id: schema.organization.id,
+                    name: schema.organization.name,
+                    createdAt: schema.organization.createdAt,
+                    ownerId: schema.organization.ownerId,
+                    shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
+                    memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
+                })
+                .from(schema.organization)
+                .where(eq(schema.organization.id, input.orgId))
+                .get();
         }),
     update: publicProcedure
         .input(

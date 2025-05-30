@@ -112,32 +112,30 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
-const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
-
-const { organizations } = storeToRefs(authStore);
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
     10,
 );
-const organization = organizations.value?.find(
-    (organization) => organization.id === organizationId,
-);
+
+const organization = ref<RouterOutput['organization']['listSingleOrganization'] | null>(null);
+
+trpcClient.organization
+    .listSingleOrganization.query({ orgId: organizationId })
+    .then((org) => {
+        organization.value = org;
+    });
 
 const showOrganizationDeletionModal = ref(false);
 
@@ -146,16 +144,17 @@ const schema = Yup.object().shape({
 });
 
 async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
-    if (organization) {
+    if (organization.value) {
         try {
-            await organizationStore.updateOrganization(
-                organization.id,
-                values.name,
-            );
+            await trpcClient.organization.update.mutate({
+                orgId: organization.value.id,
+                name: values.name,
+            });
+
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
-                    organizationId: organization.id,
+                    organizationId: organization.value?.id,
                 },
             });
         } catch (error) {
@@ -167,9 +166,11 @@ async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
 }
 
 async function deleteOrganization() {
-    if (organization) {
+    if (organization.value) {
         try {
-            await organizationStore.deleteOrganization(organization.id);
+            await trpcClient.organization.delete.mutate({
+                orgId: organization.value.id,
+            });
 
             await router.push({ name: 'account.organizations.list' });
         } catch (error) {

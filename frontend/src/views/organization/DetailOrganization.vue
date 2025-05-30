@@ -75,9 +75,9 @@
             <DataTable
                 :columns="[
                     { key: 'email', name: 'Email' },
-                    { key: 'displayName', name: 'Display Name' },
+                    { key: 'displayName', name: 'Name' },
                 ]"
-                :data="organizationStore.members"
+                :data="organizationMembers"
             >
                 <template #cell-displayName="{ row }">
                     {{ row.displayName }}
@@ -165,39 +165,37 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
-import { useOrganizationStore } from '@/stores/organization.store';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRoute, useRouter } from 'vue-router';
 
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import * as Yup from 'yup';
 import { authClient } from '@/helpers/auth-client';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 const route = useRoute();
 const router = useRouter();
-const authStore = useAuthStore();
-const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
-const { organizations } = storeToRefs(authStore);
 const session = authClient.useSession();
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
     10,
 );
-const organization = organizations.value?.find(
-    (organization) => organization.id === organizationId,
-);
-const isOwner = organization?.ownerId === session.value.data?.user.id;
+
+const organization = ref<RouterOutput['organization']['listSingleOrganization'] | null>(null);
+const organizationMembers = ref<RouterOutput['organization']['listMembers'] | null>(null);
+
+trpcClient.organization.listSingleOrganization.query({ orgId: organizationId })
+    .then((org) => {
+        organization.value = org;
+    })
+
+const isOwner = computed(() => organization.value?.ownerId === session.value.data?.user.id);
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
-
-organizationStore.loadMembers(organizationId);
 
 const schemaMembers = Yup.object().shape({
     email: Yup.string()
@@ -205,16 +203,30 @@ const schemaMembers = Yup.object().shape({
         .required('Email address is required'),
 });
 
+async function loadOrganizationMembers() {
+    organizationMembers.value = await trpcClient.organization.listMembers.query({
+        orgId: organizationId,
+    });
+}
+
+loadOrganizationMembers();
+
 async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
     isSubmitting.value = true;
-    if (organization) {
+    if (organization.value) {
         try {
-            await organizationStore.addMember(organization.id, values.email);
+            await trpcClient.organization.addMember.mutate({
+                orgId: organization.value.id,
+                email: values.email,
+            });
+
+            await loadOrganizationMembers();
+
             showAddMemberModal.value = false;
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
-                    organizationId: organization.id,
+                    organizationId: organization.value.id,
                 },
             });
         } catch (error) {
@@ -227,13 +239,19 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
 }
 
 async function onRemoveMember(userId: string) {
-    if (organization) {
+    if (organization.value) {
         try {
-            await organizationStore.removeMember(organization.id, userId);
+            await trpcClient.organization.removeMember.mutate({
+                orgId: organization.value.id,
+                userId,
+            });
+
+            await loadOrganizationMembers();
+
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
-                    organizationId: organization.id,
+                    organizationId: organization.value.id,
                 },
             });
         } catch (error) {
