@@ -136,7 +136,6 @@ const naturalSort = createNewSortInstance({
 });
 
 function setSort(key: string) {
-    console.log('setSort', key);
     if (sorting.sortBy !== key) {
         sorting.sortBy = key;
         sorting.sortDesc = false;
