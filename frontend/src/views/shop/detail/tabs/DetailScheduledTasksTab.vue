@@ -73,12 +73,12 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from '@/composables/useAlert';
 import { formatDateTime } from '@/helpers/formatter';
-import { useAlertStore } from '@/stores/alert.store';
 import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
-const alertStore = useAlertStore();
+const { success, error } = useAlert();
 
 async function onReScheduleTask(taskId: string) {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
@@ -88,9 +88,9 @@ async function onReScheduleTask(taskId: string) {
                 shopStore.shop.id,
                 taskId,
             );
-            alertStore.success('Task is re-scheduled');
+            success('Task is re-scheduled');
         } catch (e) {
-            alertStore.error(e instanceof Error ? e.message : String(e));
+            error(e instanceof Error ? e.message : String(e));
         }
     }
 }

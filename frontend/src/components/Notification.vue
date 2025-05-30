@@ -9,7 +9,7 @@
             leave-to-class="translate-x-full"
         >
             <div v-if="alert" class="notification" :class="`notification-${alert.type}`">
-                <button class="notification-close" type="button" @click="alertStore.clear()">
+                <button class="notification-close" type="button" @click="clear()">
                     <icon-fa6-solid:xmark aria-hidden="true" />
                 </button>
                 <div class="notification-icon">
@@ -28,12 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
+import { useAlert } from '@/composables/useAlert';
 
-import { useAlertStore } from '@/stores/alert.store';
-
-const alertStore = useAlertStore();
-const { alert } = storeToRefs(alertStore);
+const { alert, clear } = useAlert();
 </script>
 
 <style scoped>

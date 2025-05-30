@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAlertStore } from '@/stores/alert.store';
+import { useAlert } from '@/composables/useAlert';
 import { useShopStore } from '@/stores/shop.store';
 
 import {
@@ -144,7 +144,7 @@ import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
 const shopStore = useShopStore();
-const alertStore = useAlertStore();
+const { error } = useAlert();
 const router = useRouter();
 
 const organizations = ref<RouterOutput['account']['listOrganizations']>();
@@ -185,7 +185,7 @@ async function onSubmit(values: RouterInput['organization']['shop']['create']) {
 
         router.push({ name: 'account.shops.list' });
     } catch (e) {
-        alertStore.error(e instanceof Error ? e.message : String(e));
+        error(e instanceof Error ? e.message : String(e));
     }
 }
 </script>

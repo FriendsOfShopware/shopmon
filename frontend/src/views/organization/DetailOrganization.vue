@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAlertStore } from '@/stores/alert.store';
+import { useAlert } from '@/composables/useAlert';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -176,7 +176,7 @@ import * as Yup from 'yup';
 
 const route = useRoute();
 const router = useRouter();
-const alertStore = useAlertStore();
+const { error } = useAlert();
 const session = authClient.useSession();
 
 const organizationId = Number.parseInt(
@@ -238,10 +238,8 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
                     organizationId: organization.value.id,
                 },
             });
-        } catch (error) {
-            alertStore.error(
-                error instanceof Error ? error.message : String(error),
-            );
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
         }
     }
     isSubmitting.value = false;
@@ -263,10 +261,8 @@ async function onRemoveMember(userId: string) {
                     organizationId: organization.value.id,
                 },
             });
-        } catch (error) {
-            alertStore.error(
-                error instanceof Error ? error.message : String(error),
-            );
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
         }
     }
 }

@@ -357,8 +357,8 @@
 import { compareVersions } from 'compare-versions';
 import { createNewSortInstance } from 'fast-sort';
 
+import { useAlert } from '@/composables/useAlert';
 import type { RouterOutput } from '@/helpers/trpc';
-import { useAlertStore } from '@/stores/alert.store';
 import { useShopStore } from '@/stores/shop.store';
 import { type Ref, ref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -389,7 +389,7 @@ type ExtensionWithCompatibility = NonNullable<
 
 const route = useRoute();
 const shopStore = useShopStore();
-const alertStore = useAlertStore();
+const { success, error } = useAlert();
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
@@ -439,9 +439,9 @@ async function onRefresh(pagespeed: boolean) {
                 shopStore.shop.id,
                 pagespeed,
             );
-            alertStore.success('Your Shop will refresh soon!');
+            success('Your Shop will refresh soon!');
         } catch (e) {
-            alertStore.error(e instanceof Error ? e.message : String(e));
+            error(e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -453,9 +453,9 @@ async function onCacheClear() {
                 shopStore.shop.organizationId,
                 shopStore.shop.id,
             );
-            alertStore.success('Your Shop cache was cleared successfully');
+            success('Your Shop cache was cleared successfully');
         } catch (e) {
-            alertStore.error(e instanceof Error ? e.message : String(e));
+            error(e instanceof Error ? e.message : String(e));
         }
     }
 }

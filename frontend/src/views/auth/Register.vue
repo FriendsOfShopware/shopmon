@@ -76,8 +76,8 @@ import * as Yup from 'yup';
 
 import { router } from '@/router';
 
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
-import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     displayName: Yup.string().required('Display Name is required'),
@@ -97,7 +97,7 @@ async function onSubmit(values: {
     password: string;
     displayName: string;
 }) {
-    const alertStore = useAlertStore();
+    const { success, error } = useAlert();
     try {
         authClient.signUp.email({
             email: values.email,
@@ -105,13 +105,11 @@ async function onSubmit(values: {
             name: values.displayName,
         });
         await router.push({ name: 'account.login' });
-        alertStore.success(
+        success(
             'Registration successful. Please check your mailbox and confirm your email address.',
         );
-    } catch (error) {
-        alertStore.error(
-            error instanceof Error ? error.message : String(error),
-        );
+    } catch (err) {
+        error(err instanceof Error ? err.message : String(err));
     }
 }
 </script>

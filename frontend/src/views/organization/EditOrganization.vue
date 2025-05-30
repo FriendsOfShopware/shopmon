@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAlertStore } from '@/stores/alert.store';
+import { useAlert } from '@/composables/useAlert';
 
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -120,7 +120,7 @@ import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
-const alertStore = useAlertStore();
+const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
@@ -159,10 +159,8 @@ async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
                     organizationId: organization.value?.id,
                 },
             });
-        } catch (error) {
-            alertStore.error(
-                error instanceof Error ? error.message : String(error),
-            );
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
         }
     }
 }
@@ -175,10 +173,8 @@ async function deleteOrganization() {
             });
 
             await router.push({ name: 'account.organizations.list' });
-        } catch (error) {
-            alertStore.error(
-                error instanceof Error ? error.message : String(error),
-            );
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
         }
     }
 }

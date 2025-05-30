@@ -55,23 +55,21 @@
 import { Field, Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
-import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     email: Yup.string().required('Email is required'),
 });
 
 async function onSubmit(values: { email: string }): Promise<void> {
-    const alertStore = useAlertStore();
+    const { success, error } = useAlert();
 
     try {
         await authClient.forgetPassword({ email: values.email });
-        alertStore.success('Password reset email sent');
-    } catch (error) {
-        alertStore.error(
-            error instanceof Error ? error.message : String(error),
-        );
+        success('Password reset email sent');
+    } catch (err) {
+        error(err instanceof Error ? err.message : String(err));
     }
 }
 </script>

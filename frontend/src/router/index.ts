@@ -4,11 +4,11 @@ import {
     createWebHistory,
 } from 'vue-router';
 
+import { useAlert } from '@/composables/useAlert';
 import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
-import { useAlertStore } from '@/stores/alert.store';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
 
@@ -135,8 +135,8 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     }
 
     // clear alert on route change
-    const alertStore = useAlertStore();
-    alertStore.clear();
+    const { clear } = useAlert();
+    clear();
 
     // redirect to login page if not logged in and trying to access a restricted page
     const publicPages = [

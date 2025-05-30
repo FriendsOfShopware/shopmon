@@ -39,11 +39,11 @@
 </template>
 
 <script setup lang="ts">
-import { useAlertStore } from '@/stores/alert.store';
+import { useAlert } from '@/composables/useAlert';
 import { useShopStore } from '@/stores/shop.store';
 
 const shopStore = useShopStore();
-const alertStore = useAlertStore();
+const { info } = useAlert();
 
 async function ignoreCheck(id: string) {
     if (shopStore?.shop?.organizationId && shopStore?.shop?.id) {
@@ -70,6 +70,6 @@ async function removeIgnore(id: string) {
 }
 
 async function notificateIgnoreUpdate() {
-    alertStore.info('Ignore state updated. Will effect after next shop update');
+    info('Ignore state updated. Will effect after next shop update');
 }
 </script>

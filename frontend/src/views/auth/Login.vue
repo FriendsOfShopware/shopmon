@@ -83,9 +83,9 @@ import { Field, Form as VeeForm, configure } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import { useAlert } from '@/composables/useAlert';
 import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
-import { useAlertStore } from '@/stores/alert.store';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -104,8 +104,9 @@ const schema = Yup.object().shape({
 
 const disableRegistration = import.meta.env.VITE_DISABLE_REGISTRATION;
 
-async function onSubmit(values: { email: string; password: string }) {
-    const { email, password } = values;
+async function onSubmit(values: Record<string, unknown>) {
+    const email = values.email as string;
+    const password = values.password as string;
     try {
         await authClient.signIn.email({
             email,
@@ -117,9 +118,9 @@ async function onSubmit(values: { email: string; password: string }) {
         clearReturnUrl();
         router.push(redirectUrl);
     } catch (e: unknown) {
-        const alertStore = useAlertStore();
+        const { error } = useAlert();
 
-        alertStore.error(e instanceof Error ? e.message : String(e));
+        error(e instanceof Error ? e.message : String(e));
     }
 }
 
@@ -134,9 +135,9 @@ async function webauthnLogin() {
         clearReturnUrl();
         router.push(redirectUrl);
     } catch (e: unknown) {
-        const alertStore = useAlertStore();
+        const { error } = useAlert();
 
-        alertStore.error(e instanceof Error ? e.message : String(e));
+        error(e instanceof Error ? e.message : String(e));
 
         isAuthenticated.value = false;
     }

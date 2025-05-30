@@ -50,9 +50,9 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
-import { useAlertStore } from '@/stores/alert.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
@@ -60,7 +60,7 @@ import * as Yup from 'yup';
 
 const session = authClient.useSession();
 
-const alertStore = useAlertStore();
+const { error } = useAlert();
 const router = useRouter();
 
 const schema = Yup.object().shape({
@@ -76,7 +76,7 @@ async function onCreateOrganization(values: Yup.InferType<typeof schema>) {
         await trpcClient.organization.create.mutate(values.name);
         await router.push({ name: 'account.organizations.list' });
     } catch (e) {
-        alertStore.error(e instanceof Error ? e.message : String(e));
+        error(e instanceof Error ? e.message : String(e));
     }
 }
 </script>

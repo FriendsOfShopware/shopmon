@@ -5,58 +5,52 @@
         </h2>
     </div>
 
-    <Alert type="info" v-if="isLoading">
-        Loading...
-    </Alert>
 
-    <template v-else>
-        <vee-form
-            v-slot="{ errors, isSubmitting }"
-            class="login-form-container"
-            :validation-schema="schema"
-            @submit="onSubmit"
+    <vee-form
+        v-slot="{ errors, isSubmitting }"
+        class="login-form-container"
+        :validation-schema="schema"
+        @submit="onSubmit"
+    >
+        <password-field
+            name="password"
+            placeholder="Password"
+            :error="errors.password"
+        />
+
+        <button
+            class="btn btn-primary btn-block"
+            :disabled="isSubmitting"
+            type="submit"
         >
-            <password-field
-                name="password"
-                placeholder="Password"
-                :error="errors.password"
+            <icon-fa6-solid:key
+                v-if="isSubmitting"
+                class="icon"
+                aria-hidden="true"
             />
+            <icon-line-md:loading-twotone-loop
+                v-else
+                class="icon"
+            />
+            Change Password
+        </button>
 
-            <button
-                class="btn btn-primary btn-block"
-                :disabled="isSubmitting"
-                type="submit"
-            >
-                <icon-fa6-solid:key
-                    v-if="isSubmitting"
-                    class="icon"
-                    aria-hidden="true"
-                />
-                <icon-line-md:loading-twotone-loop
-                    v-else
-                    class="icon"
-                />
-                Change Password
-            </button>
-
-            <div>
-                <router-link :to="{ name: 'account.login' }">
-                    Cancel
-                </router-link>
-            </div>            
-        </vee-form>
-    </template>
+        <div>
+            <router-link :to="{ name: 'account.login' }">
+                Cancel
+            </router-link>
+        </div>            
+    </vee-form>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
-import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     password: Yup.string()
@@ -71,33 +65,26 @@ const schema = Yup.object().shape({
 
 const route = useRoute();
 const router = useRouter();
-const alertStore = useAlertStore();
+const { success, error } = useAlert();
 
-async function onSubmit(values: { password: string }): Promise<void> {
+async function onSubmit(values: Record<string, unknown>): Promise<void> {
+    const password = values.password as string;
     try {
         await authClient.resetPassword({
             token: route.params.token as string,
-            newPassword: values.password,
+            newPassword: password,
         });
 
-        alertStore.success(
+        success(
             'Password has been resetted. You will be redirected to login page in 2 seconds.',
         );
 
         setTimeout(() => {
             router.push({ name: 'account.login' });
         }, 2000);
-    } catch (error) {
-        alertStore.error(
-            error instanceof Error ? error.message : String(error),
-        );
+    } catch (err) {
+        error(err instanceof Error ? err.message : String(err));
     }
-}
-
-const isLoading = ref(true);
-
-function goToResend() {
-    router.push({ name: 'account.forgot.password' });
 }
 </script>
 

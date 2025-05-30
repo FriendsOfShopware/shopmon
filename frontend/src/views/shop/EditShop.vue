@@ -206,8 +206,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from '@/composables/useAlert';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { useAlertStore } from '@/stores/alert.store';
 import { useShopStore } from '@/stores/shop.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -216,7 +216,7 @@ import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
 const shopStore = useShopStore();
-const alertStore = useAlertStore();
+const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 const organizations = ref<RouterOutput['account']['listOrganizations']>();
@@ -274,7 +274,7 @@ async function onSubmit(values: Yup.InferType<typeof schema>) {
                 },
             });
         } catch (e) {
-            alertStore.error(e instanceof Error ? e.message : String(e));
+            error(e instanceof Error ? e.message : String(e));
         }
     }
 }
@@ -288,10 +288,8 @@ async function deleteShop() {
             );
 
             router.push({ name: 'account.shops.list' });
-        } catch (error) {
-            alertStore.error(
-                error instanceof Error ? error.message : String(error),
-            );
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
         }
     }
 }

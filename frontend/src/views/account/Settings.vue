@@ -241,14 +241,14 @@ import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
-import { useAlertStore } from '@/stores/alert.store';
 import type { Session } from 'better-auth/types';
 
 const session = authClient.useSession();
 
-const alertStore = useAlertStore();
+const { error } = useAlert();
 
 const passKeyName = ref('');
 
@@ -306,10 +306,8 @@ async function deleteUser() {
     try {
         await trpcClient.account.deleteCurrentUser.mutate();
         await authClient.deleteUser();
-    } catch (error) {
-        alertStore.error(
-            error instanceof Error ? error.message : String(error),
-        );
+    } catch (err) {
+        error(err instanceof Error ? err.message : String(err));
     }
 
     showAccountDeletionModal.value = false;
@@ -317,7 +315,7 @@ async function deleteUser() {
 
 async function createPasskey() {
     if (!passKeyName.value) {
-        alertStore.error('Please provide a name for the Passkey Device.');
+        error('Please provide a name for the Passkey Device.');
         return;
     }
 

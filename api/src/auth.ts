@@ -13,6 +13,10 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
+        async sendResetPassword(data, request) {
+            const { sendMailResetPassword } = await import('./mail/mail.js');
+            await sendMailResetPassword(data.user.email, data.token);
+        },
         password: {
             hash: async (password) => {
                 return Bun.password.hash(password, {
@@ -26,7 +30,6 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, token }) => {
-            // Import dynamically to avoid circular dependency
             const { sendMailConfirmToUser } = await import('./mail/mail.js');
             await sendMailConfirmToUser(user.email, token);
         },
