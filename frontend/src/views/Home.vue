@@ -1,5 +1,5 @@
 <template>
-    <div v-if="user && !shopStore.isLoading">
+    <div v-if="!shopStore.isLoading">
         <header-container title="Dashboard" />
         <main-container>
             <h2 class="section-title">
@@ -124,12 +124,7 @@ import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
 
 const authStore = useAuthStore();
-const { user, organizations } = storeToRefs(authStore);
-
-const orgs = organizations.value?.map((organization) => ({
-    ...organization,
-    initials: organization.name.substring(0, 2),
-}));
+const { organizations } = storeToRefs(authStore);
 
 const shopStore = useShopStore();
 shopStore.loadShops();

@@ -10,7 +10,7 @@
         </router-link>
     </header-container>
 
-    <main-container v-if="user">
+    <main-container>
         <template v-if="organizations && organizations.length === 0">
             <element-empty title="No Organization" :route="{ name: 'account.organizations.new' }" button="Add Organization">
                 Get started by adding your first organization.
@@ -53,5 +53,5 @@ import { useAuthStore } from '@/stores/auth.store';
 import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
-const { organizations, user } = storeToRefs(authStore);
+const { organizations } = storeToRefs(authStore);
 </script>

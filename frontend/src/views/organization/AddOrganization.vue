@@ -1,6 +1,6 @@
 <template>
     <header-container title="New Organization" />
-    <main-container v-if="authStore.user">
+    <main-container v-if="session.data?.user">
         <vee-form
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
@@ -50,15 +50,16 @@
 </template>
 
 <script setup lang="ts">
+import { authClient } from '@/helpers/auth-client';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { useOrganizationStore } from '@/stores/organization.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
-const authStore = useAuthStore();
+const session = authClient.useSession();
+
 const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
 const router = useRouter();
@@ -68,7 +69,7 @@ const schema = Yup.object().shape({
 });
 
 const owner = {
-    ownerId: authStore.user?.id,
+    ownerId: session.value.data?.user?.id,
 };
 
 async function onCreateOrganization(values: Yup.InferType<typeof schema>) {

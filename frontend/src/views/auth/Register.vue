@@ -77,7 +77,7 @@ import * as Yup from 'yup';
 import { router } from '@/router';
 
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
+import { authClient } from '@/helpers/auth-client';
 
 const schema = Yup.object().shape({
     displayName: Yup.string().required('Display Name is required'),
@@ -97,10 +97,13 @@ async function onSubmit(values: {
     password: string;
     displayName: string;
 }) {
-    const authStore = useAuthStore();
     const alertStore = useAlertStore();
     try {
-        await authStore.register(values);
+        authClient.signUp.email({
+            email: values.email,
+            password: values.password,
+            name: values.displayName,
+        });
         await router.push({ name: 'account.login' });
         alertStore.success(
             'Registration successful. Please check your mailbox and confirm your email address.',

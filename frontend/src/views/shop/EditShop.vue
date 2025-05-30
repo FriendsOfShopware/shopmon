@@ -18,7 +18,7 @@
         </router-link>
     </header-container>
 
-    <main-container v-if="shopStore.shop && authStore.user">
+    <main-container v-if="shopStore.shop">
         <vee-form
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"

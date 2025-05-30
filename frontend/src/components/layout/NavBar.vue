@@ -1,6 +1,6 @@
 <template>
     <disclosure
-        v-if="authStore.user"
+        v-if="session.data"
         v-slot="{ open }"
         as="nav"
         class="nav"
@@ -176,7 +176,7 @@
                         <menu-items class="user-menu-panel">
                             <div class="user-menu-header">
                                 <div class="user-menu-name">
-                                    Hi {{ authStore.user.displayName }}
+                                    Hi {{ session.data.user.name }}
                                 </div>
                             </div>
                             <menu-item
@@ -190,7 +190,7 @@
                                         active && 'active',
                                     ]"
                                     type="button"
-                                    @click="item.route === 'logout' ? authStore.logout() : $router.push({ name: item.route })"
+                                    @click="item.route === 'logout' ? logout() : $router.push({ name: item.route })"
                                 >
                                     <component
                                         :is="item.icon"
@@ -248,10 +248,10 @@
                     </div>
                     <div class="nav-mobile-user-details">
                         <div class="nav-mobile-user-name">
-                            {{ authStore.user.displayName }}
+                            {{ session.data.user.name }}
                         </div>
                         <div class="nav-mobile-user-email">
-                            {{ authStore.user.email }}
+                            {{ session.data.user.email }}
                         </div>
                     </div>
                 </div>
@@ -264,7 +264,7 @@
                         class="nav-mobile-user-link"
                         @click="
                             item.route === 'logout'
-                                ? authStore.logout()
+                                ? logout()
                                 : $router.push({ name: item.route })
                         "
                     >
@@ -281,7 +281,6 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth.store';
 import { useDarkModeStore } from '@/stores/darkMode.store';
 import { useNotificationStore } from '@/stores/notification.store';
 
@@ -303,8 +302,13 @@ import FaPowerOff from '~icons/fa6-solid/power-off';
 
 import { formatDateTime } from '@/helpers/formatter';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
+import { authClient } from '@/helpers/auth-client';
 
+const session = authClient.useSession();
+import { useAuthStore } from '@/stores/auth.store';
+import { router } from '@/router';
 const authStore = useAuthStore();
+
 const notificationStore = useNotificationStore();
 const darkModeStore = useDarkModeStore();
 
@@ -342,6 +346,12 @@ function isActive(
 
     return false;
 }
+
+async function logout() {
+    await authClient.signOut();
+    window.location.reload();
+}
+
 </script>
 
 <style>
