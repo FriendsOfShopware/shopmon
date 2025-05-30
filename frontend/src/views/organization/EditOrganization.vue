@@ -114,11 +114,11 @@
 <script setup lang="ts">
 import { useAlertStore } from '@/stores/alert.store';
 
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 const alertStore = useAlertStore();
 const router = useRouter();

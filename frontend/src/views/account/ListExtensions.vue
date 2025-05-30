@@ -99,7 +99,7 @@
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { formatDateTime } from '@/helpers/formatter';
-import { trpcClient, type RouterOutput } from '@/helpers/trpc';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { ref } from 'vue';
 
 const term = ref('');

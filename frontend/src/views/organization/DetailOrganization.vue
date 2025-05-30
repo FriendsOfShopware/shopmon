@@ -169,10 +169,10 @@ import { useAlertStore } from '@/stores/alert.store';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRoute, useRouter } from 'vue-router';
 
-import { computed, ref } from 'vue';
-import * as Yup from 'yup';
 import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { computed, ref } from 'vue';
+import * as Yup from 'yup';
 
 const route = useRoute();
 const router = useRouter();

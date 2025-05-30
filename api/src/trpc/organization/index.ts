@@ -1,8 +1,8 @@
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { schema } from '../../db.ts';
 import Organizations from '../../repository/organization.ts';
 import { publicProcedure, router } from '../index.ts';
-import { schema } from '../../db.ts';
-import { eq, sql } from 'drizzle-orm';
 import {
     loggedInUserMiddleware,
     organizationAdminMiddleware,

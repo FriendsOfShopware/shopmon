@@ -118,8 +118,8 @@ import MainContainer from '@/components/layout/MainContainer.vue';
 
 import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { ref } from 'vue';
-import { trpcClient, type RouterOutput } from '@/helpers/trpc';
 
 const organizations = ref<RouterOutput['account']['listOrganizations']>();
 trpcClient.account.listOrganizations.query().then((data) => {

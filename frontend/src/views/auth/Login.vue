@@ -83,10 +83,10 @@ import { Field, Form as VeeForm, configure } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import { authClient } from '@/helpers/auth-client';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'vue-router';
-import { authClient } from '@/helpers/auth-client';
 
 const router = useRouter();
 const authStore = useAuthStore();

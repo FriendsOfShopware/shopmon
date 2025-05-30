@@ -297,13 +297,13 @@ import {
     PopoverPanel,
 } from '@headlessui/vue';
 
+import { ref } from 'vue';
 import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
-import { ref } from 'vue';
 
+import { authClient } from '@/helpers/auth-client';
 import { formatDateTime } from '@/helpers/formatter';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
-import { authClient } from '@/helpers/auth-client';
 
 const session = authClient.useSession();
 

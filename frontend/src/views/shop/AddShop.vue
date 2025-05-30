@@ -134,14 +134,14 @@ import { useAlertStore } from '@/stores/alert.store';
 import { useShopStore } from '@/stores/shop.store';
 
 import {
-    trpcClient,
     type RouterInput,
     type RouterOutput,
+    trpcClient,
 } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
-import { ref } from 'vue';
 
 const shopStore = useShopStore();
 const alertStore = useAlertStore();

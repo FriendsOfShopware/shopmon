@@ -76,8 +76,8 @@ import * as Yup from 'yup';
 
 import { router } from '@/router';
 
-import { useAlertStore } from '@/stores/alert.store';
 import { authClient } from '@/helpers/auth-client';
+import { useAlertStore } from '@/stores/alert.store';
 
 const schema = Yup.object().shape({
     displayName: Yup.string().required('Display Name is required'),

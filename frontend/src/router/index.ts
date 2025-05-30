@@ -4,13 +4,13 @@ import {
     createWebHistory,
 } from 'vue-router';
 
+import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
 import { useAlertStore } from '@/stores/alert.store';
+import { useAuthStore } from '@/stores/auth.store';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
-import { authClient } from '@/helpers/auth-client';
-import { useAuthStore } from '@/stores/auth.store';
 
 const session = authClient.useSession();
 
