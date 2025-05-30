@@ -1,5 +1,4 @@
 import { authClient } from '@/helpers/auth-client';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 const session = authClient.useSession();
@@ -10,27 +9,12 @@ export const useAuthStore = defineStore('auth', () => {
     );
 
     setAvatar();
-    loadOrganizations();
-
-    const organizations = ref<
-        RouterOutput['account']['listOrganizations'] | null
-    >(null);
 
     watch(session, async () => {
-        await Promise.all([setAvatar(), loadOrganizations()]);
+        await Promise.all([setAvatar()]);
     });
 
     const returnUrl = ref<string | null>(null);
-
-    async function loadOrganizations() {
-        if (session.value.data?.user) {
-            trpcClient.account.listOrganizations.query().then((orgs) => {
-                organizations.value = orgs;
-            }).catch((error) => {
-                console.error('Error loading organizations:', error);
-            });
-        }
-    }
 
     async function setAvatar() {
         if (session.value.data?.user) {
@@ -57,8 +41,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     return {
         userAvatar,
-        organizations,
-        loadOrganizations,
         returnUrl,
     };
 });

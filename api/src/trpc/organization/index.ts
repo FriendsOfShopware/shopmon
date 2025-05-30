@@ -19,9 +19,11 @@ export const organizationRouter = router({
             return await Organizations.create(ctx.drizzle, input, ctx.user.id);
         }),
     listSingleOrganization: publicProcedure
-        .input(z.object({
-            orgId: z.number(),
-        }))
+        .input(
+            z.object({
+                orgId: z.number(),
+            }),
+        )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
         .query(async ({ input, ctx }) => {

@@ -55,7 +55,7 @@
                         :value="shopStore.shop.organizationId"
                     >
                         <option
-                            v-for="organization in authStore.organizations"
+                            v-for="organization in organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >
@@ -206,8 +206,8 @@
 </template>
 
 <script setup lang="ts">
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
 
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -215,11 +215,15 @@ import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
-const authStore = useAuthStore();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
+const organizations = ref<RouterOutput['account']['listOrganizations']>();
+
+trpcClient.account.listOrganizations.query().then((data) => {
+    organizations.value = data;
+});
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,

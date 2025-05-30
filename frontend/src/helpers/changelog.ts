@@ -1,4 +1,8 @@
-export function sumChanges(changes: { oldShopwareVersion?: string | null; newShopwareVersion?: string | null; extensions: { state: string }[] }) {
+export function sumChanges(changes: {
+    oldShopwareVersion?: string | null;
+    newShopwareVersion?: string | null;
+    extensions: { state: string }[];
+}) {
     const messages: string[] = [];
 
     if (changes.oldShopwareVersion && changes.newShopwareVersion) {

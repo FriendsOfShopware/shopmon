@@ -276,10 +276,7 @@ const showPasskeyCreationModal = ref(false);
 const schema = Yup.object().shape({
     currentPassword: Yup.string().required('Current password is required'),
     email: Yup.string().email().required(),
-    name: Yup.string().min(
-        5,
-        'Name must be at least 5 characters',
-    ),
+    name: Yup.string().min(5, 'Name must be at least 5 characters'),
     newPassword: Yup.string()
         .transform((x) => (x === '' ? undefined : x))
         .min(8, 'Password must be at least 8 characters'),

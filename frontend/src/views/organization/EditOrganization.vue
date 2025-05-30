@@ -129,10 +129,12 @@ const organizationId = Number.parseInt(
     10,
 );
 
-const organization = ref<RouterOutput['organization']['listSingleOrganization'] | null>(null);
+const organization = ref<
+    RouterOutput['organization']['listSingleOrganization'] | null
+>(null);
 
-trpcClient.organization
-    .listSingleOrganization.query({ orgId: organizationId })
+trpcClient.organization.listSingleOrganization
+    .query({ orgId: organizationId })
     .then((org) => {
         organization.value = org;
     });

@@ -184,15 +184,22 @@ const organizationId = Number.parseInt(
     10,
 );
 
-const organization = ref<RouterOutput['organization']['listSingleOrganization'] | null>(null);
-const organizationMembers = ref<RouterOutput['organization']['listMembers'] | null>(null);
+const organization = ref<
+    RouterOutput['organization']['listSingleOrganization'] | null
+>(null);
+const organizationMembers = ref<
+    RouterOutput['organization']['listMembers'] | null
+>(null);
 
-trpcClient.organization.listSingleOrganization.query({ orgId: organizationId })
+trpcClient.organization.listSingleOrganization
+    .query({ orgId: organizationId })
     .then((org) => {
         organization.value = org;
-    })
+    });
 
-const isOwner = computed(() => organization.value?.ownerId === session.value.data?.user.id);
+const isOwner = computed(
+    () => organization.value?.ownerId === session.value.data?.user.id,
+);
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
@@ -204,9 +211,11 @@ const schemaMembers = Yup.object().shape({
 });
 
 async function loadOrganizationMembers() {
-    organizationMembers.value = await trpcClient.organization.listMembers.query({
-        orgId: organizationId,
-    });
+    organizationMembers.value = await trpcClient.organization.listMembers.query(
+        {
+            orgId: organizationId,
+        },
+    );
 }
 
 loadOrganizationMembers();

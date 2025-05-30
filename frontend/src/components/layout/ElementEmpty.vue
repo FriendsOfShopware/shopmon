@@ -24,14 +24,17 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
-withDefaults(defineProps<{
-    title?: string;
-    button?: string;
-    route: RouteLocationRaw;
-}>(), {
-    title: 'No elements',
-    button: 'Add element'
-});
+withDefaults(
+    defineProps<{
+        title?: string;
+        button?: string;
+        route: RouteLocationRaw;
+    }>(),
+    {
+        title: 'No elements',
+        button: 'Add element',
+    },
+);
 </script>
 
 <style scoped>

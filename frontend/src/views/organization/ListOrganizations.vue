@@ -49,9 +49,11 @@
 
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
-import { useAuthStore } from '@/stores/auth.store';
-import { storeToRefs } from 'pinia';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { ref } from 'vue';
 
-const authStore = useAuthStore();
-const { organizations } = storeToRefs(authStore);
+const organizations = ref<RouterOutput['account']['listOrganizations']>();
+trpcClient.account.listOrganizations.query().then((data) => {
+    organizations.value = data;
+});
 </script>

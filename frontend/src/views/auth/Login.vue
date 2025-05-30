@@ -110,7 +110,7 @@ async function onSubmit(values: { email: string; password: string }) {
         await authClient.signIn.email({
             email,
             password,
-        })
+        });
 
         // redirect to previous url or default to home page
         router.push(authStore.returnUrl || '/');

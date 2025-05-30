@@ -2,6 +2,7 @@
     <header-container title="New Shop" />
     <main-container>
         <vee-form
+            v-if="organizations"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shops"
@@ -34,7 +35,7 @@
                         class="field"
                     >
                         <option
-                            v-for="organization in authStore.organizations"
+                            v-for="organization in organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >
@@ -130,18 +131,23 @@
 
 <script setup lang="ts">
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
 
-import type { RouterInput } from '@/helpers/trpc';
+import {
+    trpcClient,
+    type RouterInput,
+    type RouterOutput,
+} from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
+import { ref } from 'vue';
 
-const authStore = useAuthStore();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
 const router = useRouter();
+
+const organizations = ref<RouterOutput['account']['listOrganizations']>();
 
 const isValidUrl = (url: string) => {
     try {
@@ -165,8 +171,13 @@ const schema = Yup.object().shape({
 });
 
 const shops = {
-    orgId: authStore.organizations?.[0].id,
+    orgId: organizations.value?.[0].id,
 };
+
+trpcClient.account.listOrganizations.query().then((data) => {
+    shops.orgId = data?.[0]?.id;
+    organizations.value = data;
+});
 
 async function onSubmit(values: RouterInput['organization']['shop']['create']) {
     try {

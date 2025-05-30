@@ -111,9 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from 'pinia';
-
-import { useAuthStore } from '@/stores/auth.store';
 import { useShopStore } from '@/stores/shop.store';
 
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
@@ -124,8 +121,10 @@ import { formatDateTime } from '@/helpers/formatter';
 import { ref } from 'vue';
 import { trpcClient, type RouterOutput } from '@/helpers/trpc';
 
-const authStore = useAuthStore();
-const { organizations } = storeToRefs(authStore);
+const organizations = ref<RouterOutput['account']['listOrganizations']>();
+trpcClient.account.listOrganizations.query().then((data) => {
+    organizations.value = data;
+});
 
 const shopStore = useShopStore();
 shopStore.loadShops();

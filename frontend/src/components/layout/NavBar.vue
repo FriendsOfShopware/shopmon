@@ -160,7 +160,7 @@
                         <span class="sr-only">Open user menu</span>
                         <img
                             class="user-avatar"
-                            :src="authStore.userAvatar"
+                            :src="userAvatar"
                             alt=""
                         >
                     </menu-button>
@@ -241,7 +241,7 @@
                 <div class="nav-mobile-user-info">
                     <div class="nav-mobile-user-avatar">
                         <img
-                            :src="authStore.userAvatar"
+                            :src="userAvatar"
                             alt="avatar"
                             class="user-avatar"
                         >
@@ -299,15 +299,26 @@ import {
 
 import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
+import { ref } from 'vue';
 
 import { formatDateTime } from '@/helpers/formatter';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 import { authClient } from '@/helpers/auth-client';
 
 const session = authClient.useSession();
-import { useAuthStore } from '@/stores/auth.store';
-import { router } from '@/router';
-const authStore = useAuthStore();
+
+const userAvatar = ref(
+    'https://api.dicebear.com/7.x/personas/svg/?seed=default?d=identicon',
+);
+
+crypto.subtle
+    .digest('SHA-256', new TextEncoder().encode(session.value.data.user.email))
+    .then((hash) => {
+        const seed = new Uint8Array(hash)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+        userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${seed}&d=identicon`;
+    });
 
 const notificationStore = useNotificationStore();
 const darkModeStore = useDarkModeStore();
@@ -351,7 +362,6 @@ async function logout() {
     await authClient.signOut();
     window.location.reload();
 }
-
 </script>
 
 <style>
