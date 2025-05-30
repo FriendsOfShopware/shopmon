@@ -326,6 +326,7 @@ if (session.value.data?.user.email) {
             });
     } catch (error) {
         // Web crypto API is not supported, fallback to default avatar
+        console.error('Web Crypto API is not supported:', error);
     }
 }
 

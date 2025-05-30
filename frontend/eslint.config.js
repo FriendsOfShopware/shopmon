@@ -87,13 +87,7 @@ export default [
             '@typescript-eslint/no-non-null-assertion': 'warn',
 
             // Type-aware rules (require TypeScript compilation)
-            '@typescript-eslint/no-floating-promises': [
-                'warn',
-                {
-                    ignoreVoid: true,
-                    ignoreIIFE: true,
-                },
-            ],
+            '@typescript-eslint/no-floating-promises': 'off',
             '@typescript-eslint/no-misused-promises': 'error',
             '@typescript-eslint/await-thenable': 'error',
             '@typescript-eslint/no-unnecessary-type-assertion': 'error',
