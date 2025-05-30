@@ -4,16 +4,7 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
+import { useDarkMode } from './composables/useDarkMode';
 
-import { useDarkModeStore } from './stores/darkMode.store';
-
-const darkModeStore = useDarkModeStore();
-
-window
-    .matchMedia('(prefers-color-scheme: dark)')
-    .addEventListener('change', (e) => {
-        darkModeStore.setDarkMode(e.matches);
-    });
-
-darkModeStore.updateDarkModeClass();
+useDarkMode();
 </script>

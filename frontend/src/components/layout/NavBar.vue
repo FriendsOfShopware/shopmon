@@ -41,10 +41,10 @@
                 <button
                     class="action action-dark-mode"
                     type="button"
-                    @click="darkModeStore.toggleDarkMode"
+                    @click="toggleDarkMode"
                 >
                     <icon-fa6-regular:moon
-                        v-if="darkModeStore.darkMode"
+                        v-if="darkMode"
                         class="icon"
                     />
                     <icon-fa6-regular:sun
@@ -281,7 +281,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDarkModeStore } from '@/stores/darkMode.store';
+import { useDarkMode } from '@/composables/useDarkMode';
 import { useNotificationStore } from '@/stores/notification.store';
 
 import {
@@ -330,7 +330,7 @@ if (session.value.data?.user.email) {
 }
 
 const notificationStore = useNotificationStore();
-const darkModeStore = useDarkModeStore();
+const { darkMode, toggleDarkMode } = useDarkMode();
 
 const navigation = [
     { name: 'Dashboard', route: 'home' },

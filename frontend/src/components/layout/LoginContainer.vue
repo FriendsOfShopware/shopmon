@@ -1,7 +1,7 @@
 <template>
     <div class="login-container">
-        <button class="dark-mode-toggle" type="button" @click="darkModeStore.toggleDarkMode">
-            <icon-fa6-regular:moon v-if="darkModeStore.darkMode" class="icon" />
+        <button class="dark-mode-toggle" type="button" @click="toggleDarkMode">
+            <icon-fa6-regular:moon v-if="darkMode" class="icon" />
             <icon-fa6-regular:sun v-else class="icon" />
         </button>
         
@@ -13,9 +13,9 @@
 </template>
 
 <script setup lang="ts">
-import { useDarkModeStore } from '@/stores/darkMode.store';
+import { useDarkMode } from '@/composables/useDarkMode';
 
-const darkModeStore = useDarkModeStore();
+const { darkMode, toggleDarkMode } = useDarkMode();
 </script>
 
 <style>
