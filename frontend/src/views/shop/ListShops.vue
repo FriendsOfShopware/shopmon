@@ -6,8 +6,8 @@
         </router-link>
     </header-container>
 
-    <main-container v-if="!shopStore.isLoading">
-        <template v-if="shopStore.shops.length === 0">
+    <main-container v-if="shops">
+        <template v-if="shops.length === 0">
             <element-empty title="No Shops" button="Add Shop" :route="{ name: 'account.shops.new' }">
                 Get started by adding your first Shop.
             </element-empty>
@@ -24,7 +24,7 @@
                     { key: 'organizationName', name: 'Organization', sortable: true },
                     { key: 'lastScrapedAt', name: 'Last checked at', sortable: true }
                 ]"
-                :data="shopStore.shops"
+                :data="shops"
                 :default-sorting="{by: 'name'}"
             >
                 <template #cell-favicon="{ row }">
@@ -77,14 +77,16 @@
 </template>
 
 <script setup lang="ts">
-import { formatDate, formatDateTime } from '@/helpers/formatter';
-
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
-import { useShopStore } from '@/stores/shop.store';
+import { formatDate, formatDateTime } from '@/helpers/formatter';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { ref } from 'vue';
 
-const shopStore = useShopStore();
+const shops = ref<RouterOutput['account']['currentUserShops']>([]);
 
-shopStore.loadShops();
+trpcClient.account.currentUserShops.query().then((data) => {
+    shops.value = data;
+});
 </script>
 
 <style>

@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!shopStore.isLoading">
+    <div v-if="shops">
         <header-container title="Dashboard" />
         <main-container>
             <h2 class="section-title">
@@ -8,7 +8,7 @@
             </h2>
 
             <ul class="dashboard-grid-container">
-                <li v-for="shop in shopStore.shops" :key="shop.id" class="dashboard-grid-item">
+                <li v-for="shop in shops" :key="shop.id" class="dashboard-grid-item">
                     <router-link 
                         :to="{
                             name: 'account.shops.detail',
@@ -111,8 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import { useShopStore } from '@/stores/shop.store';
-
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
 import MainContainer from '@/components/layout/MainContainer.vue';
 
@@ -126,8 +124,11 @@ trpcClient.account.listOrganizations.query().then((data) => {
     organizations.value = data;
 });
 
-const shopStore = useShopStore();
-shopStore.loadShops();
+const shops = ref<RouterOutput['account']['currentUserShops']>([]);
+
+trpcClient.account.currentUserShops.query().then((data) => {
+    shops.value = data;
+});
 
 const changelogs = ref<RouterOutput['account']['currentUserChangelogs']>([]);
 

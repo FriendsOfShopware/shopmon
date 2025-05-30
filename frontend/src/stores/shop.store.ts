@@ -11,7 +11,6 @@ export const useShopStore = defineStore('shop', () => {
     const isRefreshing = ref(false);
     const isCacheClearing = ref(false);
     const isReSchedulingTask = ref(false);
-    const shops = ref<RouterOutput['account']['currentUserShops']>([]);
     const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 
     async function createShop(
@@ -20,14 +19,6 @@ export const useShopStore = defineStore('shop', () => {
         isLoading.value = true;
         payload.shopUrl = payload.shopUrl.replace(/\/+$/, '');
         await trpcClient.organization.shop.create.mutate(payload);
-        isLoading.value = false;
-
-        await loadShops();
-    }
-
-    async function loadShops() {
-        isLoading.value = true;
-        shops.value = await trpcClient.account.currentUserShops.query();
         isLoading.value = false;
     }
 
@@ -107,7 +98,6 @@ export const useShopStore = defineStore('shop', () => {
 
     async function deleteShop(orgId: number, shopId: number) {
         await trpcClient.organization.shop.delete.mutate({ orgId, shopId });
-        await loadShops();
     }
 
     return {
@@ -115,10 +105,8 @@ export const useShopStore = defineStore('shop', () => {
         isRefreshing,
         isCacheClearing,
         isReSchedulingTask,
-        shops,
         shop,
         createShop,
-        loadShops,
         loadShop,
         updateShop,
         refreshShop,

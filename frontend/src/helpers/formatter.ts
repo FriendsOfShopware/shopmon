@@ -2,7 +2,11 @@ export function formatDate(date: string | Date) {
     return dateTimeFormatter(date);
 }
 
-export function formatDateTime(date: string | Date) {
+export function formatDateTime(date: string | Date | null) {
+    if (date === null) {
+        return '';
+    }
+
     return dateTimeFormatter(date, {
         hour: 'numeric',
         minute: 'numeric',
