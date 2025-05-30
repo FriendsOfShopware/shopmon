@@ -130,7 +130,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
                     clearInterval(a);
                     resolve(true);
                 }
-            }, 100);
+            }, 50);
         });
     }
 
