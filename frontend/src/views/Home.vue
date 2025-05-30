@@ -67,7 +67,7 @@
                 </li>
             </ul>
 
-            <template v-if="dashboardStore.changelogs.length > 0">
+            <template v-if="changelogs.length > 0">
                 <h2 class="section-title">
                     <icon-fa6-solid:file-waveform />
                     Last Changes
@@ -80,7 +80,7 @@
                             { key: 'extensions', name: 'Changes', sortable: true },
                             { key: 'date', name: 'Date', sortable: true, sortPath: 'date' }
                         ]"
-                        :data="dashboardStore.changelogs"
+                        :data="changelogs"
                     >
                         <template #cell-shopName="{ row }">
                             <router-link
@@ -114,7 +114,6 @@
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores/auth.store';
-import { useDashboardStore } from '@/stores/dashboard.store';
 import { useShopStore } from '@/stores/shop.store';
 
 import HeaderContainer from '@/components/layout/HeaderContainer.vue';
@@ -122,6 +121,8 @@ import MainContainer from '@/components/layout/MainContainer.vue';
 
 import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
+import { ref } from 'vue';
+import { trpcClient, type RouterOutput } from '@/helpers/trpc';
 
 const authStore = useAuthStore();
 const { organizations } = storeToRefs(authStore);
@@ -129,8 +130,11 @@ const { organizations } = storeToRefs(authStore);
 const shopStore = useShopStore();
 shopStore.loadShops();
 
-const dashboardStore = useDashboardStore();
-dashboardStore.loadChangelogs();
+const changelogs = ref<RouterOutput['account']['currentUserChangelogs']>([]);
+
+trpcClient.account.currentUserChangelogs.query().then((data) => {
+    changelogs.value = data;
+});
 </script>
 
 <style scoped>

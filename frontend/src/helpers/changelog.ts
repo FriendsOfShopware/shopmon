@@ -1,7 +1,4 @@
-import type { Changelogs } from '@/types/dashboard';
-import type { ShopChangelog } from '@/types/shop';
-
-export function sumChanges(changes: ShopChangelog | Changelogs) {
+export function sumChanges(changes: { oldShopwareVersion?: string | null; newShopwareVersion?: string | null; extensions: { state: string }[] }) {
     const messages: string[] = [];
 
     if (changes.oldShopwareVersion && changes.newShopwareVersion) {
