@@ -9,6 +9,8 @@ export const useNotificationStore = defineStore('notification', () => {
         [],
     );
 
+    loadNotifications();
+
     const unreadNotificationCount = computed(() => {
         return notifications.value.filter((n) => !n.read).length;
     });
