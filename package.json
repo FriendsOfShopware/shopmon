@@ -12,6 +12,7 @@
 	"trustedDependencies": ["@biomejs/biome", "esbuild", "sharp"],
 	"scripts": {
 		"biome:format": "biome format --write .",
-		"biome:lint": "biome lint ."
+		"biome:lint": "biome lint .",
+		"biome:check": "biome check ."
 	}
 }

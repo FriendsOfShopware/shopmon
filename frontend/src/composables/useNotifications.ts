@@ -1,17 +1,15 @@
 import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-const session = authClient.useSession();
 
-export const useNotificationStore = defineStore('notification', () => {
-    const isLoading = ref(false);
-    const isRefreshing = ref(false);
-    const notifications = ref<RouterOutput['account']['notification']['list']>(
-        [],
-    );
+const isLoading = ref(false);
+const isRefreshing = ref(false);
+const notifications = ref<RouterOutput['account']['notification']['list']>([]);
 
-    if (session.value.data?.user) {
+export function useNotifications() {
+    const session = authClient.useSession();
+
+    if (session.value.data?.user && notifications.value.length === 0) {
         loadNotifications();
     }
 
@@ -21,8 +19,7 @@ export const useNotificationStore = defineStore('notification', () => {
 
     async function loadNotifications() {
         isLoading.value = true;
-        notifications.value =
-            await trpcClient.account.notification.list.query();
+        notifications.value = await trpcClient.account.notification.list.query();
         isLoading.value = false;
     }
 
@@ -66,4 +63,4 @@ export const useNotificationStore = defineStore('notification', () => {
         deleteAllNotifications,
         deleteNotification,
     };
-});
+}

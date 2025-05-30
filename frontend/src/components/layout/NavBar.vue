@@ -56,7 +56,7 @@
                 <popover class="notifications">
                     <popover-button
                         class="action notifications"
-                        @click="notificationStore.markAllRead"
+                        @click="markAllRead"
                     >
                         <span class="sr-only">View notifications</span>
                         <icon-fa6-solid:bell
@@ -64,10 +64,10 @@
                             aria-hidden="true"
                         />
                         <div
-                            v-if="notificationStore.unreadNotificationCount > 0"
+                            v-if="unreadNotificationCount > 0"
                             class="notifications-count"
                         >
-                            {{ notificationStore.unreadNotificationCount }}
+                            {{ unreadNotificationCount }}
                         </div>
                     </popover-button>
 
@@ -81,22 +81,22 @@
                     >
                         <popover-panel class="notifications-panel">
                             <div class="notifications-header">
-                                Notifications ({{ notificationStore.notifications.length }})
+                                Notifications ({{ notifications.length }})
                                 <button
-                                    v-if="notificationStore.notifications.length > 0"
+                                    v-if="notifications.length > 0"
                                     class="notification-delete"
                                     type="button"
-                                    @click="notificationStore.deleteAllNotifications"
+                                    @click="deleteAllNotifications"
                                 >
                                     <icon-fa6-solid:trash class="icon" />
                                 </button>
                             </div>
                             <ul
-                                v-if="notificationStore.notifications.length > 0"
+                                v-if="notifications.length > 0"
                                 class="notifications-list"
                             >
                                 <li
-                                    v-for="(notification, index) in notificationStore.notifications"
+                                    v-for="(notification, index) in notifications"
                                     :key="index"
                                     class="notification-item"
                                 >
@@ -132,7 +132,7 @@
                                     <div class="notification-delete">
                                         <button
                                             type="button"
-                                            @click="notificationStore.deleteNotification(notification.id)"
+                                            @click="deleteNotification(notification.id)"
                                         >
                                             <icon-fa6-solid:xmark class="icon" />
                                         </button>
@@ -282,7 +282,7 @@
 
 <script setup lang="ts">
 import { useDarkMode } from '@/composables/useDarkMode';
-import { useNotificationStore } from '@/stores/notification.store';
+import { useNotifications } from '@/composables/useNotifications';
 
 import {
     Disclosure,
@@ -329,7 +329,13 @@ if (session.value.data?.user.email) {
     }
 }
 
-const notificationStore = useNotificationStore();
+const {
+    notifications,
+    unreadNotificationCount,
+    markAllRead,
+    deleteAllNotifications,
+    deleteNotification,
+} = useNotifications();
 const { darkMode, toggleDarkMode } = useDarkMode();
 
 const navigation = [
