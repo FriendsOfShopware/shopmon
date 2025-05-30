@@ -8,7 +8,7 @@
         <div class="nav-container container">
             <div class="nav-main">
                 <div class="nav-logo">
-                    <router-link to="/">
+                    <router-link :to="{ name: 'home' }">
                         <logo class="nav-logo-img" />
                     </router-link>
                 </div>
@@ -17,7 +17,7 @@
                     <router-link
                         v-for="item in navigation"
                         :key="item.name"
-                        :to="item.route"
+                        :to="{ name: item.route }"
                         :class="{
                             'nav-link': true,
                             'active': isActive(item, $route),
@@ -190,7 +190,7 @@
                                         active && 'active',
                                     ]"
                                     type="button"
-                                    @click="item.route === '/logout' ? authStore.logout() : $router.push(item.route)"
+                                    @click="item.route === 'logout' ? authStore.logout() : $router.push({ name: item.route })"
                                 >
                                     <component
                                         :is="item.icon"
@@ -229,10 +229,10 @@
                     as="a"
                     class="nav-mobile-link"
                     :class="[
-                        item.route == $route.path && 'active',
+                        isActive(item, $route) && 'active',
                     ]"
-                    :aria-current="item.route == $route.path ? 'page' : undefined"
-                    @click="$router.push(item.route)"
+                    :aria-current="isActive(item, $route) ? 'page' : undefined"
+                    @click="$router.push({ name: item.route })"
                 >
                     {{ item.name }}
                 </disclosure-button>
@@ -263,9 +263,9 @@
                         as="a"
                         class="nav-mobile-user-link"
                         @click="
-                            item.route === '/logout'
+                            item.route === 'logout'
                                 ? authStore.logout()
-                                : $router.push(item.route)
+                                : $router.push({ name: item.route })
                         "
                     >
                         <component
@@ -309,26 +309,26 @@ const notificationStore = useNotificationStore();
 const darkModeStore = useDarkModeStore();
 
 const navigation = [
-    { name: 'Dashboard', route: '/' },
-    { name: 'My Shops', route: '/account/shops', active: 'shop' },
-    { name: 'My Extensions', route: '/account/extensions' },
+    { name: 'Dashboard', route: 'home' },
+    { name: 'My Shops', route: 'account.shops.list', active: 'shop' },
+    { name: 'My Extensions', route: 'account.extension.list' },
     {
         name: 'My Organizations',
-        route: '/account/organizations',
+        route: 'account.organizations.list',
         active: 'organizations',
     },
 ];
 
 const userNavigation = [
-    { name: 'Settings', route: '/account/settings', icon: FaGear },
-    { name: 'Logout', route: '/logout', icon: FaPowerOff },
+    { name: 'Settings', route: 'account.settings', icon: FaGear },
+    { name: 'Logout', route: 'logout', icon: FaPowerOff },
 ];
 
 function isActive(
     item: { route: string; active?: string },
     $route: RouteLocationNormalizedLoaded,
 ) {
-    if (item.route === $route.path) {
+    if (item.route === $route.name) {
         return true;
     }
     if (

@@ -4,7 +4,7 @@
         <p v-if="!disableRegistration">
             New to Shopmon?
             {{ ' ' }}
-            <router-link to="register">
+            <router-link :to="{ name: 'account.register' }">
                 Create an account
             </router-link>
         </p>
@@ -51,7 +51,7 @@
         </button>
 
         <div>
-            <router-link to="/account/forgot-password">
+            <router-link :to="{ name: 'account.forgot.password' }">
                 Forgot your password?
             </router-link>
         </div>

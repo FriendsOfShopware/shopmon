@@ -1,7 +1,7 @@
 <template>
     <header-container title="My Organization">
         <router-link
-            to="/account/organizations/new"
+            :to="{ name: 'account.organizations.new' }"
             type="button"
             class="btn btn-primary"
         >
@@ -12,7 +12,7 @@
 
     <main-container v-if="user">
         <template v-if="organizations && organizations.length === 0">
-            <element-empty title="No Organization" route="/account/organizations/new" button="Add Organization">
+            <element-empty title="No Organization" :route="{ name: 'account.organizations.new' }" button="Add Organization">
                 Get started by adding your first organization.
             </element-empty>
         </template>

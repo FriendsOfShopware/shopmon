@@ -62,7 +62,7 @@
         </button>
 
         <div>
-            <router-link to="login">
+            <router-link :to="{ name: 'account.login' }">
                 Cancel
             </router-link>
         </div>
@@ -101,7 +101,7 @@ async function onSubmit(values: {
     const alertStore = useAlertStore();
     try {
         await authStore.register(values);
-        await router.push('/account/login');
+        await router.push({ name: 'account.login' });
         alertStore.success(
             'Registration successful. Please check your mailbox and confirm your email address.',
         );

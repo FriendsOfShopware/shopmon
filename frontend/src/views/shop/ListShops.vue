@@ -1,6 +1,6 @@
 <template>
     <header-container title="My Shops">
-        <router-link to="/account/shops/new" class="btn btn-primary">
+        <router-link :to="{ name: 'account.shops.new' }" class="btn btn-primary">
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
             Add Shop
         </router-link>
@@ -8,7 +8,7 @@
 
     <main-container v-if="!shopStore.isLoading">
         <template v-if="shopStore.shops.length === 0">
-            <element-empty title="No Shops" button="Add Shop" route="/account/shops/new">
+            <element-empty title="No Shops" button="Add Shop" :route="{ name: 'account.shops.new' }">
                 Get started by adding your first Shop.
             </element-empty>
         </template>

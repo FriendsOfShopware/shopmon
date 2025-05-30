@@ -12,7 +12,7 @@
     <template v-else>
         <Alert type="success" v-if="success">
             Your email address has been confirmed.
-            <router-link to="/account/login">
+            <router-link :to="{ name: 'account.login' }">
                 Login
             </router-link>
         </Alert>
@@ -47,7 +47,7 @@ export default {
     },
     methods: {
         goToLogin() {
-            this.$router.push('/account/login');
+            this.$router.push({ name: 'account.login' });
         },
     },
 };

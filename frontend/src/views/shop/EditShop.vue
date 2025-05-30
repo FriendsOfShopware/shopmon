@@ -283,7 +283,7 @@ async function deleteShop() {
                 shopStore.shop.id,
             );
 
-            router.push('/account/shops');
+            router.push({ name: 'account.shops.list' });
         } catch (error) {
             alertStore.error(
                 error instanceof Error ? error.message : String(error),

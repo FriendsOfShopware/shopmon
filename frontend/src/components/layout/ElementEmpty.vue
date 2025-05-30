@@ -31,10 +31,7 @@ const props = defineProps<{
         type: string;
         default: 'Add element';
     };
-    route: {
-        type: string;
-        required: true;
-    };
+    route: string | { name: string };
 }>();
 </script>
 

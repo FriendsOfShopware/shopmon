@@ -84,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null;
         localStorage.removeItem('user');
         authClient.signOut();
-        router.push('/account/login');
+        router.push({ name: 'account.login' });
     }
 
     async function refreshUser() {

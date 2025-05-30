@@ -40,7 +40,7 @@
             </button>
 
             <div>
-                <router-link to="login">
+                <router-link :to="{ name: 'account.login' }">
                     Cancel
                 </router-link>
             </div>            
@@ -85,7 +85,7 @@ async function onSubmit(values: { password: string }): Promise<void> {
         );
 
         setTimeout(() => {
-            router.push('/account/login');
+            router.push({ name: 'account.login' });
         }, 2000);
     } catch (error) {
         alertStore.error(
@@ -97,7 +97,7 @@ async function onSubmit(values: { password: string }): Promise<void> {
 const isLoading = ref(true);
 
 function goToResend() {
-    router.push('/account/forgot-password');
+    router.push({ name: 'account.forgot.password' });
 }
 </script>
 

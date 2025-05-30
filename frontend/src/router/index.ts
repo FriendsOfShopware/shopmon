@@ -14,7 +14,7 @@ export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     linkActiveClass: 'active',
     routes: [
-        { path: '/', component: Home },
+        { path: '/', name: 'home', component: Home },
         {
             path: '/account',
             component: Layout,
@@ -107,7 +107,7 @@ export const router = createRouter({
             ],
         },
         // catch all redirect to home page
-        { path: '/:pathMatch(.*)*', redirect: '/' },
+        { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
     ],
 });
 
@@ -131,16 +131,16 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         import.meta.env.VITE_DISABLE_REGISTRATION &&
         (to.name as string) === 'account.register'
     ) {
-        return '/';
+        return { name: 'home' };
     }
 
     if (authRequired && !authStore.user) {
         authStore.returnUrl = to.fullPath;
-        return '/account/login';
+        return { name: 'account.login' };
     }
     if (authStore.user && publicPages.includes(to.name as string)) {
         // redirect to home page if logged in and trying to access a public page
-        return '/';
+        return { name: 'home' };
     }
 });
 
