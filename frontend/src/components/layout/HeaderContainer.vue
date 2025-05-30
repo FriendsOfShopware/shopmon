@@ -5,8 +5,7 @@
             <div class="header-actions">
                 <slot />
             </div>
-
-        </div>
+</div>
     </header>
 </template>
 

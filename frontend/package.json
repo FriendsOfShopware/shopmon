@@ -2,12 +2,16 @@
 	"name": "shopmon-frontend",
 	"private": true,
 	"version": "0.0.0",
+	"type": "module",
 	"scripts": {
 		"dev": "vite --port 3000 --host",
 		"dev:local": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
 		"build": "vite build",
 		"preview": "vite preview",
-		"wrangler": "wrangler"
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"lint:all": "bun run lint && cd .. && bun run biome:lint",
+		"lint:fix-all": "bun run lint:fix && cd .. && bun run biome:format"
 	},
 	"dependencies": {
 		"@headlessui/vue": "1.7.23",
@@ -35,9 +39,13 @@
 		"@typescript-eslint/parser": "8.33.0",
 		"@vitejs/plugin-vue": "5.2.4",
 		"autoprefixer": "10.4.21",
+		"eslint": "^9.27.0",
+		"eslint-config-biome": "^1.9.4",
+		"eslint-plugin-vue": "^10.1.0",
 		"postcss": "^8.5.3",
 		"postcss-nested": "^7.0.2",
 		"typescript": "catalog:",
-		"vite": "6.3.5"
+		"vite": "6.3.5",
+		"vue-eslint-parser": "^10.1.3"
 	}
 }

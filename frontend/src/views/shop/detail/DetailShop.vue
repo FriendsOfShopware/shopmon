@@ -424,10 +424,7 @@ async function loadShop() {
         .filter(
             (version) =>
                 !version.includes('-RC') &&
-                compareVersions(
-                    shop.value?.shopwareVersion || '',
-                    version,
-                ) < 0,
+                compareVersions(shop.value?.shopwareVersion || '', version) < 0,
         );
     latestShopwareVersion.value = shopwareVersions.value[0];
 }

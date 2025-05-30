@@ -5,8 +5,8 @@
 
             <p v-if="subTitle" class="sidebar-subtitle">{{ subTitle }}</p>
 
-            <Alert type="info" v-if="$slots.info">
-                <slot name="info"></slot>
+            <Alert v-if="$slots.info" type="info">
+                <slot name="info" />
             </Alert>
         </div>
         

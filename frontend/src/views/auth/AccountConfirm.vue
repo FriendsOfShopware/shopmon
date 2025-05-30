@@ -5,19 +5,19 @@
         </h2>
     </div>
     
-    <Alert type="info" v-if="isLoading">
+    <Alert v-if="isLoading" type="info">
         Loading...
     </Alert>
 
     <template v-else>
-        <Alert type="success" v-if="success">
+        <Alert v-if="success" type="success">
             Your email address has been confirmed.
             <router-link :to="{ name: 'account.login' }">
                 Login
             </router-link>
         </Alert>
 
-        <Alert type="error" v-else>
+        <Alert v-else type="error">
             The given token has been expired
         </Alert>
     </template>

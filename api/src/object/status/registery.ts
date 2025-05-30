@@ -37,15 +37,15 @@ export interface CheckerChecks {
 }
 
 export class CheckerOutput {
-    public status: SHOP_STATUS = SHOP_STATUS.GREEN;
-    public checks: CheckerChecks[] = [];
+    status: SHOP_STATUS = SHOP_STATUS.GREEN;
+    checks: CheckerChecks[] = [];
     ignores: string[];
 
     constructor(ignores: string[]) {
         this.ignores = ignores;
     }
 
-    public success(
+    success(
         id: string,
         message: string,
         source = 'Shopmon',
@@ -60,7 +60,7 @@ export class CheckerOutput {
         });
     }
 
-    public warning(
+    warning(
         id: string,
         message: string,
         source = 'Shopmon',
@@ -81,7 +81,7 @@ export class CheckerOutput {
         this.status = SHOP_STATUS.YELLOW;
     }
 
-    public error(
+    error(
         id: string,
         message: string,
         source = 'Shopmon',

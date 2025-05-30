@@ -19,7 +19,8 @@ export function useNotifications() {
 
     async function loadNotifications() {
         isLoading.value = true;
-        notifications.value = await trpcClient.account.notification.list.query();
+        notifications.value =
+            await trpcClient.account.notification.list.query();
         isLoading.value = false;
     }
 

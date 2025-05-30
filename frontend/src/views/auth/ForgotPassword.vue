@@ -47,8 +47,7 @@
                 Cancel
             </router-link>
         </div>
-        
-    </vee-form>
+</vee-form>
 </template>
 
 <script setup lang="ts">

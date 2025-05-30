@@ -10,7 +10,7 @@
 
             <component :is="row.link ? 'a' : 'span'" v-bind="row.link ? {href: row.link, target: '_blank'} : {}">
                 {{ row.message }}
-                <icon-fa6-solid:up-right-from-square class="icon icon-xs" v-if="row.link"/>
+                <icon-fa6-solid:up-right-from-square v-if="row.link" class="icon icon-xs" />
             </component>
         </template>
 
@@ -22,7 +22,7 @@
                 type="button"
                 @click="removeIgnore(row.id)"
             >
-                <icon-fa6-solid:eye-slash class="icon icon-error"/>
+                <icon-fa6-solid:eye-slash class="icon icon-error" />
             </button>
 
             <button
@@ -32,7 +32,7 @@
                 type="button"
                 @click="ignoreCheck(row.id)"
             >
-                <icon-fa6-solid:eye class="icon"/>
+                <icon-fa6-solid:eye class="icon" />
             </button>
         </template>
     </data-table>
@@ -50,13 +50,13 @@ const { info } = useAlert();
 
 async function ignoreCheck(id: string) {
     const updatedIgnores = [...shop.ignores, id];
-    
+
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.organizationId,
         shopId: shop.id,
         ignores: updatedIgnores,
     });
-    
+
     // Update local shop data
     shop.ignores = updatedIgnores;
     notificateIgnoreUpdate();
@@ -64,13 +64,13 @@ async function ignoreCheck(id: string) {
 
 async function removeIgnore(id: string) {
     const updatedIgnores = shop.ignores.filter((aid: string) => aid !== id);
-    
+
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.organizationId,
         shopId: shop.id,
         ignores: updatedIgnores,
     });
-    
+
     // Update local shop data
     shop.ignores = updatedIgnores;
     notificateIgnoreUpdate();

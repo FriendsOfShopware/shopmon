@@ -28,7 +28,7 @@
                 :default-sorting="{by: 'name'}"
             >
                 <template #cell-favicon="{ row }">
-                    <img v-if="row.favicon" :src="row.favicon" alt="Shop Logo" class="favicon" />
+                    <img v-if="row.favicon" :src="row.favicon" alt="Shop Logo" class="favicon">
                 </template>
 
                 <template #cell-name="{ row }">

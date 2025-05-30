@@ -92,7 +92,7 @@
                 </li>
             </ul>
 
-            <alert type="error" v-else>
+            <alert v-else type="error">
                 No Changelog data provided
             </alert>
         </template>
@@ -109,7 +109,6 @@ type Extension = RouterOutput['account']['currentUserExtensions'][number];
 const { shop } = defineProps<{
     shop: RouterOutput['organization']['shop']['get'];
 }>();
-
 
 const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);

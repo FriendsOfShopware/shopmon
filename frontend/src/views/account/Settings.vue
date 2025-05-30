@@ -121,10 +121,10 @@
             >
                 <template #cell-actions="{ row }">
                     <button
+                        v-if="row.token !== session.data?.session.token"
                         type="button"
                         class="tooltip-position-left"
                         data-tooltip="Delete"
-                        v-if="row.token !== session.data?.session.token"
                         @click="removeSession(row)"
                     >
                         <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -205,11 +205,11 @@
             <template #content>
                 Please give a name to your new Passkey Device.
                 <field
+                        v-model="passKeyName"
                         type="text"
                         name="name"
                         autocomplete="off"
                         class="field"
-                        v-model="passKeyName"
                     />
             </template>
 

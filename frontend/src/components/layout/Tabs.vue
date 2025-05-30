@@ -8,7 +8,7 @@
                         :class="{ 'tab-active': selected }"
                         type="button"
                     >
-                        <component :is="label.icon" v-if="label.icon" class="icon"/>
+                        <component :is="label.icon" v-if="label.icon" class="icon" />
                         {{ label.title }}
                         <span v-if="label.count !== undefined" class="pill">
                             {{ label.count }}

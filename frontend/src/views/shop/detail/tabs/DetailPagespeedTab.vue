@@ -39,7 +39,7 @@
                     }]"
                 />
             </template>
-            <icon-fa6-solid:minus class="icon" v-else />
+            <icon-fa6-solid:minus v-else class="icon" />
 
             <span class="ml-2">{{ parseInt(row[cellKey]) }}</span>
         </template>
