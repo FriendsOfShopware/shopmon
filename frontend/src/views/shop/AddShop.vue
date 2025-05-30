@@ -34,7 +34,7 @@
                         class="field"
                     >
                         <option
-                            v-for="organization in authStore.user.organizations"
+                            v-for="organization in authStore.organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >
@@ -165,7 +165,7 @@ const schema = Yup.object().shape({
 });
 
 const shops = {
-    orgId: authStore.user?.organizations[0]?.id,
+    orgId: authStore.organizations?.[0].id,
 };
 
 async function onSubmit(values: RouterInput['organization']['shop']['create']) {

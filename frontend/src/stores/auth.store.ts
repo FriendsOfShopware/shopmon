@@ -1,63 +1,80 @@
+import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { router } from '@/router';
-import { client } from '@passwordless-id/webauthn';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useNotificationStore } from './notification.store';
 
 export const useAuthStore = defineStore('auth', () => {
+    // const {
+    //     session,
+    //     isPending, //loading state
+    //     error, //error object
+    //     refetch //refetch the session
+    // } = authClient.useSession();
+
     const user = ref<RouterOutput['account']['currentUser'] | null>(
         JSON.parse(localStorage.getItem('user') as string),
     );
-    const returnUrl = ref<string | null>(null);
-    const access_token = ref<string | null>(
-        localStorage.getItem('access_token'),
-    );
-    const passkeys = ref<RouterOutput['auth']['passkey']['listDevices'] | null>(
-        null,
+
+    const userAvatar = ref(
+        'https://api.dicebear.com/7.x/personas/svg/?seed=default?d=identicon',
     );
 
+    const organizations = ref<
+        RouterOutput['account']['listOrganizations'] | null
+    >(null);
+
+    const returnUrl = ref<string | null>(null);
+
+    authClient.getSession().then(async (session) => {
+        if (session.data?.user) {
+            trpcClient.account.listOrganizations.query().then((orgs) => {
+                organizations.value = orgs;
+            });
+
+            const userEmailSha256 = Array.from(
+                new Uint8Array(
+                    await crypto.subtle.digest(
+                        'SHA-256',
+                        new TextEncoder().encode(session.data.user.email),
+                    ),
+                ),
+            )
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+
+            userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${userEmailSha256}?d=identicon`;
+
+            trpcClient.account.currentUser.query().then((currentUser) => {
+                user.value = currentUser;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+            });
+        } else {
+            user.value = null;
+            localStorage.removeItem('user');
+        }
+    });
+
     const isAuthenticated = computed(() => {
-        return user.value !== null && access_token.value !== null;
+        return user.value !== null;
     });
 
     async function login(email: string, password: string) {
-        const token = await trpcClient.auth.loginWithPassword.mutate({
+        await authClient.signIn.email({
             email,
             password,
         });
 
-        localStorage.setItem('access_token', token);
-        access_token.value = token;
-
-        const userData = await trpcClient.account.currentUser.query();
-        user.value = userData;
-        localStorage.setItem('user', JSON.stringify(userData));
+        user.value = await trpcClient.account.currentUser.query();
 
         const notificationStore = useNotificationStore();
         await notificationStore.loadNotifications();
     }
 
     async function loginWithPasskey() {
-        const challenge = await trpcClient.auth.passkey.challenge.mutate();
-
-        const authentication = await client.authenticate({
-            challenge,
-            userVerification: 'required',
-            timeout: 60000,
-        });
-
-        const token =
-            await trpcClient.auth.passkey.authenticateDevice.mutate(
-                authentication,
-            );
-
-        localStorage.setItem('access_token', token);
-        access_token.value = token;
-
-        const userData = await trpcClient.account.currentUser.query();
-        user.value = userData;
-        localStorage.setItem('user', JSON.stringify(userData));
+        await authClient.signIn.passkey();
+        user.value = await trpcClient.account.currentUser.query();
 
         const notificationStore = useNotificationStore();
         await notificationStore.loadNotifications();
@@ -65,9 +82,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function logout() {
         user.value = null;
-        access_token.value = null;
         localStorage.removeItem('user');
-        localStorage.removeItem('access_token');
+        authClient.signOut();
         router.push('/account/login');
     }
 
@@ -75,53 +91,9 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             const userData = await trpcClient.account.currentUser.query();
             user.value = userData;
-            localStorage.setItem('user', JSON.stringify(userData));
         } catch (error) {
             logout();
         }
-    }
-
-    async function loadPasskeys() {
-        passkeys.value = await trpcClient.auth.passkey.listDevices.query();
-    }
-
-    async function registerPasskey() {
-        const challenge = await trpcClient.auth.passkey.challenge.mutate();
-
-        const registration = await client.register({
-            challenge,
-            user: user.value?.email || '',
-            userVerification: 'required',
-            timeout: 60000,
-            attestation: false,
-        });
-
-        await trpcClient.auth.passkey.registerDevice.mutate(registration);
-        await loadPasskeys();
-    }
-
-    async function deletePasskey(credentialId: string) {
-        await trpcClient.auth.passkey.removeDevice.mutate(credentialId);
-        await loadPasskeys();
-    }
-
-    async function confirmMail(token: string) {
-        await trpcClient.auth.confirmVerification.mutate(token);
-    }
-
-    async function resetPassword(email: string) {
-        await trpcClient.auth.passwordResetRequest.mutate(email);
-    }
-
-    async function resetAvailable(token: string) {
-        return await trpcClient.auth.passwordResetAvailable.mutate(token);
-    }
-
-    async function confirmResetPassword(token: string, password: string) {
-        return await trpcClient.auth.passwordResetConfirm.mutate({
-            token,
-            password,
-        });
     }
 
     async function register(user: {
@@ -129,26 +101,23 @@ export const useAuthStore = defineStore('auth', () => {
         password: string;
         displayName: string;
     }) {
-        trpcClient.auth.register.mutate(user);
+        await authClient.signUp.email({
+            email: user.email,
+            password: user.password,
+            name: user.displayName,
+        });
     }
 
     return {
         user,
+        userAvatar,
+        organizations,
         returnUrl,
-        access_token,
-        passkeys,
         isAuthenticated,
         login,
         loginWithPasskey,
         logout,
         refreshUser,
-        loadPasskeys,
-        registerPasskey,
-        deletePasskey,
-        resetPassword,
-        resetAvailable,
-        confirmResetPassword,
-        confirmMail,
         register,
     };
 });

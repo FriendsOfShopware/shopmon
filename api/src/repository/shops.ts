@@ -26,7 +26,7 @@ export interface Shop {
 }
 
 export interface User {
-    id: number;
+    id: string;
     displayName: string;
     email: string;
 }
@@ -72,7 +72,7 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
     const result = await con
         .select({
             id: schema.userToOrganization.userId,
-            displayName: schema.user.displayName,
+            displayName: schema.user.name,
             email: schema.user.email,
         })
         .from(schema.shop)

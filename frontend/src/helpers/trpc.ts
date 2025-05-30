@@ -1,11 +1,11 @@
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../../../api/src/trpc/router';
 
 export type RouterOutput = inferRouterOutputs<AppRouter>;
 export type RouterInput = inferRouterInputs<AppRouter>;
 
-export const trpcClient = createTRPCProxyClient<AppRouter>({
+export const trpcClient = createTRPCClient<AppRouter>({
     links: [
         httpBatchLink({
             url: '/trpc',
@@ -15,10 +15,7 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
             ) => {
                 const resp = await fetch(requestInfo, init);
 
-                if (
-                    resp.status === 401 &&
-                    localStorage.getItem('access_token')
-                ) {
+                if (resp.status === 401) {
                     const clonedResp = resp.clone();
                     let json = (await clonedResp.json()) as {
                         error: { message: string };
@@ -31,7 +28,6 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
 
                     for (const error of json) {
                         if (error.error.message === 'Token expired') {
-                            localStorage.removeItem('access_token');
                             localStorage.removeItem('user');
                             window.location.reload();
                         }
@@ -39,15 +35,6 @@ export const trpcClient = createTRPCProxyClient<AppRouter>({
                 }
 
                 return resp;
-            },
-            async headers() {
-                const headers: { Authorization?: string } = {};
-
-                if (localStorage.getItem('access_token')) {
-                    headers.Authorization = `${localStorage.getItem('access_token')}`;
-                }
-
-                return headers;
             },
         }),
     ],

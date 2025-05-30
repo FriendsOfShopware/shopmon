@@ -53,7 +53,5 @@ import { useAuthStore } from '@/stores/auth.store';
 import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
-
-const organizations = user.value?.organizations;
+const { organizations, user } = storeToRefs(authStore);
 </script>

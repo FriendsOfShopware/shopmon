@@ -181,13 +181,13 @@ const router = useRouter();
 const authStore = useAuthStore();
 const organizationStore = useOrganizationStore();
 const alertStore = useAlertStore();
-const { user } = storeToRefs(authStore);
+const { user, organizations } = storeToRefs(authStore);
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
     10,
 );
-const organization = user.value?.organizations.find(
+const organization = organizations.value?.find(
     (organization) => organization.id === organizationId,
 );
 const isOwner = organization?.ownerId === user.value?.id;
@@ -224,7 +224,7 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
     isSubmitting.value = false;
 }
 
-async function onRemoveMember(userId: number) {
+async function onRemoveMember(userId: string) {
     if (organization) {
         try {
             await organizationStore.removeMember(organization.id, userId);

@@ -55,7 +55,7 @@
                         :value="shopStore.shop.organizationId"
                     >
                         <option
-                            v-for="organization in authStore.user.organizations"
+                            v-for="organization in authStore.organizations"
                             :key="organization.id"
                             :value="organization.id"
                         >

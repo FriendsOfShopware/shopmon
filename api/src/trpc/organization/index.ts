@@ -14,7 +14,7 @@ export const organizationRouter = router({
         .input(z.string())
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
-            return await Organizations.create(ctx.drizzle, input, ctx.user);
+            return await Organizations.create(ctx.drizzle, input, ctx.user.id);
         }),
     update: publicProcedure
         .input(
@@ -73,7 +73,7 @@ export const organizationRouter = router({
         .input(
             z.object({
                 orgId: z.number(),
-                userId: z.number(),
+                userId: z.string(),
             }),
         )
         .use(loggedInUserMiddleware)

@@ -129,13 +129,13 @@ const alertStore = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 
-const { user } = storeToRefs(authStore);
+const { organizations } = storeToRefs(authStore);
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
     10,
 );
-const organization = user.value?.organizations.find(
+const organization = organizations.value?.find(
     (organization) => organization.id === organizationId,
 );
 
@@ -169,7 +169,7 @@ async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
 async function deleteOrganization() {
     if (organization) {
         try {
-            await organizationStore.delete(organization.id);
+            await organizationStore.deleteOrganization(organization.id);
 
             await router.push({ name: 'account.organizations.list' });
         } catch (error) {

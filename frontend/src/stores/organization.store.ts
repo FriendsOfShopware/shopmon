@@ -29,7 +29,7 @@ export const useOrganizationStore = defineStore('organization', () => {
         await loadMembers(orgId);
     }
 
-    async function removeMember(orgId: number, userId: number) {
+    async function removeMember(orgId: number, userId: string) {
         await trpcClient.organization.removeMember.mutate({ orgId, userId });
         const authStore = useAuthStore();
         await authStore.refreshUser();

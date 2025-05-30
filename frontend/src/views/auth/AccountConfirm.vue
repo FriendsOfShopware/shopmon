@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth.store';
+import { authClient } from '@/helpers/auth-client';
 </script>
 
 <script lang="ts">
@@ -36,10 +36,8 @@ export default {
         };
     },
     async created() {
-        const authStore = useAuthStore();
-
         try {
-            await authStore.confirmMail(this.$route.params.token as string);
+            await authClient.verifyEmail({query: {token: this.$route.params.token as string}});
             this.success = true;
         } catch (e) {
             this.success = false;

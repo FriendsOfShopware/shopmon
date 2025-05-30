@@ -4,14 +4,14 @@ import { type Drizzle, getLastInsertId, schema } from '../db';
 import Users from './users';
 
 interface OrganizationMember {
-    id: number;
+    id: string;
     email: string;
 }
 
 async function create(
     con: Drizzle,
     name: string,
-    ownerId: number,
+    ownerId: string,
 ): Promise<string> {
     const organizationInsertResult = await con
         .insert(schema.organization)
@@ -40,7 +40,7 @@ async function listMembers(
     const result = await con
         .select({
             id: schema.user.id,
-            displayName: schema.user.displayName,
+            displayName: schema.user.name,
             email: schema.user.email,
         })
         .from(schema.user)
@@ -87,13 +87,13 @@ async function addMember(
 async function removeMember(
     con: Drizzle,
     organizationId: number,
-    userId: number,
+    userId: string,
 ): Promise<void> {
     const ownerOrganization = await con.query.organization.findFirst({
         columns: {
             ownerId: true,
         },
-        where: eq(schema.organization.id, userId),
+        where: eq(schema.organization.id, organizationId),
     });
 
     if (ownerOrganization === undefined) {

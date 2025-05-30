@@ -231,7 +231,7 @@
             <template #content>
                 <select
                     class="field"
-                    @change="event => loadUpdateWizard((event.target as HTMLSelectElement).value)"
+                    @change="(event: HTMLSelectElement) => loadUpdateWizard(event.value)"
                 >
                     <option disabled selected>
                         Select update Version
@@ -357,12 +357,11 @@
 import { compareVersions } from 'compare-versions';
 import { createNewSortInstance } from 'fast-sort';
 
+import type { RouterOutput } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useShopStore } from '@/stores/shop.store';
 import { type Ref, ref } from 'vue';
 import { useRoute } from 'vue-router';
-
-import type { Extension, ExtensionCompatibilitys } from '@/types/shop';
 
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 
@@ -380,13 +379,21 @@ import DetailPagespeedTab from '@/views/shop/detail/tabs/DetailPagespeedTab.vue'
 import DetailQueueTab from '@/views/shop/detail/tabs/DetailQueueTab.vue';
 import DetailScheduledTasksTab from '@/views/shop/detail/tabs/DetailScheduledTasksTab.vue';
 
+type ExtensionWithCompatibility = NonNullable<
+    RouterOutput['organization']['shop']['get']['extensions']
+>[number] & {
+    compatibility: {
+        label: string;
+    } | null;
+};
+
 const route = useRoute();
 const shopStore = useShopStore();
 const alertStore = useAlertStore();
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
-const dialogUpdateWizard: Ref<ExtensionCompatibilitys[] | null> = ref(null);
+const dialogUpdateWizard: Ref<ExtensionWithCompatibility[] | null> = ref(null);
 
 const showShopRefreshModal: Ref<boolean> = ref(false);
 const shopwareVersions: Ref<string[] | null> = ref(null);
@@ -409,7 +416,10 @@ async function loadShop() {
         .filter(
             (version) =>
                 !version.includes('-RC') &&
-                compareVersions(shopStore.shop?.shopwareVersion, version) < 0,
+                compareVersions(
+                    shopStore.shop?.shopwareVersion || '',
+                    version,
+                ) < 0,
         );
     latestShopwareVersion.value = shopwareVersions.value[0];
 }
@@ -476,7 +486,9 @@ async function loadUpdateWizard(version: string) {
     const pluginCompatibility =
         await trpcClient.info.checkExtensionCompatibility.query(body);
 
-    const extensions = JSON.parse(JSON.stringify(shopStore.shop?.extensions));
+    const extensions = JSON.parse(
+        JSON.stringify(shopStore.shop?.extensions),
+    ) as ExtensionWithCompatibility[];
 
     for (const extension of extensions) {
         const compatibility = pluginCompatibility.find(

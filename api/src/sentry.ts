@@ -7,5 +7,5 @@ Sentry.init({
     integrations: [Sentry.nativeNodeFetchIntegration()],
     _experiments: {
         enableLogs: true,
-    }
+    },
 });

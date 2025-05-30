@@ -28,7 +28,7 @@ export const organizationMiddleware = t.middleware(async (opts) => {
         },
         where: and(
             eq(schema.userToOrganization.organizationId, input.orgId),
-            eq(schema.userToOrganization.userId, ctx.user),
+            eq(schema.userToOrganization.userId, ctx.user.id),
         ),
     });
 
@@ -53,7 +53,7 @@ export const organizationAdminMiddleware = t.middleware(async (opts) => {
         .where(eq(schema.organization.id, input.orgId))
         .get();
 
-    if (!result || result.ownerId !== ctx.user) {
+    if (!result || result.ownerId !== ctx.user.id) {
         throw new TRPCError({
             code: 'NOT_FOUND',
             message: 'Your are not the owner of the organization',
