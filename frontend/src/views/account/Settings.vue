@@ -76,12 +76,12 @@
 
         <form-group title="Passkey Devices" class="form-group-table">
             <data-table
-                v-if="authStore.passkeys"
+                v-if="passkeys && passkeys.length"
                 :columns="[
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'createdAt', name: 'Created At', sortable: true },
                 ]"
-                :data="authStore.passkeys"
+                :data="passkeys"
             >
                 <template #cell-actions="{ row }">
                     <button
@@ -100,7 +100,7 @@
             <button
                 type="button"
                 class="btn btn-primary"
-                @click="createPasskey"
+                @click="showPasskeyCreationModal = true"
             >
                 <icon-material-symbols:passkey
                     class="icon icon-passkey"
@@ -109,6 +109,29 @@
                 Add a new Device
             </button>
         </div>
+
+        <form-group title="Sessions" class="form-group-table">
+            <data-table
+                v-if="sessions && sessions.length"
+                :columns="[
+                    { key: 'userAgent', name: 'User Agent', sortable: true },
+                    { key: 'createdAt', name: 'Created At', sortable: true },
+                ]"
+                :data="sessions"
+            >
+                <template #cell-actions="{ row }">
+                    <button
+                        type="button"
+                        class="tooltip-position-left"
+                        data-tooltip="Delete"
+                        v-if="row.token !== currentSessionId"
+                        @click="removeSession(row)"
+                    >
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+                    </button>
+                </template>
+            </data-table>
+        </form-group>
 
         <form-group title="Deleting your Account">
                 <p>
@@ -165,30 +188,94 @@
                 </button>
             </template>
         </Modal>
+
+        <Modal :show="showPasskeyCreationModal"
+            @close="showPasskeyCreationModal = false">
+            <template #title>
+                Add a Passkey Device
+            </template>
+
+            <template #icon>
+                <icon-fa6-solid:key
+                    class="icon icon-info"
+                    aria-hidden="true"
+                />
+            </template>
+
+            <template #content>
+                Please give a name to your new Passkey Device.
+                <field
+                        type="text"
+                        name="name"
+                        autocomplete="off"
+                        class="field"
+                        v-model="passKeyName"
+                    />
+            </template>
+
+            <template #footer>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    @click="createPasskey"
+                >
+                    Create
+                </button>
+
+                <button
+                    ref="cancelButtonRef"
+                    type="button"
+                    class="btn btn-cancel"
+                    @click="showPasskeyCreationModal = false"
+                >
+                    Cancel
+                </button>
+            </template>
+        </Modal>
     </main-container>
 </template>
 
 <script setup lang="ts">
+import type { Passkey } from 'better-auth/plugins/passkey';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
 import { useAlertStore } from '@/stores/alert.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { client } from '@passwordless-id/webauthn';
+import type { Session } from 'better-auth/types';
 
 const authStore = useAuthStore();
 const alertStore = useAlertStore();
+const currentSessionId = ref<string | null>(null);
 
-authStore.loadPasskeys();
+authClient.getSession().then((session) => {
+    currentSessionId.value = session.data?.session.token || null;
+});
+
+const passKeyName = ref('');
+
+const passkeys = ref<Passkey[] | null>([]);
+const sessions = ref<Session[] | null>([]);
+
+authClient.passkey.listUserPasskeys().then((data) => {
+    passkeys.value = data.data;
+});
+
+authClient.listSessions().then((data) => {
+    sessions.value = data.data;
+});
 
 const user = {
     displayName: authStore.user?.displayName,
     email: authStore.user?.email,
+    currentPassword: '',
 };
 
 const showAccountDeletionModal = ref(false);
+const showPasskeyCreationModal = ref(false);
 
 const schema = Yup.object().shape({
     currentPassword: Yup.string().required('Current password is required'),
@@ -203,23 +290,34 @@ const schema = Yup.object().shape({
 });
 
 async function onSubmit(values: {
-    displayName: string;
+    currentPassword: string;
+    displayName?: string;
     email: string;
     password?: string;
 }) {
-    try {
-        await authStore.updateProfile(values);
-        alertStore.success('User updated');
-    } catch (error) {
-        alertStore.error(
-            error instanceof Error ? error.message : String(error),
-        );
+    await authClient.changeEmail({
+        newEmail: values.email,
+    });
+
+    if (values.displayName) {
+        await authClient.updateUser({
+            name: values.displayName,
+        });
+    }
+
+    if (values.password) {
+        await authClient.changePassword({
+            currentPassword: values.currentPassword,
+            newPassword: values.password,
+            revokeOtherSessions: true,
+        });
     }
 }
 
 async function deleteUser() {
     try {
-        await authStore.delete();
+        await trpcClient.account.deleteCurrentUser.mutate();
+        await authClient.deleteUser();
     } catch (error) {
         alertStore.error(
             error instanceof Error ? error.message : String(error),
@@ -230,22 +328,29 @@ async function deleteUser() {
 }
 
 async function createPasskey() {
-    const challenge = await trpcClient.auth.passkey.challenge.mutate();
+    if (!passKeyName.value) {
+        alertStore.error('Please provide a name for the Passkey Device.');
+        return;
+    }
 
-    const registration = await client.register({
-        challenge,
-        user: authStore.user?.email || '',
-        userVerification: 'required',
-        timeout: 60000,
-        attestation: false,
+    await authClient.passkey.addPasskey({ name: passKeyName.value });
+    authClient.passkey.listUserPasskeys().then((data) => {
+        passkeys.value = data.data;
     });
-
-    await trpcClient.auth.passkey.registerDevice.mutate(registration);
-    await authStore.loadPasskeys();
+    showPasskeyCreationModal.value = false;
 }
 
 async function removePasskey(id: string) {
-    await trpcClient.auth.passkey.removeDevice.mutate(id);
-    await authStore.loadPasskeys();
+    await authClient.passkey.deletePasskey({ id });
+    authClient.passkey.listUserPasskeys().then((data) => {
+        passkeys.value = data.data;
+    });
+}
+
+async function removeSession(session: Session) {
+    await authClient.revokeSession({ token: session.token });
+    authClient.listSessions().then((data) => {
+        sessions.value = data.data;
+    });
 }
 </script>

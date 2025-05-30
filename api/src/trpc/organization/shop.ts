@@ -28,7 +28,7 @@ export const shopRouter = router({
         )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
-        .query(async ({ ctx }) => {
+        .query(async ({ ctx, input }) => {
             const result = await ctx.drizzle.query.shop.findMany({
                 columns: {
                     id: true,
@@ -41,7 +41,7 @@ export const shopRouter = router({
                     lastScrapedError: true,
                     shopwareVersion: true,
                 },
-                where: eq(schema.shop.organizationId, ctx.user),
+                where: eq(schema.shop.organizationId, input.orgId),
             });
 
             return result === undefined ? [] : result;
@@ -230,7 +230,7 @@ export const shopRouter = router({
                         },
                         where: and(
                             eq(schema.organization.id, input.newOrgId),
-                            eq(schema.organization.ownerId, ctx.user),
+                            eq(schema.organization.ownerId, ctx.user.id),
                         ),
                     });
 
@@ -241,7 +241,7 @@ export const shopRouter = router({
                     });
                 }
 
-                if (organization.ownerId !== ctx.user) {
+                if (organization.ownerId !== ctx.user.id) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'You are not the owner of this organization',

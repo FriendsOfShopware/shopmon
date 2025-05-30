@@ -99,6 +99,7 @@
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { formatDateTime } from '@/helpers/formatter';
+import type { RouterOutput } from '@/helpers/trpc';
 import { useExtensionStore } from '@/stores/extension.store';
 import { ref } from 'vue';
 
@@ -107,7 +108,9 @@ const term = ref('');
 
 extensionStore.loadExtensions();
 
-function getExtensionState(extension) {
+function getExtensionState(
+    extension: RouterOutput['account']['currentUserExtensions'][number],
+) {
     if (!extension.installed) {
         return 'not installed';
     }

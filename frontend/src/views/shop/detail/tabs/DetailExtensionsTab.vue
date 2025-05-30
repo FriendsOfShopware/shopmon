@@ -101,9 +101,11 @@
 
 <script setup lang="ts">
 import { formatDate, formatDateTime } from '@/helpers/formatter';
+import type { RouterOutput } from '@/helpers/trpc';
 import { useShopStore } from '@/stores/shop.store';
-import type { Extension } from '@/types/shop';
+
 import { type Ref, ref } from 'vue';
+type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
 const shopStore = useShopStore();
 
@@ -115,7 +117,7 @@ function openExtensionChangelog(extension: Extension | null) {
     viewExtensionChangelogDialog.value = true;
 }
 
-function getExtensionState(extension) {
+function getExtensionState(extension: Extension) {
     if (!extension.installed) {
         return 'not installed';
     }

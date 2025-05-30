@@ -5,7 +5,7 @@ import Organization from './organization';
 async function existsByEmail(
     con: Drizzle,
     email: string,
-): Promise<number | null> {
+): Promise<string | null> {
     const result = await con.query.user.findFirst({
         columns: {
             id: true,
@@ -16,7 +16,7 @@ async function existsByEmail(
     return result ? result.id : null;
 }
 
-async function existsById(con: Drizzle, id: number): Promise<boolean> {
+async function existsById(con: Drizzle, id: string): Promise<boolean> {
     const result = await con.query.user.findFirst({
         columns: {
             id: true,
@@ -27,7 +27,7 @@ async function existsById(con: Drizzle, id: number): Promise<boolean> {
     return result !== undefined;
 }
 
-async function deleteById(con: Drizzle, id: number): Promise<void> {
+async function deleteById(con: Drizzle, id: string): Promise<void> {
     const ownerOrganizations = await con.query.organization.findMany({
         columns: {
             id: true,
@@ -53,16 +53,9 @@ async function deleteById(con: Drizzle, id: number): Promise<void> {
         .execute();
 }
 
-async function revokeUserSessions(id: number): Promise<void> {
-    await getConnection()
-        .delete(schema.sessions)
-        .where(eq(schema.sessions.userId, id))
-        .execute();
-}
-
 async function createNotification(
     con: Drizzle,
-    userId: number,
+    userId: string,
     key: string,
     notification: Omit<
         typeof schema.userNotification.$inferInsert,
@@ -110,6 +103,5 @@ export default {
     existsByEmail,
     existsById,
     deleteById,
-    revokeUserSessions,
     createNotification,
 };

@@ -55,19 +55,18 @@
 import { Field, Form as VeeForm } from 'vee-validate';
 import * as Yup from 'yup';
 
+import { authClient } from '@/helpers/auth-client';
 import { useAlertStore } from '@/stores/alert.store';
-import { useAuthStore } from '@/stores/auth.store';
 
 const schema = Yup.object().shape({
     email: Yup.string().required('Email is required'),
 });
 
-async function onSubmit(values): Promise<void> {
-    const usersStore = useAuthStore();
+async function onSubmit(values: { email: string }): Promise<void> {
     const alertStore = useAlertStore();
 
     try {
-        await usersStore.resetPassword(values.email);
+        await authClient.forgetPassword({ email: values.email });
         alertStore.success('Password reset email sent');
     } catch (error) {
         alertStore.error(

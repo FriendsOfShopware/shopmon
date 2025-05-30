@@ -160,7 +160,7 @@
                         <span class="sr-only">Open user menu</span>
                         <img
                             class="user-avatar"
-                            :src="authStore.user.avatar"
+                            :src="authStore.userAvatar"
                             alt=""
                         >
                     </menu-button>
@@ -241,7 +241,7 @@
                 <div class="nav-mobile-user-info">
                     <div class="nav-mobile-user-avatar">
                         <img
-                            :src="authStore.user.avatar"
+                            :src="authStore.userAvatar"
                             alt="avatar"
                             class="user-avatar"
                         >
@@ -302,6 +302,7 @@ import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
 
 import { formatDateTime } from '@/helpers/formatter';
+import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
@@ -323,11 +324,19 @@ const userNavigation = [
     { name: 'Logout', route: '/logout', icon: FaPowerOff },
 ];
 
-function isActive(item, $route) {
+function isActive(
+    item: { route: string; active?: string },
+    $route: RouteLocationNormalizedLoaded,
+) {
     if (item.route === $route.path) {
         return true;
     }
-    if ($route.name && item.active && $route.name.match(item.active)) {
+    if (
+        $route.name &&
+        typeof $route.name === 'string' &&
+        item.active &&
+        $route.name.match(item.active)
+    ) {
         return true;
     }
 

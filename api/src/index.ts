@@ -3,6 +3,7 @@ import { promises as fs, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
+import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 
@@ -13,6 +14,11 @@ if (!existsSync(filesDir)) {
 }
 
 const app = new Hono();
+
+// Better Auth routes
+app.on(['POST', 'GET'], '/auth/*', (c) => {
+    return auth.handler(c.req.raw);
+});
 
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));

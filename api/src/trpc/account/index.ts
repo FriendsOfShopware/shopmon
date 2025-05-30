@@ -1,7 +1,4 @@
-import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
-import { z } from 'zod';
-import { sha256 } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
@@ -50,26 +47,20 @@ export const accountRouter = router({
             const user = await ctx.drizzle
                 .select({
                     id: schema.user.id,
-                    displayName: schema.user.displayName,
+                    displayName: schema.user.name,
                     email: schema.user.email,
                     createdAt: schema.user.createdAt,
                 })
                 .from(schema.user)
-                .where(eq(schema.user.id, ctx.user))
+                .where(eq(schema.user.id, ctx.user.id))
                 .get();
 
-            if (user === undefined) {
-                throw new TRPCError({
-                    code: 'NOT_FOUND',
-                    message: 'User not found',
-                });
-            }
-
-            const emailMd5 = await sha256(user.displayName + user.email);
-
-            const avatar = `https://api.dicebear.com/7.x/personas/svg/?seed=${emailMd5}?d=identicon`;
-
-            const organizations = await ctx.drizzle
+            return user;
+        }),
+    listOrganizations: publicProcedure
+        .use(loggedInUserMiddleware)
+        .query(async ({ ctx }) => {
+            return ctx.drizzle
                 .select({
                     id: schema.organization.id,
                     name: schema.organization.name,
@@ -86,87 +77,13 @@ export const accountRouter = router({
                         schema.organization.id,
                     ),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user.id))
                 .all();
-
-            return { ...user, avatar, organizations };
-        }),
-    updateCurrentUser: publicProcedure
-        .use(loggedInUserMiddleware)
-        .input(
-            z.object({
-                currentPassword: z.string().min(8),
-                newPassword: z.string().min(8).optional(),
-                email: z.string().email().optional(),
-                displayName: z.string().min(5).optional(),
-            }),
-        )
-        .mutation(async ({ ctx, input }) => {
-            const user = await ctx.drizzle.query.user.findFirst({
-                columns: {
-                    id: true,
-                    password: true,
-                },
-                where: eq(schema.user.id, ctx.user),
-            });
-
-            if (user === undefined) {
-                throw new TRPCError({
-                    code: 'NOT_FOUND',
-                    message: 'User not found',
-                });
-            }
-
-            if (
-                !(await Bun.password.verify(
-                    input.currentPassword,
-                    user.password,
-                ))
-            ) {
-                throw new TRPCError({
-                    code: 'BAD_REQUEST',
-                    message: 'Invalid password',
-                });
-            }
-
-            const updates: {
-                password?: string;
-                displayName?: string;
-                email?: string;
-            } = {};
-
-            if (input.newPassword !== undefined) {
-                const hash = await Bun.password.hash(input.newPassword, {
-                    algorithm: 'bcrypt',
-                });
-
-                await Users.revokeUserSessions(ctx.user);
-                updates.password = hash;
-            }
-
-            if (input.email !== undefined) {
-                updates.email = input.email;
-            }
-
-            if (input.displayName !== undefined) {
-                updates.displayName = input.displayName;
-            }
-
-            if (Object.keys(updates).length !== 0) {
-                await ctx.drizzle
-                    .update(schema.user)
-                    .set(updates)
-                    .where(eq(schema.user.id, ctx.user))
-                    .execute();
-            }
-
-            return true;
         }),
     deleteCurrentUser: publicProcedure
         .use(loggedInUserMiddleware)
         .mutation(async ({ ctx }) => {
-            await Users.revokeUserSessions(ctx.user);
-            await Users.deleteById(ctx.drizzle, ctx.user);
+            await Users.deleteById(ctx.drizzle, ctx.user.id);
 
             return true;
         }),
@@ -202,7 +119,7 @@ export const accountRouter = router({
                     schema.organization,
                     eq(schema.organization.id, schema.shop.organizationId),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user.id))
                 .orderBy(schema.shop.name)
                 .all();
         }),
@@ -233,7 +150,7 @@ export const accountRouter = router({
                     schema.shopChangelog,
                     eq(schema.shopChangelog.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user.id))
                 .orderBy(desc(schema.shopChangelog.date))
                 .limit(10)
                 .all();
@@ -263,7 +180,7 @@ export const accountRouter = router({
                     schema.shopScrapeInfo,
                     eq(schema.shopScrapeInfo.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user))
+                .where(eq(schema.userToOrganization.userId, ctx.user.id))
                 .orderBy(schema.shop.name)
                 .all();
 

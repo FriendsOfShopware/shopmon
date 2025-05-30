@@ -97,18 +97,9 @@ export const shopChangelog = sqliteTable('shop_changelog', {
 export const organization = sqliteTable('organization', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     name: text('name').notNull(),
-    ownerId: integer('owner_id')
+    ownerId: text('owner_id')
         .notNull()
         .references(() => user.id),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-});
-
-export const user = sqliteTable('user', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    displayName: text('displayName').notNull(),
-    email: text('email').notNull().unique(),
-    password: text('password').notNull(),
-    verifyCode: text('verify_code'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -116,7 +107,7 @@ export const userNotification = sqliteTable(
     'user_notification',
     {
         id: integer('id').primaryKey({ autoIncrement: true }),
-        userId: integer('user_id')
+        userId: text('user_id')
             .notNull()
             .references(() => user.id),
         key: text('key').notNull(),
@@ -136,20 +127,89 @@ export const userNotification = sqliteTable(
     },
 );
 
-export const userPasskeys = sqliteTable('user_passkeys', {
+export const user = sqliteTable('user', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
-    userId: integer('userId')
-        .notNull()
-        .references(() => user.id),
-    key: text('key', { mode: 'json' }).notNull().$type<RegistrationInfo>(),
+    email: text('email').notNull().unique(),
+    emailVerified: integer('email_verified', { mode: 'boolean' })
+        .$defaultFn(() => !1)
+        .notNull(),
+    image: text('image'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+});
+
+export const session = sqliteTable('session', {
+    id: text('id').primaryKey(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    token: text('token').notNull().unique(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+});
+
+export const account = sqliteTable('account', {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: integer('access_token_expires_at', {
+        mode: 'timestamp',
+    }),
+    refreshTokenExpiresAt: integer('refresh_token_expires_at', {
+        mode: 'timestamp',
+    }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const verification = sqliteTable('verification', {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
+        () => new Date(),
+    ),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
+        () => new Date(),
+    ),
+});
+
+export const passkey = sqliteTable('passkey', {
+    id: text('id').primaryKey(),
+    name: text('name'),
+    publicKey: text('public_key').notNull(),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_i_d').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
+    transports: text('transports'),
+    createdAt: integer('created_at', { mode: 'timestamp' }),
 });
 
 export const userToOrganization = sqliteTable(
     'user_to_organization',
     {
-        userId: integer('user_id')
+        userId: text('user_id')
             .notNull()
             .references(() => user.id),
         organizationId: integer('organization_id')
@@ -163,26 +223,7 @@ export const userToOrganization = sqliteTable(
     },
 );
 
-export const sessions = sqliteTable('sessions', {
-    id: text('id').primaryKey(),
-    userId: integer('user_id')
-        .notNull()
-        .references(() => user.id),
-    expires: integer('expires', { mode: 'timestamp' }).notNull(),
-});
-
-export const passwordResetTokens = sqliteTable('password_reset_tokens', {
-    id: text('id').primaryKey(),
-    userId: integer('user_id')
-        .notNull()
-        .references(() => user.id),
-    token: text('token').notNull().unique(),
-    expires: integer('expires', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-});
-
 export const schema = {
-    user,
     shop,
     shopPageSpeed,
     shopScrapeInfo,
@@ -190,16 +231,20 @@ export const schema = {
     organization,
     userNotification,
     userToOrganization,
-    userPasskeys,
-    sessions,
-    passwordResetTokens,
+
+    // Better Auth
+    user,
+    session,
+    account,
+    verification,
+    passkey,
 };
 
 export type Drizzle = BunSQLiteDatabase<typeof schema>;
 let drizzle: Drizzle | undefined = undefined;
 let dbClient: Database | undefined = undefined;
 
-export function getConnection() {
+export function getConnection(applyPragmas = true) {
     if (drizzle !== undefined) {
         return drizzle;
     }
@@ -207,21 +252,22 @@ export function getConnection() {
     const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
     dbClient = new Database(dbPath);
 
-    // SQLite optimizations
-    // Enable Write-Ahead Logging for better concurrency
-    dbClient.exec('PRAGMA journal_mode = WAL');
-    // Increase cache size (negative value = KB, so -64000 = 64MB)
-    dbClient.exec('PRAGMA cache_size = -64000');
-    // Enable foreign key constraints
-    dbClient.exec('PRAGMA foreign_keys = ON');
-    // Synchronous mode - NORMAL is safe and faster than FULL
-    dbClient.exec('PRAGMA synchronous = NORMAL');
-    // Temp store in memory for better performance
-    dbClient.exec('PRAGMA temp_store = MEMORY');
-    // Increase busy timeout to 5 seconds
-    dbClient.exec('PRAGMA busy_timeout = 5000');
-    // Enable query optimizer
-    dbClient.exec('PRAGMA optimize');
+    if (applyPragmas) {
+        // Enable Write-Ahead Logging for better concurrency
+        dbClient.exec('PRAGMA journal_mode = WAL');
+        // Increase cache size (negative value = KB, so -64000 = 64MB)
+        dbClient.exec('PRAGMA cache_size = -64000');
+        // Enable foreign key constraints
+        dbClient.exec('PRAGMA foreign_keys = ON');
+        // Synchronous mode - NORMAL is safe and faster than FULL
+        dbClient.exec('PRAGMA synchronous = NORMAL');
+        // Temp store in memory for better performance
+        dbClient.exec('PRAGMA temp_store = MEMORY');
+        // Increase busy timeout to 5 seconds
+        dbClient.exec('PRAGMA busy_timeout = 5000');
+        // Enable query optimizer
+        dbClient.exec('PRAGMA optimize');
+    }
 
     drizzle = drizzleSqlite(dbClient, { schema });
 

@@ -113,7 +113,7 @@ async function onSubmit(values: { email: string; password: string }) {
     } catch (e: unknown) {
         const alertStore = useAlertStore();
 
-        alertStore.error(e);
+        alertStore.error(e instanceof Error ? e.message : String(e));
     }
 }
 
@@ -128,7 +128,7 @@ async function webauthnLogin() {
     } catch (e: unknown) {
         const alertStore = useAlertStore();
 
-        alertStore.error(e);
+        alertStore.error(e instanceof Error ? e.message : String(e));
 
         isAuthenticated.value = false;
     }

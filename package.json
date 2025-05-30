@@ -5,8 +5,8 @@
 	"workspaces": {
 		"packages": ["api", "frontend"],
 		"catalog": {
-			"@passwordless-id/webauthn": "^2.3.0",
-			"typescript": "5.8.3"
+			"typescript": "5.8.3",
+			"better-auth": "1.2.8"
 		}
 	},
 	"trustedDependencies": ["@biomejs/biome", "esbuild", "sharp"],

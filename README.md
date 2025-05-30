@@ -159,6 +159,10 @@ Make sure to:
 - Set up persistent volumes for database and uploads
 - Configure a reverse proxy (nginx, traefik, etc.) for HTTPS
 
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](./CONTRIBUTING.md) for details on how to get started.
+
 ## License
 
 MIT

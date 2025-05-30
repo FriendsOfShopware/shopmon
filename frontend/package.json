@@ -11,8 +11,8 @@
 	},
 	"dependencies": {
 		"@headlessui/vue": "1.7.23",
-		"@passwordless-id/webauthn": "catalog:",
 		"@trpc/client": "^11.1.0",
+		"better-auth": "catalog:",
 		"compare-versions": "^6.1.1",
 		"fast-sort": "3.4.1",
 		"fuse.js": "^7.1.0",

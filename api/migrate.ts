@@ -6,7 +6,7 @@ async function runMigrations() {
 
     try {
         // This will run migrations on the database, skipping the ones already applied
-        await migrate(getConnection(), { migrationsFolder: './drizzle' });
+        await migrate(getConnection(false), { migrationsFolder: './drizzle' });
 
         console.log('Migrations completed successfully!');
         process.exit(0);

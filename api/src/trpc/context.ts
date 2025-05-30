@@ -1,51 +1,31 @@
-import { TRPCError } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { eq } from 'drizzle-orm';
-import { type Drizzle, getConnection, schema } from '../db.ts';
+import type { Session, User } from 'better-auth/types';
+import { auth } from '../auth.ts';
+import { type Drizzle, getConnection } from '../db.ts';
 
 export type context = {
-    user: number | null;
+    user: User | null;
+    session: Session | null;
     drizzle: Drizzle;
 };
 
 export function createContext() {
     return async ({ req }: FetchCreateContextFnOptions) => {
-        const auth = req.headers.get('authorization');
-
         let user = null;
+        let session = null;
 
-        if (auth) {
-            const token = await getConnection()
-                .select({
-                    id: schema.sessions.userId,
-                    expires: schema.sessions.expires,
-                })
-                .from(schema.sessions)
-                .where(eq(schema.sessions.id, auth));
+        const sessionResponse = await auth.api.getSession({
+            headers: req.headers,
+        });
 
-            if (token.length === 0) {
-                throw new TRPCError({
-                    code: 'UNAUTHORIZED',
-                    message: 'Token expired',
-                });
-            }
-
-            if (token[0].expires < new Date()) {
-                await getConnection()
-                    .delete(schema.sessions)
-                    .where(eq(schema.sessions.id, auth));
-
-                throw new TRPCError({
-                    code: 'UNAUTHORIZED',
-                    message: 'Token expired',
-                });
-            }
-
-            user = token[0].id as number;
+        if (sessionResponse?.session && sessionResponse?.user) {
+            session = sessionResponse.session;
+            user = sessionResponse.user;
         }
 
         return {
             user,
+            session,
             drizzle: getConnection(),
         };
     };

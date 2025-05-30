@@ -124,9 +124,9 @@ import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
 
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
+const { user, organizations } = storeToRefs(authStore);
 
-const organizations = user.value?.organizations.map((organization) => ({
+const orgs = organizations.value?.map((organization) => ({
     ...organization,
     initials: organization.name.substring(0, 2),
 }));
