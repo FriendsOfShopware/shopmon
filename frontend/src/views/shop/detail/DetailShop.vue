@@ -194,7 +194,7 @@
                  }]"
         >
             <template #panel-checks>
-                <detail-checks-tab v-if="shop" :shop="shop" />
+                <detail-checks-tab v-if="shop" :shop="shop" @update:shop="shop = $event" />
             </template>
 
             <template #panel-extensions>

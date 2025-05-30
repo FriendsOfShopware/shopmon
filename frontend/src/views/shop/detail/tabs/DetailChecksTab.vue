@@ -46,6 +46,10 @@ const { shop } = defineProps<{
     shop: RouterOutput['organization']['shop']['get'];
 }>();
 
+const emit = defineEmits<{
+    'update:shop': [shop: RouterOutput['organization']['shop']['get']];
+}>();
+
 const { info } = useAlert();
 
 async function ignoreCheck(id: string) {
@@ -57,8 +61,8 @@ async function ignoreCheck(id: string) {
         ignores: updatedIgnores,
     });
 
-    // Update local shop data
-    shop.ignores = updatedIgnores;
+    // Emit updated shop data to parent
+    emit('update:shop', { ...shop, ignores: updatedIgnores });
     notificateIgnoreUpdate();
 }
 
@@ -71,8 +75,8 @@ async function removeIgnore(id: string) {
         ignores: updatedIgnores,
     });
 
-    // Update local shop data
-    shop.ignores = updatedIgnores;
+    // Emit updated shop data to parent
+    emit('update:shop', { ...shop, ignores: updatedIgnores });
     notificateIgnoreUpdate();
 }
 
