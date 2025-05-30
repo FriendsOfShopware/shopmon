@@ -1,6 +1,8 @@
+import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+const session = authClient.useSession();
 
 export const useNotificationStore = defineStore('notification', () => {
     const isLoading = ref(false);
@@ -9,7 +11,9 @@ export const useNotificationStore = defineStore('notification', () => {
         [],
     );
 
-    loadNotifications();
+    if (session.value.data?.user) {
+        loadNotifications();
+    }
 
     const unreadNotificationCount = computed(() => {
         return notifications.value.filter((n) => !n.read).length;
