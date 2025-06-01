@@ -36,16 +36,6 @@ services:
     volumes:
       - db:/app/db
       - uploads:/app/uploads
-  cron:
-    image: ${IMAGE}
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    environment:
-      <<: *env
-    command: ['src/cron/index.ts']
-    volumes_from:
-      - app
 
   backup:
     image: litestream/litestream

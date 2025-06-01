@@ -11,9 +11,7 @@
 		"generate:mail": "node generate-mjml.js",
 		"cron": "bun src/cron/index.ts",
 		"db:migrate": "bun migrate.ts",
-		"db:generate": "drizzle-kit generate",
-		"build:app": "bun build src/index.ts --production --target bun --sourcemap --outfile=app.js",
-		"build:cron": "bun build src/cron/index.ts --production --target bun --sourcemap --outfile=cron.js"
+		"db:generate": "drizzle-kit generate"
 	},
 	"author": "",
 	"license": "MIT",

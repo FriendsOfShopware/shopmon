@@ -2,7 +2,7 @@ import * as cron from 'node-cron';
 import { pagespeedScrapeJob } from './jobs/pagespeedScrape.js';
 import { shopScrapeJob } from './jobs/shopScrape.js';
 
-console.log('Starting cron jobs...');
+console.log('Registered cron jobs...');
 
 // Run shop scrape every hour
 cron.schedule('0 * * * *', async () => {
@@ -22,12 +22,4 @@ cron.schedule('0 2 * * *', async () => {
     } catch (error) {
         console.error('Pagespeed scrape job failed:', error);
     }
-});
-
-console.log('Cron jobs scheduled successfully');
-
-// Keep the process running
-process.on('SIGINT', () => {
-    console.log('Shutting down cron jobs...');
-    process.exit(0);
 });

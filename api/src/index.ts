@@ -6,6 +6,7 @@ import { serveStatic } from 'hono/bun';
 import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
+import './cron/index.ts';
 
 const filesDir = process.env.APP_FILES_DIR || './files';
 
