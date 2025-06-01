@@ -33,9 +33,9 @@
                     :class="[{
                         'icon' : true,
                         'icon-success':
-                            shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
+                            shop.pageSpeed[(rowIndex + 1)][cellKey] < row[cellKey],
                         'icon-error':
-                            shopStore.shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
+                            shop.pageSpeed[(rowIndex + 1)][cellKey] > row[cellKey],
                     }]"
                 />
             </template>
