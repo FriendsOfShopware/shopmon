@@ -76,12 +76,12 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.shops.edit',
-                    path: 'organizations/edit/:organizationId(\\d+)/:shopId(\\d+)',
+                    path: 'organizations/edit/:organizationId/:shopId(\\d+)',
                     component: () => import('@/views/shop/EditShop.vue'),
                 },
                 {
                     name: 'account.shops.detail',
-                    path: 'organizations/:organizationId(\\d+)/:shopId(\\d+)',
+                    path: 'organizations/:organizationId/:shopId(\\d+)',
                     component: () =>
                         import('@/views/shop/detail/DetailShop.vue'),
                 },
@@ -99,13 +99,13 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.organizations.detail',
-                    path: 'organizations/:organizationId(\\d+)',
+                    path: 'organizations/:organizationId',
                     component: () =>
                         import('@/views/organization/DetailOrganization.vue'),
                 },
                 {
                     name: 'account.organizations.edit',
-                    path: 'organizations/edit/:organizationId(\\d+)',
+                    path: 'organizations/edit/:organizationId',
                     component: () =>
                         import('@/views/organization/EditOrganization.vue'),
                 },
@@ -140,7 +140,7 @@ export const router = createRouter({
             ],
         },
         // catch all redirect to home page
-        { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
+        { path: '/:pathMatch(.*)*', name: 'not-found', redirect: { name: 'home' } },
     ],
 });
 
