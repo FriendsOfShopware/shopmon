@@ -20,7 +20,6 @@ declare global {
 
             // Application
             FRONTEND_URL?: string;
-            DISABLE_REGISTRATION?: string;
             APP_FILES_DIR?: string;
 
             // Monitoring (optional)

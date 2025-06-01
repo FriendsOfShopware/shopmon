@@ -1,7 +1,7 @@
 <template>
     <div class="login-header">
         <h2>Sign in to your account</h2>
-        <p v-if="!disableRegistration">
+        <p>
             New to Shopmon?
             {{ ' ' }}
             <router-link :to="{ name: 'account.register' }">
@@ -101,8 +101,6 @@ const schema = Yup.object().shape({
     email: Yup.string().required('Email is required').email(),
     password: Yup.string().required('Password is required'),
 });
-
-const disableRegistration = import.meta.env.VITE_DISABLE_REGISTRATION;
 
 async function onSubmit(values: Record<string, unknown>) {
     const email = values.email as string;
