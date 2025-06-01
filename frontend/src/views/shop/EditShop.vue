@@ -223,16 +223,12 @@ const isLoading = ref(false);
 
 const organizations = authClient.useListOrganizations();
 
-const organizationId = Number.parseInt(
-    route.params.organizationId as string,
-    10,
-);
 const shopId = Number.parseInt(route.params.shopId as string, 10);
 
 async function loadShop() {
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
-        orgId: organizationId,
+        orgId: route.params.organizationId as string,
         shopId,
     });
     isLoading.value = false;
@@ -264,16 +260,17 @@ const schema = Yup.object().shape({
     }),
 });
 
-async function onSubmit(values: Yup.InferType<typeof schema>) {
+async function onSubmit(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schema>;
     if (shop.value) {
         try {
-            if (values.url) {
-                values.url = values.url.replace(/\/+$/, '');
+            if (typedValues.url) {
+                typedValues.url = typedValues.url.replace(/\/+$/, '');
             }
             await trpcClient.organization.shop.update.mutate({
                 orgId: shop.value.organizationId,
                 shopId: shop.value.id,
-                ...values,
+                ...typedValues,
             });
 
             router.push({

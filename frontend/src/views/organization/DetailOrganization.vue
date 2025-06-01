@@ -93,6 +93,16 @@
 
                 <template #cell-actions="{ row }">
                     <button
+                        v-if="row.user.id !== session.data?.user.id"
+                        type="button"
+                        class="tooltip tooltip-position-left"
+                        data-tooltip="Change Role"
+                        @click="openChangeRoleModal(row as OrganizationMember)"
+                    >
+                        <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
+                    </button>
+                    <button
+                        v-if="row.user.id !== session.data?.user.id"
                         type="button"
                         class="tooltip tooltip-position-left"
                         data-tooltip="Unassign"
@@ -209,6 +219,72 @@
                 </button>
             </template>
         </modal>
+
+        <modal
+            :show="showChangeRoleModal"
+            close-x-mark
+            @close="showChangeRoleModal = false"
+        >
+            <template #title>
+                Change Member Role
+            </template>
+
+            <template #content>
+                <vee-form
+                    id="changeRoleForm"
+                    v-slot="{ errors }"
+                    :validation-schema="schemaChangeRole"
+                    :initial-values="{ role: selectedMember?.role || 'member' }"
+                    @submit="onChangeRole"
+                >
+                    <label for="role">Role</label>
+
+                    <field
+                        id="role"
+                        as="select"
+                        name="role"
+                        class="field"
+                        :class="{ 'has-error': errors.role }"
+                    >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </field>
+
+                    <div class="field-error-message">
+                        {{ errors.role }}
+                    </div>
+                </vee-form>
+            </template>
+
+            <template #footer>
+                <button
+                    type="reset"
+                    class="btn"
+                    form="changeRoleForm"
+                    @click="showChangeRoleModal = false"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    :disabled="isChangingRole"
+                    type="submit"
+                    class="btn btn-primary"
+                    form="changeRoleForm"
+                >
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isChangingRole"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
+                    Save
+                </button>
+            </template>
+        </modal>
     </main-container>
 </template>
 
@@ -221,8 +297,10 @@ import { authClient } from '@/helpers/auth-client';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+const session = authClient.useSession();
+
 const route = useRoute();
-const { error } = useAlert();
+const alert = useAlert();
 
 const organization =
     ref<
@@ -244,10 +322,32 @@ loadOrganization();
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
 
+// Change role modal state
+const showChangeRoleModal = ref(false);
+const isChangingRole = ref(false);
+
+type OrganizationMember = {
+    id: string;
+    role: string;
+    user: {
+        id: string;
+        email: string;
+        name: string;
+    };
+};
+
+const selectedMember = ref<OrganizationMember | null>(null);
+
 const schemaMembers = Yup.object().shape({
     email: Yup.string()
         .email('Email address is not valid')
         .required('Email address is required'),
+    role: Yup.string()
+        .oneOf(['member', 'admin'], 'Role must be either member or admin')
+        .required('Role is required'),
+});
+
+const schemaChangeRole = Yup.object().shape({
     role: Yup.string()
         .oneOf(['member', 'admin'], 'Role must be either member or admin')
         .required('Role is required'),
@@ -267,7 +367,7 @@ async function onAddMember(values: Record<string, unknown>) {
             showAddMemberModal.value = false;
             await loadOrganization();
         } catch (err) {
-            error(err instanceof Error ? err.message : String(err));
+            alert.error(err instanceof Error ? err.message : String(err));
         }
     }
     isSubmitting.value = false;
@@ -283,7 +383,7 @@ async function onRemoveMember(userId: string) {
 
             await loadOrganization();
         } catch (err) {
-            error(err instanceof Error ? err.message : String(err));
+            alert.error(err instanceof Error ? err.message : String(err));
         }
     }
 }
@@ -297,9 +397,38 @@ async function cancelInvitation(invitationId: string) {
 
             await loadOrganization();
         } catch (err) {
-            error(err instanceof Error ? err.message : String(err));
+            alert.error(err instanceof Error ? err.message : String(err));
         }
     }
+}
+
+function openChangeRoleModal(member: OrganizationMember) {
+    selectedMember.value = member;
+    showChangeRoleModal.value = true;
+}
+
+async function onChangeRole(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schemaChangeRole>;
+    isChangingRole.value = true;
+
+    if (organization.value && selectedMember.value) {
+        try {
+            await authClient.organization.updateMemberRole({
+                memberId: selectedMember.value.id,
+                role: typedValues.role,
+                organizationId: organization.value.data.id,
+            });
+
+            alert.success('Member role updated successfully');
+
+            showChangeRoleModal.value = false;
+            await loadOrganization();
+        } catch (err) {
+            alert.error(err instanceof Error ? err.message : String(err));
+        }
+    }
+
+    isChangingRole.value = false;
 }
 </script>
 

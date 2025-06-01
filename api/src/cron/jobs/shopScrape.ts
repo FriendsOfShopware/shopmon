@@ -187,7 +187,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             .execute();
 
         const clientSecret = await decrypt(
-            process.env.APP_SECRET || '',
+            process.env.APP_SECRET,
             shop.clientSecret,
         );
 

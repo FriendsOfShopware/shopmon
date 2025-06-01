@@ -11,7 +11,7 @@
     </header-container>
 
     <main-container>
-        <template v-if="organizations.data && organizations.data.length === 0">
+        <template v-if="!organizations.data || organizations.data.length === 0">
             <element-empty title="No Organization" :route="{ name: 'account.organizations.new' }" button="Add Organization">
                 Get started by adding your first organization.
             </element-empty>
@@ -23,7 +23,7 @@
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'slug', name: 'Slug', sortable: true },
                 ]"
-                :data="organizations.data"
+                :data="organizations.data || []"
                 class="bg-white dark:bg-neutral-800"
             >
                 <template #cell-name="{ row }">
