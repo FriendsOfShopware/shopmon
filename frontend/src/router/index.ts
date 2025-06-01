@@ -140,7 +140,11 @@ export const router = createRouter({
             ],
         },
         // catch all redirect to home page
-        { path: '/:pathMatch(.*)*', name: 'not-found', redirect: { name: 'home' } },
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'not-found',
+            redirect: { name: 'home' },
+        },
     ],
 });
 
