@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization } from 'better-auth/plugins';
 import { passkey } from 'better-auth/plugins/passkey';
 import { getConnection } from './db.js';
+import shops from './repository/shops.js';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -71,6 +72,14 @@ export const auth = betterAuth({
                     data.inviter.user.name,
                     data.invitation.id,
                 );
+            },
+            cancelPendingInvitationsOnReInvite: true,
+            organizationDeletion: {
+                async beforeDelete(data, request) {
+                    return shops.deleteShopsByOrganization(
+                        data.organization.id,
+                    );
+                },
             },
         }),
     ],

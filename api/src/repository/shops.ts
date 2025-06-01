@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { type Drizzle, schema } from '../db.ts';
+import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
 import Users from './users.ts';
 
@@ -86,6 +86,22 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
     return result;
 }
 
+async function deleteShopsByOrganization(organizationId: string) {
+    const con = getConnection();
+    const shops = await con
+        .select({
+            id: schema.shop.id,
+        })
+        .from(schema.shop)
+        .where(eq(schema.shop.organizationId, organizationId));
+
+    const promises = [];
+    for (const shop of shops) {
+        promises.push(deleteShop(con, shop.id));
+    }
+    await Promise.all(promises);
+}
+
 async function notify(
     con: Drizzle,
     shopId: number,
@@ -132,6 +148,7 @@ export default {
     createShop,
     deleteShop,
     getUsersOfShop,
+    deleteShopsByOrganization,
     notify,
     alert,
 };

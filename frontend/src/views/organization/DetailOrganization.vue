@@ -215,7 +215,7 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { authClient } from '@/helpers/auth-client';
 import { ref } from 'vue';

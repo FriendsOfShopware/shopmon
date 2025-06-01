@@ -115,6 +115,28 @@ export const router = createRouter({
                     component: () =>
                         import('@/views/account/ListExtensions.vue'),
                 },
+                {
+                    name: 'account.organization.accept',
+                    path: 'organizations/accept/:token',
+                    component: () =>
+                        import(
+                            '@/views/organization/AcceptRejectInvitation.vue'
+                        ),
+                    props: {
+                        action: 'accept',
+                    },
+                },
+                {
+                    name: 'account.organization.reject',
+                    path: 'organizations/reject/:token',
+                    component: () =>
+                        import(
+                            '@/views/organization/AcceptRejectInvitation.vue'
+                        ),
+                    props: {
+                        action: 'reject',
+                    },
+                },
             ],
         },
         // catch all redirect to home page
@@ -133,10 +155,6 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
             }, 50);
         });
     }
-
-    // clear alert on route change
-    const { clear } = useAlert();
-    clear();
 
     // redirect to login page if not logged in and trying to access a restricted page
     const publicPages = [
