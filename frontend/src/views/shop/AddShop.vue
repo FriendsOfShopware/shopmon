@@ -180,14 +180,21 @@ watch(
     { immediate: true },
 );
 
-async function onSubmit(values: RouterInput['organization']['shop']['create']) {
+const onSubmit = async (values: Record<string, unknown>) => {
     try {
-        values.shopUrl = values.shopUrl.replace(/\/+$/, '');
-        await trpcClient.organization.shop.create.mutate(values);
+        const typedValues = values as Yup.InferType<typeof schema>;
+        const input: RouterInput['organization']['shop']['create'] = {
+            name: typedValues.name,
+            orgId: typedValues.orgId,
+            shopUrl: typedValues.shopUrl.replace(/\/+$/, ''),
+            clientId: typedValues.clientId,
+            clientSecret: typedValues.clientSecret,
+        };
+        await trpcClient.organization.shop.create.mutate(input);
 
         router.push({ name: 'account.shops.list' });
     } catch (e) {
         error(e instanceof Error ? e.message : String(e));
     }
-}
+};
 </script>

@@ -231,7 +231,7 @@
             <template #content>
                 <select
                     class="field"
-                    @change="(event: HTMLSelectElement) => loadUpdateWizard(event.value)"
+                    @change="(event: Event) => loadUpdateWizard((event.target as HTMLSelectElement).value)"
                 >
                     <option disabled selected>
                         Select update Version
