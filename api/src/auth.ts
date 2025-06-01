@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { passkey } from 'better-auth/plugins/passkey';
 import { organization } from 'better-auth/plugins';
+import { passkey } from 'better-auth/plugins/passkey';
 import { getConnection } from './db.js';
 
 export const auth = betterAuth({

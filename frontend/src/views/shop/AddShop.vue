@@ -133,10 +133,7 @@
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 
-import {
-    type RouterInput,
-    trpcClient,
-} from '@/helpers/trpc';
+import { type RouterInput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { watch } from 'vue';
 
@@ -173,11 +170,15 @@ const shops = {
     orgId: organizations.value.data?.[0].id,
 };
 
-watch(organizations, (newValue) => {
-    if (newValue.data?.length && shops.orgId == null) {
-        shops.orgId = newValue.data[0].id;
-    }
-}, { immediate: true });
+watch(
+    organizations,
+    (newValue) => {
+        if (newValue.data?.length && shops.orgId == null) {
+            shops.orgId = newValue.data[0].id;
+        }
+    },
+    { immediate: true },
+);
 
 async function onSubmit(values: RouterInput['organization']['shop']['create']) {
     try {

@@ -71,10 +71,7 @@ export const accountRouter = router({
                 .from(schema.organization)
                 .innerJoin(
                     schema.member,
-                    eq(
-                        schema.member.organizationId,
-                        schema.organization.id,
-                    ),
+                    eq(schema.member.organizationId, schema.organization.id),
                 )
                 .where(eq(schema.member.userId, ctx.user.id))
                 .all();

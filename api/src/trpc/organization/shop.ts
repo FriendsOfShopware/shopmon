@@ -218,16 +218,15 @@ export const shopRouter = router({
             }
 
             if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const organization =
-                    await ctx.drizzle.query.member.findFirst({
-                        columns: {
-                            id: true,
-                        },
-                        where: and(
-                            eq(schema.member.organizationId, input.newOrgId),
-                            eq(schema.member.userId, ctx.user.id),
-                        ),
-                    });
+                const organization = await ctx.drizzle.query.member.findFirst({
+                    columns: {
+                        id: true,
+                    },
+                    where: and(
+                        eq(schema.member.organizationId, input.newOrgId),
+                        eq(schema.member.userId, ctx.user.id),
+                    ),
+                });
 
                 if (organization === undefined) {
                     throw new TRPCError({

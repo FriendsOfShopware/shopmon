@@ -227,12 +227,18 @@ const router = useRouter();
 const { error } = useAlert();
 const session = authClient.useSession();
 
-const organization = ref<Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>>();
-authClient.organization.getFullOrganization({ query: {organizationId: route.params.organizationId as string} })
-    .then((org) => {
-        console.log(org)
-        organization.value = org;
+const organization =
+    ref<
+        Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
+    >();
+authClient.organization
+    .getFullOrganization({
+        query: { organizationId: route.params.organizationId as string },
     })
+    .then((org) => {
+        console.log(org);
+        organization.value = org;
+    });
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
@@ -276,7 +282,7 @@ async function onRemoveMember(userId: string) {
             await authClient.organization.removeMember({
                 memberIdOrEmail: userId,
                 organizationId: organization.value.data.id,
-            })
+            });
 
             await router.push({
                 name: 'account.organizations.detail',

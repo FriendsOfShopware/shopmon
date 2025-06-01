@@ -77,15 +77,9 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
         .from(schema.shop)
         .innerJoin(
             schema.member,
-            eq(
-                schema.shop.organizationId,
-                schema.member.organizationId,
-            ),
+            eq(schema.shop.organizationId, schema.member.organizationId),
         )
-        .innerJoin(
-            schema.user,
-            eq(schema.user.id, schema.member.userId),
-        )
+        .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
         .where(eq(schema.shop.id, shopId))
         .all();
 

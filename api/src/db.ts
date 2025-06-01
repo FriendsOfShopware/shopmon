@@ -232,7 +232,6 @@ export const invitation = sqliteTable('invitation', {
         .references(() => user.id, { onDelete: 'cascade' }),
 });
 
-
 export const schema = {
     shop,
     shopPageSpeed,
