@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import type { Shop, ShopAlert, User } from '../repository/shops';
 import alertTemplate from './sources/alert.js';
 import accountConfirmationTemplate from './sources/confirmation.js';
+import organizationInviteTemplate from './sources/org-invite.js';
 import passwordResetTemplate from './sources/password-reset.js';
 
 interface MaiLRequest {
@@ -73,6 +74,24 @@ export async function sendAlert(shop: Shop, user: User, alert: ShopAlert) {
             shop,
             alert,
             user,
+        }),
+    });
+}
+
+export async function sendMailInviteToOrganization(
+    email: string,
+    organizationName: string,
+    invitedByUsername: string,
+    token: string,
+) {
+    await sendMail({
+        to: email,
+        subject: `You have been invited to join ${organizationName} at Shopmon`,
+        body: organizationInviteTemplate({
+            FRONTEND_URL: process.env.FRONTEND_URL,
+            token,
+            organizationName,
+            invitedByUsername,
         }),
     });
 }

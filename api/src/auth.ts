@@ -60,7 +60,19 @@ export const auth = betterAuth({
                 : 'localhost',
             rpName: 'Shopmon',
         }),
-        organization({}),
+        organization({
+            sendInvitationEmail: async (data) => {
+                const { sendMailInviteToOrganization } = await import(
+                    './mail/mail.js'
+                );
+                await sendMailInviteToOrganization(
+                    data.email,
+                    data.organization.name,
+                    data.inviter.user.name,
+                    data.invitation.id,
+                );
+            },
+        }),
     ],
 });
 

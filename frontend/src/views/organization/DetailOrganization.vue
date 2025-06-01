@@ -1,8 +1,8 @@
 <template>
     <header-container
-        v-if="organization"
-        :title="organization.name"
-    >
+        v-if="organization?.data?.name"
+        :title="organization.data.name"
+        >
         <router-link
             :to="{ name: 'account.organizations.edit', params: { organizationId: organization.data.id } }"
             type="button"
@@ -104,6 +104,35 @@
             </DataTable>
         </div>
 
+        <div class="panel panel-table">
+            <div class="organization-members-header">
+                <h3 class="organization-members-heading">
+                    Invitations
+                </h3>
+            </div>
+
+            <DataTable
+                :columns="[
+                    { key: 'email', name: 'Email' },
+                    { key: 'role', name: 'Role' },
+                    { key: 'status', name: 'Status' },
+                ]"
+                :data="organization.data.invitations"
+            >
+                <template #cell-actions="{ row }">
+                    <button
+                        v-if="row.status !== 'canceled'"
+                        type="button"
+                        class="tooltip tooltip-position-left"
+                        data-tooltip="Cancel Invitation"
+                        @click="cancelInvitation(row.id)"
+                    >
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+                    </button>
+                </template>
+            </DataTable>
+        </div>
+
         <modal
             :show="showAddMemberModal"
             close-x-mark
@@ -181,36 +210,6 @@
             </template>
         </modal>
     </main-container>
-
-    <main-container>
-        <div class="panel panel-table">
-            <div class="organization-members-header">
-                <h3 class="organization-members-heading">
-                    Invitations
-                </h3>
-            </div>
-
-            <DataTable
-                :columns="[
-                    { key: 'email', name: 'Email' },
-                    { key: 'role', name: 'Role' },
-                    { key: 'status', name: 'Status' },
-                ]"
-                :data="organization.data.invitations"
-            >
-                <template #cell-actions="{ row }">
-                    <button
-                        type="button"
-                        class="tooltip tooltip-position-left"
-                        data-tooltip="Unassign"
-                        @click="onRemoveMember(row.id)"
-                    >
-                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
-                    </button>
-                </template>
-            </DataTable>
-        </div>
-    </main-container>
 </template>
 
 <script setup lang="ts">
@@ -223,22 +222,24 @@ import { ref } from 'vue';
 import * as Yup from 'yup';
 
 const route = useRoute();
-const router = useRouter();
 const { error } = useAlert();
-const session = authClient.useSession();
 
 const organization =
     ref<
         Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
     >();
-authClient.organization
-    .getFullOrganization({
-        query: { organizationId: route.params.organizationId as string },
-    })
-    .then((org) => {
-        console.log(org);
-        organization.value = org;
-    });
+
+async function loadOrganization() {
+    authClient.organization
+        .getFullOrganization({
+            query: { organizationId: route.params.organizationId as string },
+        })
+        .then((org) => {
+            organization.value = org;
+        });
+}
+
+loadOrganization();
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
@@ -252,23 +253,19 @@ const schemaMembers = Yup.object().shape({
         .required('Role is required'),
 });
 
-async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
+async function onAddMember(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schemaMembers>;
     isSubmitting.value = true;
     if (organization.value) {
         try {
             await authClient.organization.inviteMember({
-                email: values.email,
-                role: values.role,
+                email: typedValues.email,
+                role: typedValues.role,
                 organizationId: organization.value.data.id,
             });
 
             showAddMemberModal.value = false;
-            await router.push({
-                name: 'account.organizations.detail',
-                params: {
-                    organizationId: organization.value.id,
-                },
-            });
+            await loadOrganization();
         } catch (err) {
             error(err instanceof Error ? err.message : String(err));
         }
@@ -284,12 +281,21 @@ async function onRemoveMember(userId: string) {
                 organizationId: organization.value.data.id,
             });
 
-            await router.push({
-                name: 'account.organizations.detail',
-                params: {
-                    organizationId: organization.value.id,
-                },
+            await loadOrganization();
+        } catch (err) {
+            error(err instanceof Error ? err.message : String(err));
+        }
+    }
+}
+
+async function cancelInvitation(invitationId: string) {
+    if (organization.value) {
+        try {
+            await authClient.organization.cancelInvitation({
+                invitationId,
             });
+
+            await loadOrganization();
         } catch (err) {
             error(err instanceof Error ? err.message : String(err));
         }
@@ -298,9 +304,12 @@ async function onRemoveMember(userId: string) {
 </script>
 
 <style scoped>
+.panel {
+    margin-bottom: 3rem;
+}
+
 .organization-info {
     padding: 0;
-    margin-bottom: 3rem;
 
     &-heading {
         padding: 1.25rem 1rem;
