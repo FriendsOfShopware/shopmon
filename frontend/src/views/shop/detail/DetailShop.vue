@@ -29,7 +29,7 @@
             :to="{
                 name: 'account.shops.edit',
                 params: {
-                    organizationId: shop.organizationId,
+                    slug: route.params.slug,
                     shopId: shop.id
                 }
             }"
