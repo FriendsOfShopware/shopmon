@@ -34,6 +34,21 @@
                         {{ errors.name }}
                     </div>
                 </div>
+
+                <div>
+                    <label for="slug">Slug</label>
+                    <field
+                        id="slug"
+                        type="text"
+                        name="slug"
+                        autocomplete="slug"
+                        class="field"
+                        :class="{ 'has-error': errors.slug }"
+                    />
+                    <div class="field-error-message">
+                        {{ errors.slug }}
+                    </div>
+                </div>
             </form-group>
 
             <div class="form-submit">
@@ -141,6 +156,12 @@ const showOrganizationDeletionModal = ref(false);
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Name of organization is required'),
+    slug: Yup.string()
+        .required('Slug for organization is required')
+        .matches(
+            /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+            'Slug must be lowercase and can only contain letters, numbers, and hyphens',
+        ),
 });
 
 const canDeleteOrganization = ref<boolean>(false);
@@ -163,6 +184,7 @@ async function onSaveOrganization(values: Record<string, unknown>) {
                 organizationId: organization.value.data.id,
                 data: {
                     name: typedValues.name,
+                    slug: typedValues.slug,
                 },
             });
 
