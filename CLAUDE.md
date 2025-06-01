@@ -119,7 +119,6 @@ APP_DATABASE_PATH       # SQLite database path
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
 PAGESPEED_API_KEY       # Google PageSpeed API
-DISABLE_REGISTRATION    # Disable new signups
 FRONTEND_URL            # Frontend URL for emails
 SENTRY_DSN              # Error tracking
 ```
@@ -127,7 +126,6 @@ SENTRY_DSN              # Error tracking
 ### Frontend Environment
 ```bash
 SHOPMON_API_URL         # API URL (defaults to production)
-VITE_DISABLE_REGISTRATION # Hide registration UI
 ```
 
 ## Deployment

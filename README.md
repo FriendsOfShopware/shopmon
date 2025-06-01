@@ -79,7 +79,6 @@ PAGESPEED_API_KEY=your-google-pagespeed-api-key
 
 # Application
 FRONTEND_URL=http://localhost:5173
-DISABLE_REGISTRATION=false
 APP_FILES_DIR=./files
 
 # Monitoring (optional)
@@ -124,20 +123,6 @@ PAGESPEED_API_KEY=your-api-key-here
 ```
 
 ## Configuration
-
-### Disable registration
-
-To disable user registrations:
-
-1. In your `api/.env` file:
-```env
-DISABLE_REGISTRATION=true
-```
-
-2. For the frontend, create a `frontend/.env` file:
-```env
-VITE_DISABLE_REGISTRATION=1
-```
 
 ### Production Deployment
 

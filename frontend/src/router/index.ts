@@ -149,13 +149,6 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     const authRequired = !publicPages.includes(to.name as string);
     const { setReturnUrl } = useReturnUrl();
 
-    if (
-        import.meta.env.VITE_DISABLE_REGISTRATION &&
-        (to.name as string) === 'account.register'
-    ) {
-        return { name: 'home' };
-    }
-
     if (authRequired && !session.value.data) {
         setReturnUrl(to.fullPath);
         return { name: 'account.login' };
