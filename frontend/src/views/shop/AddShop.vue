@@ -2,7 +2,7 @@
     <header-container title="New Shop" />
     <main-container>
         <vee-form
-            v-if="organizations"
+            v-if="!organizations.isPending"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shops"
@@ -35,7 +35,7 @@
                         class="field"
                     >
                         <option
-                            v-for="organization in organizations"
+                            v-for="organization in organizations.data"
                             :key="organization.id"
                             :value="organization.id"
                         >
@@ -131,21 +131,22 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
+import { authClient } from '@/helpers/auth-client';
 
 import {
     type RouterInput,
-    type RouterOutput,
     trpcClient,
 } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { ref } from 'vue';
+import { watch } from 'vue';
+
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
 const { error } = useAlert();
 const router = useRouter();
 
-const organizations = ref<RouterOutput['account']['listOrganizations']>();
+const organizations = authClient.useListOrganizations();
 
 const isValidUrl = (url: string) => {
     try {
@@ -163,19 +164,20 @@ const schema = Yup.object().shape({
         .test('is-url-valid', 'Shop URL is not valid', (value) =>
             isValidUrl(value),
         ),
-    orgId: Yup.number().required('Organization is required'),
+    orgId: Yup.string().required('Organization is required'),
     clientId: Yup.string().required('Client ID is required'),
     clientSecret: Yup.string().required('Client Secret is required'),
 });
 
 const shops = {
-    orgId: organizations.value?.[0].id,
+    orgId: organizations.value.data?.[0].id,
 };
 
-trpcClient.account.listOrganizations.query().then((data) => {
-    shops.orgId = data?.[0]?.id;
-    organizations.value = data;
-});
+watch(organizations, (newValue) => {
+    if (newValue.data?.length && shops.orgId == null) {
+        shops.orgId = newValue.data[0].id;
+    }
+}, { immediate: true });
 
 async function onSubmit(values: RouterInput['organization']['shop']['create']) {
     try {

@@ -55,7 +55,7 @@
                         :value="shop.organizationId"
                     >
                         <option
-                            v-for="organization in organizations"
+                            v-for="organization in organizations.data"
                             :key="organization.id"
                             :value="organization.id"
                         >
@@ -207,6 +207,7 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
+import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -217,13 +218,10 @@ import * as Yup from 'yup';
 const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
-const organizations = ref<RouterOutput['account']['listOrganizations']>();
 const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 const isLoading = ref(false);
 
-trpcClient.account.listOrganizations.query().then((data) => {
-    organizations.value = data;
-});
+const organizations = authClient.useListOrganizations();
 
 const organizationId = Number.parseInt(
     route.params.organizationId as string,
@@ -247,7 +245,7 @@ const showShopDeletionModal = ref(false);
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    organizationId: Yup.number().required('Organization is required'),
+    organizationId: Yup.string().required('Organization is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shop.value?.url,
         // biome-ignore lint/suspicious/noThenProperty: Yup schema method
@@ -269,8 +267,8 @@ const schema = Yup.object().shape({
 async function onSubmit(values: Yup.InferType<typeof schema>) {
     if (shop.value) {
         try {
-            if (values.shopUrl) {
-                values.shopUrl = values.shopUrl.replace(/\/+$/, '');
+            if (values.url) {
+                values.url = values.url.replace(/\/+$/, '');
             }
             await trpcClient.organization.shop.update.mutate({
                 orgId: shop.value.organizationId,

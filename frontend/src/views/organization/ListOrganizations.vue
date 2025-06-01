@@ -11,7 +11,7 @@
     </header-container>
 
     <main-container>
-        <template v-if="organizations && organizations.length === 0">
+        <template v-if="organizations.data && organizations.data.length === 0">
             <element-empty title="No Organization" :route="{ name: 'account.organizations.new' }" button="Add Organization">
                 Get started by adding your first organization.
             </element-empty>
@@ -21,10 +21,9 @@
             <data-table
                 :columns="[
                     { key: 'name', name: 'Name', sortable: true },
-                    { key: 'memberCount', name: 'Members', sortable: true },
-                    { key: 'shopCount', name: 'Shops', sortable: true },
+                    { key: 'slug', name: 'Slug', sortable: true },
                 ]"
-                :data="organizations || []"
+                :data="organizations.data"
                 class="bg-white dark:bg-neutral-800"
             >
                 <template #cell-name="{ row }">
@@ -33,14 +32,8 @@
                     </router-link>
                 </template>
 
-                <template #cell-memberCount="{ row }">
-                    <icon-fa6-solid:people-group />
-                    {{ row.memberCount }}
-                </template>
-
-                <template #cell-shopCount="{ row }">
-                    <icon-fa6-solid:cart-shopping />
-                    {{ row.shopCount }}
+                <template #cell-slug="{ row }">
+                    {{ row.slug }}
                 </template>
             </data-table>
         </div>
@@ -49,11 +42,7 @@
 
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { ref } from 'vue';
+import { authClient } from '@/helpers/auth-client';
 
-const organizations = ref<RouterOutput['account']['listOrganizations']>();
-trpcClient.account.listOrganizations.query().then((data) => {
-    organizations.value = data;
-});
+const organizations = authClient.useListOrganizations();
 </script>

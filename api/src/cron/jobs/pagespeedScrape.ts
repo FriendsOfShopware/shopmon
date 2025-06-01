@@ -9,7 +9,7 @@ interface SQLShop {
     id: number;
     name: string;
     url: string;
-    organizationId: number;
+    organizationId: string;
     shopImage: string | null;
 }
 

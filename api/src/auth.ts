@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { passkey } from 'better-auth/plugins/passkey';
+import { organization } from 'better-auth/plugins';
 import { getConnection } from './db.js';
 
 export const auth = betterAuth({
@@ -59,6 +60,7 @@ export const auth = betterAuth({
                 : 'localhost',
             rpName: 'Shopmon',
         }),
+        organization({}),
     ],
 });
 

@@ -23,7 +23,7 @@ interface SQLShop {
     id: number;
     name: string;
     status: string;
-    organizationId: number;
+    organizationId: string;
     url: string;
     clientId: string;
     clientSecret: string;

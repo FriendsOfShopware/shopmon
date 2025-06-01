@@ -58,10 +58,6 @@
                             <div class="item-name">
                                 {{ organization.name }}
                             </div>
-
-                            <div class="item-content">
-                                {{ organization.memberCount }} Members, {{ organization.shopCount }} Shops
-                            </div>
                         </div>
                     </router-link>
                 </li>

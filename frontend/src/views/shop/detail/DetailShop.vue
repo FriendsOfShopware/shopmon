@@ -383,6 +383,7 @@ type ExtensionWithCompatibility = NonNullable<
 >[number] & {
     compatibility: {
         label: string;
+        type: string;
     } | null;
 };
 
@@ -404,15 +405,11 @@ const shopwareVersions: Ref<string[] | null> = ref(null);
 const latestShopwareVersion: Ref<string | null> = ref(null);
 
 async function loadShop() {
-    const organizationId = Number.parseInt(
-        route.params.organizationId as string,
-        10,
-    );
     const shopId = Number.parseInt(route.params.shopId as string, 10);
 
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
-        orgId: organizationId,
+        orgId: route.params.organizationId as string,
         shopId,
     });
     isLoading.value = false;

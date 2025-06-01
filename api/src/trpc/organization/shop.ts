@@ -14,7 +14,6 @@ import Shops from '../../repository/shops.ts';
 import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
-    organizationAdminMiddleware,
     organizationMiddleware,
     shopMiddleware,
 } from '../middleware.ts';
@@ -23,7 +22,7 @@ export const shopRouter = router({
     list: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -49,7 +48,7 @@ export const shopRouter = router({
     get: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
@@ -123,7 +122,7 @@ export const shopRouter = router({
     create: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 name: z.string(),
                 shopUrl: z.string().url(),
                 clientId: z.string(),
@@ -132,7 +131,6 @@ export const shopRouter = router({
         )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
-        .use(organizationAdminMiddleware)
         .mutation(async ({ input, ctx }) => {
             const shop = new SimpleShop('', input.shopUrl, '');
             shop.setShopCredentials(input.clientId, input.clientSecret);
@@ -171,13 +169,12 @@ export const shopRouter = router({
     delete: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
-        .use(organizationAdminMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             await Shops.deleteShop(ctx.drizzle, input.shopId);
@@ -190,19 +187,18 @@ export const shopRouter = router({
     update: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
                 name: z.string().optional(),
                 shopUrl: z.string().url().optional(),
                 clientId: z.string().optional(),
                 clientSecret: z.string().optional(),
                 ignores: z.array(z.string()).optional(),
-                newOrgId: z.number().optional(),
+                newOrgId: z.string().optional(),
             }),
         )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
-        .use(organizationAdminMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             if (input.name) {
@@ -223,14 +219,13 @@ export const shopRouter = router({
 
             if (input.newOrgId && input.newOrgId !== input.orgId) {
                 const organization =
-                    await ctx.drizzle.query.organization.findFirst({
+                    await ctx.drizzle.query.member.findFirst({
                         columns: {
                             id: true,
-                            ownerId: true,
                         },
                         where: and(
-                            eq(schema.organization.id, input.newOrgId),
-                            eq(schema.organization.ownerId, ctx.user.id),
+                            eq(schema.member.organizationId, input.newOrgId),
+                            eq(schema.member.userId, ctx.user.id),
                         ),
                     });
 
@@ -238,13 +233,6 @@ export const shopRouter = router({
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'You are not a member of this organization',
-                    });
-                }
-
-                if (organization.ownerId !== ctx.user.id) {
-                    throw new TRPCError({
-                        code: 'BAD_REQUEST',
-                        message: 'You are not the owner of this organization',
                     });
                 }
 
@@ -291,7 +279,7 @@ export const shopRouter = router({
     refreshShop: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
                 pageSpeed: z.boolean(),
             }),
@@ -311,7 +299,7 @@ export const shopRouter = router({
     clearShopCache: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
@@ -350,7 +338,7 @@ export const shopRouter = router({
     rescheduleTask: publicProcedure
         .input(
             z.object({
-                orgId: z.number(),
+                orgId: z.string(),
                 shopId: z.number(),
                 taskId: z.string(),
             }),

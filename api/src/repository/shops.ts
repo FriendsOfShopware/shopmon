@@ -6,7 +6,7 @@ import Users from './users.ts';
 const alertMap = new Map<string, string>();
 
 interface CreateShopRequest {
-    organizationId: number;
+    organizationId: string;
     name: string;
     version: string;
     shopUrl: string;
@@ -70,21 +70,21 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
 async function getUsersOfShop(con: Drizzle, shopId: number) {
     const result = await con
         .select({
-            id: schema.userToOrganization.userId,
+            id: schema.member.userId,
             displayName: schema.user.name,
             email: schema.user.email,
         })
         .from(schema.shop)
         .innerJoin(
-            schema.userToOrganization,
+            schema.member,
             eq(
                 schema.shop.organizationId,
-                schema.userToOrganization.organizationId,
+                schema.member.organizationId,
             ),
         )
         .innerJoin(
             schema.user,
-            eq(schema.user.id, schema.userToOrganization.userId),
+            eq(schema.user.id, schema.member.userId),
         )
         .where(eq(schema.shop.id, shopId))
         .all();

@@ -4,8 +4,7 @@
         :title="organization.name"
     >
         <router-link
-            v-if="isOwner"
-            :to="{ name: 'account.organizations.edit', params: { organizationId } }"
+            :to="{ name: 'account.organizations.edit', params: { organizationId: organization.data.id } }"
             type="button"
             class="btn btn-primary"
         >
@@ -29,7 +28,7 @@
                         Organization Name
                     </dt>
                     <dd>
-                        {{ organization.name }}
+                        {{ organization.data.name }}
                     </dd>
                 </div>
 
@@ -38,16 +37,16 @@
                         Members
                     </dt>
                     <dd>
-                        {{ organization.memberCount }}
+                        {{ organization.data.members.length }}
                     </dd>
                 </div>
 
                 <div class="organization-info-item">
                     <dt>
-                        Shops
+                        Slug
                     </dt>
                     <dd>
-                        {{ organization.shopCount }}
+                        {{ organization.data.slug }}
                     </dd>
                 </div>
             </dl>
@@ -75,20 +74,25 @@
             <DataTable
                 :columns="[
                     { key: 'email', name: 'Email' },
-                    { key: 'displayName', name: 'Name' },
+                    { key: 'name', name: 'Name' },
+                    { key: 'role', name: 'Role' },
                 ]"
-                :data="organizationMembers"
+                :data="organization.data.members"
             >
-                <template #cell-displayName="{ row }">
-                    {{ row.displayName }}
-                    <template v-if="row.id === organization?.ownerId">
-                        (Owner)
-                    </template>
+                <template #cell-email="{ row }">
+                    {{ row.user.email }}
+                </template>
+
+                <template #cell-name="{ row }">
+                    {{ row.user.name }}
+                </template>
+                
+                <template #cell-role="{ row }">
+                    {{ row.role }}
                 </template>
 
                 <template #cell-actions="{ row }">
                     <button
-                        v-if="isOwner && row.id !== organization?.ownerId"
                         type="button"
                         class="tooltip tooltip-position-left"
                         data-tooltip="Unassign"
@@ -114,6 +118,7 @@
                     id="addMemberForm"
                     v-slot="{ errors }"
                     :validation-schema="schemaMembers"
+                    :initial-values="{ email: '', role: 'member' }"
                     @submit="onAddMember"
                 >
                     <label for="email">Email</label>
@@ -128,6 +133,20 @@
                     />
                     <div class="field-error-message">
                         {{ errors.email }}
+                    </div>
+
+                    <label for="role">Role</label>
+                    <field
+                        id="role"
+                        as="select"
+                        name="role"
+                        class="field"
+                    >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </field>
+                    <div class="field-error-message">
+                        {{ errors.role }}
                     </div>
                 </vee-form>
             </template>
@@ -162,6 +181,36 @@
             </template>
         </modal>
     </main-container>
+
+    <main-container>
+        <div class="panel panel-table">
+            <div class="organization-members-header">
+                <h3 class="organization-members-heading">
+                    Invitations
+                </h3>
+            </div>
+
+            <DataTable
+                :columns="[
+                    { key: 'email', name: 'Email' },
+                    { key: 'role', name: 'Role' },
+                    { key: 'status', name: 'Status' },
+                ]"
+                :data="organization.data.invitations"
+            >
+                <template #cell-actions="{ row }">
+                    <button
+                        type="button"
+                        class="tooltip tooltip-position-left"
+                        data-tooltip="Unassign"
+                        @click="onRemoveMember(row.id)"
+                    >
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+                    </button>
+                </template>
+            </DataTable>
+        </div>
+    </main-container>
 </template>
 
 <script setup lang="ts">
@@ -170,8 +219,7 @@ import { Field, Form as VeeForm } from 'vee-validate';
 import { useRoute, useRouter } from 'vue-router';
 
 import { authClient } from '@/helpers/auth-client';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import * as Yup from 'yup';
 
 const route = useRoute();
@@ -179,27 +227,12 @@ const router = useRouter();
 const { error } = useAlert();
 const session = authClient.useSession();
 
-const organizationId = Number.parseInt(
-    route.params.organizationId as string,
-    10,
-);
-
-const organization = ref<
-    RouterOutput['organization']['listSingleOrganization'] | null
->(null);
-const organizationMembers = ref<
-    RouterOutput['organization']['listMembers'] | null
->(null);
-
-trpcClient.organization.listSingleOrganization
-    .query({ orgId: organizationId })
+const organization = ref<Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>>();
+authClient.organization.getFullOrganization({ query: {organizationId: route.params.organizationId as string} })
     .then((org) => {
+        console.log(org)
         organization.value = org;
-    });
-
-const isOwner = computed(
-    () => organization.value?.ownerId === session.value.data?.user.id,
-);
+    })
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
@@ -208,28 +241,20 @@ const schemaMembers = Yup.object().shape({
     email: Yup.string()
         .email('Email address is not valid')
         .required('Email address is required'),
+    role: Yup.string()
+        .oneOf(['member', 'admin'], 'Role must be either member or admin')
+        .required('Role is required'),
 });
-
-async function loadOrganizationMembers() {
-    organizationMembers.value = await trpcClient.organization.listMembers.query(
-        {
-            orgId: organizationId,
-        },
-    );
-}
-
-loadOrganizationMembers();
 
 async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
     isSubmitting.value = true;
     if (organization.value) {
         try {
-            await trpcClient.organization.addMember.mutate({
-                orgId: organization.value.id,
+            await authClient.organization.inviteMember({
                 email: values.email,
+                role: values.role,
+                organizationId: organization.value.data.id,
             });
-
-            await loadOrganizationMembers();
 
             showAddMemberModal.value = false;
             await router.push({
@@ -248,12 +273,10 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
 async function onRemoveMember(userId: string) {
     if (organization.value) {
         try {
-            await trpcClient.organization.removeMember.mutate({
-                orgId: organization.value.id,
-                userId,
-            });
-
-            await loadOrganizationMembers();
+            await authClient.organization.removeMember({
+                memberIdOrEmail: userId,
+                organizationId: organization.value.data.id,
+            })
 
             await router.push({
                 name: 'account.organizations.detail',
