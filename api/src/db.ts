@@ -1,5 +1,4 @@
 import { Database } from 'bun:sqlite';
-import type { RegistrationInfo } from '@passwordless-id/webauthn/dist/esm/types';
 import {
     type BunSQLiteDatabase,
     drizzle as drizzleSqlite,
@@ -287,10 +286,4 @@ export function closeConnection() {
             console.error('Error closing database connection:', error);
         }
     }
-}
-
-type ResultSet = { lastInsertRowid: number };
-
-export function getLastInsertId(result: ResultSet): number {
-    return result.lastInsertRowid;
 }

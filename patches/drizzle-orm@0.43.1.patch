@@ -1,0 +1,58 @@
+diff --git a/bun-sqlite/driver.d.ts b/bun-sqlite/driver.d.ts
+index e0ff8e429fa75d6d1e169b7ab618396ec0c6da40..fdf051254d2c9b110f62b67093be0319bfa4cf46 100644
+--- a/bun-sqlite/driver.d.ts
++++ b/bun-sqlite/driver.d.ts
+@@ -2,7 +2,8 @@ import { Database } from 'bun:sqlite';
+ import { entityKind } from "../entity.js";
+ import { BaseSQLiteDatabase } from "../sqlite-core/db.js";
+ import { type DrizzleConfig } from "../utils.js";
+-export declare class BunSQLiteDatabase<TSchema extends Record<string, unknown> = Record<string, never>> extends BaseSQLiteDatabase<'sync', void, TSchema> {
++export type BunSQLiteRunResult = ReturnType<BunStatement<any>['run']>;
++export declare class BunSQLiteDatabase<TSchema extends Record<string, unknown> = Record<string, never>> extends BaseSQLiteDatabase<'sync', BunSQLiteRunResult, TSchema> {
+     static readonly [entityKind]: string;
+ }
+ type DrizzleBunSqliteDatabaseOptions = {
+diff --git a/bun-sqlite/session.d.ts b/bun-sqlite/session.d.ts
+index b94945565b6a86200731c9a88498ec41e039cadb..04fca907f01afdf9820ed8ec6c07cf087d9085c2 100644
+--- a/bun-sqlite/session.d.ts
++++ b/bun-sqlite/session.d.ts
+@@ -1,4 +1,5 @@
+ import type { Database, Statement as BunStatement } from 'bun:sqlite';
++export type BunSQLiteRunResult = ReturnType<BunStatement<any>['run']>;
+ import { entityKind } from "../entity.js";
+ import type { Logger } from "../logger.js";
+ import type { RelationalSchemaConfig, TablesRelationalConfig } from "../relations.js";
+@@ -13,7 +14,7 @@ export interface SQLiteBunSessionOptions {
+ }
+ type PreparedQueryConfig = Omit<PreparedQueryConfigBase, 'statement' | 'run'>;
+ type Statement = BunStatement<any>;
+-export declare class SQLiteBunSession<TFullSchema extends Record<string, unknown>, TSchema extends TablesRelationalConfig> extends SQLiteSession<'sync', void, TFullSchema, TSchema> {
++export declare class SQLiteBunSession<TFullSchema extends Record<string, unknown>, TSchema extends TablesRelationalConfig> extends SQLiteSession<'sync', BunSQLiteRunResult, TFullSchema, TSchema> {
+     private client;
+     private schema;
+     static readonly [entityKind]: string;
+@@ -23,13 +24,13 @@ export declare class SQLiteBunSession<TFullSchema extends Record<string, unknown
+     prepareQuery<T extends Omit<PreparedQueryConfig, 'run'>>(query: Query, fields: SelectedFieldsOrdered | undefined, executeMethod: SQLiteExecuteMethod, isResponseInArrayMode: boolean, customResultMapper?: (rows: unknown[][]) => unknown): PreparedQuery<T>;
+     transaction<T>(transaction: (tx: SQLiteBunTransaction<TFullSchema, TSchema>) => T, config?: SQLiteTransactionConfig): T;
+ }
+-export declare class SQLiteBunTransaction<TFullSchema extends Record<string, unknown>, TSchema extends TablesRelationalConfig> extends SQLiteTransaction<'sync', void, TFullSchema, TSchema> {
++export declare class SQLiteBunTransaction<TFullSchema extends Record<string, unknown>, TSchema extends TablesRelationalConfig> extends SQLiteTransaction<'sync', BunSQLiteRunResult, TFullSchema, TSchema> {
+     static readonly [entityKind]: string;
+     transaction<T>(transaction: (tx: SQLiteBunTransaction<TFullSchema, TSchema>) => T): T;
+ }
+ export declare class PreparedQuery<T extends PreparedQueryConfig = PreparedQueryConfig> extends PreparedQueryBase<{
+     type: 'sync';
+-    run: void;
++    run: BunSQLiteRunResult;
+     all: T['all'];
+     get: T['get'];
+     values: T['values'];
+@@ -42,7 +43,7 @@ export declare class PreparedQuery<T extends PreparedQueryConfig = PreparedQuery
+     private customResultMapper?;
+     static readonly [entityKind]: string;
+     constructor(stmt: Statement, query: Query, logger: Logger, fields: SelectedFieldsOrdered | undefined, executeMethod: SQLiteExecuteMethod, _isResponseInArrayMode: boolean, customResultMapper?: ((rows: unknown[][]) => unknown) | undefined);
+-    run(placeholderValues?: Record<string, unknown>): import("bun:sqlite").Changes;
++    run(placeholderValues?: Record<string, unknown>): BunSQLiteRunResult;
+     all(placeholderValues?: Record<string, unknown>): T['all'];
+     get(placeholderValues?: Record<string, unknown>): T['get'];
+     values(placeholderValues?: Record<string, unknown>): T['values'];

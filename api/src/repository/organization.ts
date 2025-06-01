@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq, inArray } from 'drizzle-orm';
-import { type Drizzle, getLastInsertId, schema } from '../db';
+import { type Drizzle, schema } from '../db';
 import Users from './users';
 
 interface OrganizationMember {
@@ -22,15 +22,12 @@ async function create(
         })
         .execute();
 
-    // @ts-expect-error drizzle-lib-error
-    const lastId = getLastInsertId(organizationInsertResult);
-
     await con.insert(schema.userToOrganization).values({
-        organizationId: lastId,
+        organizationId: organizationInsertResult.lastInsertRowid,
         userId: ownerId,
     });
 
-    return lastId.toString();
+    return organizationInsertResult.lastInsertRowid.toString();
 }
 
 async function listMembers(

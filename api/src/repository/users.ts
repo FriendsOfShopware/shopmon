@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { type Drizzle, getConnection, getLastInsertId, schema } from '../db';
+import { type Drizzle, schema } from '../db';
 import Organization from './organization';
 
 async function existsByEmail(
@@ -84,14 +84,11 @@ async function createNotification(
         })
         .execute();
 
-    // @ts-expect-error drizzle-lib-error
-    const lastId = getLastInsertId(result);
-
     const notificationResponse: typeof schema.userNotification.$inferSelect = {
         ...notification,
         key,
         userId,
-        id: lastId,
+        id: result.lastInsertRowid,
         read: false,
         createdAt: new Date(),
     };

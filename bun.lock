@@ -76,6 +76,9 @@
     "esbuild",
     "@biomejs/biome",
   ],
+  "patchedDependencies": {
+    "drizzle-orm@0.43.1": "patches/drizzle-orm@0.43.1.patch",
+  },
   "catalog": {
     "better-auth": "1.2.8",
     "typescript": "5.8.3",

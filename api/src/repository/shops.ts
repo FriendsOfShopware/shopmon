@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { type Drizzle, getLastInsertId, schema } from '../db.ts';
+import { type Drizzle, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
 import Users from './users.ts';
 
@@ -48,8 +48,7 @@ async function createShop(
         })
         .execute();
 
-    // @ts-expect-error drizzle-lib-error
-    return getLastInsertId(result);
+    return result.lastInsertRowid as number;
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {
