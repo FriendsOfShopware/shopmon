@@ -37,7 +37,7 @@
                         :to="{
                             name: 'account.shops.detail',
                             params: {
-                                organizationId: row.organizationId,
+                                slug: row.organizationSlug,
                                 shopId: row.id
                             }
                         }"

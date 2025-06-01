@@ -27,7 +27,7 @@
                 class="bg-white dark:bg-neutral-800"
             >
                 <template #cell-name="{ row }">
-                    <router-link :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }">
+                    <router-link :to="{ name: 'account.organizations.detail', params: { slug: row.slug } }">
                         {{ row.name }}
                     </router-link>
                 </template>

@@ -4,7 +4,7 @@
         :title="'Edit ' + organization.data.name"
     >
         <router-link
-            :to="{ name: 'account.organizations.detail', params: { organizationId: organization.data.id } }"
+            :to="{ name: 'account.organizations.detail', params: { slug: organization.data.slug } }"
             type="button"
             class="btn"
         >
@@ -143,13 +143,25 @@ const organization =
     ref<
         Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
     >();
+const canDeleteOrganization = ref<boolean>(false);
 
 authClient.organization
     .getFullOrganization({
-        query: { organizationId: route.params.organizationId as string },
+        query: { organizationSlug: route.params.slug as string },
     })
     .then((org) => {
         organization.value = org;
+        authClient.organization
+            .hasPermission({
+                organizationId: org.data?.id,
+                permissions: {
+                    organization: ['delete'],
+                },
+            })
+            .then((hasPermission) => {
+                canDeleteOrganization.value =
+                    hasPermission.data?.success || false;
+            });
     });
 
 const showOrganizationDeletionModal = ref(false);
@@ -163,18 +175,6 @@ const schema = Yup.object().shape({
             'Slug must be lowercase and can only contain letters, numbers, and hyphens',
         ),
 });
-
-const canDeleteOrganization = ref<boolean>(false);
-authClient.organization
-    .hasPermission({
-        organizationId: route.params.organizationId as string,
-        permissions: {
-            organization: ['delete'],
-        },
-    })
-    .then((hasPermission) => {
-        canDeleteOrganization.value = hasPermission.data?.success || false;
-    });
 
 async function onSaveOrganization(values: Record<string, unknown>) {
     const typedValues = values as Yup.InferType<typeof schema>;
@@ -191,7 +191,7 @@ async function onSaveOrganization(values: Record<string, unknown>) {
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
-                    organizationId: organization.value.data.id,
+                    slug: typedValues.slug,
                 },
             });
         } catch (err) {

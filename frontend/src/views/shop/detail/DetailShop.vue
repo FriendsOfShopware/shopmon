@@ -409,7 +409,6 @@ async function loadShop() {
 
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
-        orgId: route.params.organizationId as string,
         shopId,
     });
     isLoading.value = false;
@@ -438,7 +437,6 @@ async function onRefresh(pagespeed: boolean) {
         try {
             isRefreshing.value = true;
             await trpcClient.organization.shop.refreshShop.mutate({
-                orgId: shop.value.organizationId,
                 shopId: shop.value.id,
                 pageSpeed: pagespeed,
             });
@@ -457,7 +455,6 @@ async function onCacheClear() {
         try {
             isCacheClearing.value = true;
             await trpcClient.organization.shop.clearShopCache.mutate({
-                orgId: shop.value.organizationId,
                 shopId: shop.value.id,
             });
             isCacheClearing.value = false;

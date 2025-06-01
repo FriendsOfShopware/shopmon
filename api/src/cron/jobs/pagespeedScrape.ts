@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import sharp from 'sharp';
 import { type Drizzle, getConnection, schema } from '../../db.js';
 import Shops from '../../repository/shops.js';
@@ -10,6 +10,7 @@ interface SQLShop {
     name: string;
     url: string;
     organizationId: string;
+    organizationSlug: string;
     shopImage: string | null;
 }
 
@@ -68,17 +69,22 @@ export async function pagespeedScrapeJob() {
 export async function scrapeSinglePagespeedShop(shopId: number) {
     const con = getConnection();
 
-    // Get the shop by ID
-    const shop = await con.query.shop.findFirst({
-        where: eq(schema.shop.id, shopId),
-        columns: {
-            id: true,
-            name: true,
-            url: true,
-            organizationId: true,
-            shopImage: true,
-        },
-    });
+    const shop = await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            url: schema.shop.url,
+            organizationId: schema.shop.organizationId,
+            organizationSlug: schema.organization.slug,
+            shopImage: schema.shop.shopImage,
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .where(eq(schema.shop.id, shopId))
+        .get();
 
     if (!shop) {
         console.error(`Shop with ID ${shopId} not found`);
@@ -106,7 +112,7 @@ async function computePagespeed(shop: SQLShop, con: Drizzle) {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            organizationId: shop.organizationId.toString(),
+                            slug: shop.organizationSlug,
                         },
                     },
                 },
@@ -126,7 +132,7 @@ async function computePagespeed(shop: SQLShop, con: Drizzle) {
                     name: 'account.shops.detail',
                     params: {
                         shopId: shop.id.toString(),
-                        organizationId: shop.organizationId.toString(),
+                        slug: shop.organizationSlug,
                     },
                 },
             },

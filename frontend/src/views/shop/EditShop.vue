@@ -7,7 +7,7 @@
             :to="{
                 name: 'account.shops.detail',
                 params: {
-                    organizationId: shop.organizationId,
+                    slug: route.params.slug as string,
                     shopId: shop.id
                 }
             }"
@@ -228,7 +228,6 @@ const shopId = Number.parseInt(route.params.shopId as string, 10);
 async function loadShop() {
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
-        orgId: route.params.organizationId as string,
         shopId,
     });
     isLoading.value = false;
@@ -276,7 +275,7 @@ async function onSubmit(values: Record<string, unknown>) {
             router.push({
                 name: 'account.shops.detail',
                 params: {
-                    organizationId: shop.value.organizationId,
+                    slug: route.params.slug as string,
                     shopId: shop.value.id,
                 },
             });
@@ -290,7 +289,6 @@ async function deleteShop() {
     if (shop.value) {
         try {
             await trpcClient.organization.shop.delete.mutate({
-                orgId: shop.value.organizationId,
                 shopId: shop.value.id,
             });
 

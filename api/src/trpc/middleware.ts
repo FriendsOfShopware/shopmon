@@ -79,7 +79,7 @@ export const hasPermissionMiddleware = (
 export const shopMiddleware = t.middleware(async (opts) => {
     const { ctx, input, next } = opts as typeof opts & {
         input: { orgId: string; shopId: number };
-        ctx: context & { user: number };
+        ctx: context & { user: NonNullable<context['user']> };
     };
 
     const result = await ctx.drizzle
@@ -87,10 +87,19 @@ export const shopMiddleware = t.middleware(async (opts) => {
             orgId: schema.shop.organizationId,
         })
         .from(schema.shop)
-        .where(eq(schema.shop.id, input.shopId))
+        .innerJoin(
+            schema.member,
+            eq(schema.shop.organizationId, schema.member.organizationId),
+        )
+        .where(
+            and(
+                eq(schema.shop.id, input.shopId),
+                eq(schema.member.userId, ctx.user.id),
+            ),
+        )
         .get();
 
-    if (!result || result.orgId !== input.orgId) {
+    if (!result) {
         throw new TRPCError({ code: 'NOT_FOUND' });
     }
 

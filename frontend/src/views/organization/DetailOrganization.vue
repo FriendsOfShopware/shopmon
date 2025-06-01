@@ -4,7 +4,7 @@
         :title="organization.data.name"
         >
         <router-link
-            :to="{ name: 'account.organizations.edit', params: { organizationId: organization.data.id } }"
+            :to="{ name: 'account.organizations.edit', params: { slug: organization.data.slug } }"
             type="button"
             class="btn btn-primary"
         >
@@ -310,7 +310,7 @@ const organization =
 async function loadOrganization() {
     authClient.organization
         .getFullOrganization({
-            query: { organizationId: route.params.organizationId as string },
+            query: { organizationSlug: route.params.slug as string },
         })
         .then((org) => {
             organization.value = org;

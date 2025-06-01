@@ -48,12 +48,10 @@ export const shopRouter = router({
     get: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .query(async ({ input, ctx }) => {
             const shopQuery = ctx.drizzle
@@ -130,7 +128,6 @@ export const shopRouter = router({
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .mutation(async ({ input, ctx }) => {
             const shop = new SimpleShop('', input.shopUrl, '');
             shop.setShopCredentials(input.clientId, input.clientSecret);
@@ -169,12 +166,10 @@ export const shopRouter = router({
     delete: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             await Shops.deleteShop(ctx.drizzle, input.shopId);
@@ -198,7 +193,6 @@ export const shopRouter = router({
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             if (input.name) {
@@ -278,13 +272,11 @@ export const shopRouter = router({
     refreshShop: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 shopId: z.number(),
                 pageSpeed: z.boolean(),
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             await scrapeSingleShop(input.shopId);
@@ -298,12 +290,10 @@ export const shopRouter = router({
     clearShopCache: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 shopId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             const shopData = await ctx.drizzle.query.shop.findFirst({
@@ -337,13 +327,11 @@ export const shopRouter = router({
     rescheduleTask: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 shopId: z.number(),
                 taskId: z.string(),
             }),
         )
         .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
             const shopData = await ctx.drizzle.query.shop.findFirst({

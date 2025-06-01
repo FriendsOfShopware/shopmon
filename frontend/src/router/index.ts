@@ -76,12 +76,12 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.shops.edit',
-                    path: 'organizations/edit/:organizationId/:shopId(\\d+)',
+                    path: 'organizations/:slug/shops/:shopId(\\d+)/edit',
                     component: () => import('@/views/shop/EditShop.vue'),
                 },
                 {
                     name: 'account.shops.detail',
-                    path: 'organizations/:organizationId/:shopId(\\d+)',
+                    path: 'organizations/:slug/shops/:shopId(\\d+)',
                     component: () =>
                         import('@/views/shop/detail/DetailShop.vue'),
                 },
@@ -99,13 +99,13 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.organizations.detail',
-                    path: 'organizations/:organizationId',
+                    path: 'organizations/:slug',
                     component: () =>
                         import('@/views/organization/DetailOrganization.vue'),
                 },
                 {
                     name: 'account.organizations.edit',
-                    path: 'organizations/edit/:organizationId',
+                    path: 'organizations/edit/:slug',
                     component: () =>
                         import('@/views/organization/EditOrganization.vue'),
                 },
