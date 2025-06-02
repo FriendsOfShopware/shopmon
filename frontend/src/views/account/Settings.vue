@@ -303,12 +303,12 @@ const user = {
 
 async function loadLinkedAccounts() {
     authClient.listAccounts().then((data) => {
-    if (data.data) {
-        connectedProviders.value = data.data?.map(
-            (account) => account.provider,
-        );
-    }
-});
+        if (data.data) {
+            connectedProviders.value = data.data?.map(
+                (account) => account.provider,
+            );
+        }
+    });
 }
 loadLinkedAccounts();
 
@@ -384,7 +384,10 @@ async function removeSession(session: Session) {
 
 async function linkSocial(provider: 'github') {
     try {
-        await authClient.linkSocial({ provider, callbackURL: window.location.href });
+        await authClient.linkSocial({
+            provider,
+            callbackURL: window.location.href,
+        });
     } catch (err) {
         alert.error(err instanceof Error ? err.message : String(err));
     }

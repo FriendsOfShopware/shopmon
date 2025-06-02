@@ -413,11 +413,18 @@ async function onChangeRole(values: Record<string, unknown>) {
 
     if (organization.value && selectedMember.value) {
         try {
-            await authClient.organization.updateMemberRole({
+            const resp = await authClient.organization.updateMemberRole({
                 memberId: selectedMember.value.id,
                 role: typedValues.role,
                 organizationId: organization.value.data.id,
             });
+
+            if (resp.error) {
+                alert.error(
+                    resp.error.message || 'Failed to update member role',
+                );
+                return;
+            }
 
             alert.success('Member role updated successfully');
 
