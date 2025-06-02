@@ -30,6 +30,12 @@ export const auth = betterAuth({
             },
         },
     },
+    socialProviders: {
+        github: {
+            clientId: process.env.APP_OAUTH_GITHUB_CLIENT_ID,
+            clientSecret: process.env.APP_OAUTH_GITHUB_CLIENT_SECRET,
+        },
+    },
     emailVerification: {
         sendVerificationEmail: async ({ user, token }) => {
             const { sendMailConfirmToUser } = await import('./mail/mail.js');
