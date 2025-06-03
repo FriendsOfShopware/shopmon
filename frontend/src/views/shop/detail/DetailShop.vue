@@ -29,7 +29,7 @@
             :to="{
                 name: 'account.shops.edit',
                 params: {
-                    organizationId: shop.organizationId,
+                    slug: route.params.slug,
                     shopId: shop.id
                 }
             }"
@@ -231,7 +231,7 @@
             <template #content>
                 <select
                     class="field"
-                    @change="(event: HTMLSelectElement) => loadUpdateWizard(event.value)"
+                    @change="(event: Event) => loadUpdateWizard((event.target as HTMLSelectElement).value)"
                 >
                     <option disabled selected>
                         Select update Version
@@ -383,6 +383,7 @@ type ExtensionWithCompatibility = NonNullable<
 >[number] & {
     compatibility: {
         label: string;
+        type: string;
     } | null;
 };
 
@@ -404,15 +405,10 @@ const shopwareVersions: Ref<string[] | null> = ref(null);
 const latestShopwareVersion: Ref<string | null> = ref(null);
 
 async function loadShop() {
-    const organizationId = Number.parseInt(
-        route.params.organizationId as string,
-        10,
-    );
     const shopId = Number.parseInt(route.params.shopId as string, 10);
 
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
-        orgId: organizationId,
         shopId,
     });
     isLoading.value = false;
@@ -441,7 +437,6 @@ async function onRefresh(pagespeed: boolean) {
         try {
             isRefreshing.value = true;
             await trpcClient.organization.shop.refreshShop.mutate({
-                orgId: shop.value.organizationId,
                 shopId: shop.value.id,
                 pageSpeed: pagespeed,
             });
@@ -460,7 +455,6 @@ async function onCacheClear() {
         try {
             isCacheClearing.value = true;
             await trpcClient.organization.shop.clearShopCache.mutate({
-                orgId: shop.value.organizationId,
                 shopId: shop.value.id,
             });
             isCacheClearing.value = false;

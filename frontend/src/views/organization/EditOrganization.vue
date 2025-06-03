@@ -1,10 +1,10 @@
 <template>
     <header-container
-        v-if="organization"
-        :title="'Edit ' + organization.name"
+        v-if="organization?.data"
+        :title="'Edit ' + organization.data.name"
     >
         <router-link
-            :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
+            :to="{ name: 'account.organizations.detail', params: { slug: organization.data.slug } }"
             type="button"
             class="btn"
         >
@@ -12,11 +12,11 @@
         </router-link>
     </header-container>
 
-    <main-container v-if="organization">
+    <main-container v-if="organization?.data">
         <vee-form
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
-            :initial-values="organization"
+            :initial-values="organization.data"
             @submit="onSaveOrganization"
         >
             <form-group title="Organization Information">
@@ -32,6 +32,21 @@
                     />
                     <div class="field-error-message">
                         {{ errors.name }}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="slug">Slug</label>
+                    <field
+                        id="slug"
+                        type="text"
+                        name="slug"
+                        autocomplete="slug"
+                        class="field"
+                        :class="{ 'has-error': errors.slug }"
+                    />
+                    <div class="field-error-message">
+                        {{ errors.slug }}
                     </div>
                 </div>
             </form-group>
@@ -55,7 +70,7 @@
             </div>
         </vee-form>
 
-        <form-group :title="'Deleting organization ' + organization.name">
+        <form-group :title="'Deleting organization ' + organization.data.name" v-if="canDeleteOrganization">
             <p>Once you delete your organization, you will lose all data associated with it. </p>
 
             <button
@@ -113,8 +128,8 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
+import { authClient } from '@/helpers/auth-client';
 
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -124,39 +139,59 @@ const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-const organizationId = Number.parseInt(
-    route.params.organizationId as string,
-    10,
-);
+const organization =
+    ref<
+        Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
+    >();
+const canDeleteOrganization = ref<boolean>(false);
 
-const organization = ref<
-    RouterOutput['organization']['listSingleOrganization'] | null
->(null);
-
-trpcClient.organization.listSingleOrganization
-    .query({ orgId: organizationId })
+authClient.organization
+    .getFullOrganization({
+        query: { organizationSlug: route.params.slug as string },
+    })
     .then((org) => {
         organization.value = org;
+        authClient.organization
+            .hasPermission({
+                organizationId: org.data?.id,
+                permissions: {
+                    organization: ['delete'],
+                },
+            })
+            .then((hasPermission) => {
+                canDeleteOrganization.value =
+                    hasPermission.data?.success || false;
+            });
     });
 
 const showOrganizationDeletionModal = ref(false);
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Name of organization is required'),
+    slug: Yup.string()
+        .required('Slug for organization is required')
+        .matches(
+            /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+            'Slug must be lowercase and can only contain letters, numbers, and hyphens',
+        ),
 });
 
-async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
+async function onSaveOrganization(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schema>;
     if (organization.value) {
         try {
-            await trpcClient.organization.update.mutate({
-                orgId: organization.value.id,
-                name: values.name,
+            await authClient.organization.update({
+                organizationId: organization.value.data.id,
+                data: {
+                    name: typedValues.name,
+                    slug: typedValues.slug,
+                },
             });
 
             await router.push({
                 name: 'account.organizations.detail',
                 params: {
-                    organizationId: organization.value?.id,
+                    slug: typedValues.slug,
                 },
             });
         } catch (err) {
@@ -168,9 +203,14 @@ async function onSaveOrganization(values: Yup.InferType<typeof schema>) {
 async function deleteOrganization() {
     if (organization.value) {
         try {
-            await trpcClient.organization.delete.mutate({
-                orgId: organization.value.id,
+            const resp = await authClient.organization.delete({
+                organizationId: organization.value.data.id,
             });
+
+            if (resp.error) {
+                error(resp.error.message || 'Failed to delete organization');
+                return;
+            }
 
             await router.push({ name: 'account.organizations.list' });
         } catch (err) {

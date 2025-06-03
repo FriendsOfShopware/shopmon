@@ -13,7 +13,7 @@
                         :to="{
                             name: 'account.shops.detail',
                             params: {
-                                organizationId: shop.organizationId,
+                                slug: shop.organizationSlug,
                                 shopId: shop.id
                             }
                         }" class="item-link"
@@ -47,7 +47,7 @@
             <ul class="dashboard-grid-container">
                 <li v-for="organization in organizations" :key="organization.id" class="dashboard-grid-item item-item">
                     <router-link
-                        :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
+                        :to="{ name: 'account.organizations.detail', params: { slug: organization.slug } }"
                         class="item-link"
                     >
                         <div class="item-logo">
@@ -87,7 +87,7 @@
                                 :to="{
                                     name: 'account.shops.detail',
                                     params: {
-                                        organizationId: row.shopOrganizationId,
+                                        slug: row.organizationSlug,
                                         shopId: row.shopId
                                     }
                                 }"

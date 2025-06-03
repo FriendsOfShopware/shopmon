@@ -52,7 +52,37 @@
                     label="New Password"
                     :error="errors.newPassword"
                 />
+
+                <label>Login using your GitHub account</label>
+
+                <button 
+                v-if="!connectedProviders.includes('github')"
+                    type="button"
+                    class="btn btn-primary"
+                    @click="linkSocial('github')"
+                >
+                <icon-fa6-brands:github
+                    class="icon"
+                    aria-hidden="true"
+                />
+                Link GitHub
+            </button>
+            
+                <button
+                    v-else
+                    type="button"
+                    class="btn btn-danger"
+                    @click="unlinkSocial('github')"
+                >
+                    <icon-fa6-brands:github
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    Unlink from GitHub
+                </button>
+
             </form-group>
+            
 
             <div class="form-submit">
                 <button
@@ -76,7 +106,7 @@
 
         <form-group title="Passkey Devices" class="form-group-table">
             <data-table
-                v-if="passkeys && passkeys.length"
+                v-if="passkeys"
                 :columns="[
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'createdAt', name: 'Created At', sortable: true },
@@ -244,16 +274,17 @@ import * as Yup from 'yup';
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
-import type { Session } from 'better-auth/types';
+import type { Account, Session } from 'better-auth/types';
 
 const session = authClient.useSession();
 
-const { error } = useAlert();
+const alert = useAlert();
 
 const passKeyName = ref('');
 
 const passkeys = ref<Passkey[] | null>([]);
 const sessions = ref<Session[] | null>([]);
+const connectedProviders = ref<string[]>([]);
 
 authClient.passkey.listUserPasskeys().then((data) => {
     passkeys.value = data.data;
@@ -269,6 +300,17 @@ const user = {
     currentPassword: '',
     newPassword: '',
 };
+
+async function loadLinkedAccounts() {
+    authClient.listAccounts().then((data) => {
+        if (data.data) {
+            connectedProviders.value = data.data?.map(
+                (account) => account.provider,
+            );
+        }
+    });
+}
+loadLinkedAccounts();
 
 const showAccountDeletionModal = ref(false);
 const showPasskeyCreationModal = ref(false);
@@ -307,7 +349,7 @@ async function deleteUser() {
         await trpcClient.account.deleteCurrentUser.mutate();
         await authClient.deleteUser();
     } catch (err) {
-        error(err instanceof Error ? err.message : String(err));
+        alert.error(err instanceof Error ? err.message : String(err));
     }
 
     showAccountDeletionModal.value = false;
@@ -315,7 +357,7 @@ async function deleteUser() {
 
 async function createPasskey() {
     if (!passKeyName.value) {
-        error('Please provide a name for the Passkey Device.');
+        alert.error('Please provide a name for the Passkey Device.');
         return;
     }
 
@@ -338,5 +380,26 @@ async function removeSession(session: Session) {
     authClient.listSessions().then((data) => {
         sessions.value = data.data;
     });
+}
+
+async function linkSocial(provider: 'github') {
+    try {
+        await authClient.linkSocial({
+            provider,
+            callbackURL: window.location.href,
+        });
+    } catch (err) {
+        alert.error(err instanceof Error ? err.message : String(err));
+    }
+}
+
+async function unlinkSocial(providerId: string) {
+    try {
+        await authClient.unlinkAccount({ providerId });
+        await loadLinkedAccounts();
+        alert.success(`Successfully unlinked your account from ${providerId}`);
+    } catch (err) {
+        alert.error(err instanceof Error ? err.message : String(err));
+    }
 }
 </script>

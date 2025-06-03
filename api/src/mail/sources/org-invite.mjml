@@ -9,12 +9,17 @@
         </mj-text>
 
         <mj-text color="#121826" font-size="16px" font-family="arial">
-           thank you for registering with us. Please click the button below to confirm your email address.
+           the user ${vars.invitedByUsername} has invited you to join the Organization: ${vars.organizationName}
         </mj-text>
 
-        <mj-button background-color="#43a3e6" color="#fff" font-size="16px" font-weight="bold" font-family="arial" height="42px" padding="10px 20px" href="${vars.FRONTEND_URL}/account/confirm/${vars.token}">
-          Confirm email
+        <mj-button background-color="#43a3e6" color="#fff" font-size="16px" font-weight="bold" font-family="arial" height="42px" padding="10px 20px" href="${vars.FRONTEND_URL}/app/organizations/accept/${vars.token}">
+          Accept
         </mj-button>
+
+        <mj-button background-color="red" color="#fff" font-size="16px" font-weight="bold" font-family="arial" height="42px" padding="10px 20px" href="${vars.FRONTEND_URL}/app/organizations/reject/${vars.token}">
+          Reject
+        </mj-button>
+
 
         <mj-text color="#121826" font-size="16px" font-family="arial">
           Best Regards,

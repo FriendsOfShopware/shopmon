@@ -1,11 +1,10 @@
 <template>
     <header-container
-        v-if="organization"
-        :title="organization.name"
-    >
+        v-if="organization?.data?.name"
+        :title="organization.data.name"
+        >
         <router-link
-            v-if="isOwner"
-            :to="{ name: 'account.organizations.edit', params: { organizationId } }"
+            :to="{ name: 'account.organizations.edit', params: { slug: organization.data.slug } }"
             type="button"
             class="btn btn-primary"
         >
@@ -29,7 +28,7 @@
                         Organization Name
                     </dt>
                     <dd>
-                        {{ organization.name }}
+                        {{ organization.data.name }}
                     </dd>
                 </div>
 
@@ -38,16 +37,16 @@
                         Members
                     </dt>
                     <dd>
-                        {{ organization.memberCount }}
+                        {{ organization.data.members.length }}
                     </dd>
                 </div>
 
                 <div class="organization-info-item">
                     <dt>
-                        Shops
+                        Slug
                     </dt>
                     <dd>
-                        {{ organization.shopCount }}
+                        {{ organization.data.slug }}
                     </dd>
                 </div>
             </dl>
@@ -75,24 +74,68 @@
             <DataTable
                 :columns="[
                     { key: 'email', name: 'Email' },
-                    { key: 'displayName', name: 'Name' },
+                    { key: 'name', name: 'Name' },
+                    { key: 'role', name: 'Role' },
                 ]"
-                :data="organizationMembers"
+                :data="organization.data.members"
             >
-                <template #cell-displayName="{ row }">
-                    {{ row.displayName }}
-                    <template v-if="row.id === organization?.ownerId">
-                        (Owner)
-                    </template>
+                <template #cell-email="{ row }">
+                    {{ row.user.email }}
+                </template>
+
+                <template #cell-name="{ row }">
+                    {{ row.user.name }}
+                </template>
+                
+                <template #cell-role="{ row }">
+                    {{ row.role }}
                 </template>
 
                 <template #cell-actions="{ row }">
                     <button
-                        v-if="isOwner && row.id !== organization?.ownerId"
+                        v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
+                        type="button"
+                        class="tooltip tooltip-position-left"
+                        data-tooltip="Change Role"
+                        @click="openChangeRoleModal(row as OrganizationMember)"
+                    >
+                        <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
+                    </button>
+                    <button
+                        v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
                         type="button"
                         class="tooltip tooltip-position-left"
                         data-tooltip="Unassign"
                         @click="onRemoveMember(row.id)"
+                    >
+                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+                    </button>
+                </template>
+            </DataTable>
+        </div>
+
+        <div class="panel panel-table">
+            <div class="organization-members-header">
+                <h3 class="organization-members-heading">
+                    Invitations
+                </h3>
+            </div>
+
+            <DataTable
+                :columns="[
+                    { key: 'email', name: 'Email' },
+                    { key: 'role', name: 'Role' },
+                    { key: 'status', name: 'Status' },
+                ]"
+                :data="organization.data.invitations"
+            >
+                <template #cell-actions="{ row }">
+                    <button
+                        v-if="row.status !== 'canceled'"
+                        type="button"
+                        class="tooltip tooltip-position-left"
+                        data-tooltip="Cancel Invitation"
+                        @click="cancelInvitation(row.id)"
                     >
                         <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
                     </button>
@@ -114,6 +157,7 @@
                     id="addMemberForm"
                     v-slot="{ errors }"
                     :validation-schema="schemaMembers"
+                    :initial-values="{ email: '', role: 'member' }"
                     @submit="onAddMember"
                 >
                     <label for="email">Email</label>
@@ -128,6 +172,20 @@
                     />
                     <div class="field-error-message">
                         {{ errors.email }}
+                    </div>
+
+                    <label for="role">Role</label>
+                    <field
+                        id="role"
+                        as="select"
+                        name="role"
+                        class="field"
+                    >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </field>
+                    <div class="field-error-message">
+                        {{ errors.role }}
                     </div>
                 </vee-form>
             </template>
@@ -161,85 +219,166 @@
                 </button>
             </template>
         </modal>
+
+        <modal
+            :show="showChangeRoleModal"
+            close-x-mark
+            @close="showChangeRoleModal = false"
+        >
+            <template #title>
+                Change Member Role
+            </template>
+
+            <template #content>
+                <vee-form
+                    id="changeRoleForm"
+                    v-slot="{ errors }"
+                    :validation-schema="schemaChangeRole"
+                    :initial-values="{ role: selectedMember?.role || 'member' }"
+                    @submit="onChangeRole"
+                >
+                    <label for="role">Role</label>
+
+                    <field
+                        id="role"
+                        as="select"
+                        name="role"
+                        class="field"
+                        :class="{ 'has-error': errors.role }"
+                    >
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                    </field>
+
+                    <div class="field-error-message">
+                        {{ errors.role }}
+                    </div>
+                </vee-form>
+            </template>
+
+            <template #footer>
+                <button
+                    type="reset"
+                    class="btn"
+                    form="changeRoleForm"
+                    @click="showChangeRoleModal = false"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    :disabled="isChangingRole"
+                    type="submit"
+                    class="btn btn-primary"
+                    form="changeRoleForm"
+                >
+                    <icon-fa6-solid:floppy-disk
+                        v-if="!isChangingRole"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop
+                        v-else
+                        class="icon"
+                    />
+                    Save
+                </button>
+            </template>
+        </modal>
     </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { authClient } from '@/helpers/auth-client';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import * as Yup from 'yup';
 
-const route = useRoute();
-const router = useRouter();
-const { error } = useAlert();
 const session = authClient.useSession();
 
-const organizationId = Number.parseInt(
-    route.params.organizationId as string,
-    10,
-);
+const route = useRoute();
+const alert = useAlert();
 
-const organization = ref<
-    RouterOutput['organization']['listSingleOrganization'] | null
->(null);
-const organizationMembers = ref<
-    RouterOutput['organization']['listMembers'] | null
->(null);
+const allowedToManageMembers = ref(false);
+const organization =
+    ref<
+        Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
+    >();
 
-trpcClient.organization.listSingleOrganization
-    .query({ orgId: organizationId })
-    .then((org) => {
-        organization.value = org;
-    });
+async function loadOrganization() {
+    authClient.organization
+        .getFullOrganization({
+            query: { organizationSlug: route.params.slug as string },
+        })
+        .then((org) => {
+            organization.value = org;
+            authClient.organization
+                .hasPermission({
+                    organizationId: organization.value?.data.id,
+                    permissions: {
+                        member: ['create', 'delete'],
+                    },
+                })
+                .then((resp) => {
+                    allowedToManageMembers.value = resp.data?.success || false;
+                });
+        });
+}
 
-const isOwner = computed(
-    () => organization.value?.ownerId === session.value.data?.user.id,
-);
+loadOrganization();
 
 const showAddMemberModal = ref(false);
 const isSubmitting = ref(false);
+
+// Change role modal state
+const showChangeRoleModal = ref(false);
+const isChangingRole = ref(false);
+
+type OrganizationMember = {
+    id: string;
+    role: string;
+    user: {
+        id: string;
+        email: string;
+        name: string;
+    };
+};
+
+const selectedMember = ref<OrganizationMember | null>(null);
 
 const schemaMembers = Yup.object().shape({
     email: Yup.string()
         .email('Email address is not valid')
         .required('Email address is required'),
+    role: Yup.string()
+        .oneOf(['member', 'admin'], 'Role must be either member or admin')
+        .required('Role is required'),
 });
 
-async function loadOrganizationMembers() {
-    organizationMembers.value = await trpcClient.organization.listMembers.query(
-        {
-            orgId: organizationId,
-        },
-    );
-}
+const schemaChangeRole = Yup.object().shape({
+    role: Yup.string()
+        .oneOf(['member', 'admin'], 'Role must be either member or admin')
+        .required('Role is required'),
+});
 
-loadOrganizationMembers();
-
-async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
+async function onAddMember(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schemaMembers>;
     isSubmitting.value = true;
     if (organization.value) {
         try {
-            await trpcClient.organization.addMember.mutate({
-                orgId: organization.value.id,
-                email: values.email,
+            await authClient.organization.inviteMember({
+                email: typedValues.email,
+                role: typedValues.role,
+                organizationId: organization.value.data.id,
             });
-
-            await loadOrganizationMembers();
 
             showAddMemberModal.value = false;
-            await router.push({
-                name: 'account.organizations.detail',
-                params: {
-                    organizationId: organization.value.id,
-                },
-            });
+            await loadOrganization();
         } catch (err) {
-            error(err instanceof Error ? err.message : String(err));
+            alert.error(err instanceof Error ? err.message : String(err));
         }
     }
     isSubmitting.value = false;
@@ -248,30 +387,76 @@ async function onAddMember(values: Yup.InferType<typeof schemaMembers>) {
 async function onRemoveMember(userId: string) {
     if (organization.value) {
         try {
-            await trpcClient.organization.removeMember.mutate({
-                orgId: organization.value.id,
-                userId,
+            await authClient.organization.removeMember({
+                memberIdOrEmail: userId,
+                organizationId: organization.value.data.id,
             });
 
-            await loadOrganizationMembers();
-
-            await router.push({
-                name: 'account.organizations.detail',
-                params: {
-                    organizationId: organization.value.id,
-                },
-            });
+            await loadOrganization();
         } catch (err) {
-            error(err instanceof Error ? err.message : String(err));
+            alert.error(err instanceof Error ? err.message : String(err));
         }
     }
+}
+
+async function cancelInvitation(invitationId: string) {
+    if (organization.value) {
+        try {
+            await authClient.organization.cancelInvitation({
+                invitationId,
+            });
+
+            await loadOrganization();
+        } catch (err) {
+            alert.error(err instanceof Error ? err.message : String(err));
+        }
+    }
+}
+
+function openChangeRoleModal(member: OrganizationMember) {
+    selectedMember.value = member;
+    showChangeRoleModal.value = true;
+}
+
+async function onChangeRole(values: Record<string, unknown>) {
+    const typedValues = values as Yup.InferType<typeof schemaChangeRole>;
+    isChangingRole.value = true;
+
+    if (organization.value && selectedMember.value) {
+        try {
+            const resp = await authClient.organization.updateMemberRole({
+                memberId: selectedMember.value.id,
+                role: typedValues.role,
+                organizationId: organization.value.data.id,
+            });
+
+            if (resp.error) {
+                alert.error(
+                    resp.error.message || 'Failed to update member role',
+                );
+                return;
+            }
+
+            alert.success('Member role updated successfully');
+
+            showChangeRoleModal.value = false;
+            await loadOrganization();
+        } catch (err) {
+            alert.error(err instanceof Error ? err.message : String(err));
+        }
+    }
+
+    isChangingRole.value = false;
 }
 </script>
 
 <style scoped>
+.panel {
+    margin-bottom: 3rem;
+}
+
 .organization-info {
     padding: 0;
-    margin-bottom: 3rem;
 
     &-heading {
         padding: 1.25rem 1rem;

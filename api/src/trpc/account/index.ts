@@ -30,7 +30,8 @@ export interface UserExtension extends Extension {
         [key: string]: {
             id: number;
             name: string;
-            organizationId: number;
+            organizationId: string;
+            organizationSlug: string;
             shopwareVersion: string;
             installed: boolean;
             active: boolean;
@@ -65,19 +66,16 @@ export const accountRouter = router({
                     id: schema.organization.id,
                     name: schema.organization.name,
                     createdAt: schema.organization.createdAt,
-                    ownerId: schema.organization.ownerId,
+                    slug: schema.organization.slug,
                     shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
-                    memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.userToOrganization} WHERE ${schema.userToOrganization.organizationId} = ${schema.organization.id})`,
+                    memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.member} WHERE ${schema.member.organizationId} = ${schema.organization.id})`,
                 })
                 .from(schema.organization)
                 .innerJoin(
-                    schema.userToOrganization,
-                    eq(
-                        schema.userToOrganization.organizationId,
-                        schema.organization.id,
-                    ),
+                    schema.member,
+                    eq(schema.member.organizationId, schema.organization.id),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user.id))
+                .where(eq(schema.member.userId, ctx.user.id))
                 .all();
         }),
     deleteCurrentUser: publicProcedure
@@ -106,12 +104,16 @@ export const accountRouter = router({
                         sql<string>`${schema.organization.name}`.as(
                             'organization_name',
                         ),
+                    organizationSlug:
+                        sql<string>`${schema.organization.slug}`.as(
+                            'organization_slug',
+                        ),
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToOrganization,
+                    schema.member,
                     eq(
-                        schema.userToOrganization.organizationId,
+                        schema.member.organizationId,
                         schema.shop.organizationId,
                     ),
                 )
@@ -119,7 +121,7 @@ export const accountRouter = router({
                     schema.organization,
                     eq(schema.organization.id, schema.shop.organizationId),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user.id))
+                .where(eq(schema.member.userId, ctx.user.id))
                 .orderBy(schema.shop.name)
                 .all();
         }),
@@ -131,6 +133,10 @@ export const accountRouter = router({
                     id: schema.shopChangelog.id,
                     shopId: schema.shopChangelog.shopId,
                     shopOrganizationId: schema.shop.organizationId,
+                    organizationSlug:
+                        sql<string>`${schema.organization.slug}`.as(
+                            'organization_slug',
+                        ),
                     shopName: schema.shop.name,
                     shopFavicon: schema.shop.favicon,
                     extensions: schema.shopChangelog.extensions,
@@ -140,17 +146,21 @@ export const accountRouter = router({
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToOrganization,
+                    schema.member,
                     eq(
-                        schema.userToOrganization.organizationId,
+                        schema.member.organizationId,
                         schema.shop.organizationId,
                     ),
+                )
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
                 )
                 .innerJoin(
                     schema.shopChangelog,
                     eq(schema.shopChangelog.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user.id))
+                .where(eq(schema.member.userId, ctx.user.id))
                 .orderBy(desc(schema.shopChangelog.date))
                 .limit(10)
                 .all();
@@ -167,20 +177,28 @@ export const accountRouter = router({
                     organizationId: schema.shop.organizationId,
                     shopwareVersion: schema.shop.shopwareVersion,
                     extensions: schema.shopScrapeInfo.extensions,
+                    organizationSlug:
+                        sql<string>`${schema.organization.slug}`.as(
+                            'organization_slug',
+                        ),
                 })
                 .from(schema.shop)
                 .innerJoin(
-                    schema.userToOrganization,
+                    schema.member,
                     eq(
-                        schema.userToOrganization.organizationId,
+                        schema.member.organizationId,
                         schema.shop.organizationId,
                     ),
+                )
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
                 )
                 .innerJoin(
                     schema.shopScrapeInfo,
                     eq(schema.shopScrapeInfo.shopId, schema.shop.id),
                 )
-                .where(eq(schema.userToOrganization.userId, ctx.user.id))
+                .where(eq(schema.member.userId, ctx.user.id))
                 .orderBy(schema.shop.name)
                 .all();
 
@@ -197,6 +215,7 @@ export const accountRouter = router({
                         id: row.id,
                         name: row.name,
                         organizationId: row.organizationId,
+                        organizationSlug: row.organizationSlug,
                         shopwareVersion: row.shopwareVersion,
                         installed: extension.installed,
                         active: extension.active,

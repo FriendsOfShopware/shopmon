@@ -28,7 +28,7 @@ type LastChangelog = {
 
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    organizationId: integer('organization_id')
+    organizationId: text('organization_id')
         .notNull()
         .references(() => organization.id),
     name: text('name').notNull(),
@@ -93,15 +93,6 @@ export const shopChangelog = sqliteTable('shop_changelog', {
     date: integer('date', { mode: 'timestamp' }).notNull(),
 });
 
-export const organization = sqliteTable('organization', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    name: text('name').notNull(),
-    ownerId: text('owner_id')
-        .notNull()
-        .references(() => user.id),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-});
-
 export const userNotification = sqliteTable(
     'user_notification',
     {
@@ -153,6 +144,7 @@ export const session = sqliteTable('session', {
     userId: text('user_id')
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
+    activeOrganizationId: text('active_organization_id'),
 });
 
 export const account = sqliteTable('account', {
@@ -205,31 +197,47 @@ export const passkey = sqliteTable('passkey', {
     createdAt: integer('created_at', { mode: 'timestamp' }),
 });
 
-export const userToOrganization = sqliteTable(
-    'user_to_organization',
-    {
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id),
-        organizationId: integer('organization_id')
-            .notNull()
-            .references(() => organization.id),
-    },
-    (table) => {
-        return {
-            pk: primaryKey({ columns: [table.userId, table.organizationId] }),
-        };
-    },
-);
+export const organization = sqliteTable('organization', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').unique(),
+    logo: text('logo'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    metadata: text('metadata'),
+});
+
+export const member = sqliteTable('member', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+        .notNull()
+        .references(() => organization.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role').default('member').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export const invitation = sqliteTable('invitation', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+        .notNull()
+        .references(() => organization.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    role: text('role'),
+    status: text('status').default('pending').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    inviterId: text('inviter_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+});
 
 export const schema = {
     shop,
     shopPageSpeed,
     shopScrapeInfo,
     shopChangelog,
-    organization,
     userNotification,
-    userToOrganization,
 
     // Better Auth
     user,
@@ -237,6 +245,9 @@ export const schema = {
     account,
     verification,
     passkey,
+    organization,
+    member,
+    invitation,
 };
 
 export type Drizzle = BunSQLiteDatabase<typeof schema>;

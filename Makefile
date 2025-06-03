@@ -11,6 +11,12 @@ setup: # Setup the project
 migrate:
 	cd api && bun run migrate.ts
 
+load-fixtures: # Load fixtures
+	@echo "Loading fixtures"
+	cd api && rm -rf shopmon.db*
+	cd api && bun run migrate.ts
+	cd api && bun run apply-fixtures.ts
+
 dev: # Run the project locally
 	npx concurrently -- 'npm run --prefix=api dev' 'npm --prefix frontend run dev:local'
 

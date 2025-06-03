@@ -76,12 +76,12 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.shops.edit',
-                    path: 'organizations/edit/:organizationId(\\d+)/:shopId(\\d+)',
+                    path: 'organizations/:slug/shops/:shopId(\\d+)/edit',
                     component: () => import('@/views/shop/EditShop.vue'),
                 },
                 {
                     name: 'account.shops.detail',
-                    path: 'organizations/:organizationId(\\d+)/:shopId(\\d+)',
+                    path: 'organizations/:slug/shops/:shopId(\\d+)',
                     component: () =>
                         import('@/views/shop/detail/DetailShop.vue'),
                 },
@@ -99,13 +99,13 @@ export const router = createRouter({
                 },
                 {
                     name: 'account.organizations.detail',
-                    path: 'organizations/:organizationId(\\d+)',
+                    path: 'organizations/:slug',
                     component: () =>
                         import('@/views/organization/DetailOrganization.vue'),
                 },
                 {
                     name: 'account.organizations.edit',
-                    path: 'organizations/edit/:organizationId(\\d+)',
+                    path: 'organizations/edit/:slug',
                     component: () =>
                         import('@/views/organization/EditOrganization.vue'),
                 },
@@ -115,10 +115,36 @@ export const router = createRouter({
                     component: () =>
                         import('@/views/account/ListExtensions.vue'),
                 },
+                {
+                    name: 'account.organization.accept',
+                    path: 'organizations/accept/:token',
+                    component: () =>
+                        import(
+                            '@/views/organization/AcceptRejectInvitation.vue'
+                        ),
+                    props: {
+                        action: 'accept',
+                    },
+                },
+                {
+                    name: 'account.organization.reject',
+                    path: 'organizations/reject/:token',
+                    component: () =>
+                        import(
+                            '@/views/organization/AcceptRejectInvitation.vue'
+                        ),
+                    props: {
+                        action: 'reject',
+                    },
+                },
             ],
         },
         // catch all redirect to home page
-        { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'not-found',
+            redirect: { name: 'home' },
+        },
     ],
 });
 
@@ -133,10 +159,6 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
             }, 50);
         });
     }
-
-    // clear alert on route change
-    const { clear } = useAlert();
-    clear();
 
     // redirect to login page if not logged in and trying to access a restricted page
     const publicPages = [

@@ -23,7 +23,8 @@ interface SQLShop {
     id: number;
     name: string;
     status: string;
-    organizationId: number;
+    organizationId: string;
+    organizationSlug: string;
     url: string;
     clientId: string;
     clientSecret: string;
@@ -94,20 +95,26 @@ const STATES: { [key: string]: number } = {
 export async function shopScrapeJob() {
     const con = getConnection();
 
-    // Get all shops that need to be scraped
-    const shops = await con.query.shop.findMany({
-        columns: {
-            id: true,
-            name: true,
-            status: true,
-            ignores: true,
-            url: true,
-            clientId: true,
-            clientSecret: true,
-            shopwareVersion: true,
-            organizationId: true,
-        },
-    });
+    const shops = await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            status: schema.shop.status,
+            ignores: schema.shop.ignores,
+            url: schema.shop.url,
+            clientId: schema.shop.clientId,
+            clientSecret: schema.shop.clientSecret,
+            shopwareVersion: schema.shop.shopwareVersion,
+            organizationId: schema.shop.organizationId,
+            organizationSlug: schema.organization.slug,
+            shopImage: schema.shop.shopImage,
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .all();
 
     console.log(`Found ${shops.length} shops to scrape`);
 
@@ -122,21 +129,27 @@ export async function shopScrapeJob() {
 export async function scrapeSingleShop(shopId: number) {
     const con = getConnection();
 
-    // Get the shop by ID
-    const shop = await con.query.shop.findFirst({
-        columns: {
-            id: true,
-            name: true,
-            status: true,
-            ignores: true,
-            url: true,
-            clientId: true,
-            clientSecret: true,
-            shopwareVersion: true,
-            organizationId: true,
-        },
-        where: eq(schema.shop.id, shopId),
-    });
+    const shop = await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            status: schema.shop.status,
+            ignores: schema.shop.ignores,
+            url: schema.shop.url,
+            clientId: schema.shop.clientId,
+            clientSecret: schema.shop.clientSecret,
+            shopwareVersion: schema.shop.shopwareVersion,
+            organizationId: schema.shop.organizationId,
+            organizationSlug: schema.organization.slug,
+            shopImage: schema.shop.shopImage,
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .where(eq(schema.shop.id, shopId))
+        .get();
 
     if (!shop) {
         throw new Error(`Shop with ID ${shopId} not found`);
@@ -187,7 +200,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             .execute();
 
         const clientSecret = await decrypt(
-            process.env.APP_SECRET || '',
+            process.env.APP_SECRET,
             shop.clientSecret,
         );
 
@@ -234,7 +247,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            organizationId: shop.organizationId.toString(),
+                            slug: shop.organizationSlug,
                         },
                     },
                 },
@@ -316,7 +329,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     name: 'account.shops.detail',
                     params: {
                         shopId: shop.id.toString(),
-                        organizationId: shop.organizationId.toString(),
+                        slug: shop.organizationSlug,
                     },
                 },
             });
@@ -579,7 +592,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                         name: 'account.shops.detail',
                         params: {
                             shopId: shop.id.toString(),
-                            organizationId: shop.organizationId.toString(),
+                            slug: shop.organizationSlug,
                         },
                     },
                 });

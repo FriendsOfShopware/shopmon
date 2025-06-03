@@ -38,12 +38,15 @@ Thank you for your interest in contributing to Shopmon! This document provides g
 1. Install dependencies:
    ```bash
    make setup
+   make up
    ```
 
 2. Set up the database:
    ```bash
-   make migrate
+   make load-fixtures
    ```
+
+This will create a few users and a shop with sample data to help you get started.
 
 3. Start the development environment:
    ```bash

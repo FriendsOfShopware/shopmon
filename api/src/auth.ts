@@ -1,7 +1,9 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { organization } from 'better-auth/plugins';
 import { passkey } from 'better-auth/plugins/passkey';
 import { getConnection } from './db.js';
+import shops from './repository/shops.js';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -26,6 +28,12 @@ export const auth = betterAuth({
             verify: async (data) => {
                 return Bun.password.verify(data.password, data.hash);
             },
+        },
+    },
+    socialProviders: {
+        github: {
+            clientId: process.env.APP_OAUTH_GITHUB_CLIENT_ID,
+            clientSecret: process.env.APP_OAUTH_GITHUB_CLIENT_SECRET,
         },
     },
     emailVerification: {
@@ -58,6 +66,27 @@ export const auth = betterAuth({
                 ? new URL(process.env.FRONTEND_URL).hostname
                 : 'localhost',
             rpName: 'Shopmon',
+        }),
+        organization({
+            sendInvitationEmail: async (data) => {
+                const { sendMailInviteToOrganization } = await import(
+                    './mail/mail.js'
+                );
+                await sendMailInviteToOrganization(
+                    data.email,
+                    data.organization.name,
+                    data.inviter.user.name,
+                    data.invitation.id,
+                );
+            },
+            cancelPendingInvitationsOnReInvite: true,
+            organizationDeletion: {
+                async beforeDelete(data, request) {
+                    return shops.deleteShopsByOrganization(
+                        data.organization.id,
+                    );
+                },
+            },
         }),
     ],
 });

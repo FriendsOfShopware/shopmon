@@ -50,7 +50,7 @@
                                 :to="{
                                     name: 'account.shops.detail',
                                     params: {
-                                        organizationId: shop.organizationId,
+                                        slug: shop.organizationSlug,
                                         shopId: shop.id
                                     }
                                 }"

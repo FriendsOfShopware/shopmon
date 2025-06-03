@@ -5,8 +5,9 @@ import { type Drizzle, getConnection } from '../db.ts';
 
 export type context = {
     user: User | null;
-    session: Session | null;
+    session: (Session & { activeOrganizationId?: string }) | null;
     drizzle: Drizzle;
+    headers: Headers;
 };
 
 export function createContext() {
@@ -26,6 +27,7 @@ export function createContext() {
         return {
             user,
             session,
+            headers: req.headers,
             drizzle: getConnection(),
         };
     };

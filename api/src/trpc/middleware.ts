@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { t } from '.';
+import { auth } from '../auth';
 import { schema } from '../db';
 import type { context } from './context';
 
@@ -18,55 +19,67 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
 
 export const organizationMiddleware = t.middleware(async (opts) => {
     const { ctx, input, next } = opts as typeof opts & {
-        input: { orgId: number };
+        input: { orgId: string };
         ctx: context & { user: number };
     };
 
-    const result = await ctx.drizzle.query.userToOrganization.findFirst({
-        columns: {
-            userId: true,
-        },
-        where: and(
-            eq(schema.userToOrganization.organizationId, input.orgId),
-            eq(schema.userToOrganization.userId, ctx.user.id),
-        ),
-    });
-
-    if (!result) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-    }
-
-    return next();
-});
-
-export const organizationAdminMiddleware = t.middleware(async (opts) => {
-    const { ctx, input, next } = opts as typeof opts & {
-        input: { orgId: number };
-        ctx: context & { user: number };
-    };
-
-    const result = await ctx.drizzle
+    const result = ctx.drizzle
         .select({
-            ownerId: schema.organization.ownerId,
+            id: schema.member.id,
         })
-        .from(schema.organization)
-        .where(eq(schema.organization.id, input.orgId))
+        .from(schema.member)
+        .where(
+            and(
+                eq(schema.member.organizationId, input.orgId),
+                eq(schema.member.userId, ctx.user.id),
+            ),
+        )
         .get();
 
-    if (!result || result.ownerId !== ctx.user.id) {
+    if (!result) {
         throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Your are not the owner of the organization',
+            code: 'FORBIDDEN',
+            message: 'You are not a member of this organization',
         });
     }
 
     return next();
 });
 
+export const hasPermissionMiddleware = (
+    permissions: Parameters<
+        typeof auth.api.hasPermission
+    >[0]['body']['permissions'],
+) => {
+    return t.middleware(async (opts) => {
+        const { ctx, input, next } = opts as typeof opts & {
+            input: { orgId: string };
+            ctx: context & { user: number };
+        };
+
+        const hasPermission = await auth.api.hasPermission({
+            body: {
+                organizationId: input.orgId,
+                permissions,
+            },
+            headers: ctx.headers,
+        });
+
+        if (!hasPermission) {
+            throw new TRPCError({
+                code: 'FORBIDDEN',
+                message: 'You do not have permission to perform this action',
+            });
+        }
+
+        return next();
+    });
+};
+
 export const shopMiddleware = t.middleware(async (opts) => {
     const { ctx, input, next } = opts as typeof opts & {
-        input: { orgId: number; shopId: number };
-        ctx: context & { user: number };
+        input: { orgId: string; shopId: number };
+        ctx: context & { user: NonNullable<context['user']> };
     };
 
     const result = await ctx.drizzle
@@ -74,10 +87,19 @@ export const shopMiddleware = t.middleware(async (opts) => {
             orgId: schema.shop.organizationId,
         })
         .from(schema.shop)
-        .where(eq(schema.shop.id, input.shopId))
+        .innerJoin(
+            schema.member,
+            eq(schema.shop.organizationId, schema.member.organizationId),
+        )
+        .where(
+            and(
+                eq(schema.shop.id, input.shopId),
+                eq(schema.member.userId, ctx.user.id),
+            ),
+        )
         .get();
 
-    if (!result || result.orgId !== input.orgId) {
+    if (!result) {
         throw new TRPCError({ code: 'NOT_FOUND' });
     }
 

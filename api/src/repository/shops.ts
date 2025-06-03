@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { type Drizzle, schema } from '../db.ts';
+import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
 import Users from './users.ts';
 
 const alertMap = new Map<string, string>();
 
 interface CreateShopRequest {
-    organizationId: number;
+    organizationId: string;
     name: string;
     version: string;
     shopUrl: string;
@@ -48,6 +48,7 @@ async function createShop(
         })
         .execute();
 
+    // @ts-expect-error
     return result.lastInsertRowid as number;
 }
 
@@ -70,26 +71,36 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
 async function getUsersOfShop(con: Drizzle, shopId: number) {
     const result = await con
         .select({
-            id: schema.userToOrganization.userId,
+            id: schema.member.userId,
             displayName: schema.user.name,
             email: schema.user.email,
         })
         .from(schema.shop)
         .innerJoin(
-            schema.userToOrganization,
-            eq(
-                schema.shop.organizationId,
-                schema.userToOrganization.organizationId,
-            ),
+            schema.member,
+            eq(schema.shop.organizationId, schema.member.organizationId),
         )
-        .innerJoin(
-            schema.user,
-            eq(schema.user.id, schema.userToOrganization.userId),
-        )
+        .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
         .where(eq(schema.shop.id, shopId))
         .all();
 
     return result;
+}
+
+async function deleteShopsByOrganization(organizationId: string) {
+    const con = getConnection();
+    const shops = await con
+        .select({
+            id: schema.shop.id,
+        })
+        .from(schema.shop)
+        .where(eq(schema.shop.organizationId, organizationId));
+
+    const promises = [];
+    for (const shop of shops) {
+        promises.push(deleteShop(con, shop.id));
+    }
+    await Promise.all(promises);
 }
 
 async function notify(
@@ -138,6 +149,7 @@ export default {
     createShop,
     deleteShop,
     getUsersOfShop,
+    deleteShopsByOrganization,
     notify,
     alert,
 };
