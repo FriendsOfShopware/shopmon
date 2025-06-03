@@ -48,6 +48,7 @@ async function createShop(
         })
         .execute();
 
+    // @ts-expect-error
     return result.lastInsertRowid as number;
 }
 

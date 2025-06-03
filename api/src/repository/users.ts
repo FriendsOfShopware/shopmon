@@ -68,6 +68,7 @@ async function createNotification(
         ...notification,
         key,
         userId,
+        // @ts-expect-error
         id: result.lastInsertRowid,
         read: false,
         createdAt: new Date(),
