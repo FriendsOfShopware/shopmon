@@ -93,7 +93,7 @@
 
                 <template #cell-actions="{ row }">
                     <button
-                        v-if="row.user.id !== session.data?.user.id"
+                        v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
                         type="button"
                         class="tooltip tooltip-position-left"
                         data-tooltip="Change Role"
@@ -102,7 +102,7 @@
                         <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
                     </button>
                     <button
-                        v-if="row.user.id !== session.data?.user.id"
+                        v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
                         type="button"
                         class="tooltip tooltip-position-left"
                         data-tooltip="Unassign"
@@ -302,6 +302,7 @@ const session = authClient.useSession();
 const route = useRoute();
 const alert = useAlert();
 
+const allowedToManageMembers = ref(false);
 const organization =
     ref<
         Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
@@ -314,6 +315,14 @@ async function loadOrganization() {
         })
         .then((org) => {
             organization.value = org;
+            authClient.organization.hasPermission({
+                organizationId: organization.value?.data.id,
+                permissions: {
+                    member: ['create', 'delete'],
+                },
+            }).then((resp) => {
+                allowedToManageMembers.value = resp.data?.success || false;
+            });
         });
 }
 
