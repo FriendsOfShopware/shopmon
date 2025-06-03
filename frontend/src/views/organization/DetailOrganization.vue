@@ -315,14 +315,16 @@ async function loadOrganization() {
         })
         .then((org) => {
             organization.value = org;
-            authClient.organization.hasPermission({
-                organizationId: organization.value?.data.id,
-                permissions: {
-                    member: ['create', 'delete'],
-                },
-            }).then((resp) => {
-                allowedToManageMembers.value = resp.data?.success || false;
-            });
+            authClient.organization
+                .hasPermission({
+                    organizationId: organization.value?.data.id,
+                    permissions: {
+                        member: ['create', 'delete'],
+                    },
+                })
+                .then((resp) => {
+                    allowedToManageMembers.value = resp.data?.success || false;
+                });
         });
 }
 
