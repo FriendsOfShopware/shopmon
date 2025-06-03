@@ -106,7 +106,7 @@
 
         <form-group title="Passkey Devices" class="form-group-table">
             <data-table
-                v-if="passkeys && passkeys.length"
+                v-if="passkeys"
                 :columns="[
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'createdAt', name: 'Created At', sortable: true },
