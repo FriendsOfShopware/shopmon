@@ -1,0 +1,66 @@
+name: Deploy Production
+on:
+  workflow_dispatch:
+
+permissions:
+    contents: read
+    id-token: write
+    packages: write
+
+jobs:
+    build:
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and push
+              uses: docker/build-push-action@v6
+              with:
+                push: true
+                tags: ghcr.io/friendsofshopware/shopmon:production
+                build-args:
+                  SENTRY_RELEASE=${{ github.sha }}
+
+    deploy:
+        runs-on: ubuntu-latest
+        environment:
+            name: production
+            url: https://shopmon.fos.gg
+        needs: build
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup opkssh
+              uses: openpubkey/setup-opkssh@v1
+              with:
+                ssh-hosts-to-scan: 'shea.shyim.de'
+
+            - name: Create Sentry release
+              uses: getsentry/action-release@v3
+              env:
+                SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+                SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+                SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+              with:
+                environment: production
+
+            - name: Install 1Password CLI
+              uses: 1password/install-cli-action@v1
+
+            - name: Deploy to Production
+              run: op run --env-file .env.production -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
+              env:
+                OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+                DOCKER_HOST: ssh://github@shea.shyim.de
