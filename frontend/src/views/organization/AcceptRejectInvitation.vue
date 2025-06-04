@@ -22,7 +22,7 @@ if (props.action === 'accept') {
         })
         .then((resp) => {
             if (resp.error) {
-                error(resp.error.message || 'Failed to accept invitation');
+                error(resp.error.message ?? 'Failed to accept invitation');
                 router.push({ name: 'account.organizations.list' });
             } else {
                 router.push({ name: 'account.organizations.list' });
@@ -36,7 +36,7 @@ if (props.action === 'accept') {
         })
         .then((resp) => {
             if (resp.error) {
-                error(resp.error.message || 'Failed to reject invitation');
+                error(resp.error.message ?? 'Failed to reject invitation');
                 router.push({ name: 'account.organizations.list' });
             } else {
                 router.push({ name: 'account.organizations.list' });

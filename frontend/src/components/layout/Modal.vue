@@ -93,7 +93,7 @@ import {
 
 defineProps<{ show: boolean; closeXMark?: boolean }>();
 
-const emit = defineEmits<(e: 'close') => void>();
+const emit = defineEmits<{ close: [] }>();
 </script>
 
 <style>

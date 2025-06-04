@@ -2,7 +2,7 @@
     <header-container title="New Organization" />
     <main-container v-if="session.data?.user">
         <vee-form
-            v-slot="{ errors, isSubmitting, values, setFieldValue }"
+            v-slot="{ errors, isSubmitting, setFieldValue }"
             :validation-schema="schema"
             @submit="onCreateOrganization"
         >
@@ -19,7 +19,7 @@
                         autocomplete="name"
                         class="field"
                         :class="{ 'has-error': errors.name }"
-                        @input="onNameChange($event, values, setFieldValue)"
+                        @input="(e) => onNameChange(e, setFieldValue)"
                     />
                     <div class="field-error-message">
                         {{ errors.name }}
@@ -103,7 +103,7 @@ function generateSlug(str: string): string {
 
 function onNameChange(
     event: Event,
-    _values: Record<string, unknown>,
+    // eslint-disable-next-line no-unused-vars
     setFieldValue: (field: string, value: unknown) => void,
 ) {
     if (!slugManuallyEdited.value) {
@@ -125,7 +125,7 @@ async function onCreateOrganization(values: Record<string, unknown>) {
             slug: typedValues.slug,
         });
         if (resp.error) {
-            error(resp.error.message || 'Failed to create organization');
+            error(resp.error.message ?? 'Failed to create organization');
             return;
         }
         await router.push({ name: 'account.organizations.list' });

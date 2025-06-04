@@ -22,7 +22,7 @@ import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaCircleInfo from '~icons/fa6-solid/circle-info';
 import FaCircleXmark from '~icons/fa6-solid/circle-xmark';
 
-const props = defineProps({
+defineProps({
     status: {
         type: String,
         required: true,

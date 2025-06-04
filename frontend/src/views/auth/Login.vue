@@ -112,12 +112,12 @@ async function onSubmit(values: Record<string, unknown>) {
     });
 
     if (resp.error) {
-        alert.error(resp.error.message || 'Failed to sign in');
+        alert.error(resp.error.message ?? 'Failed to sign in');
         return;
     }
 
     // redirect to previous url or default to home page
-    const redirectUrl = returnUrl.value || '/';
+    const redirectUrl = returnUrl.value ?? '/';
     clearReturnUrl();
     router.push(redirectUrl);
 }
@@ -129,7 +129,7 @@ async function webauthnLogin() {
         await authClient.signIn.passkey();
 
         // redirect to previous url or default to home page
-        const redirectUrl = returnUrl.value || '/';
+        const redirectUrl = returnUrl.value ?? '/';
         clearReturnUrl();
         router.push(redirectUrl);
     } catch (e: unknown) {

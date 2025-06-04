@@ -109,6 +109,7 @@ const props = withDefaults(
     }>(),
     {
         searchTerm: '',
+        defaultSort: undefined,
     },
 );
 
@@ -151,10 +152,10 @@ const searchableRows = computed(() => {
 
 function getSortByValue(row: RowData, propertyPath: string): unknown {
     const path = propertyPath.split('.');
-    let value = row;
+    let value: RowData = row;
 
     for (const key of path) {
-        value = value[key] as unknown;
+        value = value[key];
     }
 
     return value;

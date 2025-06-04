@@ -76,15 +76,13 @@ export default [
             vue,
         },
         rules: {
-            // TypeScript rules
-            '@typescript-eslint/no-unused-vars': [
-                'error',
-                { argsIgnorePattern: '^_' },
-            ],
             '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/explicit-module-boundary-types': 'off',
             '@typescript-eslint/no-non-null-assertion': 'warn',
+
+            // Duplicate to regular unused-vars
+            '@typescript-eslint/no-unused-vars': 'off',
 
             // Type-aware rules (require TypeScript compilation)
             '@typescript-eslint/no-floating-promises': 'off',

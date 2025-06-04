@@ -148,6 +148,7 @@ const organizations = authClient.useListOrganizations();
 const isValidUrl = (url: string) => {
     try {
         new URL(url);
+        // eslint-disable-next-line no-unused-vars
     } catch (e) {
         return false;
     }

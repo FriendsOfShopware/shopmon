@@ -323,7 +323,7 @@ async function loadOrganization() {
                     },
                 })
                 .then((resp) => {
-                    allowedToManageMembers.value = resp.data?.success || false;
+                    allowedToManageMembers.value = resp.data?.success ?? false;
                 });
         });
 }
@@ -432,7 +432,7 @@ async function onChangeRole(values: Record<string, unknown>) {
 
             if (resp.error) {
                 alert.error(
-                    resp.error.message || 'Failed to update member role',
+                    resp.error.message ?? 'Failed to update member role',
                 );
                 return;
             }
