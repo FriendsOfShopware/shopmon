@@ -75,6 +75,22 @@
             
             Login using Passkey
         </button>
+
+        <button
+            type="button"
+            class="btn btn-github btn-block"
+            :disabled="isGithubLoading"
+            @click="githubLogin"
+        >
+            <icon-mdi:github
+                v-if="!isGithubLoading"
+                class="icon"
+                aria-hidden="true"
+            />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            
+            Continue with GitHub
+        </button>
     </div>
 </template>
 
@@ -92,6 +108,7 @@ const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
 
 const isAuthenticated = ref(false);
+const isGithubLoading = ref(false);
 const alert = useAlert();
 
 configure({
@@ -140,6 +157,24 @@ async function webauthnLogin() {
         isAuthenticated.value = false;
     }
 }
+
+async function githubLogin() {
+    isGithubLoading.value = true;
+
+    try {
+        const redirectUrl = returnUrl.value ?? '/';
+        await authClient.signIn.social({
+            provider: 'github',
+            callbackURL: redirectUrl,
+        });
+    } catch (e: unknown) {
+        const { error } = useAlert();
+
+        error(e instanceof Error ? e.message : String(e));
+
+        isGithubLoading.value = false;
+    }
+}
 </script>
 
 <style scoped>
@@ -151,6 +186,23 @@ async function webauthnLogin() {
 
     .text-divider {
         color: #6b7280;
+    }
+}
+
+.btn-github {
+    border-color: #24292e;
+    color: #fff;
+    background-color: #24292e;
+
+    &:hover {
+        background-color: #1a1e22;
+        border-color: #1a1e22;
+        color: #fff;
+    }
+
+    .icon {
+        width: 1.25rem;
+        height: 1.25rem;
     }
 }
 </style>
