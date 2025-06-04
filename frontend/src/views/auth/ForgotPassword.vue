@@ -64,12 +64,14 @@ const schema = Yup.object().shape({
 async function onSubmit(values: { email: string }): Promise<void> {
     const { success, error } = useAlert();
 
-    try {
-        await authClient.forgetPassword({ email: values.email });
-        success('Password reset email sent');
-    } catch (err) {
-        error(err instanceof Error ? err.message : String(err));
+    const resp = await authClient.forgetPassword({ email: values.email });
+
+    if (resp.error) {
+        error(resp.error.message || 'Failed to send password reset email');
+        return;
     }
+
+    success('Password reset email sent');
 }
 </script>
 

@@ -69,22 +69,24 @@ const { success, error } = useAlert();
 
 async function onSubmit(values: Record<string, unknown>): Promise<void> {
     const password = values.password as string;
-    try {
-        await authClient.resetPassword({
-            token: route.params.token as string,
-            newPassword: password,
-        });
 
-        success(
-            'Password has been resetted. You will be redirected to login page in 2 seconds.',
-        );
+    const resp = await authClient.resetPassword({
+        token: route.params.token as string,
+        newPassword: password,
+    });
 
-        setTimeout(() => {
-            router.push({ name: 'account.login' });
-        }, 2000);
-    } catch (err) {
-        error(err instanceof Error ? err.message : String(err));
+    if (resp.error) {
+        error(resp.error.message || 'Failed to reset password');
+        return;
     }
+
+    success(
+        'Password has been resetted. You will be redirected to login page in 2 seconds.',
+    );
+
+    setTimeout(() => {
+        router.push({ name: 'account.login' });
+    }, 2000);
 }
 </script>
 

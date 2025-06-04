@@ -78,6 +78,8 @@ import { router } from '@/router';
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 
+const alert = useAlert();
+
 const schema = Yup.object().shape({
     displayName: Yup.string().required('Display Name is required'),
     email: Yup.string().required('Email is required'),
@@ -96,19 +98,20 @@ async function onSubmit(values: {
     password: string;
     displayName: string;
 }) {
-    const { success, error } = useAlert();
-    try {
-        authClient.signUp.email({
-            email: values.email,
-            password: values.password,
-            name: values.displayName,
-        });
-        await router.push({ name: 'account.login' });
-        success(
-            'Registration successful. Please check your mailbox and confirm your email address.',
-        );
-    } catch (err) {
-        error(err instanceof Error ? err.message : String(err));
+    const resp = await authClient.signUp.email({
+        email: values.email,
+        password: values.password,
+        name: values.displayName,
+    });
+
+    if (resp.error) {
+        alert.error(resp.error.message || 'Failed to register');
+        return;
     }
+
+    await router.push({ name: 'account.login' });
+    alert.success(
+        'Registration successful. Please check your mailbox and confirm your email address.',
+    );
 }
 </script>

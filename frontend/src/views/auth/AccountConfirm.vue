@@ -24,7 +24,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
+
+const alert = useAlert();
 </script>
 
 <script lang="ts">
@@ -36,14 +39,19 @@ export default {
         };
     },
     async created() {
-        try {
-            await authClient.verifyEmail({query: {token: this.$route.params.token as string}});
-            this.success = true;
-        } catch (e) {
+        const resp = await authClient.verifyEmail({query: {token: this.$route.params.token as string}});
+
+        if (resp.error) {
             this.success = false;
-        } finally {
             this.isLoading = false;
+
+            alert.error(resp.error.message || 'Failed to verify email');
+
+            return;
         }
+
+        this.success = true;
+        this.isLoading = false;
     },
     methods: {
         goToLogin() {

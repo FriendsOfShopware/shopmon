@@ -92,6 +92,7 @@ const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
 
 const isAuthenticated = ref(false);
+const alert = useAlert();
 
 configure({
     validateOnBlur: false,
@@ -105,21 +106,20 @@ const schema = Yup.object().shape({
 async function onSubmit(values: Record<string, unknown>) {
     const email = values.email as string;
     const password = values.password as string;
-    try {
-        await authClient.signIn.email({
-            email,
-            password,
-        });
+    const resp = await authClient.signIn.email({
+        email,
+        password,
+    });
 
-        // redirect to previous url or default to home page
-        const redirectUrl = returnUrl.value || '/';
-        clearReturnUrl();
-        router.push(redirectUrl);
-    } catch (e: unknown) {
-        const { error } = useAlert();
-
-        error(e instanceof Error ? e.message : String(e));
+    if (resp.error) {
+        alert.error(resp.error.message || 'Failed to sign in');
+        return;
     }
+
+    // redirect to previous url or default to home page
+    const redirectUrl = returnUrl.value || '/';
+    clearReturnUrl();
+    router.push(redirectUrl);
 }
 
 async function webauthnLogin() {
