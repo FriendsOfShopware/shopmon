@@ -56,6 +56,7 @@
         "@iconify-json/ic": "1.2.2",
         "@iconify-json/line-md": "1.2.8",
         "@iconify-json/material-symbols": "^1.2.20",
+        "@iconify-json/mdi": "^1.2.3",
         "@trpc/server": "^11.1.1",
         "@typescript-eslint/eslint-plugin": "8.33.0",
         "@typescript-eslint/parser": "8.33.0",
@@ -291,6 +292,8 @@
     "@iconify-json/line-md": ["@iconify-json/line-md@1.2.8", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-jWFsu6OZ1xAd4U0MLc/dgawC8nCbSn+a+WjTv+luiihpb6rrGLMw+Vy3wQ01hGf77v+fwt8sTvwm6K9zN3r4vQ=="],
 
     "@iconify-json/material-symbols": ["@iconify-json/material-symbols@1.2.22", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-raleOIRt8iPtwAkDzmw/c5zb06nIaicsYs5bZ3yfRjBxuYT/UYNa2ZFQQMl3uuTTiZuUXwFa1M8PJW3CFRAN0w=="],
+
+    "@iconify-json/mdi": ["@iconify-json/mdi@1.2.3", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-O3cLwbDOK7NNDf2ihaQOH5F9JglnulNDFV7WprU2dSoZu3h3cWH//h74uQAB87brHmvFVxIOkuBX2sZSzYhScg=="],
 
     "@iconify/types": ["@iconify/types@2.0.0", "", {}, "sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg=="],
 
