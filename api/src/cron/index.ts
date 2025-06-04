@@ -1,4 +1,5 @@
 import * as cron from 'node-cron';
+import { lockCleanupJob } from './jobs/lockCleanup.js';
 import { pagespeedScrapeJob } from './jobs/pagespeedScrape.js';
 import { shopScrapeJob } from './jobs/shopScrape.js';
 
@@ -21,5 +22,15 @@ cron.schedule('0 2 * * *', async () => {
         await pagespeedScrapeJob();
     } catch (error) {
         console.error('Pagespeed scrape job failed:', error);
+    }
+});
+
+// Run lock cleanup job every day at 3 AM
+cron.schedule('0 3 * * *', async () => {
+    console.log('Running lock cleanup job...');
+    try {
+        await lockCleanupJob();
+    } catch (error) {
+        console.error('Lock cleanup job failed:', error);
     }
 });

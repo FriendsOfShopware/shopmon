@@ -200,6 +200,12 @@ export const passkey = sqliteTable('passkey', {
     createdAt: integer('created_at', { mode: 'timestamp' }),
 });
 
+export const lock = sqliteTable('lock', {
+    key: text('key').primaryKey(),
+    expires: integer('expires', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
 export const organization = sqliteTable('organization', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),

@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
+import * as LockRepository from './lock.ts';
 import Users from './users.ts';
-
-const alertMap = new Map<string, string>();
 
 interface CreateShopRequest {
     organizationId: string;
@@ -123,11 +122,11 @@ async function alert(con: Drizzle, alert: ShopAlert): Promise<void> {
     const users = await getUsersOfShop(con, Number.parseInt(alert.shopId));
     const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
-    if (alertMap.has(alertKey)) {
+    if (await LockRepository.isLocked(alertKey)) {
         return;
     }
 
-    alertMap.set(alertKey, '1');
+    await LockRepository.createLock(alertKey);
 
     const result = await con.query.shop.findFirst({
         columns: {
