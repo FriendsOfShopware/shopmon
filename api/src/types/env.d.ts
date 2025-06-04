@@ -14,6 +14,7 @@ declare global {
             SMTP_SECURE?: 'true' | 'false';
             SMTP_USER?: string;
             SMTP_PASS?: string;
+            SMTP_REPLY_TO?: string;
 
             APP_OAUTH_GITHUB_CLIENT_ID: string;
             APP_OAUTH_GITHUB_CLIENT_SECRET: string;
