@@ -67,7 +67,7 @@
                             :key="rowIndex"
                             class="shops-row"
                         >
-                            {{ shop.version }}
+                            <span class="extension-version" :data-tooltip="shop.version">{{ shop.version }}</span>
                             <span
                                 v-if="row.latestVersion && shop.version < row.latestVersion"
                                 data-tooltip="Update available"
@@ -138,6 +138,12 @@ function getExtensionState(
         font-weight: normal;
         opacity: .6;
     }
+}
+
+.extension-version {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .shops-row {
