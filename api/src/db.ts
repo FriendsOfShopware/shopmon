@@ -48,6 +48,9 @@ export const shop = sqliteTable('shop', {
     lastChangelog: text('last_changelog', { mode: 'json' })
         .default('{}')
         .$type<LastChangelog>(),
+    connectionIssueCount: integer('connection_issue_count')
+        .default(0)
+        .notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 

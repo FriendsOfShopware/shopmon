@@ -72,6 +72,7 @@ export const shopRouter = router({
                     queueInfo: schema.shopScrapeInfo.queueInfo,
                     cacheInfo: schema.shopScrapeInfo.cacheInfo,
                     checks: schema.shopScrapeInfo.checks,
+                    connectionIssueCount: schema.shop.connectionIssueCount,
                     organizationId: schema.shop.organizationId,
                     organizationName:
                         sql<string>`${schema.organization.name}`.as(
@@ -264,6 +265,7 @@ export const shopRouter = router({
                         url: input.shopUrl,
                         clientId: input.clientId,
                         clientSecret: clientSecret,
+                        connectionIssueCount: 0,
                     })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
