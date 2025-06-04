@@ -4,7 +4,7 @@
         <main-container>
             <h2 class="section-title">
                 <icon-fa6-solid:shop />
-                My Shops's
+                My Shops
             </h2>
 
             <ul class="dashboard-grid-container">
