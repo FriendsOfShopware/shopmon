@@ -274,7 +274,7 @@ import * as Yup from 'yup';
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
-import type { Account, Session } from 'better-auth/types';
+import type { Session } from 'better-auth/types';
 
 const session = authClient.useSession();
 
@@ -295,8 +295,8 @@ authClient.listSessions().then((data) => {
 });
 
 const user = {
-    name: session.value.data?.user?.name || '',
-    email: session.value.data?.user?.email || '',
+    name: session.value.data?.user?.name ?? '',
+    email: session.value.data?.user?.email ?? '',
     currentPassword: '',
     newPassword: '',
 };

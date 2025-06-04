@@ -33,7 +33,7 @@ const props = defineProps<{
 }>();
 
 const passwordType = ref('password');
-const passwordLabel = props.label || 'Password';
+const passwordLabel = props.label ?? 'Password';
 </script>
 
 <style>

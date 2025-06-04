@@ -4,7 +4,6 @@ import {
     createWebHistory,
 } from 'vue-router';
 
-import { useAlert } from '@/composables/useAlert';
 import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';

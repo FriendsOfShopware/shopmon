@@ -26,37 +26,30 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
+import { onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const alert = useAlert();
-</script>
 
-<script lang="ts">
-export default {
-    data() {
-        return {
-            isLoading: true,
-            success: false,
-        };
-    },
-    async created() {
-        const resp = await authClient.verifyEmail({query: {token: this.$route.params.token as string}});
+const isLoading = ref(true);
+const success = ref(false);
 
-        if (resp.error) {
-            this.success = false;
-            this.isLoading = false;
+onMounted(async () => {
+    const resp = await authClient.verifyEmail({
+        query: { token: route.params.token as string },
+    });
 
-            alert.error(resp.error.message || 'Failed to verify email');
+    if (resp.error) {
+        success.value = false;
+        isLoading.value = false;
 
-            return;
-        }
+        alert.error(resp.error.message ?? 'Failed to verify email');
 
-        this.success = true;
-        this.isLoading = false;
-    },
-    methods: {
-        goToLogin() {
-            this.$router.push({ name: 'account.login' });
-        },
-    },
-};
+        return;
+    }
+
+    success.value = true;
+    isLoading.value = false;
+});
 </script>

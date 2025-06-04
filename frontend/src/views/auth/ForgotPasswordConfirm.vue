@@ -76,7 +76,7 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
     });
 
     if (resp.error) {
-        error(resp.error.message || 'Failed to reset password');
+        error(resp.error.message ?? 'Failed to reset password');
         return;
     }
 

@@ -67,7 +67,7 @@ async function onSubmit(values: { email: string }): Promise<void> {
     const resp = await authClient.forgetPassword({ email: values.email });
 
     if (resp.error) {
-        error(resp.error.message || 'Failed to send password reset email');
+        error(resp.error.message ?? 'Failed to send password reset email');
         return;
     }
 

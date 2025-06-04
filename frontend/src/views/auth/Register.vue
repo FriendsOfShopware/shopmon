@@ -105,7 +105,7 @@ async function onSubmit(values: {
     });
 
     if (resp.error) {
-        alert.error(resp.error.message || 'Failed to register');
+        alert.error(resp.error.message ?? 'Failed to register');
         return;
     }
 

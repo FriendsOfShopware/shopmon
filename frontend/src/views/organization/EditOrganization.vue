@@ -70,7 +70,7 @@
             </div>
         </vee-form>
 
-        <form-group :title="'Deleting organization ' + organization.data.name" v-if="canDeleteOrganization">
+        <form-group v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name">
             <p>Once you delete your organization, you will lose all data associated with it. </p>
 
             <button
@@ -160,7 +160,7 @@ authClient.organization
             })
             .then((hasPermission) => {
                 canDeleteOrganization.value =
-                    hasPermission.data?.success || false;
+                    hasPermission.data?.success ?? false;
             });
     });
 
@@ -208,7 +208,7 @@ async function deleteOrganization() {
             });
 
             if (resp.error) {
-                error(resp.error.message || 'Failed to delete organization');
+                error(resp.error.message ?? 'Failed to delete organization');
                 return;
             }
 
