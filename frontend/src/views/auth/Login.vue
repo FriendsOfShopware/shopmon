@@ -10,6 +10,15 @@
         </p>
     </div>
 
+    <Alert type="info" :dismissible="false">
+        <p>
+            <strong>Database Migration Notice:</strong> Due to recent database updates, you may need to reset your password.
+            If you're unable to log in, please use the
+            <router-link :to="{ name: 'account.forgot.password' }">password reset</router-link>
+            option.
+        </p>
+    </Alert>
+
     <vee-form
         v-slot="{ errors, isSubmitting }"
         class="login-form-container"
@@ -99,6 +108,7 @@ import { Field, Form as VeeForm, configure } from 'vee-validate';
 import { ref } from 'vue';
 import * as Yup from 'yup';
 
+import Alert from '@/components/layout/Alert.vue';
 import { useAlert } from '@/composables/useAlert';
 import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
@@ -204,5 +214,9 @@ async function githubLogin() {
         width: 1.25rem;
         height: 1.25rem;
     }
+}
+
+.alert {
+    margin-bottom: 1.5rem;
 }
 </style>
