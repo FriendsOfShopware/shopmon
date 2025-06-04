@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
+import * as LockRepository from './lock.ts';
 import Users from './users.ts';
-import LockRepository from './lock.ts';
 
 interface CreateShopRequest {
     organizationId: string;

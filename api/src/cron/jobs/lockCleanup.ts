@@ -1,5 +1,5 @@
 import { logger } from '@sentry/bun';
-import LockRepository from '../../repository/lock.js';
+import { cleanupExpiredLocks } from '../../repository/lock.js';
 
 /**
  * Cron job to clean up expired locks
@@ -7,8 +7,10 @@ import LockRepository from '../../repository/lock.js';
  */
 export async function lockCleanupJob() {
     try {
-        const removedCount = await LockRepository.cleanupExpiredLocks();
-        logger.info(`Lock cleanup job completed: ${removedCount} expired locks removed`);
+        const removedCount = await cleanupExpiredLocks();
+        logger.info(
+            `Lock cleanup job completed: ${removedCount} expired locks removed`,
+        );
     } catch (error) {
         logger.error('Error in lock cleanup job', error);
     }
