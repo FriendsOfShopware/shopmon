@@ -1,3 +1,4 @@
+import { logger } from '@sentry/bun';
 import {
     ApiClientAuthenticationFailed,
     ApiClientRequestFailed,
@@ -30,6 +31,7 @@ interface SQLShop {
     clientSecret: string;
     shopwareVersion: string;
     ignores: string[];
+    connectionIssueCount: number;
 }
 
 interface ShopwareScheduledTask {
@@ -108,6 +110,7 @@ export async function shopScrapeJob() {
             organizationId: schema.shop.organizationId,
             organizationSlug: schema.organization.slug,
             shopImage: schema.shop.shopImage,
+            connectionIssueCount: schema.shop.connectionIssueCount,
         })
         .from(schema.shop)
         .innerJoin(
@@ -142,6 +145,7 @@ export async function scrapeSingleShop(shopId: number) {
             organizationId: schema.shop.organizationId,
             organizationSlug: schema.organization.slug,
             shopImage: schema.shop.shopImage,
+            connectionIssueCount: schema.shop.connectionIssueCount,
         })
         .from(schema.shop)
         .innerJoin(
@@ -192,6 +196,13 @@ async function shouldNotify(
 }
 
 async function updateShop(shop: SQLShop, con: Drizzle) {
+    if (shop.connectionIssueCount >= 3) {
+        logger.info(
+            `Shop ${shop.name} has too many connection issues, skipping it`,
+        );
+        return;
+    }
+
     try {
         await con
             .update(schema.shop)
@@ -260,13 +271,28 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                 message: `The Shop could not be updated. Please check your credentials and try again.${error}`,
             });
 
+            logger.info(
+                `Shop ${shop.name} could not be updated, error is ${error}`,
+            );
+
             await con
                 .update(schema.shop)
-                .set({ status: 'red' })
+                .set({
+                    status: 'red',
+                    connectionIssueCount: shop.connectionIssueCount + 1,
+                })
                 .where(eq(schema.shop.id, shop.id))
                 .execute();
 
             return;
+        }
+
+        if (shop.connectionIssueCount > 0) {
+            await con
+                .update(schema.shop)
+                .set({ connectionIssueCount: 0 })
+                .where(eq(schema.shop.id, shop.id))
+                .execute();
         }
 
         let responses: {

@@ -42,6 +42,14 @@
     </header-container>
 
     <main-container v-if="shop && shop.lastScrapedAt">
+        <alert
+            v-if="shop.connectionIssueCount >= 3"
+            class="shop-scrape-error"
+            type="error"
+        >
+            This shop will be not automatically updated anymore. Please update the API credentials or Shop URL to fix this issue.
+        </alert>
+
         <div class="panel shop-info">
             <h3 class="shop-info-heading">
                 <status-icon :status="shop.status" />
@@ -669,5 +677,8 @@ async function loadUpdateWizard(version: string) {
             opacity: .6;
         }
     }
+}
+.shop-scrape-error {
+    margin-bottom: 1rem;
 }
 </style>
