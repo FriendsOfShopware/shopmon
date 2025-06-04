@@ -31,7 +31,9 @@ async function sendMail(mail: MaiLRequest) {
             to: mail.to,
             subject: mail.subject,
             html: mail.body,
-            ...(process.env.SMTP_REPLY_TO && { replyTo: process.env.SMTP_REPLY_TO }),
+            ...(process.env.SMTP_REPLY_TO && {
+                replyTo: process.env.SMTP_REPLY_TO,
+            }),
         });
     } catch (error) {
         console.error(
