@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
+import { admin, organization } from 'better-auth/plugins';
 import { passkey } from 'better-auth/plugins/passkey';
 import { getConnection } from './db.js';
 import shops from './repository/shops.js';
@@ -61,6 +61,7 @@ export const auth = betterAuth({
         max: 10, // 10 requests per minute
     },
     plugins: [
+        admin(),
         passkey({
             rpID: process.env.FRONTEND_URL
                 ? new URL(process.env.FRONTEND_URL).hostname

@@ -8,6 +8,7 @@ import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
+import adminRoutes from '@/router/admin';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
 
@@ -138,6 +139,7 @@ export const router = createRouter({
                 },
             ],
         },
+        ...adminRoutes,
         // catch all redirect to home page
         {
             path: '/:pathMatch(.*)*',
@@ -177,6 +179,14 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     if (session.value.data && publicPages.includes(to.name as string)) {
         // redirect to home page if logged in and trying to access a public page
         return { name: 'home' };
+    }
+
+    // Check admin routes
+    if (to.path.startsWith('/admin') && session.value.data) {
+        const userRole = session.value.data.user.role;
+        if (userRole !== 'admin') {
+            return { name: 'home' };
+        }
     }
 });
 

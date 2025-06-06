@@ -134,6 +134,10 @@ export const user = sqliteTable('user', {
     updatedAt: integer('updated_at', { mode: 'timestamp' })
         .$defaultFn(() => new Date())
         .notNull(),
+    role: text('role').default('user').notNull(),
+    banned: integer('banned', { mode: 'boolean' }),
+    banReason: text('ban_reason'),
+    banExpires: integer('ban_expires', { mode: 'timestamp' }),
 });
 
 export const session = sqliteTable('session', {
@@ -148,6 +152,7 @@ export const session = sqliteTable('session', {
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
     activeOrganizationId: text('active_organization_id'),
+    impersonatedBy: text('impersonated_by'),
 });
 
 export const account = sqliteTable('account', {
