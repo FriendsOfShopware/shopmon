@@ -163,6 +163,52 @@
             </data-table>
         </form-group>
 
+        <form-group title="Shop Notifications" class="form-group-table">
+            <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
+                <icon-fa6-regular:bell-slash class="empty-state-icon" />
+                <p class="empty-state-text">
+                    You are not subscribed to any shop notifications.
+                </p>
+                <p class="empty-state-subtext">
+                    Visit a shop's detail page and click the watch button to receive notifications about changes.
+                </p>
+            </div>
+            <data-table
+                v-else
+                :columns="[
+                    { key: 'name', name: 'Shop Name', sortable: true },
+                    { key: 'organizationName', name: 'Organization', sortable: true },
+                    { key: 'shopwareVersion', name: 'Version', sortable: true },
+                ]"
+                :data="subscribedShops"
+            >
+                <template #cell-name="{ row }">
+                    <router-link
+                        :to="{
+                            name: 'account.shops.detail',
+                            params: {
+                                slug: row.organizationSlug,
+                                shopId: row.id
+                            }
+                        }"
+                        class="link"
+                    >
+                        {{ row.name }}
+                    </router-link>
+                </template>
+                <template #cell-actions="{ row }">
+                    <button
+                        type="button"
+                        class="tooltip-position-left"
+                        data-tooltip="Unsubscribe"
+                        @click="unsubscribeFromShop(row.id)"
+                    >
+                        <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
+                    </button>
+                </template>
+            </data-table>
+        </form-group>
+
         <form-group title="Deleting your Account">
                 <p>
                     Once you delete your account, you will lose all data associated with it.
@@ -285,6 +331,7 @@ const passKeyName = ref('');
 const passkeys = ref<Passkey[] | null>([]);
 const sessions = ref<Session[] | null>([]);
 const connectedProviders = ref<string[]>([]);
+const subscribedShops = ref<any[] | null>(null);
 
 authClient.passkey.listUserPasskeys().then((data) => {
     passkeys.value = data.data;
@@ -311,6 +358,16 @@ async function loadLinkedAccounts() {
     });
 }
 loadLinkedAccounts();
+
+async function loadSubscribedShops() {
+    try {
+        subscribedShops.value =
+            await trpcClient.account.subscribedShops.query();
+    } catch (err) {
+        alert.error(err instanceof Error ? err.message : String(err));
+    }
+}
+loadSubscribedShops();
 
 const showAccountDeletionModal = ref(false);
 const showPasskeyCreationModal = ref(false);
@@ -402,4 +459,44 @@ async function unlinkSocial(providerId: string) {
         alert.error(err instanceof Error ? err.message : String(err));
     }
 }
+
+async function unsubscribeFromShop(shopId: number) {
+    try {
+        await trpcClient.organization.shop.unsubscribeFromNotifications.mutate({
+            shopId,
+        });
+        await loadSubscribedShops();
+        alert.success('Successfully unsubscribed from shop notifications');
+    } catch (err) {
+        alert.error(err instanceof Error ? err.message : String(err));
+    }
+}
 </script>
+
+<style scoped>
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    color: var(--text-color-muted);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+}
+
+.empty-state-text {
+    font-size: 1.125rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.empty-state-subtext {
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    max-width: 28rem;
+    margin: 0 auto;
+}
+</style>

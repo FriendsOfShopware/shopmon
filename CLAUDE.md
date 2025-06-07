@@ -58,6 +58,23 @@ bun run build:app         # Build for production
 bun run build:cron        # Build cron worker
 ```
 
+### Database Migration Commands
+```bash
+# Generate a new migration after schema changes
+cd api
+bunx --bun drizzle-kit generate
+
+# Apply pending migrations
+cd api
+bun run db:migrate
+
+# Creating custom SQL migrations
+# 1. Create SQL file: /api/drizzle/XXXX_migration_name.sql
+# 2. Update /api/drizzle/meta/_journal.json with new entry
+# 3. Create snapshot: /api/drizzle/meta/XXXX_snapshot.json
+# 4. Run: bun run db:migrate
+```
+
 ### Frontend-specific Commands
 ```bash
 cd frontend
@@ -99,6 +116,7 @@ bun run biome:fix         # Auto-fix issues
 - Organization/Shop: `organization`, `shop`, `shop_scrape_info`
 - Monitoring data: `shop_changelog`, `shop_pagespeed`, `shop_extension`
 - Task tracking: `scheduled_task`, `scheduled_task_run`
+- Notifications: User's `notifications` column stores array of strings like `shop-123` for subscriptions
 
 ### Email Templates
 - MJML templates in `/api/src/mail/sources/`
@@ -109,6 +127,14 @@ bun run biome:fix         # Auto-fix issues
 - Located in `/api/src/cron/jobs/`
 - Jobs: shopScrape, pagespeedScrape, sessionCleanup, passwordResetCleanup
 - Configured in `/api/src/cron/index.ts`
+
+### Notification System
+- User subscription-based notifications stored in `user.notifications` as JSON array
+- Format: `["shop-123", "shop-456"]` for subscribed shops
+- Shop notification logic in `/api/src/repository/shops.ts` filters by subscriptions
+- Frontend watch/unwatch functionality in shop detail pages
+- Settings page shows all subscribed shops with unsubscribe option
+- tRPC endpoints: `subscribeToNotifications`, `unsubscribeFromNotifications`, `isSubscribedToNotifications`
 
 ## Environment Configuration
 

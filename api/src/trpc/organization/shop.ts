@@ -393,4 +393,102 @@ export const shopRouter = router({
                 .where(eq(schema.shopScrapeInfo.shopId, input.shopId))
                 .execute();
         }),
+    subscribeToNotifications: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .mutation(async ({ input, ctx }) => {
+            const user = await ctx.drizzle.query.user.findFirst({
+                columns: {
+                    notifications: true,
+                },
+                where: eq(schema.user.id, ctx.user.id),
+            });
+
+            if (!user) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'User not found',
+                });
+            }
+
+            const shopKey = `shop-${input.shopId}`;
+            const notifications = user.notifications || [];
+
+            if (!notifications.includes(shopKey)) {
+                notifications.push(shopKey);
+                await ctx.drizzle
+                    .update(schema.user)
+                    .set({ notifications })
+                    .where(eq(schema.user.id, ctx.user.id))
+                    .execute();
+            }
+
+            return true;
+        }),
+    unsubscribeFromNotifications: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .mutation(async ({ input, ctx }) => {
+            const user = await ctx.drizzle.query.user.findFirst({
+                columns: {
+                    notifications: true,
+                },
+                where: eq(schema.user.id, ctx.user.id),
+            });
+
+            if (!user) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'User not found',
+                });
+            }
+
+            const shopKey = `shop-${input.shopId}`;
+            const notifications = user.notifications || [];
+            const index = notifications.indexOf(shopKey);
+
+            if (index > -1) {
+                notifications.splice(index, 1);
+                await ctx.drizzle
+                    .update(schema.user)
+                    .set({ notifications })
+                    .where(eq(schema.user.id, ctx.user.id))
+                    .execute();
+            }
+
+            return true;
+        }),
+    isSubscribedToNotifications: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .query(async ({ input, ctx }) => {
+            const user = await ctx.drizzle.query.user.findFirst({
+                columns: {
+                    notifications: true,
+                },
+                where: eq(schema.user.id, ctx.user.id),
+            });
+
+            if (!user) {
+                return false;
+            }
+
+            const shopKey = `shop-${input.shopId}`;
+            return (user.notifications || []).includes(shopKey);
+        }),
 });

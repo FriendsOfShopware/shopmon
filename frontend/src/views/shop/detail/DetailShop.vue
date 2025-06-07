@@ -5,6 +5,24 @@
     >
         <button
             class="btn icon-only"
+            :data-tooltip="isSubscribed ? 'Unwatch shop' : 'Watch shop'"
+            :disabled="isSubscribing"
+            type="button"
+            @click="toggleNotificationSubscription"
+        >
+            <icon-fa6-solid:bell
+                v-if="isSubscribed"
+                :class="{ 'animate-pulse': isSubscribing }"
+                class="icon"
+            />
+            <icon-fa6-regular:bell
+                v-else
+                :class="{ 'animate-pulse': isSubscribing }"
+                class="icon"
+            />
+        </button>
+        <button
+            class="btn icon-only"
             data-tooltip="Clear shop cache"
             :disabled="isCacheClearing"
             type="button"
@@ -402,6 +420,8 @@ const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 const isLoading = ref(false);
 const isRefreshing = ref(false);
 const isCacheClearing = ref(false);
+const isSubscribed = ref(false);
+const isSubscribing = ref(false);
 
 const viewUpdateWizardDialog: Ref<boolean> = ref(false);
 const loadingUpdateWizard: Ref<boolean> = ref(false);
@@ -420,6 +440,12 @@ async function loadShop() {
         shopId,
     });
     isLoading.value = false;
+
+    // Check notification subscription status
+    isSubscribed.value =
+        await trpcClient.organization.shop.isSubscribedToNotifications.query({
+            shopId,
+        });
 
     const shopwareVersionsData =
         await trpcClient.info.getLatestShopwareVersion.query();
@@ -528,6 +554,34 @@ async function loadUpdateWizard(version: string) {
     ]);
 
     loadingUpdateWizard.value = false;
+}
+
+async function toggleNotificationSubscription() {
+    if (!shop.value) return;
+
+    try {
+        isSubscribing.value = true;
+
+        if (isSubscribed.value) {
+            await trpcClient.organization.shop.unsubscribeFromNotifications.mutate(
+                {
+                    shopId: shop.value.id,
+                },
+            );
+            isSubscribed.value = false;
+            success('You have unsubscribed from notifications for this shop');
+        } else {
+            await trpcClient.organization.shop.subscribeToNotifications.mutate({
+                shopId: shop.value.id,
+            });
+            isSubscribed.value = true;
+            success('You have subscribed to notifications for this shop');
+        }
+    } catch (e) {
+        error(e instanceof Error ? e.message : String(e));
+    } finally {
+        isSubscribing.value = false;
+    }
 }
 </script>
 

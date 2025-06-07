@@ -4,7 +4,7 @@ import { auth } from '../auth.ts';
 import { type Drizzle, getConnection } from '../db.ts';
 
 export type context = {
-    user: User | null;
+    user: (User & { notifications: string[] }) | null;
     session: (Session & { activeOrganizationId?: string }) | null;
     drizzle: Drizzle;
     headers: Headers;

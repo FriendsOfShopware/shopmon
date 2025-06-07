@@ -28,6 +28,7 @@ export interface User {
     id: string;
     displayName: string;
     email: string;
+    notifications?: string[];
 }
 
 async function createShop(
@@ -73,6 +74,7 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
             id: schema.member.userId,
             displayName: schema.user.name,
             email: schema.user.email,
+            notifications: schema.user.notifications,
         })
         .from(schema.shop)
         .innerJoin(
@@ -83,7 +85,12 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
         .where(eq(schema.shop.id, shopId))
         .all();
 
-    return result;
+    // Filter users who have subscribed to notifications for this shop
+    const shopKey = `shop-${shopId}`;
+    return result.filter((user) => {
+        const notifications = user.notifications || [];
+        return notifications.includes(shopKey);
+    });
 }
 
 async function deleteShopsByOrganization(organizationId: string) {

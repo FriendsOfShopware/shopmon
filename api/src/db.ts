@@ -138,6 +138,10 @@ export const user = sqliteTable('user', {
     banned: integer('banned', { mode: 'boolean' }),
     banReason: text('ban_reason'),
     banExpires: integer('ban_expires', { mode: 'timestamp' }),
+    notifications: text('notifications', { mode: 'json' })
+        .default([])
+        .$type<string[]>()
+        .notNull(),
 });
 
 export const session = sqliteTable('session', {
