@@ -127,6 +127,9 @@
                         </dt>
                         <dd>
                             {{ formatDateTime(shop.lastScrapedAt) }}
+                            <div class="auto-update-info">
+                                Shop is updated once an hour automatically
+                            </div>
                         </dd>
                     </div>
                     <div class="shop-info-item">
@@ -734,5 +737,13 @@ async function toggleNotificationSubscription() {
 }
 .shop-scrape-error {
     margin-bottom: 1rem;
+}
+
+.auto-update-info {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-color-muted);
+    opacity: 0.8;
+    font-style: italic;
 }
 </style>
