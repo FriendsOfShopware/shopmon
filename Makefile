@@ -5,6 +5,8 @@ help: # Show help
 
 setup: # Setup the project
 	@echo "Setting up the project"
+	@echo "Create api/.env if not exists"
+	@test -f api/.env || cp api/.env.example api/.env
 	@echo "Installing dependencies"
 	bun install
 
@@ -13,6 +15,8 @@ migrate:
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
+	@echo "Create api/.env if not exists"
+	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
 	cd api && bun run migrate.ts
 	cd api && bun run apply-fixtures.ts

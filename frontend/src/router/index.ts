@@ -52,6 +52,16 @@ export const router = createRouter({
                     component: () =>
                         import('@/views/auth/ForgotPasswordConfirm.vue'),
                 },
+                {
+                    name: 'privacy.unauthenticated',
+                    path: 'privacy',
+                    component: () => import('@/views/Privacy.vue'),
+                },
+                {
+                    name: 'imprint.unauthenticated',
+                    path: 'imprint',
+                    component: () => import('@/views/Imprint.vue'),
+                },
             ],
         },
         {
@@ -137,6 +147,16 @@ export const router = createRouter({
                         action: 'reject',
                     },
                 },
+                {
+                    name: 'privacy.authenticated',
+                    path: 'privacy',
+                    component: () => import('@/views/Privacy.vue'),
+                },
+                {
+                    name: 'imprint.authenticated',
+                    path: 'imprint',
+                    component: () => import('@/views/Imprint.vue'),
+                },
             ],
         },
         ...adminRoutes,
@@ -168,6 +188,8 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         'account.confirm',
         'account.forgot.password',
         'account.forgot.password.confirm',
+        'privacy.unauthenticated',
+        'imprint.unauthenticated',
     ];
     const authRequired = !publicPages.includes(to.name as string);
     const { setReturnUrl } = useReturnUrl();
