@@ -18,6 +18,7 @@ export const auth = betterAuth({
                 type: 'string[]',
                 defaultValue: [],
                 returned: true,
+                required: false,
             },
         },
     },
