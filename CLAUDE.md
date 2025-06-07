@@ -69,10 +69,9 @@ cd api
 bun run db:migrate
 
 # Creating custom SQL migrations
-# 1. Create SQL file: /api/drizzle/XXXX_migration_name.sql
-# 2. Update /api/drizzle/meta/_journal.json with new entry
-# 3. Create snapshot: /api/drizzle/meta/XXXX_snapshot.json
-# 4. Run: bun run db:migrate
+# 1. Run bunx --bun drizzle-kit generate --custom --name=<migration_name>
+# 2. Edit the generated file in api/drizzle/migrations/
+# 3. Run: bun run db:migrate
 ```
 
 ### Frontend-specific Commands
