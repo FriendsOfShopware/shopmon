@@ -319,7 +319,7 @@ import * as Yup from 'yup';
 
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
-import { trpcClient } from '@/helpers/trpc';
+import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import type { Session } from 'better-auth/types';
 
 const session = authClient.useSession();
@@ -331,7 +331,9 @@ const passKeyName = ref('');
 const passkeys = ref<Passkey[] | null>([]);
 const sessions = ref<Session[] | null>([]);
 const connectedProviders = ref<string[]>([]);
-const subscribedShops = ref<any[] | null>(null);
+const subscribedShops = ref<RouterOutput['account']['subscribedShops'] | null>(
+    null,
+);
 
 authClient.passkey.listUserPasskeys().then((data) => {
     passkeys.value = data.data;
