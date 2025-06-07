@@ -1,0 +1,80 @@
+<template>
+    <div class="imprint-page">
+        <main-container>
+            <h1>Legal notice</h1>
+
+            <div class="imprint-content">
+                <section>
+                    <h2>Contact</h2>
+                    <div class="contact-info">
+                        <p>E-Mail: shopmon at fos.gg</p>
+                    </div>
+                </section>
+            </div>
+        </main-container>
+    </div>
+</template>
+
+<style scoped>
+.imprint-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+section {
+    margin-bottom: 2rem;
+}
+
+h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+h3 {
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+ul {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.contact-info,
+.tech-info {
+    background-color: var(--background-secondary, #f8fafc);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.contact-info p:last-child,
+.tech-info p:last-child {
+    margin-bottom: 0;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-color-dark, #2563eb);
+}
+</style>
