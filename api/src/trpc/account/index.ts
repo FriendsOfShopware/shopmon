@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
@@ -225,5 +225,63 @@ export const accountRouter = router({
             }
 
             return Object.values(json);
+        }),
+    subscribedShops: publicProcedure
+        .use(loggedInUserMiddleware)
+        .query(async ({ ctx }) => {
+            if (ctx.user.notifications.length === 0) {
+                return [];
+            }
+
+            // Extract shop IDs from notifications array
+            const shopIds = ctx.user.notifications
+                .filter((n) => n.startsWith('shop-'))
+                .map((n) => Number.parseInt(n.replace('shop-', ''), 10))
+                .filter((id) => !Number.isNaN(id));
+
+            if (shopIds.length === 0) {
+                return [];
+            }
+
+            // Get shop details for subscribed shops
+            const shops = await ctx.drizzle
+                .select({
+                    id: schema.shop.id,
+                    name: schema.shop.name,
+                    url: schema.shop.url,
+                    favicon: schema.shop.favicon,
+                    shopwareVersion: schema.shop.shopwareVersion,
+                    organizationId: schema.shop.organizationId,
+                    organizationName:
+                        sql<string>`${schema.organization.name}`.as(
+                            'organization_name',
+                        ),
+                    organizationSlug:
+                        sql<string>`${schema.organization.slug}`.as(
+                            'organization_slug',
+                        ),
+                })
+                .from(schema.shop)
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
+                )
+                .innerJoin(
+                    schema.member,
+                    eq(
+                        schema.member.organizationId,
+                        schema.shop.organizationId,
+                    ),
+                )
+                .where(
+                    and(
+                        inArray(schema.shop.id, shopIds),
+                        eq(schema.member.userId, ctx.user.id),
+                    ),
+                )
+                .orderBy(schema.shop.name)
+                .all();
+
+            return shops;
         }),
 });
