@@ -51,6 +51,8 @@ services:
     environment:
       LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID}
       LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY}
+      LITESTREAM_AGE_PUBLIC_KEY: ${LITESTREAM_AGE_PUBLIC_KEY}
+      LITESTREAM_AGE_PRIVATE_KEY: ${LITESTREAM_AGE_PRIVATE_KEY}
       ENVIRONMENT: ${ENVIRONMENT}
   
 volumes:
@@ -65,6 +67,11 @@ configs:
           replicas:
             - type: s3
               bucket: shopmon-backups
-              path: db/$ENVIRONMENT/
+              path: db-enc/$ENVIRONMENT/
               endpoint: s3.eu-central-003.backblazeb2.com
               force-path-style: true
+              age:
+                identities:
+                  - $LITESTREAM_AGE_PRIVATE_KEY
+                recipients:
+                  - $LITESTREAM_AGE_PUBLIC_KEY
