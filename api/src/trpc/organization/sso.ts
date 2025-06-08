@@ -37,45 +37,6 @@ export const ssoRouter = router({
             });
         }),
 
-    get: publicProcedure
-        .input(
-            z.object({
-                orgId: z.string(),
-                providerId: z.string(),
-            }),
-        )
-        .use(loggedInUserMiddleware)
-        .use(organizationMiddleware)
-        .query(async ({ ctx, input }) => {
-            const provider = await ctx.drizzle
-                .select()
-                .from(ssoProvider)
-                .where(
-                    and(
-                        eq(ssoProvider.providerId, input.providerId),
-                        eq(ssoProvider.organizationId, input.orgId),
-                    ),
-                )
-                .get();
-
-            if (!provider) {
-                throw new TRPCError({
-                    code: 'NOT_FOUND',
-                    message: 'SSO provider not found',
-                });
-            }
-
-            // Parse oidcConfig to object for consistency
-            if (provider.oidcConfig) {
-                return {
-                    ...provider,
-                    oidcConfig: JSON.parse(provider.oidcConfig),
-                };
-            }
-
-            return provider;
-        }),
-
     discoverOpenIdConfig: publicProcedure
         .input(
             z.object({
