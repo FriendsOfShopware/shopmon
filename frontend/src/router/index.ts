@@ -120,6 +120,12 @@ export const router = createRouter({
                         import('@/views/organization/EditOrganization.vue'),
                 },
                 {
+                    name: 'account.organizations.sso',
+                    path: 'organizations/:slug/sso',
+                    component: () =>
+                        import('@/views/organization/ManageSSO.vue'),
+                },
+                {
                     name: 'account.extension.list',
                     path: 'extensions',
                     component: () =>

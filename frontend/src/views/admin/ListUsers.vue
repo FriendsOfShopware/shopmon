@@ -169,14 +169,13 @@ async function loadUsers() {
         const response = await authClient.admin.listUsers({ query });
 
         if (!response.error) {
-            users.value = response.data?.users || [];
-            totalUsers.value = response.data?.total || 0;
+            users.value = response.data?.users ?? [];
+            totalUsers.value = response.data?.total ?? 0;
         } else {
-            error.value = response.error.message || 'Failed to load users';
+            error.value = response.error.message ?? 'Failed to load users';
         }
     } catch (err) {
-        error.value = 'Failed to load users';
-        console.error('Error loading users:', err);
+        error.value = `Failed to load users: ${err instanceof Error ? err.message : String(err)}`;
     } finally {
         loading.value = false;
     }
@@ -191,16 +190,15 @@ async function impersonateUser(userId: string) {
             window.location.href = '/';
         } else {
             error.value =
-                response.error.message || 'Failed to impersonate user';
+                response.error.message ?? 'Failed to impersonate user';
         }
     } catch (err) {
-        error.value = 'Failed to impersonate user';
-        console.error('Error impersonating user:', err);
+        error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
     }
 }
 
 async function banUser(userId: string) {
-    const reason = prompt('Ban reason:');
+    const reason = window.prompt('Ban reason:');
     if (!reason) return;
 
     try {
@@ -212,11 +210,10 @@ async function banUser(userId: string) {
         if (!response.error) {
             await loadUsers();
         } else {
-            error.value = response.error.message || 'Failed to ban user';
+            error.value = response.error.message ?? 'Failed to ban user';
         }
     } catch (err) {
-        error.value = 'Failed to ban user';
-        console.error('Error banning user:', err);
+        error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
     }
 }
 
@@ -227,11 +224,10 @@ async function unbanUser(userId: string) {
         if (!response.error) {
             await loadUsers();
         } else {
-            error.value = response.error.message || 'Failed to unban user';
+            error.value = response.error.message ?? 'Failed to unban user';
         }
     } catch (err) {
-        error.value = 'Failed to unban user';
-        console.error('Error unbanning user:', err);
+        error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;
     }
 }
 

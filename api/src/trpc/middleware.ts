@@ -65,7 +65,7 @@ export const hasPermissionMiddleware = (
             headers: ctx.headers,
         });
 
-        if (!hasPermission) {
+        if (!hasPermission.success) {
             throw new TRPCError({
                 code: 'FORBIDDEN',
                 message: 'You do not have permission to perform this action',
