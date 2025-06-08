@@ -7,6 +7,7 @@
                 <section>
                     <h2>Contact</h2>
                     <div class="contact-info">
+                        <p>As a Non-Profit Website, it's not required to provide a legal representative. If you have questions or concerns, please reach out to us.</p>
                         <p>E-Mail: shopmon at fos.gg</p>
                     </div>
                 </section>
@@ -53,16 +54,8 @@ li {
 p {
     margin-bottom: 1rem;
     color: var(--text-color);
-}
-
-.contact-info,
-.tech-info {
-    background-color: var(--background-secondary, #f8fafc);
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border-color, #e5e7eb);
-}
-
+}ß
+ß
 .contact-info p:last-child,
 .tech-info p:last-child {
     margin-bottom: 0;
