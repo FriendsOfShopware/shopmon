@@ -100,6 +100,34 @@
             
             Continue with GitHub
         </button>
+        
+        <div class="sso-section">
+            <div class="text-divider">Enterprise SSO</div>
+            
+            <div class="sso-input-group">
+                <input
+                    v-model="ssoEmail"
+                    type="email"
+                    class="field"
+                    placeholder="Enter your work email"
+                    @keyup.enter="ssoLogin"
+                />
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    :disabled="isSSOLoading || !ssoEmail"
+                    @click="ssoLogin"
+                >
+                    <icon-fa6-solid:arrow-right
+                        v-if="!isSSOLoading"
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop v-else class="icon" />
+                </button>
+            </div>
+            <p class="sso-help">Use your company email to sign in with SSO</p>
+        </div>
     </div>
 </template>
 
@@ -119,6 +147,8 @@ const { returnUrl, clearReturnUrl } = useReturnUrl();
 
 const isAuthenticated = ref(false);
 const isGithubLoading = ref(false);
+const isSSOLoading = ref(false);
+const ssoEmail = ref('');
 const alert = useAlert();
 
 configure({
@@ -185,6 +215,35 @@ async function githubLogin() {
         isGithubLoading.value = false;
     }
 }
+
+async function ssoLogin() {
+    if (!ssoEmail.value) {
+        alert.error('Please enter your work email');
+        return;
+    }
+
+    isSSOLoading.value = true;
+
+    try {
+        const redirectUrl = returnUrl.value ?? '/';
+        const result = await authClient.signIn.sso({
+            email: ssoEmail.value,
+            callbackURL: `${window.location.origin}${redirectUrl}`,
+        });
+
+        if (result.error) {
+            if (result.error.code === 'SSO_PROVIDER_NOT_FOUND') {
+                alert.error('No SSO provider found for this email domain');
+            } else {
+                alert.error(result.error.message ?? 'SSO login failed');
+            }
+        }
+    } catch (e: unknown) {
+        alert.error(e instanceof Error ? e.message : 'SSO login failed');
+    } finally {
+        isSSOLoading.value = false;
+    }
+}
 </script>
 
 <style scoped>
@@ -218,5 +277,31 @@ async function githubLogin() {
 
 .alert {
     margin-bottom: 1.5rem;
+}
+
+.sso-section {
+    margin-top: 1rem;
+}
+
+.sso-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+
+    input {
+        flex: 1;
+    }
+
+    button {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+.sso-help {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    text-align: center;
 }
 </style>

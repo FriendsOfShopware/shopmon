@@ -13,10 +13,12 @@
 </template>
 
 <script setup lang="ts">
+import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { computed } from 'vue';
 
 const session = authClient.useSession();
+const alert = useAlert();
 
 const isImpersonating = computed(() => {
     // Check if the session has impersonation data
@@ -33,7 +35,9 @@ async function stopImpersonating() {
         // Force a complete page reload to ensure clean session state
         window.location.reload();
     } catch (error) {
-        console.error('Failed to stop impersonating:', error);
+        alert.error(
+            `Failed to stop impersonating.  Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
     }
 }
 </script>

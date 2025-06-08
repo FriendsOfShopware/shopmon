@@ -250,6 +250,17 @@ export const invitation = sqliteTable('invitation', {
         .references(() => user.id, { onDelete: 'cascade' }),
 });
 
+export const ssoProvider = sqliteTable('sso_provider', {
+    id: text('id').primaryKey(),
+    issuer: text('issuer').notNull(),
+    oidcConfig: text('oidc_config'),
+    samlConfig: text('saml_config'),
+    userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+    providerId: text('provider_id').notNull().unique(),
+    organizationId: text('organization_id'),
+    domain: text('domain').notNull(),
+});
+
 export const schema = {
     shop,
     shopPageSpeed,
@@ -266,6 +277,7 @@ export const schema = {
     organization,
     member,
     invitation,
+    ssoProvider,
 };
 
 export type Drizzle = BunSQLiteDatabase<typeof schema>;

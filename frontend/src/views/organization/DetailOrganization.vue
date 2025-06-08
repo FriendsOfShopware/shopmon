@@ -143,6 +143,41 @@
             </DataTable>
         </div>
 
+        <div class="panel panel-table">
+            <div class="organization-members-header">
+                <h3 class="organization-members-heading">
+                    SSO Configuration
+                </h3>
+
+                <router-link
+                    :to="{ name: 'account.organizations.sso', params: { slug: organization.data.slug } }"
+                    type="button"
+                    class="btn btn-primary"
+                >
+                    <icon-fa6-solid:key
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    Manage SSO
+                </router-link>
+            </div>
+            
+            <div v-if="ssoProviders.length === 0" class="sso-empty">
+                <p>No SSO providers configured yet.</p>
+                <p class="text-muted">Configure SSO to allow users to login with their corporate identity provider.</p>
+            </div>
+            
+            <DataTable
+                v-else
+                :columns="[
+                    { key: 'domain', name: 'Domain' },
+                    { key: 'issuer', name: 'Issuer' },
+                ]"
+                :data="ssoProviders"
+            >
+            </DataTable>
+        </div>
+
         <modal
             :show="showAddMemberModal"
             close-x-mark
@@ -290,11 +325,13 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
+import { usePermissions } from '@/composables/usePermissions';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { useRoute } from 'vue-router';
 
 import { authClient } from '@/helpers/auth-client';
-import { ref } from 'vue';
+import { trpcClient } from '@/helpers/trpc';
+import { computed, ref } from 'vue';
 import * as Yup from 'yup';
 
 const session = authClient.useSession();
@@ -302,11 +339,20 @@ const session = authClient.useSession();
 const route = useRoute();
 const alert = useAlert();
 
-const allowedToManageMembers = ref(false);
 const organization =
     ref<
         Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>
     >();
+const ssoProviders = ref<{ domain: string; issuer: string }[]>([]);
+
+const allowedToManageMembers = usePermissions(
+    computed(() => ({
+        organizationId: organization.value?.data?.id,
+        permissions: {
+            member: ['update', 'delete'],
+        },
+    })),
+);
 
 async function loadOrganization() {
     authClient.organization
@@ -315,16 +361,22 @@ async function loadOrganization() {
         })
         .then((org) => {
             organization.value = org;
-            authClient.organization
-                .hasPermission({
-                    organizationId: organization.value?.data.id,
-                    permissions: {
-                        member: ['create', 'delete'],
-                    },
-                })
-                .then((resp) => {
-                    allowedToManageMembers.value = resp.data?.success ?? false;
-                });
+
+            // Load SSO providers
+            if (organization.value?.data.id) {
+                trpcClient.organization.sso.list
+                    .query({
+                        orgId: organization.value.data.id,
+                    })
+                    .then((providers) => {
+                        ssoProviders.value = providers;
+                    })
+                    .catch((err) => {
+                        alert.error(
+                            err instanceof Error ? err.message : String(err),
+                        );
+                    });
+            }
         });
 }
 
@@ -526,6 +578,21 @@ async function onChangeRole(values: Record<string, unknown>) {
     &-heading {
         font-size: 1.25rem;
         font-weight: 500;
+    }
+}
+
+.sso-empty {
+    padding: 2rem;
+    text-align: center;
+    
+    p {
+        margin: 0;
+        
+        &.text-muted {
+            margin-top: 0.5rem;
+            color: var(--text-color-muted);
+            font-size: 0.875rem;
+        }
     }
 }
 </style>
