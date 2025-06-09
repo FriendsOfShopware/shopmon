@@ -24,27 +24,62 @@ app.on(['POST', 'GET'], '/auth/*', (c) => {
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));
 
-// Serve screenshots from local files
-app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
-    const uuid = c.req.param('uuid');
+// Serve sitespeed results
+app.get('/sitespeed/result/:shopId/*', async (c) => {
+    const shopId = c.req.param('shopId');
+    const filePath = c.req.param('*') || '';
 
-    if (uuid.includes('/') || uuid.includes('..')) {
-        return c.json({ error: 'Invalid UUID' }, 404);
+    // Validate shop ID
+    if (!/^\d+$/.test(shopId)) {
+        return c.json({ error: 'Invalid shop ID' }, 400);
     }
 
-    const filePath = path.join(filesDir, 'pagespeed', uuid, 'screenshot.jpg');
+    // Prevent directory traversal
+    if (filePath.includes('..') || filePath.includes('\\')) {
+        return c.json({ error: 'Invalid file path' }, 400);
+    }
+
+    const sitespeedDataFolder =
+        process.env.APP_SITESPEED_DATA_FOLDER || './sitespeed-results';
+    const fullPath = path.join(sitespeedDataFolder, shopId, filePath);
 
     try {
-        const file = await fs.readFile(filePath);
+        const stat = await fs.stat(fullPath);
+
+        if (stat.isDirectory()) {
+            // List directory contents
+            const files = await fs.readdir(fullPath);
+            return c.json({
+                type: 'directory',
+                path: `/${filePath}`,
+                files: files.map((file) => ({ name: file })),
+            });
+        }
+        // Serve file
+        const file = await fs.readFile(fullPath);
+        const ext = path.extname(fullPath).toLowerCase();
+
+        let contentType = 'application/octet-stream';
+        if (ext === '.json') contentType = 'application/json';
+        else if (ext === '.html') contentType = 'text/html';
+        else if (ext === '.css') contentType = 'text/css';
+        else if (ext === '.js') contentType = 'application/javascript';
+        else if (ext === '.png') contentType = 'image/png';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.gif') contentType = 'image/gif';
+        else if (ext === '.svg') contentType = 'image/svg+xml';
+        else if (ext === '.mp4') contentType = 'video/mp4';
+        else if (ext === '.webm') contentType = 'video/webm';
+
         return new Response(file, {
             status: 200,
             headers: {
-                'content-type': 'image/jpeg',
-                'cache-control': 'public, max-age=86400', // Cache for 1 day
+                'content-type': contentType,
+                'cache-control': 'public, max-age=3600', // Cache for 1 hour
             },
         });
     } catch (e) {
-        return c.json({ error: 'Screenshot not found' }, 404);
+        return c.json({ error: 'File not found' }, 404);
     }
 });
 
