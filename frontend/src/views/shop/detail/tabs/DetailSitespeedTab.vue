@@ -3,6 +3,13 @@
         <div class="sitespeed-header">
             <h3>Sitespeed Metrics</h3>
             <div class="sitespeed-actions">
+                <button
+                    class="btn btn-secondary"
+                    @click="showSettings = !showSettings"
+                >
+                    <icon-fa6-solid:gear />
+                    Settings
+                </button>
                 <a
                     v-if="shop.sitespeed && shop.sitespeed.length > 0"
                     :href="`/sitespeed/result/${shop.id}/`"
@@ -13,6 +20,7 @@
                     View Details
                 </a>
                 <button
+                    v-if="shop.sitespeedEnabled"
                     class="btn btn-primary"
                     :disabled="isAnalyzing"
                     @click="runAnalysis"
@@ -21,6 +29,84 @@
                     {{ isAnalyzing ? 'Analyzing...' : 'Run Analysis' }}
                 </button>
             </div>
+        </div>
+
+        <div v-if="showSettings" class="sitespeed-settings panel">
+            <h4>Sitespeed Configuration</h4>
+            <form @submit.prevent="saveSettings">
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            v-model="settings.enabled"
+                        />
+                        Enable automatic daily Sitespeed analysis
+                    </label>
+                    <p class="form-help-text">When enabled, Sitespeed will run once daily at 3 AM automatically</p>
+                </div>
+
+                <div v-if="settings.enabled" class="form-group">
+                    <label>URLs to Analyze (max 5)</label>
+                    <div class="url-list">
+                        <div
+                            v-for="(url, index) in settings.urls"
+                            :key="index"
+                            class="url-item"
+                        >
+                            <input
+                                type="text"
+                                v-model="url.label"
+                                placeholder="Label (e.g., Homepage)"
+                                class="field"
+                                maxlength="50"
+                                required
+                            />
+                            <input
+                                type="url"
+                                v-model="url.url"
+                                placeholder="https://example.com"
+                                class="field"
+                                required
+                            />
+                            <button
+                                type="button"
+                                class="btn btn-secondary icon-only"
+                                @click="removeUrl(index)"
+                                :disabled="settings.urls.length === 1"
+                            >
+                                <icon-fa6-solid:trash />
+                            </button>
+                        </div>
+                        <button
+                            v-if="settings.urls.length < 5"
+                            type="button"
+                            class="btn btn-secondary"
+                            @click="addUrl"
+                        >
+                            <icon-fa6-solid:plus />
+                            Add URL
+                        </button>
+                    </div>
+                    <p class="form-help-text">If no URLs are specified, only the shop's main URL will be analyzed</p>
+                </div>
+
+                <div class="form-actions">
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        :disabled="isSaving"
+                    >
+                        {{ isSaving ? 'Saving...' : 'Save Settings' }}
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        @click="cancelSettings"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
 
         <div v-if="shop.sitespeed && shop.sitespeed.length > 0" class="sitespeed-content">
@@ -65,6 +151,7 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th>Page</th>
                                 <th>TTFB</th>
                                 <th>Fully Loaded</th>
                                 <th>LCP</th>
@@ -75,6 +162,7 @@
                         <tbody>
                             <tr v-for="metric in shop.sitespeed" :key="metric.id">
                                 <td>{{ formatDateTime(metric.createdAt) }}</td>
+                                <td>{{ metric.label || 'Homepage' }}</td>
                                 <td>{{ metric.ttfb || 'N/A' }}<span v-if="metric.ttfb">ms</span></td>
                                 <td>{{ formatTime(metric.fullyLoaded) }}</td>
                                 <td>{{ formatTime(metric.largestContentfulPaint) }}</td>
@@ -90,10 +178,19 @@
         <element-empty
             v-else
             title="No sitespeed data available"
-            description="Run your first analysis to see performance metrics"
+            :description="shop.sitespeedEnabled ? 'Run your first analysis to see performance metrics' : 'Enable Sitespeed to start monitoring performance'"
         >
             <template #actions>
                 <button
+                    v-if="!shop.sitespeedEnabled"
+                    class="btn btn-primary"
+                    @click="showSettings = true"
+                >
+                    <icon-fa6-solid:gear />
+                    Configure Sitespeed
+                </button>
+                <button
+                    v-else
                     class="btn btn-primary"
                     :disabled="isAnalyzing"
                     @click="runAnalysis"
@@ -115,8 +212,12 @@ import { computed, ref } from 'vue';
 
 interface Shop {
     id: number;
+    sitespeedEnabled?: boolean;
+    sitespeedUrls?: Array<{ url: string; label: string }>;
     sitespeed?: Array<{
         id: number;
+        url: string;
+        label: string;
         ttfb: number | null;
         fullyLoaded: number | null;
         largestContentfulPaint: number | null;
@@ -135,7 +236,16 @@ interface Props {
 const props = defineProps<Props>();
 
 const isAnalyzing = ref(false);
+const isSaving = ref(false);
+const showSettings = ref(false);
 const { showAlert } = useAlert();
+
+const settings = ref({
+    enabled: props.shop.sitespeedEnabled || false,
+    urls: props.shop.sitespeedUrls?.length
+        ? [...props.shop.sitespeedUrls]
+        : [{ url: '', label: '' }],
+});
 
 const latestMetrics = computed(() => {
     if (!props.shop.sitespeed || props.shop.sitespeed.length === 0) {
@@ -184,6 +294,53 @@ const runAnalysis = async () => {
     } finally {
         isAnalyzing.value = false;
     }
+};
+
+const addUrl = () => {
+    settings.value.urls.push({ url: '', label: '' });
+};
+
+const removeUrl = (index: number) => {
+    settings.value.urls.splice(index, 1);
+};
+
+const saveSettings = async () => {
+    isSaving.value = true;
+    try {
+        // Filter out empty URLs
+        const validUrls = settings.value.urls.filter((u) => u.url && u.label);
+
+        await trpcClient.organization.shop.updateSitespeedSettings.mutate({
+            shopId: props.shop.id,
+            enabled: settings.value.enabled,
+            urls: validUrls.length > 0 ? validUrls : undefined,
+        });
+
+        showAlert('Sitespeed settings saved successfully', 'success');
+        showSettings.value = false;
+
+        // Refresh the page to show updated settings
+        window.location.reload();
+    } catch (error) {
+        console.error('Failed to save sitespeed settings:', error);
+        showAlert(
+            'Failed to save sitespeed settings. Please try again.',
+            'error',
+        );
+    } finally {
+        isSaving.value = false;
+    }
+};
+
+const cancelSettings = () => {
+    // Reset to original values
+    settings.value = {
+        enabled: props.shop.sitespeedEnabled || false,
+        urls: props.shop.sitespeedUrls?.length
+            ? [...props.shop.sitespeedUrls]
+            : [{ url: '', label: '' }],
+    };
+    showSettings.value = false;
 };
 </script>
 
@@ -262,5 +419,67 @@ const runAnalysis = async () => {
 
 .history-table tr:hover {
     background: var(--color-surface);
+}
+
+.sitespeed-settings {
+    margin-top: 1rem;
+    padding: 1.5rem;
+}
+
+.sitespeed-settings h4 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin: 0;
+}
+
+.form-help-text {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+}
+
+.url-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.url-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.url-item .field {
+    flex: 1;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
 }
 </style>

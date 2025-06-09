@@ -24,30 +24,6 @@ app.on(['POST', 'GET'], '/auth/*', (c) => {
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));
 
-// Serve screenshots from local files
-app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
-    const uuid = c.req.param('uuid');
-
-    if (uuid.includes('/') || uuid.includes('..')) {
-        return c.json({ error: 'Invalid UUID' }, 404);
-    }
-
-    const filePath = path.join(filesDir, 'pagespeed', uuid, 'screenshot.jpg');
-
-    try {
-        const file = await fs.readFile(filePath);
-        return new Response(file, {
-            status: 200,
-            headers: {
-                'content-type': 'image/jpeg',
-                'cache-control': 'public, max-age=86400', // Cache for 1 day
-            },
-        });
-    } catch (e) {
-        return c.json({ error: 'Screenshot not found' }, 404);
-    }
-});
-
 // Serve sitespeed results
 app.get('/sitespeed/result/:shopId/*', async (c) => {
     const shopId = c.req.param('shopId');

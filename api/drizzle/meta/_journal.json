@@ -148,6 +148,20 @@
       "when": 1749394323482,
       "tag": "0020_fix-cls-precision",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1749464346074,
+      "tag": "0021_add-sitespeed-config",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1749479902749,
+      "tag": "0022_drop-pagespeed-table",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,7 @@ app.get('/health', (req, res) => {
 
 // Main endpoint to run sitespeed analysis
 app.post('/analyze', async (req, res) => {
-    const { shopId, url } = req.body;
+    const { shopId, url, label, folderName } = req.body;
 
     if (!shopId || !url) {
         return res.status(400).json({
@@ -24,10 +24,18 @@ app.post('/analyze', async (req, res) => {
     }
 
     try {
-        // Create results directory for this shop
+        // Create results directory for this shop and URL
         const dataFolder =
             process.env.APP_SITESPEED_DATA_FOLDER || '/app/results';
-        const resultsDir = path.join(dataFolder, shopId.toString());
+
+        // Use the pre-sanitized folder name from the API, or fallback to 'default'
+        const safeName = folderName || 'default';
+
+        const resultsDir = path.join(
+            dataFolder,
+            shopId.toString(),
+            safeName,
+        );
         await fs.mkdir(resultsDir, { recursive: true });
 
         // Convert localhost URLs to docker network URLs
@@ -40,7 +48,9 @@ app.post('/analyze', async (req, res) => {
         // Note: Cannot use --headless with --video/--visualMetrics as they need a screen
         const command = `/usr/src/app/bin/sitespeed.js --outputFolder ${resultsDir} --plugins.add analysisstorer --visualMetrics --video --browsertime.iterations 1 "${dockerUrl}"`;
 
-        console.log(`Running sitespeed analysis for shop ${shopId}: ${url}`);
+        console.log(
+            `Running sitespeed analysis for shop ${shopId} - ${label || 'Unlabeled'} (${safeName}): ${url}`,
+        );
 
         exec(command, async (error, stdout, stderr) => {
             console.log('Command stdout:', stdout);
@@ -121,12 +131,14 @@ app.post('/analyze', async (req, res) => {
                     );
 
                     console.log(
-                        `Analysis completed for shop ${shopId}`,
+                        `Analysis completed for shop ${shopId} - ${label || 'Unlabeled'} (${safeName})`,
                         metrics,
                     );
                     res.json({
                         shopId,
                         url,
+                        label: label || null,
+                        folderName: safeName,
                         timestamp: new Date().toISOString(),
                         metrics,
                     });

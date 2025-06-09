@@ -51,12 +51,21 @@ export const shop = sqliteTable('shop', {
     connectionIssueCount: integer('connection_issue_count')
         .default(0)
         .notNull(),
+    sitespeedEnabled: integer('sitespeed_enabled', { mode: 'boolean' })
+        .default(false)
+        .notNull(),
+    sitespeedUrls: text('sitespeed_urls', { mode: 'json' })
+        .default([])
+        .$type<{ url: string; label: string }[]>()
+        .notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
 export const shopSitespeed = sqliteTable('shop_sitespeed', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     shopId: integer('shop_id').references(() => shop.id),
+    url: text('url').notNull(),
+    label: text('label').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     ttfb: integer('ttfb'),
     fullyLoaded: integer('fully_loaded'),
