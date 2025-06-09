@@ -12,3 +12,13 @@ services:
       APP_URL: "http://localhost:3889"
     ports:
       - "3889:8000"
+  sitespeed-service:
+    build:
+      context: sitespeed-service
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./sitespeed-results:/app/results
+    environment:
+      - NODE_ENV=development
+      - APP_SITESPEED_DATA_FOLDER=/app/results

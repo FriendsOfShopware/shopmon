@@ -2,6 +2,7 @@ import * as cron from 'node-cron';
 import { lockCleanupJob } from './jobs/lockCleanup.js';
 import { pagespeedScrapeJob } from './jobs/pagespeedScrape.js';
 import { shopScrapeJob } from './jobs/shopScrape.js';
+import { scrapeSitespeedForAllShops } from './jobs/sitespeedScrape.js';
 
 console.log('Registered cron jobs...');
 
@@ -22,6 +23,16 @@ cron.schedule('0 2 * * *', async () => {
         await pagespeedScrapeJob();
     } catch (error) {
         console.error('Pagespeed scrape job failed:', error);
+    }
+});
+
+// Run sitespeed scrape every 12 hours at 6 AM and 6 PM
+cron.schedule('0 6,18 * * *', async () => {
+    console.log('Running sitespeed scrape job...');
+    try {
+        await scrapeSitespeedForAllShops();
+    } catch (error) {
+        console.error('Sitespeed scrape job failed:', error);
     }
 });
 
