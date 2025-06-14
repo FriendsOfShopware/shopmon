@@ -60,7 +60,6 @@
                             v-model="selectedOrgId"
                             class="field"
                             :class="{ 'has-error': errors.organizationId }"
-                            @change="$event => value = selectedOrgId"
                         >
                             <option value="">Select an organization</option>
                             <option
