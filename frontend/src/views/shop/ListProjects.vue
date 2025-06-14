@@ -206,9 +206,7 @@ const projectShops = computed(() => {
     return grouped;
 });
 
-// Load data
-Promise.all([trpcClient.account.currentUserShops.query()])
-    .then(([shopsData]) => {
+trpcClient.account.currentUserShops.query().then((shopsData) => {
         shops.value = shopsData;
 
         if (organizationId.value) {

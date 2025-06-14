@@ -91,7 +91,8 @@ export const accountRouter = router({
             return await ctx.drizzle
                 .select({
                     id: schema.shop.id,
-                    name: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
+                    name: schema.shop.name,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
                     status: schema.shop.status,
                     url: schema.shop.url,
                     favicon: schema.shop.favicon,
