@@ -35,6 +35,5 @@ jobs:
               run: bun install
 
             - name: Run TSLint
-              working-directory: api
-              run: bun run tslint
+              run: make tslint
 

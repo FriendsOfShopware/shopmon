@@ -10,6 +10,9 @@ setup: # Setup the project
 	@echo "Installing dependencies"
 	bun install
 
+tslint:
+	cd api && bun ../node_modules/.bin/tsc --noEmit
+
 lint:
 	cd api && bun ../node_modules/.bin/tsc --noEmit
 	cd frontend && bun ../node_modules/.bin/eslint --cache
