@@ -1,5 +1,7 @@
 <template>
-    <data-table
+    <div class="panel panel-table">
+        <data-table
+        v-if="shop"
         :columns="[
             { key: 'label', name: 'Name', sortable: true },
             { key: 'version', name: 'Version' },
@@ -7,7 +9,7 @@
             { key: 'ratingAverage', name: 'Rating', sortable: true },
             { key: 'installedAt', name: 'Installed at', sortable: true },
         ]"
-        :data="shop.extensions || []"
+        :data="shop?.extensions || []"
         :default-sort="{ key: 'label', desc: false }"
     >
         <template #cell-actions-header>
@@ -52,6 +54,7 @@
             No known issues. <a href="#">Report issue</a>
         </template>
     </data-table>
+    </div>
 
     <modal
         :show="viewExtensionChangelogDialog"
@@ -102,13 +105,14 @@
 <script setup lang="ts">
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 import type { RouterOutput } from '@/helpers/trpc';
+import { useShopDetail } from '@/composables/useShopDetail';
 
 import { type Ref, ref } from 'vue';
 type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
-const { shop } = defineProps<{
-    shop: RouterOutput['organization']['shop']['get'];
-}>();
+const {
+    shop,
+} = useShopDetail();
 
 const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
 const dialogExtension: Ref<Extension | null> = ref(null);

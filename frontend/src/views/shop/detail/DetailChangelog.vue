@@ -1,5 +1,7 @@
 <template>
-    <data-table
+    <div class="panel panel-table">
+        <data-table
+        v-if="shop"
         :columns="[
             { key: 'date', name: 'Date', class: 'changelog-date', sortable: true },
             { key: 'log', name: 'Log', sortable: false },
@@ -16,6 +18,7 @@
             </span>
         </template>
     </data-table>
+    </div>
 
     <modal
         :show="viewShopChangelogDialog"
@@ -68,13 +71,13 @@
 <script setup lang="ts">
 import { sumChanges } from '@/helpers/changelog';
 import { formatDateTime } from '@/helpers/formatter';
-import type { RouterOutput } from '@/helpers/trpc';
 import type { ShopChangelog } from '@/types/shop';
 import { type Ref, ref } from 'vue';
+import { useShopDetail } from '@/composables/useShopDetail';
 
-const { shop } = defineProps<{
-    shop: RouterOutput['organization']['shop']['get'];
-}>();
+const {
+    shop,
+} = useShopDetail();
 
 const viewShopChangelogDialog: Ref<boolean> = ref(false);
 const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
