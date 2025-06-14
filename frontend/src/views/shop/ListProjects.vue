@@ -27,7 +27,7 @@
                         <h3 class="project-name">{{ project.name }}</h3>
                         <p v-if="project.description" class="project-description">{{ project.description }}</p>
                         <p class="project-meta">
-                            <span class="shop-count">{{ projectShops[project.id].length }} shops</span>
+                            <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
                             <span class="separator">•</span>
                             <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
                         </p>

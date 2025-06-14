@@ -45,41 +45,15 @@
                 </div>
 
                 <div>
-                    <label for="newOrgId">Organization</label>
-
-                    <field
-                        id="newOrgId"
-                        as="select"
-                        name="newOrgId"
-                        class="field"
-                        :value="shop.organizationId"
-                    >
-                        <option
-                            v-for="organization in organizations.data"
-                            :key="organization.id"
-                            :value="organization.id"
-                        >
-                            {{ organization.name }}
-                        </option>
-                    </field>
-
-                    <div class="field-error-message">
-                        {{ errors.newOrgId }}
-                    </div>
-                </div>
-
-                <div>
                     <label for="projectId">Project</label>
 
                     <field
                         id="projectId"
-                        v-slot="{ value }"
                         name="projectId"
                     >
                         <select 
                             v-model="selectedProjectId" 
                             class="field"
-                            @change="$event => value = selectedProjectId"
                         >
                             <option
                                 v-for="project in projects"
@@ -235,7 +209,6 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -248,12 +221,14 @@ const router = useRouter();
 const route = useRoute();
 const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 const isLoading = ref(false);
-const projects = ref<RouterOutput['organization']['project']['list']>([]);
-const selectedProjectId = ref<number | undefined>(undefined);
-
-const organizations = authClient.useListOrganizations();
+const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
+const selectedProjectId = ref<number>(0);
 
 const shopId = Number.parseInt(route.params.shopId as string, 10);
+
+trpcClient.account.currentUserProjects.query().then((data) => {
+    projects.value = data;
+});
 
 async function loadShop() {
     isLoading.value = true;
@@ -263,9 +238,7 @@ async function loadShop() {
 
     // Load projects for the organization
     if (shop.value?.organizationId) {
-        projects.value = await trpcClient.organization.project.list.query({
-            orgId: shop.value.organizationId,
-        });
+        projects.value = await trpcClient.account.currentUserProjects.query();
         selectedProjectId.value = shop.value.projectId;
     }
 

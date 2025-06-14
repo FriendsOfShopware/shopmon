@@ -71,6 +71,7 @@ export const shopRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
                     url: schema.shop.url,
                     status: schema.shop.status,
                     createdAt: schema.shop.createdAt,
@@ -214,7 +215,6 @@ export const shopRouter = router({
                 clientId: z.string().optional(),
                 clientSecret: z.string().optional(),
                 ignores: z.array(z.string()).optional(),
-                newOrgId: z.string().optional(),
                 projectId: z.number(),
             }),
         )
@@ -245,27 +245,31 @@ export const shopRouter = router({
                     .execute();
             }
 
-            if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const organization = await ctx.drizzle.query.member.findFirst({
-                    columns: {
-                        id: true,
-                    },
-                    where: and(
-                        eq(schema.member.organizationId, input.newOrgId),
+            if (input.projectId) {
+                const project = await ctx.drizzle.select({
+                    id: schema.project.id,
+                    organizationId: schema.project.organizationId,
+                })
+                .from(schema.project)
+                .innerJoin(schema.organization, eq(schema.project.organizationId, schema.organization.id))
+                .innerJoin(schema.member, eq(schema.organization.id, schema.member.organizationId))
+                .where(
+                    and(
+                        eq(schema.project.id, input.projectId),
                         eq(schema.member.userId, ctx.user.id),
                     ),
-                });
+                ).get();
 
-                if (organization === undefined) {
+                if (project === null) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'You are not a member of this organization',
+                        message: 'You do not have access to this project',
                     });
                 }
 
                 await ctx.drizzle
                     .update(schema.shop)
-                    .set({ organizationId: input.newOrgId })
+                    .set({ organizationId: project.organizationId, projectId: project.id })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }

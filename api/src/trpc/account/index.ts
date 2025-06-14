@@ -140,7 +140,7 @@ export const accountRouter = router({
             return await ctx.drizzle
                 .select({
                     id: schema.project.id,
-                    name: schema.project.name,
+                    name: sql<string>`CONCAT(${schema.organization.name}, " / ", ${schema.project.name})`,
                 })
                 .from(schema.project)
                 .innerJoin(
