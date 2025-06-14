@@ -8,6 +8,7 @@ import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
+import ShopDetailLayout from '@/layouts/ShopDetailLayout.vue';
 import adminRoutes from '@/router/admin';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
@@ -95,10 +96,52 @@ export const router = createRouter({
                     component: () => import('@/views/shop/EditShop.vue'),
                 },
                 {
-                    name: 'account.shops.detail',
                     path: 'organizations/:slug/shops/:shopId(\\d+)',
-                    component: () =>
-                        import('@/views/shop/detail/DetailShop.vue'),
+                    component: ShopDetailLayout,
+                    children: [
+                        {
+                            name: 'account.shops.detail',
+                            path: '',
+                            component: () =>
+                                import('@/views/shop/detail/DetailShop.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.checks',
+                            path: 'checks',
+                            component: () =>
+                                import('@/views/shop/detail/DetailChecks.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.extensions',
+                            path: 'extensions',
+                            component: () =>
+                                import('@/views/shop/detail/DetailExtensions.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.tasks',
+                            path: 'tasks',
+                            component: () =>
+                                import('@/views/shop/detail/DetailScheduledTasks.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.queue',
+                            path: 'queue',
+                            component: () =>
+                                import('@/views/shop/detail/DetailQueue.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.pagespeed',
+                            path: 'pagespeed',
+                            component: () =>
+                                import('@/views/shop/detail/DetailPagespeed.vue'),
+                        },
+                        {
+                            name: 'account.shops.detail.changelog',
+                            path: 'changelog',
+                            component: () =>
+                                import('@/views/shop/detail/DetailChangelog.vue'),
+                        },
+                    ],
                 },
                 {
                     name: 'account.organizations.list',

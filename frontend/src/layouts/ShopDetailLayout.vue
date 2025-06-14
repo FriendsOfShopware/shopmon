@@ -4,7 +4,7 @@
 
         <header-container
             v-if="shop"
-            :title="shop.name"
+            :title="shop.nameCombined"
         >
             <slot name="header-actions">
                 <button
