@@ -1,5 +1,5 @@
 :root {
-    --container-width: 80rem;
+    --container-width: 90rem;
     --primary-color: #0ea5e9;
     --background-color: #f3f4f6;
     --text-color: #111827;
@@ -14,6 +14,7 @@
     --error-background: #f8d7da;
     --warning-color: #facc15;
     --warning-background: #fff3cd;
+    --sidebar-nav-link-color: #111827;
     --panel-background: #ffffff;
     --panel-border-color: #e5e7eb;
     --item-background: #f9fafb;
@@ -35,7 +36,6 @@
     --field-background: #fff;
     --field-color: #1a202c;
     --field-border-color: #d1d5db;
-
 }
 
 :root.dark {
@@ -52,6 +52,7 @@
     --error-background: #2c0b0e;
     --warning-color: #fef08a;
     --warning-background: #332701;
+    --sidebar-nav-link-color: #ffffff;
     --panel-background: #262626;
     --panel-border-color: #404040;
     --item-background: #262626;

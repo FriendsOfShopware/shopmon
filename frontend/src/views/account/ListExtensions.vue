@@ -9,11 +9,13 @@
         </template>
 
         <template v-else>
-            <input
-                v-model="term"
-                class="field field-search"
-                placeholder="Search ..."
-            >
+            <div class="panel">
+                <input
+                    v-model="term"
+                    class="field field-search"
+                    placeholder="Search ..."
+                >
+            </div>
 
             <div class="panel panel-table">
                 <data-table
@@ -124,9 +126,6 @@ function getExtensionState(
 </script>
 
 <style scoped>
-.field-search {
-    margin-bottom: 0.75rem;
-}
 
 .extension-label {
     .extension-name {

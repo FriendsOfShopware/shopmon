@@ -1,8 +1,7 @@
 <template>
     <div class="privacy-page">
-        <main-container>
-            <h1>Privacy Policy</h1>
-
+        <header-container title="Privacy Policy" />
+        <main-container class="panel">
             <div class="privacy-content">
 
             <section>
@@ -110,3 +109,5 @@ p {
     color: var(--text-color);
 }
 </style>
+<script setup lang="ts">
+</script>

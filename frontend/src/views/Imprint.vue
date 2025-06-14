@@ -1,8 +1,8 @@
 <template>
     <div class="imprint-page">
-        <main-container>
-            <h1>Legal notice</h1>
+        <header-container title="Legal notice" />
 
+        <main-container class="panel">
             <div class="imprint-content">
                 <section>
                     <h2>Contact</h2>
@@ -71,3 +71,5 @@ a:hover {
     color: var(--primary-color-dark, #2563eb);
 }
 </style>
+<script setup lang="ts">
+</script>
