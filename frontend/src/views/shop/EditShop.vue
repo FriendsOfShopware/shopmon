@@ -24,6 +24,7 @@
             :validation-schema="schema"
             :initial-values="shop"
             @submit="onSubmit"
+            class="panel"
         >
             <form-group title="Shop information">
                 <div>
@@ -150,7 +151,7 @@
             </div>
         </vee-form>
 
-        <form-group :title="'Deleting shop ' + shop.name">
+        <form-group :title="'Deleting shop ' + shop.name" class="panel">
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
                 <button

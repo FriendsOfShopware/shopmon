@@ -5,37 +5,20 @@
         as="nav"
         class="nav"
     >
-        <div class="nav-container container">
-            <div class="nav-main">
-                <div class="nav-logo">
-                    <router-link :to="{ name: 'home' }">
-                        <logo class="nav-logo-img" />
-                    </router-link>
-                </div>
-
-                <div class="nav-main-menue">
-                    <router-link
-                        v-for="item in navigation"
-                        :key="item.name"
-                        :to="{ name: item.route }"
-                        :class="{
-                            'nav-link': true,
-                            'active': isActive(item, $route),
-                        }"
-                        :aria-current="isActive(item, $route) ? 'page' : undefined"
-                    >
-                        {{ item.name }}
-                    </router-link>
-                </div>
+        <div class="top-bar-container container">
+            <div class="top-bar-logo">
+                <router-link :to="{ name: 'home' }">
+                    <logo class="nav-logo-img"/>
+                </router-link>
             </div>
 
-            <div class="nav-actions">
+            <div class="top-bar-actions">
                 <a
                     href="https://github.com/FriendsOfShopware/shopmon/"
                     target="_blank"
                     class="action action-github"
                 >
-                    <icon-fa-brands:github class="icon" />
+                    <icon-fa-brands:github class="icon"/>
                 </a>
 
                 <button
@@ -47,7 +30,7 @@
                         v-if="darkMode"
                         class="icon"
                     />
-                    <icon-fa6-regular:sun
+                    <icon-octicon:sun-16
                         v-else
                         class="icon"
                     />
@@ -88,7 +71,7 @@
                                     type="button"
                                     @click="deleteAllNotifications"
                                 >
-                                    <icon-fa6-solid:trash class="icon" />
+                                    <icon-fa6-solid:trash class="icon"/>
                                 </button>
                             </div>
                             <ul
@@ -119,7 +102,8 @@
                                             {{ formatDateTime(notification.createdAt) }}
                                         </div>
                                         <div class="notification-item-message">
-                                            {{ notification.message }} <router-link
+                                            {{ notification.message }}
+                                            <router-link
                                                 v-if="notification.link"
                                                 :to="notification.link"
                                                 type="a"
@@ -134,7 +118,7 @@
                                             type="button"
                                             @click="deleteNotification(notification.id)"
                                         >
-                                            <icon-fa6-solid:xmark class="icon" />
+                                            <icon-fa6-solid:xmark class="icon"/>
                                         </button>
                                     </div>
                                 </li>
@@ -149,7 +133,6 @@
                         </popover-panel>
                     </transition>
                 </popover>
-
 
                 <!-- Profile dropdown -->
                 <menu-container
@@ -204,7 +187,7 @@
                 </menu-container>
 
                 <!-- Mobile menu button -->
-                <disclosure-button class="action action-mobile-nav-toggle">
+                <disclosure-button class="action action-mobile-top-bar-toggle">
                     <span class="sr-only">Open main menu</span>
                     <icon-fa6-solid:bars-staggered
                         v-if="!open"
@@ -217,66 +200,66 @@
                         aria-hidden="true"
                     />
                 </disclosure-button>
-            </div>
-        </div>
 
-        <!-- Mobile menu -->
-        <disclosure-panel class="nav-mobile-menu">
-            <div class="nav-mobile-links">
-                <disclosure-button
-                    v-for="item in navigation"
-                    :key="item.name"
-                    as="a"
-                    class="nav-mobile-link"
-                    :class="[
+                <!-- Mobile menu -->
+                <disclosure-panel class="top-bar-mobile-menu">
+                    <div class="top-bar-mobile-links">
+                        <disclosure-button
+                            v-for="item in navigation"
+                            :key="item.name"
+                            as="a"
+                            class="top-bar-mobile-link"
+                            :class="[
                         isActive(item, $route) && 'active',
                     ]"
-                    :aria-current="isActive(item, $route) ? 'page' : undefined"
-                    @click="$router.push({ name: item.route })"
-                >
-                    {{ item.name }}
-                </disclosure-button>
-            </div>
-            <div class="nav-mobile-user">
-                <div class="nav-mobile-user-info">
-                    <div class="nav-mobile-user-avatar">
-                        <img
-                            :src="userAvatar"
-                            alt="avatar"
-                            class="user-avatar"
+                            :aria-current="isActive(item, $route) ? 'page' : undefined"
+                            @click="$router.push({ name: item.route })"
                         >
+                            {{ item.name }}
+                        </disclosure-button>
                     </div>
-                    <div class="nav-mobile-user-details">
-                        <div class="nav-mobile-user-name">
-                            {{ session.data.user.name }}
+                    <div class="top-bar-mobile-user">
+                        <div class="top-bar-mobile-user-info">
+                            <div class="top-bar-mobile-user-avatar">
+                                <img
+                                    :src="userAvatar"
+                                    alt="avatar"
+                                    class="user-avatar"
+                                >
+                            </div>
+                            <div class="top-bar-mobile-user-details">
+                                <div class="top-bar-mobile-user-name">
+                                    {{ session.data.user.name }}
+                                </div>
+                                <div class="top-bar-mobile-user-email">
+                                    {{ session.data.user.email }}
+                                </div>
+                            </div>
                         </div>
-                        <div class="nav-mobile-user-email">
-                            {{ session.data.user.email }}
-                        </div>
-                    </div>
-                </div>
 
-                <div class="nav-mobile-user-links">
-                    <disclosure-button
-                        v-for="item in userNavigation"
-                        :key="item.name"
-                        as="a"
-                        class="nav-mobile-user-link"
-                        @click="
+                        <div class="top-bar-mobile-user-links">
+                            <disclosure-button
+                                v-for="item in userNavigation"
+                                :key="item.name"
+                                as="a"
+                                class="top-bar-mobile-user-link"
+                                @click="
                             item.route === 'logout'
                                 ? logout()
                                 : $router.push({ name: item.route })
                         "
-                    >
-                        <component
-                            :is="item.icon"
-                            class="icon"
-                        />
-                        {{ item.name }}
-                    </disclosure-button>
-                </div>
+                            >
+                                <component
+                                    :is="item.icon"
+                                    class="icon"
+                                />
+                                {{ item.name }}
+                            </disclosure-button>
+                        </div>
+                    </div>
+                </disclosure-panel>
             </div>
-        </disclosure-panel>
+        </div>
     </disclosure>
 </template>
 
@@ -308,7 +291,7 @@ import type { RouteLocationNormalizedLoaded } from 'vue-router';
 const session = authClient.useSession();
 
 const userAvatar = ref(
-    'https://api.dicebear.com/7.x/personas/svg/?seed=default?d=identicon',
+    'https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon',
 );
 
 if (session.value.data?.user.email) {
@@ -322,7 +305,7 @@ if (session.value.data?.user.email) {
                 const seed = Array.from(new Uint8Array(hash))
                     .map((b) => b.toString(16).padStart(2, '0'))
                     .join('');
-                userAvatar.value = `https://api.dicebear.com/7.x/personas/svg/?seed=${seed}&d=identicon`;
+                userAvatar.value = `https://api.dicebear.com/7.x/personas/svg?seed=${seed}&d=identicon`;
             });
         // eslint-disable-next-line no-unused-vars
     } catch (error) {
@@ -340,53 +323,20 @@ const {
 } = useNotifications();
 const { darkMode, toggleDarkMode } = useDarkMode();
 
-const navigation = [
-    { name: 'Dashboard', route: 'home' },
-    { name: 'My Projects', route: 'account.project.list', active: 'shop' },
-    { name: 'My Extensions', route: 'account.extension.list' },
-    {
-        name: 'My Organizations',
-        route: 'account.organizations.list',
-        active: 'organizations',
-    },
-];
-
 const userNavigation = [
-    { name: 'Settings', route: 'account.settings', icon: FaGear },
-    { name: 'Logout', route: 'logout', icon: FaPowerOff },
+    {name: 'Settings', route: 'account.settings', icon: FaGear},
+    {name: 'Logout', route: 'logout', icon: FaPowerOff},
 ];
-
-function isActive(
-    item: { route: string; active?: string },
-    $route: RouteLocationNormalizedLoaded,
-) {
-    if (item.route === $route.name) {
-        return true;
-    }
-    if (
-        $route.name &&
-        typeof $route.name === 'string' &&
-        item.active &&
-        $route.name.match(item.active)
-    ) {
-        return true;
-    }
-
-    return false;
-}
 
 async function logout() {
     await authClient.signOut();
     window.location.reload();
 }
+
 </script>
 
 <style>
-.nav {
-    background-color: var(--primary-color);
-}
-
-.nav-container {
+.top-bar-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -394,47 +344,17 @@ async function logout() {
 }
 
 /* Logo */
-.nav-logo {
+.top-bar-logo {
     flex-shrink: 0;
 
     img {
-        height: 2.5rem;
+        height: 3.5rem;
         width: auto;
     }
 }
 
-/* Main */
-.nav-main {
-    display: flex;
-
-    &-menue {
-        display: none;
-
-        @media (min-width: 768px) {
-            display: flex;
-            margin-left: 1.5rem;
-            align-items: center;
-            gap: 1rem;
-        }
-    }
-}
-
-.nav-link {
-    color: #fff;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-
-    &:hover,
-    &.active {
-        background-color: #0c84c2;
-        color: #ffffff;
-    }
-}
-
 /* Actions */
-.nav-actions {
+.top-bar-actions {
     display: flex;
     margin: 0 0 0 1rem;
     align-items: center;
@@ -472,7 +392,7 @@ async function logout() {
             }
         }
 
-        &.action-mobile-nav-toggle {
+        &.action-mobile-top-bar-toggle {
             margin-left: 1rem;
 
             @media (min-width: 768px) {
@@ -673,7 +593,7 @@ async function logout() {
 }
 
 /* Mobile Menü */
-.nav-mobile-menu {
+.top-bar-mobile-menu {
     width: 100%;
     position: absolute;
     background-color: var(--primary-color);
@@ -685,7 +605,7 @@ async function logout() {
     }
 }
 
-.nav-mobile-links {
+.top-bar-mobile-links {
     padding: 0.5rem 0.5rem 0.75rem;
     gap: 0.25rem;
     display: flex;
@@ -697,7 +617,7 @@ async function logout() {
     }
 }
 
-.nav-mobile-link {
+.top-bar-mobile-link {
     display: block;
     padding: 0.5rem 0.75rem;
     border-radius: 0.25rem;
@@ -712,7 +632,7 @@ async function logout() {
     }
 }
 
-.nav-mobile-user {
+.top-bar-mobile-user {
     padding: 1rem 0 0.75rem;
     border-top: 1px solid #38bdf8;
 

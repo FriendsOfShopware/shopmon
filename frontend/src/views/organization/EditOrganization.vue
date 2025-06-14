@@ -18,6 +18,7 @@
             :validation-schema="schema"
             :initial-values="organization.data"
             @submit="onSaveOrganization"
+            class="panel"
         >
             <form-group title="Organization Information">
                 <div>
@@ -70,7 +71,7 @@
             </div>
         </vee-form>
 
-        <form-group v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name">
+        <form-group v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name" class="panel">
             <p>Once you delete your organization, you will lose all data associated with it. </p>
 
             <button

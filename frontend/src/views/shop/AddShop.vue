@@ -6,6 +6,7 @@
             :validation-schema="schema"
             :initial-values="shops"
             @submit="onSubmit"
+            class="panel"
         >
             <form-group title="Shop information">
                 <div>

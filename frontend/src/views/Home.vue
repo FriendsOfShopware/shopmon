@@ -1,7 +1,7 @@
 <template>
     <div v-if="shops">
         <header-container title="Dashboard" />
-        <main-container>
+        <main-container class="panel">
             <h2 class="section-title">
                 <icon-fa6-solid:shop />
                 My Shops
