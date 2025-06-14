@@ -96,54 +96,52 @@
                 :initial-values="editingProject"
                 @submit="updateProject"
             >
-                <form>
-                    <div>
-                        <label for="name">Project Name</label>
+                <div>
+                    <label for="name">Project Name</label>
 
-                        <field
-                            id="name"
-                            type="text"
-                            name="name"
-                            class="field"
-                            :class="{ 'has-error': errors.name }"
-                        />
+                    <field
+                        id="name"
+                        type="text"
+                        name="name"
+                        class="field"
+                        :class="{ 'has-error': errors.name }"
+                    />
 
-                        <div class="field-error-message">
-                            {{ errors.name }}
-                        </div>
+                    <div class="field-error-message">
+                        {{ errors.name }}
                     </div>
+                </div>
 
-                    <div style="margin-top: 1rem;">
-                        <label for="description">Description</label>
+                <div class="form-group">
+                    <label for="description">Description</label>
 
-                        <field
+                    <field
+                        id="description"
+                        v-slot="{ field }"
+                        name="description"
+                    >
+                        <textarea
+                            v-bind="field"
                             id="description"
-                            v-slot="{ field }"
-                            name="description"
-                        >
-                            <textarea
-                                v-bind="field"
-                                id="description"
-                                class="field"
-                                rows="3"
-                                placeholder="Optional project description..."
-                                :class="{ 'has-error': errors.description }"
-                            />
-                        </field>
+                            class="field"
+                            rows="3"
+                            placeholder="Optional project description..."
+                            :class="{ 'has-error': errors.description }"
+                        />
+                    </field>
 
-                        <div class="field-error-message">
-                            {{ errors.description }}
-                        </div>
+                    <div class="field-error-message">
+                        {{ errors.description }}
                     </div>
+                </div>
 
-                    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                        <button type="button" class="btn btn-secondary" @click="editModalVisible = false">Cancel</button>
-                        <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-                            <span v-if="isSubmitting">Saving...</span>
-                            <span v-else>Save Changes</span>
-                        </button>
-                    </div>
-                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="editModalVisible = false">Cancel</button>
+                    <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                        <span v-if="isSubmitting">Saving...</span>
+                        <span v-else>Save Changes</span>
+                    </button>
+                </div>
             </vee-form>
         </template>
     </modal>
@@ -450,6 +448,13 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 
 .form-group:last-child {
     margin-bottom: 0;
+}
+
+.modal-footer {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }
 
 .form-label {
