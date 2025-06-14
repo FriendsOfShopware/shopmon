@@ -70,6 +70,14 @@ await getConnection()
     .set({ emailVerified: true })
     .execute();
 
+await getConnection().insert(schema.project).values({
+    id: 1,
+    name: 'Acme Shop',
+    organizationId: org.id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+});
+
 const shop = new SimpleShop('', 'http://localhost:3889', '');
 shop.setShopCredentials(
     'SWIAUZL4OXRKEG1RR3PMCEVNMG',
@@ -82,8 +90,9 @@ const resp: HttpClientResponse<{ version: string }> =
     await client.get('/_info/config');
 
 const shopId = await shops.createShop(getConnection(), {
-    name: 'Acme Shop',
+    name: 'Local',
     organizationId: org.id,
+    projectId: 1,
     shopUrl: shop.getShopUrl(),
     clientId: shop.getShopClientId(),
     clientSecret: await encrypt(

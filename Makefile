@@ -10,6 +10,25 @@ setup: # Setup the project
 	@echo "Installing dependencies"
 	bun install
 
+lint:
+	cd api && bun ../node_modules/.bin/tsc --noEmit
+	cd frontend && bun ../node_modules/.bin/eslint --cache
+	bun node_modules/.bin/biome ci
+
+lint-fix:
+	cd frontend && bun ../node_modules/.bin/eslint --cache --fix
+	bun node_modules/.bin/biome check --fix --unsafe
+	bun node_modules/.bin/biome format --write
+
+generate-migration:
+	cd api && bunx --bun drizzle-kit generate
+
+generate-custom-migration:
+	cd api && bunx --bun drizzle-kit generate --custom
+
+generate-email:
+	cd api && bun generate-mjml.js
+
 migrate:
 	cd api && bun run migrate.ts
 
@@ -22,7 +41,7 @@ load-fixtures: # Load fixtures
 	cd api && bun run apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'npm run --prefix=api dev' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'cd api && bun --watch --port 5789 src/index.ts' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev

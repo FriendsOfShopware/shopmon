@@ -11,6 +11,7 @@ interface CreateShopRequest {
     shopUrl: string;
     clientId: string;
     clientSecret: string;
+    projectId: number;
 }
 
 export interface ShopAlert {
@@ -45,6 +46,7 @@ async function createShop(
             clientSecret: params.clientSecret,
             createdAt: new Date(),
             shopwareVersion: params.version,
+            projectId: params.projectId,
         })
         .execute();
 

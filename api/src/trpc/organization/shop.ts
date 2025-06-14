@@ -28,20 +28,33 @@ export const shopRouter = router({
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
         .query(async ({ ctx, input }) => {
-            const result = await ctx.drizzle.query.shop.findMany({
-                columns: {
-                    id: true,
-                    name: true,
-                    url: true,
-                    favicon: true,
-                    createdAt: true,
-                    lastScrapedAt: true,
-                    status: true,
-                    lastScrapedError: true,
-                    shopwareVersion: true,
-                },
-                where: eq(schema.shop.organizationId, input.orgId),
-            });
+            const result = await ctx.drizzle
+                .select({
+                    id: schema.shop.id,
+                    name: schema.shop.name,
+                    url: schema.shop.url,
+                    favicon: schema.shop.favicon,
+                    createdAt: schema.shop.createdAt,
+                    lastScrapedAt: schema.shop.lastScrapedAt,
+                    status: schema.shop.status,
+                    lastScrapedError: schema.shop.lastScrapedError,
+                    shopwareVersion: schema.shop.shopwareVersion,
+                    projectId: schema.shop.projectId,
+                    project: schema.project
+                        ? {
+                              id: schema.project.id,
+                              name: schema.project.name,
+                              description: schema.project.description,
+                          }
+                        : null,
+                })
+                .from(schema.shop)
+                .leftJoin(
+                    schema.project,
+                    eq(schema.project.id, schema.shop.projectId),
+                )
+                .where(eq(schema.shop.organizationId, input.orgId))
+                .all();
 
             return result === undefined ? [] : result;
         }),
@@ -78,11 +91,20 @@ export const shopRouter = router({
                         sql<string>`${schema.organization.name}`.as(
                             'organization_name',
                         ),
+                    projectId: schema.shop.projectId,
+                    projectName: sql<string>`${schema.project.name}`.as(
+                        'project_name',
+                    ),
+                    projectDescription: schema.project.description,
                 })
                 .from(schema.shop)
                 .innerJoin(
                     schema.organization,
                     eq(schema.organization.id, schema.shop.organizationId),
+                )
+                .leftJoin(
+                    schema.project,
+                    eq(schema.project.id, schema.shop.projectId),
                 )
                 .leftJoin(
                     schema.shopScrapeInfo,
@@ -126,6 +148,7 @@ export const shopRouter = router({
                 shopUrl: z.string().url(),
                 clientId: z.string(),
                 clientSecret: z.string(),
+                projectId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -158,6 +181,7 @@ export const shopRouter = router({
                 clientSecret: clientSecret,
                 shopUrl: input.shopUrl,
                 version: resp.body.version,
+                projectId: input.projectId,
             });
 
             await scrapeSingleShop(id);
@@ -191,6 +215,7 @@ export const shopRouter = router({
                 clientSecret: z.string().optional(),
                 ignores: z.array(z.string()).optional(),
                 newOrgId: z.string().optional(),
+                projectId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -208,6 +233,14 @@ export const shopRouter = router({
                 await ctx.drizzle
                     .update(schema.shop)
                     .set({ ignores: input.ignores })
+                    .where(eq(schema.shop.id, input.shopId))
+                    .execute();
+            }
+
+            if (input.projectId) {
+                await ctx.drizzle
+                    .update(schema.shop)
+                    .set({ projectId: input.projectId })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }

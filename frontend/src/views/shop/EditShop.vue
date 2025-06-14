@@ -69,6 +69,34 @@
                 </div>
 
                 <div>
+                    <label for="projectId">Project</label>
+
+                    <field
+                        id="projectId"
+                        v-slot="{ value }"
+                        name="projectId"
+                    >
+                        <select 
+                            v-model="selectedProjectId" 
+                            class="field"
+                            @change="$event => value = selectedProjectId"
+                        >
+                            <option
+                                v-for="project in projects"
+                                :key="project.id"
+                                :value="project.id"
+                            >
+                                {{ project.name }}
+                            </option>
+                        </select>
+                    </field>
+
+                    <div class="field-error-message">
+                        {{ errors.projectId }}
+                    </div>
+                </div>
+
+                <div>
                     <label for="shopUrl">URL</label>
 
                     <field
@@ -220,6 +248,8 @@ const router = useRouter();
 const route = useRoute();
 const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 const isLoading = ref(false);
+const projects = ref<RouterOutput['organization']['project']['list']>([]);
+const selectedProjectId = ref<number | undefined>(undefined);
 
 const organizations = authClient.useListOrganizations();
 
@@ -230,6 +260,15 @@ async function loadShop() {
     shop.value = await trpcClient.organization.shop.get.query({
         shopId,
     });
+
+    // Load projects for the organization
+    if (shop.value?.organizationId) {
+        projects.value = await trpcClient.organization.project.list.query({
+            orgId: shop.value.organizationId,
+        });
+        selectedProjectId.value = shop.value.projectId;
+    }
+
     isLoading.value = false;
 }
 
@@ -240,7 +279,7 @@ const showShopDeletionModal = ref(false);
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    organizationId: Yup.string().required('Organization is required'),
+    projectId: Yup.number().required('Project is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shop.value?.url,
         // biome-ignore lint/suspicious/noThenProperty: Yup schema method
@@ -270,6 +309,7 @@ async function onSubmit(values: Record<string, unknown>) {
                 orgId: shop.value.organizationId,
                 shopId: shop.value.id,
                 ...typedValues,
+                projectId: selectedProjectId.value,
             });
 
             router.push({
@@ -292,7 +332,7 @@ async function deleteShop() {
                 shopId: shop.value.id,
             });
 
-            router.push({ name: 'account.shops.list' });
+            router.push({ name: 'account.project.list' });
         } catch (err) {
             error(err instanceof Error ? err.message : String(err));
         }

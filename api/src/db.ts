@@ -1,4 +1,5 @@
 import { Database } from 'bun:sqlite';
+import { relations } from 'drizzle-orm';
 import {
     type BunSQLiteDatabase,
     drizzle as drizzleSqlite,
@@ -26,11 +27,34 @@ type LastChangelog = {
     to: string;
 };
 
+export const organization = sqliteTable('organization', {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').unique(),
+    logo: text('logo'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    metadata: text('metadata'),
+});
+
+export const project = sqliteTable('project', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    organizationId: text('organization_id')
+        .notNull()
+        .references(() => organization.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+
 export const shop = sqliteTable('shop', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     organizationId: text('organization_id')
         .notNull()
         .references(() => organization.id),
+    projectId: integer('project_id')
+        .notNull()
+        .references(() => project.id),
     name: text('name').notNull(),
     status: text('status').notNull().default('green'),
     url: text('url').notNull(),
@@ -215,15 +239,6 @@ export const lock = sqliteTable('lock', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const organization = sqliteTable('organization', {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    slug: text('slug').unique(),
-    logo: text('logo'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    metadata: text('metadata'),
-});
-
 export const member = sqliteTable('member', {
     id: text('id').primaryKey(),
     organizationId: text('organization_id')
@@ -261,6 +276,31 @@ export const ssoProvider = sqliteTable('sso_provider', {
     domain: text('domain').notNull(),
 });
 
+// Relations
+export const projectRelations = relations(project, ({ one, many }) => ({
+    organization: one(organization, {
+        fields: [project.organizationId],
+        references: [organization.id],
+    }),
+    shops: many(shop),
+}));
+
+export const shopRelations = relations(shop, ({ one }) => ({
+    organization: one(organization, {
+        fields: [shop.organizationId],
+        references: [organization.id],
+    }),
+    project: one(project, {
+        fields: [shop.projectId],
+        references: [project.id],
+    }),
+}));
+
+export const organizationRelations = relations(organization, ({ many }) => ({
+    projects: many(project),
+    shops: many(shop),
+}));
+
 export const schema = {
     shop,
     shopPageSpeed,
@@ -275,9 +315,15 @@ export const schema = {
     verification,
     passkey,
     organization,
+    project,
     member,
     invitation,
     ssoProvider,
+
+    // Relations
+    projectRelations,
+    shopRelations,
+    organizationRelations,
 };
 
 export type Drizzle = BunSQLiteDatabase<typeof schema>;

@@ -2,18 +2,6 @@
 	"name": "shopmon",
 	"version": "0.0.1",
 	"type": "module",
-	"description": "",
-	"scripts": {
-		"dev": "bun --watch --port 5789 src/index.ts",
-		"format": "biome format --write src",
-		"lint": "biome lint src",
-		"tslint": "tsc --noEmit",
-		"generate:mail": "node generate-mjml.js",
-		"cron": "bun src/cron/index.ts",
-		"db:migrate": "bun migrate.ts",
-		"db:generate": "drizzle-kit generate"
-	},
-	"author": "",
 	"license": "MIT",
 	"dependencies": {
 		"@sentry/bun": "^9.22.0",

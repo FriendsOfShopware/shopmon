@@ -75,14 +75,19 @@ export const router = createRouter({
                     component: () => import('@/views/account/Settings.vue'),
                 },
                 {
-                    name: 'account.shops.list',
-                    path: 'shops',
-                    component: () => import('@/views/shop/ListShops.vue'),
+                    name: 'account.project.list',
+                    path: 'projects',
+                    component: () => import('@/views/shop/ListProjects.vue'),
                 },
                 {
                     name: 'account.shops.new',
                     path: 'shops/new',
                     component: () => import('@/views/shop/AddShop.vue'),
+                },
+                {
+                    name: 'account.projects.new',
+                    path: 'projects/new',
+                    component: () => import('@/views/shop/AddProject.vue'),
                 },
                 {
                     name: 'account.shops.edit',
