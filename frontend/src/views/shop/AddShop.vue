@@ -2,7 +2,6 @@
     <header-container title="New Shop" />
     <main-container>
         <vee-form
-            v-if="!organizations.isPending"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shops"
@@ -26,25 +25,29 @@
                 </div>
 
                 <div>
-                    <label for="orgId">Organization</label>
+                    <label for="projectId">Project</label>
 
                     <field
-                        id="orgId"
-                        as="select"
-                        name="orgId"
-                        class="field"
+                        id="projectId"
+                        name="projectId"
                     >
-                        <option
-                            v-for="organization in organizations.data"
-                            :key="organization.id"
-                            :value="organization.id"
+                        <select 
+                            v-model="selectedProjectId" 
+                            class="field"
+                            required
                         >
-                            {{ organization.name }}
-                        </option>
+                            <option
+                                v-for="project in projects"
+                                :key="project.id"
+                                :value="project.id"
+                            >
+                                {{ project.name }}
+                            </option>
+                        </select>
                     </field>
 
                     <div class="field-error-message">
-                        {{ errors.orgId }}
+                        {{ errors.projectId }}
                     </div>
                 </div>
 
@@ -131,19 +134,33 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { authClient } from '@/helpers/auth-client';
 
-import { type RouterInput, trpcClient } from '@/helpers/trpc';
+import {
+    type RouterInput,
+    type RouterOutput,
+    trpcClient,
+} from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { watch } from 'vue';
+import { ref } from 'vue';
 
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
 const { error } = useAlert();
 const router = useRouter();
+const route = useRoute();
 
-const organizations = authClient.useListOrganizations();
+const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
+const selectedProjectId = ref<number>(
+    route.query.projectId ? Number(route.query.projectId) : 0,
+);
+
+trpcClient.account.currentUserProjects.query().then((data) => {
+    projects.value = data;
+    if (!selectedProjectId.value && data.length > 0) {
+        selectedProjectId.value = data[0].id;
+    }
+});
 
 const isValidUrl = (url: string) => {
     try {
@@ -162,38 +179,28 @@ const schema = Yup.object().shape({
         .test('is-url-valid', 'Shop URL is not valid', (value) =>
             isValidUrl(value),
         ),
-    orgId: Yup.string().required('Organization is required'),
+    projectId: Yup.number().required('Project is required'),
     clientId: Yup.string().required('Client ID is required'),
     clientSecret: Yup.string().required('Client Secret is required'),
 });
 
 const shops = {
-    orgId: organizations.value.data?.[0].id,
+    projectId: selectedProjectId.value,
 };
-
-watch(
-    organizations,
-    (newValue) => {
-        if (newValue.data?.length && shops.orgId == null) {
-            shops.orgId = newValue.data[0].id;
-        }
-    },
-    { immediate: true },
-);
 
 const onSubmit = async (values: Record<string, unknown>) => {
     try {
         const typedValues = values as Yup.InferType<typeof schema>;
         const input: RouterInput['organization']['shop']['create'] = {
             name: typedValues.name,
-            orgId: typedValues.orgId,
             shopUrl: typedValues.shopUrl.replace(/\/+$/, ''),
             clientId: typedValues.clientId,
             clientSecret: typedValues.clientSecret,
+            projectId: selectedProjectId.value,
         };
         await trpcClient.organization.shop.create.mutate(input);
 
-        router.push({ name: 'account.shops.list' });
+        router.push({ name: 'account.project.list' });
     } catch (e) {
         error(e instanceof Error ? e.message : String(e));
     }

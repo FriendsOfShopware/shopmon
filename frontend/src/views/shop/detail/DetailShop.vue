@@ -1,7 +1,7 @@
 <template>
     <header-container
         v-if="shop"
-        :title="shop.name"
+        :title="shop.nameCombined"
     >
         <button
             class="btn icon-only"

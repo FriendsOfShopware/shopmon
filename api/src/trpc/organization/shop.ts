@@ -4,13 +4,14 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';
+import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
@@ -28,20 +29,33 @@ export const shopRouter = router({
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
         .query(async ({ ctx, input }) => {
-            const result = await ctx.drizzle.query.shop.findMany({
-                columns: {
-                    id: true,
-                    name: true,
-                    url: true,
-                    favicon: true,
-                    createdAt: true,
-                    lastScrapedAt: true,
-                    status: true,
-                    lastScrapedError: true,
-                    shopwareVersion: true,
-                },
-                where: eq(schema.shop.organizationId, input.orgId),
-            });
+            const result = await ctx.drizzle
+                .select({
+                    id: schema.shop.id,
+                    name: schema.shop.name,
+                    url: schema.shop.url,
+                    favicon: schema.shop.favicon,
+                    createdAt: schema.shop.createdAt,
+                    lastScrapedAt: schema.shop.lastScrapedAt,
+                    status: schema.shop.status,
+                    lastScrapedError: schema.shop.lastScrapedError,
+                    shopwareVersion: schema.shop.shopwareVersion,
+                    projectId: schema.shop.projectId,
+                    project: schema.project
+                        ? {
+                              id: schema.project.id,
+                              name: schema.project.name,
+                              description: schema.project.description,
+                          }
+                        : null,
+                })
+                .from(schema.shop)
+                .leftJoin(
+                    schema.project,
+                    eq(schema.project.id, schema.shop.projectId),
+                )
+                .where(eq(schema.shop.organizationId, input.orgId))
+                .all();
 
             return result === undefined ? [] : result;
         }),
@@ -58,6 +72,7 @@ export const shopRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
                     url: schema.shop.url,
                     status: schema.shop.status,
                     createdAt: schema.shop.createdAt,
@@ -78,11 +93,20 @@ export const shopRouter = router({
                         sql<string>`${schema.organization.name}`.as(
                             'organization_name',
                         ),
+                    projectId: schema.shop.projectId,
+                    projectName: sql<string>`${schema.project.name}`.as(
+                        'project_name',
+                    ),
+                    projectDescription: schema.project.description,
                 })
                 .from(schema.shop)
                 .innerJoin(
                     schema.organization,
                     eq(schema.organization.id, schema.shop.organizationId),
+                )
+                .leftJoin(
+                    schema.project,
+                    eq(schema.project.id, schema.shop.projectId),
                 )
                 .leftJoin(
                     schema.shopScrapeInfo,
@@ -121,15 +145,27 @@ export const shopRouter = router({
     create: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 name: z.string(),
                 shopUrl: z.string().url(),
                 clientId: z.string(),
                 clientSecret: z.string(),
+                projectId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
+            const project = await Users.hasAccessToProject(
+                ctx.user.id,
+                input.projectId,
+            );
+
+            if (project === null) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'You do not have access to this project',
+                });
+            }
+
             const shop = new SimpleShop('', input.shopUrl, '');
             shop.setShopCredentials(input.clientId, input.clientSecret);
 
@@ -152,12 +188,13 @@ export const shopRouter = router({
             );
 
             const id = await Shops.createShop(ctx.drizzle, {
-                organizationId: input.orgId,
+                organizationId: project.organizationId,
                 name: input.name,
                 clientId: input.clientId,
                 clientSecret: clientSecret,
                 shopUrl: input.shopUrl,
                 version: resp.body.version,
+                projectId: input.projectId,
             });
 
             await scrapeSingleShop(id);
@@ -190,7 +227,7 @@ export const shopRouter = router({
                 clientId: z.string().optional(),
                 clientSecret: z.string().optional(),
                 ignores: z.array(z.string()).optional(),
-                newOrgId: z.string().optional(),
+                projectId: z.number(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -212,27 +249,33 @@ export const shopRouter = router({
                     .execute();
             }
 
-            if (input.newOrgId && input.newOrgId !== input.orgId) {
-                const organization = await ctx.drizzle.query.member.findFirst({
-                    columns: {
-                        id: true,
-                    },
-                    where: and(
-                        eq(schema.member.organizationId, input.newOrgId),
-                        eq(schema.member.userId, ctx.user.id),
-                    ),
-                });
+            if (input.projectId) {
+                await ctx.drizzle
+                    .update(schema.shop)
+                    .set({ projectId: input.projectId })
+                    .where(eq(schema.shop.id, input.shopId))
+                    .execute();
+            }
 
-                if (organization === undefined) {
+            if (input.projectId) {
+                const project = await Users.hasAccessToProject(
+                    ctx.user.id,
+                    input.projectId,
+                );
+
+                if (project === null) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
-                        message: 'You are not a member of this organization',
+                        message: 'You do not have access to this project',
                     });
                 }
 
                 await ctx.drizzle
                     .update(schema.shop)
-                    .set({ organizationId: input.newOrgId })
+                    .set({
+                        organizationId: project.organizationId,
+                        projectId: project.id,
+                    })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }

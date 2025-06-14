@@ -24,7 +24,7 @@
 
                         <div class="item-info">
                             <div class="item-name">
-                                {{ shop.name }}
+                                {{ shop.nameCombined }}
                             </div>
 
                             <div class="item-content">

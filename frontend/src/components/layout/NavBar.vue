@@ -342,7 +342,7 @@ const { darkMode, toggleDarkMode } = useDarkMode();
 
 const navigation = [
     { name: 'Dashboard', route: 'home' },
-    { name: 'My Shops', route: 'account.shops.list', active: 'shop' },
+    { name: 'My Projects', route: 'account.project.list', active: 'shop' },
     { name: 'My Extensions', route: 'account.extension.list' },
     {
         name: 'My Organizations',

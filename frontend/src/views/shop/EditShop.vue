@@ -45,26 +45,28 @@
                 </div>
 
                 <div>
-                    <label for="newOrgId">Organization</label>
+                    <label for="projectId">Project</label>
 
                     <field
-                        id="newOrgId"
-                        as="select"
-                        name="newOrgId"
-                        class="field"
-                        :value="shop.organizationId"
+                        id="projectId"
+                        name="projectId"
                     >
-                        <option
-                            v-for="organization in organizations.data"
-                            :key="organization.id"
-                            :value="organization.id"
+                        <select 
+                            v-model="selectedProjectId" 
+                            class="field"
                         >
-                            {{ organization.name }}
-                        </option>
+                            <option
+                                v-for="project in projects"
+                                :key="project.id"
+                                :value="project.id"
+                            >
+                                {{ project.name }}
+                            </option>
+                        </select>
                     </field>
 
                     <div class="field-error-message">
-                        {{ errors.newOrgId }}
+                        {{ errors.projectId }}
                     </div>
                 </div>
 
@@ -207,7 +209,6 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { authClient } from '@/helpers/auth-client';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 import { Field, Form as VeeForm } from 'vee-validate';
@@ -220,16 +221,27 @@ const router = useRouter();
 const route = useRoute();
 const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
 const isLoading = ref(false);
-
-const organizations = authClient.useListOrganizations();
+const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
+const selectedProjectId = ref<number>(0);
 
 const shopId = Number.parseInt(route.params.shopId as string, 10);
+
+trpcClient.account.currentUserProjects.query().then((data) => {
+    projects.value = data;
+});
 
 async function loadShop() {
     isLoading.value = true;
     shop.value = await trpcClient.organization.shop.get.query({
         shopId,
     });
+
+    // Load projects for the organization
+    if (shop.value?.organizationId) {
+        projects.value = await trpcClient.account.currentUserProjects.query();
+        selectedProjectId.value = shop.value.projectId;
+    }
+
     isLoading.value = false;
 }
 
@@ -240,7 +252,7 @@ const showShopDeletionModal = ref(false);
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
     url: Yup.string().required('Shop URL is required').url(),
-    organizationId: Yup.string().required('Organization is required'),
+    projectId: Yup.number().required('Project is required'),
     clientId: Yup.string().when('url', {
         is: (url: string) => url !== shop.value?.url,
         // biome-ignore lint/suspicious/noThenProperty: Yup schema method
@@ -270,6 +282,7 @@ async function onSubmit(values: Record<string, unknown>) {
                 orgId: shop.value.organizationId,
                 shopId: shop.value.id,
                 ...typedValues,
+                projectId: selectedProjectId.value,
             });
 
             router.push({
@@ -292,7 +305,7 @@ async function deleteShop() {
                 shopId: shop.value.id,
             });
 
-            router.push({ name: 'account.shops.list' });
+            router.push({ name: 'account.project.list' });
         } catch (err) {
             error(err instanceof Error ? err.message : String(err));
         }

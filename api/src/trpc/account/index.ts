@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import { schema } from '../../db.ts';
+import { member, schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import { loggedInUserMiddleware } from '../middleware.ts';
@@ -92,6 +92,7 @@ export const accountRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
                     status: schema.shop.status,
                     url: schema.shop.url,
                     favicon: schema.shop.favicon,
@@ -108,6 +109,10 @@ export const accountRouter = router({
                         sql<string>`${schema.organization.slug}`.as(
                             'organization_slug',
                         ),
+                    projectId: schema.shop.projectId,
+                    projectName: sql<string>`${schema.project.name}`.as(
+                        'project_name',
+                    ),
                 })
                 .from(schema.shop)
                 .innerJoin(
@@ -121,9 +126,37 @@ export const accountRouter = router({
                     schema.organization,
                     eq(schema.organization.id, schema.shop.organizationId),
                 )
+                .leftJoin(
+                    schema.project,
+                    eq(schema.project.id, schema.shop.projectId),
+                )
                 .where(eq(schema.member.userId, ctx.user.id))
                 .orderBy(schema.shop.name)
                 .all();
+        }),
+    currentUserProjects: publicProcedure
+        .use(loggedInUserMiddleware)
+        .query(async ({ ctx }) => {
+            return await ctx.drizzle
+                .select({
+                    id: schema.project.id,
+                    name: sql<string>`CONCAT(${schema.organization.name}, " / ", ${schema.project.name})`,
+                })
+                .from(schema.project)
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.project.organizationId),
+                )
+                .innerJoin(
+                    schema.member,
+                    and(
+                        eq(
+                            schema.member.organizationId,
+                            schema.organization.id,
+                        ),
+                        eq(schema.member.userId, ctx.user.id),
+                    ),
+                );
         }),
     currentUserChangelogs: publicProcedure
         .use(loggedInUserMiddleware)

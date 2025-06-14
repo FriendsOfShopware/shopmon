@@ -1,5 +1,5 @@
-import { eq } from 'drizzle-orm';
-import { type Drizzle, schema } from '../db';
+import { and, eq } from 'drizzle-orm';
+import { type Drizzle, getConnection, schema } from '../db';
 
 async function existsByEmail(
     con: Drizzle,
@@ -77,9 +77,34 @@ async function createNotification(
     return notificationResponse;
 }
 
+async function hasAccessToProject(userId: string, projectId: number) {
+    return await getConnection()
+        .select({
+            id: schema.project.id,
+            organizationId: schema.project.organizationId,
+        })
+        .from(schema.project)
+        .innerJoin(
+            schema.organization,
+            eq(schema.project.organizationId, schema.organization.id),
+        )
+        .innerJoin(
+            schema.member,
+            eq(schema.organization.id, schema.member.organizationId),
+        )
+        .where(
+            and(
+                eq(schema.project.id, projectId),
+                eq(schema.member.userId, userId),
+            ),
+        )
+        .get();
+}
+
 export default {
     existsByEmail,
     existsById,
     deleteById,
     createNotification,
+    hasAccessToProject,
 };
