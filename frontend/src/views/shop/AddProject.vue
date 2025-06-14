@@ -125,7 +125,7 @@ const schema = Yup.object().shape({
 const initialValues = {
     name: '',
     description: '',
-    organizationId: organizations.value.data?.[0]?.id || '',
+    organizationId: organizations.value.data?.[0]?.id ?? '',
 };
 
 watch(
@@ -145,7 +145,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
         const input: RouterInput['organization']['project']['create'] = {
             orgId: typedValues.organizationId,
             name: typedValues.name,
-            description: typedValues.description || undefined,
+            description: typedValues.description ?? undefined,
         };
         await trpcClient.organization.project.create.mutate(input);
 

@@ -2,7 +2,6 @@
     <header-container title="New Shop" />
     <main-container>
         <vee-form
-            v-if="!organizations.isPending"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shops"
@@ -30,17 +29,15 @@
 
                     <field
                         id="projectId"
-                        v-slot="{ value }"
                         name="projectId"
                     >
                         <select 
                             v-model="selectedProjectId" 
                             class="field"
                             required
-                            @change="$event => value = selectedProjectId"
                         >
                             <option
-                                v-for="project in filteredProjects"
+                                v-for="project in projects"
                                 :key="project.id"
                                 :value="project.id"
                             >
@@ -154,12 +151,15 @@ const router = useRouter();
 const route = useRoute();
 
 const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
-const selectedProjectId = ref<number | undefined>(
-    route.query.projectId ? Number(route.query.projectId) : undefined,
+const selectedProjectId = ref<number>(
+    route.query.projectId ? Number(route.query.projectId) : 0,
 );
 
 trpcClient.account.currentUserProjects.query().then((data) => {
     projects.value = data;
+    if (!selectedProjectId.value && data.length > 0) {
+        selectedProjectId.value = data[0].id;
+    }
 });
 
 const isValidUrl = (url: string) => {

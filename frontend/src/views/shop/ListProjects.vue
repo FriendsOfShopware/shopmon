@@ -104,6 +104,7 @@
                         type="text"
                         name="name"
                         class="field"
+                        autocomplete="off"
                         :class="{ 'has-error': errors.name }"
                     />
 
@@ -112,17 +113,19 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="mt-1">
                     <label for="description">Description</label>
 
                     <field
                         id="description"
                         v-slot="{ field }"
                         name="description"
+                        type="textarea"
                     >
                         <textarea
                             v-bind="field"
                             id="description"
+                            autocomplete="off"
                             class="field"
                             rows="3"
                             placeholder="Optional project description..."
@@ -204,7 +207,9 @@ const projectShops = computed(() => {
     return grouped;
 });
 
-trpcClient.account.currentUserShops.query().then((shopsData) => {
+trpcClient.account.currentUserShops
+    .query()
+    .then((shopsData) => {
         shops.value = shopsData;
 
         if (organizationId.value) {
@@ -228,7 +233,7 @@ function editProject(project: (typeof projects.value)[0]) {
     editingProject.value = {
         id: project.id,
         name: project.name,
-        description: project.description || '',
+        description: project.description ?? '',
     };
     editModalVisible.value = true;
 }
@@ -241,7 +246,7 @@ async function updateProject(values: Record<string, unknown>) {
             orgId: organizationId.value,
             projectId: editingProject.value.id,
             name: typedValues.name,
-            description: typedValues.description || '',
+            description: typedValues.description ?? '',
         });
 
         // Reload projects
@@ -253,10 +258,9 @@ async function updateProject(values: Record<string, unknown>) {
         editModalVisible.value = false;
         alert.success('Project updated successfully');
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        alert.error(
-            `Failed to update project: ${errorMessage}`,
-        );
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+        alert.error(`Failed to update project: ${errorMessage}`);
     }
 }
 
@@ -284,7 +288,8 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 
         alert.success('Project deleted successfully');
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete project';
+        const errorMessage =
+            error instanceof Error ? error.message : 'Failed to delete project';
         alert.error(errorMessage);
     }
 }
@@ -457,34 +462,5 @@ async function deleteProject(project: (typeof projects.value)[0]) {
     gap: 0.5rem;
 }
 
-.form-label {
-    display: block;
-    margin-bottom: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-text-primary);
-}
 
-.field {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: var(--color-text-primary);
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.field:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-}
-
-textarea.field {
-    resize: vertical;
-    min-height: 4rem;
-}
 </style>

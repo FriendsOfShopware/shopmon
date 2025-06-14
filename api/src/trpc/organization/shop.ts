@@ -4,13 +4,14 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';
+import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
@@ -144,7 +145,6 @@ export const shopRouter = router({
     create: publicProcedure
         .input(
             z.object({
-                orgId: z.string(),
                 name: z.string(),
                 shopUrl: z.string().url(),
                 clientId: z.string(),
@@ -154,6 +154,18 @@ export const shopRouter = router({
         )
         .use(loggedInUserMiddleware)
         .mutation(async ({ input, ctx }) => {
+            const project = await Users.hasAccessToProject(
+                ctx.user.id,
+                input.projectId,
+            );
+
+            if (project === null) {
+                throw new TRPCError({
+                    code: 'BAD_REQUEST',
+                    message: 'You do not have access to this project',
+                });
+            }
+
             const shop = new SimpleShop('', input.shopUrl, '');
             shop.setShopCredentials(input.clientId, input.clientSecret);
 
@@ -176,7 +188,7 @@ export const shopRouter = router({
             );
 
             const id = await Shops.createShop(ctx.drizzle, {
-                organizationId: input.orgId,
+                organizationId: project.organizationId,
                 name: input.name,
                 clientId: input.clientId,
                 clientSecret: clientSecret,
@@ -246,19 +258,10 @@ export const shopRouter = router({
             }
 
             if (input.projectId) {
-                const project = await ctx.drizzle.select({
-                    id: schema.project.id,
-                    organizationId: schema.project.organizationId,
-                })
-                .from(schema.project)
-                .innerJoin(schema.organization, eq(schema.project.organizationId, schema.organization.id))
-                .innerJoin(schema.member, eq(schema.organization.id, schema.member.organizationId))
-                .where(
-                    and(
-                        eq(schema.project.id, input.projectId),
-                        eq(schema.member.userId, ctx.user.id),
-                    ),
-                ).get();
+                const project = await Users.hasAccessToProject(
+                    ctx.user.id,
+                    input.projectId,
+                );
 
                 if (project === null) {
                     throw new TRPCError({
@@ -269,7 +272,10 @@ export const shopRouter = router({
 
                 await ctx.drizzle
                     .update(schema.shop)
-                    .set({ organizationId: project.organizationId, projectId: project.id })
+                    .set({
+                        organizationId: project.organizationId,
+                        projectId: project.id,
+                    })
                     .where(eq(schema.shop.id, input.shopId))
                     .execute();
             }

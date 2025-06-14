@@ -82,7 +82,11 @@ export const projectRouter = router({
                 });
             }
 
-            const updateData: any = { updatedAt: new Date() };
+            const updateData: {
+                name?: string;
+                description?: string;
+                updatedAt: Date;
+            } = { updatedAt: new Date() };
             if (input.name !== undefined) {
                 updateData.name = input.name;
             }
