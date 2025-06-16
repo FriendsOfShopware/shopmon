@@ -1,6 +1,8 @@
 name: Deploy Production
 on:
-  workflow_dispatch:
+  release:
+    types:
+      - created
 
 permissions:
     contents: read
