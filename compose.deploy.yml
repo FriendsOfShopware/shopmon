@@ -34,8 +34,18 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *env
-    ports:
-      - "127.0.0.1:${LOCAL_PORT}:3000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.entrypoints=websecure
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls=true
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.certresolver=cloudflare
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].main=fos.gg
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].sans=*.fos.gg
+
+      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress=true
+      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress.encodings=zstd,gzip
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.middlewares=shopmon-${ENVIRONMENT}
     volumes:
       - db:/app/db
       - uploads:/app/uploads
