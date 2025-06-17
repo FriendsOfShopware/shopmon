@@ -53,7 +53,6 @@
 
                     <field
                         id="organizationId"
-                        v-slot="{ value }"
                         name="organizationId"
                     >
                         <select

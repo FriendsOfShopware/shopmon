@@ -144,9 +144,22 @@ APP_DATABASE_PATH       # SQLite database path
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
 PAGESPEED_API_KEY       # Google PageSpeed API
+APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
+APP_SITESPEED_DATA_FOLDER # Directory for sitespeed results (default: ./sitespeed-results)
 FRONTEND_URL            # Frontend URL for emails
 SENTRY_DSN              # Error tracking
 ```
+
+### Sitespeed Service Environment Variables
+```bash
+APP_SITESPEED_DATA_FOLDER # Directory for storing sitespeed results (default: /app/results)
+```
+
+### Sitespeed Results Access
+- Results are accessible via `/sitespeed/result/<shop-id>/` endpoint
+- API serves sitespeed files and directories from the configured data folder
+- Frontend proxy passes `/sitespeed` requests to API server
+- Detailed reports, screenshots, and videos are available through the web interface
 
 ### Frontend Environment
 ```bash

@@ -9,7 +9,8 @@
 			"frontend/src/styles/*.css",
 			"frontend/src/style.css",
 			"node_modules/**",
-			"frontend/components.d.ts"
+			"frontend/components.d.ts",
+			"sitespeed-results/**"
 		]
 	},
 	"organizeImports": {

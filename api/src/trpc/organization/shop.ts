@@ -1,17 +1,20 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import {
     HttpClient,
     type HttpClientResponse,
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
+import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';
 import Users from '../../repository/users.ts';
+import { sanitizeSitespeedLabel } from '../../util.ts';
 import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
@@ -98,6 +101,8 @@ export const shopRouter = router({
                         'project_name',
                     ),
                     projectDescription: schema.project.description,
+                    sitespeedEnabled: schema.shop.sitespeedEnabled,
+                    sitespeedUrls: schema.shop.sitespeedUrls,
                 })
                 .from(schema.shop)
                 .innerJoin(
@@ -115,9 +120,9 @@ export const shopRouter = router({
                 .where(eq(schema.shop.id, input.shopId))
                 .get();
 
-            const pageSpeedQuery = ctx.drizzle.query.shopPageSpeed.findMany({
-                where: eq(schema.shopPageSpeed.shopId, input.shopId),
-                orderBy: [desc(schema.shopPageSpeed.createdAt)],
+            const sitespeedQuery = ctx.drizzle.query.shopSitespeed.findMany({
+                where: eq(schema.shopSitespeed.shopId, input.shopId),
+                orderBy: [desc(schema.shopSitespeed.createdAt)],
             });
 
             const shopChangelogQuery = ctx.drizzle.query.shopChangelog.findMany(
@@ -127,9 +132,9 @@ export const shopRouter = router({
                 },
             );
 
-            const [shop, pageSpeed, shopChangelog] = await Promise.all([
+            const [shop, sitespeed, shopChangelog] = await Promise.all([
                 shopQuery,
-                pageSpeedQuery,
+                sitespeedQuery,
                 shopChangelogQuery,
             ]);
 
@@ -140,7 +145,7 @@ export const shopRouter = router({
                 });
             }
 
-            return { ...shop, pageSpeed: pageSpeed, changelog: shopChangelog };
+            return { ...shop, sitespeed: sitespeed, changelog: shopChangelog };
         }),
     create: publicProcedure
         .input(
@@ -318,7 +323,7 @@ export const shopRouter = router({
         .input(
             z.object({
                 shopId: z.number(),
-                pageSpeed: z.boolean(),
+                sitespeed: z.boolean().optional(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -326,8 +331,8 @@ export const shopRouter = router({
         .mutation(async ({ input, ctx }) => {
             await scrapeSingleShop(input.shopId);
 
-            if (input.pageSpeed) {
-                await scrapeSinglePagespeedShop(input.shopId);
+            if (input.sitespeed) {
+                await scrapeSingleSitespeedShop(input.shopId);
             }
 
             return true;
@@ -533,5 +538,246 @@ export const shopRouter = router({
 
             const shopKey = `shop-${input.shopId}`;
             return (user.notifications || []).includes(shopKey);
+        }),
+    updateSitespeedSettings: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+                enabled: z.boolean(),
+                urls: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            label: z.string().min(1).max(50),
+                        }),
+                    )
+                    .max(5)
+                    .optional(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .mutation(async ({ input, ctx }) => {
+            // Get current URLs before updating to detect removals
+            const currentShop = await ctx.drizzle.query.shop.findFirst({
+                columns: {
+                    sitespeedUrls: true,
+                },
+                where: eq(schema.shop.id, input.shopId),
+            });
+
+            const updateData: {
+                sitespeedEnabled: boolean;
+                sitespeedUrls?: { url: string; label: string }[];
+            } = {
+                sitespeedEnabled: input.enabled,
+            };
+
+            if (input.urls !== undefined) {
+                updateData.sitespeedUrls = input.urls as {
+                    url: string;
+                    label: string;
+                }[];
+            }
+
+            await ctx.drizzle
+                .update(schema.shop)
+                .set(updateData)
+                .where(eq(schema.shop.id, input.shopId))
+                .execute();
+
+            // Clean up folders for removed URLs
+            if (currentShop && input.urls !== undefined) {
+                const currentUrls = currentShop.sitespeedUrls || [];
+                const newUrls = input.urls;
+
+                // Find URLs that were removed (URL+label combination no longer exists)
+                const removedUrls = currentUrls.filter(
+                    (currentUrl) =>
+                        !newUrls.some(
+                            (newUrl) =>
+                                newUrl.url === currentUrl.url &&
+                                newUrl.label === currentUrl.label,
+                        ),
+                );
+
+                // Find URLs where only the label changed (same URL, different label)
+                // These need cleanup of the old label's folder
+                const changedLabelUrls = currentUrls.filter((currentUrl) => {
+                    const matchingNewUrl = newUrls.find(
+                        (newUrl) => newUrl.url === currentUrl.url,
+                    );
+                    return (
+                        matchingNewUrl &&
+                        matchingNewUrl.label !== currentUrl.label
+                    );
+                });
+
+                // Add changed label URLs to the removal list for cleanup
+                removedUrls.push(...changedLabelUrls);
+
+                // Clean up database records and folders for removed URLs
+                for (const removedUrl of removedUrls) {
+                    try {
+                        // Clean up database records for this URL
+                        await ctx.drizzle
+                            .delete(schema.shopSitespeed)
+                            .where(
+                                and(
+                                    eq(
+                                        schema.shopSitespeed.shopId,
+                                        input.shopId,
+                                    ),
+                                    eq(
+                                        schema.shopSitespeed.url,
+                                        removedUrl.url,
+                                    ),
+                                    eq(
+                                        schema.shopSitespeed.label,
+                                        removedUrl.label,
+                                    ),
+                                ),
+                            )
+                            .execute();
+
+                        // Clean up filesystem folder
+                        const sanitizedFolderName = sanitizeSitespeedLabel(
+                            removedUrl.label,
+                            removedUrl.url,
+                        );
+                        const sitespeedDataFolder =
+                            process.env.APP_SITESPEED_DATA_FOLDER ||
+                            './sitespeed-results';
+                        const urlFolderPath = path.join(
+                            sitespeedDataFolder,
+                            input.shopId.toString(),
+                            sanitizedFolderName,
+                        );
+
+                        try {
+                            await fs.access(urlFolderPath);
+                            await fs.rm(urlFolderPath, {
+                                recursive: true,
+                                force: true,
+                            });
+                            console.log(
+                                `Cleaned up sitespeed results for removed URL: ${removedUrl.label} (${sanitizedFolderName})`,
+                            );
+                        } catch (accessError) {
+                            // Folder doesn't exist, which is fine
+                            console.log(
+                                `No sitespeed results found for removed URL: ${removedUrl.label} (${sanitizedFolderName})`,
+                            );
+                        }
+                    } catch (error) {
+                        // Log error but don't fail the update
+                        console.error(
+                            `Failed to clean up sitespeed results for removed URL ${removedUrl.label}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+
+            return true;
+        }),
+    runSitespeedAnalysis: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .mutation(async ({ input, ctx }) => {
+            const shopData = await ctx.drizzle.query.shop.findFirst({
+                columns: {
+                    url: true,
+                },
+                where: eq(schema.shop.id, input.shopId),
+            });
+
+            if (!shopData) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Shop not found',
+                });
+            }
+
+            try {
+                const sitespeedServiceUrl =
+                    process.env.APP_SITESPEED_ENDPOINT ||
+                    'http://localhost:3001';
+
+                const label = 'Homepage';
+                const sanitizedFolderName = sanitizeSitespeedLabel(
+                    label,
+                    shopData.url,
+                );
+
+                const response = await fetch(`${sitespeedServiceUrl}/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        shopId: input.shopId,
+                        url: shopData.url,
+                        label: label,
+                        folderName: sanitizedFolderName,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        `Sitespeed service error: ${response.statusText}`,
+                    );
+                }
+
+                const result = (await response.json()) as {
+                    metrics: {
+                        ttfb?: number;
+                        fullyLoaded?: number;
+                        largestContentfulPaint?: number;
+                        firstContentfulPaint?: number;
+                        cumulativeLayoutShift?: number;
+                        speedIndex?: number;
+                        transferSize?: number;
+                    };
+                };
+
+                // Store the metrics in the database
+                await ctx.drizzle
+                    .insert(schema.shopSitespeed)
+                    .values({
+                        shopId: input.shopId,
+                        url: shopData.url,
+                        label: 'Homepage',
+                        createdAt: new Date(),
+                        ttfb: result.metrics.ttfb || null,
+                        fullyLoaded: result.metrics.fullyLoaded || null,
+                        largestContentfulPaint:
+                            result.metrics.largestContentfulPaint || null,
+                        firstContentfulPaint:
+                            result.metrics.firstContentfulPaint || null,
+                        cumulativeLayoutShift: result.metrics
+                            .cumulativeLayoutShift
+                            ? Math.round(
+                                  result.metrics.cumulativeLayoutShift * 1000,
+                              )
+                            : null,
+                        speedIndex: result.metrics.speedIndex || null,
+                        transferSize: result.metrics.transferSize || null,
+                    })
+                    .execute();
+
+                return result.metrics;
+            } catch (error) {
+                console.error('Sitespeed analysis error:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to run sitespeed analysis',
+                });
+            }
         }),
 });

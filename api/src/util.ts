@@ -11,6 +11,42 @@ export function randomString(length: number): string {
     return result;
 }
 
+/**
+ * Sanitize a label for use as a folder name in sitespeed analysis
+ * @param label The label to sanitize
+ * @param fallbackUrl Optional URL to use as fallback if label is empty
+ * @returns A sanitized folder name safe for filesystem use
+ */
+export function sanitizeSitespeedLabel(
+    label: string,
+    fallbackUrl?: string,
+): string {
+    let safeName: string;
+
+    if (label?.trim()) {
+        safeName = label
+            .trim()
+            .replace(/[^a-zA-Z0-9-_\s]/g, '') // Remove special chars except spaces, hyphens, underscores
+            .replace(/\s+/g, '_') // Replace spaces with underscores
+            .toLowerCase()
+            .substring(0, 50);
+    } else if (fallbackUrl) {
+        // Fallback to URL-based name
+        safeName = fallbackUrl
+            .replace(/^https?:\/\//, '') // Remove protocol
+            .replace(/[^a-zA-Z0-9-_]/g, '_') // Replace special chars
+            .toLowerCase()
+            .substring(0, 50);
+    } else {
+        safeName = 'default';
+    }
+
+    // Ensure the folder name is not empty and doesn't start/end with special chars
+    safeName = safeName.replace(/^[_-]+|[_-]+$/g, '') || 'default';
+
+    return safeName;
+}
+
 export type Version = string | number;
 export enum VersionIs {
     LessThan = -1,

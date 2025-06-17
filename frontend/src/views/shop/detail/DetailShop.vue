@@ -211,10 +211,11 @@
                      count: shop.queueInfo?.length ?? 0
                      , icon: FaCircleCheck },
                  {
-                     key: 'pagespeed',
-                     title: 'Pagespeed',
-                     count: shop.pageSpeed?.length ?? 0
-                     ,icon: FaRocket },
+                     key: 'sitespeed',
+                     title: 'Sitespeed',
+                     count: shop.sitespeed?.length ?? 0,
+                     icon: FaGauge
+                 },
                  {
                      key: 'changelog',
                      title: 'Changelog',
@@ -238,8 +239,9 @@
                 <detail-queue-tab v-if="shop" :shop="shop" />
             </template>
 
-            <template #panel-pagespeed>
-                <detail-pagespeed-tab v-if="shop" :shop="shop" />
+
+            <template #panel-sitespeed>
+                <detail-sitespeed-tab v-if="shop" :shop="shop" />
             </template>
 
             <template #panel-changelog>
@@ -357,25 +359,33 @@
             </template>
 
             <template #content>
-                Do you also want to have a new pagespeed test?
+                <div class="refresh-options">
+                    <p>Do you also want to run additional performance tests?</p>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input v-model="refreshOptions.sitespeed" type="checkbox" />
+                            Run Sitespeed analysis
+                        </label>
+                    </div>
+                </div>
             </template>
 
             <template #footer>
                 <button
                     type="button"
                     class="btn btn-primary"
-                    @click="onRefresh(true)"
+                    @click="onRefreshWithOptions"
                 >
-                    Yes
+                    Refresh Shop
                 </button>
 
                 <button
                     ref="cancelButtonRef"
                     type="button"
-                    class="btn btn-danger"
-                    @click="onRefresh(false)"
+                    class="btn btn-secondary"
+                    @click="showShopRefreshModal = false"
                 >
-                    No
+                    Cancel
                 </button>
             </template>
         </modal>
@@ -396,16 +406,16 @@ import { formatDate, formatDateTime } from '@/helpers/formatter';
 import { trpcClient } from '@/helpers/trpc';
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
 import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import FaGauge from '~icons/fa6-solid/gauge';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaPlug from '~icons/fa6-solid/plug';
-import FaRocket from '~icons/fa6-solid/rocket';
 
 import DetailChangelogTab from '@/views/shop/detail/tabs/DetailChangelogTab.vue';
 import DetailChecksTab from '@/views/shop/detail/tabs/DetailChecksTab.vue';
 import DetailExtensionsTab from '@/views/shop/detail/tabs/DetailExtensionsTab.vue';
-import DetailPagespeedTab from '@/views/shop/detail/tabs/DetailPagespeedTab.vue';
 import DetailQueueTab from '@/views/shop/detail/tabs/DetailQueueTab.vue';
 import DetailScheduledTasksTab from '@/views/shop/detail/tabs/DetailScheduledTasksTab.vue';
+import DetailSitespeedTab from '@/views/shop/detail/tabs/DetailSitespeedTab.vue';
 
 type ExtensionWithCompatibility = NonNullable<
     RouterOutput['organization']['shop']['get']['extensions']
@@ -431,6 +441,9 @@ const loadingUpdateWizard: Ref<boolean> = ref(false);
 const dialogUpdateWizard: Ref<ExtensionWithCompatibility[] | null> = ref(null);
 
 const showShopRefreshModal: Ref<boolean> = ref(false);
+const refreshOptions = ref({
+    sitespeed: false,
+});
 const shopwareVersions: Ref<string[] | null> = ref(null);
 
 const latestShopwareVersion: Ref<string | null> = ref(null);
@@ -468,14 +481,14 @@ loadShop().then(() => {
     }
 });
 
-async function onRefresh(pagespeed: boolean) {
+async function onRefreshWithOptions() {
     showShopRefreshModal.value = false;
     if (shop.value?.organizationId && shop.value?.id) {
         try {
             isRefreshing.value = true;
             await trpcClient.organization.shop.refreshShop.mutate({
                 shopId: shop.value.id,
-                pageSpeed: pagespeed,
+                sitespeed: refreshOptions.value.sitespeed,
             });
             isRefreshing.value = false;
             await loadShop();
@@ -745,5 +758,26 @@ async function toggleNotificationSubscription() {
     color: var(--text-color-muted);
     opacity: 0.8;
     font-style: italic;
+}
+
+.refresh-options {
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+
+        input[type="checkbox"] {
+            margin: 0;
+        }
+    }
 }
 </style>

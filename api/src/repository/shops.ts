@@ -1,3 +1,5 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
@@ -55,6 +57,7 @@ async function createShop(
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {
+    // Delete database records
     await con
         .delete(schema.shopScrapeInfo)
         .where(eq(schema.shopScrapeInfo.shopId, id))
@@ -64,10 +67,35 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
         .where(eq(schema.shopChangelog.shopId, id))
         .execute();
     await con
-        .delete(schema.shopPageSpeed)
-        .where(eq(schema.shopPageSpeed.shopId, id))
+        .delete(schema.shopSitespeed)
+        .where(eq(schema.shopSitespeed.shopId, id))
         .execute();
     await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
+
+    // Clean up sitespeed results from filesystem
+    try {
+        const sitespeedDataFolder =
+            process.env.APP_SITESPEED_DATA_FOLDER || './sitespeed-results';
+        const shopResultsDir = path.join(sitespeedDataFolder, id.toString());
+
+        // Check if the directory exists before trying to delete it
+        try {
+            await fs.access(shopResultsDir);
+            await fs.rm(shopResultsDir, { recursive: true, force: true });
+            console.log(`Cleaned up sitespeed results for shop ${id}`);
+        } catch (accessError) {
+            // Directory doesn't exist, which is fine
+            console.log(
+                `No sitespeed results found for shop ${id} - nothing to clean up`,
+            );
+        }
+    } catch (error) {
+        // Log the error but don't fail the shop deletion
+        console.error(
+            `Failed to clean up sitespeed results for shop ${id}:`,
+            error,
+        );
+    }
 }
 
 async function getUsersOfShop(con: Drizzle, shopId: number) {
