@@ -4,6 +4,7 @@
 @import "styles/_transitions.css";
 
 @import "styles/_global.css";
+@import "styles/_item-grid.css";
 @import "styles/_form.css";
 @import "styles/_button.css";
 @import "styles/_badge.css";

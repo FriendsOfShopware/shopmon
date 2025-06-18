@@ -7,6 +7,7 @@
             :validation-schema="schema"
             :initial-values="initialValues"
             @submit="onSubmit"
+            class="panel"
         >
             <form-group title="Project information">
                 <div>

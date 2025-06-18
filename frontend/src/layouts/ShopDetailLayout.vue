@@ -4,7 +4,8 @@
 
         <header-container
             v-if="shop"
-            :title="shop.nameCombined"
+            :breadcrumb="shop.nameCombined + (route.meta.title && route.name !== 'account.shops.detail' ? ' / ' + route.meta.title : '')"
+            :title="shop.name"
         >
             <slot name="header-actions">
                 <button
@@ -129,6 +130,8 @@ import Modal from '@/components/layout/Modal.vue';
 import FaRotate from '~icons/fa6-solid/rotate';
 
 const route = useRoute();
+
+console.log(route.meta);
 
 const {
     shop,

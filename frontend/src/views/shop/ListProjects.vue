@@ -5,10 +5,6 @@
                 <icon-fa6-solid:folder-plus class="icon" aria-hidden="true" />
                 Add Project
             </router-link>
-            <router-link :to="{ name: 'account.shops.new' }" class="btn btn-secondary">
-                <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-                Add Shop
-            </router-link>
         </div>
     </header-container>
 
@@ -21,11 +17,13 @@
 
         <div v-else>
             <!-- Projects -->
-            <div v-for="project in projects" :key="project.id" class="project-card">
+            <div v-for="project in projects" :key="project.id" class="project-card panel">
                 <div class="project-header">
                     <div class="project-info">
                         <h3 class="project-name">{{ project.name }}</h3>
+
                         <p v-if="project.description" class="project-description">{{ project.description }}</p>
+
                         <p class="project-meta">
                             <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
                             <span class="separator">•</span>
@@ -33,46 +31,55 @@
                         </p>
                     </div>
                     <div class="project-actions">
-                        <button class="btn btn-sm btn-ghost" data-tooltip="Edit Project" @click="editProject(project)">
-                            <icon-fa6-solid:pen-to-square />
+                        <router-link class="btn icon-only" data-tooltip="Add Shop" :to="{ name: 'account.shops.new' }">
+                            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
+                        </router-link>
+
+                        <button class="btn icon-only" data-tooltip="Edit Project" @click="editProject(project)">
+                            <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
                         </button>
-                        <button class="btn btn-sm btn-ghost btn-danger" data-tooltip="Delete Project" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
-                            <icon-fa6-solid:trash />
+
+                        <button class="btn btn-danger icon-only" data-tooltip="Delete Project" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
+                            <icon-fa6-solid:trash class="icon" aria-hidden="true" />
                         </button>
                     </div>
                 </div>
                 
-                <div v-if="projectShops[project.id]?.length > 0" class="project-shops">
-                    <div class="shop-grid">
-                        <div v-for="shop in projectShops[project.id]" :key="shop.id" class="shop-card">
-                            <status-icon :status="shop.status" class="shop-status" />
-                            <img v-if="shop.favicon" :src="shop.favicon" alt="Shop favicon" class="shop-favicon">
-                            <div v-else class="shop-favicon-placeholder">
-                                <icon-fa6-solid:store />
+                <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
+                    <div v-for="shop in projectShops[project.id]" :key="shop.id" class="item">
+                        <router-link
+                            :to="{
+                                    name: 'account.shops.detail',
+                                    params: {
+                                        slug: organizationSlug,
+                                        shopId: shop.id
+                                    }
+                                }"
+                            class="item-link item-wrapper"
+                        >
+                            <div class="item-logo">
+                                <img v-if="shop.favicon" :src="shop.favicon" alt="Shop favicon" class="item-logo-img">
+                                <icon-fa6-solid:store v-else />
                             </div>
-                            <div class="shop-info">
-                                <router-link 
-                                    :to="{
-                                        name: 'account.shops.detail',
-                                        params: {
-                                            slug: organizationSlug,
-                                            shopId: shop.id
-                                        }
-                                    }" 
-                                    class="shop-name"
-                                >
+
+                            <div class="item-info">
+                                <div class="item-name">
                                     {{ shop.name }}
-                                </router-link>
-                                <div class="shop-version">{{ shop.shopwareVersion }}</div>
+                                </div>
+
+                                <div class="item-content">{{ shop.shopwareVersion }}</div>
+                                <status-icon :status="shop.status" class="item-state" />
                             </div>
-                            <div class="shop-actions">
-                                <a :href="shop.url" target="_blank" class="btn btn-xs btn-ghost" data-tooltip="Visit Shop">
-                                    <icon-fa6-solid:arrow-up-right-from-square />
-                                </a>
-                            </div>
+                        </router-link>
+
+                        <div class="item-actions">
+                            <a :href="shop.url" target="_blank" class="" data-tooltip="Visit Shop">
+                                <icon-fa6-solid:arrow-up-right-from-square />
+                            </a>
                         </div>
                     </div>
                 </div>
+
                 <div v-else class="no-shops">
                     <p>No shops in this project yet.</p>
                     <router-link :to="{ name: 'account.shops.new', query: { projectId: project.id } }" class="btn btn-sm btn-primary">
@@ -296,24 +303,13 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 </script>
 
 <style scoped>
-.header-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.project-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-lg);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
 .project-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--panel-border-color);
 }
 
 .project-info {
@@ -324,11 +320,9 @@ async function deleteProject(project: (typeof projects.value)[0]) {
     font-size: 1.25rem;
     font-weight: 600;
     margin: 0 0 0.25rem 0;
-    color: var(--color-text-primary);
 }
 
 .project-description {
-    color: var(--color-text-secondary);
     margin: 0 0 0.5rem 0;
 }
 
@@ -337,7 +331,7 @@ async function deleteProject(project: (typeof projects.value)[0]) {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: var(--color-text-muted);
+    color: var(--text-color-muted);
 }
 
 .separator {
@@ -349,118 +343,13 @@ async function deleteProject(project: (typeof projects.value)[0]) {
     gap: 0.25rem;
 }
 
-.project-shops {
-    margin-top: 1rem;
-}
-
-.shop-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-}
-
-.shop-card {
-    background: var(--panel-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    transition: all 0.2s;
-}
-
-.shop-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.shop-status {
-    flex-shrink: 0;
-}
-
-.shop-favicon {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--border-radius);
-    flex-shrink: 0;
-}
-
-.shop-favicon-placeholder {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--border-radius);
-    background: var(--color-surface);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: var(--color-text-muted);
-}
-
-.shop-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.shop-name {
-    font-weight: 500;
-    color: var(--color-text-primary);
-    text-decoration: none;
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.shop-name:hover {
-    color: var(--color-primary);
-}
-
-.shop-version {
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-}
-
-.shop-actions {
-    display: flex;
-    gap: 0.25rem;
-    flex-shrink: 0;
-}
-
 .no-shops {
     text-align: center;
     padding: 2rem;
-    color: var(--color-text-muted);
+    color: var(--text-color-muted);
 }
 
 .no-shops p {
     margin-bottom: 1rem;
 }
-
-.btn-danger:hover {
-    color: var(--color-danger);
-}
-
-.btn-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group:last-child {
-    margin-bottom: 0;
-}
-
-.modal-footer {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-
 </style>

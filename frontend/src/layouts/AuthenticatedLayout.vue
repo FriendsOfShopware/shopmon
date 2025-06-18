@@ -59,7 +59,7 @@ import Notification from '@/components/Notification.vue';
     top: 0;
     left: 0;
     width: 100%;
-    height: 240px;
+    height: 290px;
     z-index: -1;
     background-color: var(--primary-color);
 

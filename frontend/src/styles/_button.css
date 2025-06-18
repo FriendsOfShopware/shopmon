@@ -88,4 +88,9 @@ button,
 			margin-left: -1.75rem;
 		}
 	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
 }
