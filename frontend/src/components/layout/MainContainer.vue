@@ -11,5 +11,6 @@
 <style scoped>
 .main-container {
     grid-area: content;
+    overflow: hidden;
 }
 </style>

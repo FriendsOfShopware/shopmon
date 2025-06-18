@@ -6,6 +6,7 @@
             v-if="shop"
             :breadcrumb="shop.nameCombined + (route.meta.title && route.name !== 'account.shops.detail' ? ' / ' + route.meta.title : '')"
             :title="shop.name"
+            :titleMobileHide="true"
         >
             <slot name="header-actions">
                 <button
@@ -26,6 +27,7 @@
                         class="icon"
                     />
                 </button>
+
                 <button
                     class="btn icon-only"
                     data-tooltip="Clear shop cache"
@@ -38,6 +40,7 @@
                         class="icon"
                     />
                 </button>
+
                 <button
                     class="btn icon-only"
                     data-tooltip="Refresh shop data"
@@ -131,8 +134,6 @@ import FaRotate from '~icons/fa6-solid/rotate';
 
 const route = useRoute();
 
-console.log(route.meta);
-
 const {
     shop,
     isRefreshing,
@@ -148,12 +149,14 @@ const {
 
 <style scoped>
 .detail-wrapper {
-    display: grid;
-    column-gap: 1rem;
-    grid-template-areas:
+    @media all and (min-width: 1024px) {
+        display: grid;
+        column-gap: 1rem;
+        grid-template-areas:
         "sidebar header"
         "sidebar content";
-    grid-template-columns: 250px 1fr;
+        grid-template-columns: 250px 1fr;
+    }
 }
 
 .shop-scrape-error {

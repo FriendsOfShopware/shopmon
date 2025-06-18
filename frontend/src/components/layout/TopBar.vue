@@ -2,8 +2,8 @@
     <disclosure
         v-if="session.data"
         v-slot="{ open }"
-        as="nav"
-        class="nav"
+        as="div"
+        class="top-bar"
     >
         <div class="top-bar-container container">
             <div class="top-bar-logo">
@@ -187,7 +187,7 @@
                 </menu-container>
 
                 <!-- Mobile menu button -->
-                <disclosure-button class="action action-mobile-top-bar-toggle">
+                <disclosure-button class="action action-mobile-nav-toggle">
                     <span class="sr-only">Open main menu</span>
                     <icon-fa6-solid:bars-staggered
                         v-if="!open"
@@ -209,15 +209,13 @@
                             :key="item.name"
                             as="a"
                             class="top-bar-mobile-link"
-                            :class="[
-                        isActive(item, $route) && 'active',
-                    ]"
-                            :aria-current="isActive(item, $route) ? 'page' : undefined"
                             @click="$router.push({ name: item.route })"
                         >
-                            {{ item.name }}
+                            <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="icon"/>
+                            {{ $router.resolve({name: item.route}).meta.title }}
                         </disclosure-button>
                     </div>
+
                     <div class="top-bar-mobile-user">
                         <div class="top-bar-mobile-user-info">
                             <div class="top-bar-mobile-user-avatar">
@@ -227,32 +225,31 @@
                                     class="user-avatar"
                                 >
                             </div>
+
                             <div class="top-bar-mobile-user-details">
                                 <div class="top-bar-mobile-user-name">
                                     {{ session.data.user.name }}
                                 </div>
+
                                 <div class="top-bar-mobile-user-email">
                                     {{ session.data.user.email }}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="top-bar-mobile-user-links">
+                        <div class="top-bar-mobile-links">
                             <disclosure-button
                                 v-for="item in userNavigation"
                                 :key="item.name"
                                 as="a"
-                                class="top-bar-mobile-user-link"
+                                class="top-bar-mobile-link"
                                 @click="
                             item.route === 'logout'
                                 ? logout()
                                 : $router.push({ name: item.route })
                         "
                             >
-                                <component
-                                    :is="item.icon"
-                                    class="icon"
-                                />
+                                <component :is="item.icon" class="icon" />
                                 {{ item.name }}
                             </disclosure-button>
                         </div>
@@ -293,6 +290,13 @@ const session = authClient.useSession();
 const userAvatar = ref(
     'https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon',
 );
+
+const navigation = [
+    { route: 'home' },
+    { route: 'account.project.list', active: 'shop' },
+    { route: 'account.extension.list' },
+    { route: 'account.organizations.list', active: 'organizations', },
+];
 
 if (session.value.data?.user.email) {
     try {
@@ -336,6 +340,10 @@ async function logout() {
 </script>
 
 <style>
+.top-bar {
+    position:relative;
+}
+
 .top-bar-container {
     display: flex;
     align-items: center;
@@ -378,7 +386,6 @@ async function logout() {
         }
 
         &.action-user {
-            display: block;
             height: 2rem;
             width: 2rem;
             background-color: #38bdf8;
@@ -392,10 +399,10 @@ async function logout() {
             }
         }
 
-        &.action-mobile-top-bar-toggle {
+        &.action-mobile-nav-toggle {
             margin-left: 1rem;
 
-            @media (min-width: 768px) {
+            @media (min-width: 1024px) {
                 display: none;
             }
 
@@ -409,7 +416,7 @@ async function logout() {
     .user-menu {
         display: none;
 
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             display: block;
         }
     }
@@ -417,7 +424,10 @@ async function logout() {
 
 /* Benachrichtigungen */
 .notifications {
-    position: relative;
+    @media all and (min-width: 768px) {
+        position: relative;
+    }
+
 
     &-count {
         position: absolute;
@@ -456,11 +466,10 @@ async function logout() {
 
 .notifications-panel {
     position: absolute;
-    top: 140%;
-    left: 0;
-    right: 0;
+    top: 110%;
+    left: 0.5rem;
+    right: 0.5rem;
     z-index: 20;
-    width: 100vw;
     border-radius: 0.375rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     background-color: var(--panel-background);
@@ -485,10 +494,7 @@ async function logout() {
 }
 
 .notification-item {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
     display: flex;
     gap: 0.5rem;
     background-color: var(--item-background);
@@ -542,7 +548,7 @@ async function logout() {
     }
 }
 
-/* Nutzermenu */
+/* Nutzer menu */
 .user-menu {
     position: relative;
 
@@ -596,11 +602,13 @@ async function logout() {
 .top-bar-mobile-menu {
     width: 100%;
     position: absolute;
+    left: 0;
+    top: 110%;
     background-color: var(--primary-color);
     z-index: 10;
     filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
         display: none;
     }
 }
@@ -630,6 +638,13 @@ async function logout() {
         color: #ffffff;
         background-color: #0c84c2;
     }
+
+    .icon {
+        width: 1rem;
+        height: 1rem;
+        display: inline-block;
+        margin-right: 0.25rem;
+    }
 }
 
 .top-bar-mobile-user {
@@ -650,6 +665,7 @@ async function logout() {
             height: 2.5rem;
             width: 2.5rem;
             border-radius: 9999px;
+            background: #38bdf8;
         }
     }
 
@@ -667,34 +683,6 @@ async function logout() {
         font-size: 0.875rem;
         font-weight: 500;
         color: #e7e5e4;
-    }
-
-    &-links {
-        margin-top: 0.75rem;
-        padding: 0 0.5rem;
-        gap: 0.25rem;
-        display: flex;
-        flex-direction: column;
-    }
-
-    &-link {
-        display: block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 0.25rem;
-        font-size: 1rem;
-        font-weight: 500;
-        color: #ffffff;
-
-        &:hover {
-            background-color: #0c84c2;
-        }
-
-        .icon {
-            width: 1rem;
-            height: 1rem;
-            display: inline-block;
-            margin-right: 0.25rem;
-        }
     }
 }
 </style>

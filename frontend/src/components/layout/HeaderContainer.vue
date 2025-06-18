@@ -1,8 +1,12 @@
 <template>
     <header>
-        <div>
+        <div :class="[
+            'header-title',
+            {'mobile-hide': titleMobileHide}
+            ]"
+        >
             <div v-if="breadcrumb" class="header-breadcrumb">{{ breadcrumb }}</div>
-            <h1 class="header-title">{{ title }}</h1>
+            <h1>{{ title }}</h1>
         </div>
 
         <div class="header-actions">
@@ -12,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string, breadcrumb?: string }>();
+defineProps<{ title: string, breadcrumb?: string, titleMobileHide?: boolean }>();
 </script>
 
 <style>
@@ -25,10 +29,24 @@ header {
 }
 
 .header-title {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-    font-weight: 700;
-    color: #fff;
+    h1 {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    &.mobile-hide {
+        display: none;
+
+        + .header-actions {
+            margin-left: auto;
+        }
+
+        @media all and (min-width: 1024px) {
+            display: block;
+        }
+    }
 }
 
 .header-breadcrumb {

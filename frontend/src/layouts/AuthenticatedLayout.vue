@@ -42,14 +42,18 @@ import Notification from '@/components/Notification.vue';
 
 .main-container {
     padding: 1.5rem 0;
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
+
+    @media all and (min-width: 1024px) {
+        display: grid;
+        column-gap: 1rem;
+        grid-template-areas:
+        "sidebar main-content";
+        grid-template-columns: auto 1fr;
+    }
 }
 
 .main-content {
-    flex: 1 1 0%;
-    min-width: 0;
+    grid-area: main-content;
 }
 
 .background-mask {
@@ -59,18 +63,12 @@ import Notification from '@/components/Notification.vue';
     top: 0;
     left: 0;
     width: 100%;
-    height: 290px;
+    height: 400px;
     z-index: -1;
     background-color: var(--primary-color);
 
-    &:before {
-        content: '';
-        display: block;
-        background: linear-gradient(90deg, var(--primary-color) -0.48%, #0284c7 57.18%, #0284c7 60.83%, var(--primary-color) 97.96%);
-        width: 100%;
-        height: 100%;
-        max-width: var(--container-width);
-        margin: 0 auto;
+    @media all and (min-width: 1024px) {
+        height: 290px;
     }
 }
 

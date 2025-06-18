@@ -1,7 +1,15 @@
-<template xmlns="http://www.w3.org/1999/html">
-    <div class="sidebar-wrapper">
+<template>
+    <div class="sidebar-wrapper" v-if="props.shop">
+        <div ref="toggleRef" class="sidebar-detail-toggle btn btn-primary btn-block" @click="toggleMobileOpen">
+            {{ shop.nameCombined }} {{ route.meta.title && route.name !== 'account.shops.detail' ? ' / ' : '' }} {{ route.meta.title }}
+        </div>
 
-        <div class="detail-sidebar sidebar" v-if="props.shop">
+        <div ref="sidebarRef" :class="[
+            'sidebar',
+            'sidebar-detail',
+            { 'mobile-open': isMobileOpen }
+            ]"
+        >
             <div class="shop-image-container">
                 <img
                     v-if="shop.shopImage"
@@ -24,20 +32,20 @@
                     v-for="item in detailNavigation"
                     :key="item.name"
                     :to="{
-                        name: item.route,
-                        params: {
-                            slug: route.params.slug,
-                            shopId: route.params.shopId
-                        }
-                    }"
+                    name: item.route,
+                    params: {
+                        slug: route.params.slug,
+                        shopId: route.params.shopId
+                    }
+                }"
                     :class="{
-                        'nav-link': true
-                    }"
+                    'nav-link': true
+                }"
                     active-class=""
                     exact-active-class="active"
                 >
                     <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="nav-link-icon"/>
-                    <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title || item.name }}</span>
+                    <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title }}</span>
                     <span v-if="item.count !== undefined" class="nav-link-count">{{ item.count }}</span>
                 </router-link>
             </nav>
@@ -47,10 +55,14 @@
 
 <script setup lang="ts">
 import type { RouterOutput } from '@/helpers/trpc';
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+
+const isMobileOpen = ref(false);
+const sidebarRef = ref<HTMLElement | null>(null);
+const toggleRef = ref<HTMLElement | null>(null);
 
 const props = defineProps<{
     shop: RouterOutput['organization']['shop']['get'] | null
@@ -92,9 +104,85 @@ const detailNavigation = computed(() => [
         count: props.shop?.changelog?.length ?? 0
     }
 ]);
+function toggleMobileOpen() {
+    isMobileOpen.value = !isMobileOpen.value;
+}
+
+function handleClickOutside(event: MouseEvent) {
+    if (!isMobileOpen.value) return;
+
+    // Check if click was outside both the sidebar and the toggle button
+    const clickedElement = event.target as Node;
+    const isClickInsideSidebar = sidebarRef.value?.contains(clickedElement) || false;
+    const isClickOnToggle = toggleRef.value?.contains(clickedElement) || false;
+
+    if (!isClickInsideSidebar && !isClickOnToggle) {
+        isMobileOpen.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+// Close sidebar when route changes
+watch(route, () => {
+    if (isMobileOpen.value) {
+        isMobileOpen.value = false;
+    }
+});
 </script>
 
 <style scoped>
+.sidebar-wrapper {
+    display: block;
+    position: relative;
+}
+
+.sidebar-detail-toggle {
+    border-color: transparent;
+    margin-bottom: 1rem;
+    background-color: #0284c7;
+
+    &:after {
+        content: '';
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        margin-top: -2px;
+        border: 5px solid transparent;
+        border-top-color: #fff;
+    }
+
+    @media all and (min-width: 1024px) {
+        display: none;
+    }
+}
+
+.sidebar {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% - 0.9rem);
+    left: 0;
+    right: 0;
+    display: none;
+    border: 1px solid var(--panel-border-color);
+
+    &.mobile-open {
+        display: block;
+    }
+
+    @media all and (min-width: 1024px) {
+        position: static;
+        display: block;
+        border: unset;
+    }
+}
+
 .shop-image-container {
     margin-top: 1.5rem;
     display: flex;

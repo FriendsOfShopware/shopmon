@@ -17,7 +17,7 @@
                     :aria-current="isActive(item, $route) ? 'page' : undefined"
                 >
                     <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="nav-link-icon"/>
-                    <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title || item.name }}</span>
+                    <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title }}</span>
                 </router-link>
             </nav>
 
@@ -78,14 +78,10 @@ const currentViewClass = computed(() => {
 });
 
 const navigation = [
-    { name: 'Dashboard', route: 'home' },
-    { name: 'My Projects', route: 'account.project.list', active: 'shop' },
-    { name: 'My Extensions', route: 'account.extension.list' },
-    {
-        name: 'My Organizations',
-        route: 'account.organizations.list',
-        active: 'organizations',
-    },
+    { route: 'home' },
+    { route: 'account.project.list', active: 'shop' },
+    { route: 'account.extension.list' },
+    { route: 'account.organizations.list', active: 'organizations', },
 ];
 
 function isActive(
@@ -104,19 +100,24 @@ function isActive(
 
 <style>
 .sidebar-wrapper {
+    display: none;
     grid-area: sidebar;
-    width: 250px;
 
-    &[class*="is-account-shops-detail"] {
-        width: 60px;
+    @media all and (min-width: 1024px) {
+        display: block;
+        width: 250px;
 
-        .nav-link-name,
-        .nav-link-state {
-            display: none;
-        }
+        &[class*="is-account-shops-detail"] {
+            width: 60px;
 
-        .nav-link {
-            padding: 0.5rem;
+            .nav-link-name,
+            .nav-link-state {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 0.5rem;
+            }
         }
     }
 }
@@ -143,14 +144,9 @@ function isActive(
 
 /* Main */
 .nav-main {
-    display: none;
-
-    @media (min-width: 768px) {
-        display: block;
-        padding-bottom: 0.3rem;
-        margin-bottom: 0.5rem;
-        border-bottom: 1px solid var(--panel-border-color);
-    }
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--panel-border-color);
 }
 
 .nav-link {
