@@ -13,6 +13,16 @@ import adminRoutes from '@/router/admin';
 import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
 
+import FaShop from '~icons/fa6-solid/shop';
+import FaCircleCheck from '~icons/fa6-solid/circle-check';
+import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import FaListCheck from '~icons/fa6-solid/list-check';
+import FaPlug from '~icons/fa6-solid/plug';
+import FaRocket from '~icons/fa6-solid/rocket';
+import FaHouse from '~icons/fa6-solid/house';
+import FaFolder from '~icons/fa6-solid/folder';
+import FaBuilding from '~icons/fa6-solid/building';
+
 const session = authClient.useSession();
 
 export const router = createRouter({
@@ -69,16 +79,32 @@ export const router = createRouter({
             path: '/app',
             component: AuthenticatedLayout,
             children: [
-                { path: '/', name: 'home', component: Home },
+                {
+                    path: '/',
+                    name: 'home',
+                    component: Home,
+                    meta: {
+                        title: 'Dashboard',
+                        icon: FaHouse
+                    },
+                },
                 {
                     name: 'account.settings',
                     path: 'settings',
                     component: () => import('@/views/account/Settings.vue'),
+                    meta: {
+                        title: 'Settings',
+                        icon: FaShop
+                    },
                 },
                 {
                     name: 'account.project.list',
                     path: 'projects',
                     component: () => import('@/views/shop/ListProjects.vue'),
+                    meta: {
+                        title: 'My Projects',
+                        icon: FaFolder
+                    },
                 },
                 {
                     name: 'account.shops.new',
@@ -104,42 +130,70 @@ export const router = createRouter({
                             path: '',
                             component: () =>
                                 import('@/views/shop/detail/DetailShop.vue'),
+                            meta: {
+                                title: 'Shop informations',
+                                icon: FaShop
+                            },
                         },
                         {
                             name: 'account.shops.detail.checks',
                             path: 'checks',
                             component: () =>
                                 import('@/views/shop/detail/DetailChecks.vue'),
+                            meta: {
+                                title: 'Checks',
+                                icon: FaCircleCheck
+                            },
                         },
                         {
                             name: 'account.shops.detail.extensions',
                             path: 'extensions',
                             component: () =>
                                 import('@/views/shop/detail/DetailExtensions.vue'),
+                            meta: {
+                                title: 'Extensions',
+                                icon: FaPlug
+                            },
                         },
                         {
                             name: 'account.shops.detail.tasks',
                             path: 'tasks',
                             component: () =>
                                 import('@/views/shop/detail/DetailScheduledTasks.vue'),
+                            meta: {
+                                title: 'Scheduled tasks',
+                                icon: FaListCheck
+                            },
                         },
                         {
                             name: 'account.shops.detail.queue',
                             path: 'queue',
                             component: () =>
                                 import('@/views/shop/detail/DetailQueue.vue'),
+                            meta: {
+                                title: 'Queue',
+                                icon: FaCircleCheck
+                            },
                         },
                         {
                             name: 'account.shops.detail.pagespeed',
                             path: 'pagespeed',
                             component: () =>
                                 import('@/views/shop/detail/DetailPagespeed.vue'),
+                            meta: {
+                                title: 'Pagespeed',
+                                icon: FaRocket
+                            },
                         },
                         {
                             name: 'account.shops.detail.changelog',
                             path: 'changelog',
                             component: () =>
                                 import('@/views/shop/detail/DetailChangelog.vue'),
+                            meta: {
+                                title: 'Changelog',
+                                icon: FaFileWaverform
+                            },
                         },
                     ],
                 },
@@ -148,6 +202,10 @@ export const router = createRouter({
                     path: 'organizations',
                     component: () =>
                         import('@/views/organization/ListOrganizations.vue'),
+                    meta: {
+                        title: 'My Organisations',
+                        icon: FaBuilding
+                    },
                 },
                 {
                     name: 'account.organizations.new',
@@ -178,6 +236,10 @@ export const router = createRouter({
                     path: 'extensions',
                     component: () =>
                         import('@/views/account/ListExtensions.vue'),
+                    meta: {
+                        title: 'My Extensions',
+                        icon: FaPlug
+                    },
                 },
                 {
                     name: 'account.organization.accept',

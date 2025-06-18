@@ -16,8 +16,8 @@
                     }"
                     :aria-current="isActive(item, $route) ? 'page' : undefined"
                 >
-                    <component :is="item.icon" v-if="item.icon" class="nav-link-icon"/>
-                    <span class="nav-link-name">{{ item.name }}</span>
+                    <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="nav-link-icon"/>
+                    <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title || item.name }}</span>
                 </router-link>
             </nav>
 
@@ -61,10 +61,6 @@ trpcClient.account.currentUserShops.query().then((data) => {
     shops.value = data;
 });
 
-import FaHouse from '~icons/fa6-solid/house';
-import FaShop from '~icons/fa6-solid/shop';
-import FaPlug from '~icons/fa6-solid/plug';
-import FaPeopleGroup from '~icons/fa6-solid/people-group';
 import {ref, computed} from "vue";
 import {RouterOutput, trpcClient} from "@/helpers/trpc";
 import {useRoute} from "vue-router";
@@ -82,14 +78,13 @@ const currentViewClass = computed(() => {
 });
 
 const navigation = [
-    { name: 'Dashboard', route: 'home', icon: FaHouse },
-    { name: 'My Projects', route: 'account.project.list', active: 'shop', icon: FaShop },
-    { name: 'My Extensions', route: 'account.extension.list', icon: FaPlug },
+    { name: 'Dashboard', route: 'home' },
+    { name: 'My Projects', route: 'account.project.list', active: 'shop' },
+    { name: 'My Extensions', route: 'account.extension.list' },
     {
         name: 'My Organizations',
         route: 'account.organizations.list',
         active: 'organizations',
-        icon: FaPeopleGroup,
     },
 ];
 
@@ -129,9 +124,21 @@ function isActive(
 .sidebar {
     background-color: var(--panel-background);
     padding: 0.75rem;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     width: 100%;
     flex-shrink: 0;
+
+    .dark & {
+        box-shadow: none;
+    }
+}
+
+.sidebar-section-label {
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 0.25rem;
+    color: var(--text-color-muted);
 }
 
 /* Main */
