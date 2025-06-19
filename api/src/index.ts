@@ -64,5 +64,8 @@ if (existsSync('./dist')) {
     });
 }
 
-serve(app);
+serve({
+    fetch: app.fetch,
+    port: Number.parseInt(process.env.PORT || '3000', 10),
+});
 export default app;

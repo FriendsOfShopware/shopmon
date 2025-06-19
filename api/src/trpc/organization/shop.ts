@@ -72,7 +72,7 @@ export const shopRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
-                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, ' / ', ${schema.shop.name})`,
                     url: schema.shop.url,
                     status: schema.shop.status,
                     createdAt: schema.shop.createdAt,

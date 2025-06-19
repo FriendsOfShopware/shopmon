@@ -8,7 +8,7 @@ setup: # Setup the project
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	@echo "Installing dependencies"
-	bun install
+	pnpm install
 
 tslint:
 	cd api && node ../node_modules/.bin/tsc --noEmit
@@ -33,18 +33,18 @@ generate-email:
 	cd api && node generate-mjml.js
 
 migrate:
-	cd api && npm run migrate.ts
+	cd api && node --env-file-if-exists=.env migrate.ts
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
-	cd api && node migrate.ts
-	cd api && node apply-fixtures.ts
+	cd api && node --env-file-if-exists=.env migrate.ts
+	cd api && node --env-file-if-exists=.env apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'cd api && bun --watch --port 5789 src/index.ts' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'cd api && PORT=5789 node --env-file-if-exists=.env --no-warnings=ExperimentalWarning --watch src/index.ts' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev

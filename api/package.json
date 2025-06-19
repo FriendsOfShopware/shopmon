@@ -21,7 +21,7 @@
 	"devDependencies": {
 		"@better-auth/cli": "^1.2.8",
 		"@types/bcrypt": "^5.0.2",
-		"@types/bun": "^1.2.14",
+		"@types/node": "^24.0.3",
 		"@types/node-cron": "^3.0.11",
 		"@types/nodemailer": "^6.4.17",
 		"drizzle-kit": "^0.31.0",

@@ -69,9 +69,9 @@ importers:
       '@types/bcrypt':
         specifier: ^5.0.2
         version: 5.0.2
-      '@types/bun':
-        specifier: ^1.2.14
-        version: 1.2.16
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.0.3
       '@types/node-cron':
         specifier: ^3.0.11
         version: 3.0.11
@@ -1480,9 +1480,6 @@ packages:
 
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
-
-  '@types/bun@1.2.16':
-    resolution: {integrity: sha512-1aCZJ/6nSiViw339RsaNhkNoEloLaPzZhxMOYEa7OzRzO41IGg5n/7I43/ZIAW/c+Q6cT12Vf7fOZOoVIzb5BQ==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -4803,10 +4800,6 @@ snapshots:
     dependencies:
       '@types/node': 24.0.3
 
-  '@types/bun@1.2.16':
-    dependencies:
-      bun-types: 1.2.16
-
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 24.0.3
@@ -5176,6 +5169,7 @@ snapshots:
   bun-types@1.2.16:
     dependencies:
       '@types/node': 24.0.3
+    optional: true
 
   c12@2.0.4:
     dependencies:
