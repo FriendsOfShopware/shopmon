@@ -1,8 +1,9 @@
 import './sentry.ts';
 import { promises as fs, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/bun';
 import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
@@ -63,4 +64,5 @@ if (existsSync('./dist')) {
     });
 }
 
+serve(app);
 export default app;

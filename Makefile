@@ -11,37 +11,37 @@ setup: # Setup the project
 	bun install
 
 tslint:
-	cd api && bun ../node_modules/.bin/tsc --noEmit
+	cd api && node ../node_modules/.bin/tsc --noEmit
 
 lint:
-	cd api && bun ../node_modules/.bin/tsc --noEmit
-	cd frontend && bun ../node_modules/.bin/eslint --cache
-	bun node_modules/.bin/biome ci
+	cd api && node ../node_modules/.bin/tsc --noEmit
+	cd frontend && node ../node_modules/.bin/eslint --cache
+	node_modules/.bin/biome ci
 
 lint-fix:
-	cd frontend && bun ../node_modules/.bin/eslint --cache --fix
-	bun node_modules/.bin/biome check --fix --unsafe
-	bun node_modules/.bin/biome format --write
+	cd frontend && node ../node_modules/.bin/eslint --cache --fix
+	node_modules/.bin/biome check --fix --unsafe
+	node_modules/.bin/biome format --write
 
 generate-migration:
-	cd api && bunx --bun drizzle-kit generate
+	cd api && npx drizzle-kit generate
 
 generate-custom-migration:
-	cd api && bunx --bun drizzle-kit generate --custom
+	cd api && npx drizzle-kit generate --custom
 
 generate-email:
-	cd api && bun generate-mjml.js
+	cd api && node generate-mjml.js
 
 migrate:
-	cd api && bun run migrate.ts
+	cd api && npm run migrate.ts
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
-	cd api && bun run migrate.ts
-	cd api && bun run apply-fixtures.ts
+	cd api && node migrate.ts
+	cd api && node apply-fixtures.ts
 
 dev: # Run the project locally
 	npx concurrently -- 'cd api && bun --watch --port 5789 src/index.ts' 'npm --prefix frontend run dev:local'

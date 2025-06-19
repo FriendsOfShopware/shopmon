@@ -1,15 +1,8 @@
 {
+	"packageManager": "pnpm@10.12.1",
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4"
 	},
-	"workspaces": {
-		"packages": ["api", "frontend"],
-		"catalog": {
-			"typescript": "5.8.3",
-			"better-auth": "1.2.8"
-		}
-	},
-	"trustedDependencies": ["@biomejs/biome", "esbuild", "sharp"],
 	"scripts": {
 		"biome:format": "biome format --write .",
 		"biome:lint": "biome lint .",

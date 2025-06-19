@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { type Drizzle, getConnection, schema } from '../db';
+import { type Drizzle, getConnection, schema } from '../db.ts';
 
 async function existsByEmail(
     con: Drizzle,
@@ -68,8 +68,7 @@ async function createNotification(
         ...notification,
         key,
         userId,
-        // @ts-expect-error
-        id: result.lastInsertRowid,
+        id: result.lastInsertRowid as unknown as number,
         read: false,
         createdAt: new Date(),
     };

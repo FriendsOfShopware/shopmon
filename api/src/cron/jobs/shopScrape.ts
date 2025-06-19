@@ -1,4 +1,4 @@
-import { logger } from '@sentry/bun';
+import { logger } from '@sentry/node';
 import {
     ApiClientAuthenticationFailed,
     ApiClientRequestFailed,
@@ -7,17 +7,17 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { decrypt } from '../../crypto/index.js';
-import { type Drizzle, getConnection, schema } from '../../db.js';
-import { type CheckerInput, check } from '../../object/status/registery.js';
-import Shops, { type User } from '../../repository/shops.js';
+import { decrypt } from '../../crypto/index.ts';
+import { type Drizzle, getConnection, schema } from '../../db.ts';
+import { type CheckerInput, check } from '../../object/status/registery.ts';
+import Shops, { type User } from '../../repository/shops.ts';
 import type {
     CacheInfo,
     Extension,
     ExtensionChangelog,
     ExtensionDiff,
     QueueInfo,
-} from '../../types/index.js';
+} from '../../types/index.ts';
 import versionCompare from '../../util.ts';
 
 interface SQLShop {

@@ -4,9 +4,12 @@
 	"type": "module",
 	"license": "MIT",
 	"dependencies": {
-		"@sentry/bun": "^9.22.0",
+		"@hono/node-server": "^1.14.4",
+		"@libsql/client": "^0.15.9",
+		"@sentry/node": "^9.30.0",
 		"@shopware-ag/app-server-sdk": "^1.1.16",
 		"@trpc/server": "^11.1.2",
+		"bcrypt": "^6.0.0",
 		"better-auth": "catalog:",
 		"drizzle-orm": "^0.44.1",
 		"hono": "~4.7.7",
@@ -17,14 +20,12 @@
 	},
 	"devDependencies": {
 		"@better-auth/cli": "^1.2.8",
+		"@types/bcrypt": "^5.0.2",
 		"@types/bun": "^1.2.14",
 		"@types/node-cron": "^3.0.11",
 		"@types/nodemailer": "^6.4.17",
 		"drizzle-kit": "^0.31.0",
 		"mjml": "^4.15.3",
 		"typescript": "catalog:"
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": ["esbuild", "sharp"]
 	}
 }

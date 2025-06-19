@@ -29,9 +29,8 @@ Thank you for your interest in contributing to Shopmon! This document provides g
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) (latest version)
 - Docker and Docker Compose (for running the demo environment)
-- Node.js 22+ (for some build tools)
+- Node.js 24+ (for some build tools)
 
 ### Initial Setup
 
