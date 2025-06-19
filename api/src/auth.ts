@@ -27,7 +27,7 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
-        async sendResetPassword(data, request) {
+        async sendResetPassword(data, _request) {
             const { sendMailResetPassword } = await import('./mail/mail.ts');
             await sendMailResetPassword(data.user.email, data.token);
         },
@@ -92,7 +92,7 @@ export const auth = betterAuth({
             },
             cancelPendingInvitationsOnReInvite: true,
             organizationDeletion: {
-                async beforeDelete(data, request) {
+                async beforeDelete(data, _request) {
                     return shops.deleteShopsByOrganization(
                         data.organization.id,
                     );

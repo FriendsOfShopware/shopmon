@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import { member, schema } from '../../db.ts';
+import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import { loggedInUserMiddleware } from '../middleware.ts';

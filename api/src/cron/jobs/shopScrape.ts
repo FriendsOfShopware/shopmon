@@ -190,7 +190,7 @@ async function shouldNotify(
     }
 
     const lastNotification = new Date(notificationResult[0].created_at);
-    const timeDifference = lastNotification.getTime() - new Date().getTime();
+    const timeDifference = lastNotification.getTime() - Date.now();
 
     return timeDifference >= 24 * 60 * 60 * 1000;
 }
@@ -409,8 +409,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     status: task.status,
                     interval: task.runInterval,
                     overdue:
-                        new Date(task.nextExecutionTime).getTime() <
-                        new Date().getTime(),
+                        new Date(task.nextExecutionTime).getTime() < Date.now(),
                     lastExecutionTime: task.lastExecutionTime,
                     nextExecutionTime: task.nextExecutionTime,
                 };

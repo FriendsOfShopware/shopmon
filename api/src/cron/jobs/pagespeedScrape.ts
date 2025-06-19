@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { eq, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { type Drizzle, getConnection, schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';

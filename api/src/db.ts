@@ -1,16 +1,10 @@
 import { createClient } from '@libsql/client';
 import { relations } from 'drizzle-orm';
 import {
-    type LibSQLDatabase,
     drizzle as drizzleSqlite,
+    type LibSQLDatabase,
 } from 'drizzle-orm/libsql';
-import {
-    integer,
-    primaryKey,
-    sqliteTable,
-    text,
-    unique,
-} from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type {
     CacheInfo,
     CheckerChecks,
@@ -327,7 +321,7 @@ export const schema = {
 };
 
 export type Drizzle = LibSQLDatabase<typeof schema>;
-let drizzle: Drizzle | undefined = undefined;
+let drizzle: Drizzle | undefined;
 
 export function getConnection(applyPragmas = true) {
     if (drizzle !== undefined) {

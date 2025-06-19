@@ -14,12 +14,12 @@ tslint:
 	cd api && node ../node_modules/.bin/tsc --noEmit
 
 lint:
-	cd api && node ../node_modules/.bin/tsc --noEmit
-	cd frontend && node ../node_modules/.bin/eslint --cache
+	cd api && node_modules/.bin/tsc --noEmit
+	cd frontend && node_modules/.bin/eslint --cache
 	node_modules/.bin/biome ci
 
 lint-fix:
-	cd frontend && node ../node_modules/.bin/eslint --cache --fix
+	cd frontend && node_modules/.bin/eslint --cache --fix
 	node_modules/.bin/biome check --fix --unsafe
 	node_modules/.bin/biome format --write
 
