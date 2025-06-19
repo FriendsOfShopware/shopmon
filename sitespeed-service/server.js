@@ -2,6 +2,7 @@ const express = require('express');
 const { exec } = require('node:child_process');
 const fs = require('node:fs').promises;
 const path = require('node:path');
+const { argv } = require('node:process');
 
 const app = express();
 const PORT = 3001;
@@ -15,11 +16,11 @@ app.get('/health', (req, res) => {
 
 // Main endpoint to run sitespeed analysis
 app.post('/analyze', async (req, res) => {
-    const { shopId, url, label, folderName } = req.body;
+    const { shopId, urls, label, folderName } = req.body;
 
-    if (!shopId || !url) {
+    if (!shopId || !urls || !Array.isArray(urls) || urls.length === 0) {
         return res.status(400).json({
-            error: 'Missing required parameters: shopId and url',
+            error: 'Missing required parameters: shopId and urls',
         });
     }
 
@@ -28,24 +29,22 @@ app.post('/analyze', async (req, res) => {
         const dataFolder =
             process.env.APP_SITESPEED_DATA_FOLDER || '/app/results';
 
-        // Use the pre-sanitized folder name from the API, or fallback to 'default'
-        const safeName = folderName || 'default';
-
-        const resultsDir = path.join(dataFolder, shopId.toString(), safeName);
+        const resultsDir = path.join(dataFolder, shopId.toString());
         await fs.mkdir(resultsDir, { recursive: true });
 
-        // Convert localhost URLs to docker network URLs
-        const dockerUrl = url.replace(
-            'http://localhost:3889',
-            'http://shopmon-demoshop-1:8000',
-        );
+        formattedUrls = urls.map((url) => {
+            url.replace(
+                'http://localhost:3889',
+                'http://shopmon-demoshop-1:8000',
+            );
+        });
 
         // Run sitespeed.io analysis with all metrics including visual metrics and transfer size
         // Note: Cannot use --headless with --video/--visualMetrics as they need a screen
-        const command = `/usr/src/app/bin/sitespeed.js --outputFolder ${resultsDir} --plugins.add analysisstorer --visualMetrics --video --browsertime.iterations 1 "${dockerUrl}"`;
+        const command = `/usr/src/app/bin/sitespeed.js --outputFolder ${resultsDir} --plugins.add analysisstorer --visualMetrics --video --browsertime.iterations 1 "${formattedUrls.join(' ')}"`;
 
         console.log(
-            `Running sitespeed analysis for shop ${shopId} - ${label || 'Unlabeled'} (${safeName}): ${url}`,
+            `Running sitespeed analysis for shop ${shopId}`,
         );
 
         exec(command, async (error, stdout, stderr) => {
