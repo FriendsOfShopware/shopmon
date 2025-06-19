@@ -1,4 +1,4 @@
-import { captureException } from '@sentry/bun';
+import { captureException } from '@sentry/node';
 import type { AnyRouter } from '@trpc/server';
 import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';

@@ -1,8 +1,9 @@
 import './sentry.ts';
-import { promises as fs, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, promises as fs, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/bun';
 import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
@@ -43,7 +44,7 @@ app.get('/pagespeed/:uuid/screenshot.jpg', async (c) => {
                 'cache-control': 'public, max-age=86400', // Cache for 1 day
             },
         });
-    } catch (e) {
+    } catch (_e) {
         return c.json({ error: 'Screenshot not found' }, 404);
     }
 });
@@ -63,4 +64,8 @@ if (existsSync('./dist')) {
     });
 }
 
+serve({
+    fetch: app.fetch,
+    port: Number.parseInt(process.env.PORT || '3000', 10),
+});
 export default app;

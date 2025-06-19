@@ -53,7 +53,20 @@ CREATE TABLE `verification` (
 --> statement-breakpoint
 DROP TABLE `password_reset_tokens`;--> statement-breakpoint
 DROP TABLE `sessions`;--> statement-breakpoint
-INSERT INTO `passkey` ("id", "name", "public_key", "user_id", "credential_i_d", "counter", "device_type", "backed_up", "transports", "created_at") SELECT substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "name", JSON_EXTRACT("key", "$.credential.publicKey"), substr(concat('00000000000000000000000000000000'||"userId"), -32, 32), JSON_EXTRACT("key", "$.credential.id"), JSON_EXTRACT("key", "$.authenticator.counter"), "multiDevice", IFNULL(JSON_EXTRACT("key", "$.authenticator.flags.backupState"), 0), "internal,hybrid", "created_at"  FROM user_passkeys;--> statement-breakpoint
+INSERT INTO `passkey` ("id", "name", "public_key", "user_id", "credential_i_d", "counter", "device_type", "backed_up", "transports", "created_at") 
+SELECT 
+    substr(concat('00000000000000000000000000000000'||"id"), -32, 32), 
+    "name", 
+    JSON_EXTRACT("key", '$.credential.publicKey'), 
+    substr(concat('00000000000000000000000000000000'||"userId"), -32, 32), 
+    JSON_EXTRACT("key", '$.credential.id'), 
+    JSON_EXTRACT("key", '$.authenticator.counter'), 
+    'multiDevice', 
+    IFNULL(JSON_EXTRACT("key", '$.authenticator.flags.backupState'), 0), 
+    'internal,hybrid', 
+    "created_at"  
+FROM user_passkeys;
+--> statement-breakpoint
 
 DROP TABLE `user_passkeys`;--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
@@ -68,8 +81,8 @@ CREATE TABLE `__new_user` (
 	`display_name` text
 );
 --> statement-breakpoint
-INSERT INTO `__new_user`("id", "name", "email", "email_verified", "image", "created_at", "updated_at", "display_name") SELECT substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "displayName", "email", 1, NULL, "created_at", "created_at", "display_name" FROM `user`;--> statement-breakpoint
-INSERT INTO `account` ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at") SELECT substr(concat('00000000000000000000000000000000'||"id"), -32, 32), substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "credential", substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "password", "created_at", "created_at" FROM `user`;--> statement-breakpoint
+INSERT INTO `__new_user`("id", "name", "email", "email_verified", "image", "created_at", "updated_at", "display_name") SELECT substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "displayName", "email", 1, NULL, "created_at", "created_at", "displayName" FROM `user`;--> statement-breakpoint
+INSERT INTO `account` ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at") SELECT substr(concat('00000000000000000000000000000000'||"id"), -32, 32), substr(concat('00000000000000000000000000000000'||"id"), -32, 32), 'credential', substr(concat('00000000000000000000000000000000'||"id"), -32, 32), "password", "created_at", "created_at" FROM `user`;--> statement-breakpoint
 DROP TABLE `user`;--> statement-breakpoint
 ALTER TABLE `__new_user` RENAME TO `user`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint

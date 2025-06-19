@@ -1,18 +1,20 @@
-FROM oven/bun:latest AS frontend
+FROM node:24-alpine AS frontend
 
 COPY . /app
 WORKDIR /app
-RUN bun install
-RUN cd frontend && bun run build
+RUN corepack enable
+RUN pnpm install --filter shopmon-frontend
+RUN cd frontend && pnpm run build
 
-FROM oven/bun:latest AS api
+FROM node:24-alpine AS api
 
 COPY . /app
 WORKDIR /app
-RUN bun install
+RUN corepack enable
+RUN pnpm install --filter shopmon
 RUN rm -rf /app/frontend
 
-FROM oven/bun:latest AS final
+FROM node:24-alpine AS final
 
 ARG SENTRY_RELEASE="unknown"
 ENV SENTRY_RELEASE=${SENTRY_RELEASE}
@@ -23,8 +25,6 @@ COPY --from=frontend /app/frontend/dist /app/api/dist/
 WORKDIR /app/api
 ENV NODE_ENV=production
 EXPOSE 3000
-ENTRYPOINT [ "bun" ]
-
-STOPSIGNAL SIGKILL
+ENTRYPOINT [ "node", "--no-warnings=ExperimentalWarning" ]
 
 CMD [ "src/index.ts" ]

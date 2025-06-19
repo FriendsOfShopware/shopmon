@@ -1,4 +1,4 @@
-import type { Checker, CheckerInput, CheckerOutput } from '../registery';
+import type { Checker, CheckerInput, CheckerOutput } from '../registery.ts';
 
 const ignores = [
     'frosh-tools.checker.scheduledTaskGood',

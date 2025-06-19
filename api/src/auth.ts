@@ -1,10 +1,11 @@
+import { compare, hash } from 'bcrypt';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin, organization } from 'better-auth/plugins';
 import { passkey } from 'better-auth/plugins/passkey';
 import { sso } from 'better-auth/plugins/sso';
-import { getConnection } from './db.js';
-import shops from './repository/shops.js';
+import { getConnection } from './db.ts';
+import shops from './repository/shops.ts';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -26,18 +27,16 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
-        async sendResetPassword(data, request) {
-            const { sendMailResetPassword } = await import('./mail/mail.js');
+        async sendResetPassword(data, _request) {
+            const { sendMailResetPassword } = await import('./mail/mail.ts');
             await sendMailResetPassword(data.user.email, data.token);
         },
         password: {
             hash: async (password) => {
-                return Bun.password.hash(password, {
-                    algorithm: 'bcrypt',
-                });
+                return hash(password, 10);
             },
             verify: async (data) => {
-                return Bun.password.verify(data.password, data.hash);
+                return compare(data.password, data.hash);
             },
         },
     },
@@ -49,7 +48,7 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, token }) => {
-            const { sendMailConfirmToUser } = await import('./mail/mail.js');
+            const { sendMailConfirmToUser } = await import('./mail/mail.ts');
             await sendMailConfirmToUser(user.email, token);
         },
     },
@@ -62,7 +61,7 @@ export const auth = betterAuth({
         enabled: true,
         sendResetPasswordEmail: async ({ user, token }) => {
             // Import dynamically to avoid circular dependency
-            const { sendMailResetPassword } = await import('./mail/mail.js');
+            const { sendMailResetPassword } = await import('./mail/mail.ts');
             await sendMailResetPassword(user.email, token);
         },
     },
@@ -93,7 +92,7 @@ export const auth = betterAuth({
             },
             cancelPendingInvitationsOnReInvite: true,
             organizationDeletion: {
-                async beforeDelete(data, request) {
+                async beforeDelete(data, _request) {
                     return shops.deleteShopsByOrganization(
                         data.organization.id,
                     );
