@@ -341,6 +341,7 @@ export function getConnection(applyPragmas = true) {
             client.execute('PRAGMA foreign_keys = ON'),
             client.execute('PRAGMA synchronous = NORMAL'),
             client.execute('PRAGMA temp_store = MEMORY'),
+            client.execute('PRAGMA wal_autocheckpoint = 0'),
         ];
         Promise.all(promises).then(() => {
             console.log('Database PRAGMAs applied successfully');
