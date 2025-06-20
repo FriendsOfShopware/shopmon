@@ -1,5 +1,5 @@
 <template>
-    <header title="Settings" />
+    <header-container title="Settings" />
     <main-container>
         <vee-form
             v-slot="{ errors, isSubmitting }"
