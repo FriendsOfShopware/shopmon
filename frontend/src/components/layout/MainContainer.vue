@@ -11,6 +11,9 @@
 <style scoped>
 .main-container {
     grid-area: content;
-    overflow: hidden;
+
+    &:has(.data-table) {
+        overflow: hidden;
+    }
 }
 </style>
