@@ -3,10 +3,13 @@
 	font-weight: 600;
 	display: inline-block;
 	padding: 0.25rem 0.5rem;
-	margin-left: 0.5rem;
 	border-radius: 0.25rem;
 	background-color: #d1d5db;
 	color: var(--text-color);
+
+	&:not(:first-child) {
+		margin-left: 0.5rem;
+	}
 
 	.dark & {
 		color: #111827;
@@ -21,8 +24,14 @@
 		background-color: var(--warning-color);
 	}
 
-	&-error {
+	&-error,
+	&-danger {
 		background-color: var(--error-color);
+		color: #fff;
+	}
+
+	&-success {
+		background-color: #10b981;
 		color: #fff;
 	}
 }
