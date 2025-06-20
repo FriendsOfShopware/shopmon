@@ -6,6 +6,7 @@
             :validation-schema="schema"
             :initial-values="user"
             @submit="onSubmit"
+            class="panel"
         >
             <form-group
                 title="Account"
@@ -53,20 +54,20 @@
                     :error="errors.newPassword"
                 />
 
-                <label>Login using your GitHub account</label>
+                <p>Login using your GitHub account</p>
 
-                <button 
-                v-if="!connectedProviders.includes('github')"
-                    type="button"
-                    class="btn btn-primary"
-                    @click="linkSocial('github')"
-                >
-                <icon-fa6-brands:github
-                    class="icon"
-                    aria-hidden="true"
-                />
-                Link GitHub
-            </button>
+                <button
+                    v-if="!connectedProviders.includes('github')"
+                        type="button"
+                        class="btn btn-primary"
+                        @click="linkSocial('github')"
+                    >
+                    <icon-fa6-brands:github
+                        class="icon"
+                        aria-hidden="true"
+                    />
+                    Link GitHub
+                </button>
             
                 <button
                     v-else
@@ -80,9 +81,7 @@
                     />
                     Unlink from GitHub
                 </button>
-
             </form-group>
-            
 
             <div class="form-submit">
                 <button
@@ -104,43 +103,45 @@
             </div>
         </vee-form>
 
-        <form-group title="Passkey Devices" class="form-group-table">
-            <data-table
-                v-if="passkeys"
-                :columns="[
+        <div class="panel">
+            <form-group title="Passkey Devices" class="form-group-table">
+                <data-table
+                    v-if="passkeys"
+                    :columns="[
                     { key: 'name', name: 'Name', sortable: true },
                     { key: 'createdAt', name: 'Created At', sortable: true },
                 ]"
-                :data="passkeys"
-            >
-                <template #cell-actions="{ row }">
-                    <button
-                        type="button"
-                        class="tooltip-position-left"
-                        data-tooltip="Delete"
-                        @click="removePasskey(row.id)"
-                    >
-                        <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
-                    </button>
-                </template>
-            </data-table>
-        </form-group>
+                    :data="passkeys"
+                >
+                    <template #cell-actions="{ row }">
+                        <button
+                            type="button"
+                            class="tooltip-position-left"
+                            data-tooltip="Delete"
+                            @click="removePasskey(row.id)"
+                        >
+                            <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+                        </button>
+                    </template>
+                </data-table>
+            </form-group>
 
-        <div class="form-submit">
-            <button
-                type="button"
-                class="btn btn-primary"
-                @click="showPasskeyCreationModal = true"
-            >
-                <icon-material-symbols:passkey
-                    class="icon icon-passkey"
-                    aria-hidden="true"
-                />
-                Add a new Device
-            </button>
+            <div class="form-submit">
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    @click="showPasskeyCreationModal = true"
+                >
+                    <icon-material-symbols:passkey
+                        class="icon icon-passkey"
+                        aria-hidden="true"
+                    />
+                    Add a new Device
+                </button>
+            </div>
         </div>
 
-        <form-group title="Sessions" class="form-group-table">
+        <form-group title="Sessions" class="form-group-table panel">
             <data-table
                 v-if="sessions && sessions.length"
                 :columns="[
@@ -163,16 +164,18 @@
             </data-table>
         </form-group>
 
-        <form-group title="Shop Notifications" class="form-group-table">
+        <form-group title="Notifications" class="form-group-table panel">
             <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
                 <icon-fa6-regular:bell-slash class="empty-state-icon" />
                 <p class="empty-state-text">
                     You are not subscribed to any shop notifications.
                 </p>
+
                 <p class="empty-state-subtext">
                     Visit a shop's detail page and click the watch button to receive notifications about changes.
                 </p>
             </div>
+
             <data-table
                 v-else
                 :columns="[
@@ -196,6 +199,7 @@
                         {{ row.name }}
                     </router-link>
                 </template>
+
                 <template #cell-actions="{ row }">
                     <button
                         type="button"
@@ -209,7 +213,7 @@
             </data-table>
         </form-group>
 
-        <form-group title="Deleting your Account">
+        <form-group title="Deleting your Account" class="panel">
                 <p>
                     Once you delete your account, you will lose all data associated with it.
                     All owning organization will be also deleted with all shops associated.
