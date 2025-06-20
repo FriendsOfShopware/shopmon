@@ -30,19 +30,41 @@
                             <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
                         </p>
                     </div>
-                    <div class="project-actions">
-                        <router-link class="btn icon-only" data-tooltip="Add Shop" :to="{ name: 'account.shops.new' }">
-                            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-                        </router-link>
 
-                        <button class="btn icon-only" data-tooltip="Edit Project" @click="editProject(project)">
-                            <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
-                        </button>
+                    <menu-container as="div" class="menu project-actions">
+                        <menu-button>
+                            <icon-fa6-solid:ellipsis class="icon menu-button" />
+                        </menu-button>
 
-                        <button class="btn btn-danger icon-only" data-tooltip="Delete Project" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
-                            <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-                        </button>
-                    </div>
+                        <transition
+                            enter-active-class="transition ease-out duration-100"
+                            enter-from-class="transform opacity-0 scale-95"
+                            enter-to-class="transform opacity-100 scale-100"
+                            leave-active-class="transition ease-in duration-75"
+                            leave-from-class="transform opacity-100 scale-100"
+                            leave-to-class="transform opacity-0 scale-95"
+                        >
+                            <menu-items class="menu-panel">
+                                <menu-item v-slot="{ active }">
+                                    <button class="menu-item" @click="editProject(project)">
+                                        <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" /> Edit Project
+                                    </button>
+                                </menu-item>
+
+                                <menu-item v-slot="{ active }">
+                                    <router-link class="menu-item" :to="{ name: 'account.shops.new' }">
+                                        <icon-fa6-solid:plus class="icon" aria-hidden="true" /> Add Shop
+                                    </router-link>
+                                </menu-item>
+
+                                <menu-item v-slot="{ active }">
+                                    <button class="menu-item" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
+                                        <icon-fa6-solid:trash class="icon" aria-hidden="true" /> Delete Project
+                                    </button>
+                                </menu-item>
+                            </menu-items>
+                        </transition>
+                    </menu-container>
                 </div>
                 
                 <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
@@ -79,13 +101,10 @@
                         </div>
                     </div>
                 </div>
-
-                <div v-else class="no-shops">
-                    <p>No shops in this project yet.</p>
-                    <router-link :to="{ name: 'account.shops.new', query: { projectId: project.id } }" class="btn btn-sm btn-primary">
-                        Add Shop
-                    </router-link>
-                </div>
+                
+                <element-empty v-else :route="{ name: 'account.shops.new', query: { projectId: project.id } }" title="" button="Add Shop">
+                    No shops in this project yet.
+                </element-empty>
             </div>
 
         </div>
@@ -167,6 +186,7 @@ import { Field, Form as VeeForm } from 'vee-validate';
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import * as Yup from 'yup';
+import { Menu as MenuContainer, MenuButton, MenuItem, MenuItems, } from '@headlessui/vue';
 
 const route = useRoute();
 const alert = useAlert();
@@ -339,17 +359,8 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 }
 
 .project-actions {
-    display: flex;
-    gap: 0.25rem;
-}
-
-.no-shops {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-color-muted);
-}
-
-.no-shops p {
-    margin-bottom: 1rem;
+    .menu-button {
+        color: var(--text-color)
+    }
 }
 </style>

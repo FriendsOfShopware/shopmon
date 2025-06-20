@@ -137,7 +137,7 @@
                 <!-- Profile dropdown -->
                 <menu-container
                     as="div"
-                    class="user-menu"
+                    class="menu"
                 >
                     <menu-button class="action action-user">
                         <span class="sr-only">Open user menu</span>
@@ -156,29 +156,24 @@
                         leave-from-class="transform opacity-100 scale-100"
                         leave-to-class="transform opacity-0 scale-95"
                     >
-                        <menu-items class="user-menu-panel">
-                            <div class="user-menu-header">
-                                <div class="user-menu-name">
+                        <menu-items class="menu-panel">
+                            <div class="menu-header">
+                                <div class="menu-name">
                                     Hi {{ session.data.user.name }}
                                 </div>
                             </div>
+
                             <menu-item
                                 v-for="item in userNavigation"
                                 :key="item.name"
                                 v-slot="{ active }"
                             >
                                 <button
-                                    class="user-menu-item"
-                                    :class="[
-                                        active && 'active',
-                                    ]"
+                                    class="menu-item"
                                     type="button"
                                     @click="item.route === 'logout' ? logout() : $router.push({ name: item.route })"
                                 >
-                                    <component
-                                        :is="item.icon"
-                                        class="icon"
-                                    />
+                                    <component :is="item.icon" class="icon" />
                                     {{ item.name }}
                                 </button>
                             </menu-item>
@@ -545,56 +540,6 @@ async function logout() {
 
     &:hover {
         opacity: 1;
-    }
-}
-
-/* Nutzer menu */
-.user-menu {
-    position: relative;
-
-    &-panel {
-        position: absolute;
-        top: 110%;
-        right: 0;
-        width: 12rem;
-        border-radius: 0.375rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
-        background-color: var(--panel-background);
-        z-index: 20;
-    }
-
-    &-header {
-        padding: 0.5rem 1rem;
-        border-bottom: 1px solid var(--panel-border-color);
-    }
-
-    &-name {
-        font-size: 1rem;
-        font-weight: 500;
-    }
-
-    &-item {
-        width: 100%;
-        text-align: left;
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-        font-size: 0.875rem;
-
-        &.active {
-            background-color: var(--user-menu-item-active-background-color);
-        }
-    }
-
-    .icon {
-        width: 1rem;
-        height: 1rem;
-        display: inline-block;
-        color: var(--user-menu-icon-color);
-        margin-right: 0.25rem;
     }
 }
 
