@@ -30,6 +30,7 @@
                         v-if="darkMode"
                         class="icon"
                     />
+
                     <icon-octicon:sun-16
                         v-else
                         class="icon"
@@ -42,10 +43,12 @@
                         @click="markAllRead"
                     >
                         <span class="sr-only">View notifications</span>
+
                         <icon-fa6-solid:bell
                             class="icon"
                             aria-hidden="true"
                         />
+
                         <div
                             v-if="unreadNotificationCount > 0"
                             class="notifications-count"
@@ -65,6 +68,7 @@
                         <popover-panel class="notifications-panel">
                             <div class="notifications-header">
                                 Notifications ({{ notifications.length }})
+
                                 <button
                                     v-if="notifications.length > 0"
                                     class="notification-delete"
@@ -74,6 +78,7 @@
                                     <icon-fa6-solid:trash class="icon"/>
                                 </button>
                             </div>
+
                             <ul
                                 v-if="notifications.length > 0"
                                 class="notifications-list"
@@ -88,6 +93,7 @@
                                             v-if="notification.level === 'error'"
                                             class="icon icon-error"
                                         />
+
                                         <icon-fa6-solid:circle-info
                                             v-else
                                             class="icon icon-warning"
@@ -98,9 +104,11 @@
                                         <div class="notification-item-title">
                                             {{ notification.title }}
                                         </div>
+
                                         <div class="notification-item-date">
                                             {{ formatDateTime(notification.createdAt) }}
                                         </div>
+
                                         <div class="notification-item-message">
                                             {{ notification.message }}
                                             <router-link
@@ -360,11 +368,10 @@ async function logout() {
 .top-bar-actions {
     display: flex;
     margin: 0 0 0 1rem;
-    align-items: center;
     gap: 0.75rem;
 
     .action {
-        height: 1.25rem;
+        height: 2rem;
         width: 1.25rem;
         color: #bae6fd;
         display: flex;
@@ -385,10 +392,13 @@ async function logout() {
             width: 2rem;
             background-color: #38bdf8;
             border-radius: 9999px;
-            display: flex;
+            display: none;
             align-items: center;
             margin-left: 1rem;
 
+            @media (min-width: 1024px) {
+                display: flex;
+            }
             .user-avatar {
                 border-radius: 9999px;
             }
@@ -423,11 +433,10 @@ async function logout() {
         position: relative;
     }
 
-
     &-count {
         position: absolute;
-        right: -0.5rem;
-        top: -0.5rem;
+        right: -0.4rem;
+        top: 0;
         background-color: #ef4444;
         border-radius: 9999px;
         padding: 2px;
@@ -477,7 +486,9 @@ async function logout() {
 
     @media (min-width: 768px) {
         max-width: 25rem;
+        min-width: 12rem;
         left: auto;
+        right: 0;
         padding-left: 0;
         padding-right: 0;
     }
