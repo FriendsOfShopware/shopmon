@@ -1,4 +1,4 @@
-import type { Checker, CheckerInput, CheckerOutput } from '../registery';
+import type { Checker, CheckerInput, CheckerOutput } from '../registery.ts';
 
 export default class implements Checker {
     VAILD_ENVIRONMENTS = ['production', 'staging', 'prod', 'stage'];

@@ -72,7 +72,7 @@ export const shopRouter = router({
                 .select({
                     id: schema.shop.id,
                     name: schema.shop.name,
-                    nameCombined: sql<string>`CONCAT(${schema.project.name}, " / ", ${schema.shop.name})`,
+                    nameCombined: sql<string>`CONCAT(${schema.project.name}, ' / ', ${schema.shop.name})`,
                     url: schema.shop.url,
                     status: schema.shop.status,
                     createdAt: schema.shop.createdAt,
@@ -174,7 +174,7 @@ export const shopRouter = router({
             let resp: HttpClientResponse<{ version: string }>;
             try {
                 resp = await client.get('/_info/config');
-            } catch (e) {
+            } catch (_e) {
                 throw new TRPCError({
                     code: 'BAD_REQUEST',
                     message:
@@ -289,7 +289,7 @@ export const shopRouter = router({
 
                 try {
                     await client.get('/_info/config');
-                } catch (e) {
+                } catch (_e) {
                     throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message:
@@ -323,7 +323,7 @@ export const shopRouter = router({
         )
         .use(loggedInUserMiddleware)
         .use(shopMiddleware)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             await scrapeSingleShop(input.shopId);
 
             if (input.pageSpeed) {

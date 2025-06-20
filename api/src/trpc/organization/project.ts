@@ -55,8 +55,7 @@ export const projectRouter = router({
                 })
                 .execute();
 
-            // @ts-expect-error
-            return result.lastInsertRowid as number;
+            return result.lastInsertRowid as unknown as number;
         }),
     update: publicProcedure
         .input(

@@ -3,11 +3,11 @@ import {
     type HttpClientResponse,
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
-import { auth } from './src/auth';
-import { scrapeSingleShop } from './src/cron/jobs/shopScrape';
-import { encrypt } from './src/crypto';
-import { getConnection, schema } from './src/db';
-import shops from './src/repository/shops';
+import { auth } from './src/auth.ts';
+import { scrapeSingleShop } from './src/cron/jobs/shopScrape.ts';
+import { encrypt } from './src/crypto/index.ts';
+import { getConnection, schema } from './src/db.ts';
+import shops from './src/repository/shops.ts';
 
 const user1 = await auth.api.signUpEmail({
     body: {

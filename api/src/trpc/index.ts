@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/bun';
+import * as Sentry from '@sentry/node';
 import { initTRPC } from '@trpc/server';
 import type { context } from './context.ts';
 

@@ -27,7 +27,7 @@ export const ssoRouter = router({
             return providers.map((provider) => {
                 if (provider.oidcConfig) {
                     const oidcConfig = JSON.parse(provider.oidcConfig);
-                    const { clientSecret, ...safeConfig } = oidcConfig;
+                    const { ...safeConfig } = oidcConfig;
                     return {
                         ...provider,
                         oidcConfig: safeConfig,

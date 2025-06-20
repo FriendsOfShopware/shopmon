@@ -50,8 +50,7 @@ async function createShop(
         })
         .execute();
 
-    // @ts-expect-error
-    return result.lastInsertRowid as number;
+    return result.lastInsertRowid as unknown as number;
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {
