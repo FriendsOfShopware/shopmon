@@ -2,7 +2,7 @@
 /http-client.private.env.json
 /api/.env
 /api/shopmon*.db*
-/node_modules
+node_modules
 frontend/components.d.ts
 litestream.yml
 .eslintcache

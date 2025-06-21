@@ -17,8 +17,11 @@ services:
       context: sitespeed-service
     ports:
       - "3001:3001"
+    develop:
+      watch:
+        - action: rebuild
+          path: sitespeed-service/index.ts
     volumes:
       - ./sitespeed-results:/app/results
     environment:
-      - NODE_ENV=development
       - APP_SITESPEED_DATA_FOLDER=/app/results
