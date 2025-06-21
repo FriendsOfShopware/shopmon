@@ -1,6 +1,7 @@
 packages:
   - api
   - frontend
+  - sitespeed-service
 
 catalog:
   typescript: 5.8.3

@@ -19,9 +19,6 @@ declare global {
             APP_OAUTH_GITHUB_CLIENT_ID: string;
             APP_OAUTH_GITHUB_CLIENT_SECRET: string;
 
-            // External APIs
-            PAGESPEED_API_KEY?: string;
-
             // Application
             FRONTEND_URL?: string;
             APP_FILES_DIR?: string;

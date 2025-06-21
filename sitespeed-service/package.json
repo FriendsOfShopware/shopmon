@@ -1,0 +1,12 @@
+{
+	"name": "sitespeed-service",
+	"type": "module",
+	"version": "1.0.0",
+	"description": "Sitespeed.io API service for Shopmon",
+	"dependencies": {
+		"@hono/node-server": "^1.14.4",
+		"@hono/zod-validator": "^0.7.0",
+		"hono": "~4.7.11",
+		"zod": "^3.25.67"
+	}
+}

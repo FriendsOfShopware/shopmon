@@ -43,6 +43,10 @@ export default defineConfig({
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
                 changeOrigin: true,
             },
+            '/sitespeed': {
+                target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
+                changeOrigin: true,
+            },
         },
     },
 });
