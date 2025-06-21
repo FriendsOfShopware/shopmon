@@ -65,10 +65,6 @@
     display: flex;
     justify-content: flex-end;
 
-    .form-group + & {
-        padding-bottom: 3rem;
-    }
-
     .form-group:has(+ &) {
         padding-bottom: 1rem;
     }

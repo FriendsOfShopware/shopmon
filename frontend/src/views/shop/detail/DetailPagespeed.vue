@@ -1,5 +1,7 @@
 <template>
-    <data-table
+    <div class="panel panel-table">
+        <data-table
+        v-if="shop"
         :columns="[
             { key: 'createdAt', name: 'Checked At' },
             { key: 'performance', name: 'Performance' },
@@ -33,11 +35,11 @@
                     :class="[{
                         'icon' : true,
                         'icon-success':
-                            shop.pageSpeed?.[(rowIndex + 1)]?.[cellKey] != null && 
+                            shop.pageSpeed?.[(rowIndex + 1)]?.[cellKey] != null &&
                             row[cellKey] != null &&
                             shop.pageSpeed[(rowIndex + 1)][cellKey]! < row[cellKey],
                         'icon-error':
-                            shop.pageSpeed?.[(rowIndex + 1)]?.[cellKey] != null && 
+                            shop.pageSpeed?.[(rowIndex + 1)]?.[cellKey] != null &&
                             row[cellKey] != null &&
                             shop.pageSpeed[(rowIndex + 1)][cellKey]! > row[cellKey],
                     }]"
@@ -48,15 +50,16 @@
             <span class="ml-2">{{ row[cellKey] ?? '-' }}</span>
         </template>
     </data-table>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { formatDateTime } from '@/helpers/formatter';
-import type { RouterOutput } from '@/helpers/trpc';
+import {useShopDetail} from "@/composables/useShopDetail";
 
-const { shop } = defineProps<{
-    shop: RouterOutput['organization']['shop']['get'];
-}>();
+const {
+    shop,
+} = useShopDetail();
 </script>
 
 <style scoped>

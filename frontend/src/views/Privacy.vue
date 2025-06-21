@@ -1,8 +1,7 @@
 <template>
     <div class="privacy-page">
-        <main-container>
-            <h1>Privacy Policy</h1>
-
+        <header-container title="Privacy Policy" />
+        <main-container class="panel">
             <div class="privacy-content">
 
             <section>
@@ -70,6 +69,8 @@
     </div>
 </template>
 
+<script setup lang="ts">
+</script>
 <style scoped>
 .privacy-content {
     max-width: 800px;

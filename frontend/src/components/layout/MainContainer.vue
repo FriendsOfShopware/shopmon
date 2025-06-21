@@ -1,13 +1,19 @@
 <template>
-    <main>
-        <div class="container container-main">
-            <slot />
-        </div>
-    </main>
+    <div class="main-container">
+        <slot />
+    </div>
+
 </template>
 
-<style>
-.container-main {
-    padding: 1.5rem 0;
+<script setup lang="ts">
+</script>
+
+<style scoped>
+.main-container {
+    grid-area: content;
+
+    &:has(.data-table) {
+        overflow: hidden;
+    }
 }
 </style>

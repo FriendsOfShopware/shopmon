@@ -11,15 +11,12 @@
     </header-container>
 
     <main-container>
-        <div class="sso-info-banner">
-            <icon-fa6-solid:circle-info class="icon" aria-hidden="true" />
-            <div class="sso-info-content">
+        <div class="panel">
+            <Alert type="info">
                 <p><strong>Single Sign-On Information</strong></p>
                 <p>Users who sign in through SSO will automatically become members of this organization. Configure your identity provider to allow users from your domain to access Shopmon.</p>
-            </div>
-        </div>
+            </Alert>
 
-        <div class="panel">
             <div class="sso-header">
                 <h3 class="sso-heading">SSO Providers</h3>
                 <button
@@ -642,41 +639,6 @@ onMounted(() => {
     font-size: 1.25rem;
     font-weight: 500;
     margin: 0;
-}
-
-.sso-info-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem 2rem;
-    background-color: var(--color-info-light, #e1f5fe);
-    border-left: 4px solid var(--color-info, #0288d1);
-    margin-bottom: 1rem;
-
-    .icon {
-        color: var(--color-info, #0288d1);
-        font-size: 1.125rem;
-        margin-top: 0.125rem;
-        flex-shrink: 0;
-    }
-}
-
-.sso-info-content {
-    flex: 1;
-
-    p {
-        margin: 0;
-        color: var(--text-color);
-        line-height: 1.5;
-
-        &:first-child {
-            margin-bottom: 0.25rem;
-        }
-
-        strong {
-            font-weight: 600;
-        }
-    }
 }
 
 .sso-loading {

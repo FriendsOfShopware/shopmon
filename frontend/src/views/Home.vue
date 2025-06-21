@@ -1,14 +1,14 @@
 <template>
     <div v-if="shops">
         <header-container title="Dashboard" />
-        <main-container>
+        <main-container class="panel">
             <h2 class="section-title">
                 <icon-fa6-solid:shop />
                 My Shops
             </h2>
 
-            <ul class="dashboard-grid-container">
-                <li v-for="shop in shops" :key="shop.id" class="dashboard-grid-item">
+            <div class="item-grid">
+                <div v-for="shop in shops" :key="shop.id" class="item">
                     <router-link 
                         :to="{
                             name: 'account.shops.detail',
@@ -16,7 +16,7 @@
                                 slug: shop.organizationSlug,
                                 shopId: shop.id
                             }
-                        }" class="item-link"
+                        }" class="item-link item-wrapper"
                     >
                         <div class="item-logo">
                             <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img">
@@ -24,11 +24,11 @@
 
                         <div class="item-info">
                             <div class="item-name">
-                                {{ shop.nameCombined }}
+                                {{ shop.name }}
                             </div>
 
                             <div class="item-content">
-                                {{ shop.organizationName }}<br>
+                                {{ shop.projectName }}<br>
                                 {{ shop.shopwareVersion }}
                             </div>
 
@@ -37,21 +37,21 @@
                             </div>
                         </div>
                     </router-link>
-                </li>
-            </ul>
+                </div>
+            </div>
 
             <h2 class="section-title">
-                <icon-fa6-solid:people-group />
+                <icon-fa6-solid:building />
                 My Organizations
             </h2>
-            <ul class="dashboard-grid-container">
-                <li v-for="organization in organizations" :key="organization.id" class="dashboard-grid-item item-item">
+            <div class="item-grid">
+                <div v-for="organization in organizations" :key="organization.id" class="item">
                     <router-link
                         :to="{ name: 'account.organizations.detail', params: { slug: organization.slug } }"
-                        class="item-link"
+                        class="item-link item-wrapper"
                     >
                         <div class="item-logo">
-                            <icon-fa6-solid:people-group class="item-logo-icon" />
+                            <icon-fa6-solid:building class="item-logo-icon" />
                         </div>
 
                         <div class="item-info">
@@ -64,8 +64,8 @@
                             </div>
                         </div>
                     </router-link>
-                </li>
-            </ul>
+                </div>
+            </div>
 
             <template v-if="changelogs.length > 0">
                 <h2 class="section-title">
@@ -139,103 +139,12 @@ trpcClient.account.currentUserChangelogs.query().then((data) => {
 
 <style scoped>
 .section-title {
-    color: var(--section-title-color);
     font-size: 1.125rem;
     line-height: 1.75rem;
     font-weight: 500;
     padding-bottom: 0.25rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid var(--section-title-border-color);
+    border-bottom: 1px solid var(--panel-border-color);
 }
 
-.dashboard-grid {
-    &-container {
-        display: grid;
-        grid-template-columns: repeat(1, minmax(0, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2.5rem;
-
-        @media (min-width: 640px) {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        @media (min-width: 1024px) {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-    }
-
-    &-item {
-        position: relative;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        border-radius: 0.375rem;
-        background-color: var(--item-background);
-
-        .dark & {
-            box-shadow: none;
-        }
-
-        &:hover {
-            background-color: var(--item-hover-background);
-        }
-
-        .item-state {
-            position: absolute;
-            right: 0.5rem;
-            bottom: 0.25rem;
-        }
-    }
-}
-
-.item {
-    &-link {
-        display: flex;
-        text-decoration: none;
-    }
-
-    &-logo {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 4rem;
-        border-top-left-radius: 0.375rem;
-        border-bottom-left-radius: 0.375rem;
-        background-color: var(--item-sub-background);
-
-        &-img {
-            width: 1.25rem;
-            height: 1.25rem;
-        }
-
-        &-icon {
-            font-size: 1.25rem;
-            color: var(--item-icon-color);
-        }
-    }
-
-    &-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 0.5rem 1rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    &-name {
-        font-weight: 500;
-        color: var(--item-title-color);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    &-content {
-        color: #6b7280;
-        font-size: 0.875rem;
-        line-height: 1.25rem;
-    }
-}
 </style>
