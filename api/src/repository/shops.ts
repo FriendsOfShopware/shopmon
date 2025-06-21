@@ -82,7 +82,7 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
             await fs.access(shopResultsDir);
             await fs.rm(shopResultsDir, { recursive: true, force: true });
             console.log(`Cleaned up sitespeed results for shop ${id}`);
-        } catch (accessError) {
+        } catch (_accessError) {
             // Directory doesn't exist, which is fine
             console.log(
                 `No sitespeed results found for shop ${id} - nothing to clean up`,

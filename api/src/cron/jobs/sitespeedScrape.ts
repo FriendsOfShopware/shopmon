@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { getConnection, schema } from '../../db.ts';
-import { sanitizeSitespeedLabel } from '../../util.ts';
 
 export async function scrapeSitespeedForAllShops() {
     const drizzle = getConnection();
@@ -42,20 +41,16 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
         return;
     }
 
-    if (!shop.sitespeedEnabled) {
-        console.log(`Sitespeed is disabled for shop ${shop.id}: ${shop.name}`);
+    if (!shop.sitespeedEnabled || !shop.sitespeedUrls) {
+        console.log(
+            `Sitespeed is disabled for shop ${shop.id}: ${shop.name} or no URLs configured`,
+        );
         return;
     }
 
     console.log(`Running sitespeed analysis for shop ${shop.id}: ${shop.name}`);
 
     const sitespeedServiceUrl = process.env.APP_SITESPEED_ENDPOINT;
-
-    const urlsToTest =
-        shop.sitespeedUrls.length > 0
-            ? shop.sitespeedUrls.slice(0, 5)
-            : [{ url: shop.url, label: 'Homepage' }];
-
     try {
         const response = await fetch(`${sitespeedServiceUrl}/analyze`, {
             method: 'POST',
@@ -64,20 +59,18 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
             },
             body: JSON.stringify({
                 shopId: shop.id,
-                urls: urlsToTest.map((urlConfig) => urlConfig.url),
+                urls: shop.sitespeedUrls,
             }),
         });
 
         const result = (await response.json()) as {
-            metrics: {
-                ttfb?: number;
-                fullyLoaded?: number;
-                largestContentfulPaint?: number;
-                firstContentfulPaint?: number;
-                cumulativeLayoutShift?: number;
-                speedIndex?: number;
-                transferSize?: number;
-            };
+            ttfb: number;
+            fullyLoaded: number;
+            largestContentfulPaint: number;
+            firstContentfulPaint: number;
+            cumulativeLayoutShift: number;
+            transferSize: number;
+            screenshotPath: string;
         };
 
         // Store the metrics in the database
@@ -85,20 +78,22 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
             .insert(schema.shopSitespeed)
             .values({
                 shopId: shop.id,
-                url: urlsToTest[0].url,
-                label: urlsToTest[0].label,
                 createdAt: new Date(),
-                ttfb: result.metrics.ttfb || null,
-                fullyLoaded: result.metrics.fullyLoaded || null,
-                largestContentfulPaint:
-                    result.metrics.largestContentfulPaint || null,
-                firstContentfulPaint:
-                    result.metrics.firstContentfulPaint || null,
-                cumulativeLayoutShift:
-                    result.metrics.cumulativeLayoutShift || null,
-                speedIndex: result.metrics.speedIndex || null,
-                transferSize: result.metrics.transferSize || null,
+                ttfb: result.ttfb || null,
+                fullyLoaded: result.fullyLoaded || null,
+                largestContentfulPaint: result.largestContentfulPaint || null,
+                firstContentfulPaint: result.firstContentfulPaint || null,
+                cumulativeLayoutShift: result.cumulativeLayoutShift || null,
+                transferSize: result.transferSize || null,
             })
+            .execute();
+
+        await drizzle
+            .update(schema.shop)
+            .set({
+                shopImage: `/sitespeed/${shop.id}/${result.screenshotPath}`,
+            })
+            .where(eq(schema.shop.id, shop.id))
             .execute();
 
         console.log(`Sitespeed analysis completed for shop ${shop.id}`);

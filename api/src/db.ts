@@ -74,7 +74,7 @@ export const shop = sqliteTable('shop', {
         .notNull(),
     sitespeedUrls: text('sitespeed_urls', { mode: 'json' })
         .default([])
-        .$type<{ url: string; label: string }[]>()
+        .$type<string[]>()
         .notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
@@ -82,15 +82,12 @@ export const shop = sqliteTable('shop', {
 export const shopSitespeed = sqliteTable('shop_sitespeed', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     shopId: integer('shop_id').references(() => shop.id),
-    url: text('url').notNull(),
-    label: text('label').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     ttfb: integer('ttfb'),
     fullyLoaded: integer('fully_loaded'),
     largestContentfulPaint: integer('largest_contentful_paint'),
     firstContentfulPaint: integer('first_contentful_paint'),
     cumulativeLayoutShift: integer('cumulative_layout_shift'),
-    speedIndex: integer('speed_index'),
     transferSize: integer('transfer_size'),
 });
 

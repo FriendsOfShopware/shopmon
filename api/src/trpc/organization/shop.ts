@@ -6,7 +6,7 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
@@ -14,7 +14,6 @@ import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';
 import Users from '../../repository/users.ts';
-import { sanitizeSitespeedLabel } from '../../util.ts';
 import { publicProcedure, router } from '../index.ts';
 import {
     loggedInUserMiddleware,
@@ -558,26 +557,15 @@ export const shopRouter = router({
         .use(loggedInUserMiddleware)
         .use(shopMiddleware)
         .mutation(async ({ input, ctx }) => {
-            // Get current URLs before updating to detect removals
-            const currentShop = await ctx.drizzle.query.shop.findFirst({
-                columns: {
-                    sitespeedUrls: true,
-                },
-                where: eq(schema.shop.id, input.shopId),
-            });
-
             const updateData: {
                 sitespeedEnabled: boolean;
-                sitespeedUrls?: { url: string; label: string }[];
+                sitespeedUrls?: string[];
             } = {
                 sitespeedEnabled: input.enabled,
             };
 
             if (input.urls !== undefined) {
-                updateData.sitespeedUrls = input.urls as {
-                    url: string;
-                    label: string;
-                }[];
+                updateData.sitespeedUrls = input.urls.map((url) => url.url);
             }
 
             await ctx.drizzle
@@ -586,97 +574,20 @@ export const shopRouter = router({
                 .where(eq(schema.shop.id, input.shopId))
                 .execute();
 
-            // Clean up folders for removed URLs
-            if (currentShop && input.urls !== undefined) {
-                const currentUrls = currentShop.sitespeedUrls || [];
-                const newUrls = input.urls;
+            if (!input.enabled) {
+                await ctx.drizzle
+                    .delete(schema.shopSitespeed)
+                    .where(eq(schema.shopSitespeed.shopId, input.shopId))
+                    .execute();
 
-                // Find URLs that were removed (URL+label combination no longer exists)
-                const removedUrls = currentUrls.filter(
-                    (currentUrl) =>
-                        !newUrls.some(
-                            (newUrl) =>
-                                newUrl.url === currentUrl.url &&
-                                newUrl.label === currentUrl.label,
-                        ),
+                await fs.rm(
+                    path.join(
+                        process.env.APP_SITESPEED_DATA_FOLDER ||
+                            './sitespeed-results',
+                        input.shopId.toString(),
+                    ),
+                    { recursive: true, force: true },
                 );
-
-                // Find URLs where only the label changed (same URL, different label)
-                // These need cleanup of the old label's folder
-                const changedLabelUrls = currentUrls.filter((currentUrl) => {
-                    const matchingNewUrl = newUrls.find(
-                        (newUrl) => newUrl.url === currentUrl.url,
-                    );
-                    return (
-                        matchingNewUrl &&
-                        matchingNewUrl.label !== currentUrl.label
-                    );
-                });
-
-                // Add changed label URLs to the removal list for cleanup
-                removedUrls.push(...changedLabelUrls);
-
-                // Clean up database records and folders for removed URLs
-                for (const removedUrl of removedUrls) {
-                    try {
-                        // Clean up database records for this URL
-                        await ctx.drizzle
-                            .delete(schema.shopSitespeed)
-                            .where(
-                                and(
-                                    eq(
-                                        schema.shopSitespeed.shopId,
-                                        input.shopId,
-                                    ),
-                                    eq(
-                                        schema.shopSitespeed.url,
-                                        removedUrl.url,
-                                    ),
-                                    eq(
-                                        schema.shopSitespeed.label,
-                                        removedUrl.label,
-                                    ),
-                                ),
-                            )
-                            .execute();
-
-                        // Clean up filesystem folder
-                        const sanitizedFolderName = sanitizeSitespeedLabel(
-                            removedUrl.label,
-                            removedUrl.url,
-                        );
-                        const sitespeedDataFolder =
-                            process.env.APP_SITESPEED_DATA_FOLDER ||
-                            './sitespeed-results';
-                        const urlFolderPath = path.join(
-                            sitespeedDataFolder,
-                            input.shopId.toString(),
-                            sanitizedFolderName,
-                        );
-
-                        try {
-                            await fs.access(urlFolderPath);
-                            await fs.rm(urlFolderPath, {
-                                recursive: true,
-                                force: true,
-                            });
-                            console.log(
-                                `Cleaned up sitespeed results for removed URL: ${removedUrl.label} (${sanitizedFolderName})`,
-                            );
-                        } catch (accessError) {
-                            // Folder doesn't exist, which is fine
-                            console.log(
-                                `No sitespeed results found for removed URL: ${removedUrl.label} (${sanitizedFolderName})`,
-                            );
-                        }
-                    } catch (error) {
-                        // Log error but don't fail the update
-                        console.error(
-                            `Failed to clean up sitespeed results for removed URL ${removedUrl.label}:`,
-                            error,
-                        );
-                    }
-                }
             }
 
             return true;
