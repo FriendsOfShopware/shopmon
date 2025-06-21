@@ -4,6 +4,7 @@
 	padding: 0.125rem 0.5rem;
 	border-radius: 9999px;
 	background-color: #d1d5db;
+	white-space: nowrap;
 
 	.dark & {
 		color: #111827;

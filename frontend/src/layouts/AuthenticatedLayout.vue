@@ -1,11 +1,17 @@
 <template>
     <div class="app-layout">
-        <nav-bar />
+        <div class="background-mask"></div>
+        <top-bar />
         <ImpersonationBanner />
         <Notification />
-        <main class="app-main">
-            <router-view />
-        </main>
+
+        <div class="container main-container">
+            <sidebar />
+            <div class="main-content">
+                <router-view />
+            </div>
+        </div>
+
         <footer class="app-footer">
             <div class="container">
                 <div class="footer-links">
@@ -34,15 +40,27 @@ import Notification from '@/components/Notification.vue';
     flex-direction: column;
 }
 
-.app-main {
-    flex: 1;
+.main-container {
+    padding: 1.5rem 0;
+
+    @media all and (min-width: 1024px) {
+        display: grid;
+        column-gap: 1rem;
+        grid-template-areas:
+        "sidebar main-content";
+        grid-template-columns: auto 1fr;
+    }
+}
+
+.main-content {
+    grid-area: main-content;
 }
 
 .app-footer {
     margin-top: auto;
     padding: 2rem 0;
-    border-top: 1px solid var(--border-color, #e5e7eb);
-    background-color: var(--footer-background, #f9fafb);
+    border-top: 1px solid var(--panel-border-color);
+    background-color: var(--panel-background);
 }
 
 .footer-links {
@@ -54,18 +72,18 @@ import Notification from '@/components/Notification.vue';
 }
 
 .footer-link {
-    color: var(--text-color-muted, #6b7280);
+    color: var(--text-color-muted);
     text-decoration: none;
     font-size: 0.875rem;
     transition: color 0.2s ease;
 }
 
 .footer-link:hover {
-    color: var(--primary-color, #3b82f6);
+    color: var(--primary-color);
 }
 
 .footer-separator {
-    color: var(--text-color-muted, #6b7280);
+    color: var(--text-color-muted);
     font-size: 0.875rem;
 }
 </style>

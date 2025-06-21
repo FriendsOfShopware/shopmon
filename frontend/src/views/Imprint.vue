@@ -1,8 +1,8 @@
 <template>
     <div class="imprint-page">
-        <main-container>
-            <h1>Legal notice</h1>
+        <header-container title="Legal notice" />
 
+        <main-container class="panel">
             <div class="imprint-content">
                 <section>
                     <h2>Contact</h2>
@@ -16,6 +16,8 @@
     </div>
 </template>
 
+<script setup lang="ts">
+</script>
 <style scoped>
 .imprint-content {
     max-width: 800px;

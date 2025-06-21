@@ -23,6 +23,7 @@
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shop"
+            class="panel"
             @submit="onSubmit"
         >
             <form-group title="Shop information">
@@ -150,7 +151,7 @@
             </div>
         </vee-form>
 
-        <form-group :title="'Deleting shop ' + shop.name">
+        <form-group :title="'Deleting shop ' + shop.name" class="panel">
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
                 <button

@@ -1,20 +1,16 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.5.0/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
 	"files": {
-		"ignore": [
-			"*.mjml",
-			"drizzle/meta/**",
-			"dist/**",
-			"frontend/src/types/vue.shyim.d.ts",
-			"frontend/src/styles/*.css",
-			"frontend/src/style.css",
-			"node_modules/**",
-			"frontend/components.d.ts",
-			"sitespeed-results/**"
+		"includes": [
+			"api/src/**",
+			"frontend/src/components",
+			"frontend/src/composables",
+			"frontend/src/helpers",
+			"frontend/src/layouts",
+			"frontend/src/router",
+			"frontend/src/views",
+			"frontend/src/App.vue"
 		]
-	},
-	"organizeImports": {
-		"enabled": true
 	},
 	"linter": {
 		"enabled": true,

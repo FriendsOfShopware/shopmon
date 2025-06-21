@@ -1,9 +1,9 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
-import { t } from '.';
-import { auth } from '../auth';
-import { schema } from '../db';
-import type { context } from './context';
+import { auth } from '../auth.ts';
+import { schema } from '../db.ts';
+import type { context } from './context.ts';
+import { t } from './index.ts';
 
 export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     if (!ctx.user) {

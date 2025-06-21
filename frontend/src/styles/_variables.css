@@ -1,5 +1,5 @@
 :root {
-    --container-width: 80rem;
+    --container-width: 90rem;
     --primary-color: #0ea5e9;
     --background-color: #f3f4f6;
     --text-color: #111827;
@@ -14,6 +14,7 @@
     --error-background: #f8d7da;
     --warning-color: #facc15;
     --warning-background: #fff3cd;
+    --sidebar-nav-link-color: #111827;
     --panel-background: #ffffff;
     --panel-border-color: #e5e7eb;
     --item-background: #f9fafb;
@@ -25,8 +26,8 @@
     --section-title-color: #6b7280;
     --section-title-border-color: #cbd5e1;
     --notification-border-color: #e5e7eb;
-    --user-menu-item-active-background-color:#f3f4f6;
-    --user-menu-icon-color:#0c84c2;
+    --menu-item-active-background-color:#f3f4f6;
+    --menu-icon-color:#0c84c2;
     --data-table-head-background: #f8fafc;
     --data-table-head-color: #4b5563;
     --data-table-row-background: #f9fafb;
@@ -35,7 +36,6 @@
     --field-background: #fff;
     --field-color: #1a202c;
     --field-border-color: #d1d5db;
-
 }
 
 :root.dark {
@@ -52,9 +52,10 @@
     --error-background: #2c0b0e;
     --warning-color: #fef08a;
     --warning-background: #332701;
+    --sidebar-nav-link-color: #ffffff;
     --panel-background: #262626;
     --panel-border-color: #404040;
-    --item-background: #262626;
+    --item-background: #2b2b2b;
     --item-odd-background: #2b2b2b;
     --item-hover-background: #2a2b2f;
     --item-title-color: #d1d5db;
@@ -63,8 +64,8 @@
     --section-title-color: #6b7280;
     --section-title-border-color: #262626;
     --notification-border-color: #404040;
-    --user-menu-item-active-background-color:#374151;
-    --user-menu-icon-color:#60a5fa;
+    --menu-item-active-background-color:#374151;
+    --menu-icon-color:#60a5fa;
     --data-table-head-background: #262626;
     --data-table-head-color: #d1d5db;
     --data-table-row-background: #2b2b2b;

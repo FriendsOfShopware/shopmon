@@ -1,16 +1,10 @@
-import { Database } from 'bun:sqlite';
+import { createClient } from '@libsql/client';
 import { relations } from 'drizzle-orm';
 import {
-    type BunSQLiteDatabase,
     drizzle as drizzleSqlite,
-} from 'drizzle-orm/bun-sqlite';
-import {
-    integer,
-    primaryKey,
-    sqliteTable,
-    text,
-    unique,
-} from 'drizzle-orm/sqlite-core';
+    type LibSQLDatabase,
+} from 'drizzle-orm/libsql';
+import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type {
     CacheInfo,
     CheckerChecks,
@@ -338,9 +332,8 @@ export const schema = {
     organizationRelations,
 };
 
-export type Drizzle = BunSQLiteDatabase<typeof schema>;
-let drizzle: Drizzle | undefined = undefined;
-let dbClient: Database | undefined = undefined;
+export type Drizzle = LibSQLDatabase<typeof schema>;
+let drizzle: Drizzle | undefined;
 
 export function getConnection(applyPragmas = true) {
     if (drizzle !== undefined) {
@@ -348,41 +341,26 @@ export function getConnection(applyPragmas = true) {
     }
 
     const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
-    dbClient = new Database(dbPath);
+
+    const client = createClient({
+        url: `file:${dbPath}`,
+    });
 
     if (applyPragmas) {
-        // Enable Write-Ahead Logging for better concurrency
-        dbClient.exec('PRAGMA journal_mode = WAL');
-        // Increase cache size (negative value = KB, so -64000 = 64MB)
-        dbClient.exec('PRAGMA cache_size = -64000');
-        // Enable foreign key constraints
-        dbClient.exec('PRAGMA foreign_keys = ON');
-        // Synchronous mode - NORMAL is safe and faster than FULL
-        dbClient.exec('PRAGMA synchronous = NORMAL');
-        // Temp store in memory for better performance
-        dbClient.exec('PRAGMA temp_store = MEMORY');
-        // Increase busy timeout to 5 seconds
-        dbClient.exec('PRAGMA busy_timeout = 5000');
-        // Enable query optimizer
-        dbClient.exec('PRAGMA optimize');
+        const promises = [
+            client.execute('PRAGMA journal_mode = WAL'),
+            client.execute('PRAGMA cache_size = -64000'),
+            client.execute('PRAGMA foreign_keys = ON'),
+            client.execute('PRAGMA synchronous = NORMAL'),
+            client.execute('PRAGMA temp_store = MEMORY'),
+            client.execute('PRAGMA wal_autocheckpoint = 0'),
+        ];
+        Promise.all(promises).then(() => {
+            console.log('Database PRAGMAs applied successfully');
+        });
     }
 
-    drizzle = drizzleSqlite(dbClient, { schema });
+    drizzle = drizzleSqlite(client, { schema });
 
     return drizzle;
-}
-
-export function closeConnection() {
-    if (dbClient) {
-        try {
-            // Run optimize before closing
-            dbClient.exec('PRAGMA optimize');
-            dbClient.close();
-            dbClient = undefined;
-            drizzle = undefined;
-            console.log('Database connection closed gracefully');
-        } catch (error) {
-            console.error('Error closing database connection:', error);
-        }
-    }
 }

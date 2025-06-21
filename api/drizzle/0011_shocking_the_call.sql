@@ -20,7 +20,7 @@ CREATE TABLE `member` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-INSERT INTO "member" ("id", "organization_id", "user_id", "role", "created_at") SELECT substr(concat('00000000000000000000000000000000'||"rowid"), -32, 32), "organization_id", "user_id", CASE WHEN((SELECT owner_id FROM organization WHERE id = organization_id) == user_id) THEN "owner" ELSE "member" END, date("now") FROM `user_to_organization`;
+INSERT INTO "member" ("id", "organization_id", "user_id", "role", "created_at") SELECT substr(concat('00000000000000000000000000000000'||"rowid"), -32, 32), "organization_id", "user_id", CASE WHEN((SELECT owner_id FROM organization WHERE id = organization_id) == user_id) THEN 'owner' ELSE 'member' END, date('now') FROM `user_to_organization`;
 --> statement-breakpoint
 DROP TABLE `user_to_organization`;--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint

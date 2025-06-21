@@ -6,6 +6,7 @@
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="initialValues"
+            class="panel"
             @submit="onSubmit"
         >
             <form-group title="Project information">

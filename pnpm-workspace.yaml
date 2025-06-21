@@ -1,0 +1,19 @@
+packages:
+  - api
+  - frontend
+
+catalog:
+  typescript: 5.8.3
+  better-auth: 1.2.8
+
+ignoredBuiltDependencies:
+  - 'better-sqlite3'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
+
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - bcrypt
+  - esbuild
+  - sharp

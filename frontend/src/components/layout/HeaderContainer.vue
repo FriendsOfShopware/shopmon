@@ -1,45 +1,74 @@
 <template>
     <header>
-        <div class="container header">
-            <h1 class="header-title">{{ title }}</h1>
-            <div class="header-actions">
-                <slot />
-            </div>
-</div>
+        <div :class="[
+            'header-title',
+            {'mobile-hide': titleMobileHide}
+            ]"
+        >
+            <div v-if="breadcrumb" class="header-breadcrumb">{{ breadcrumb }}</div>
+            <h1>{{ title }}</h1>
+        </div>
+
+        <div class="header-actions">
+            <slot />
+        </div>
     </header>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string }>();
+defineProps<{ title: string, breadcrumb?: string, titleMobileHide?: boolean }>();
 </script>
 
-<style scoped>
+<style>
 header {
-    background-color: var(--panel-background);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
-.dark header {
-    background-color: #26262680;
-    border-bottom: 1px solid #4a4a4a;
-}
-
-.header {
-    margin: 0 auto;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    margin: 0 auto 1rem;
     display: flex;
     justify-content: space-between;
+    width: 100%;
+    grid-area: header;
 }
 
 .header-title {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-    font-weight: 700;
+    h1 {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    &.mobile-hide {
+        display: none;
+
+        + .header-actions {
+            margin-left: auto;
+        }
+
+        @media all and (min-width: 1024px) {
+            display: block;
+        }
+    }
+}
+
+.header-breadcrumb {
+    font-size: 1rem;
+    color: #fff;
+    margin-bottom: 0.25rem;
 }
 
 .header-actions {
     display: flex;
     gap: .5rem;
+    align-items: flex-start;
+
+    .btn {
+        background: #0284c7;
+        border-color: transparent;
+        color: #fff;
+        transition: background .4s;
+
+        &:hover {
+            background: #0284c777;
+        }
+    }
 }
 </style>
