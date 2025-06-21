@@ -25,10 +25,6 @@ declare global {
             // Application
             FRONTEND_URL?: string;
             APP_FILES_DIR?: string;
-
-            // Monitoring (optional)
-            SENTRY_DSN?: string;
-            SENTRY_RELEASE?: string;
         }
     }
 }

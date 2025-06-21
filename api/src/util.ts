@@ -1,3 +1,5 @@
+import { pino } from 'pino';
+
 export type Version = string | number;
 
 /**
@@ -22,3 +24,5 @@ export default function versionCompare(
     }
     return 0;
 }
+
+export const logger = pino();

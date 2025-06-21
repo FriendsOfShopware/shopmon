@@ -1,4 +1,3 @@
-import './sentry.ts';
 import { existsSync, promises as fs, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { serve } from '@hono/node-server';
@@ -6,6 +5,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
+import { otel } from './otel.ts';
 import { appRouter } from './trpc/router.ts';
 import './cron/index.ts';
 
@@ -16,6 +16,8 @@ if (!existsSync(filesDir)) {
 }
 
 const app = new Hono();
+
+app.use('*', otel());
 
 // Better Auth routes
 app.on(['POST', 'GET'], '/auth/*', (c) => {

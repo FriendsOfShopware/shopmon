@@ -11,8 +11,7 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 ### API (Bun + TypeScript)
 - Located in `/api/`
 - Built with TypeScript, tRPC, Hono framework
-- Uses Drizzle ORM with SQLite (Cloudflare D1 in production)
-- Sentry for error tracking
+- Uses Drizzle ORM with SQLite
 - Deployed via Docker containers
 
 ### Frontend (Vue 3 SPA)
@@ -145,7 +144,6 @@ APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
 PAGESPEED_API_KEY       # Google PageSpeed API
 FRONTEND_URL            # Frontend URL for emails
-SENTRY_DSN              # Error tracking
 ```
 
 ### Frontend Environment
