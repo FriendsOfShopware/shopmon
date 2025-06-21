@@ -1,5 +1,5 @@
 <template>
-    <div class="sidebar-wrapper" v-if="props.shop">
+    <div v-if="props.shop" class="sidebar-wrapper">
         <div ref="toggleRef" class="sidebar-detail-toggle btn btn-primary btn-block" @click="toggleMobileOpen">
             {{ shop.nameCombined }} {{ route.meta.title && route.name !== 'account.shops.detail' ? ' / ' : '' }} {{ route.meta.title }}
         </div>
@@ -113,8 +113,8 @@ function handleClickOutside(event: MouseEvent) {
 
     // Check if click was outside both the sidebar and the toggle button
     const clickedElement = event.target as Node;
-    const isClickInsideSidebar = sidebarRef.value?.contains(clickedElement) || false;
-    const isClickOnToggle = toggleRef.value?.contains(clickedElement) || false;
+    const isClickInsideSidebar = sidebarRef.value?.contains(clickedElement) ?? false;
+    const isClickOnToggle = toggleRef.value?.contains(clickedElement) ?? false;
 
     if (!isClickInsideSidebar && !isClickOnToggle) {
         isMobileOpen.value = false;

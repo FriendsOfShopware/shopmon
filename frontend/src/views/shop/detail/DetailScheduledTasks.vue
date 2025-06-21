@@ -78,7 +78,8 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { formatDateTime } from '@/helpers/formatter';
-import {useShopDetail} from "@/composables/useShopDetail";
+import {useShopDetail} from '@/composables/useShopDetail';
+import { trpcClient } from '@/helpers/trpc';
 
 const {
     shop,

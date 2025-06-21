@@ -69,6 +69,8 @@
     </div>
 </template>
 
+<script setup lang="ts">
+</script>
 <style scoped>
 .privacy-content {
     max-width: 800px;
@@ -109,5 +111,3 @@ p {
     color: var(--text-color);
 }
 </style>
-<script setup lang="ts">
-</script>

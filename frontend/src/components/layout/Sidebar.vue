@@ -1,10 +1,6 @@
 <template>
     <div :class="['sidebar-wrapper', currentViewClass]">
-        <disclosure
-            v-slot="{ open }"
-            as="div"
-            class="main-sidebar sidebar"
-        >
+        <div class="main-sidebar sidebar">
             <nav class="nav-main">
                 <router-link
                     v-for="item in navigation"
@@ -47,12 +43,11 @@
                     </router-link>
                 </li>
             </ul>
-        </disclosure>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import {Disclosure, DisclosureButton, DisclosurePanel} from "@headlessui/vue";
 import type {RouteLocationNormalizedLoaded} from "vue-router";
 
 const shops = ref<RouterOutput['account']['currentUserShops']>([]);

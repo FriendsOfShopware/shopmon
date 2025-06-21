@@ -5,8 +5,8 @@
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="user"
-            @submit="onSubmit"
             class="panel"
+            @submit="onSubmit"
         >
             <form-group
                 title="Account"

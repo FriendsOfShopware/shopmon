@@ -174,7 +174,6 @@
                             <menu-item
                                 v-for="item in userNavigation"
                                 :key="item.name"
-                                v-slot="{ active }"
                             >
                                 <button
                                     class="menu-item"
@@ -286,7 +285,6 @@ import FaPowerOff from '~icons/fa6-solid/power-off';
 
 import { authClient } from '@/helpers/auth-client';
 import { formatDateTime } from '@/helpers/formatter';
-import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
 const session = authClient.useSession();
 

@@ -16,6 +16,8 @@
     </div>
 </template>
 
+<script setup lang="ts">
+</script>
 <style scoped>
 .imprint-content {
     max-width: 800px;
@@ -71,5 +73,3 @@ a:hover {
     color: var(--primary-color-dark, #2563eb);
 }
 </style>
-<script setup lang="ts">
-</script>

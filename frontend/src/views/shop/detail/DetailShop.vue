@@ -1,5 +1,5 @@
 <template>
-    <div class="shop-info panel" v-if="shop">
+    <div v-if="shop" class="shop-info panel">
         <h3 class="shop-info-heading">
             <status-icon :status="shop.status" />
             Shop Information

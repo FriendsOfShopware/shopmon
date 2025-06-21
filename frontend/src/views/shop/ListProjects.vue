@@ -45,19 +45,19 @@
                             leave-to-class="transform opacity-0 scale-95"
                         >
                             <menu-items class="menu-panel">
-                                <menu-item v-slot="{ active }">
+                                <menu-item>
                                     <button class="menu-item" @click="editProject(project)">
                                         <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" /> Edit Project
                                     </button>
                                 </menu-item>
 
-                                <menu-item v-slot="{ active }">
+                                <menu-item>
                                     <router-link class="menu-item" :to="{ name: 'account.shops.new' }">
                                         <icon-fa6-solid:plus class="icon" aria-hidden="true" /> Add Shop
                                     </router-link>
                                 </menu-item>
 
-                                <menu-item v-slot="{ active }">
+                                <menu-item>
                                     <button class="menu-item" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
                                         <icon-fa6-solid:trash class="icon" aria-hidden="true" /> Delete Project
                                     </button>

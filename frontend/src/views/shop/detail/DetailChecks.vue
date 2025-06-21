@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { trpcClient } from '@/helpers/trpc';
 import { useShopDetail } from "@/composables/useShopDetail";
 
 const {

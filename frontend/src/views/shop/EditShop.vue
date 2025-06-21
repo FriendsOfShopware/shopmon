@@ -23,8 +23,8 @@
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shop"
-            @submit="onSubmit"
             class="panel"
+            @submit="onSubmit"
         >
             <form-group title="Shop information">
                 <div>

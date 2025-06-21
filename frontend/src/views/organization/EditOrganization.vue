@@ -17,8 +17,8 @@
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="organization.data"
-            @submit="onSaveOrganization"
             class="panel"
+            @submit="onSaveOrganization"
         >
             <form-group title="Organization Information">
                 <div>
