@@ -408,25 +408,4 @@ async function loadUpdateWizard(version: string) {
     opacity: 0.8;
     font-style: italic;
 }
-
-.refresh-options {
-    .checkbox-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-top: 1rem;
-    }
-
-    .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        font-size: 0.875rem;
-
-        input[type="checkbox"] {
-            margin: 0;
-        }
-    }
-}
 </style>
