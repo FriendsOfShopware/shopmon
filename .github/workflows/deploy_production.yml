@@ -34,22 +34,11 @@ jobs:
               with:
                 push: true
                 tags: ghcr.io/friendsofshopware/shopmon:production
-                build-args:
-                  SENTRY_RELEASE=${{ github.sha }}
 
             - name: Setup opkssh
               uses: openpubkey/setup-opkssh@v1
               with:
                 ssh-hosts-to-scan: 'shea.shyim.de'
-
-            - name: Create Sentry release
-              uses: getsentry/action-release@v3
-              env:
-                SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-                SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-                SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-              with:
-                environment: production
 
             - name: Install 1Password CLI
               uses: 1password/install-cli-action@v1

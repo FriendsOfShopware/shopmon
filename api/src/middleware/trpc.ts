@@ -1,9 +1,10 @@
-import { captureException } from '@sentry/node';
+import { SpanStatusCode, trace } from '@opentelemetry/api';
 import type { AnyRouter } from '@trpc/server';
 import type { FetchHandlerRequestOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { MiddlewareHandler } from 'hono';
 import { createContext } from '../trpc/context.ts';
+import { logger } from '../util.ts';
 
 type tRPCOptions = Omit<
     FetchHandlerRequestOptions<AnyRouter>,
@@ -23,19 +24,28 @@ export const trpcServer = ({
             createContext: createContext(),
             onError: (err) => {
                 if (err.error.code === 'INTERNAL_SERVER_ERROR') {
-                    console.error(
-                        `[tRPC] Error on path: ${err.path}`,
-                        err.error,
+                    logger.error(
+                        `[tRPC] Error on path: ${err.path}, message: ${err.error.message}`,
                     );
-                    captureException(err.error, {
-                        user: {
-                            id: err.ctx.user || null,
-                        },
-                        extra: {
-                            type: err.type,
-                            path: err.path,
-                        },
-                    });
+
+                    const activeSpan = trace.getActiveSpan();
+
+                    if (activeSpan) {
+                        // Set error status on the span
+                        activeSpan.setStatus({
+                            code: SpanStatusCode.ERROR,
+                            message: err.error.message,
+                        });
+
+                        // Record the error as an exception
+                        activeSpan.recordException(err.error);
+
+                        // Add error attributes
+                        activeSpan.setAttributes({
+                            'error.type': err.error.code,
+                            'error.message': err.error.message,
+                        });
+                    }
                 }
             },
         });

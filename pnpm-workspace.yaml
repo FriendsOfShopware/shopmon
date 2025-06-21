@@ -7,7 +7,6 @@ catalog:
   better-auth: 1.2.8
 
 ignoredBuiltDependencies:
-  - 'better-sqlite3'
   - '@prisma/client'
   - '@prisma/engines'
   - prisma
@@ -15,5 +14,13 @@ ignoredBuiltDependencies:
 onlyBuiltDependencies:
   - '@biomejs/biome'
   - bcrypt
+  - better-sqlite3
   - esbuild
+  - protobufjs
   - sharp
+
+overrides:
+  esbuild@<=0.24.2: '>=0.25.0'
+
+patchedDependencies:
+  opentelemetry-plugin-better-sqlite3: patches/opentelemetry-plugin-better-sqlite3.patch

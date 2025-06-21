@@ -1,4 +1,3 @@
-import { logger } from '@sentry/node';
 import { cleanupExpiredLocks } from '../../repository/lock.ts';
 
 /**
@@ -8,10 +7,10 @@ import { cleanupExpiredLocks } from '../../repository/lock.ts';
 export async function lockCleanupJob() {
     try {
         const removedCount = await cleanupExpiredLocks();
-        logger.info(
+        console.info(
             `Lock cleanup job completed: ${removedCount} expired locks removed`,
         );
     } catch (error) {
-        logger.error('Error in lock cleanup job', error);
+        console.error('Error in lock cleanup job', error);
     }
 }

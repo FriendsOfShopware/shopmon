@@ -1,5 +1,3 @@
-declare global {
-    const SENTRY_RELEASE: string;
-}
+declare global {}
 
 export {};

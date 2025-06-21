@@ -26,7 +26,6 @@
                 <ul>
                     <li>Log files for debugging and security purposes</li>
                     <li>Session data for authentication</li>
-                    <li>Error tracking data (via Sentry referecing user id)</li>
                 </ul>
             </section>
 

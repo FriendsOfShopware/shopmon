@@ -1,4 +1,3 @@
-import { logger } from '@sentry/node';
 import {
     ApiClientAuthenticationFailed,
     ApiClientRequestFailed,
@@ -197,7 +196,7 @@ async function shouldNotify(
 
 async function updateShop(shop: SQLShop, con: Drizzle) {
     if (shop.connectionIssueCount >= 3) {
-        logger.info(
+        console.info(
             `Shop ${shop.name} has too many connection issues, skipping it`,
         );
         return;
@@ -271,7 +270,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                 message: `The Shop could not be updated. Please check your credentials and try again.${error}`,
             });
 
-            logger.info(
+            console.info(
                 `Shop ${shop.name} could not be updated, error is ${error}`,
             );
 

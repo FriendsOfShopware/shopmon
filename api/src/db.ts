@@ -1,9 +1,9 @@
-import { createClient } from '@libsql/client';
+import Database from 'better-sqlite3';
 import { relations } from 'drizzle-orm';
 import {
+    type BetterSQLite3Database,
     drizzle as drizzleSqlite,
-    type LibSQLDatabase,
-} from 'drizzle-orm/libsql';
+} from 'drizzle-orm/better-sqlite3';
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type {
     CacheInfo,
@@ -320,7 +320,7 @@ export const schema = {
     organizationRelations,
 };
 
-export type Drizzle = LibSQLDatabase<typeof schema>;
+export type Drizzle = BetterSQLite3Database<typeof schema>;
 let drizzle: Drizzle | undefined;
 
 export function getConnection(applyPragmas = true) {
@@ -330,22 +330,16 @@ export function getConnection(applyPragmas = true) {
 
     const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
 
-    const client = createClient({
-        url: `file:${dbPath}`,
-    });
+    const client = new Database(dbPath);
 
     if (applyPragmas) {
-        const promises = [
-            client.execute('PRAGMA journal_mode = WAL'),
-            client.execute('PRAGMA cache_size = -64000'),
-            client.execute('PRAGMA foreign_keys = ON'),
-            client.execute('PRAGMA synchronous = NORMAL'),
-            client.execute('PRAGMA temp_store = MEMORY'),
-            client.execute('PRAGMA wal_autocheckpoint = 0'),
-        ];
-        Promise.all(promises).then(() => {
-            console.log('Database PRAGMAs applied successfully');
-        });
+        client.pragma('journal_mode = WAL');
+        client.pragma('cache_size = -64000');
+        client.pragma('foreign_keys = ON');
+        client.pragma('synchronous = NORMAL');
+        client.pragma('temp_store = MEMORY');
+        client.pragma('wal_autocheckpoint = 0');
+        client.pragma('busy_timeout = 5000');
     }
 
     drizzle = drizzleSqlite(client, { schema });
