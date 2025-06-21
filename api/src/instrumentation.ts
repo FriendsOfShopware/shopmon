@@ -24,4 +24,6 @@ const sdk = new NodeSDK({
     ],
 });
 
+console.log('Starting OpenTelemetry SDK...');
+
 sdk.start();
