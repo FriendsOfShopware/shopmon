@@ -1,6 +1,9 @@
 <template>
+    <Alert v-if="shop && !shop.sitespeedEnabled" type="info">
+        Sitespeed monitoring is not enabled for this shop. Please enable it in the shop settings to view performance metrics.
+    </Alert>
     <div class="mb-1">
-        <a v-if="shop" class="btn btn-primary-outline" :href="'/sitespeed/' + shop.id + '/index.html'" target="_blank">
+        <a v-if="shop && shop.sitespeed.length > 0" class="btn btn-primary-outline" :href="'/sitespeed/' + shop.id + '/index.html'" target="_blank">
             <i class="fa fa-chart-line"></i> View Sitespeed Report
         </a>
     </div>
