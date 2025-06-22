@@ -3,6 +3,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"license": "MIT",
+	"imports": {
+		"#src/*": "./src/*.ts"
+	},
 	"dependencies": {
 		"@hono/node-server": "^1.14.4",
 		"@libsql/client": "^0.15.9",
