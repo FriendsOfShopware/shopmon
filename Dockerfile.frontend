@@ -48,3 +48,5 @@ server {
 EOF
 
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
+
+EXPOSE 8080
