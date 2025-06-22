@@ -27,11 +27,21 @@ jobs:
                 username: ${{ github.actor }}
                 password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build and push
+            - name: Build and push (frontend)
               uses: docker/build-push-action@v6
               with:
                 push: true
-                tags: ghcr.io/friendsofshopware/shopmon:staging
+                tags: ghcr.io/friendsofshopware/shopmon/frontend:staging
+                file: Dockerfile.frontend
+                build-args:
+                  SENTRY_RELEASE=${{ github.sha }}
+
+            - name: Build and push (api)
+              uses: docker/build-push-action@v6
+              with:
+                push: true
+                tags: ghcr.io/friendsofshopware/shopmon/api:staging
+                file: Dockerfile.api
                 build-args:
                   SENTRY_RELEASE=${{ github.sha }}
 
