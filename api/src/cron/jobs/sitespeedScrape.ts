@@ -32,6 +32,7 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
             name: true,
             sitespeedEnabled: true,
             sitespeedUrls: true,
+            connectionIssueCount: true,
         },
         where: eq(schema.shop.id, shopId),
     });
@@ -41,16 +42,30 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
         return;
     }
 
-    if (!shop.sitespeedEnabled || !shop.sitespeedUrls) {
-        console.log(
-            `Sitespeed is disabled for shop ${shop.id}: ${shop.name} or no URLs configured`,
-        );
+    if (
+        !shop.sitespeedEnabled ||
+        !shop.sitespeedUrls ||
+        shop.connectionIssueCount > 0
+    ) {
+        if (!shop.sitespeedUrls) {
+            console.warn(
+                `Shop ${shop.id} (${shop.name}) has sitespeed disabled or no URLs configured`,
+            );
+        }
+
+        if (shop.connectionIssueCount > 0) {
+            console.warn(
+                `Shop ${shop.id} (${shop.name}) has connection issues, skipping sitespeed analysis`,
+            );
+        }
+
         return;
     }
 
     console.log(`Running sitespeed analysis for shop ${shop.id}: ${shop.name}`);
 
-    const sitespeedServiceUrl = process.env.APP_SITESPEED_ENDPOINT;
+    const sitespeedServiceUrl =
+        process.env.APP_SITESPEED_ENDPOINT || 'http://localhost:3001';
     try {
         const response = await fetch(`${sitespeedServiceUrl}/analyze`, {
             method: 'POST',

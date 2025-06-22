@@ -113,7 +113,7 @@ bun run biome:fix         # Auto-fix issues
 ### Database Schema
 - User management: `user`, `user_notification`, `sessions`, `user_passkeys`
 - Organization/Shop: `organization`, `shop`, `shop_scrape_info`
-- Monitoring data: `shop_changelog`, `shop_pagespeed`, `shop_extension`
+- Monitoring data: `shop_changelog`, `shop_sitespeed`, `shop_extension`
 - Task tracking: `scheduled_task`, `scheduled_task_run`
 - Notifications: User's `notifications` column stores array of strings like `shop-123` for subscriptions
 
@@ -124,7 +124,7 @@ bun run biome:fix         # Auto-fix issues
 
 ### Cron Jobs
 - Located in `/api/src/cron/jobs/`
-- Jobs: shopScrape, pagespeedScrape, sessionCleanup, passwordResetCleanup
+- Jobs: shopScrape, sessionCleanup, passwordResetCleanup
 - Configured in `/api/src/cron/index.ts`
 
 ### Notification System
@@ -143,7 +143,6 @@ APP_SECRET              # Encryption key (required)
 APP_DATABASE_PATH       # SQLite database path
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
-PAGESPEED_API_KEY       # Google PageSpeed API
 APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
 APP_SITESPEED_DATA_FOLDER # Directory for sitespeed results (default: ./sitespeed-results)
 FRONTEND_URL            # Frontend URL for emails

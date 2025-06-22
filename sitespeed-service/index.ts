@@ -59,7 +59,7 @@ app.post('/analyze',
 
     console.log(`Starting sitespeed analysis for shop ${shopId} with URLs: ${formattedUrls.join(', ')}`);
 
-    const command = `/usr/src/app/bin/sitespeed.js --outputFolder ${resultDir} --plugins.add analysisstorer --visualMetrics --video --browsertime.iterations 1 "${formattedUrls.join('" "')}"`;
+    const command = `/usr/src/app/bin/sitespeed.js --outputFolder ${resultDir} --plugins.add analysisstorer --visualMetrics --video --viewPort 1920x1080 --browsertime.iterations 1 "${formattedUrls.join('" "')}"`;
     console.log(`Running sitespeed analysis for shop ${shopId} with command: ${command}`);
 
     try {

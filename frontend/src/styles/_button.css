@@ -71,6 +71,18 @@ button,
 		}
 	}
 
+	&-primary-outline {
+        background: #0284c7;
+        border-color: transparent;
+        color: #fff;
+        transition: background .4s;
+
+        &:hover {
+            background: #0284c777;
+			color: #fff;
+        }
+	}
+
 	&-danger {
 		border-color: #dc2626;
 		color: #fff;

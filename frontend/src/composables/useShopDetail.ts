@@ -55,14 +55,14 @@ export function useShopDetail() {
         }
     }
 
-    async function onRefresh(pagespeed: boolean) {
+    async function onRefresh(sitespeed: boolean) {
         showShopRefreshModal.value = false;
         if (shop.value?.organizationId && shop.value?.id) {
             try {
                 isRefreshing.value = true;
                 await trpcClient.organization.shop.refreshShop.mutate({
                     shopId: shop.value.id,
-                    pageSpeed: pagespeed,
+                    sitespeed: sitespeed,
                 });
                 isRefreshing.value = false;
                 await loadShop();

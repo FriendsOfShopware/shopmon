@@ -127,7 +127,7 @@
         @close="viewUpdateWizardDialog = false"
     >
         <template #title>
-            <FaRotate /> Shopware Plugin Compatibility Check
+            <FaRotate /> Shopware Extension Compatibility Check
         </template>
 
         <template #content>
@@ -158,7 +158,7 @@
                 :class="{ 'update-wizard-refresh': loadingUpdateWizard }"
             >
                 <h2 class="update-wizard-plugins-heading">
-                    Plugin Compatibility
+                    Extension Compatibility
                 </h2>
 
                 <ul>

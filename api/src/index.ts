@@ -7,6 +7,7 @@ import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 import './cron/index.ts';
+import users from './repository/users.ts';
 
 const filesDir = process.env.APP_FILES_DIR || './files';
 
@@ -24,10 +25,39 @@ app.on(['POST', 'GET'], '/auth/*', (c) => {
 // tRPC routes
 app.use('/trpc/*', trpcServer({ router: appRouter }));
 
+app.use('/sitespeed/*', async (c, next) => {
+    const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+    });
+
+    if (session.user === null) {
+        return c.redirect('/');
+    }
+
+    const shopId = /^\/sitespeed\/(\d+)/.exec(c.req.path)?.[1];
+    if (!shopId) {
+        return c.redirect('/');
+    }
+
+    const access = await users.hasAccessToShop(
+        session.user.id,
+        parseInt(shopId, 10),
+    );
+
+    if (!access) {
+        return c.redirect('/');
+    }
+
+    return next();
+});
+
 app.get(
-    '/sitespeed',
+    '/sitespeed/*',
     serveStatic({
-        root: process.env.APP_SITESPEED_DATA_FOLDER || './sitespeed-results',
+        root: process.env.APP_SITESPEED_DATA_FOLDER || '../sitespeed-results',
+        rewriteRequestPath(path) {
+            return path.replace(/^\/sitespeed\//, '');
+        },
     }),
 );
 

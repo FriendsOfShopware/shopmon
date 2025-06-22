@@ -28,6 +28,7 @@
 		"yup": "1.6.1"
 	},
 	"devDependencies": {
+		"@eslint/js": "^9.27.0",
 		"@iconify-json/fa-brands": "^1.2.1",
 		"@iconify-json/fa6-brands": "^1.2.5",
 		"@iconify-json/fa6-regular": "1.2.3",
@@ -36,13 +37,13 @@
 		"@iconify-json/line-md": "1.2.8",
 		"@iconify-json/material-symbols": "^1.2.20",
 		"@iconify-json/mdi": "^1.2.3",
+		"@iconify-json/octicon": "^1.2.6",
 		"@trpc/server": "^11.1.1",
 		"@typescript-eslint/eslint-plugin": "8.34.0",
 		"@typescript-eslint/parser": "8.34.0",
 		"@vitejs/plugin-vue": "5.2.4",
 		"autoprefixer": "10.4.21",
 		"eslint": "^9.27.0",
-		"@eslint/js": "^9.27.0",
 		"eslint-config-biome": "^1.9.4",
 		"eslint-plugin-vue": "^10.1.0",
 		"postcss": "^8.5.3",

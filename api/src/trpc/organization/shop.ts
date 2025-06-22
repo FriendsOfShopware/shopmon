@@ -543,15 +543,7 @@ export const shopRouter = router({
             z.object({
                 shopId: z.number(),
                 enabled: z.boolean(),
-                urls: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            label: z.string().min(1).max(50),
-                        }),
-                    )
-                    .max(5)
-                    .optional(),
+                urls: z.array(z.string()).max(5).optional(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -565,7 +557,7 @@ export const shopRouter = router({
             };
 
             if (input.urls !== undefined) {
-                updateData.sitespeedUrls = input.urls.map((url) => url.url);
+                updateData.sitespeedUrls = input.urls;
             }
 
             await ctx.drizzle

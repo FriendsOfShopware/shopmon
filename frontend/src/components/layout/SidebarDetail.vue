@@ -13,7 +13,7 @@
             <div class="shop-image-container">
                 <img
                     v-if="shop.shopImage"
-                    :src="`/${shop.shopImage}`"
+                    :src="`${shop.shopImage}`"
                     class="shop-image"
                 >
                 <icon-fa6-solid:image
@@ -94,9 +94,9 @@ const detailNavigation = computed(() => [
         count: props.shop?.queueInfo?.length ?? 0
     },
     { 
-        name: 'Pagespeed', 
-        route: 'account.shops.detail.pagespeed',
-        count: props.shop?.pageSpeed?.length ?? 0
+        name: 'Sitespeed', 
+        route: 'account.shops.detail.sitespeed',
+        count: props.shop?.sitespeed?.length ?? 0
     },
     { 
         name: 'Changelog', 

@@ -176,12 +176,12 @@ export const router = createRouter({
                             },
                         },
                         {
-                            name: 'account.shops.detail.pagespeed',
-                            path: 'pagespeed',
+                            name: 'account.shops.detail.sitespeed',
+                            path: 'sitespeed',
                             component: () =>
-                                import('@/views/shop/detail/DetailPagespeed.vue'),
+                                import('@/views/shop/detail/DetailSitespeed.vue'),
                             meta: {
-                                title: 'Pagespeed',
+                                title: 'Sitespeed',
                                 icon: FaRocket
                             },
                         },

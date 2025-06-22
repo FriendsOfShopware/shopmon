@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
-import { lockCleanupJob } from './jobs/lockCleanup.js';
-import { shopScrapeJob } from './jobs/shopScrape.js';
-import { scrapeSitespeedForAllShops } from './jobs/sitespeedScrape.js';
+import { lockCleanupJob } from './jobs/lockCleanup.ts';
+import { shopScrapeJob } from './jobs/shopScrape.ts';
+import { scrapeSitespeedForAllShops } from './jobs/sitespeedScrape.ts';
 
 console.log('Registered cron jobs...');
 

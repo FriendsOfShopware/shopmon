@@ -100,10 +100,32 @@ async function hasAccessToProject(userId: string, projectId: number) {
         .get();
 }
 
+async function hasAccessToShop(
+    userId: string,
+    shopId: number,
+): Promise<boolean> {
+    const result = await getConnection()
+        .select({
+            id: schema.shop.id,
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.member,
+            eq(schema.shop.organizationId, schema.member.organizationId),
+        )
+        .where(
+            and(eq(schema.shop.id, shopId), eq(schema.member.userId, userId)),
+        )
+        .get();
+
+    return result !== undefined;
+}
+
 export default {
     existsByEmail,
     existsById,
     deleteById,
     createNotification,
     hasAccessToProject,
+    hasAccessToShop,
 };
