@@ -1,6 +1,8 @@
+import * as Sentry from '@sentry/node';
 import { compare, hash } from 'bcrypt';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin, organization } from 'better-auth/plugins';
 import { passkey } from 'better-auth/plugins/passkey';
 import { sso } from 'better-auth/plugins/sso';
@@ -23,6 +25,55 @@ export const auth = betterAuth({
                 required: false,
             },
         },
+    },
+    hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+            if (ctx.path === '/sign-in/email') {
+                ctx.context.span = Sentry.startInactiveSpan({
+                    name: 'auth.signIn',
+                    op: 'auth.signIn.email',
+                    attributes: {
+                        'span.category': 'auth.signIn',
+                    },
+                    parentSpan: Sentry.getActiveSpan(),
+                });
+            }
+            if (ctx.path === '/passkey/verify-authentication') {
+                ctx.context.span = Sentry.startInactiveSpan({
+                    name: 'auth.signIn',
+                    op: 'auth.signIn.passkey',
+                    attributes: {
+                        'span.category': 'auth.signIn',
+                    },
+                    parentSpan: Sentry.getActiveSpan(),
+                });
+            }
+            if (ctx.path === '/callback/:id') {
+                ctx.context.span = Sentry.startInactiveSpan({
+                    name: 'auth.signIn',
+                    op: `auth.signIn.${ctx.params.id}`,
+                    attributes: {
+                        'span.category': 'auth.signIn',
+                    },
+                    parentSpan: Sentry.getActiveSpan(),
+                });
+            }
+            if (ctx.path === '/sso/callback/:providerId') {
+                ctx.context.span = Sentry.startInactiveSpan({
+                    name: 'auth.signIn',
+                    op: `auth.signIn.sso`,
+                    attributes: {
+                        'span.category': 'auth.signIn',
+                    },
+                    parentSpan: Sentry.getActiveSpan(),
+                });
+            }
+        }),
+        after: createAuthMiddleware(async (ctx) => {
+            if (ctx.context.span) {
+                ctx.context.span.end();
+            }
+        }),
     },
     emailAndPassword: {
         enabled: true,

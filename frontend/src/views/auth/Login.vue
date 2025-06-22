@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import { Field, Form as VeeForm, configure } from 'vee-validate';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import * as Yup from 'yup';
 
 import Alert from '@/components/layout/Alert.vue';
@@ -160,6 +160,18 @@ const schema = Yup.object().shape({
     password: Yup.string().required('Password is required'),
 });
 
+function goToHome() {
+    const sess = authClient.useSession()
+
+    watch(sess, (user) => {
+        if (user.data?.user) {
+            const redirectUrl = returnUrl.value ?? '/';
+            clearReturnUrl();
+            router.push(redirectUrl);
+        }
+    });
+}
+
 async function onSubmit(values: Record<string, unknown>) {
     const email = values.email as string;
     const password = values.password as string;
@@ -173,22 +185,23 @@ async function onSubmit(values: Record<string, unknown>) {
         return;
     }
 
-    // redirect to previous url or default to home page
-    const redirectUrl = returnUrl.value ?? '/';
-    clearReturnUrl();
-    router.push(redirectUrl);
+    goToHome();
 }
 
 async function webauthnLogin() {
     isAuthenticated.value = true;
 
     try {
-        await authClient.signIn.passkey();
+        const resp = await authClient.signIn.passkey();
 
-        // redirect to previous url or default to home page
-        const redirectUrl = returnUrl.value ?? '/';
-        clearReturnUrl();
-        router.push(redirectUrl);
+        if (resp?.error) {
+            const { error } = useAlert();
+            error(resp.error.message ?? 'Failed to sign in with Passkey');
+            isAuthenticated.value = false;
+            return;
+        }
+
+        goToHome();
     } catch (e: unknown) {
         const { error } = useAlert();
 
@@ -203,10 +216,18 @@ async function githubLogin() {
 
     try {
         const redirectUrl = returnUrl.value ?? '/';
-        await authClient.signIn.social({
+        const resp = await authClient.signIn.social({
             provider: 'github',
             callbackURL: redirectUrl,
         });
+        if (resp.error) {
+            const { error } = useAlert();
+            error(resp.error.message ?? 'Failed to sign in with GitHub');
+            isGithubLoading.value = false;
+            return;
+        }
+
+        goToHome();
     } catch (e: unknown) {
         const { error } = useAlert();
 
@@ -237,6 +258,8 @@ async function ssoLogin() {
             } else {
                 alert.error(result.error.message ?? 'SSO login failed');
             }
+        } else {
+            goToHome();
         }
     } catch (e: unknown) {
         alert.error(e instanceof Error ? e.message : 'SSO login failed');
