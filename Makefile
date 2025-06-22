@@ -54,27 +54,3 @@ up: # Build and run the demo shop
 	@echo "Demo shop is running at http://localhost:3889"
 	@echo "Integration: Key: SWIAUZL4OXRKEG1RR3PMCEVNMG, Secret: aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks"
 	@echo "Mailpit: http://localhost:8025"
-
-sitespeed: # Run sitespeed analysis for a shop (usage: make sitespeed SHOP_ID=1 URL=https://example.com)
-ifndef SHOP_ID
-	@echo "Error: SHOP_ID is required. Usage: make sitespeed SHOP_ID=1 URL=https://example.com"
-	@exit 1
-endif
-ifndef URL
-	@echo "Error: URL is required. Usage: make sitespeed SHOP_ID=1 URL=https://example.com"
-	@exit 1
-endif
-	@echo "Running sitespeed analysis for shop $(SHOP_ID) on $(URL)..."
-	@curl -X POST $${APP_SITESPEED_ENDPOINT:-http://localhost:3001}/analyze \
-		-H "Content-Type: application/json" \
-		-d '{"shopId": $(SHOP_ID), "url": "$(URL)"}' \
-		--silent --show-error --fail \
-		| jq '.' && echo "✅ Sitespeed analysis completed successfully!" || echo "❌ Failed to run sitespeed analysis. Make sure the sitespeed service is running (make up)"
-
-sitespeed-demo: # Run sitespeed analysis for demo shop (shop ID 1)
-	@echo "Running sitespeed analysis for demo shop..."
-	@curl -X POST $${APP_SITESPEED_ENDPOINT:-http://localhost:3001}/analyze \
-		-H "Content-Type: application/json" \
-		-d '{"shopId": 1, "url": "http://localhost:3889"}' \
-		--silent --show-error --fail \
-		| jq '.' && echo "✅ Demo shop sitespeed analysis completed successfully!" || echo "❌ Failed to run sitespeed analysis. Make sure the sitespeed service is running (make up)"
