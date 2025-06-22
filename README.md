@@ -77,9 +77,6 @@ SMTP_FROM=noreply@yourdomain.com
 # Application
 FRONTEND_URL=http://localhost:5173
 APP_FILES_DIR=./files
-
-# Monitoring (optional)
-SENTRY_DSN=
 ```
 
 ### Step 4: Run database migrations

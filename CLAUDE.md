@@ -11,8 +11,7 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 ### API (Bun + TypeScript)
 - Located in `/api/`
 - Built with TypeScript, tRPC, Hono framework
-- Uses Drizzle ORM with SQLite (Cloudflare D1 in production)
-- Sentry for error tracking
+- Uses Drizzle ORM with SQLite
 - Deployed via Docker containers
 
 ### Frontend (Vue 3 SPA)
@@ -146,7 +145,6 @@ SMTP_HOST/PORT/USER/PASS # Email configuration
 APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
 APP_SITESPEED_DATA_FOLDER # Directory for sitespeed results (default: ./sitespeed-results)
 FRONTEND_URL            # Frontend URL for emails
-SENTRY_DSN              # Error tracking
 ```
 
 ### Sitespeed Service Environment Variables
