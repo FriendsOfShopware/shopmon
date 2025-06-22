@@ -11,12 +11,7 @@ FROM node:24-alpine AS api
 COPY . /app
 WORKDIR /app
 RUN corepack enable
-RUN <<EOF
-    set -e
-    apk add --no-cache python3 make gcc g++
-    pnpm install --filter shopmon
-    apk del python3 make gcc g++
-EOF
+RUN pnpm install --filter shopmon
 RUN rm -rf /app/frontend
 
 FROM node:24-alpine AS final

@@ -1,11 +1,14 @@
 {
 	"packageManager": "pnpm@10.12.1",
 	"devDependencies": {
-		"@biomejs/biome": "~2.0.0"
+		"@biomejs/biome": "~2.0.4"
 	},
 	"scripts": {
 		"biome:format": "biome format --write .",
 		"biome:lint": "biome lint .",
 		"biome:check": "biome check ."
+	},
+	"dependencies": {
+		"better-sqlite3": "12.0.0"
 	}
 }
