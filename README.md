@@ -14,7 +14,7 @@ Overview of all your Shopware instances to see:
 - Shopware Version and Security Updates
 - Show all installed extension and extension updates
 - Show info on scheduled tasks and queue
-- Run a daily check with pagespeed to see decreasing performance
+- Run a daily check with sitespeed to see decreasing performance
 - Clear shop cache
 
 ## Requirements (self hosted)
@@ -74,9 +74,6 @@ SMTP_USER=your-email@example.com
 SMTP_PASS=your-password
 SMTP_FROM=noreply@yourdomain.com
 
-# External APIs (optional)
-PAGESPEED_API_KEY=your-google-pagespeed-api-key
-
 # Application
 FRONTEND_URL=http://localhost:5173
 APP_FILES_DIR=./files
@@ -109,17 +106,6 @@ To develop Shopmon easier, you can start a local mail catcher and a local Shopwa
 
 ```
 make up
-```
-
-### Page Speed Monitoring
-
-To enable Google PageSpeed monitoring:
-
-1. Get an API key from https://developers.google.com/speed/docs/insights/v5/get-started
-2. Add the key to your `.env` file:
-
-```env
-PAGESPEED_API_KEY=your-api-key-here
 ```
 
 ## Configuration

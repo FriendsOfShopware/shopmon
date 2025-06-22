@@ -151,6 +151,83 @@
             </div>
         </vee-form>
 
+        <form-group
+            v-if="shop"
+            title="Sitespeed"
+            class="panel"
+        >
+            <p>
+                <a href="https://www.sitespeed.io/">Sitespeed.io</a> allows you to monitor the performance of your shop's frontend.
+            </p>
+            <p> To activate Sitespeed.io, you need to provide up to five URLs that you want to monitor. These URLs will be used to run performance tests and gather insights about your shop's frontend performance.</p>
+            <p>The Sitespeed run is scheduled to run every 24 hours, after the initial run you can view the results of Sitespeed directly in Shopmon. </p>
+
+            <form @submit.prevent="onSitespeedSubmit">
+                <div class="mb-1">
+                    <label for="sitespeedEnabled">Sitespeed Enabled</label>
+                    <input
+                        id="sitespeedEnabled"
+                        v-model="sitespeedEnabled"
+                        type="checkbox"
+                        class="field"
+                    />
+                </div>
+
+                <div v-if="sitespeedEnabled">
+                    <label for="sitespeedUrls">Sitespeed URLs</label>
+                    <div class="sitespeed-urls-container">
+                        <div
+                            v-for="(url, index) in sitespeedUrls"
+                            :key="index"
+                            class="sitespeed-url-row"
+                        >
+                            <input
+                                v-model="sitespeedUrls[index]"
+                                type="url"
+                                class="field"
+                                placeholder="https://example.com"
+                            />
+                            <button
+                                type="button"
+                                class="btn btn-icon"
+                                @click="removeSitespeedUrl(index)"
+                            >
+                                <icon-fa6-solid:xmark />
+                            </button>
+                        </div>
+                        <button
+                            v-if="sitespeedUrls.length < 5"
+                            type="button"
+                            class="btn btn-secondary"
+                            @click="addSitespeedUrl"
+                        >
+                            <icon-fa6-solid:plus class="icon" />
+                            New URL
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-submit">
+                    <button
+                        :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        <icon-fa6-solid:floppy-disk
+                            v-if="!isSitespeedSubmitting"
+                            class="icon"
+                            aria-hidden="true"
+                        />
+                        <icon-line-md:loading-twotone-loop
+                            v-else
+                            class="icon"
+                        />
+                        Save Sitespeed Settings
+                    </button>
+                </div>
+            </form>
+        </form-group>
+
         <form-group :title="'Deleting shop ' + shop.name" class="panel">
                 <p>Once you delete your shop, you will lose all data associated with it. </p>
 
@@ -213,11 +290,11 @@ import { useAlert } from '@/composables/useAlert';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 
 import { Field, Form as VeeForm } from 'vee-validate';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
-const { error } = useAlert();
+const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
 const shop = ref<RouterOutput['organization']['shop']['get'] | null>(null);
@@ -243,12 +320,29 @@ async function loadShop() {
         selectedProjectId.value = shop.value.projectId;
     }
 
+    // Initialize sitespeed settings
+    if (shop.value) {
+        sitespeedEnabled.value = shop.value.sitespeedEnabled || false;
+        sitespeedUrls.value = shop.value.sitespeedUrls ? [...shop.value.sitespeedUrls] : [];
+    }
+
     isLoading.value = false;
 }
 
 loadShop();
 
 const showShopDeletionModal = ref(false);
+const sitespeedUrls = ref<string[]>([]);
+const sitespeedEnabled = ref(false);
+const isSitespeedSubmitting = ref(false);
+
+const isSitespeedFormValid = computed(() => {
+    if (!sitespeedEnabled.value) {
+        return true; // Always valid when disabled
+    }
+    // Check if at least one non-empty URL exists
+    return sitespeedUrls.value.some(url => url.trim() !== '');
+});
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Shop name is required'),
@@ -312,4 +406,62 @@ async function deleteShop() {
         }
     }
 }
+
+function addSitespeedUrl() {
+    sitespeedUrls.value.push('');
+}
+
+function removeSitespeedUrl(index: number) {
+    sitespeedUrls.value.splice(index, 1);
+}
+
+async function onSitespeedSubmit() {
+    if (shop.value) {
+        try {
+            isSitespeedSubmitting.value = true;
+            
+            // Validate that if enabled, at least one URL is provided
+            if (sitespeedEnabled.value && sitespeedUrls.value.length === 0) {
+                error('Please provide at least one URL when enabling Sitespeed');
+                return;
+            }
+            
+            await trpcClient.organization.shop.updateSitespeedSettings.mutate({
+                shopId: shop.value.id,
+                enabled: sitespeedEnabled.value,
+                urls: sitespeedUrls.value,
+            });
+            
+            // Reload shop data to refresh the UI
+            await loadShop();
+            success('Sitespeed settings saved successfully');
+        } catch (e) {
+            error(e instanceof Error ? e.message : String(e));
+        } finally {
+            isSitespeedSubmitting.value = false;
+        }
+    }
+}
 </script>
+
+<style>
+.sitespeed-urls-container {
+    margin-top: 0.5rem;
+}
+
+.sitespeed-url-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.sitespeed-url-row input {
+    flex: 1;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    min-width: auto;
+}
+</style>

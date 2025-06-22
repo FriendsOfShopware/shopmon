@@ -69,17 +69,26 @@ export const shop = sqliteTable('shop', {
     connectionIssueCount: integer('connection_issue_count')
         .default(0)
         .notNull(),
+    sitespeedEnabled: integer('sitespeed_enabled', { mode: 'boolean' })
+        .default(false)
+        .notNull(),
+    sitespeedUrls: text('sitespeed_urls', { mode: 'json' })
+        .default([])
+        .$type<string[]>()
+        .notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const shopPageSpeed = sqliteTable('shop_pagespeed', {
+export const shopSitespeed = sqliteTable('shop_sitespeed', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     shopId: integer('shop_id').references(() => shop.id),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    performance: integer('performance'),
-    accessibility: integer('accessibility'),
-    bestPractices: integer('best_practices'),
-    seo: integer('seo'),
+    ttfb: integer('ttfb'),
+    fullyLoaded: integer('fully_loaded'),
+    largestContentfulPaint: integer('largest_contentful_paint'),
+    firstContentfulPaint: integer('first_contentful_paint'),
+    cumulativeLayoutShift: integer('cumulative_layout_shift'),
+    transferSize: integer('transfer_size'),
 });
 
 export const shopScrapeInfo = sqliteTable('shop_scrape_info', {
@@ -297,7 +306,7 @@ export const organizationRelations = relations(organization, ({ many }) => ({
 
 export const schema = {
     shop,
-    shopPageSpeed,
+    shopSitespeed,
     shopScrapeInfo,
     shopChangelog,
     userNotification,

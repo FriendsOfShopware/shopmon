@@ -1,3 +1,5 @@
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import {
     HttpClient,
     type HttpClientResponse,
@@ -6,8 +8,8 @@ import {
 import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { scrapeSinglePagespeedShop } from '../../cron/jobs/pagespeedScrape.ts';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
+import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
 import Shops from '../../repository/shops.ts';
@@ -98,6 +100,8 @@ export const shopRouter = router({
                         'project_name',
                     ),
                     projectDescription: schema.project.description,
+                    sitespeedEnabled: schema.shop.sitespeedEnabled,
+                    sitespeedUrls: schema.shop.sitespeedUrls,
                 })
                 .from(schema.shop)
                 .innerJoin(
@@ -115,9 +119,9 @@ export const shopRouter = router({
                 .where(eq(schema.shop.id, input.shopId))
                 .get();
 
-            const pageSpeedQuery = ctx.drizzle.query.shopPageSpeed.findMany({
-                where: eq(schema.shopPageSpeed.shopId, input.shopId),
-                orderBy: [desc(schema.shopPageSpeed.createdAt)],
+            const sitespeedQuery = ctx.drizzle.query.shopSitespeed.findMany({
+                where: eq(schema.shopSitespeed.shopId, input.shopId),
+                orderBy: [desc(schema.shopSitespeed.createdAt)],
             });
 
             const shopChangelogQuery = ctx.drizzle.query.shopChangelog.findMany(
@@ -127,9 +131,9 @@ export const shopRouter = router({
                 },
             );
 
-            const [shop, pageSpeed, shopChangelog] = await Promise.all([
+            const [shop, sitespeed, shopChangelog] = await Promise.all([
                 shopQuery,
-                pageSpeedQuery,
+                sitespeedQuery,
                 shopChangelogQuery,
             ]);
 
@@ -140,7 +144,7 @@ export const shopRouter = router({
                 });
             }
 
-            return { ...shop, pageSpeed: pageSpeed, changelog: shopChangelog };
+            return { ...shop, sitespeed: sitespeed, changelog: shopChangelog };
         }),
     create: publicProcedure
         .input(
@@ -318,7 +322,7 @@ export const shopRouter = router({
         .input(
             z.object({
                 shopId: z.number(),
-                pageSpeed: z.boolean(),
+                sitespeed: z.boolean().optional(),
             }),
         )
         .use(loggedInUserMiddleware)
@@ -326,8 +330,8 @@ export const shopRouter = router({
         .mutation(async ({ input }) => {
             await scrapeSingleShop(input.shopId);
 
-            if (input.pageSpeed) {
-                await scrapeSinglePagespeedShop(input.shopId);
+            if (input.sitespeed) {
+                await scrapeSingleSitespeedShop(input.shopId);
             }
 
             return true;
@@ -533,5 +537,51 @@ export const shopRouter = router({
 
             const shopKey = `shop-${input.shopId}`;
             return (user.notifications || []).includes(shopKey);
+        }),
+    updateSitespeedSettings: publicProcedure
+        .input(
+            z.object({
+                shopId: z.number(),
+                enabled: z.boolean(),
+                urls: z.array(z.string()).max(5).optional(),
+            }),
+        )
+        .use(loggedInUserMiddleware)
+        .use(shopMiddleware)
+        .mutation(async ({ input, ctx }) => {
+            const updateData: {
+                sitespeedEnabled: boolean;
+                sitespeedUrls?: string[];
+            } = {
+                sitespeedEnabled: input.enabled,
+            };
+
+            if (input.urls !== undefined) {
+                updateData.sitespeedUrls = input.urls;
+            }
+
+            await ctx.drizzle
+                .update(schema.shop)
+                .set(updateData)
+                .where(eq(schema.shop.id, input.shopId))
+                .execute();
+
+            if (!input.enabled) {
+                await ctx.drizzle
+                    .delete(schema.shopSitespeed)
+                    .where(eq(schema.shopSitespeed.shopId, input.shopId))
+                    .execute();
+
+                await fs.rm(
+                    path.join(
+                        process.env.APP_SITESPEED_DATA_FOLDER ||
+                            './sitespeed-results',
+                        input.shopId.toString(),
+                    ),
+                    { recursive: true, force: true },
+                );
+            }
+
+            return true;
         }),
 });

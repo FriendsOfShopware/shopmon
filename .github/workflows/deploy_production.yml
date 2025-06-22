@@ -37,6 +37,13 @@ jobs:
                 build-args:
                   SENTRY_RELEASE=${{ github.sha }}
 
+            - name: Build and push (sitespeed)
+              uses: docker/build-push-action@v6
+              with:
+                push: true
+                tags: ghcr.io/friendsofshopware/shopmon/sitespeed:production
+                context: sitespeed-service
+
             - name: Setup opkssh
               uses: openpubkey/setup-opkssh@v1
               with:

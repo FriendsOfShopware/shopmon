@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
 import { lockCleanupJob } from './jobs/lockCleanup.ts';
-import { pagespeedScrapeJob } from './jobs/pagespeedScrape.ts';
 import { shopScrapeJob } from './jobs/shopScrape.ts';
+import { scrapeSitespeedForAllShops } from './jobs/sitespeedScrape.ts';
 
 console.log('Registered cron jobs...');
 
@@ -15,18 +15,18 @@ cron.schedule('0 * * * *', async () => {
     }
 });
 
-// Run pagespeed scrape every 24 hours at 2 AM
-cron.schedule('0 2 * * *', async () => {
-    console.log('Running pagespeed scrape job...');
+// Run sitespeed scrape once daily at 3 AM
+cron.schedule('0 3 * * *', async () => {
+    console.log('Running sitespeed scrape job...');
     try {
-        await pagespeedScrapeJob();
+        await scrapeSitespeedForAllShops();
     } catch (error) {
-        console.error('Pagespeed scrape job failed:', error);
+        console.error('Sitespeed scrape job failed:', error);
     }
 });
 
-// Run lock cleanup job every day at 3 AM
-cron.schedule('0 3 * * *', async () => {
+// Run lock cleanup job every day at 4 AM
+cron.schedule('0 4 * * *', async () => {
     console.log('Running lock cleanup job...');
     try {
         await lockCleanupJob();
