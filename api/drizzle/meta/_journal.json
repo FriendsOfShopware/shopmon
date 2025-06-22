@@ -162,6 +162,13 @@
       "when": 1750524558902,
       "tag": "0022_optimal_nuke",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1750579991260,
+      "tag": "0023_burly_grim_reaper",
+      "breakpoints": true
     }
   ]
 }
