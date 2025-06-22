@@ -13,13 +13,14 @@ x-env: &env
   SMTP_USER: ${SMTP_USER}
   SMTP_PASS: ${SMTP_PASS}
   SMTP_REPLY_TO: ${SMTP_REPLY_TO}
-  PAGESPEED_API_KEY: ${PAGESPEED_API_KEY}
   OTEL_SERVICE_NAME: shopmon
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=${ENVIRONMENT}
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4317
+  APP_SITESPEED_ENDPOINT: http://sitespeed:3001
+  APP_SITESPEED_DATA_FOLDER: ../uploads/sitespeed/
 
 services:
   migrate:
@@ -61,6 +62,12 @@ services:
       GRAFANA_CLOUD_API_KEY: ${GRAFANA_CLOUD_API_KEY}
       GRAFANA_CLOUD_INSTANCE_ID: ${GRAFANA_CLOUD_INSTANCE_ID}
 
+  sitespeed:
+    image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}
+    environment:
+      APP_SITESPEED_DATA_FOLDER: /app/uploads/sitespeed
+    volumes:
+      - uploads:/app/uploads
 
   backup:
     image: litestream/litestream

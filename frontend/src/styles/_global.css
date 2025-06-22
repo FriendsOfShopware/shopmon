@@ -28,6 +28,22 @@ table th {
 	height: 100%;
 }
 
+.background-mask {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath fill='%230099ff' fill-opacity='1' d='M0,192L80,197.3C160,203,320,213,480,202.7C640,192,800,160,960,170.7C1120,181,1280,235,1360,261.3L1440,288L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+	mask-size: 100% 111%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 400px;
+	z-index: -1;
+	background-color: var(--primary-color);
+
+	@media all and (min-width: 1024px) {
+		height: 290px;
+	}
+}
+
 .container {
 	width: 94%;
 	max-width: var(--container-width);
@@ -39,6 +55,7 @@ table th {
 	padding: 1.25rem;
 	border-radius: 0.375rem;
 	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+	margin-bottom: 2rem;
 
 	&-table {
 		padding: 0;

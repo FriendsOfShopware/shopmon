@@ -33,6 +33,13 @@ jobs:
                 push: true
                 tags: ghcr.io/friendsofshopware/shopmon:staging
 
+            - name: Build and push (sitespeed)
+              uses: docker/build-push-action@v6
+              with:
+                push: true
+                tags: ghcr.io/friendsofshopware/shopmon/sitespeed:staging
+                context: sitespeed-service
+
             - name: Setup opkssh
               uses: openpubkey/setup-opkssh@v1
               with:

@@ -112,7 +112,7 @@ bun run biome:fix         # Auto-fix issues
 ### Database Schema
 - User management: `user`, `user_notification`, `sessions`, `user_passkeys`
 - Organization/Shop: `organization`, `shop`, `shop_scrape_info`
-- Monitoring data: `shop_changelog`, `shop_pagespeed`, `shop_extension`
+- Monitoring data: `shop_changelog`, `shop_sitespeed`, `shop_extension`
 - Task tracking: `scheduled_task`, `scheduled_task_run`
 - Notifications: User's `notifications` column stores array of strings like `shop-123` for subscriptions
 
@@ -123,7 +123,7 @@ bun run biome:fix         # Auto-fix issues
 
 ### Cron Jobs
 - Located in `/api/src/cron/jobs/`
-- Jobs: shopScrape, pagespeedScrape, sessionCleanup, passwordResetCleanup
+- Jobs: shopScrape, sessionCleanup, passwordResetCleanup
 - Configured in `/api/src/cron/index.ts`
 
 ### Notification System
@@ -142,9 +142,21 @@ APP_SECRET              # Encryption key (required)
 APP_DATABASE_PATH       # SQLite database path
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
-PAGESPEED_API_KEY       # Google PageSpeed API
+APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
+APP_SITESPEED_DATA_FOLDER # Directory for sitespeed results (default: ./sitespeed-results)
 FRONTEND_URL            # Frontend URL for emails
 ```
+
+### Sitespeed Service Environment Variables
+```bash
+APP_SITESPEED_DATA_FOLDER # Directory for storing sitespeed results (default: /app/results)
+```
+
+### Sitespeed Results Access
+- Results are accessible via `/sitespeed/result/<shop-id>/` endpoint
+- API serves sitespeed files and directories from the configured data folder
+- Frontend proxy passes `/sitespeed` requests to API server
+- Detailed reports, screenshots, and videos are available through the web interface
 
 ### Frontend Environment
 ```bash

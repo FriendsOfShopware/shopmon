@@ -1,9 +1,10 @@
 <template>
-    <table
+    <div
         v-if="sortedFilteredData?.length ?? 0 > 0"
-        class="data-table"
+        class="data-table-wrapper"
     >
-        <thead>
+        <table class="data-table">
+            <thead>
             <tr>
                 <th
                     v-for="column in columns"
@@ -20,6 +21,7 @@
                         <icon-fa6-solid:chevron-down v-else />
                     </template>
                 </th>
+
                 <th
                     v-if="slots['cell-actions']"
                     class="actions"
@@ -27,8 +29,9 @@
                     <slot name="cell-actions-header" />
                 </th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+
+            <tbody>
             <tr
                 v-for="(row, rowIndex) in sortedFilteredData"
                 :key="rowIndex"
@@ -46,6 +49,7 @@
                         {{ row[column.key] }}
                     </slot>
                 </td>
+
                 <td
                     v-if="slots['cell-actions']"
                     class="actions"
@@ -56,8 +60,11 @@
                     />
                 </td>
             </tr>
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+
+
     <div
         v-else
         class="data-table-empty"
@@ -200,6 +207,10 @@ const sortedFilteredData = computed(() => {
 </script>
 
 <style>
+.data-table-wrapper {
+    overflow-x: auto;
+}
+
 .data-table {
     width: 100%;
     border-spacing: 0;
@@ -217,7 +228,6 @@ const sortedFilteredData = computed(() => {
         font-weight: 500;
         color: var(--data-table-head-color);
         white-space: nowrap;
-        text-align: left;
 
         &.sortable {
             cursor: pointer;

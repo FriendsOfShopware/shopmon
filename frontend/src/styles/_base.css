@@ -120,3 +120,7 @@ textarea {
 	margin: 0;
 	padding: 0;
 }
+
+.mb-1 {
+	margin-bottom: 1rem;
+}

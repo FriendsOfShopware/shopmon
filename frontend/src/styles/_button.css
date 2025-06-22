@@ -50,7 +50,17 @@ button,
 		}
 	}
 
-	&.btn-primary {
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	&-sm {
+		padding: 0.25rem 0.75rem;
+		font-size: 0.875rem;
+	}
+
+	&-primary {
 		border-color: var(--primary-color);
 		color: #fff;
 		background-color: var(--primary-color);
@@ -61,7 +71,19 @@ button,
 		}
 	}
 
-	&.btn-danger {
+	&-primary-outline {
+        background: #0284c7;
+        border-color: transparent;
+        color: #fff;
+        transition: background .4s;
+
+        &:hover {
+            background: #0284c777;
+			color: #fff;
+        }
+	}
+
+	&-danger {
 		border-color: #dc2626;
 		color: #fff;
 		background-color: #dc2626;
@@ -73,7 +95,7 @@ button,
 		}
 	}
 
-	&.btn-danger-outline {
+	&-danger-outline {
 		border-color: #dc2626;
 
 		&:hover {
