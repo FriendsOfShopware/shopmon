@@ -17,4 +17,3 @@ onlyBuiltDependencies:
   - '@biomejs/biome'
   - bcrypt
   - esbuild
-  - sharp

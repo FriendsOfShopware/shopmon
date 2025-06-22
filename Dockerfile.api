@@ -5,7 +5,7 @@ COPY pnpm* /app/
 COPY api/package.json /app/api/
 
 WORKDIR /app
-RUN pnpm install
+RUN pnpm install --production
 
 COPY api /app/api
     
