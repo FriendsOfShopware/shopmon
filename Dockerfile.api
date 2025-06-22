@@ -1,0 +1,26 @@
+FROM node:24-alpine AS api
+
+RUN corepack enable
+COPY pnpm* /app/
+COPY api/package.json /app/api/
+
+WORKDIR /app
+RUN pnpm install --production
+
+COPY api /app/api
+    
+WORKDIR /app/api
+
+FROM node:24-alpine
+
+ARG SENTRY_RELEASE="unknown"
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+
+COPY --from=api /app/ /app/
+
+WORKDIR /app/api
+ENV NODE_ENV=production
+EXPOSE 3000
+ENTRYPOINT [ "node", "--no-warnings=ExperimentalWarning" ]
+
+CMD [ "src/index.ts" ]

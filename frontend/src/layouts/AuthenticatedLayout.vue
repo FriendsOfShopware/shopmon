@@ -23,7 +23,7 @@ import Notification from '@/components/Notification.vue';
 
 <style scoped>
 .app-layout {
-    min-height: 100vh;
+    min-height: calc(100vh + 1px);
     display: flex;
     flex-direction: column;
 }

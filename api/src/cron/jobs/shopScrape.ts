@@ -576,7 +576,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             shopUpdate.date = new Date().toISOString();
         }
 
-        const favicon = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${shop.url}&size=32`;
+        const favicon = await getFavicon(shop.url);
 
         let queue: QueueInfo[] = [];
         if (versionCompare(shop.shopwareVersion, '6.4.7.0') < 0) {
@@ -694,4 +694,35 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         console.error(`Error updating shop ${shop.id}:`, e);
         throw e;
     }
+}
+
+async function getFavicon(url: string): Promise<string | null> {
+    const shopHtml = await fetch(url, {
+        redirect: 'follow',
+    });
+
+    if (!shopHtml.ok) {
+        return null;
+    }
+
+    const text = await shopHtml.text();
+    const match = text.match(
+        /<link[^>]+rel=["']?(?:shortcut\s+)?icon["']?[^>]*>/i,
+    );
+    if (match) {
+        const iconTag = match[0];
+        const hrefMatch = iconTag.match(/href=["']([^"']+)["']/i);
+        if (hrefMatch) {
+            const iconUrl = hrefMatch[1];
+            if (iconUrl.startsWith('http')) {
+                return iconUrl;
+            } else if (iconUrl.startsWith('/')) {
+                // If the URL is relative, construct the absolute URL
+                const absoluteUrl = new URL(iconUrl, url);
+                return absoluteUrl.toString();
+            }
+        }
+    }
+
+    return null;
 }
