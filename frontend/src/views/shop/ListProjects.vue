@@ -18,9 +18,9 @@
         <div v-else>
             <!-- Projects -->
             <div v-for="project in projects" :key="project.id" class="project-card panel">
-                <div class="project-header">
+                <div class="panel-header">
                     <div class="project-info">
-                        <h3 class="project-name">{{ project.name }}</h3>
+                        <h3>{{ project.name }}</h3>
 
                         <p v-if="project.description" class="project-description">{{ project.description }}</p>
 

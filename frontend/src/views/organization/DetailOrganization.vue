@@ -18,7 +18,7 @@
 
     <main-container v-if="organization">
         <div class="panel organization-info">
-            <h3 class="organization-info-heading">
+            <h3 class="panel-title">
                 Organization Information
             </h3>
 
@@ -52,9 +52,9 @@
             </dl>
         </div>
 
-        <div class="panel panel-table">
-            <div class="organization-members-header">
-                <h3 class="organization-members-heading">
+        <div class="panel">
+            <div class="panel-header">
+                <h3>
                     Members
                 </h3>
 
@@ -114,12 +114,10 @@
             </DataTable>
         </div>
 
-        <div class="panel panel-table">
-            <div class="organization-members-header">
-                <h3 class="organization-members-heading">
-                    Invitations
-                </h3>
-            </div>
+        <div class="panel">
+            <h3 class="panel-title">
+                Invitations
+            </h3>
 
             <DataTable
                 :columns="[
@@ -143,9 +141,9 @@
             </DataTable>
         </div>
 
-        <div class="panel panel-table">
-            <div class="organization-members-header">
-                <h3 class="organization-members-heading">
+        <div class="panel">
+            <div class="panel-header">
+                <h3>
                     SSO Configuration
                 </h3>
 
@@ -503,40 +501,15 @@ async function onChangeRole(values: Record<string, unknown>) {
 </script>
 
 <style scoped>
-.panel {
-    margin-bottom: 3rem;
-}
-
-.organization-info {
-    padding: 0;
-
-    &-heading {
-        padding: 1.25rem 1rem;
-        font-size: 1.125rem;
-        font-weight: 500;
-
-        @media (min-width: 1024px) {
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
-    }
-}
-
 .organization-info-list {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     grid-auto-rows: min-content;
     gap: 0.5rem 1.5rem;
-    border-top: 1px solid var(--panel-border-color);
-    padding: 1.25rem 1rem;
 
     @media (min-width: 960px) {
         grid-column: 1 / span 2;
         grid-template-columns: repeat(3, 1fr);
-    }
-    @media (min-width: 1024px) {
-        padding-left: 2rem;
-        padding-right: 2rem;
     }
 }
 

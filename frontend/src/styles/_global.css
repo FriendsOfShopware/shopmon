@@ -57,6 +57,37 @@ table th {
 	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 	margin-bottom: 2rem;
 
+	&-title {
+		font-size: 1.125rem;
+		line-height: 1.75rem;
+		font-weight: 500;
+		padding-bottom: 0.25rem;
+		margin-bottom: 1rem;
+		border-bottom: 1px solid var(--panel-border-color);
+	}
+
+	&-header {
+		display: flex;
+		padding-bottom: 0.75rem;
+		margin-bottom: 1rem;
+		justify-content: space-between;
+		align-items: flex-start;
+		border-bottom: 1px solid var(--panel-border-color);
+
+		h3 {
+			font-size: 1.125rem;
+			line-height: 1.75rem;
+			font-weight: 500;
+		}
+	}
+
+	&-title,
+	&-header {
+		&:not(:first-child) {
+			margin-top: 1.5rem;
+		}
+	}
+
 	&-table {
 		padding: 0;
 		overflow-y: auto;

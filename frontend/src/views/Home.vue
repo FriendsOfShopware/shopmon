@@ -2,7 +2,7 @@
     <div v-if="shops">
         <header-container title="Dashboard" />
         <main-container class="panel">
-            <h2 class="section-title">
+            <h2 class="panel-title">
                 <icon-fa6-solid:shop />
                 My Shops
             </h2>
@@ -40,10 +40,11 @@
                 </div>
             </div>
 
-            <h2 class="section-title">
+            <h2 class="panel-title">
                 <icon-fa6-solid:building />
                 My Organizations
             </h2>
+
             <div class="item-grid">
                 <div v-for="organization in organizations" :key="organization.id" class="item">
                     <router-link
@@ -68,7 +69,7 @@
             </div>
 
             <template v-if="changelogs.length > 0">
-                <h2 class="section-title">
+                <h2 class="panel-title">
                     <icon-fa6-solid:file-waveform />
                     Last Changes
                 </h2>
@@ -138,13 +139,5 @@ trpcClient.account.currentUserChangelogs.query().then((data) => {
 </script>
 
 <style scoped>
-.section-title {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-    font-weight: 500;
-    padding-bottom: 0.25rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--panel-border-color);
-}
 
 </style>

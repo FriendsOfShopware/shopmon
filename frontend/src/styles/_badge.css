@@ -1,5 +1,6 @@
 .badge {
 	font-size: 0.75rem;
+	line-height: 1;
 	font-weight: 600;
 	display: inline-block;
 	padding: 0.25rem 0.5rem;
@@ -13,6 +14,11 @@
 
 	.dark & {
 		color: #111827;
+	}
+
+	&-primary {
+		background-color: var(--color-primary-light);
+		color: var(--color-primary);
 	}
 
 	&-info {

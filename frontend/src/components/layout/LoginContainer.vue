@@ -2,7 +2,7 @@
     <div class="login-container">
         <button class="dark-mode-toggle" type="button" @click="toggleDarkMode">
             <icon-fa6-regular:moon v-if="darkMode" class="icon" />
-            <icon-fa6-regular:sun v-else class="icon" />
+            <icon-octicon:sun-16 v-else class="icon" />
         </button>
         
         <div class="login-content">
@@ -21,7 +21,7 @@ const { darkMode, toggleDarkMode } = useDarkMode();
 <style>
 .login-container {
     position: relative;
-    min-height: 100vh;
+    min-height: calc(100vh - 82px);
     display: flex;
     align-items: center;
     justify-content: center;

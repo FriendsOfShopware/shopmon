@@ -41,7 +41,6 @@ function getIconComponent(type) {
     padding: 1rem;
     border-radius: 0.375rem;
     border: 1px solid transparent;
-    margin-top: 0.75rem;
     
     &-icon {
         flex-shrink: 0;
