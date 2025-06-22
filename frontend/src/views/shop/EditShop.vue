@@ -157,7 +157,7 @@
             class="panel"
         >
             <p>
-                <a href="https://www.sitespeed.io/">Sitespeed.io</a> allows you to monitor the performance of your shop's frontend.
+                <a href="https://www.sitespeed.io/" target="_blank">Sitespeed.io</a> allows you to monitor the performance of your shop's frontend.
             </p>
             <p> To activate Sitespeed.io, you need to provide up to five URLs that you want to monitor. These URLs will be used to run performance tests and gather insights about your shop's frontend performance.</p>
             <p>The Sitespeed run is scheduled to run every 24 hours, after the initial run you can view the results of Sitespeed directly in Shopmon. </p>
@@ -175,6 +175,7 @@
 
                 <div v-if="sitespeedEnabled">
                     <label for="sitespeedUrls">Sitespeed URLs</label>
+
                     <div class="sitespeed-urls-container">
                         <div
                             v-for="(url, index) in sitespeedUrls"
@@ -187,6 +188,7 @@
                                 class="field"
                                 placeholder="https://example.com"
                             />
+
                             <button
                                 type="button"
                                 class="btn btn-icon"
@@ -195,6 +197,7 @@
                                 <icon-fa6-solid:xmark />
                             </button>
                         </div>
+
                         <button
                             v-if="sitespeedUrls.length < 5"
                             type="button"
@@ -218,6 +221,7 @@
                             class="icon"
                             aria-hidden="true"
                         />
+
                         <icon-line-md:loading-twotone-loop
                             v-else
                             class="icon"

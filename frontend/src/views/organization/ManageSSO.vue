@@ -17,7 +17,7 @@
                 <p>Users who sign in through SSO will automatically become members of this organization. Configure your identity provider to allow users from your domain to access Shopmon.</p>
             </Alert>
 
-            <div class="sso-header">
+            <div class="panel-header">
                 <h3 class="sso-heading">SSO Providers</h3>
                 <button
                     v-if="canManageOrganization"
@@ -45,11 +45,14 @@
                 <div v-for="provider in ssoProviders" :key="provider.id" class="sso-provider">
                     <div class="sso-provider-info">
                         <h4>{{ provider.domain }}</h4>
+
                         <p class="text-muted">{{ provider.issuer }}</p>
+
                         <div class="sso-provider-type">
-                            <span class="badge">{{ provider.oidcConfig ? 'OIDC' : 'SAML' }}</span>
+                            <span class="badge badge-primary">{{ provider.oidcConfig ? 'OIDC' : 'SAML' }}</span>
                         </div>
                     </div>
+
                     <div class="sso-provider-actions">
                         <button
                             v-if="canManageOrganization"
@@ -60,6 +63,7 @@
                             <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
                             Edit
                         </button>
+
                         <button
                             v-if="canManageOrganization"
                             type="button"
@@ -623,24 +627,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.panel {
-    margin-bottom: 2rem;
-}
-
-.sso-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--panel-border-color);
-}
-
-.sso-heading {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin: 0;
-}
-
 .sso-loading {
     padding: 3rem;
     text-align: center;
@@ -696,19 +682,6 @@ onMounted(() => {
     p {
         margin: 0 0 0.5rem 0;
         font-size: 0.875rem;
-    }
-}
-
-.sso-provider-type {
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        background-color: var(--color-primary-light);
-        color: var(--color-primary);
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
     }
 }
 

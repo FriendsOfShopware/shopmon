@@ -1,6 +1,6 @@
 <template>
     <div v-if="shop" class="shop-info panel">
-        <h3 class="shop-info-heading">
+        <h3 class="panel-title">
             <status-icon :status="shop.status" />
             Shop Information
         </h3>
@@ -12,7 +12,7 @@
                         Shopware Version
                     </dt>
                     <dd>
-                        {{ shop.shopwareVersion }}
+                        <span>{{ shop.shopwareVersion }}</span>
                         <template v-if="latestShopwareVersion && latestShopwareVersion != shop.shopwareVersion">
                             <a
                                 class="badge badge-warning"
@@ -316,7 +316,6 @@ async function loadUpdateWizard(version: string) {
 .shop-info-grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    border-top: 1px solid var(--panel-border-color);
     padding: 1.25rem 0;
 
     @media (min-width: 640px) {

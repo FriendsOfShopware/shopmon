@@ -61,32 +61,25 @@
     }
 
     &[type="checkbox"] {
-        appearance: none;
-        width: 1.25rem;
-        height: 1.25rem;
+        width: 1rem;
+        height: 1rem;
         padding: 0;
-        margin-left: 0.5rem;
         display: inline-block;
-        vertical-align: middle;
-        background-origin: border-box;
+        vertical-align: top;
         user-select: none;
-        flex-shrink: 0;
-        background-color: var(--field-background);
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
         cursor: pointer;
+        margin-right: 0.35rem;
+        border-radius: 0.25rem;
+
+        label + & {
+            margin-left: 0.35rem;
+            margin-right: 0;
+        }
 
         &:checked {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16"><path stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z"/></svg>');
-        }
-
-        &:focus {
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-            box-shadow: 0 0 0 2px var(--field-background), 0 0 0 4px var(--primary-color);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
         }
 
         &:disabled {
@@ -103,4 +96,8 @@
     .form-group:has(+ &) {
         padding-bottom: 1rem;
     }
+}
+
+label {
+    cursor: pointer;
 }

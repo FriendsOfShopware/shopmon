@@ -5,10 +5,10 @@
             v-slot="{ errors, isSubmitting, setFieldValue }"
             :validation-schema="schema"
             @submit="onCreateOrganization"
+            class="panel"
         >
             <form-group
                 title="Organization Information"
-                sub-title=""
             >
                 <div>
                     <label for="Name">Name</label>
