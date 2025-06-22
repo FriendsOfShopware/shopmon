@@ -1,5 +1,4 @@
 import './sentry.ts';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
@@ -8,12 +7,6 @@ import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 import './cron/index.ts';
 import users from './repository/users.ts';
-
-const filesDir = process.env.APP_FILES_DIR || './files';
-
-if (!existsSync(filesDir)) {
-    mkdirSync(filesDir, { recursive: true });
-}
 
 const app = new Hono();
 
@@ -65,16 +58,6 @@ app.get(
 app.get('/health', (c) => {
     return c.json({ status: 'ok' });
 });
-
-if (existsSync('./dist')) {
-    app.use('*', serveStatic({ root: './dist' }));
-    const indexHtml = readFileSync('./dist/index.html', 'utf-8');
-    app.notFound((c) => {
-        return c.html(indexHtml, 200, {
-            'Content-Type': 'text/html',
-        });
-    });
-}
 
 serve({
     fetch: app.fetch,
