@@ -130,13 +130,6 @@ function isActive(
     }
 }
 
-.sidebar-section-label {
-    font-weight: bold;
-    display: inline-block;
-    margin-bottom: 0.25rem;
-    color: var(--text-color-muted);
-}
-
 /* Main */
 .nav-main {
     padding-bottom: 0.3rem;
@@ -168,6 +161,15 @@ function isActive(
 
     .nav-link-state {
         margin-left: auto;
+    }
+}
+
+.nav-stores {
+    .nav-link-name {
+        overflow: hidden;
+        max-width: 170px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 }
 </style>
