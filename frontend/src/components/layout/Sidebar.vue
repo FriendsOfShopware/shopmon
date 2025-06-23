@@ -33,6 +33,10 @@
                     >
                         <div class="nav-link-icon">
                             <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img">
+                            <icon-fa6-solid:earth-americas
+                                v-else
+                                class="placeholder-image"
+                            />
                         </div>
 
                         <span class="nav-link-name">{{ shop.name }}</span>
@@ -130,13 +134,6 @@ function isActive(
     }
 }
 
-.sidebar-section-label {
-    font-weight: bold;
-    display: inline-block;
-    margin-bottom: 0.25rem;
-    color: var(--text-color-muted);
-}
-
 /* Main */
 .nav-main {
     padding-bottom: 0.3rem;
@@ -168,6 +165,15 @@ function isActive(
 
     .nav-link-state {
         margin-left: auto;
+    }
+}
+
+.nav-stores {
+    .nav-link-name {
+        overflow: hidden;
+        max-width: 8.35rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 }
 </style>

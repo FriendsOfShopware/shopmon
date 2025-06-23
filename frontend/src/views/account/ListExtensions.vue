@@ -69,7 +69,7 @@
                             :key="rowIndex"
                             class="shops-row"
                         >
-                            <span class="extension-version" :data-tooltip="shop.version">{{ shop.version }}</span>
+                            <span class="extension-version" :data-tooltip="shop.version">{{ shop.version.replace(/(.{12})..+/, "$1&hellip;") }}</span>
                             <span
                                 v-if="row.latestVersion && shop.version < row.latestVersion"
                                 data-tooltip="Update available"
@@ -135,14 +135,8 @@ function getExtensionState(
 
     .extension-technical-name {
         font-weight: normal;
-        opacity: .6;
+        opacity: 0.6;
     }
-}
-
-.extension-version {
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .shops-row {
@@ -150,12 +144,12 @@ function getExtensionState(
     line-height: 1.2rem;
 
     &:not(:last-child) {
-        margin-bottom: .35rem;
+        margin-bottom: 0.35rem;
     }
 
     .icon-update {
-        vertical-align: -.1em;
-        margin-left: .15rem;
+        vertical-align: -0.1em;
+        margin-left: 0.3rem;
     }
 }
 </style>
@@ -163,7 +157,7 @@ function getExtensionState(
 <style>
 .shops-row {
     .icon-status {
-        vertical-align: -.2em;
+        vertical-align: -0.2em;
     }
 }
 </style>

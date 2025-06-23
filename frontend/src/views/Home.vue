@@ -1,15 +1,15 @@
 <template>
     <div v-if="shops">
-        <header-container title="Dashboard" />
-        <main-container class="panel">
+        <header-container title="Dashboard"/>
+        <div class="panel">
             <h2 class="panel-title">
-                <icon-fa6-solid:shop />
+                <icon-fa6-solid:shop/>
                 My Shops
             </h2>
 
             <div class="item-grid">
                 <div v-for="shop in shops" :key="shop.id" class="item">
-                    <router-link 
+                    <router-link
                         :to="{
                             name: 'account.shops.detail',
                             params: {
@@ -33,15 +33,17 @@
                             </div>
 
                             <div class="item-state">
-                                <status-icon :status="shop.status" />
+                                <status-icon :status="shop.status"/>
                             </div>
                         </div>
                     </router-link>
                 </div>
             </div>
+        </div>
 
+        <div class="panel">
             <h2 class="panel-title">
-                <icon-fa6-solid:building />
+                <icon-fa6-solid:building/>
                 My Organizations
             </h2>
 
@@ -52,7 +54,7 @@
                         class="item-link item-wrapper"
                     >
                         <div class="item-logo">
-                            <icon-fa6-solid:building class="item-logo-icon" />
+                            <icon-fa6-solid:building class="item-logo-icon"/>
                         </div>
 
                         <div class="item-info">
@@ -67,58 +69,54 @@
                     </router-link>
                 </div>
             </div>
+        </div>
 
-            <template v-if="changelogs.length > 0">
-                <h2 class="panel-title">
-                    <icon-fa6-solid:file-waveform />
-                    Last Changes
-                </h2>
-                
-                <div class="panel panel-table">
-                    <data-table
-                        :columns="[
-                            { key: 'shopName', name: 'Shop', sortable: true },
-                            { key: 'extensions', name: 'Changes', sortable: true },
-                            { key: 'date', name: 'Date', sortable: true, sortPath: 'date' }
-                        ]"
-                        :data="changelogs"
+        <div v-if="changelogs.length > 0" class="panel">
+            <h2 class="panel-title">
+                <icon-fa6-solid:file-waveform/>
+                Last Changes
+            </h2>
+
+            <data-table
+                :columns="[
+                { key: 'shopName', name: 'Shop', sortable: true },
+                { key: 'extensions', name: 'Changes', sortable: true },
+                { key: 'date', name: 'Date', sortable: true, sortPath: 'date' }
+            ]"
+                :data="changelogs"
+            >
+                <template #cell-shopName="{ row }">
+                    <router-link
+                        :to="{
+                        name: 'account.shops.detail',
+                        params: {
+                            slug: row.organizationSlug,
+                            shopId: row.shopId
+                        }
+                    }"
                     >
-                        <template #cell-shopName="{ row }">
-                            <router-link
-                                :to="{
-                                    name: 'account.shops.detail',
-                                    params: {
-                                        slug: row.organizationSlug,
-                                        shopId: row.shopId
-                                    }
-                                }"
-                            >
-                                {{ row.shopName }}
-                            </router-link>
-                        </template>
+                        {{ row.shopName }}
+                    </router-link>
+                </template>
 
-                        <template #cell-extensions="{ row }">
-                            {{ sumChanges(row) }}
-                        </template>
+                <template #cell-extensions="{ row }">
+                    {{ sumChanges(row) }}
+                </template>
 
-                        <template #cell-date="{ row }">
-                            {{ formatDateTime(row.date) }}
-                        </template>
-                    </data-table>
-                </div>
-            </template>
-        </main-container>
+                <template #cell-date="{ row }">
+                    {{ formatDateTime(row.date) }}
+                </template>
+            </data-table>
+        </div>
+
     </div>
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-
-import { sumChanges } from '@/helpers/changelog';
-import { formatDateTime } from '@/helpers/formatter';
-import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import { ref } from 'vue';
+import {sumChanges} from '@/helpers/changelog';
+import {formatDateTime} from '@/helpers/formatter';
+import {type RouterOutput, trpcClient} from '@/helpers/trpc';
+import {ref} from 'vue';
 
 const organizations = ref<RouterOutput['account']['listOrganizations']>();
 trpcClient.account.listOrganizations.query().then((data) => {

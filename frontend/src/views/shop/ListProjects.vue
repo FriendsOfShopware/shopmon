@@ -17,7 +17,7 @@
 
         <div v-else>
             <!-- Projects -->
-            <div v-for="project in projects" :key="project.id" class="project-card panel">
+            <div v-for="project in projects" :key="project.id" class="project-panel panel">
                 <div class="panel-header">
                     <div class="project-info">
                         <h3>{{ project.name }}</h3>
@@ -323,23 +323,9 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 </script>
 
 <style scoped>
-.project-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--panel-border-color);
-}
 
 .project-info {
     flex: 1;
-}
-
-.project-name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0 0 0.25rem 0;
 }
 
 .project-description {
@@ -361,6 +347,12 @@ async function deleteProject(project: (typeof projects.value)[0]) {
 .project-actions {
     .menu-button {
         color: var(--text-color)
+    }
+}
+
+.project-panel {
+    .item-info {
+        padding-right: 1.75rem;
     }
 }
 </style>
