@@ -71,7 +71,7 @@
             </div>
         </div>
 
-        <div class="panel" v-if="changelogs.length > 0">
+        <div v-if="changelogs.length > 0" class="panel">
             <h2 class="panel-title">
                 <icon-fa6-solid:file-waveform/>
                 Last Changes
@@ -113,9 +113,6 @@
 </template>
 
 <script setup lang="ts">
-import HeaderContainer from '@/components/layout/HeaderContainer.vue';
-import MainContainer from '@/components/layout/MainContainer.vue';
-
 import {sumChanges} from '@/helpers/changelog';
 import {formatDateTime} from '@/helpers/formatter';
 import {type RouterOutput, trpcClient} from '@/helpers/trpc';
