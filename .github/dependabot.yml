@@ -1,17 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: "pnpm"
-    directory: "/api"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: 'fix(deps): '
-    groups:
-      all:
-        patterns:
-          - '*'
-  - package-ecosystem: "pnpm"
-    directory: "/frontend"
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "weekly"
     commit-message:
