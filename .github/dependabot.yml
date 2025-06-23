@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  - package-ecosystem: "pnpm"
     directory: "/api"
     schedule:
       interval: "weekly"
@@ -10,7 +10,7 @@ updates:
       all:
         patterns:
           - '*'
-  - package-ecosystem: "npm"
+  - package-ecosystem: "pnpm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
