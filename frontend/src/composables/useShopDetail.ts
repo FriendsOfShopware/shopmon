@@ -1,4 +1,4 @@
-import {ref, computed, onMounted} from 'vue';
+import {ref, computed, onMounted, watch} from 'vue';
 import {useRoute} from 'vue-router';
 import {compareVersions} from 'compare-versions';
 import {trpcClient} from '@/helpers/trpc';
@@ -118,6 +118,11 @@ export function useShopDetail() {
     }
 
     onMounted(() => {
+        loadShop();
+    });
+
+    // Watch for changes to the shop ID and reload the shop data when it changes
+    watch(() => route.params.shopId, () => {
         loadShop();
     });
 
