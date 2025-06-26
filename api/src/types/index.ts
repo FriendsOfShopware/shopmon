@@ -63,3 +63,12 @@ export type NotificationLink = {
     name: string;
     params: Record<string, string>;
 } | null;
+
+export type ShopScrapeInfo = {
+    extensions: Extension[];
+    scheduledTask: ScheduledTask[];
+    queueInfo: QueueInfo[];
+    cacheInfo: CacheInfo;
+    checks: CheckerChecks[];
+    createdAt: Date;
+};
