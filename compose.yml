@@ -5,11 +5,12 @@ services:
       - "8025:8025"
       - "1025:1025"
   demoshop:
-    image: local/demoshop
-    build:
-      context: demoshop
+    image: ghcr.io/friendsofshopware/shopware-demo-environment:6.7.0
     environment:
       APP_URL: "http://localhost:3889"
+      EXTENSIONS: "frosh/tools:* frosh/shopmon:*"
+      SHOPMON_ACCESS_KEY: SWIAUZL4OXRKEG1RR3PMCEVNMG
+      SHOPMON_ACCESS_SECRET: aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks
     ports:
       - "3889:8000"
   sitespeed-service:
