@@ -12,6 +12,10 @@ import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
 import { schema } from '../../db.ts';
+import {
+    getShopScrapeInfo,
+    saveShopScrapeInfo,
+} from '../../repository/scrapeInfo.ts';
 import Shops from '../../repository/shops.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
@@ -84,11 +88,6 @@ export const shopRouter = router({
                     lastChangelog: schema.shop.lastChangelog,
                     ignores: schema.shop.ignores,
                     shopImage: schema.shop.shopImage,
-                    extensions: schema.shopScrapeInfo.extensions,
-                    scheduledTask: schema.shopScrapeInfo.scheduledTask,
-                    queueInfo: schema.shopScrapeInfo.queueInfo,
-                    cacheInfo: schema.shopScrapeInfo.cacheInfo,
-                    checks: schema.shopScrapeInfo.checks,
                     connectionIssueCount: schema.shop.connectionIssueCount,
                     organizationId: schema.shop.organizationId,
                     organizationName:
@@ -112,10 +111,6 @@ export const shopRouter = router({
                     schema.project,
                     eq(schema.project.id, schema.shop.projectId),
                 )
-                .leftJoin(
-                    schema.shopScrapeInfo,
-                    eq(schema.shopScrapeInfo.shopId, schema.shop.id),
-                )
                 .where(eq(schema.shop.id, input.shopId))
                 .get();
 
@@ -131,11 +126,13 @@ export const shopRouter = router({
                 },
             );
 
-            const [shop, sitespeed, shopChangelog] = await Promise.all([
-                shopQuery,
-                sitespeedQuery,
-                shopChangelogQuery,
-            ]);
+            const [shop, sitespeed, shopChangelog, scrapeInfo] =
+                await Promise.all([
+                    shopQuery,
+                    sitespeedQuery,
+                    shopChangelogQuery,
+                    getShopScrapeInfo(input.shopId),
+                ]);
 
             if (shop === undefined) {
                 throw new TRPCError({
@@ -144,7 +141,12 @@ export const shopRouter = router({
                 });
             }
 
-            return { ...shop, sitespeed: sitespeed, changelog: shopChangelog };
+            return {
+                ...shop,
+                ...scrapeInfo,
+                sitespeed: sitespeed,
+                changelog: shopChangelog,
+            };
         }),
     create: publicProcedure
         .input(
@@ -413,16 +415,10 @@ export const shopRouter = router({
                 nextExecutionTime: nextExecutionTime,
             });
 
-            const scrapeResult =
-                await ctx.drizzle.query.shopScrapeInfo.findFirst({
-                    columns: {
-                        scheduledTask: true,
-                    },
-                    where: eq(schema.shopScrapeInfo.shopId, input.shopId),
-                });
+            const scrapeResult = await getShopScrapeInfo(input.shopId);
 
             // If there is no scrape result, we don't need to update the scheduled task
-            if (scrapeResult === undefined) {
+            if (scrapeResult === null) {
                 return true;
             }
 
@@ -434,11 +430,7 @@ export const shopRouter = router({
                 }
             }
 
-            await ctx.drizzle
-                .update(schema.shopScrapeInfo)
-                .set({ scheduledTask: scrapeResult.scheduledTask })
-                .where(eq(schema.shopScrapeInfo.shopId, input.shopId))
-                .execute();
+            await saveShopScrapeInfo(input.shopId, scrapeResult);
         }),
     subscribeToNotifications: publicProcedure
         .input(
@@ -574,8 +566,7 @@ export const shopRouter = router({
 
                 await fs.rm(
                     path.join(
-                        process.env.APP_SITESPEED_DATA_FOLDER ||
-                            './sitespeed-results',
+                        './files/sitespeed-results',
                         input.shopId.toString(),
                     ),
                     { recursive: true, force: true },

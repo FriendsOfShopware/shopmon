@@ -5,15 +5,7 @@ import {
     type LibSQLDatabase,
 } from 'drizzle-orm/libsql';
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
-import type {
-    CacheInfo,
-    CheckerChecks,
-    Extension,
-    ExtensionDiff,
-    NotificationLink,
-    QueueInfo,
-    ScheduledTask,
-} from './types/index.ts';
+import type { ExtensionDiff, NotificationLink } from './types/index.ts';
 
 type LastChangelog = {
     date: Date;
@@ -89,27 +81,6 @@ export const shopSitespeed = sqliteTable('shop_sitespeed', {
     firstContentfulPaint: integer('first_contentful_paint'),
     cumulativeLayoutShift: integer('cumulative_layout_shift'),
     transferSize: integer('transfer_size'),
-});
-
-export const shopScrapeInfo = sqliteTable('shop_scrape_info', {
-    shopId: integer('shop_id')
-        .notNull()
-        .primaryKey()
-        .references(() => shop.id),
-    extensions: text('extensions', { mode: 'json' })
-        .notNull()
-        .$type<Extension[]>(),
-    scheduledTask: text('scheduled_task', { mode: 'json' })
-        .notNull()
-        .$type<ScheduledTask[]>(),
-    queueInfo: text('queue_info', { mode: 'json' })
-        .notNull()
-        .$type<QueueInfo[]>(),
-    cacheInfo: text('cache_info', { mode: 'json' })
-        .notNull()
-        .$type<CacheInfo>(),
-    checks: text('checks', { mode: 'json' }).notNull().$type<CheckerChecks[]>(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
 export const shopChangelog = sqliteTable('shop_changelog', {
@@ -307,7 +278,6 @@ export const organizationRelations = relations(organization, ({ many }) => ({
 export const schema = {
     shop,
     shopSitespeed,
-    shopScrapeInfo,
     shopChangelog,
     userNotification,
 

@@ -1,5 +1,10 @@
 import type { HttpClient } from '@shopware-ag/app-server-sdk';
-import type { schema } from '../../db.ts';
+import type {
+    CacheInfo,
+    Extension,
+    QueueInfo,
+    ScheduledTask,
+} from '../../types/index.ts';
 import env from './checks/env.ts';
 import frosh_tools from './checks/frosh_tools.ts';
 import security from './checks/security.ts';
@@ -9,16 +14,16 @@ import worker from './checks/worker.ts';
 type SHOP_STATUS = 'green' | 'yellow' | 'red';
 
 export interface CheckerInput {
-    extensions: typeof schema.shopScrapeInfo.$inferInsert.extensions;
+    extensions: Extension[];
     config: {
         version: string;
         adminWorker: {
             enableAdminWorker: boolean;
         };
     };
-    scheduledTasks: typeof schema.shopScrapeInfo.$inferInsert.scheduledTask;
-    queueInfo: typeof schema.shopScrapeInfo.$inferInsert.queueInfo;
-    cacheInfo: typeof schema.shopScrapeInfo.$inferInsert.cacheInfo;
+    scheduledTasks: ScheduledTask[];
+    queueInfo: QueueInfo[];
+    cacheInfo: CacheInfo;
     favicon: string | null;
     client: HttpClient;
     ignores: string[];

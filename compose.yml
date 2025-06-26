@@ -23,6 +23,6 @@ services:
         - action: rebuild
           path: sitespeed-service/index.ts
     volumes:
-      - ./sitespeed-results:/app/results
+      - ./api/files/sitespeed-results:/app/results
     environment:
       - APP_SITESPEED_DATA_FOLDER=/app/results

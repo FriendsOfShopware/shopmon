@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
 import * as LockRepository from './lock.ts';
+import { deleteShopScrapeInfo } from './scrapeInfo.ts';
 import Users from './users.ts';
 
 interface CreateShopRequest {
@@ -58,10 +59,6 @@ async function createShop(
 async function deleteShop(con: Drizzle, id: number): Promise<void> {
     // Delete database records
     await con
-        .delete(schema.shopScrapeInfo)
-        .where(eq(schema.shopScrapeInfo.shopId, id))
-        .execute();
-    await con
         .delete(schema.shopChangelog)
         .where(eq(schema.shopChangelog.shopId, id))
         .execute();
@@ -71,10 +68,11 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
         .execute();
     await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
 
+    await deleteShopScrapeInfo(id);
+
     // Clean up sitespeed results from filesystem
     try {
-        const sitespeedDataFolder =
-            process.env.APP_SITESPEED_DATA_FOLDER || './sitespeed-results';
+        const sitespeedDataFolder = './files/sitespeed-results';
         const shopResultsDir = path.join(sitespeedDataFolder, id.toString());
 
         // Check if the directory exists before trying to delete it

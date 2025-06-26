@@ -10,6 +10,10 @@ import { and, asc, eq, inArray } from 'drizzle-orm';
 import { decrypt } from '../../crypto/index.ts';
 import { type Drizzle, getConnection, schema } from '../../db.ts';
 import { type CheckerInput, check } from '../../object/status/registery.ts';
+import {
+    getShopScrapeInfo,
+    saveShopScrapeInfo,
+} from '../../repository/scrapeInfo.ts';
 import Shops, { type User } from '../../repository/shops.ts';
 import type {
     CacheInfo,
@@ -480,17 +484,11 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             }
         }
 
-        const resultCurrentExtensions =
-            await con.query.shopScrapeInfo.findFirst({
-                columns: {
-                    extensions: true,
-                },
-                where: eq(schema.shopScrapeInfo.shopId, shop.id),
-            });
+        const oldShopScrapeInfo = await getShopScrapeInfo(shop.id);
 
         const extensionsDiff: ExtensionDiff[] = [];
-        if (resultCurrentExtensions) {
-            for (const oldExtension of resultCurrentExtensions.extensions) {
+        if (oldShopScrapeInfo) {
+            for (const oldExtension of oldShopScrapeInfo.extensions) {
                 let exists = false;
 
                 for (const newExtension of extensions) {
@@ -544,7 +542,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             for (const newExtension of extensions) {
                 let exists = false;
 
-                for (const oldExtension of resultCurrentExtensions.extensions) {
+                for (const oldExtension of oldShopScrapeInfo.extensions) {
                     if (oldExtension.name === newExtension.name) {
                         exists = true;
                     }
@@ -642,13 +640,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             .where(eq(schema.shop.id, shop.id))
             .execute();
 
-        await con
-            .delete(schema.shopScrapeInfo)
-            .where(eq(schema.shopScrapeInfo.shopId, shop.id))
-            .execute();
-
-        await con.insert(schema.shopScrapeInfo).values({
-            shopId: shop.id,
+        await saveShopScrapeInfo(shop.id, {
             extensions: input.extensions,
             scheduledTask: input.scheduledTasks,
             queueInfo: input.queueInfo,
