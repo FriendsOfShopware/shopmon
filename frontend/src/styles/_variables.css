@@ -3,7 +3,7 @@
     --primary-color: #0ea5e9;
     --background-color: #f3f4f6;
     --text-color: #111827;
-    --text-color-muted: #6b7280;
+    --text-color-muted: #69707e;
     --link-color: #0369a1;
     --link-hover-color: #0284c7;
     --info-color: #3b82f6;
@@ -41,7 +41,7 @@
 :root.dark {
     --background-color: #171717;
     --text-color: #a3a3a3;
-    --text-color-muted: #737373;
+    --text-color-muted: #818181;
     --link-color: #38bdf8;
     --link-hover-color: #0ea5e9;
     --info-color: #38bdf8;
@@ -61,7 +61,7 @@
     --item-title-color: #d1d5db;
     --item-sub-background: #40404040;
     --item-icon-color: #d1d5db;
-    --section-title-color: #6b7280;
+    --section-title-color: #878e9c;
     --section-title-border-color: #262626;
     --notification-border-color: #404040;
     --menu-item-active-background-color:#374151;
