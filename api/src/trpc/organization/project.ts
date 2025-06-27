@@ -55,7 +55,7 @@ export const projectRouter = router({
                 })
                 .execute();
 
-            return result.lastInsertRowid as unknown as number;
+            return Number(result.lastInsertRowid);
         }),
     update: publicProcedure
         .input(

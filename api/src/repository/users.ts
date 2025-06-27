@@ -68,7 +68,7 @@ async function createNotification(
         ...notification,
         key,
         userId,
-        id: result.lastInsertRowid as unknown as number,
+        id: Number(result.lastInsertRowid),
         read: false,
         createdAt: new Date(),
     };

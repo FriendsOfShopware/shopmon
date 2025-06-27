@@ -52,7 +52,7 @@ async function createShop(
         })
         .execute();
 
-    return result.lastInsertRowid as unknown as number;
+    return Number(result.lastInsertRowid);
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {
