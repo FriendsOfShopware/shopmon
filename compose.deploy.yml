@@ -1,5 +1,5 @@
 x-env: &env
-  MAIL_FROM: "Shopmon <contact@fos.gg>"
+  MAIL_FROM: "Shopmon <noreply@fos.gg>"
   APP_FILES_DIR: /app/uploads
   APP_DATABASE_PATH: /app/db/shopmon.db
   APP_OAUTH_GITHUB_CLIENT_ID: ${APP_OAUTH_GITHUB_CLIENT_ID}
