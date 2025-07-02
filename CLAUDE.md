@@ -144,15 +144,11 @@ APP_DATABASE_PATH       # SQLite database path
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
 APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
-APP_SITESPEED_DATA_FOLDER # Directory for sitespeed results (default: ./sitespeed-results)
 FRONTEND_URL            # Frontend URL for emails
 SENTRY_DSN              # Error tracking
 ```
 
 ### Sitespeed Service Environment Variables
-```bash
-APP_SITESPEED_DATA_FOLDER # Directory for storing sitespeed results (default: /app/results)
-```
 
 ### Sitespeed Results Access
 - Results are accessible via `/sitespeed/result/<shop-id>/` endpoint

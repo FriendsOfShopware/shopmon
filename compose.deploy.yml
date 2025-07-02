@@ -14,7 +14,6 @@ x-env: &env
   SMTP_PASS: ${SMTP_PASS}
   SMTP_REPLY_TO: ${SMTP_REPLY_TO}
   APP_SITESPEED_ENDPOINT: http://sitespeed:3001
-  APP_SITESPEED_DATA_FOLDER: ../uploads/sitespeed/
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT}
   SENTRY_DSN: ${SENTRY_DSN}
 
@@ -64,7 +63,7 @@ services:
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
     volumes:
       - db:/app/db
-      - uploads:/app/uploads
+      - uploads:/app/files
 
   sitespeed:
     image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}

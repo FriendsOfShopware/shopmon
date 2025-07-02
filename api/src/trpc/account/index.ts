@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
 import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
@@ -57,6 +58,66 @@ export const accountRouter = router({
                 .get();
 
             return user;
+        }),
+    currentUserExtensions: publicProcedure
+        .use(loggedInUserMiddleware)
+        .query(async ({ ctx }) => {
+            const result = await ctx.drizzle
+                .select({
+                    id: schema.shop.id,
+                    name: schema.shop.name,
+                    organizationId: schema.shop.organizationId,
+                    shopwareVersion: schema.shop.shopwareVersion,
+                    organizationSlug:
+                        sql<string>`${schema.organization.slug}`.as(
+                            'organization_slug',
+                        ),
+                })
+                .from(schema.shop)
+                .innerJoin(
+                    schema.member,
+                    eq(
+                        schema.member.organizationId,
+                        schema.shop.organizationId,
+                    ),
+                )
+                .innerJoin(
+                    schema.organization,
+                    eq(schema.organization.id, schema.shop.organizationId),
+                )
+                .where(eq(schema.member.userId, ctx.user.id))
+                .orderBy(schema.shop.name)
+                .all();
+
+            const json = {} as { [key: string]: UserExtension };
+
+            for (const row of result) {
+                const scrapeResult = await getShopScrapeInfo(row.id);
+
+                if (!scrapeResult) {
+                    continue;
+                }
+
+                for (const extension of scrapeResult.extensions) {
+                    if (json[extension.name] === undefined) {
+                        json[extension.name] = extension as UserExtension;
+                        json[extension.name].shops = {};
+                    }
+
+                    json[extension.name].shops[row.id] = {
+                        id: row.id,
+                        name: row.name,
+                        organizationId: row.organizationId,
+                        organizationSlug: row.organizationSlug,
+                        shopwareVersion: row.shopwareVersion,
+                        installed: extension.installed,
+                        active: extension.active,
+                        version: extension.version,
+                    };
+                }
+            }
+
+            return Object.values(json);
         }),
     listOrganizations: publicProcedure
         .use(loggedInUserMiddleware)
@@ -199,65 +260,6 @@ export const accountRouter = router({
                 .all();
 
             return result;
-        }),
-    currentUserExtensions: publicProcedure
-        .use(loggedInUserMiddleware)
-        .query(async ({ ctx }) => {
-            const result = await ctx.drizzle
-                .select({
-                    id: schema.shop.id,
-                    name: schema.shop.name,
-                    organizationId: schema.shop.organizationId,
-                    shopwareVersion: schema.shop.shopwareVersion,
-                    extensions: schema.shopScrapeInfo.extensions,
-                    organizationSlug:
-                        sql<string>`${schema.organization.slug}`.as(
-                            'organization_slug',
-                        ),
-                })
-                .from(schema.shop)
-                .innerJoin(
-                    schema.member,
-                    eq(
-                        schema.member.organizationId,
-                        schema.shop.organizationId,
-                    ),
-                )
-                .innerJoin(
-                    schema.organization,
-                    eq(schema.organization.id, schema.shop.organizationId),
-                )
-                .innerJoin(
-                    schema.shopScrapeInfo,
-                    eq(schema.shopScrapeInfo.shopId, schema.shop.id),
-                )
-                .where(eq(schema.member.userId, ctx.user.id))
-                .orderBy(schema.shop.name)
-                .all();
-
-            const json = {} as { [key: string]: UserExtension };
-
-            for (const row of result) {
-                for (const extension of row.extensions) {
-                    if (json[extension.name] === undefined) {
-                        json[extension.name] = extension as UserExtension;
-                        json[extension.name].shops = {};
-                    }
-
-                    json[extension.name].shops[row.id] = {
-                        id: row.id,
-                        name: row.name,
-                        organizationId: row.organizationId,
-                        organizationSlug: row.organizationSlug,
-                        shopwareVersion: row.shopwareVersion,
-                        installed: extension.installed,
-                        active: extension.active,
-                        version: extension.version,
-                    };
-                }
-            }
-
-            return Object.values(json);
         }),
     subscribedShops: publicProcedure
         .use(loggedInUserMiddleware)
