@@ -58,7 +58,7 @@
             <template #cell-actions="{ row }">
                 <div class="actions-group">
                     <button
-                        v-if="row.id == session?.data?.user?.id"
+                        v-if="row.id != session?.data?.user?.id"
                         class="btn btn-sm btn-primary"
                         @click="impersonateUser(row.id)"
                     >
@@ -67,7 +67,7 @@
                     </button>
 
                     <button
-                        v-if="!row.banned && row.id == session?.data?.user?.id"
+                        v-if="!row.banned && row.id != session?.data?.user?.id"
                         class="btn btn-sm btn-danger"
                         @click="banUser(row.id)"
                     >
