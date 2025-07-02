@@ -63,7 +63,7 @@ services:
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
     volumes:
       - db:/app/db
-      - uploads:/app/files
+      - uploads:/app/api/files
 
   sitespeed:
     image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}

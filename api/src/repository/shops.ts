@@ -72,7 +72,7 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
 
     // Clean up sitespeed results from filesystem
     try {
-        const sitespeedDataFolder = './files/sitespeed-results';
+        const sitespeedDataFolder = './files/sitespeed';
         const shopResultsDir = path.join(sitespeedDataFolder, id.toString());
 
         // Check if the directory exists before trying to delete it

@@ -47,7 +47,7 @@ app.use('/sitespeed/*', async (c, next) => {
 app.get(
     '/sitespeed/*',
     serveStatic({
-        root: './files/sitespeed-results',
+        root: './files/sitespeed',
         rewriteRequestPath(path) {
             return path.replace(/^\/sitespeed\//, '');
         },
