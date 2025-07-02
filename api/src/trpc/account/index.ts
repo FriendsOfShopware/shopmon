@@ -1,10 +1,10 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
 import { schema } from '../../db.ts';
 import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import { loggedInUserMiddleware } from '../middleware.ts';
 import { notificationRouter } from './notification.ts';
-import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
 
 interface Extension {
     name: string;
@@ -92,7 +92,7 @@ export const accountRouter = router({
             const json = {} as { [key: string]: UserExtension };
 
             for (const row of result) {
-                const scrapeResult = await getShopScrapeInfo(row.id)
+                const scrapeResult = await getShopScrapeInfo(row.id);
 
                 if (!scrapeResult) {
                     continue;
