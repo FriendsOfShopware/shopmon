@@ -132,7 +132,7 @@ export const auth = betterAuth({
         organization({
             sendInvitationEmail: async (data) => {
                 const { sendMailInviteToOrganization } = await import(
-                    './mail/mail.js'
+                    './mail/mail.ts'
                 );
                 await sendMailInviteToOrganization(
                     data.email,
