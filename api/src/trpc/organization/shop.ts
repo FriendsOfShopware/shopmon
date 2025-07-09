@@ -565,10 +565,7 @@ export const shopRouter = router({
                     .execute();
 
                 await fs.rm(
-                    path.join(
-                        './files/sitespeed',
-                        input.shopId.toString(),
-                    ),
+                    path.join('./files/sitespeed', input.shopId.toString()),
                     { recursive: true, force: true },
                 );
             }
