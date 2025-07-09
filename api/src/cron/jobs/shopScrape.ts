@@ -271,12 +271,12 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             await Shops.alert(con, {
                 key: `shop.update-auth-error.${shop.id}`,
                 shopId: shop.id.toString(),
-                subject: 'Shop Update Error',
-                message: `The Shop could not be updated. Please check your credentials and try again.${error}`,
+                subject: 'Refresh shop data error',
+                message: `The shop data could not be refreshed. Please check your credentials and try again. ${error}`,
             });
 
             logger.info(
-                `Shop ${shop.name} could not be updated, error is ${error}`,
+                `Shop ${shop.name} could not be refreshed, error is ${error}`,
             );
 
             await con
@@ -708,7 +708,8 @@ async function getFavicon(url: string): Promise<string | null> {
             const iconUrl = hrefMatch[1];
             if (iconUrl.startsWith('http')) {
                 return iconUrl;
-            } else if (iconUrl.startsWith('/')) {
+            }
+            if (iconUrl.startsWith('/')) {
                 // If the URL is relative, construct the absolute URL
                 const absoluteUrl = new URL(iconUrl, url);
                 return absoluteUrl.toString();

@@ -1,4 +1,5 @@
 import * as cron from 'node-cron';
+import { invitationCleanupJob } from './jobs/invitationCleanup.ts';
 import { lockCleanupJob } from './jobs/lockCleanup.ts';
 import { shopScrapeJob } from './jobs/shopScrape.ts';
 import { scrapeSitespeedForAllShops } from './jobs/sitespeedScrape.ts';
@@ -32,5 +33,15 @@ cron.schedule('0 4 * * *', async () => {
         await lockCleanupJob();
     } catch (error) {
         console.error('Lock cleanup job failed:', error);
+    }
+});
+
+// Run invitation cleanup job every day at 5 AM
+cron.schedule('0 5 * * *', async () => {
+    console.log('Running invitation cleanup job...');
+    try {
+        await invitationCleanupJob();
+    } catch (error) {
+        console.error('Invitation cleanup job failed:', error);
     }
 });
