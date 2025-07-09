@@ -34,7 +34,7 @@ app.use('/sitespeed/*', async (c, next) => {
 
     const access = await users.hasAccessToShop(
         session.user.id,
-        parseInt(shopId, 10),
+        Number.parseInt(shopId, 10),
     );
 
     if (!access) {

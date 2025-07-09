@@ -708,7 +708,8 @@ async function getFavicon(url: string): Promise<string | null> {
             const iconUrl = hrefMatch[1];
             if (iconUrl.startsWith('http')) {
                 return iconUrl;
-            } else if (iconUrl.startsWith('/')) {
+            }
+            if (iconUrl.startsWith('/')) {
                 // If the URL is relative, construct the absolute URL
                 const absoluteUrl = new URL(iconUrl, url);
                 return absoluteUrl.toString();

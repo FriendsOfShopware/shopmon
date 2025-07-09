@@ -61,7 +61,7 @@ export const auth = betterAuth({
             if (ctx.path === '/sso/callback/:providerId') {
                 ctx.context.span = Sentry.startInactiveSpan({
                     name: 'auth.signIn',
-                    op: `auth.signIn.sso`,
+                    op: 'auth.signIn.sso',
                     attributes: {
                         'span.category': 'auth.signIn',
                     },
