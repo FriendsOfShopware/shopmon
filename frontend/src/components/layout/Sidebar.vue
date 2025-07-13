@@ -4,7 +4,7 @@
             <nav class="nav-main">
                 <router-link
                     v-for="item in navigation"
-                    :key="item.name"
+                    :key="item.route"
                     :to="{ name: item.route }"
                     :class="{
                         'nav-link': true,
