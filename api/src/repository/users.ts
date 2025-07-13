@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 
@@ -27,6 +28,22 @@ async function existsById(con: Drizzle, id: string): Promise<boolean> {
 }
 
 async function deleteById(con: Drizzle, id: string): Promise<void> {
+    const orgIds = await con
+        .select({
+            id: schema.member.id,
+        })
+        .from(schema.member)
+        .where(eq(schema.member.userId, id))
+        .execute();
+
+    if (orgIds.length > 0) {
+        throw new TRPCError({
+            code: 'CONFLICT',
+            message:
+                'To delete an user, you must leave or delete all organizations first.',
+        });
+    }
+
     await con
         .delete(schema.userNotification)
         .where(eq(schema.userNotification.userId, id))

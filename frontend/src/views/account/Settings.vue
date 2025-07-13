@@ -214,14 +214,18 @@
         </form-group>
 
         <form-group title="Deleting your Account" class="panel">
+                <Alert v-if="!canDeleteAccount" type="error">
+                    To delete your account, you must delete first all organizations or leave them.
+                </Alert>
+
                 <p>
                     Once you delete your account, you will lose all data associated with it.
-                    All owning organization will be also deleted with all shops associated.
                 </p>
 
                 <button
                     type="button"
                     class="btn btn-danger"
+                    :disabled="!canDeleteAccount"
                     @click="showAccountDeletionModal = true"
                 >
                     <icon-fa6-solid:trash class="icon icon-trash" />
@@ -241,12 +245,29 @@
             </template>
 
             <template #title>
-                Deactivate account
+                Delete account
             </template>
 
             <template #content>
-                Are you sure you want to deactivate your account? All of your data will be permanently removed
-                from our servers forever. This action cannot be undone.
+                <p>
+                    Are you sure you want to delete your account? All of your data will be permanently removed from our servers forever. 
+                </p>
+
+                <p class="mb-1">
+                    <strong>This action cannot be undone.</strong>
+                </p>
+
+                <div>
+                    <label for="deleteCurrentPassword">Current Password</label>
+                    <input
+                        id="deleteCurrentPassword"
+                        v-model="deleteCurrentPassword"
+                        type="password"
+                        class="field"
+                        autocomplete="off"
+                    />
+                </div>
+
             </template>
             
             <template #footer>
@@ -255,7 +276,7 @@
                     class="btn btn-danger"
                     @click="deleteUser"
                 >
-                    Deactivate
+                    Delete
                 </button>
 
                 <button
@@ -318,7 +339,7 @@
 <script setup lang="ts">
 import type { Passkey } from 'better-auth/plugins/passkey';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import * as Yup from 'yup';
 
 import { useAlert } from '@/composables/useAlert';
@@ -327,6 +348,7 @@ import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import type { Session } from 'better-auth/types';
 
 const session = authClient.useSession();
+const orgs = authClient.useListOrganizations();
 
 const alert = useAlert();
 
@@ -338,6 +360,12 @@ const connectedProviders = ref<string[]>([]);
 const subscribedShops = ref<RouterOutput['account']['subscribedShops'] | null>(
     null,
 );
+
+const deleteCurrentPassword = ref('');
+
+const canDeleteAccount = computed(() => {
+    return orgs.value?.data?.length === 0;
+});
 
 authClient.passkey.listUserPasskeys().then((data) => {
     passkeys.value = data.data;
@@ -408,13 +436,24 @@ async function onSubmit(values: Record<string, unknown>) {
 }
 
 async function deleteUser() {
-    try {
-        await trpcClient.account.deleteCurrentUser.mutate();
-        await authClient.deleteUser();
-    } catch (err) {
-        alert.error(err instanceof Error ? err.message : String(err));
+    if (deleteCurrentPassword.value === '') {
+        alert.error('Please provide your current password to delete your account.');
+        return;
     }
 
+    const resp = await authClient.deleteUser({
+        password: deleteCurrentPassword.value,
+    });
+
+    if (resp.error) {
+        alert.error(resp.error.message ?? 'An error occurred while deleting your account.');
+        return;
+    }
+
+    alert.success('Your account has been successfully deleted.');
+    setTimeout(() => {
+        window.location.reload();
+    }, 2000);
     showAccountDeletionModal.value = false;
 }
 

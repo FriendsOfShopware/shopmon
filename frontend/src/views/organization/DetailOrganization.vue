@@ -176,6 +176,25 @@
             </DataTable>
         </div>
 
+        <div class="panel">
+            <div class="panel-header">
+                <h3>
+                    Leave Organization
+                </h3>
+            </div>
+
+            <p class="mb-1">
+                If you leave this organization, you will lose access to all resources and data associated with it.
+            </p>
+
+            <button
+                class="btn btn-danger mt-2"
+                @click="leaveOrganization()"
+            >
+                Leave Organization
+            </button>
+        </div>
+
         <modal
             :show="showAddMemberModal"
             close-x-mark
@@ -351,6 +370,21 @@ const allowedToManageMembers = usePermissions(
         },
     })),
 );
+
+async function leaveOrganization() {
+    if (!organization.value) return;
+
+    try {
+        await authClient.organization.leave({
+            organizationId: organization.value.data.id,
+        });
+
+        alert.success('You have left the organization successfully.');
+        window.location.href = '/';
+    } catch (err) {
+        alert.error(err instanceof Error ? err.message : String(err));
+    }
+}
 
 async function loadOrganization() {
     authClient.organization

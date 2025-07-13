@@ -90,7 +90,7 @@ const { success, error } = useAlert();
 async function onReScheduleTask(taskId: string) {
     try {
         await trpcClient.organization.shop.rescheduleTask.mutate({
-            shopId: shop.value?.id || 0,
+            shopId: shop.value?.id ?? 0,
             taskId,
         });
         success('Task is re-scheduled');

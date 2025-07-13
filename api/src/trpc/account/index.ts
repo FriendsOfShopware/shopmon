@@ -1,7 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
 import { schema } from '../../db.ts';
-import Users from '../../repository/users.ts';
 import { publicProcedure, router } from '../index.ts';
 import { loggedInUserMiddleware } from '../middleware.ts';
 import { notificationRouter } from './notification.ts';
@@ -138,13 +137,6 @@ export const accountRouter = router({
                 )
                 .where(eq(schema.member.userId, ctx.user.id))
                 .all();
-        }),
-    deleteCurrentUser: publicProcedure
-        .use(loggedInUserMiddleware)
-        .mutation(async ({ ctx }) => {
-            await Users.deleteById(ctx.drizzle, ctx.user.id);
-
-            return true;
         }),
     currentUserShops: publicProcedure
         .use(loggedInUserMiddleware)

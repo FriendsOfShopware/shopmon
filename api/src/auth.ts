@@ -8,6 +8,7 @@ import { passkey } from 'better-auth/plugins/passkey';
 import { sso } from 'better-auth/plugins/sso';
 import { getConnection } from './db.ts';
 import shops from './repository/shops.ts';
+import users from './repository/users.ts';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -23,6 +24,12 @@ export const auth = betterAuth({
                 defaultValue: [],
                 returned: true,
                 required: false,
+            },
+        },
+        deleteUser: {
+            enabled: true,
+            async beforeDelete(user, _request) {
+                return users.deleteById(getConnection(), user.id);
             },
         },
     },
@@ -119,7 +126,7 @@ export const auth = betterAuth({
     rateLimit: {
         enabled: true,
         window: 60, // 1 minute
-        max: 10, // 10 requests per minute
+        max: 20, // 10 requests per minute
     },
     plugins: [
         admin(),
