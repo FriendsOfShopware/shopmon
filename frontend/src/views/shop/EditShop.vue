@@ -93,7 +93,7 @@
             <form-group title="Integration">
                 <template #info>
                     The created integration must have access to following
-                    <a href="https://github.com/FriendsOfShopware/shopmon/blob/main/app/manifest.xml#L18">
+                    <a href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions">
                         permissions
                     </a>
                 </template>
