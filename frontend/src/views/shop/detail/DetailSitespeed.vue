@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick, Ref } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { formatDateTime } from '@/helpers/formatter';
@@ -91,29 +91,79 @@ const timeMetrics = [
   { key: 'firstContentfulPaint', label: 'FCP' },
 ];
 
-const createTimeChart = () => {
-  if (!timeChartCanvas.value || !shop.value?.sitespeed) return;
+interface ChartConfig {
+  canvasRef: Ref<HTMLCanvasElement | null>;
+  chartInstance: Ref<Chart | null>;
+  title: string;
+  yAxisLabel: string;
+  datasets: Array<{
+    label: string;
+    dataKey?: string;
+    valueFormatter?: (item: any) => number;
+    tooltipFormatter?: (value: number) => string;
+  }>;
+}
+
+const chartConfigs: ChartConfig[] = [
+  {
+    canvasRef: timeChartCanvas,
+    chartInstance: timeChartInstance,
+    title: 'Performance Metrics Over Time',
+    yAxisLabel: 'Time (ms)',
+    datasets: timeMetrics.map(metric => ({
+      label: metric.label,
+      dataKey: metric.key,
+      valueFormatter: (item) => item[metric.key as keyof typeof item] as number,
+      tooltipFormatter: (value) => `${value}ms`
+    }))
+  },
+  {
+    canvasRef: transferSizeChartCanvas,
+    chartInstance: transferSizeChartInstance,
+    title: 'Transfer Size Over Time',
+    yAxisLabel: 'Size (KB)',
+    datasets: [{
+      label: 'Transfer Size',
+      valueFormatter: (item) => item.transferSize ? Math.round(item.transferSize / 1024) : 0,
+      tooltipFormatter: (value) => `${value} KB`
+    }]
+  },
+  {
+    canvasRef: clsChartCanvas,
+    chartInstance: clsChartInstance,
+    title: 'Cumulative Layout Shift Over Time',
+    yAxisLabel: 'CLS Score',
+    datasets: [{
+      label: 'Cumulative Layout Shift',
+      valueFormatter: (item) => item.cumulativeLayoutShift ?? 0,
+      tooltipFormatter: (value) => `${value}`
+    }]
+  }
+];
+
+const createChart = (config: ChartConfig) => {
+  if (!config.canvasRef.value || !shop.value?.sitespeed) return;
   
-  if (timeChartInstance.value) {
-    timeChartInstance.value.destroy();
+  if (config.chartInstance.value) {
+    config.chartInstance.value.destroy();
   }
 
-  const ctx = timeChartCanvas.value.getContext('2d');
+  const ctx = config.canvasRef.value.getContext('2d');
   if (!ctx) return;
 
   const sortedData = [...shop.value.sitespeed].sort((a, b) => 
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  const datasets = timeMetrics.map(metric => ({
-    label: metric.label,
+  const datasets = config.datasets.map(dataset => ({
+    label: dataset.label,
     data: sortedData.map(item => ({
       x: new Date(item.createdAt).getTime(),
-      y: item[metric.key as keyof typeof item] as number
+      y: dataset.valueFormatter!(item)
     })),
   }));
 
-  timeChartInstance.value = new Chart(ctx, {
+  config.chartInstance.value = new Chart(ctx, {
     type: 'line',
     data: { datasets },
     options: {
@@ -126,7 +176,7 @@ const createTimeChart = () => {
       plugins: {
         title: {
           display: true,
-          text: 'Performance Metrics Over Time'
+          text: config.title
         },
         legend: {
           display: true,
@@ -135,14 +185,9 @@ const createTimeChart = () => {
         tooltip: {
           callbacks: {
             label: function(context) {
-              let label = context.dataset.label ?? '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.parsed.y !== null) {
-                label += context.parsed.y + 'ms';
-              }
-              return label;
+              const dataset = config.datasets[context.datasetIndex];
+              const value = context.parsed.y;
+              return `${context.dataset.label}: ${dataset.tooltipFormatter!(value)}`;
             },
             title: function(tooltipItems) {
               if (tooltipItems.length > 0) {
@@ -172,7 +217,7 @@ const createTimeChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: 'Time (ms)'
+            text: config.yAxisLabel
           }
         }
       }
@@ -180,196 +225,28 @@ const createTimeChart = () => {
   });
 };
 
-const createTransferSizeChart = () => {
-  if (!transferSizeChartCanvas.value || !shop.value?.sitespeed) return;
-  
-  if (transferSizeChartInstance.value) {
-    transferSizeChartInstance.value.destroy();
-  }
-
-  const ctx = transferSizeChartCanvas.value.getContext('2d');
-  if (!ctx) return;
-
-  const sortedData = [...shop.value.sitespeed].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  const datasets = [{
-    label: 'Transfer Size',
-    data: sortedData.map(item => ({
-      x: new Date(item.createdAt).getTime(),
-      y: item.transferSize ? Math.round(item.transferSize / 1024) : 0
-    })),
-  }];
-
-  transferSizeChartInstance.value = new Chart(ctx, {
-    type: 'line',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: 'index',
-        intersect: false,
-      },
-      plugins: {
-        title: {
-          display: true,
-          text: 'Transfer Size Over Time'
-        },
-        legend: {
-          display: true,
-          position: 'top'
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return `Transfer Size: ${context.parsed.y} KB`;
-            },
-            title: function(tooltipItems) {
-              if (tooltipItems.length > 0) {
-                const timestamp = tooltipItems[0].parsed.x;
-                return new Date(timestamp).toLocaleString();
-              }
-              return '';
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'day',
-            displayFormats: {
-              day: 'MMM dd'
-            }
-          },
-          title: {
-            display: true,
-            text: 'Date'
-          }
-        },
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Size (KB)'
-          }
-        }
-      }
-    }
-  });
-};
-
-const createClsChart = () => {
-  if (!clsChartCanvas.value || !shop.value?.sitespeed) return;
-  
-  if (clsChartInstance.value) {
-    clsChartInstance.value.destroy();
-  }
-
-  const ctx = clsChartCanvas.value.getContext('2d');
-  if (!ctx) return;
-
-  const sortedData = [...shop.value.sitespeed].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  const datasets = [{
-    label: 'Cumulative Layout Shift',
-    data: sortedData.map(item => ({
-      x: new Date(item.createdAt).getTime(),
-      y: item.cumulativeLayoutShift ?? 0
-    })),
-  }];
-
-  clsChartInstance.value = new Chart(ctx, {
-    type: 'line',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: 'index',
-        intersect: false,
-      },
-      plugins: {
-        title: {
-          display: true,
-          text: 'Cumulative Layout Shift Over Time'
-        },
-        legend: {
-          display: true,
-          position: 'top'
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return `CLS: ${context.parsed.y}`;
-            },
-            title: function(tooltipItems) {
-              if (tooltipItems.length > 0) {
-                const timestamp = tooltipItems[0].parsed.x;
-                return new Date(timestamp).toLocaleString();
-              }
-              return '';
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'day',
-            displayFormats: {
-              day: 'MMM dd'
-            }
-          },
-          title: {
-            display: true,
-            text: 'Date'
-          }
-        },
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'CLS Score'
-          }
-        }
-      }
-    }
-  });
+const createAllCharts = () => {
+  chartConfigs.forEach(config => createChart(config));
 };
 
 onMounted(async () => {
   await nextTick();
   if (shop.value?.sitespeed) {
-    createTimeChart();
-    createTransferSizeChart();
-    createClsChart();
+    createAllCharts();
   }
 });
 
 onUnmounted(() => {
-  if (timeChartInstance.value) {
-    timeChartInstance.value.destroy();
-  }
-  if (transferSizeChartInstance.value) {
-    transferSizeChartInstance.value.destroy();
-  }
-  if (clsChartInstance.value) {
-    clsChartInstance.value.destroy();
-  }
+  chartConfigs.forEach(config => {
+    if (config.chartInstance.value) {
+      config.chartInstance.value.destroy();
+    }
+  });
 });
 
 watch(() => shop.value?.sitespeed, async () => {
   await nextTick();
-  createTimeChart();
-  createTransferSizeChart();
-  createClsChart();
+  createAllCharts();
 }, { deep: true });
 
 </script>
