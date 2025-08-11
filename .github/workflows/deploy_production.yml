@@ -75,7 +75,7 @@ jobs:
                 environment: production
 
             - name: Install 1Password CLI
-              uses: 1password/install-cli-action@v1
+              uses: 1password/install-cli-action@v2
 
             - name: Deploy to Production
               run: op run --env-file .env.production -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
