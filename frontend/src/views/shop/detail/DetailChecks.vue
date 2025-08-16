@@ -60,6 +60,7 @@ async function ignoreCheck(id: string) {
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.value.organizationId,
         shopId: shop.value.id,
+        projectId: shop.value.projectId,
         ignores: updatedIgnores,
     });
 
@@ -76,6 +77,7 @@ async function removeIgnore(id: string) {
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.value.organizationId,
         shopId: shop.value.id,
+        projectId: shop.value.projectId,
         ignores: updatedIgnores,
     });
 
