@@ -180,6 +180,10 @@ function isActive(
 }
 
 .nav-stores {
+    .nav-link {
+        min-height: 2.25rem;
+    }
+
     .nav-link-name {
         overflow: hidden;
         max-width: 8.35rem;
