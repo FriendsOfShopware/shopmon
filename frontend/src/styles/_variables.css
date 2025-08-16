@@ -36,6 +36,7 @@
     --field-background: #fff;
     --field-color: #1a202c;
     --field-border-color: #d1d5db;
+    --home-heading-color: #171717;
 }
 
 :root.dark {
@@ -74,4 +75,5 @@
     --field-background: #171717;
     --field-color: #a3a3a3;
     --field-border-color: #262626;
+    --home-heading-color: #ffffff;
 }

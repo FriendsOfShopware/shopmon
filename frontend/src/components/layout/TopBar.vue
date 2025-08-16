@@ -279,13 +279,15 @@ import {
     PopoverPanel,
 } from '@headlessui/vue';
 
-import { ref } from 'vue';
+import {ref} from 'vue';
 import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
 
 import { authClient } from '@/helpers/auth-client';
 import { formatDateTime } from '@/helpers/formatter';
+import {useRouter} from "vue-router";
 
+const router = useRouter();
 const session = authClient.useSession();
 
 const userAvatar = ref(
@@ -293,7 +295,7 @@ const userAvatar = ref(
 );
 
 const navigation = [
-    { route: 'home' },
+    { route: 'account.dashboard' },
     { route: 'account.project.list', active: 'shop' },
     { route: 'account.extension.list' },
     { route: 'account.organizations.list', active: 'organizations', },
@@ -335,7 +337,9 @@ const userNavigation = [
 
 async function logout() {
     await authClient.signOut();
-    window.location.reload();
+    setTimeout(() => {
+        router.push({name: 'home'});
+    }, 50);
 }
 
 </script>
@@ -367,10 +371,11 @@ async function logout() {
     display: flex;
     margin: 0 0 0 1rem;
     gap: 0.75rem;
+    align-items: center;
 
     .action {
         height: 2rem;
-        width: 1.25rem;
+        min-width: 1.25rem;
         color: #bae6fd;
         display: flex;
         justify-content: center;
@@ -383,6 +388,13 @@ async function logout() {
         .icon {
             height: 1.25rem;
             width: 1.25rem;
+        }
+
+        &.action-text {
+            .icon {
+                margin-right: 0.5rem;
+                opacity: 0.5;
+            }
         }
 
         &.action-user {
@@ -483,9 +495,8 @@ async function logout() {
     }
 
     @media (min-width: 768px) {
-        max-width: 25rem;
-        min-width: 12rem;
-        left: auto;
+        width: 22rem;
+        left: unset;
         right: 0;
         padding-left: 0;
         padding-right: 0;

@@ -69,7 +69,7 @@
                             :key="rowIndex"
                             class="shops-row"
                         >
-                            <span class="extension-version" :data-tooltip="shop.version">{{ shop.version.replace(/(.{12})..+/, "$1&hellip;") }}</span>
+                            <span :data-tooltip="shop.version.length > 6 ? shop.version : ''">{{ shop.version.replace(/(.{6})..+/, "$1&hellip;") }}</span>
                             <span
                                 v-if="row.latestVersion && shop.version < row.latestVersion"
                                 data-tooltip="Update available"
@@ -77,6 +77,10 @@
                                 <icon-fa6-solid:rotate class="icon icon-warning icon-update" />
                             </span>
                         </div>
+                    </template>
+
+                    <template #cell-latestVersion="{ row }">
+                        <span v-if="row.latestVersion" :data-tooltip="row.latestVersion.length > 6 ? row.latestVersion : ''">{{ row.latestVersion.replace(/(.{6})..+/, "$1&hellip;") }}</span>
                     </template>
 
                     <template #cell-ratingAverage="{ row }">

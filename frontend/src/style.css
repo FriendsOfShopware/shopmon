@@ -10,6 +10,7 @@
 @import "styles/_button.css";
 @import "styles/_badge.css";
 @import "styles/_pill.css";
+@import "styles/_tooltip.css";
 
 .mt-1 {
   margin-top: 1rem;

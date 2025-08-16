@@ -1,7 +1,7 @@
 body {
 	color: var(--text-color);
-	font-size: 0.875rem;
-	line-height: 1.2;
+	font-size: 1rem;
+	line-height: 1.5;
 	background-color: var(--background-color);
 	height: 100%;
 }
@@ -29,18 +29,35 @@ table th {
 }
 
 .background-mask {
-	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath fill='%230099ff' fill-opacity='1' d='M0,192L80,197.3C160,203,320,213,480,202.7C640,192,800,160,960,170.7C1120,181,1280,235,1360,261.3L1440,288L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-	mask-size: 100% 111%;
 	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 400px;
 	z-index: -1;
-	background-color: var(--primary-color);
+	top: 0;
+	width: 100%;
 
-	@media all and (min-width: 1024px) {
-		height: 290px;
+	&:before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 280px;
+		width: 100%;
+		background-color: var(--primary-color);
+	}
+
+	&:after {
+		content: '';
+		display: block;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath fill='%230099ff' fill-opacity='1' d='M0,192L80,197.3C160,203,320,213,480,202.7C640,192,800,160,960,170.7C1120,181,1280,235,1360,261.3L1440,288L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+		mask-repeat: no-repeat;
+		mask-size: max(1024px, 100%) min(290px, 111%);
+		mask-position: bottom right;
+		width: 100%;
+		height: 400px;
+		background-color: var(--primary-color);
+
+		@media all and (min-width: 1024px) {
+			height: 330px;
+		}
 	}
 }
 
@@ -101,53 +118,6 @@ table th {
 	.dark & {
 		box-shadow: none;
 	}
-}
-
-*[data-tooltip] {
-	position: relative;
-
-	&:before {
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		position: absolute;
-		border-radius: 0.25rem;
-		padding: 0.25rem 0.75rem;
-		background-color: #374151;
-		color: #fff;
-		font-size: 0.875rem;
-		bottom: calc(100% + 2px);
-		left: -0.75rem;
-		content: attr(data-tooltip);
-		white-space: nowrap;
-		display: none;
-	}
-
-	&:after {
-		pointer-events: none;
-		content: "";
-		position: absolute;
-		left: 50%;
-		bottom: 100%;
-		margin-bottom: -8px;
-		transform: translateX(-50%);
-		border: 6px solid transparent;
-		border-top-color: #374151;
-		display: none;
-	}
-
-	&:hover:before,
-	&:hover:after {
-		display: block;
-	}
-}
-
-.tooltip-position-left[data-tooltip]:before {
-	left: auto;
-	right: -0.75rem;
-}
-
-.tooltip-position-center[data-tooltip]:before {
-	left: 50%;
-	transform: translateX(-50%);
 }
 
 svg {

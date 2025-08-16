@@ -95,7 +95,7 @@
                     <button
                         v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
                         type="button"
-                        class="tooltip tooltip-position-left"
+                        class="tooltip tooltip-top-left"
                         data-tooltip="Change Role"
                         @click="openChangeRoleModal(row as OrganizationMember)"
                     >
@@ -104,7 +104,7 @@
                     <button
                         v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
                         type="button"
-                        class="tooltip tooltip-position-left"
+                        class="tooltip tooltip-top-left"
                         data-tooltip="Unassign"
                         @click="onRemoveMember(row.id)"
                     >
@@ -131,7 +131,7 @@
                     <button
                         v-if="row.status !== 'canceled'"
                         type="button"
-                        class="tooltip tooltip-position-left"
+                        class="tooltip tooltip-top-left"
                         data-tooltip="Cancel Invitation"
                         @click="cancelInvitation(row.id)"
                     >

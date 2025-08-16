@@ -64,7 +64,7 @@
 
         <template #cell-actions="{ row }">
             <button
-                class="tooltip-position-left"
+                class="tooltip-top-left"
                 data-tooltip="Re-schedule task"
                 @click="onReScheduleTask(row.id)"
             >

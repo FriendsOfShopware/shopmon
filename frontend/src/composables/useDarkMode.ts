@@ -1,4 +1,4 @@
-import { type Ref, ref, watch } from 'vue';
+import { type Ref, ref, watch, computed } from 'vue';
 
 const DARK_MODE_STORAGE_KEY = 'shopmon-dark-mode';
 
@@ -9,6 +9,7 @@ let initialized = false;
 export function useDarkMode(): {
     darkMode: Ref<boolean>;
     toggleDarkMode: () => void;
+    getThemeImage: () => Ref<string>;
 } {
     // Initialize only once
     if (!initialized) {
@@ -20,9 +21,25 @@ export function useDarkMode(): {
         isDarkMode.value = !isDarkMode.value;
     }
 
+    function getThemeImage(imagePath: string) {
+        const computedImg = computed(() => {
+            if (!isDarkMode.value) {
+                return imagePath;
+            }
+
+            const lastDotIndex = imagePath.lastIndexOf('.');
+            const pathWithoutExtension = imagePath.substring(0, lastDotIndex);
+            const extension = imagePath.substring(lastDotIndex);
+            return `${pathWithoutExtension}-dark${extension}`;
+        });
+        
+        return computedImg.value;
+    }
+
     return {
         darkMode: isDarkMode,
         toggleDarkMode,
+        getThemeImage,
     };
 }
 

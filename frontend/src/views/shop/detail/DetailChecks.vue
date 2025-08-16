@@ -20,7 +20,7 @@
                 <button
                     v-if="shop.ignores.includes(row.id)"
                     data-tooltip="check is ignored"
-                    class="tooltip-position-left"
+                    class="tooltip-top-left"
                     type="button"
                     @click="removeIgnore(row.id)"
                 >
@@ -30,7 +30,7 @@
                 <button
                     v-else
                     data-tooltip="check used"
-                    class="tooltip-position-left"
+                    class="tooltip-top-left"
                     type="button"
                     @click="ignoreCheck(row.id)"
                 >
@@ -60,6 +60,7 @@ async function ignoreCheck(id: string) {
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.value.organizationId,
         shopId: shop.value.id,
+        projectId: shop.value.projectId,
         ignores: updatedIgnores,
     });
 
@@ -76,6 +77,7 @@ async function removeIgnore(id: string) {
     await trpcClient.organization.shop.update.mutate({
         orgId: shop.value.organizationId,
         shopId: shop.value.id,
+        projectId: shop.value.projectId,
         ignores: updatedIgnores,
     });
 
