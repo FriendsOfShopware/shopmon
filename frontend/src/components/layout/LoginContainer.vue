@@ -6,7 +6,9 @@
         </button>
         
         <div class="login-content">
-            <logo class="logo" />
+            <router-link :to="{ name: 'home' }">
+                <logo class="logo" />
+            </router-link>
             <slot />
         </div>
     </div>
@@ -26,6 +28,7 @@ const { darkMode, toggleDarkMode } = useDarkMode();
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
+
     .btn {
         .icon {
             width: 1.25rem;

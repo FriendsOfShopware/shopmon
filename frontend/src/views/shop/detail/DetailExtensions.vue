@@ -4,8 +4,8 @@
         v-if="shop"
         :columns="[
             { key: 'label', name: 'Name', sortable: true },
-            { key: 'version', name: 'Version' },
-            { key: 'latestVersion', name: 'Latest' },
+            { key: 'version', name: 'Version', class: 'extension-version-column' },
+            { key: 'latestVersion', name: 'Latest', class: 'extension-version-column' },
             { key: 'ratingAverage', name: 'Rating', sortable: true },
             { key: 'installedAt', name: 'Installed at', sortable: true },
         ]"
@@ -28,16 +28,21 @@
         </template>
 
         <template #cell-version="{ row }">
-            {{ row.version }}
+            <span :data-tooltip="row.version.length > 6 ? row.version : ''">{{ row.version.replace(/(.{6})..+/, "$1&hellip;") }}</span>
             <span
                 v-if="row.latestVersion && row.version < row.latestVersion"
                 data-tooltip="Update available"
+                class="extension-update-available"
                 @click="openExtensionChangelog(row as Extension)"
             >
                 <icon-fa6-solid:rotate
                     class="icon icon-warning"
                 />
             </span>
+        </template>
+
+        <template #cell-latestVersion="{ row }">
+            <span v-if="row.latestVersion" :data-tooltip="row.latestVersion.length > 6 ? row.latestVersion : ''">{{ row.latestVersion.replace(/(.{6})..+/, "$1&hellip;") }}</span>
         </template>
 
         <template #cell-ratingAverage="{ row }">
@@ -134,6 +139,12 @@ function getExtensionState(extension: Extension) {
 }
 </script>
 
+<style>
+.extension-version-column {
+    white-space: nowrap;
+}
+</style>
+
 <style scoped>
 .extension-label {
     display: flex;
@@ -149,6 +160,10 @@ function getExtensionState(extension: Extension) {
 .extension-changelog-name {
     font-weight: normal;
     color: var(--text-color-muted);
+}
+
+.extension-update-available {
+    margin-left: .4rem;
 }
 
 .extension-changelog {

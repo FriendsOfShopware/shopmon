@@ -6,11 +6,11 @@ import {
 
 import { useReturnUrl } from '@/composables/useReturnUrl';
 import { authClient } from '@/helpers/auth-client';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
-import UnauthenticatedLayout from '@/layouts/UnauthenticatedLayout.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import LoginLayout from '@/layouts/LoginLayout.vue';
+import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import ShopDetailLayout from '@/layouts/ShopDetailLayout.vue';
 import adminRoutes from '@/router/admin';
-import Home from '@/views/Home.vue';
 import { nextTick } from 'vue';
 
 import FaShop from '~icons/fa6-solid/shop';
@@ -19,7 +19,7 @@ import FaFileWaverform from '~icons/fa6-solid/file-waveform';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaPlug from '~icons/fa6-solid/plug';
 import FaRocket from '~icons/fa6-solid/rocket';
-import FaHouse from '~icons/fa6-solid/house';
+import Dashboard from '~icons/ri/dashboard-fill';
 import FaFolder from '~icons/fa6-solid/folder';
 import FaBuilding from '~icons/fa6-solid/building';
 
@@ -31,11 +31,28 @@ export const router = createRouter({
     routes: [
         {
             path: '/',
-            redirect: { name: 'home' },
+            component: DefaultLayout,
+            children: [
+                {
+                    path: '',
+                    name: 'home',
+                    component: () => import('@/views/Home.vue'),
+                },
+                {
+                    path: 'privacy',
+                    name: 'privacy',
+                    component: () => import('@/views/Privacy.vue'),
+                },
+                {
+                    path: 'imprint',
+                    name: 'imprint',
+                    component: () => import('@/views/Imprint.vue'),
+                },
+            ],
         },
         {
             path: '/account',
-            component: UnauthenticatedLayout,
+            component: LoginLayout,
             children: [
                 {
                     name: 'account.login',
@@ -63,29 +80,19 @@ export const router = createRouter({
                     component: () =>
                         import('@/views/auth/ForgotPasswordConfirm.vue'),
                 },
-                {
-                    name: 'privacy.unauthenticated',
-                    path: 'privacy',
-                    component: () => import('@/views/Privacy.vue'),
-                },
-                {
-                    name: 'imprint.unauthenticated',
-                    path: 'imprint',
-                    component: () => import('@/views/Imprint.vue'),
-                },
             ],
         },
         {
             path: '/app',
-            component: AuthenticatedLayout,
+            component: AppLayout,
             children: [
                 {
-                    path: '/',
-                    name: 'home',
-                    component: Home,
+                    path: 'dashboard',
+                    name: 'account.dashboard',
+                    component: () => import('@/views/Dashboard.vue'),
                     meta: {
                         title: 'Dashboard',
-                        icon: FaHouse
+                        icon: Dashboard
                     },
                 },
                 {
@@ -263,16 +270,6 @@ export const router = createRouter({
                         action: 'reject',
                     },
                 },
-                {
-                    name: 'privacy.authenticated',
-                    path: 'privacy',
-                    component: () => import('@/views/Privacy.vue'),
-                },
-                {
-                    name: 'imprint.authenticated',
-                    path: 'imprint',
-                    component: () => import('@/views/Imprint.vue'),
-                },
             ],
         },
         ...adminRoutes,
@@ -297,15 +294,16 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
         });
     }
 
-    // redirect to login page if not logged in and trying to access a restricted page
+    // redirect to the login page if not logged in and trying to access a restricted page
     const publicPages = [
+        'home',
+        'privacy',
+        'imprint',
         'account.login',
         'account.register',
         'account.confirm',
         'account.forgot.password',
         'account.forgot.password.confirm',
-        'privacy.unauthenticated',
-        'imprint.unauthenticated',
     ];
     const authRequired = !publicPages.includes(to.name as string);
     const { setReturnUrl } = useReturnUrl();
@@ -313,10 +311,8 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     if (authRequired && !session.value.data) {
         setReturnUrl(to.fullPath);
         return { name: 'account.login' };
-    }
-    if (session.value.data && publicPages.includes(to.name as string)) {
-        // redirect to home page if logged in and trying to access a public page
-        return { name: 'home' };
+    } else if (to.name === 'account.login') {
+        setReturnUrl('/app/dashboard');
     }
 
     // Check admin routes

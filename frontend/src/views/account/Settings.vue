@@ -116,7 +116,7 @@
                     <template #cell-actions="{ row }">
                         <button
                             type="button"
-                            class="tooltip-position-left"
+                            class="tooltip-top-left"
                             data-tooltip="Delete"
                             @click="removePasskey(row.id)"
                         >
@@ -154,7 +154,7 @@
                     <button
                         v-if="row.token !== session.data?.session.token"
                         type="button"
-                        class="tooltip-position-left"
+                        class="tooltip-top-left"
                         data-tooltip="Delete"
                         @click="removeSession(row)"
                     >
@@ -203,7 +203,7 @@
                 <template #cell-actions="{ row }">
                     <button
                         type="button"
-                        class="tooltip-position-left"
+                        class="tooltip-top-left"
                         data-tooltip="Unsubscribe"
                         @click="unsubscribeFromShop(row.id)"
                     >
