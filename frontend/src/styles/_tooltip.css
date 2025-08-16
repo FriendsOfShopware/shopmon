@@ -36,6 +36,14 @@
     }
 }
 
+*[data-tooltip]:empty::before,
+*[data-tooltip]:empty::after,
+*[data-tooltip=""]::before,
+*[data-tooltip=""]::after {
+    content: unset;
+}
+
+
 .tooltip-top-left[data-tooltip]:before {
     left: auto;
     right: -0.75rem;
