@@ -50,7 +50,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="isSubmitting">
-            <icon-fa6-solid:key
+            <icon-fa6-solid:right-to-bracket
                 v-if="!isSubmitting"
                 class="icon"
                 aria-hidden="true"
@@ -81,7 +81,6 @@
                 aria-hidden="true"
             />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            
             Login using Passkey
         </button>
 
@@ -97,7 +96,6 @@
                 aria-hidden="true"
             />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            
             Continue with GitHub
         </button>
         
@@ -114,7 +112,7 @@
                 />
                 <button
                     type="button"
-                    class="btn btn-secondary"
+                    class="btn btn-secondary icon-only"
                     :disabled="isSSOLoading || !ssoEmail"
                     @click="ssoLogin"
                 >
@@ -160,12 +158,12 @@ const schema = Yup.object().shape({
     password: Yup.string().required('Password is required'),
 });
 
-function goToHome() {
+function goToDashboard() {
     const sess = authClient.useSession()
 
     watch(sess, (user) => {
         if (user.data?.user) {
-            const redirectUrl = returnUrl.value ?? '/';
+            const redirectUrl = returnUrl.value ?? '/app/dashboard';
             clearReturnUrl();
             router.push(redirectUrl);
         }
@@ -185,7 +183,7 @@ async function onSubmit(values: Record<string, unknown>) {
         return;
     }
 
-    goToHome();
+    goToDashboard();
 }
 
 async function webauthnLogin() {
@@ -201,7 +199,7 @@ async function webauthnLogin() {
             return;
         }
 
-        goToHome();
+        goToDashboard();
     } catch (e: unknown) {
         const { error } = useAlert();
 
@@ -227,7 +225,7 @@ async function githubLogin() {
             return;
         }
 
-        goToHome();
+        goToDashboard();
     } catch (e: unknown) {
         const { error } = useAlert();
 
@@ -259,7 +257,7 @@ async function ssoLogin() {
                 alert.error(result.error.message ?? 'SSO login failed');
             }
         } else {
-            goToHome();
+            goToDashboard();
         }
     } catch (e: unknown) {
         alert.error(e instanceof Error ? e.message : 'SSO login failed');

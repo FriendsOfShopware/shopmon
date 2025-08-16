@@ -48,6 +48,7 @@ function getIconComponent(type) {
         svg {
             width: 1.25rem;
             height: 1.25rem;
+            vertical-align: -0.4em;
         }
     }
     

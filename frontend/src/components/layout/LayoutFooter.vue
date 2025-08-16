@@ -2,11 +2,11 @@
     <footer class="app-footer">
         <div class="container">
             <div class="footer-links">
-                <router-link :to="{ name: 'privacy.authenticated' }" class="footer-link">
+                <router-link :to="{ name: 'privacy' }" class="footer-link">
                     Privacy
                 </router-link>
                 <span class="footer-separator">|</span>
-                <router-link :to="{ name: 'imprint.authenticated' }" class="footer-link">
+                <router-link :to="{ name: 'imprint' }" class="footer-link">
                     Legal Notice
                 </router-link>
             </div>

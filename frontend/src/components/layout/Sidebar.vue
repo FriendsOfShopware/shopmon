@@ -77,7 +77,7 @@ const currentViewClass = computed(() => {
 });
 
 const navigation = [
-    { route: 'home' },
+    { route: 'account.dashboard' },
     { route: 'account.project.list', active: 'shop' },
     { route: 'account.extension.list' },
     { route: 'account.organizations.list', active: 'organizations', },
