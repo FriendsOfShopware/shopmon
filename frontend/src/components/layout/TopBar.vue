@@ -279,7 +279,7 @@ import {
     PopoverPanel,
 } from '@headlessui/vue';
 
-import {nextTick, ref} from 'vue';
+import {ref} from 'vue';
 import FaGear from '~icons/fa6-solid/gear';
 import FaPowerOff from '~icons/fa6-solid/power-off';
 
