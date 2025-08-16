@@ -2,7 +2,7 @@
     <span
         v-if="rating !== null"
         :data-tooltip="`${rating / 2} from 5`"
-        class="tooltip-position-center rating-stars"
+        class="tooltip-top-center rating-stars"
     >
         <template
             v-for="n in 5"

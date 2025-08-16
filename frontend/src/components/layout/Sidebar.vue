@@ -8,9 +8,11 @@
                     :to="{ name: item.route }"
                     :class="{
                         'nav-link': true,
+                        'tooltip-right': true,
                         'active': isActive(item, $route),
                     }"
                     :aria-current="isActive(item, $route) ? 'page' : undefined"
+                    :data-tooltip="$router.resolve({name: item.route}).meta.title"
                 >
                     <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="nav-link-icon"/>
                     <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title }}</span>
@@ -19,7 +21,7 @@
 
             <!-- Store List -->
             <ul class="nav-stores">
-                <li v-for="shop in shops" :key="shop.id" class="nav-link-item">
+                <li v-for="shop in shops" :key="shop.id" class="nav-link-item tooltip-right" :data-tooltip="shop.name">
                     <router-link
                         :to="{
                             name: 'account.shops.detail',
@@ -101,6 +103,15 @@ function isActive(
 .sidebar-wrapper {
     display: none;
     grid-area: sidebar;
+
+    &:not([class*="is-account-shops-detail"]) {
+        *[data-tooltip] {
+            &:before,
+            &:after {
+                content: unset;
+            }
+        }
+    }
 
     @media all and (min-width: 1024px) {
         display: block;
