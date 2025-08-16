@@ -495,9 +495,8 @@ async function logout() {
     }
 
     @media (min-width: 768px) {
-        max-width: 25rem;
-        min-width: 12rem;
-        left: auto;
+        width: 22rem;
+        left: unset;
         right: 0;
         padding-left: 0;
         padding-right: 0;
