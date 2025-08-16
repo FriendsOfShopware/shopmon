@@ -33,18 +33,18 @@ generate-email:
 	cd api && node generate-mjml.js
 
 migrate:
-	cd api && node --env-file-if-exists=.env migrate.ts
+	cd api && node --env-file-if-exists=.env --experimental-strip-types migrate.ts
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
-	cd api && node --env-file-if-exists=.env migrate.ts
-	cd api && node --env-file-if-exists=.env apply-fixtures.ts
+	cd api && node --env-file-if-exists=.env --experimental-strip-types migrate.ts
+	cd api && node --env-file-if-exists=.env --experimental-strip-types apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'cd api && PORT=5789 node --env-file-if-exists=.env --no-warnings=ExperimentalWarning --watch src/index.ts' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'cd api && PORT=5789 node --env-file-if-exists=.env --experimental-strip-types --no-warnings=ExperimentalWarning --watch src/index.ts' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev
