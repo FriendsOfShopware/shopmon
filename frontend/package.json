@@ -17,6 +17,8 @@
 		"@headlessui/vue": "1.7.23",
 		"@trpc/client": "^11.4.3",
 		"better-auth": "catalog:",
+		"chart.js": "^4.5.0",
+		"chartjs-adapter-date-fns": "^3.0.0",
 		"compare-versions": "^6.1.1",
 		"fast-sort": "3.4.1",
 		"fuse.js": "^7.1.0",
