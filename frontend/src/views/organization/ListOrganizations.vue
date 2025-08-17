@@ -11,11 +11,11 @@
     </header-container>
 
     <main-container>
-        <template v-if="!organizations.data || organizations.data.length === 0">
+        <div v-if="!organizations.data || organizations.data.length === 0" class="panel">
             <element-empty title="No Organization" :route="{ name: 'account.organizations.new' }" button="Add Organization">
                 Get started by adding your first organization.
             </element-empty>
-        </template>
+        </div>
 
         <div v-else class="panel panel-table">
             <data-table

@@ -42,7 +42,7 @@
                                 :key="project.id"
                                 :value="project.id"
                             >
-                                {{ project.name }}
+                                {{ project.nameCombined }}
                             </option>
                         </select>
                     </field>

@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { schema } from '#src/db';
 import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
-import { schema } from '../../db.ts';
 import { publicProcedure, router } from '../index.ts';
 import { loggedInUserMiddleware } from '../middleware.ts';
 import { notificationRouter } from './notification.ts';
@@ -193,7 +193,12 @@ export const accountRouter = router({
             return await ctx.drizzle
                 .select({
                     id: schema.project.id,
-                    name: sql<string>`CONCAT(${schema.organization.name}, ' / ', ${schema.project.name})`,
+                    name: schema.project.name,
+                    nameCombined: sql<string>`CONCAT(${schema.organization.name}, ' / ', ${schema.project.name})`,
+                    organizationId: schema.project.organizationId,
+                    organizationSlug: schema.organization.slug,
+                    description: schema.project.description,
+                    createdAt: schema.project.createdAt,
                 })
                 .from(schema.project)
                 .innerJoin(

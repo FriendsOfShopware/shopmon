@@ -9,18 +9,18 @@
     </header-container>
 
     <main-container v-if="!loading">
-        <template v-if="projects.length === 0 && shops.length === 0">
+        <div v-if="projects.length === 0" class="panel">
             <element-empty title="No Projects" button="Add Project" :route="{ name: 'account.projects.new' }">
                 Get started by creating your first project and adding shops to it.
             </element-empty>
-        </template>
+        </div>
 
         <div v-else>
             <!-- Projects -->
             <div v-for="project in projects" :key="project.id" class="project-panel panel">
                 <div class="panel-header">
                     <div class="project-info">
-                        <h3>{{ project.name }}</h3>
+                        <h3>{{ project.nameCombined }}</h3>
 
                         <p v-if="project.description" class="project-description">{{ project.description }}</p>
 
@@ -193,7 +193,7 @@ const alert = useAlert();
 
 const loading = ref(true);
 const shops = ref<RouterOutput['account']['currentUserShops']>([]);
-const projects = ref<RouterOutput['organization']['project']['list']>([]);
+const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
 const editModalVisible = ref(false);
 const editingProject = ref({ id: 0, name: '', description: '' });
 
@@ -202,21 +202,22 @@ const editSchema = Yup.object().shape({
     description: Yup.string().optional(),
 });
 
-// Get organization slug from the first shop or route
+// Get organization slug from the first shop or first project
 const organizationSlug = computed(() => {
     if (shops.value.length > 0) {
         return shops.value[0].organizationSlug;
     }
+    if (projects.value.length > 0) {
+        return projects.value[0].organizationSlug;
+    }
     return (route.params.slug as string) || '';
 });
 
-// Get organization ID from the first shop
-const organizationId = computed(() => {
-    if (shops.value.length > 0) {
-        return shops.value[0].organizationId;
-    }
-    return '';
-});
+// Helper function to get organization ID for a specific project
+function getOrganizationIdForProject(projectId: number): string {
+    const project = projects.value.find(p => p.id === projectId);
+    return project?.organizationId ?? '';
+}
 
 // Group shops by project
 const projectShops = computed(() => {
@@ -224,9 +225,7 @@ const projectShops = computed(() => {
 
     for (const shop of shops.value) {
         if (shop.projectId) {
-            if (!grouped[shop.projectId]) {
-                grouped[shop.projectId] = [];
-            }
+            grouped[shop.projectId] ??= [];
             grouped[shop.projectId].push(shop);
         }
     }
@@ -234,26 +233,17 @@ const projectShops = computed(() => {
     return grouped;
 });
 
-trpcClient.account.currentUserShops
-    .query()
-    .then((shopsData) => {
-        shops.value = shopsData;
-
-        if (organizationId.value) {
-            // Load projects for the organization
-            trpcClient.organization.project.list
-                .query({ orgId: organizationId.value })
-                .then((projectsData) => {
-                    projects.value = projectsData;
-                    loading.value = false;
-                });
-        } else {
-            loading.value = false;
-        }
-    })
-    .catch(() => {
-        loading.value = false;
-    });
+// Load projects and shops in parallel
+Promise.all([
+    trpcClient.account.currentUserProjects.query(),
+    trpcClient.account.currentUserShops.query()
+]).then(([projectsData, shopsData]) => {
+    projects.value = projectsData;
+    shops.value = shopsData;
+    loading.value = false;
+}).catch(() => {
+    loading.value = false;
+});
 
 // Edit project
 function editProject(project: (typeof projects.value)[0]) {
@@ -269,18 +259,16 @@ function editProject(project: (typeof projects.value)[0]) {
 async function updateProject(values: Record<string, unknown>) {
     try {
         const typedValues = values as Yup.InferType<typeof editSchema>;
+        const orgId = getOrganizationIdForProject(editingProject.value.id);
+        
         await trpcClient.organization.project.update.mutate({
-            orgId: organizationId.value,
+            orgId: orgId,
             projectId: editingProject.value.id,
             name: typedValues.name,
             description: typedValues.description ?? '',
         });
 
-        // Reload projects
-        const projectsData = await trpcClient.organization.project.list.query({
-            orgId: organizationId.value,
-        });
-        projects.value = projectsData;
+        projects.value = await trpcClient.account.currentUserProjects.query();
 
         editModalVisible.value = false;
         alert.success('Project updated successfully');
@@ -302,16 +290,14 @@ async function deleteProject(project: (typeof projects.value)[0]) {
     }
 
     try {
+        const orgId = getOrganizationIdForProject(project.id);
+        
         await trpcClient.organization.project.delete.mutate({
-            orgId: organizationId.value,
+            orgId: orgId,
             projectId: project.id,
         });
 
-        // Reload projects
-        const projectsData = await trpcClient.organization.project.list.query({
-            orgId: organizationId.value,
-        });
-        projects.value = projectsData;
+        projects.value = await trpcClient.account.currentUserProjects.query();
 
         alert.success('Project deleted successfully');
     } catch (error) {
