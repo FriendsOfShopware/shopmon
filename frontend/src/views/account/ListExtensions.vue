@@ -2,11 +2,11 @@
     <header-container title="My Extensions" />
 
     <main-container v-if="extensions">
-        <template v-if="extensions.length === 0">
+        <div v-if="extensions.length === 0" class="panel">
             <element-empty title="No Extensions" button="Add Shop" :route="{ name: 'account.shops.new' }">
                 Get started by adding your first Shop.
             </element-empty>
-        </template>
+        </div>
 
         <template v-else>
             <div class="panel">
