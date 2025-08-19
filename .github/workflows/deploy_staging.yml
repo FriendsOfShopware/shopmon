@@ -62,6 +62,7 @@ jobs:
               uses: openpubkey/setup-opkssh@v1
               with:
                 ssh-hosts-to-scan: 'shea.shyim.de'
+                version: 'v0.7.0'
 
             - name: Create Sentry release
               uses: getsentry/action-release@v3
