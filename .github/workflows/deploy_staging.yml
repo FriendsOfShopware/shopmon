@@ -76,6 +76,11 @@ jobs:
             - name: Install 1Password CLI
               uses: 1password/install-cli-action@v2
 
+            - name: Setup SSH Key
+              uses: webfactory/ssh-agent@v0.9.1
+              with:
+                  ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
             - name: Deploy to Staging
               run: op run --env-file .env.staging -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
               env:
