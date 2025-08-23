@@ -119,6 +119,8 @@ function isActive(
 
         &[class*="is-account-shops-detail"] {
             width: 60px;
+            position: relative;
+            z-index: 10;
 
             .nav-link-name,
             .nav-link-state {
