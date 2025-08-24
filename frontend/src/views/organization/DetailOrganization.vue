@@ -59,7 +59,7 @@
                 </h3>
 
                 <button
-                    class="btn btn-primary"
+                    class="btn btn-sm btn-primary"
                     type="button"
                     @click="showAddMemberModal = true"
                 >
@@ -150,7 +150,7 @@
                 <router-link
                     :to="{ name: 'account.organizations.sso', params: { slug: organization.data.slug } }"
                     type="button"
-                    class="btn btn-primary"
+                    class="btn btn-sm btn-primary"
                 >
                     <icon-fa6-solid:key
                         class="icon"
