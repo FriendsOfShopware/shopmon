@@ -84,52 +84,20 @@
             </button>
         </form-group>
 
-        <Modal
+        <delete-confirmation-modal
             :show="showOrganizationDeletionModal"
+            title="Delete organization"
+            :entity-name="organization?.data?.name || 'this organization'"
             @close="showOrganizationDeletionModal = false"
-        >
-            <template #icon>
-                <icon-fa6-solid:triangle-exclamation
-                    class="icon icon-error"
-                    aria-hidden="true"
-                />
-            </template>
-
-            <template #title>
-                Delete organization
-            </template>
-
-            <template #content>
-                Are you sure you want to delete your organization? All of your data will
-                be permanently removed
-                from our servers forever. This action cannot be undone.
-            </template>
-
-            <template #footer>
-                <button
-                    type="button"
-                    class="btn btn-danger"
-                    @click="deleteOrganization"
-                >
-                    Delete
-                </button>
-
-                <button
-                    ref="cancelButtonRef"
-                    type="button"
-                    class="btn"
-                    @click="showOrganizationDeletionModal = false"
-                >
-                    Cancel
-                </button>
-            </template>
-        </Modal>
+            @confirm="deleteOrganization"
+        />
     </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
+import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref } from 'vue';

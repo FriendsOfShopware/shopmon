@@ -120,98 +120,22 @@
         </div>
     </div>
 
-    <modal
-        class="update-wizard"
+    <!-- Changelog Modal -->
+    <shop-changelog
+        :show="viewShopChangelogDialog"
+        :changelog="dialogShopChangelog"
+        @close="closeShopChangelog"
+    />
+
+    <!-- Update Wizard Modal -->
+    <shopware-update-wizard
         :show="viewUpdateWizardDialog"
-        close-x-mark
+        :shopware-versions="shopwareVersions"
+        :loading="loadingUpdateWizard"
+        :extensions="dialogUpdateWizard"
         @close="viewUpdateWizardDialog = false"
-    >
-        <template #title>
-            <FaRotate /> Shopware Extension Compatibility Check
-        </template>
-
-        <template #content>
-            <select
-                class="field"
-                @change="(event: Event) => loadUpdateWizard((event.target as HTMLSelectElement).value)"
-            >
-                <option disabled selected>
-                    Select update Version
-                </option>
-
-                <option
-                    v-for="version in shopwareVersions"
-                    :key="version"
-                >
-                    {{ version }}
-                </option>
-            </select>
-
-            <template v-if="loadingUpdateWizard">
-                <div class="update-wizard-loader">
-                    Loading <FaRotate class="animate-spin" />
-                </div>
-            </template>
-
-            <div
-                v-if="dialogUpdateWizard"
-                :class="{ 'update-wizard-refresh': loadingUpdateWizard }"
-            >
-                <h2 class="update-wizard-plugins-heading">
-                    Extension Compatibility
-                </h2>
-
-                <ul>
-                    <li
-                        v-for="extension in dialogUpdateWizard"
-                        :key="extension.name"
-                        class="update-wizard-plugin"
-                    >
-                        <div class="update-wizard-plugin-icon">
-                            <FaRegularCircle
-                                v-if="!extension.active"
-                                class="icon icon-muted"
-                            />
-                            <FaCircleInfo
-                                v-else-if="!extension.compatibility"
-                                class="icon icon-warning"
-                            />
-                            <FaCircleXmark
-                                v-else-if="extension.compatibility.type == 'red'"
-                                class="icon icon-error"
-                            />
-                            <FaRotate
-                                v-else-if="extension.compatibility.label === 'Available now'"
-                                class="icon icon-info"
-                            />
-                            <FaCircleCheck
-                                v-else
-                                class="icon icon-success"
-                            />
-                        </div>
-
-                        <div>
-                            <component
-                                :is="extension.storeLink ? 'a' : 'span'"
-                                v-bind="extension.storeLink ? {href: extension.storeLink, target: '_blank'} : {}"
-                            >
-                                <strong>{{ extension.label }}</strong>
-                            </component>
-                            <span class="update-wizard-plugin-technical-name"> ({{ extension.name }})</span>
-
-                            <div v-if="!extension.compatibility || !extension.storeLink">
-                                This plugin is not available in the Store. Please contact the
-                                plugin manufacturer.
-                            </div>
-                            <div v-else>
-                                {{ extension.compatibility.label }}
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </template>
-    </modal>
+        @version-selected="loadUpdateWizard"
+    />
 </template>
 
 <script setup lang="ts">
@@ -220,7 +144,6 @@ import { useShopDetail } from '@/composables/useShopDetail';
 import { ref } from 'vue';
 import { trpcClient } from '@/helpers/trpc';
 import { useAlert } from '@/composables/useAlert';
-import Modal from '@/components/layout/Modal.vue';
 import StatusIcon from '@/components/StatusIcon.vue';
 
 // Icon imports
@@ -231,6 +154,8 @@ import FaRegularCircle from '~icons/fa6-regular/circle';
 import FaRotate from '~icons/fa6-solid/rotate';
 import FaStore from '~icons/fa6-solid/store';
 import FaShieldHalved from '~icons/fa6-solid/shield-halved';
+import ShopChangelog from '@/components/modal/ShopChangelog.vue';
+import ShopwareUpdateWizard from '@/components/modal/ShopwareUpdateWizard.vue';
 
 const { error } = useAlert();
 const {
@@ -356,49 +281,6 @@ async function loadUpdateWizard(version: string) {
     }
 }
 
-.update-wizard {
-    .field {
-        margin-bottom: .75rem;
-    }
-
-    &-loader {
-        text-align:center;
-    }
-
-    &-refresh {
-        opacity: .2;
-    }
-
-    &-plugins {
-        &-heading {
-            font-size: 1.125rem;
-            font-weight: 500;
-            margin-bottom: .5rem;
-        }
-    }
-
-    &-plugin {
-        background-color: var(--item-background);
-        padding: .5rem;
-        display: flex;
-
-        &:nth-child(odd) {
-            background-color: var(--item-odd-background);
-        }
-
-        &:hover {
-            background-color: var(--item-hover-background);
-        }
-
-        &-icon {
-            margin-right: .5rem;
-        }
-
-        &-technical-name {
-            opacity: .6;
-        }
-    }
-}
 
 .auto-update-info {
     margin-top: 0.375rem;

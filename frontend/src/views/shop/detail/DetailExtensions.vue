@@ -61,71 +61,33 @@
     </data-table>
     </div>
 
-    <modal
+    <!-- Extension Changelog Modal -->
+    <extension-changelog
         :show="viewExtensionChangelogDialog"
-        close-x-mark
-        @close="viewExtensionChangelogDialog = false"
-    >
-        <template #title>
-            Changelog - <span class="extension-changelog-name">{{ dialogExtension?.name }}</span>
-        </template>
-
-        <template #content>
-            <ul v-if="dialogExtension?.changelog?.length > 0" class="extension-changelog">
-                <li
-                    v-for="changeLog in dialogExtension.changelog"
-                    :key="changeLog.version"
-                    class="extension-changelog-item"
-                >
-                    <div class="extension-changelog-title">
-                        <span
-                            v-if="!changeLog.isCompatible"
-                            data-tooltip="not compatible with your version"
-                        >
-                            <icon-fa6-solid:circle-info class="icon icon-warning" />
-                        </span>
-
-                        {{ changeLog.version }} -
-                        <span class="extension-changelog-date">
-                            {{ formatDate(changeLog.creationDate) }}
-                        </span>
-                    </div>
-
-                    <!-- eslint-disable vue/no-v-html -->
-                    <div
-                        class="extension-changelog-content"
-                        v-html="changeLog.text"
-                    />
-                    <!-- eslint-enable vue/no-v-html -->
-                </li>
-            </ul>
-
-            <alert v-else type="error">
-                No Changelog data provided
-            </alert>
-        </template>
-    </modal>
+        :extension="dialogExtension"
+        @close="closeExtensionChangelog"
+    />
 </template>
 
 <script setup lang="ts">
 import { formatDate, formatDateTime } from '@/helpers/formatter';
 import type { RouterOutput } from '@/helpers/trpc';
 import { useShopDetail } from '@/composables/useShopDetail';
+import { useExtensionChangelogModal } from '@/composables/useExtensionChangelogModal';
+import ExtensionChangelog from '@/components/modal/ExtensionChangelog.vue';
 
-import { type Ref, ref } from 'vue';
 type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
 const {
     shop,
 } = useShopDetail();
 
-const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
-const dialogExtension: Ref<Extension | null> = ref(null);
-
-function openExtensionChangelog(extension: Extension | null) {
-    dialogExtension.value = extension;
-    viewExtensionChangelogDialog.value = true;
-}
+const {
+    viewExtensionChangelogDialog,
+    dialogExtension,
+    openExtensionChangelog,
+    closeExtensionChangelog,
+} = useExtensionChangelogModal();
 
 function getExtensionState(extension: Extension) {
     if (!extension.installed) {
@@ -184,6 +146,13 @@ function getExtensionState(extension: Extension) {
     &-content {
         padding-left: 1.5rem;
     }
+}
 
+.extension-update-available {
+    cursor: pointer;
+    
+    &:hover {
+        opacity: 0.7;
+    }
 }
 </style>

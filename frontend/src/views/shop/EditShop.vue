@@ -245,53 +245,20 @@
                 </button>
         </form-group>
 
-        <Modal
+        <delete-confirmation-modal
             :show="showShopDeletionModal"
-            close-x-mark
+            title="Delete shop"
+            :entity-name="shop?.name || 'this shop'"
             @close="showShopDeletionModal = false"
-        >
-            <template #icon>
-                <icon-fa6-solid:triangle-exclamation
-                    class="icon icon-error"
-                    aria-hidden="true"
-                />
-            </template>
-
-            <template #title>
-                Delete shop
-            </template>
-
-            <template #content>
-                Are you sure you want to delete your Shop? All of your data will
-                be permanently removed
-                from our servers forever. This action cannot be undone.
-            </template>
-
-            <template #footer>
-                <button
-                    type="button"
-                    class="btn btn-danger"
-                    @click="deleteShop"
-                >
-                    Delete
-                </button>
-
-                <button
-                    ref="cancelButtonRef"
-                    type="button"
-                    class="btn"
-                    @click="showShopDeletionModal = false"
-                >
-                    Cancel
-                </button>
-            </template>
-        </Modal>
+            @confirm="deleteShop"
+        />
     </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref, computed } from 'vue';

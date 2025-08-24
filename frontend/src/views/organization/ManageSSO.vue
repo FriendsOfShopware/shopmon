@@ -251,46 +251,24 @@
         </modal>
 
         <!-- Delete Confirmation Modal -->
-        <modal
+        <delete-confirmation-modal
             :show="showDeleteModal"
-            close-x-mark
+            title="Delete SSO Provider?"
+            :entity-name="`the SSO provider for ${deletingProvider?.domain}`"
+            custom-consequence="Users from this domain will no longer be able to use SSO to sign in."
+            :reversed-buttons="true"
+            :is-loading="isDeleting"
+            confirm-button-text="Delete Provider"
             @close="showDeleteModal = false"
-        >
-            <template #title>
-                Delete SSO Provider?
-            </template>
-
-            <template #content>
-                <p>Are you sure you want to delete the SSO provider for <strong>{{ deletingProvider?.domain }}</strong>?</p>
-                <p class="text-muted">Users from this domain will no longer be able to use SSO to sign in.</p>
-            </template>
-
-            <template #footer>
-                <button
-                    type="button"
-                    class="btn"
-                    @click="showDeleteModal = false"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-danger"
-                    :disabled="isDeleting"
-                    @click="deleteProvider"
-                >
-                    <icon-fa6-solid:trash v-if="!isDeleting" class="icon" aria-hidden="true" />
-                    <icon-line-md:loading-twotone-loop v-else class="icon" />
-                    Delete Provider
-                </button>
-            </template>
-        </modal>
+            @confirm="deleteProvider"
+        />
     </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { usePermissions } from '@/composables/usePermissions';
+import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 import { authClient } from '@/helpers/auth-client';
 import { trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
