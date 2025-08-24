@@ -81,6 +81,10 @@ table th {
 		padding-bottom: 0.25rem;
 		margin-bottom: 1rem;
 		border-bottom: 1px solid var(--panel-border-color);
+
+		.icon {
+			margin-right: 0.25rem;
+		}
 	}
 
 	&-header {

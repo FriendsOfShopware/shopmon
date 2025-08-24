@@ -25,6 +25,27 @@
             <div class="shop-name">
                 <div class="sidebar-section-label">Environment:</div>
                 <h4>{{ shop.name }}</h4>
+                <status-icon :status="shop.status"/>
+                <div>
+                    <a
+                        :href="shop.url"
+                        data-tooltip="Go to storefront"
+                        target="_blank"
+                    >
+                        <icon-fa6-solid:store />
+                        Storefront
+                    </a>
+                    &nbsp;/&nbsp;
+                    <a
+                        :href="shop.url + '/admin'"
+                        data-tooltip="Go to shopware admin"
+                        target="_blank"
+                    >
+                        <icon-fa6-solid:user-gear />
+                        Admin
+                    </a>
+                </div>
+
             </div>
 
             <nav class="nav-main">
@@ -57,6 +78,7 @@
 import type { RouterOutput } from '@/helpers/trpc';
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import StatusIcon from "@/components/StatusIcon.vue";
 
 const route = useRoute();
 
@@ -187,7 +209,7 @@ watch(route, () => {
     margin-top: 1.5rem;
     display: flex;
     justify-content: center;
-    padding-bottom: 0.5rem;
+    padding-bottom: 1rem;
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--panel-border-color);
 
@@ -203,27 +225,33 @@ watch(route, () => {
     }
 }
 
-.shop-image {
-    height: 6.25rem;
-
-    @media (min-width: 640px) {
-        height: 25rem;
-    }
-
-    @media (min-width: 960px) {
-        height: 12.5rem;
-    }
+.placeholder-image {
+    color: #e5e7eb;
+    font-size: 9rem;
 }
 
 .shop-name {
     padding: 0 0 1rem 0.75rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--panel-border-color);
-}
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
 
-.placeholder-image {
-    color: #e5e7eb;
-    font-size: 9rem;
+    .sidebar-section-label {
+        flex: 1;
+        width: 100%;
+    }
+
+    h4 {
+        width: calc(100% - 1.5rem);
+    }
+
+    .icon-status {
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+    }
 }
 
 .nav-link-count {
