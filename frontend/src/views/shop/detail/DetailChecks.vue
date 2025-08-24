@@ -5,7 +5,7 @@
             :columns="[
             { key: 'message', name: 'Message' },
         ]"
-            :data="shop.checks || []"
+            :data="sortedChecks"
         >
             <template #cell-message="{ row }">
                 <status-icon :status="row.level" />
@@ -45,10 +45,23 @@
 import { useAlert } from '@/composables/useAlert';
 import { trpcClient } from '@/helpers/trpc';
 import { useShopDetail } from "@/composables/useShopDetail";
+import { computed } from 'vue';
 
 const {
     shop,
 } = useShopDetail();
+
+// Sort checks by status: red first, then yellow, then green
+const sortedChecks = computed(() => {
+    if (!shop.value?.checks) return [];
+    return [...shop.value.checks].sort((a, b) => {
+        if (a.level === 'red' && b.level !== 'red') return -1;
+        if (a.level !== 'red' && b.level === 'red') return 1;
+        if (a.level === 'yellow' && b.level === 'green') return -1;
+        if (a.level === 'green' && b.level === 'yellow') return 1;
+        return 0;
+    });
+});
 
 const { info } = useAlert();
 
