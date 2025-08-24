@@ -72,7 +72,9 @@
                             <span :data-tooltip="shop.version.length > 6 ? shop.version : ''">{{ shop.version.replace(/(.{6})..+/, "$1&hellip;") }}</span>
                             <span
                                 v-if="row.latestVersion && shop.version < row.latestVersion"
-                                data-tooltip="Update available"
+                                data-tooltip="Update available - Click to view changelog"
+                                class="extension-update-available"
+                                @click="openExtensionChangelog(row)"
                             >
                                 <icon-fa6-solid:rotate class="icon icon-warning icon-update" />
                             </span>
@@ -100,16 +102,32 @@
             </div>
         </template>
     </main-container>
+
+    <!-- Extension Changelog Modal -->
+    <extension-changelog
+        :show="viewExtensionChangelogDialog"
+        :extension="dialogExtension"
+        @close="closeExtensionChangelog"
+    />
 </template>
 
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import { formatDateTime } from '@/helpers/formatter';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import { useExtensionChangelogModal } from '@/composables/useExtensionChangelogModal';
+import ExtensionChangelog from '@/components/modal/ExtensionChangelog.vue';
 import { ref } from 'vue';
 
 const term = ref('');
 const extensions = ref<RouterOutput['account']['currentUserExtensions']>([]);
+
+const {
+    viewExtensionChangelogDialog,
+    dialogExtension,
+    openExtensionChangelog,
+    closeExtensionChangelog,
+} = useExtensionChangelogModal();
 
 trpcClient.account.currentUserExtensions.query().then((data) => {
     extensions.value = data;
@@ -141,6 +159,10 @@ function getExtensionState(
         font-weight: normal;
         opacity: 0.6;
     }
+}
+
+.extension-update-available {
+    cursor: pointer;
 }
 
 .shops-row {
