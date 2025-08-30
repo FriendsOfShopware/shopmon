@@ -75,7 +75,7 @@ export class CheckerOutput {
             link,
         });
 
-        if(this.status === 'red') {
+        if (this.status === 'red') {
             return;
         }
 
