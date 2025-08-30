@@ -56,7 +56,7 @@ services:
       <<: *env
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik
+      - traefik.docker.network=traefik_default
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.entrypoints=websecure
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`) || PathPrefix(`/sitespeed`))
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls=true
