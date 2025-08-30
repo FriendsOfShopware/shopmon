@@ -58,12 +58,6 @@ jobs:
                 platforms: linux/arm64
                 context: sitespeed-service
 
-            - name: Setup opkssh
-              uses: openpubkey/setup-opkssh@v1
-              with:
-                ssh-hosts-to-scan: 'shea.shyim.de'
-                version: 'v0.7.0'
-
             - name: Create Sentry release
               uses: getsentry/action-release@v3
               env:
@@ -73,16 +67,5 @@ jobs:
               with:
                 environment: staging
 
-            - name: Install 1Password CLI
-              uses: 1password/install-cli-action@v2
-
-            - name: Setup SSH Key
-              uses: webfactory/ssh-agent@v0.9.1
-              with:
-                  ssh-private-key: ${{ secrets.DEPLOY_KEY }}
-
-            - name: Deploy to Staging
-              run: op run --env-file .env.staging -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
-              env:
-                OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-                DOCKER_HOST: ssh://github@shea.shyim.de
+            - name: Trigger Deployment
+              run: curl -X POST ${{ secrets.DEPLOY_URL }}
