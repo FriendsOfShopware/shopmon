@@ -65,7 +65,7 @@
         height: 1rem;
         padding: 0;
         display: inline-block;
-        vertical-align: top;
+        vertical-align: -0.15em;
         user-select: none;
         cursor: pointer;
         margin-right: 0.35rem;
