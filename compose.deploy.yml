@@ -29,6 +29,8 @@ services:
 
   frontend:
     image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}
+    networks:
+      - traefik
     labels:
       - traefik.enable=true
       - traefik.http.routers.shopmon-${ENVIRONMENT}.entrypoints=websecure
@@ -44,6 +46,9 @@ services:
 
   api:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+      - traefik
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -67,11 +72,12 @@ services:
 
   sitespeed:
     image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}
+    networks:
+      - shopmon
     environment:
       APP_SITESPEED_DATA_FOLDER: /app/uploads/sitespeed
     volumes:
       - uploads:/app/uploads
-
 
   backup:
     image: litestream/litestream
@@ -87,7 +93,13 @@ services:
       LITESTREAM_AGE_PUBLIC_KEY: ${LITESTREAM_AGE_PUBLIC_KEY}
       LITESTREAM_AGE_PRIVATE_KEY: ${LITESTREAM_AGE_PRIVATE_KEY}
       ENVIRONMENT: ${ENVIRONMENT}
-  
+
+networks:
+  traefik:
+    name: traefik_default
+    external: true
+  shopmon:
+
 volumes:
   db:
   uploads:
