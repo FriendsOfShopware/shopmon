@@ -174,7 +174,7 @@
 
                 <div class="issue-content">
                     <span class="issue-message">
-                        {{ extension.label }} <span @click="openExtensionChangelog(extension)">({{ extension.version }} → {{ extension.latestVersion }})</span>
+                        {{ extension.label }} <span class="link" @click="openExtensionChangelog(extension)">({{ extension.version }} → {{ extension.latestVersion }})</span>
                     </span>
 
                     <span class="issue-source">{{ extension.name }}</span>
@@ -259,14 +259,13 @@
                 v-for="changelog in recentChangelogs"
                 :key="changelog.id"
                 class="change-item"
-                @click="openShopChangelog(changelog)"
             >
                 <div class="change-date">
                     {{ formatDate(changelog.date) }}
                 </div>
 
                 <div class="change-summary">
-                    {{ sumChanges(changelog) }}
+                    {{ sumChanges(changelog) }} <span class="link" @click="openShopChangelog(changelog)" data-tooltip="Open Details"><icon-fa6-solid:circle-info class="icon" /></span>
                 </div>
             </div>
         </div>
@@ -591,8 +590,11 @@ async function loadUpdateWizard(version: string) {
         display: flex;
         align-items: flex-start;
         padding: 0.5rem 0;
-        cursor: pointer;
         gap: 1rem;
+
+        .icon {
+            font-size: 0.75rem;
+        }
     }
 
     &-date {

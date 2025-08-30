@@ -6,9 +6,11 @@ body {
 	height: 100%;
 }
 
-a {
+a,
+.link {
 	color: var(--link-color);
 	transition: color 0.2s ease-in-out;
+	cursor: pointer;
 
 	&:hover {
 		color: var(--link-hover-color);
