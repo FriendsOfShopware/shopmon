@@ -3,6 +3,7 @@
         :show="show" 
         close-x-mark 
         @close="$emit('close')"
+        class="modal-confirm"
     >
         <template #icon>
             <icon-fa6-solid:triangle-exclamation 
@@ -34,7 +35,7 @@
             </div>
             
             <!-- Password confirmation field -->
-            <div v-if="requirePassword" class="mt-3">
+            <div v-if="requirePassword" class="section-password">
                 <label for="deletePassword">Current Password</label>
                 <input 
                     id="deletePassword" 
@@ -111,11 +112,15 @@ watch(() => props.show, (newShow) => {
 
 </script>
 
-<style scoped>
-.mt-3 {
-    margin-top: 1rem;
+<style>
+.modal-confirm {
+    .modal-panel {
+        max-width: 32rem;
+    }
 }
+</style>
 
+<style scoped>
 label {
     display: block;
     margin-bottom: 0.5rem;
@@ -130,5 +135,9 @@ label {
     display: flex;
     flex-direction: row-reverse;
     gap: 0.5rem;
+}
+
+.section-password {
+    margin-top: 1rem;
 }
 </style>
