@@ -31,10 +31,6 @@
                     :default-sort="{ key: 'label', desc: false }"
                     :search-term="term"
                 >
-                    <template #cell-actions-header>
-                        Known Issues
-                    </template>
-
                     <template #cell-label="{ row }">
                         <component :is="row.storeLink ? 'a' : 'span'" v-bind="row.storeLink ? {href: row.storeLink, target: '_blank'} : {}">
                             <div class="extension-name">{{ row.label }}</div>
@@ -93,10 +89,6 @@
                         <template v-if="row.installedAt">
                             {{ formatDateTime(row.installedAt) }}
                         </template>
-                    </template>
-
-                    <template #cell-actions>
-                        No known issues. <a href="#">Report issue</a>
                     </template>
                 </data-table>
             </div>

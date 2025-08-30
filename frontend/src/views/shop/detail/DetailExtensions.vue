@@ -12,10 +12,6 @@
         :data="shop?.extensions || []"
         :default-sort="{ key: 'label', desc: false }"
     >
-        <template #cell-actions-header>
-            Known Issues
-        </template>
-
         <template #cell-label="{ row }">
             <div class="extension-label">
                 <status-icon :status="getExtensionState(row)" :tooltip="true" />
@@ -53,10 +49,6 @@
             <template v-if="row.installedAt">
                 {{ formatDateTime(row.installedAt) }}
             </template>
-        </template>
-
-        <template #cell-actions>
-            No known issues. <a href="#">Report issue</a>
         </template>
     </data-table>
     </div>
