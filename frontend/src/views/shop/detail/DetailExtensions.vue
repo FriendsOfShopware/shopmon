@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatDate, formatDateTime } from '@/helpers/formatter';
+import { formatDateTime } from '@/helpers/formatter';
 import type { RouterOutput } from '@/helpers/trpc';
 import { useShopDetail } from '@/composables/useShopDetail';
 import { useExtensionChangelogModal } from '@/composables/useExtensionChangelogModal';

@@ -265,7 +265,7 @@
                 </div>
 
                 <div class="change-summary">
-                    {{ sumChanges(changelog) }} <span class="link tooltip-top-left" @click="openShopChangelog(changelog)" data-tooltip="Open Details"><icon-fa6-solid:circle-info class="icon" /></span>
+                    {{ sumChanges(changelog) }} <span class="link tooltip-top-left" data-tooltip="Open Details" @click="openShopChangelog(changelog)"><icon-fa6-solid:circle-info class="icon" /></span>
                 </div>
             </div>
         </div>

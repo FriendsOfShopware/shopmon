@@ -2,8 +2,8 @@
     <modal 
         :show="show" 
         close-x-mark 
-        @close="$emit('close')"
         class="modal-confirm"
+        @close="$emit('close')"
     >
         <template #icon>
             <icon-fa6-solid:triangle-exclamation 
@@ -17,7 +17,9 @@
         </template>
         
         <template #content>
-            <div v-if="customMessage" v-html="customMessage" />
+            <div v-if="customMessage">
+                {{ customMessage }}
+            </div>
             
             <div v-else>
                 <p>
