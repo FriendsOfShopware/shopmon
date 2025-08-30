@@ -37,7 +37,7 @@
                 <div class="shop-info-item">
                     <dt>
                         Last Checked At
-                        <span data-tooltip="Shop is updated once an hour automatically">
+                        <span data-tooltip="Shop is updated once an hour automatically" class="tooltip-top-center">
                             <icon-fa6-solid:circle-info class="icon" />
                         </span>
                     </dt>
@@ -265,7 +265,7 @@
                 </div>
 
                 <div class="change-summary">
-                    {{ sumChanges(changelog) }} <span class="link" @click="openShopChangelog(changelog)" data-tooltip="Open Details"><icon-fa6-solid:circle-info class="icon" /></span>
+                    {{ sumChanges(changelog) }} <span class="link tooltip-top-left" @click="openShopChangelog(changelog)" data-tooltip="Open Details"><icon-fa6-solid:circle-info class="icon" /></span>
                 </div>
             </div>
         </div>

@@ -35,6 +35,10 @@
     }
 }
 
+span[data-tooltip] {
+    display: inline-block;
+}
+
 *[data-tooltip]:empty::before,
 *[data-tooltip]:empty::after,
 *[data-tooltip=""]::before,
