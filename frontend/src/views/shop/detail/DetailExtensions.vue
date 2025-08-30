@@ -33,7 +33,7 @@
                 v-if="row.latestVersion && row.version < row.latestVersion"
                 data-tooltip="Update available"
                 class="extension-update-available"
-                @click="openExtensionChangelog(row as Extension)"
+                @click="openExtensionChangelog(row)"
             >
                 <icon-fa6-solid:rotate
                     class="icon icon-warning"

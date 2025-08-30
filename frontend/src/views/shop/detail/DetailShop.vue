@@ -174,7 +174,7 @@
 
                 <div class="issue-content">
                     <span class="issue-message">
-                        {{ extension.label }} ({{ extension.version }} → {{ extension.latestVersion }})
+                        {{ extension.label }} <span @click="openExtensionChangelog(extension)">({{ extension.version }} → {{ extension.latestVersion }})</span>
                     </span>
 
                     <span class="issue-source">{{ extension.name }}</span>
@@ -288,11 +288,18 @@
         </div>
     </div>
 
-    <!-- Changelog Modal -->
+    <!-- Shop Changelog Modal -->
     <shop-changelog
         :show="viewShopChangelogDialog"
         :changelog="dialogShopChangelog"
         @close="closeShopChangelog"
+    />
+
+    <!-- Extension Changelog Modal -->
+    <extension-changelog
+        :show="viewExtensionChangelogDialog"
+        :extension="dialogExtension"
+        @close="closeExtensionChangelog"
     />
 
     <!-- Update Wizard Modal -->
@@ -310,12 +317,10 @@
 import {formatDate, formatDateTime} from '@/helpers/formatter';
 import {useShopDetail} from '@/composables/useShopDetail';
 import {useShopChangelogModal} from '@/composables/useShopChangelogModal';
+import {useExtensionChangelogModal} from '@/composables/useExtensionChangelogModal';
 import {ref, computed} from 'vue';
 import {trpcClient} from '@/helpers/trpc';
 import {useAlert} from '@/composables/useAlert';
-import StatusIcon from '@/components/StatusIcon.vue';
-import ShopChangelog from '@/components/modal/ShopChangelog.vue';
-import ShopwareUpdateWizard from '@/components/modal/ShopwareUpdateWizard.vue';
 import {sumChanges} from '@/helpers/changelog';
 
 const {error} = useAlert();
@@ -324,6 +329,13 @@ const {
     shopwareVersions,
     latestShopwareVersion,
 } = useShopDetail();
+
+const {
+    viewExtensionChangelogDialog,
+    dialogExtension,
+    openExtensionChangelog,
+    closeExtensionChangelog,
+} = useExtensionChangelogModal();
 
 const {
     viewShopChangelogDialog,
