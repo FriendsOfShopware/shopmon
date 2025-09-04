@@ -25,7 +25,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.17.1
-        version: 1.17.1(hono@4.8.5)
+        version: 1.17.1(hono@4.9.6)
       '@libsql/client':
         specifier: ^0.15.10
         version: 0.15.10
@@ -34,7 +34,7 @@ importers:
         version: 9.40.0
       '@shopware-ag/app-server-sdk':
         specifier: ^1.1.22
-        version: 1.1.22(better-sqlite3@11.10.0)(hono@4.8.5)
+        version: 1.1.22(better-sqlite3@11.10.0)(hono@4.9.6)
       '@trpc/server':
         specifier: ^11.4.3
         version: 11.4.3(typescript@5.8.3)
@@ -48,8 +48,8 @@ importers:
         specifier: ^0.44.3
         version: 0.44.3(@libsql/client@0.15.10)(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0(prisma@5.22.0))(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(better-sqlite3@11.10.0)(bun-types@1.2.16)(kysely@0.28.3)(prisma@5.22.0)
       hono:
-        specifier: ~4.8.5
-        version: 4.8.5
+        specifier: ~4.9.6
+        version: 4.9.6
       node-cron:
         specifier: ^4.2.1
         version: 4.2.1
@@ -183,7 +183,7 @@ importers:
         version: 8.37.0(eslint@9.31.0(jiti@2.4.2))(typescript@5.8.3)
       '@vitejs/plugin-vue':
         specifier: 6.0.0
-        version: 6.0.0(vite@7.0.5(@types/node@24.0.15)(jiti@2.4.2))(vue@3.5.17(typescript@5.8.3))
+        version: 6.0.0(vite@7.0.5(@types/node@24.3.0)(jiti@2.4.2))(vue@3.5.17(typescript@5.8.3))
       autoprefixer:
         specifier: 10.4.21
         version: 10.4.21(postcss@8.5.6)
@@ -207,7 +207,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: 7.0.5
-        version: 7.0.5(@types/node@24.0.15)(jiti@2.4.2)
+        version: 7.0.5(@types/node@24.3.0)(jiti@2.4.2)
       vue-eslint-parser:
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.31.0(jiti@2.4.2))
@@ -216,13 +216,13 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.17.1
-        version: 1.17.1(hono@4.8.5)
+        version: 1.17.1(hono@4.9.6)
       '@hono/zod-validator':
         specifier: ^0.7.2
-        version: 0.7.2(hono@4.8.5)(zod@4.0.5)
+        version: 0.7.2(hono@4.9.6)(zod@4.0.5)
       hono:
-        specifier: ~4.8.5
-        version: 4.8.5
+        specifier: ~4.9.6
+        version: 4.9.6
       zod:
         specifier: ^4.0.5
         version: 4.0.5
@@ -1613,6 +1613,9 @@ packages:
   '@types/node@24.0.15':
     resolution: {integrity: sha512-oaeTSbCef7U/z7rDeJA138xpG3NuKc64/rZ2qmUFkFJmnMsAPaluIifqyWd8hSSMxyP9oie3dLAqYPblag9KgA==}
 
+  '@types/node@24.3.0':
+    resolution: {integrity: sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==}
+
   '@types/nodemailer@6.4.17':
     resolution: {integrity: sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww==}
 
@@ -2556,8 +2559,8 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  hono@4.8.5:
-    resolution: {integrity: sha512-Up2cQbtNz1s111qpnnECdTGqSIUIhZJMLikdKkshebQSEBcoUKq6XJayLGqSZWidiH0zfHRCJqFu062Mz5UuRA==}
+  hono@4.9.6:
+    resolution: {integrity: sha512-doVjXhSFvYZ7y0dNokjwwSahcrAfdz+/BCLvAMa/vHLzjj8+CFyV5xteThGUsKdkaasgN+gF2mUxao+SGLpUeA==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -3405,6 +3408,9 @@ packages:
 
   uncrypto@0.1.3:
     resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
+
+  undici-types@7.10.0:
+    resolution: {integrity: sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==}
 
   undici-types@7.8.0:
     resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
@@ -4288,13 +4294,13 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@1.17.1(hono@4.8.5)':
+  '@hono/node-server@1.17.1(hono@4.9.6)':
     dependencies:
-      hono: 4.8.5
+      hono: 4.9.6
 
-  '@hono/zod-validator@0.7.2(hono@4.8.5)(zod@4.0.5)':
+  '@hono/zod-validator@0.7.2(hono@4.9.6)(zod@4.0.5)':
     dependencies:
-      hono: 4.8.5
+      hono: 4.9.6
       zod: 4.0.5
 
   '@humanfs/core@0.19.1': {}
@@ -4929,10 +4935,10 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.36.0
       '@sentry/core': 9.40.0
 
-  '@shopware-ag/app-server-sdk@1.1.22(better-sqlite3@11.10.0)(hono@4.8.5)':
+  '@shopware-ag/app-server-sdk@1.1.22(better-sqlite3@11.10.0)(hono@4.9.6)':
     optionalDependencies:
       better-sqlite3: 11.10.0
-      hono: 4.8.5
+      hono: 4.9.6
 
   '@simplewebauthn/browser@13.1.2': {}
 
@@ -4987,6 +4993,11 @@ snapshots:
   '@types/node@24.0.15':
     dependencies:
       undici-types: 7.8.0
+
+  '@types/node@24.3.0':
+    dependencies:
+      undici-types: 7.10.0
+    optional: true
 
   '@types/nodemailer@6.4.17':
     dependencies:
@@ -5110,10 +5121,10 @@ snapshots:
       '@typescript-eslint/types': 8.37.0
       eslint-visitor-keys: 4.2.1
 
-  '@vitejs/plugin-vue@6.0.0(vite@7.0.5(@types/node@24.0.15)(jiti@2.4.2))(vue@3.5.17(typescript@5.8.3))':
+  '@vitejs/plugin-vue@6.0.0(vite@7.0.5(@types/node@24.3.0)(jiti@2.4.2))(vue@3.5.17(typescript@5.8.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.19
-      vite: 7.0.5(@types/node@24.0.15)(jiti@2.4.2)
+      vite: 7.0.5(@types/node@24.3.0)(jiti@2.4.2)
       vue: 3.5.17(typescript@5.8.3)
 
   '@vue/compiler-core@3.5.17':
@@ -5332,7 +5343,7 @@ snapshots:
 
   bun-types@1.2.16:
     dependencies:
-      '@types/node': 24.0.15
+      '@types/node': 24.3.0
     optional: true
 
   c12@2.0.4:
@@ -5943,7 +5954,7 @@ snapshots:
 
   he@1.2.0: {}
 
-  hono@4.8.5: {}
+  hono@4.9.6: {}
 
   hookable@5.5.3: {}
 
@@ -6958,6 +6969,9 @@ snapshots:
 
   uncrypto@0.1.3: {}
 
+  undici-types@7.10.0:
+    optional: true
+
   undici-types@7.8.0: {}
 
   universalify@2.0.1: {}
@@ -7029,7 +7043,7 @@ snapshots:
       type-fest: 4.41.0
       vue: 3.5.17(typescript@5.8.3)
 
-  vite@7.0.5(@types/node@24.0.15)(jiti@2.4.2):
+  vite@7.0.5(@types/node@24.3.0)(jiti@2.4.2):
     dependencies:
       esbuild: 0.25.8
       fdir: 6.4.6(picomatch@4.0.3)
@@ -7038,7 +7052,7 @@ snapshots:
       rollup: 4.45.1
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 24.0.15
+      '@types/node': 24.3.0
       fsevents: 2.3.3
       jiti: 2.4.2
 
