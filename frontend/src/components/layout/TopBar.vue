@@ -314,7 +314,7 @@ if (session.value.data?.user.email) {
                     .join('');
                 userAvatar.value = `https://api.dicebear.com/7.x/personas/svg?seed=${seed}&d=identicon`;
             });
-        // eslint-disable-next-line no-unused-vars
+         
     } catch (error) {
         // Web crypto API is not supported, fallback to default avatar
         // Silent fallback, no need for console error

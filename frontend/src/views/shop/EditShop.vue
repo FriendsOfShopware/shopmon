@@ -506,7 +506,7 @@ const processPluginData = () => {
             return;
         }
         
-        const decodedString = atob(pluginBase64.value.trim());
+        const decodedString = window.atob(pluginBase64.value.trim());
         const data = JSON.parse(decodedString);
         
         if (!data.url || !data.clientId || !data.clientSecret) {

@@ -205,7 +205,7 @@ trpcClient.account.currentUserProjects.query().then((data) => {
 const isValidUrl = (url: string) => {
     try {
         new URL(url);
-        // eslint-disable-next-line no-unused-vars
+         
     } catch (e) {
         return false;
     }
@@ -267,7 +267,7 @@ const processPluginData = () => {
             return;
         }
         
-        const decodedString = atob(pluginBase64.value.trim());
+        const decodedString = window.atob(pluginBase64.value.trim());
         const data = JSON.parse(decodedString);
         
         if (!data.url || !data.clientId || !data.clientSecret) {
