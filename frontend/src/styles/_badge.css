@@ -7,6 +7,7 @@
 	border-radius: 0.25rem;
 	background-color: #d1d5db;
 	color: var(--text-color);
+	vertical-align: 0.2rem;
 
 	&:not(:first-child) {
 		margin-left: 0.5rem;

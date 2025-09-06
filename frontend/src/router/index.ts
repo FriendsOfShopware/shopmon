@@ -15,7 +15,7 @@ import { nextTick } from 'vue';
 
 import FaShop from '~icons/fa6-solid/shop';
 import FaCircleCheck from '~icons/fa6-solid/circle-check';
-import FaFileWaverform from '~icons/fa6-solid/file-waveform';
+import FaFileWaveform from '~icons/fa6-solid/file-waveform';
 import FaListCheck from '~icons/fa6-solid/list-check';
 import FaPlug from '~icons/fa6-solid/plug';
 import FaRocket from '~icons/fa6-solid/rocket';
@@ -199,7 +199,7 @@ export const router = createRouter({
                                 import('@/views/shop/detail/DetailChangelog.vue'),
                             meta: {
                                 title: 'Changelog',
-                                icon: FaFileWaverform
+                                icon: FaFileWaveform
                             },
                         },
                     ],

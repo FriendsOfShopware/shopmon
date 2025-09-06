@@ -1,6 +1,5 @@
 *[data-tooltip] {
     position: relative;
-    z-index: 10;
 
     &:before {
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -34,6 +33,10 @@
     &:hover:after {
         display: block;
     }
+}
+
+span[data-tooltip] {
+    display: inline-block;
 }
 
 *[data-tooltip]:empty::before,
