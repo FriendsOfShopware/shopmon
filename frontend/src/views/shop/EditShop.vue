@@ -259,38 +259,19 @@
         />
 
         <!-- Plugin Connection Modal -->
-        <Modal :show="showPluginModal" close-x-mark @close="closePluginModal">
-            <template #title>
-                Connect using Shopmon Plugin
-            </template>
-            <template #content>
-                <p>Paste the base64 string from your Shopmon Plugin:</p>
-                <textarea
-                    v-model="pluginBase64"
-                    class="field"
-                    rows="4"
-                    placeholder="eyJ1cmwiOiJodHRwczpcL1wvZGVtby5mb3MuZ2ciLCJjbGllbnRJZCI6..."
-                ></textarea>
-                <div v-if="pluginError" class="field-error-message">
-                    {{ pluginError }}
-                </div>
-            </template>
-            <template #footer>
-                <button type="button" class="btn btn-primary" @click="processPluginData">
-                    Import Data
-                </button>
-                <button type="button" class="btn btn-cancel" @click="closePluginModal">
-                    Cancel
-                </button>
-            </template>
-        </Modal>
+        <plugin-connection-modal
+            :show="showPluginModal"
+            v-model:base64="pluginBase64"
+            :error="pluginError"
+            @close="closePluginModal"
+            @import="processPluginData"
+        />
     </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
-import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref, computed } from 'vue';
