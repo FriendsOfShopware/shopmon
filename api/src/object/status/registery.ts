@@ -75,6 +75,10 @@ export class CheckerOutput {
             link,
         });
 
+        if (this.status === 'red') {
+            return;
+        }
+
         if (this.ignores.indexOf(id) !== -1) {
             return;
         }

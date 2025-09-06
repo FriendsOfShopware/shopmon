@@ -250,47 +250,13 @@
                 </button>
         </form-group>
 
-        <Modal
+        <delete-confirmation-modal
             :show="showShopDeletionModal"
-            close-x-mark
+            title="Delete shop"
+            :entity-name="shop?.name || 'this shop'"
             @close="showShopDeletionModal = false"
-        >
-            <template #icon>
-                <icon-fa6-solid:triangle-exclamation
-                    class="icon icon-error"
-                    aria-hidden="true"
-                />
-            </template>
-
-            <template #title>
-                Delete shop
-            </template>
-
-            <template #content>
-                Are you sure you want to delete your Shop? All of your data will
-                be permanently removed
-                from our servers forever. This action cannot be undone.
-            </template>
-
-            <template #footer>
-                <button
-                    type="button"
-                    class="btn btn-danger"
-                    @click="deleteShop"
-                >
-                    Delete
-                </button>
-
-                <button
-                    ref="cancelButtonRef"
-                    type="button"
-                    class="btn"
-                    @click="showShopDeletionModal = false"
-                >
-                    Cancel
-                </button>
-            </template>
-        </Modal>
+            @confirm="deleteShop"
+        />
 
         <!-- Plugin Connection Modal -->
         <Modal :show="showPluginModal" close-x-mark @close="closePluginModal">
@@ -324,6 +290,7 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
+import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 
 import { Field, Form as VeeForm } from 'vee-validate';
 import { ref, computed } from 'vue';
@@ -500,15 +467,15 @@ const closePluginModal = () => {
 const processPluginData = () => {
     try {
         pluginError.value = '';
-        
+
         if (!pluginBase64.value.trim()) {
             pluginError.value = 'Please enter a base64 string';
             return;
         }
-        
+
         const decodedString = window.atob(pluginBase64.value.trim());
         const data = JSON.parse(decodedString);
-        
+
         if (!data.url || !data.clientId || !data.clientSecret) {
             pluginError.value = 'Invalid data: missing required fields (url, clientId, clientSecret)';
             return;
@@ -517,7 +484,7 @@ const processPluginData = () => {
         formRef.value.setFieldValue('url', data.url);
         formRef.value.setFieldValue('clientId', data.clientId);
         formRef.value.setFieldValue('clientSecret', data.clientSecret);
-        
+
         closePluginModal();
     } catch (e) {
         pluginError.value = 'Invalid base64 string or JSON format';

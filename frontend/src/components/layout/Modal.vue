@@ -26,12 +26,12 @@
                 <div class="modal-panel-wrapper">
                     <transition-child
                         as="template"
-                        enter="ease-out duration-300"
-                        enter-from="opacity-0 scale-80"
-                        enter-to="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leave-from="opacity-100 scale-100"
-                        leave-to="opacity-0 scale-80"
+                        enter="ease-out"
+                        enter-from="opacity-0"
+                        enter-to="opacity-100"
+                        leave="ease-in"
+                        leave-from="opacity-100"
+                        leave-to="opacity-0"
                     >
                         <dialog-panel
                             class="modal-panel transform transition"
@@ -136,13 +136,12 @@ const emit = defineEmits<{ close: [] }>();
     position: relative;
     background-color: var(--panel-background);
     border-radius: 0.5rem;
-    padding: 1rem;
-    padding-top: 1.25rem;
-    padding-bottom: 1rem;
+    padding: 1.25rem 1rem 1rem;
+    margin: 2rem 0;
     text-align: left;
     overflow: hidden;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    max-width: 32rem;
+    max-width: 52rem;
     width:90%;
 
     @media (min-width: 640px) {

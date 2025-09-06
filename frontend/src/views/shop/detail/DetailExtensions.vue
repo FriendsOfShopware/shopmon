@@ -12,10 +12,6 @@
         :data="shop?.extensions || []"
         :default-sort="{ key: 'label', desc: false }"
     >
-        <template #cell-actions-header>
-            Known Issues
-        </template>
-
         <template #cell-label="{ row }">
             <div class="extension-label">
                 <status-icon :status="getExtensionState(row)" :tooltip="true" />
@@ -33,7 +29,7 @@
                 v-if="row.latestVersion && row.version < row.latestVersion"
                 data-tooltip="Update available"
                 class="extension-update-available"
-                @click="openExtensionChangelog(row as Extension)"
+                @click="openExtensionChangelog(row)"
             >
                 <icon-fa6-solid:rotate
                     class="icon icon-warning"
@@ -54,78 +50,36 @@
                 {{ formatDateTime(row.installedAt) }}
             </template>
         </template>
-
-        <template #cell-actions>
-            No known issues. <a href="#">Report issue</a>
-        </template>
     </data-table>
     </div>
 
-    <modal
+    <!-- Extension Changelog Modal -->
+    <extension-changelog
         :show="viewExtensionChangelogDialog"
-        close-x-mark
-        @close="viewExtensionChangelogDialog = false"
-    >
-        <template #title>
-            Changelog - <span class="extension-changelog-name">{{ dialogExtension?.name }}</span>
-        </template>
-
-        <template #content>
-            <ul v-if="dialogExtension?.changelog?.length > 0" class="extension-changelog">
-                <li
-                    v-for="changeLog in dialogExtension.changelog"
-                    :key="changeLog.version"
-                    class="extension-changelog-item"
-                >
-                    <div class="extension-changelog-title">
-                        <span
-                            v-if="!changeLog.isCompatible"
-                            data-tooltip="not compatible with your version"
-                        >
-                            <icon-fa6-solid:circle-info class="icon icon-warning" />
-                        </span>
-
-                        {{ changeLog.version }} -
-                        <span class="extension-changelog-date">
-                            {{ formatDate(changeLog.creationDate) }}
-                        </span>
-                    </div>
-
-                    <!-- eslint-disable vue/no-v-html -->
-                    <div
-                        class="extension-changelog-content"
-                        v-html="changeLog.text"
-                    />
-                    <!-- eslint-enable vue/no-v-html -->
-                </li>
-            </ul>
-
-            <alert v-else type="error">
-                No Changelog data provided
-            </alert>
-        </template>
-    </modal>
+        :extension="dialogExtension"
+        @close="closeExtensionChangelog"
+    />
 </template>
 
 <script setup lang="ts">
-import { formatDate, formatDateTime } from '@/helpers/formatter';
+import { formatDateTime } from '@/helpers/formatter';
 import type { RouterOutput } from '@/helpers/trpc';
 import { useShopDetail } from '@/composables/useShopDetail';
+import { useExtensionChangelogModal } from '@/composables/useExtensionChangelogModal';
+import ExtensionChangelog from '@/components/modal/ExtensionChangelog.vue';
 
-import { type Ref, ref } from 'vue';
 type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
 const {
     shop,
 } = useShopDetail();
 
-const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
-const dialogExtension: Ref<Extension | null> = ref(null);
-
-function openExtensionChangelog(extension: Extension | null) {
-    dialogExtension.value = extension;
-    viewExtensionChangelogDialog.value = true;
-}
+const {
+    viewExtensionChangelogDialog,
+    dialogExtension,
+    openExtensionChangelog,
+    closeExtensionChangelog,
+} = useExtensionChangelogModal();
 
 function getExtensionState(extension: Extension) {
     if (!extension.installed) {
@@ -184,6 +138,13 @@ function getExtensionState(extension: Extension) {
     &-content {
         padding-left: 1.5rem;
     }
+}
 
+.extension-update-available {
+    cursor: pointer;
+    
+    &:hover {
+        opacity: 0.7;
+    }
 }
 </style>

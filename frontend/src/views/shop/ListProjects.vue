@@ -58,7 +58,7 @@
                                 </menu-item>
 
                                 <menu-item>
-                                    <button class="menu-item" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="deleteProject(project)">
+                                    <button class="menu-item" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="confirmDeleteProject(project)">
                                         <icon-fa6-solid:trash class="icon" aria-hidden="true" /> Delete Project
                                     </button>
                                 </menu-item>
@@ -174,11 +174,21 @@
             </vee-form>
         </template>
     </modal>
+
+    <!-- Delete Project Modal -->
+    <delete-confirmation-modal
+        :show="showDeleteModal"
+        title="Delete Project"
+        :entity-name="deletingProject?.name || 'this project'"
+        @close="showDeleteModal = false"
+        @confirm="deleteProject"
+    />
 </template>
 
 <script setup lang="ts">
 import ElementEmpty from '@/components/layout/ElementEmpty.vue';
 import Modal from '@/components/layout/Modal.vue';
+import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 import { useAlert } from '@/composables/useAlert';
 import { formatDate } from '@/helpers/formatter';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
@@ -196,6 +206,8 @@ const shops = ref<RouterOutput['account']['currentUserShops']>([]);
 const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
 const editModalVisible = ref(false);
 const editingProject = ref({ id: 0, name: '', description: '' });
+const showDeleteModal = ref(false);
+const deletingProject = ref<(typeof projects.value)[0] | null>(null);
 
 const editSchema = Yup.object().shape({
     name: Yup.string().required('Project name is required'),
@@ -279,25 +291,27 @@ async function updateProject(values: Record<string, unknown>) {
     }
 }
 
+// Confirm delete project
+function confirmDeleteProject(project: (typeof projects.value)[0]) {
+    deletingProject.value = project;
+    showDeleteModal.value = true;
+}
+
 // Delete project
-async function deleteProject(project: (typeof projects.value)[0]) {
-    if (
-        !window.confirm(
-            `Are you sure you want to delete the project "${project.name}"?`,
-        )
-    ) {
-        return;
-    }
+async function deleteProject() {
+    if (!deletingProject.value) return;
 
     try {
-        const orgId = getOrganizationIdForProject(project.id);
+        const orgId = getOrganizationIdForProject(deletingProject.value.id);
         
         await trpcClient.organization.project.delete.mutate({
             orgId: orgId,
-            projectId: project.id,
+            projectId: deletingProject.value.id,
         });
 
         projects.value = await trpcClient.account.currentUserProjects.query();
+        showDeleteModal.value = false;
+        deletingProject.value = null;
 
         alert.success('Project deleted successfully');
     } catch (error) {

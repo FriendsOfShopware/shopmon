@@ -233,62 +233,15 @@
                 </button>
         </form-group>
 
-        <Modal
+        <delete-confirmation-modal
             :show="showAccountDeletionModal"
+            title="Delete account"
+            entity-name="your account"
+            :require-password="true"
             @close="showAccountDeletionModal = false"
-        >
-            <template #icon>
-                <icon-fa6-solid:triangle-exclamation
-                    class="icon icon-error"
-                    aria-hidden="true"
-                />
-            </template>
-
-            <template #title>
-                Delete account
-            </template>
-
-            <template #content>
-                <p>
-                    Are you sure you want to delete your account? All of your data will be permanently removed from our servers forever. 
-                </p>
-
-                <p class="mb-1">
-                    <strong>This action cannot be undone.</strong>
-                </p>
-
-                <div>
-                    <label for="deleteCurrentPassword">Current Password</label>
-                    <input
-                        id="deleteCurrentPassword"
-                        v-model="deleteCurrentPassword"
-                        type="password"
-                        class="field"
-                        autocomplete="off"
-                    />
-                </div>
-
-            </template>
-            
-            <template #footer>
-                <button
-                    type="button"
-                    class="btn btn-danger"
-                    @click="deleteUser"
-                >
-                    Delete
-                </button>
-
-                <button
-                    ref="cancelButtonRef"
-                    type="button"
-                    class="btn btn-cancel"
-                    @click="showAccountDeletionModal = false"
-                >
-                    Cancel
-                </button>
-            </template>
-        </Modal>
+            @confirm="deleteUser"
+            @password-change="(password) => deleteCurrentPassword = password"
+        />
 
         <Modal :show="showPasskeyCreationModal"
             @close="showPasskeyCreationModal = false">
