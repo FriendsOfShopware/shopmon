@@ -2,6 +2,7 @@
     <header-container title="New Shop" />
     <main-container>
         <vee-form
+            ref="formRef"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shops"
@@ -72,11 +73,15 @@
 
             <form-group title="Integration">
                 <template #info>
-                    The created integration must have access to following
+                    The easiest way to get started is to install the <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">Shopmon Plugin</a> or create an integration in your Shopware Administration with the following
                     <a href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions">
                         permissions
                     </a>
                 </template>
+
+                <button type="button" class="btn btn-secondary" @click="openPluginModal">
+                    Connect using Shopmon Plugin
+                </button>
 
                 <div>
                     <label for="clientId">Client-ID</label>
@@ -130,6 +135,15 @@
                 </button>
             </div>
         </vee-form>
+
+        <!-- Plugin Connection Modal -->
+        <plugin-connection-modal
+            :show="showPluginModal"
+            v-model:base64="pluginBase64"
+            :error="pluginError"
+            @close="closePluginModal"
+            @import="processPluginData"
+        />
     </main-container>
 </template>
 
@@ -156,6 +170,12 @@ const selectedProjectId = ref<number>(
     route.query.projectId ? Number(route.query.projectId) : 0,
 );
 
+const showPluginModal = ref(false);
+const pluginBase64 = ref('');
+const pluginError = ref('');
+
+const formRef = ref();
+
 trpcClient.account.currentUserProjects.query().then((data) => {
     projects.value = data;
     if (!selectedProjectId.value && data.length > 0) {
@@ -166,7 +186,7 @@ trpcClient.account.currentUserProjects.query().then((data) => {
 const isValidUrl = (url: string) => {
     try {
         new URL(url);
-        // eslint-disable-next-line no-unused-vars
+         
     } catch (e) {
         return false;
     }
@@ -204,6 +224,45 @@ const onSubmit = async (values: Record<string, unknown>) => {
         router.push({ name: 'account.project.list' });
     } catch (e) {
         error(e instanceof Error ? e.message : String(e));
+    }
+};
+
+const openPluginModal = () => {
+    showPluginModal.value = true;
+    pluginBase64.value = '';
+    pluginError.value = '';
+};
+
+const closePluginModal = () => {
+    showPluginModal.value = false;
+    pluginBase64.value = '';
+    pluginError.value = '';
+};
+
+const processPluginData = () => {
+    try {
+        pluginError.value = '';
+        
+        if (!pluginBase64.value.trim()) {
+            pluginError.value = 'Please enter a base64 string';
+            return;
+        }
+        
+        const decodedString = window.atob(pluginBase64.value.trim());
+        const data = JSON.parse(decodedString);
+        
+        if (!data.url || !data.clientId || !data.clientSecret) {
+            pluginError.value = 'Invalid data: missing required fields (url, clientId, clientSecret)';
+            return;
+        }
+
+        formRef.value.setFieldValue('shopUrl', data.url);
+        formRef.value.setFieldValue('clientId', data.clientId);
+        formRef.value.setFieldValue('clientSecret', data.clientSecret);
+        
+        closePluginModal();
+    } catch (e) {
+        pluginError.value = 'Invalid base64 string or JSON format';
     }
 };
 </script>

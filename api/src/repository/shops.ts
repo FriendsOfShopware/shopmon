@@ -153,7 +153,7 @@ async function notify(
 }
 
 async function alert(con: Drizzle, alert: ShopAlert): Promise<void> {
-    const users = await getUsersOfShop(con, Number.parseInt(alert.shopId));
+    const users = await getUsersOfShop(con, Number.parseInt(alert.shopId, 10));
     const alertKey = `alert_${alert.key}_${alert.shopId}`;
 
     if (await LockRepository.isLocked(alertKey)) {
@@ -166,7 +166,7 @@ async function alert(con: Drizzle, alert: ShopAlert): Promise<void> {
         columns: {
             name: true,
         },
-        where: eq(schema.shop.id, Number.parseInt(alert.shopId)),
+        where: eq(schema.shop.id, Number.parseInt(alert.shopId, 10)),
     });
 
     if (result === undefined) {

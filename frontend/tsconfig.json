@@ -10,7 +10,7 @@
 			"@/*": ["*"]
 		},
 		"strictNullChecks": true,
-		"lib": ["DOM", "ES2015", "ESNext"],
+		"lib": ["DOM", "DOM.Iterable", "ES2015", "ESNext"],
 		"jsx": "preserve",
 		"types": ["unplugin-icons/types/vue"]
 	},

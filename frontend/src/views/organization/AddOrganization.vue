@@ -103,7 +103,7 @@ function generateSlug(str: string): string {
 
 function onNameChange(
     event: Event,
-    // eslint-disable-next-line no-unused-vars
+     
     setFieldValue: (field: string, value: unknown) => void,
 ) {
     if (!slugManuallyEdited.value) {
