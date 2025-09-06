@@ -20,6 +20,7 @@
 
     <main-container v-if="shop">
         <vee-form
+            ref="formRef"
             v-slot="{ errors, isSubmitting }"
             :validation-schema="schema"
             :initial-values="shop"
@@ -92,11 +93,15 @@
 
             <form-group title="Integration">
                 <template #info>
-                    The created integration must have access to following
+                    The easiest way to get started is to install the <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">Shopmon Plugin</a> or create an integration in your Shopware Administration with the following
                     <a href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions">
                         permissions
                     </a>
                 </template>
+
+                <button type="button" class="btn btn-secondary" @click="openPluginModal">
+                    Connect using Shopmon Plugin
+                </button>
 
                 <div>
                     <label for="clientId">Client-ID</label>
@@ -286,6 +291,33 @@
                 </button>
             </template>
         </Modal>
+
+        <!-- Plugin Connection Modal -->
+        <Modal :show="showPluginModal" close-x-mark @close="closePluginModal">
+            <template #title>
+                Connect using Shopmon Plugin
+            </template>
+            <template #content>
+                <p>Paste the base64 string from your Shopmon Plugin:</p>
+                <textarea
+                    v-model="pluginBase64"
+                    class="field"
+                    rows="4"
+                    placeholder="eyJ1cmwiOiJodHRwczpcL1wvZGVtby5mb3MuZ2ciLCJjbGllbnRJZCI6..."
+                ></textarea>
+                <div v-if="pluginError" class="field-error-message">
+                    {{ pluginError }}
+                </div>
+            </template>
+            <template #footer>
+                <button type="button" class="btn btn-primary" @click="processPluginData">
+                    Import Data
+                </button>
+                <button type="button" class="btn btn-cancel" @click="closePluginModal">
+                    Cancel
+                </button>
+            </template>
+        </Modal>
     </main-container>
 </template>
 
@@ -339,6 +371,12 @@ const showShopDeletionModal = ref(false);
 const sitespeedUrls = ref<string[]>([]);
 const sitespeedEnabled = ref(false);
 const isSitespeedSubmitting = ref(false);
+
+const showPluginModal = ref(false);
+const pluginBase64 = ref('');
+const pluginError = ref('');
+
+const formRef = ref();
 
 const isSitespeedFormValid = computed(() => {
     if (!sitespeedEnabled.value) {
@@ -446,6 +484,45 @@ async function onSitespeedSubmit() {
         }
     }
 }
+
+const openPluginModal = () => {
+    showPluginModal.value = true;
+    pluginBase64.value = '';
+    pluginError.value = '';
+};
+
+const closePluginModal = () => {
+    showPluginModal.value = false;
+    pluginBase64.value = '';
+    pluginError.value = '';
+};
+
+const processPluginData = () => {
+    try {
+        pluginError.value = '';
+        
+        if (!pluginBase64.value.trim()) {
+            pluginError.value = 'Please enter a base64 string';
+            return;
+        }
+        
+        const decodedString = atob(pluginBase64.value.trim());
+        const data = JSON.parse(decodedString);
+        
+        if (!data.url || !data.clientId || !data.clientSecret) {
+            pluginError.value = 'Invalid data: missing required fields (url, clientId, clientSecret)';
+            return;
+        }
+
+        formRef.value.setFieldValue('url', data.url);
+        formRef.value.setFieldValue('clientId', data.clientId);
+        formRef.value.setFieldValue('clientSecret', data.clientSecret);
+        
+        closePluginModal();
+    } catch (e) {
+        pluginError.value = 'Invalid base64 string or JSON format';
+    }
+};
 </script>
 
 <style>
