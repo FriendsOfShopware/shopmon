@@ -133,28 +133,32 @@ export const user = sqliteTable('user', {
         .$defaultFn(() => new Date())
         .notNull(),
     role: text('role').default('user').notNull(),
-    banned: integer('banned', { mode: 'boolean' }),
+    banned: integer('banned', { mode: 'boolean' }).default(false),
     banReason: text('ban_reason'),
     banExpires: integer('ban_expires', { mode: 'timestamp' }),
     notifications: text('notifications', { mode: 'json' })
         .default([])
-        .$type<string[]>()
-        .notNull(),
+        .$type<string[]>(),
 });
 
 export const session = sqliteTable('session', {
     id: text('id').primaryKey(),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
     token: text('token').notNull().unique(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .$onUpdate(() => new Date())
+        .notNull(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     userId: text('user_id')
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
-    activeOrganizationId: text('active_organization_id'),
     impersonatedBy: text('impersonated_by'),
+    activeOrganizationId: text('active_organization_id'),
 });
 
 export const account = sqliteTable('account', {
@@ -175,8 +179,12 @@ export const account = sqliteTable('account', {
     }),
     scope: text('scope'),
     password: text('password'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$onUpdate(() => new Date())
+        .notNull(),
 });
 
 export const verification = sqliteTable('verification', {
@@ -184,12 +192,13 @@ export const verification = sqliteTable('verification', {
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
     expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(
-        () => new Date(),
-    ),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(
-        () => new Date(),
-    ),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .$onUpdate(() => new Date())
+        .notNull(),
 });
 
 export const passkey = sqliteTable('passkey', {
@@ -199,7 +208,7 @@ export const passkey = sqliteTable('passkey', {
     userId: text('user_id')
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
-    credentialID: text('credential_i_d').notNull(),
+    credentialID: text('credential_id').notNull(),
     counter: integer('counter').notNull(),
     deviceType: text('device_type').notNull(),
     backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
