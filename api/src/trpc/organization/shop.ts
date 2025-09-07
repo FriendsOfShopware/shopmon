@@ -6,7 +6,7 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { desc, eq, isNotNull, and, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
@@ -123,8 +123,8 @@ export const shopRouter = router({
                         isNotNull(schema.shopSitespeed.largestContentfulPaint),
                         isNotNull(schema.shopSitespeed.firstContentfulPaint),
                         isNotNull(schema.shopSitespeed.cumulativeLayoutShift),
-                        isNotNull(schema.shopSitespeed.transferSize)
-                    )
+                        isNotNull(schema.shopSitespeed.transferSize),
+                    ),
                 ),
                 orderBy: [desc(schema.shopSitespeed.createdAt)],
             });
