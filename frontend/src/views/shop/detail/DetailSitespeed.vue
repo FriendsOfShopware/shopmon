@@ -103,9 +103,9 @@ interface ChartConfig {
     datasets: Array<{
         label: string;
         dataKey?: string;
-        // eslint-disable-next-line no-unused-vars
+         
         valueFormatter?: (item: any) => number;
-        // eslint-disable-next-line no-unused-vars
+         
         tooltipFormatter?: (value: number) => string;
     }>;
 }
