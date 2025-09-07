@@ -6,7 +6,7 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, isNotNull, and, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
@@ -115,7 +115,17 @@ export const shopRouter = router({
                 .get();
 
             const sitespeedQuery = ctx.drizzle.query.shopSitespeed.findMany({
-                where: eq(schema.shopSitespeed.shopId, input.shopId),
+                where: and(
+                    eq(schema.shopSitespeed.shopId, input.shopId),
+                    or(
+                        isNotNull(schema.shopSitespeed.ttfb),
+                        isNotNull(schema.shopSitespeed.fullyLoaded),
+                        isNotNull(schema.shopSitespeed.largestContentfulPaint),
+                        isNotNull(schema.shopSitespeed.firstContentfulPaint),
+                        isNotNull(schema.shopSitespeed.cumulativeLayoutShift),
+                        isNotNull(schema.shopSitespeed.transferSize)
+                    )
+                ),
                 orderBy: [desc(schema.shopSitespeed.createdAt)],
             });
 
