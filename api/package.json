@@ -11,7 +11,7 @@
 		"@libsql/client": "^0.15.14",
 		"@sentry/node": "^10.10.0",
 		"@shopware-ag/app-server-sdk": "^1.1.27",
-		"@trpc/server": "^11.5.0",
+		"@trpc/server": "^11.5.1",
 		"bcrypt": "^6.0.0",
 		"better-auth": "catalog:",
 		"drizzle-orm": "^0.44.5",
