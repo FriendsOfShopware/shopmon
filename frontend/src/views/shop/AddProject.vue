@@ -54,10 +54,11 @@
 
                     <field
                         id="organizationId"
+                        v-slot="{ field }"
                         name="organizationId"
                     >
                         <select
-                            v-model="selectedOrgId"
+                            v-bind="field"
                             class="field"
                             :class="{ 'has-error': errors.organizationId }"
                         >
@@ -105,7 +106,7 @@ import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
 import { type RouterInput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import * as Yup from 'yup';
 
@@ -113,7 +114,6 @@ const { error } = useAlert();
 const router = useRouter();
 
 const organizations = authClient.useListOrganizations();
-const selectedOrgId = ref<string>('');
 
 const schema = Yup.object().shape({
     name: Yup.string().required('Project name is required'),
@@ -121,22 +121,11 @@ const schema = Yup.object().shape({
     organizationId: Yup.string().required('Organization is required'),
 });
 
-const initialValues = {
+const initialValues = computed(() => ({
     name: '',
     description: '',
     organizationId: organizations.value.data?.[0]?.id ?? '',
-};
-
-watch(
-    organizations,
-    (newValue) => {
-        if (newValue.data?.length && !selectedOrgId.value) {
-            selectedOrgId.value = newValue.data[0].id;
-            initialValues.organizationId = newValue.data[0].id;
-        }
-    },
-    { immediate: true },
-);
+}));
 
 const onSubmit = async (values: Record<string, unknown>) => {
     try {
