@@ -54,8 +54,8 @@
 
                     <field
                         id="organizationId"
-                        name="organizationId"
                         v-slot="{ field }"
+                        name="organizationId"
                     >
                         <select
                             v-bind="field"
