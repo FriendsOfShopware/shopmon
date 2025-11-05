@@ -4,8 +4,8 @@ packages:
   - sitespeed-service
 
 catalog:
-  typescript: 5.9.2
-  better-auth: 1.3.26
+  typescript: 5.9.3
+  better-auth: 1.3.34
 
 ignoredBuiltDependencies:
   - 'better-sqlite3'
