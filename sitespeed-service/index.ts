@@ -138,9 +138,6 @@ app.post('/analyze',
             error: 'Failed to run sitespeed analysis',
             details: error.message,
         }, 500);
-    } finally {
-        // Clean up Chromium temp files after each run
-        await cleanupChromiumTempFiles();
     }
 });
 
