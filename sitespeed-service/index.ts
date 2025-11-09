@@ -15,11 +15,15 @@ if (!existsSync(dataFolder)) {
 }
 
 /**
- * Clean up Chromium temporary directories in /tmp
+ * Clean up Chromium temporary directories in /tmp that are older than the specified age
  * These are created during sitespeed analysis and need to be removed
+ * @param maxAgeMinutes - Only delete directories older than this many minutes (default: 5)
  */
-async function cleanupChromiumTempFiles() {
+async function cleanupChromiumTempFiles(maxAgeMinutes = 5) {
     const tmpDir = os.tmpdir();
+    const maxAgeMs = maxAgeMinutes * 60 * 1000;
+    const now = Date.now();
+
     try {
         const files = await fs.readdir(tmpDir);
         const chromiumDirs = files.filter(file => file.startsWith('.org.chromium.Chromium.'));
@@ -29,8 +33,11 @@ async function cleanupChromiumTempFiles() {
             try {
                 const stat = await fs.stat(fullPath);
                 if (stat.isDirectory()) {
-                    await fs.rm(fullPath, { recursive: true, force: true });
-                    console.log(`Cleaned up Chromium temp directory: ${fullPath}`);
+                    const ageMs = now - stat.mtimeMs;
+                    if (ageMs > maxAgeMs) {
+                        await fs.rm(fullPath, { recursive: true, force: true });
+                        console.log(`Cleaned up Chromium temp directory (${Math.round(ageMs / 60000)}min old): ${fullPath}`);
+                    }
                 }
             } catch (err) {
                 console.error(`Failed to clean up ${fullPath}:`, err);
@@ -137,9 +144,19 @@ app.post('/analyze',
     }
 });
 
+// Run cleanup every 5 minutes for files older than 5 minutes
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+setInterval(() => {
+    cleanupChromiumTempFiles(5);
+}, CLEANUP_INTERVAL_MS);
+
+// Run initial cleanup on startup
+cleanupChromiumTempFiles(5);
+
 serve({
   fetch: app.fetch,
   port: 3001
 }, (info) => {
     console.log(`Sitespeed service is running on http://0.0.0.0:${info.port}`);
+    console.log('Chromium temp file cleanup scheduled every 5 minutes');
 });
