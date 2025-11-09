@@ -6,11 +6,39 @@ import path from 'node:path';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { promisify } from 'node:util';
+import os from 'node:os';
 
 const dataFolder = process.env.APP_SITESPEED_DATA_FOLDER || '/app/results';
 
 if (!existsSync(dataFolder)) {
     await fs.mkdir(dataFolder, { recursive: true });
+}
+
+/**
+ * Clean up Chromium temporary directories in /tmp
+ * These are created during sitespeed analysis and need to be removed
+ */
+async function cleanupChromiumTempFiles() {
+    const tmpDir = os.tmpdir();
+    try {
+        const files = await fs.readdir(tmpDir);
+        const chromiumDirs = files.filter(file => file.startsWith('.org.chromium.Chromium.'));
+
+        for (const dir of chromiumDirs) {
+            const fullPath = path.join(tmpDir, dir);
+            try {
+                const stat = await fs.stat(fullPath);
+                if (stat.isDirectory()) {
+                    await fs.rm(fullPath, { recursive: true, force: true });
+                    console.log(`Cleaned up Chromium temp directory: ${fullPath}`);
+                }
+            } catch (err) {
+                console.error(`Failed to clean up ${fullPath}:`, err);
+            }
+        }
+    } catch (err) {
+        console.error('Failed to clean up Chromium temp files:', err);
+    }
 }
 
 const app = new Hono();
@@ -67,7 +95,7 @@ app.post('/analyze',
         console.log(`Sitespeed analysis completed for shop ${shopId}`);
 
         const pages = readdirSync(path.join(resultDir, 'pages'));
-        
+
         const webvitalDataPath = path.join(resultDir, 'data/browsertime.summary-total.json')
         const pagexrayDataPath = path.join(resultDir, 'data/pagexray.summary-total.json');
 
@@ -103,6 +131,9 @@ app.post('/analyze',
             error: 'Failed to run sitespeed analysis',
             details: error.message,
         }, 500);
+    } finally {
+        // Clean up Chromium temp files after each run
+        await cleanupChromiumTempFiles();
     }
 });
 
