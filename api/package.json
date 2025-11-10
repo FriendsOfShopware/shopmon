@@ -9,7 +9,7 @@
 	"dependencies": {
 		"@hono/node-server": "^1.19.6",
 		"@libsql/client": "^0.15.15",
-		"@sentry/node": "^10.22.0",
+		"@sentry/node": "^10.23.0",
 		"@shopware-ag/app-server-sdk": "^1.1.29",
 		"@trpc/server": "^11.7.1",
 		"bcrypt": "^6.0.0",
