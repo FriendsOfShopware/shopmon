@@ -1,7 +1,7 @@
 {
 	"packageManager": "pnpm@10.12.1",
 	"devDependencies": {
-		"@biomejs/biome": "~2.3.3"
+		"@biomejs/biome": "~2.3.4"
 	},
 	"scripts": {
 		"biome:format": "biome format --write .",
