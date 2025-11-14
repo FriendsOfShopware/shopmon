@@ -11,6 +11,15 @@
 
                     <div class="top-bar-nav-links">
                         <RouterLink
+                            to="/admin/dashboard"
+                            class="nav-link"
+                            :class="{
+                                'active': $route.name?.toString().startsWith('admin.dashboard')
+                            }"
+                        >
+                            Dashboard
+                        </RouterLink>
+                        <RouterLink
                             to="/admin/users"
                             class="nav-link"
                             :class="{
@@ -18,6 +27,24 @@
                             }"
                         >
                             Users
+                        </RouterLink>
+                        <RouterLink
+                            to="/admin/organizations"
+                            class="nav-link"
+                            :class="{
+                                'active': $route.name?.toString().startsWith('admin.organizations')
+                            }"
+                        >
+                            Organizations
+                        </RouterLink>
+                        <RouterLink
+                            to="/admin/shops"
+                            class="nav-link"
+                            :class="{
+                                'active': $route.name?.toString().startsWith('admin.shops')
+                            }"
+                        >
+                            Shops
                         </RouterLink>
                     </div>
                 </div>

@@ -8,6 +8,7 @@ import { scrapeSingleShop } from './src/cron/jobs/shopScrape.ts';
 import { encrypt } from './src/crypto/index.ts';
 import { getConnection, schema } from './src/db.ts';
 import shops from './src/repository/shops.ts';
+import { eq } from 'drizzle-orm';
 
 const user1 = await auth.api.signUpEmail({
     body: {
@@ -68,6 +69,12 @@ const user4 = await auth.api.signUpEmail({
 await getConnection()
     .update(schema.user)
     .set({ emailVerified: true })
+    .execute();
+
+await getConnection()
+    .update(schema.user)
+    .set({ role: 'admin' })
+    .where(eq(schema.user.id, user1.user.id))
     .execute();
 
 await getConnection().insert(schema.project).values({
