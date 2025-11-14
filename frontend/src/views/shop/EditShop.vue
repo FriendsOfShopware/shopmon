@@ -260,8 +260,8 @@
 
         <!-- Plugin Connection Modal -->
         <plugin-connection-modal
-            :show="showPluginModal"
             v-model:base64="pluginBase64"
+            :show="showPluginModal"
             :error="pluginError"
             @close="closePluginModal"
             @import="processPluginData"

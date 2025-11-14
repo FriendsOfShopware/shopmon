@@ -17,6 +17,22 @@ export const loggedInUserMiddleware = t.middleware(({ ctx, next }) => {
     });
 });
 
+export const isAdminMiddleware = t.middleware(({ ctx, next }) => {
+    if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Token expired' });
+    }
+
+    if (ctx.user.role !== 'admin') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin only' });
+    }
+
+    return next({
+        ctx: {
+            user: ctx.user,
+        },
+    });
+});
+
 export const organizationMiddleware = t.middleware(async (opts) => {
     const { ctx, input, next } = opts as typeof opts & {
         input: { orgId: string };
