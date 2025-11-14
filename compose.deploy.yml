@@ -111,14 +111,9 @@ configs:
       addr: ":9090"
       dbs:
         - path: /data/shopmon.db
-          replicas:
+          replica:
             - type: s3
               bucket: shopmon-backups
-              path: db-enc/$ENVIRONMENT/
+              path: db/$ENVIRONMENT/
               endpoint: s3.eu-central-003.backblazeb2.com
               force-path-style: true
-              age:
-                identities:
-                  - $LITESTREAM_AGE_PRIVATE_KEY
-                recipients:
-                  - $LITESTREAM_AGE_PUBLIC_KEY
