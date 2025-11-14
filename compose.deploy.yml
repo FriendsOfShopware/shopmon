@@ -112,8 +112,8 @@ configs:
       dbs:
         - path: /data/shopmon.db
           replica:
-            - type: s3
-              bucket: shopmon-backups
-              path: db/$ENVIRONMENT/
-              endpoint: s3.eu-central-003.backblazeb2.com
-              force-path-style: true
+            type: s3
+            bucket: shopmon-backups
+            path: db/$ENVIRONMENT/
+            endpoint: s3.eu-central-003.backblazeb2.com
+            force-path-style: true
