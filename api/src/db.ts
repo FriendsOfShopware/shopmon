@@ -260,6 +260,36 @@ export const ssoProvider = sqliteTable('sso_provider', {
     domain: text('domain').notNull(),
 });
 
+export const deploymentToken = sqliteTable('deployment_token', {
+    id: text('id').primaryKey(),
+    shopId: integer('shop_id')
+        .notNull()
+        .references(() => shop.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    name: text('name').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+});
+
+export const deployment = sqliteTable('deployment', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    shopId: integer('shop_id')
+        .notNull()
+        .references(() => shop.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    command: text('command').notNull(),
+    output: text('output').notNull(),
+    returnCode: integer('return_code').notNull(),
+    startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
+    endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+    executionTime: text('execution_time').notNull(), // stored as string to preserve decimal precision
+    composer: text('composer', { mode: 'json' })
+        .default({})
+        .$type<Record<string, string>>(),
+    reference: text('reference'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
 // Relations
 export const projectRelations = relations(project, ({ one, many }) => ({
     organization: one(organization, {
@@ -285,6 +315,23 @@ export const organizationRelations = relations(organization, ({ many }) => ({
     shops: many(shop),
 }));
 
+export const deploymentRelations = relations(deployment, ({ one }) => ({
+    shop: one(shop, {
+        fields: [deployment.shopId],
+        references: [shop.id],
+    }),
+}));
+
+export const deploymentTokenRelations = relations(
+    deploymentToken,
+    ({ one }) => ({
+        shop: one(shop, {
+            fields: [deploymentToken.shopId],
+            references: [shop.id],
+        }),
+    }),
+);
+
 export const schema = {
     shop,
     shopSitespeed,
@@ -303,10 +350,16 @@ export const schema = {
     invitation,
     ssoProvider,
 
+    // Deployments
+    deployment,
+    deploymentToken,
+
     // Relations
     projectRelations,
     shopRelations,
     organizationRelations,
+    deploymentRelations,
+    deploymentTokenRelations,
 };
 
 export type Drizzle = LibSQLDatabase<typeof schema>;

@@ -39,6 +39,10 @@ export default defineConfig({
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
                 changeOrigin: true,
             },
+            '/api': {
+                target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
+                changeOrigin: true,
+            },
             '/trpc': {
                 target: process.env.SHOPMON_API_URL || 'https://shopmon.fos.gg',
                 changeOrigin: true,

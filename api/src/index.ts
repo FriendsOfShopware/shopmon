@@ -6,6 +6,7 @@ import { auth } from './auth.ts';
 import { trpcServer } from './middleware/trpc.ts';
 import { appRouter } from './trpc/router.ts';
 import './cron/index.ts';
+import { deploymentValidator, handleDeploymentSubmission } from './api.ts';
 import users from './repository/users.ts';
 
 const app = new Hono();
@@ -58,6 +59,13 @@ app.get(
 app.get('/health', (c) => {
     return c.json({ status: 'ok' });
 });
+
+// CLI endpoint for deployment data
+app.post(
+    '/api/cli/deployments',
+    deploymentValidator,
+    handleDeploymentSubmission,
+);
 
 serve({
     fetch: app.fetch,

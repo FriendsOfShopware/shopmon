@@ -126,13 +126,25 @@ export const shopRouter = router({
                 },
             );
 
-            const [shop, sitespeed, shopChangelog, scrapeInfo] =
-                await Promise.all([
-                    shopQuery,
-                    sitespeedQuery,
-                    shopChangelogQuery,
-                    getShopScrapeInfo(input.shopId),
-                ]);
+            const deploymentsCountQuery = ctx.drizzle
+                .select({ count: sql<number>`count(*)` })
+                .from(schema.deployment)
+                .where(eq(schema.deployment.shopId, input.shopId))
+                .get();
+
+            const [
+                shop,
+                sitespeed,
+                shopChangelog,
+                scrapeInfo,
+                deploymentsCount,
+            ] = await Promise.all([
+                shopQuery,
+                sitespeedQuery,
+                shopChangelogQuery,
+                getShopScrapeInfo(input.shopId),
+                deploymentsCountQuery,
+            ]);
 
             if (shop === undefined) {
                 throw new TRPCError({
@@ -146,6 +158,7 @@ export const shopRouter = router({
                 ...scrapeInfo,
                 sitespeed: sitespeed,
                 changelog: shopChangelog,
+                deploymentsCount: deploymentsCount?.count ?? 0,
             };
         }),
     create: publicProcedure

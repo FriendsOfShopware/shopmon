@@ -60,10 +60,11 @@
                     }
                 }"
                     :class="{
-                    'nav-link': true
+                    'nav-link': true,
+                    'active': isRouteActive(item.route)
                 }"
                     active-class=""
-                    exact-active-class="active"
+                    exact-active-class=""
                 >
                     <component :is="$router.resolve({name: item.route}).meta.icon" v-if="$router.resolve({name: item.route}).meta.icon" class="nav-link-icon"/>
                     <span class="nav-link-name">{{ $router.resolve({name: item.route}).meta.title }}</span>
@@ -90,40 +91,58 @@ const props = defineProps<{
     shop: RouterOutput['organization']['shop']['get'] | null
 }>();
 
+const isRouteActive = (routeName: string) => {
+    // Exact match
+    if (route.name === routeName) return true;
+
+    // Check if current route is a child of deployments
+    if (routeName === 'account.shops.detail.deployments' &&
+        route.name === 'account.shops.detail.deployment') {
+        return true;
+    }
+
+    return false;
+};
+
 const detailNavigation = computed(() => [
-    { 
-        name: 'Shop Information', 
+    {
+        name: 'Shop Information',
         route: 'account.shops.detail'
     },
-    { 
-        name: 'Checks', 
+    {
+        name: 'Checks',
         route: 'account.shops.detail.checks',
         count: props.shop?.checks?.length ?? 0
     },
-    { 
-        name: 'Extensions', 
+    {
+        name: 'Extensions',
         route: 'account.shops.detail.extensions',
         count: props.shop?.extensions?.length ?? 0
     },
-    { 
-        name: 'Scheduled Tasks', 
+    {
+        name: 'Scheduled Tasks',
         route: 'account.shops.detail.tasks',
         count: props.shop?.scheduledTask?.length ?? 0
     },
-    { 
-        name: 'Queue', 
+    {
+        name: 'Queue',
         route: 'account.shops.detail.queue',
         count: props.shop?.queueInfo?.length ?? 0
     },
-    { 
-        name: 'Sitespeed', 
+    {
+        name: 'Sitespeed',
         route: 'account.shops.detail.sitespeed',
         count: props.shop?.sitespeed?.length ?? 0
     },
-    { 
-        name: 'Changelog', 
+    {
+        name: 'Changelog',
         route: 'account.shops.detail.changelog',
         count: props.shop?.changelog?.length ?? 0
+    },
+    {
+        name: 'Deployments',
+        route: 'account.shops.detail.deployments',
+        count: props.shop?.deploymentsCount ?? 0
     }
 ]);
 function toggleMobileOpen() {

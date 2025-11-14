@@ -8,6 +8,7 @@
 	},
 	"dependencies": {
 		"@hono/node-server": "^1.19.6",
+		"@hono/zod-validator": "^0.7.4",
 		"@libsql/client": "^0.15.15",
 		"@sentry/node": "^10.23.0",
 		"@shopware-ag/app-server-sdk": "^1.1.29",

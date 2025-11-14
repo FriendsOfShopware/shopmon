@@ -183,6 +183,27 @@
       "when": 1757141731918,
       "tag": "0025_nosy_outlaw_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1763147139852,
+      "tag": "0026_lying_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1763149422403,
+      "tag": "0027_blushing_luckman",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1763157610502,
+      "tag": "0028_lowly_red_wolf",
+      "breakpoints": true
     }
   ]
 }
