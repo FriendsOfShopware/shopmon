@@ -204,6 +204,13 @@
       "when": 1763157610502,
       "tag": "0028_lowly_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1763163122594,
+      "tag": "0029_previous_amphibian",
+      "breakpoints": true
     }
   ]
 }

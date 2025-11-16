@@ -52,6 +52,7 @@ export const shopRouter = router({
                               id: schema.project.id,
                               name: schema.project.name,
                               description: schema.project.description,
+                              gitUrl: schema.project.gitUrl,
                           }
                         : null,
                 })
@@ -99,6 +100,7 @@ export const shopRouter = router({
                         'project_name',
                     ),
                     projectDescription: schema.project.description,
+                    projectGitUrl: schema.project.gitUrl,
                     sitespeedEnabled: schema.shop.sitespeedEnabled,
                     sitespeedUrls: schema.shop.sitespeedUrls,
                 })

@@ -8,7 +8,43 @@ import {
     organizationMiddleware,
 } from '../middleware.ts';
 
+const COMMIT_PLACEHOLDER_FALLBACK =
+    '0123456789abcdef0123456789abcdef01234567';
+
+function isValidGitUrl(value: string) {
+    const normalized = value.replaceAll(
+        '%commit%',
+        COMMIT_PLACEHOLDER_FALLBACK,
+    );
+
+    try {
+        new URL(normalized);
+        return true;
+    } catch (_error) {
+        return false;
+    }
+}
+
+const gitUrlSchema = z
+    .string()
+    .trim()
+    .superRefine((value, ctx) => {
+        if (value.length === 0) {
+            return;
+        }
+
+        if (!isValidGitUrl(value)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Please enter a valid Git URL',
+            });
+        }
+    })
+    .transform((value) => (value.length === 0 ? undefined : value))
+    .optional();
+
 export const projectRouter = router({
+
     list: publicProcedure
         .input(
             z.object({
@@ -23,6 +59,7 @@ export const projectRouter = router({
                     id: schema.project.id,
                     name: schema.project.name,
                     description: schema.project.description,
+                    gitUrl: schema.project.gitUrl,
                     createdAt: schema.project.createdAt,
                     updatedAt: schema.project.updatedAt,
                     organizationId: schema.project.organizationId,
@@ -39,17 +76,20 @@ export const projectRouter = router({
                 orgId: z.string(),
                 name: z.string(),
                 description: z.string().optional(),
+                gitUrl: gitUrlSchema,
             }),
         )
         .use(loggedInUserMiddleware)
         .use(organizationMiddleware)
         .mutation(async ({ input, ctx }) => {
+            const gitUrl = input.gitUrl?.trim();
             const result = await ctx.drizzle
                 .insert(schema.project)
                 .values({
                     organizationId: input.orgId,
                     name: input.name,
                     description: input.description,
+                    gitUrl: gitUrl && gitUrl.length > 0 ? gitUrl : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -64,6 +104,7 @@ export const projectRouter = router({
                 projectId: z.number(),
                 name: z.string().optional(),
                 description: z.string().optional(),
+                gitUrl: gitUrlSchema,
             }),
         )
         .use(loggedInUserMiddleware)
@@ -84,6 +125,7 @@ export const projectRouter = router({
             const updateData: {
                 name?: string;
                 description?: string;
+                gitUrl?: string | null;
                 updatedAt: Date;
             } = { updatedAt: new Date() };
             if (input.name !== undefined) {
@@ -91,6 +133,10 @@ export const projectRouter = router({
             }
             if (input.description !== undefined) {
                 updateData.description = input.description;
+            }
+            if (input.gitUrl !== undefined) {
+                const gitUrl = input.gitUrl.trim();
+                updateData.gitUrl = gitUrl.length > 0 ? gitUrl : null;
             }
 
             await ctx.drizzle

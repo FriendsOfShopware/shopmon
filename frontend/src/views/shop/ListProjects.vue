@@ -28,6 +28,18 @@
                             <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
                             <span class="separator">•</span>
                             <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
+                            <template v-if="project.gitUrl">
+                                <span class="separator">•</span>
+                                <a
+                                    :href="project.gitUrl"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="git-link"
+                                >
+                                    <icon-fa6-solid:code-branch class="icon" aria-hidden="true" />
+                                    Repository
+                                </a>
+                            </template>
                         </p>
                     </div>
 
@@ -164,6 +176,26 @@
                     </div>
                 </div>
 
+                <div class="mt-1">
+                    <label for="gitUrl">Git repository URL</label>
+
+                    <field id="gitUrl" v-slot="{ field }" name="gitUrl">
+                        <input
+                            v-bind="field"
+                            id="gitUrl"
+                            type="url"
+                            autocomplete="off"
+                            class="field"
+                            :placeholder="gitUrlPlaceholder"
+                            :class="{ 'has-error': errors.gitUrl }"
+                        />
+                    </field>
+
+                    <div class="field-error-message">
+                        {{ errors.gitUrl }}
+                    </div>
+                </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @click="editModalVisible = false">Cancel</button>
                     <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -191,6 +223,7 @@ import Modal from '@/components/layout/Modal.vue';
 import DeleteConfirmationModal from '@/components/modal/DeleteConfirmationModal.vue';
 import { useAlert } from '@/composables/useAlert';
 import { formatDate } from '@/helpers/formatter';
+import { GIT_URL_PLACEHOLDER, isValidGitUrl } from '@/helpers/git';
 import { type RouterOutput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { computed, ref } from 'vue';
@@ -205,13 +238,24 @@ const loading = ref(true);
 const shops = ref<RouterOutput['account']['currentUserShops']>([]);
 const projects = ref<RouterOutput['account']['currentUserProjects']>([]);
 const editModalVisible = ref(false);
-const editingProject = ref({ id: 0, name: '', description: '' });
+const editingProject = ref({ id: 0, name: '', description: '', gitUrl: '' });
 const showDeleteModal = ref(false);
 const deletingProject = ref<(typeof projects.value)[0] | null>(null);
+const gitUrlPlaceholder = GIT_URL_PLACEHOLDER;
 
 const editSchema = Yup.object().shape({
     name: Yup.string().required('Project name is required'),
     description: Yup.string().optional(),
+    gitUrl: Yup.string()
+        .transform((value) => (value?.trim() === '' ? undefined : value?.trim()))
+        .test('is-valid-git-url', 'Please enter a valid Git URL', (value) => {
+            if (!value) {
+                return true;
+            }
+
+            return isValidGitUrl(value);
+        })
+        .optional(),
 });
 
 // Get organization slug from the first shop or first project
@@ -263,6 +307,7 @@ function editProject(project: (typeof projects.value)[0]) {
         id: project.id,
         name: project.name,
         description: project.description ?? '',
+        gitUrl: project.gitUrl ?? '',
     };
     editModalVisible.value = true;
 }
@@ -278,6 +323,7 @@ async function updateProject(values: Record<string, unknown>) {
             projectId: editingProject.value.id,
             name: typedValues.name,
             description: typedValues.description ?? '',
+            gitUrl: typedValues.gitUrl ?? undefined,
         });
 
         projects.value = await trpcClient.account.currentUserProjects.query();
@@ -342,6 +388,18 @@ async function deleteProject() {
 
 .separator {
     opacity: 0.5;
+}
+
+.git-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.git-link .icon {
+    font-size: 0.875rem;
 }
 
 .project-actions {

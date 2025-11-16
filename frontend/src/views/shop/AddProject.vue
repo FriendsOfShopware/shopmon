@@ -50,6 +50,26 @@
                 </div>
 
                 <div>
+                    <label for="gitUrl">Git repository URL</label>
+
+                    <field id="gitUrl" type="url" name="gitUrl" v-slot="{ field }">
+                        <input
+                            v-bind="field"
+                            id="gitUrl"
+                            type="url"
+                            class="field"
+                            :placeholder="gitUrlPlaceholder"
+                            autocomplete="off"
+                            :class="{ 'has-error': errors.gitUrl }"
+                        />
+                    </field>
+
+                    <div class="field-error-message">
+                        {{ errors.gitUrl }}
+                    </div>
+                </div>
+
+                <div>
                     <label for="organizationId">Organization</label>
 
                     <field
@@ -104,6 +124,7 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 import { authClient } from '@/helpers/auth-client';
+import { GIT_URL_PLACEHOLDER, isValidGitUrl } from '@/helpers/git';
 import { type RouterInput, trpcClient } from '@/helpers/trpc';
 import { Field, Form as VeeForm } from 'vee-validate';
 import { computed } from 'vue';
@@ -115,15 +136,28 @@ const router = useRouter();
 
 const organizations = authClient.useListOrganizations();
 
+const gitUrlPlaceholder = GIT_URL_PLACEHOLDER;
+
 const schema = Yup.object().shape({
     name: Yup.string().required('Project name is required'),
     description: Yup.string().optional(),
+    gitUrl: Yup.string()
+        .transform((value) => (value?.trim() === '' ? undefined : value?.trim()))
+        .test('is-valid-git-url', 'Please enter a valid Git URL', (value) => {
+            if (!value) {
+                return true;
+            }
+
+            return isValidGitUrl(value);
+        })
+        .optional(),
     organizationId: Yup.string().required('Organization is required'),
 });
 
 const initialValues = computed(() => ({
     name: '',
     description: '',
+    gitUrl: '',
     organizationId: organizations.value.data?.[0]?.id ?? '',
 }));
 
@@ -134,6 +168,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
             orgId: typedValues.organizationId,
             name: typedValues.name,
             description: typedValues.description ?? undefined,
+            gitUrl: typedValues.gitUrl ?? undefined,
         };
         await trpcClient.organization.project.create.mutate(input);
 
