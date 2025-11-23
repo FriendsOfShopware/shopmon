@@ -81,19 +81,18 @@ services:
       - uploads:/app/uploads
 
   backup:
-    image: litestream/litestream
+    image: offen/docker-volume-backup:latest
     volumes:
-      - db:/data
-    command: ["replicate", "--config", "/etc/litestream.yml"]
-    configs:
-      - source: litestream
-        target: /etc/litestream.yml
+      - db:/backup
     environment:
-      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID}
-      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY}
-      LITESTREAM_AGE_PUBLIC_KEY: ${LITESTREAM_AGE_PUBLIC_KEY}
-      LITESTREAM_AGE_PRIVATE_KEY: ${LITESTREAM_AGE_PRIVATE_KEY}
-      ENVIRONMENT: ${ENVIRONMENT}
+      AWS_REGION: garage
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_S3_PATH: db/${ENVIRONMENT}
+      AWS_ENDPOINT: ${AWS_ENDPOINT}
+      BACKUP_RETENTION_DAYS: 14
+      BACKUP_CRON_EXPRESSION: "@hourly"
 
 networks:
   traefik:
@@ -104,16 +103,3 @@ networks:
 volumes:
   db:
   uploads:
-
-configs:
-  litestream:
-    content: |
-      addr: ":9090"
-      dbs:
-        - path: /data/shopmon.db
-          replica:
-            type: s3
-            bucket: shopmon-backups
-            path: db/$ENVIRONMENT/
-            endpoint: s3.eu-central-003.backblazeb2.com
-            force-path-style: true
