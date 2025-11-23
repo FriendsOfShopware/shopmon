@@ -5,7 +5,9 @@ packages:
 
 catalog:
   typescript: 5.9.3
-  better-auth: 1.3.34
+  better-auth: 1.4.1
+  '@better-auth/passkey': 1.4.1
+  '@better-auth/sso': 1.4.1
 
 ignoredBuiltDependencies:
   - 'better-sqlite3'

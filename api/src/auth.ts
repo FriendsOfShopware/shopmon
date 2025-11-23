@@ -1,11 +1,11 @@
+import { passkey } from '@better-auth/passkey';
+import { sso } from '@better-auth/sso';
 import * as Sentry from '@sentry/node';
 import { compare, hash } from 'bcrypt';
-import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { createAuthMiddleware } from 'better-auth/api';
+import { betterAuth } from 'better-auth/minimal';
 import { admin, organization } from 'better-auth/plugins';
-import { passkey } from 'better-auth/plugins/passkey';
-import { sso } from 'better-auth/plugins/sso';
 import { getConnection } from './db.ts';
 import shops from './repository/shops.ts';
 import users from './repository/users.ts';

@@ -14,6 +14,8 @@
 		"lint:fix-all": "bun run lint:fix && cd .. && bun run biome:format"
 	},
 	"dependencies": {
+		"@better-auth/passkey": "catalog:",
+		"@better-auth/sso": "catalog:",
 		"@headlessui/vue": "1.7.23",
 		"@trpc/client": "^11.7.1",
 		"better-auth": "catalog:",

@@ -1,9 +1,9 @@
 import {
     adminClient,
     organizationClient,
-    passkeyClient,
-    ssoClient,
 } from 'better-auth/client/plugins';
+import { passkeyClient } from '@better-auth/passkey/client'
+import { ssoClient } from '@better-auth/sso/client'
 import { createAuthClient } from 'better-auth/vue';
 
 export const authClient = createAuthClient({
