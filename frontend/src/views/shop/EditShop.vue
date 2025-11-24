@@ -306,7 +306,7 @@ async function loadShop() {
 
     // Initialize sitespeed settings
     if (shop.value) {
-        sitespeedEnabled.value = shop.value.sitespeedEnabled || false;
+        sitespeedEnabled.value = shop.value.sitespeedEnabled ?? false;
         sitespeedUrls.value = shop.value.sitespeedUrls ? [...shop.value.sitespeedUrls] : [];
     }
 

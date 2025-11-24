@@ -14,15 +14,30 @@ services:
     ports:
       - "3889:8000"
   sitespeed-service:
-    build:
-      context: sitespeed-service
+    image: ghcr.io/shyim/sitespeed.io-api:main
     ports:
       - "3001:3001"
-    develop:
-      watch:
-        - action: rebuild
-          path: sitespeed-service/index.ts
-    volumes:
-      - ./api/files/sitespeed-results:/app/results
     environment:
-      - APP_SITESPEED_DATA_FOLDER=/app/results
+      S3_SERVICE_URL: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET_NAME: sitespeed-results
+      ASPNETCORE_ENVIRONMENT: Development
+      AUTH_TOKEN: secret
+      S3_DISABLE_PAYLOAD_SIGNING: "false"
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; exit 0; "

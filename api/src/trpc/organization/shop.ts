@@ -8,6 +8,7 @@ import {
 import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { getReportUrl } from '#src/service/sitespeed';
 import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
 import { decrypt, encrypt } from '../../crypto/index.ts';
@@ -145,6 +146,7 @@ export const shopRouter = router({
                 ...shop,
                 ...scrapeInfo,
                 sitespeed: sitespeed,
+                sitespeedReportUrl: getReportUrl(input.shopId),
                 changelog: shopChangelog,
             };
         }),
