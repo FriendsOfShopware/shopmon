@@ -90,7 +90,10 @@ export const auth = betterAuth({
         },
         password: {
             hash: async (password) => {
-                return Bun.password.hash(password, {algorithm: 'bcrypt', cost: 10});
+                return Bun.password.hash(password, {
+                    algorithm: 'bcrypt',
+                    cost: 10,
+                });
             },
             verify: async (data) => {
                 return Bun.password.verify(data.password, data.hash);

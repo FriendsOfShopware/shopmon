@@ -1,9 +1,9 @@
-import { createClient } from '@libsql/client';
+import { Database } from 'bun:sqlite';
 import { relations } from 'drizzle-orm';
 import {
+    type BunSQLiteDatabase,
     drizzle as drizzleSqlite,
-    type LibSQLDatabase,
-} from 'drizzle-orm/libsql';
+} from 'drizzle-orm/bun-sqlite';
 import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type { ExtensionDiff, NotificationLink } from './types/index.ts';
 
@@ -361,7 +361,7 @@ export const schema = {
     deploymentTokenRelations,
 };
 
-export type Drizzle = LibSQLDatabase<typeof schema>;
+export type Drizzle = BunSQLiteDatabase<typeof schema>;
 let drizzle: Drizzle | undefined;
 
 export function getConnection(applyPragmas = true) {
@@ -371,25 +371,18 @@ export function getConnection(applyPragmas = true) {
 
     const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
 
-    const client = createClient({
-        url: `file:${dbPath}`,
-    });
+    const database = new Database(dbPath);
 
     if (applyPragmas) {
-        const promises = [
-            client.execute('PRAGMA journal_mode = WAL'),
-            client.execute('PRAGMA cache_size = -64000'),
-            client.execute('PRAGMA foreign_keys = ON'),
-            client.execute('PRAGMA synchronous = NORMAL'),
-            client.execute('PRAGMA temp_store = MEMORY'),
-            client.execute('PRAGMA wal_autocheckpoint = 0'),
-        ];
-        Promise.all(promises).then(() => {
-            console.log('Database PRAGMAs applied successfully');
-        });
+        database.run('PRAGMA journal_mode = WAL');
+        database.run('PRAGMA cache_size = -64000');
+        database.run('PRAGMA foreign_keys = ON');
+        database.run('PRAGMA synchronous = NORMAL');
+        database.run('PRAGMA temp_store = MEMORY');
+        database.run('PRAGMA wal_autocheckpoint = 0');
     }
 
-    drizzle = drizzleSqlite(client, { schema });
+    drizzle = drizzleSqlite(database, { schema });
 
     return drizzle;
 }
