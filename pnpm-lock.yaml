@@ -230,21 +230,6 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.39.1(jiti@2.6.1))
 
-  sitespeed-service:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.19.6
-        version: 1.19.6(hono@4.10.6)
-      '@hono/zod-validator':
-        specifier: ^0.7.5
-        version: 0.7.5(hono@4.10.6)(zod@4.1.13)
-      hono:
-        specifier: ~4.10.6
-        version: 4.10.6
-      zod:
-        specifier: ^4.1.13
-        version: 4.1.13
-
 packages:
 
   '@antfu/install-pkg@1.1.0':
@@ -1017,12 +1002,6 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
-
-  '@hono/zod-validator@0.7.5':
-    resolution: {integrity: sha512-n4l4hutkfYU07PzRUHBOVzUEn38VSfrh+UVE5d0w4lyfWDOEhzxIupqo5iakRiJL44c3vTuFJBvcmUl8b9agIA==}
-    peerDependencies:
-      hono: '>=3.9.0'
-      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -4987,11 +4966,6 @@ snapshots:
   '@hono/node-server@1.19.6(hono@4.10.6)':
     dependencies:
       hono: 4.10.6
-
-  '@hono/zod-validator@0.7.5(hono@4.10.6)(zod@4.1.13)':
-    dependencies:
-      hono: 4.10.6
-      zod: 4.1.13
 
   '@humanfs/core@0.19.1': {}
 

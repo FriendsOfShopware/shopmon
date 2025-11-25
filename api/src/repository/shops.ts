@@ -1,6 +1,5 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 import { eq } from 'drizzle-orm';
+import { deleteSitespeedReport } from '#src/service/sitespeed';
 import { type Drizzle, getConnection, schema } from '../db.ts';
 import { sendAlert } from '../mail/mail.ts';
 import * as LockRepository from './lock.ts';
@@ -72,20 +71,7 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
 
     // Clean up sitespeed results from filesystem
     try {
-        const sitespeedDataFolder = './files/sitespeed';
-        const shopResultsDir = path.join(sitespeedDataFolder, id.toString());
-
-        // Check if the directory exists before trying to delete it
-        try {
-            await fs.access(shopResultsDir);
-            await fs.rm(shopResultsDir, { recursive: true, force: true });
-            console.log(`Cleaned up sitespeed results for shop ${id}`);
-        } catch (_accessError) {
-            // Directory doesn't exist, which is fine
-            console.log(
-                `No sitespeed results found for shop ${id} - nothing to clean up`,
-            );
-        }
+        await deleteSitespeedReport(id);
     } catch (error) {
         // Log the error but don't fail the shop deletion
         console.error(

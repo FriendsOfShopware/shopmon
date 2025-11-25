@@ -13,7 +13,9 @@ x-env: &env
   SMTP_USER: ${SMTP_USER}
   SMTP_PASS: ${SMTP_PASS}
   SMTP_REPLY_TO: ${SMTP_REPLY_TO}
-  APP_SITESPEED_ENDPOINT: http://sitespeed:3001
+  APP_SITESPEED_ENDPOINT: https://sitespeed.fos.gg
+  APP_SITESPEED_PREFIX: shopmon-${ENVIRONMENT}-
+  APP_SITESPEED_API_KEY: ${APP_SITESPEED_API_KEY}
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT}
   SENTRY_DSN: ${SENTRY_DSN}
 
@@ -58,7 +60,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik_default
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.entrypoints=websecure
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`) || PathPrefix(`/sitespeed`))
+      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`))
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls=true
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.certresolver=cloudflare
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.domains[0].main=fos.gg
@@ -70,15 +72,6 @@ services:
     volumes:
       - db:/app/db
       - uploads:/app/api/files
-
-  sitespeed:
-    image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}
-    networks:
-      - shopmon
-    environment:
-      APP_SITESPEED_DATA_FOLDER: /app/uploads/sitespeed
-    volumes:
-      - uploads:/app/uploads
 
   backup:
     image: offen/docker-volume-backup:latest

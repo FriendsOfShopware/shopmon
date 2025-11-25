@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { getScreenshotUrl, runSitespeedReport } from '#src/service/sitespeed';
 import { getConnection, schema } from '../../db.ts';
 
 export async function scrapeSitespeedForAllShops() {
@@ -64,29 +65,12 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
 
     console.log(`Running sitespeed analysis for shop ${shop.id}: ${shop.name}`);
 
-    const sitespeedServiceUrl =
-        process.env.APP_SITESPEED_ENDPOINT || 'http://localhost:3001';
-    try {
-        const response = await fetch(`${sitespeedServiceUrl}/analyze`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                shopId: shop.id,
-                urls: shop.sitespeedUrls,
-            }),
-        });
+    shop.sitespeedUrls = shop.sitespeedUrls.map((url) =>
+        url.replace('http://localhost:3889', 'http://demoshop:8000'),
+    );
 
-        const result = (await response.json()) as {
-            ttfb: number;
-            fullyLoaded: number;
-            largestContentfulPaint: number;
-            firstContentfulPaint: number;
-            cumulativeLayoutShift: number;
-            transferSize: number;
-            screenshotPath: string;
-        };
+    try {
+        const result = await runSitespeedReport(shop.id, shop.sitespeedUrls);
 
         // Store the metrics in the database
         await drizzle
@@ -106,7 +90,7 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
         await drizzle
             .update(schema.shop)
             .set({
-                shopImage: `/sitespeed/${shop.id}/${result.screenshotPath}`,
+                shopImage: getScreenshotUrl(shop.id),
             })
             .where(eq(schema.shop.id, shop.id))
             .execute();
