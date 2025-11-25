@@ -7,7 +7,7 @@ import { betterAuth } from 'better-auth/minimal';
 import { admin, organization } from 'better-auth/plugins';
 import { getConnection } from './db.ts';
 import shops from './modules/shop/shop.repository.ts';
-import users from './repository/users.ts';
+import users from './modules/user/user.repository.ts';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',

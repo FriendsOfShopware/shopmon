@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import * as SSOService from '#src/service/sso.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     hasPermissionMiddleware,
     loggedInUserMiddleware,
     organizationMiddleware,
 } from '#src/trpc/middleware.ts';
+import * as SSOService from './sso.service.ts';
 
 export const ssoRouter = router({
     list: publicProcedure

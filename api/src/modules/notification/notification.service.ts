@@ -1,5 +1,5 @@
 import type { Drizzle } from '#src/db.ts';
-import NotificationRepository from '#src/repository/notifications.ts';
+import NotificationRepository from './notification.repository.ts';
 
 export const listNotifications = async (db: Drizzle, userId: string) => {
     return await NotificationRepository.findAllByUserId(db, userId);

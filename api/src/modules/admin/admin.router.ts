@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import * as AdminService from '#src/service/admin.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import { isAdminMiddleware } from '#src/trpc/middleware.ts';
+import * as AdminService from './admin.service.ts';
 
 const organizationsPaginationSchema = z.object({
     limit: z.number().min(1).max(100).default(20),

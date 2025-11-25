@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import * as ProjectService from '#src/service/project.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     loggedInUserMiddleware,
     organizationMiddleware,
 } from '#src/trpc/middleware.ts';
+import * as ProjectService from './project.service.ts';
 
 export const projectRouter = router({
     list: publicProcedure

@@ -7,15 +7,18 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { decrypt } from '#src/crypto/index.ts';
+import { decrypt } from '#src/modules/shop/crypto.ts';
 import { type Drizzle, getConnection, schema } from '#src/db.ts';
 import Shops, { type User } from '#src/modules/shop/shop.repository.ts';
 import * as ShopService from '#src/modules/shop/shop.service.ts';
-import { type CheckerInput, check } from '#src/object/status/registery.ts';
+import {
+    type CheckerInput,
+    check,
+} from '#src/modules/shop/checker/registery.ts';
 import {
     getShopScrapeInfo,
     saveShopScrapeInfo,
-} from '#src/repository/scrapeInfo.ts';
+} from '#src/modules/shop/scrape-info.repository.ts';
 import type {
     CacheInfo,
     Extension,

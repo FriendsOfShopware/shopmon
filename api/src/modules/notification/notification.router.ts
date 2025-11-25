@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import * as NotificationService from '#src/service/notification.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import { loggedInUserMiddleware } from '#src/trpc/middleware.ts';
+import * as NotificationService from './notification.service.ts';
 
 export const notificationRouter = router({
     list: publicProcedure.use(loggedInUserMiddleware).query(async ({ ctx }) => {

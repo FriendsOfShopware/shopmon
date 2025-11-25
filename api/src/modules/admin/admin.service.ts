@@ -2,7 +2,7 @@ import type { Drizzle } from '#src/db.ts';
 import AdminRepository, {
     type OrganizationListParams,
     type ShopListParams,
-} from '#src/repository/admin.ts';
+} from './admin.repository.ts';
 
 export const listOrganizations = async (
     db: Drizzle,

@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import type { Drizzle } from '#src/db.ts';
-import SSORepository from '#src/repository/sso.ts';
+import SSORepository from './sso.repository.ts';
 
 export interface UpdateSSOProviderDTO {
     orgId: string;

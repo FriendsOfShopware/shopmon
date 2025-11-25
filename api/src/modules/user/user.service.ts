@@ -1,6 +1,6 @@
 import type { Drizzle } from '#src/db.ts';
-import { getShopScrapeInfo } from '#src/repository/scrapeInfo.ts';
-import UsersRepository from '#src/repository/users.ts';
+import { getShopScrapeInfo } from '#src/modules/shop/scrape-info.repository.ts';
+import UsersRepository from './user.repository.ts';
 
 interface Extension {
     name: string;

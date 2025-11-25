@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import type { Drizzle } from '#src/db.ts';
 import Shops from '#src/modules/shop/shop.repository.ts';
-import Projects from '#src/repository/projects.ts';
+import Projects from './project.repository.ts';
 
 export interface CreateProjectDTO {
     orgId: string;

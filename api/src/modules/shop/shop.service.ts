@@ -9,17 +9,20 @@ import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { scrapeSingleShop } from '#src/cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '#src/cron/jobs/sitespeedScrape.ts';
-import { decrypt, encrypt } from '#src/crypto/index.ts';
+import { decrypt, encrypt } from './crypto.ts';
 import { type Drizzle, schema } from '#src/db.ts';
 import { sendAlert } from '#src/mail/mail.ts';
-import * as LockRepository from '#src/repository/lock.ts';
+import Users from '#src/modules/user/user.repository.ts';
+import * as LockRepository from '#src/modules/lock/lock.repository.ts';
 import {
     deleteShopScrapeInfo,
     getShopScrapeInfo,
     saveShopScrapeInfo,
-} from '#src/repository/scrapeInfo.ts';
-import Users from '#src/repository/users.ts';
-import { deleteSitespeedReport, getReportUrl } from '#src/service/sitespeed.ts';
+} from '#src/modules/shop/scrape-info.repository.ts';
+import {
+    deleteSitespeedReport,
+    getReportUrl,
+} from '#src/modules/shop/sitespeed.service.ts';
 import Shops from './shop.repository.ts';
 
 export interface CreateShopInput {

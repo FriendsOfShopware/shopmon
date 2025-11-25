@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import * as InfoService from '#src/service/info.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
+import * as InfoService from './info.service.ts';
 
 export const infoRouter = router({
     checkExtensionCompatibility: publicProcedure

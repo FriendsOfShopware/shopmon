@@ -1,9 +1,16 @@
+import { adminRouter } from '#src/modules/admin/admin.router.ts';
+import { infoRouter } from '#src/modules/info/info.router.ts';
+import { projectRouter } from '#src/modules/project/project.router.ts';
 import { shopRouter } from '#src/modules/shop/shop.router.ts';
-import { accountRouter } from './account/index.ts';
-import { adminRouter } from './admin/index.ts';
+import { ssoRouter } from '#src/modules/sso/sso.router.ts';
+import { accountRouter } from '#src/modules/user/user.router.ts';
 import { publicProcedure, router } from './index.ts';
-import { infoRouter } from './info/index.ts';
-import { organizationRouter } from './organization/index.ts';
+
+export const organizationRouter = router({
+    shop: shopRouter,
+    sso: ssoRouter,
+    project: projectRouter,
+});
 
 export const appRouter = router({
     health: publicProcedure.query(() => 'ok'),

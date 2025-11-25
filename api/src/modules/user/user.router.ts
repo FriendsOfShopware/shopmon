@@ -1,7 +1,7 @@
-import * as AccountService from '#src/service/account.ts';
+import { notificationRouter } from '#src/modules/notification/notification.router.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import { loggedInUserMiddleware } from '#src/trpc/middleware.ts';
-import { notificationRouter } from './notification.ts';
+import * as AccountService from './user.service.ts';
 
 export const accountRouter = router({
     notification: notificationRouter,
