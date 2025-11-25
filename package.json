@@ -1,5 +1,16 @@
 {
-	"packageManager": "pnpm@10.12.1",
+	"workspaces": {
+		"packages": [
+			"frontend",
+			"api"
+		],
+		"catalog": {
+			"typescript": "5.9.3",
+			"better-auth": "1.4.1",
+			"@better-auth/passkey": "1.4.1",
+			"@better-auth/sso": "1.4.1"
+		}
+	},
 	"devDependencies": {
 		"@biomejs/biome": "~2.3.7"
 	},

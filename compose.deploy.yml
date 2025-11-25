@@ -73,6 +73,17 @@ services:
       - db:/app/db
       - uploads:/app/api/files
 
+  cron:
+    image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+      - traefik
+    environment:
+      <<: *env
+    volumes_from:
+      - api
+    command: "cron.js"
+
   backup:
     image: offen/docker-volume-backup:latest
     volumes:

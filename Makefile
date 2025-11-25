@@ -8,10 +8,10 @@ setup: # Setup the project
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	@echo "Installing dependencies"
-	pnpm install
+	bun install
 
 tslint:
-	cd api && node ../node_modules/.bin/tsc --noEmit
+	cd api && bun ../node_modules/.bin/tsc --noEmit
 
 lint:
 	cd api && node_modules/.bin/tsc --noEmit
@@ -30,18 +30,18 @@ generate-custom-migration:
 	cd api && npx drizzle-kit generate --custom
 
 generate-email:
-	cd api && node generate-mjml.js
+	cd api && bun generate-mjml.js
 
 migrate:
-	cd api && node --env-file-if-exists=.env migrate.ts
+	cd api && bun migrate.ts
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
-	cd api && node --env-file-if-exists=.env migrate.ts
-	cd api && node --env-file-if-exists=.env apply-fixtures.ts
+	cd api && bun migrate.ts
+	cd api && bun apply-fixtures.ts
 
 dev: # Run the project locally
 	npx concurrently -- 'cd api && PORT=5789 bun --watch app.ts' 'npm --prefix frontend run dev:local'
