@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import * as InfoService from '#src/service/info.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 
 export const infoRouter = router({
@@ -16,52 +17,13 @@ export const infoRouter = router({
             }),
         )
         .query(async ({ input }) => {
-            const url = new URL(
-                'https://api.shopware.com/swplatform/autoupdate',
+            return await InfoService.checkExtensionCompatibility(
+                input.currentVersion,
+                input.futureVersion,
+                input.extensions,
             );
-            url.searchParams.set('language', 'en-GB');
-            url.searchParams.set('shopwareVersion', input.currentVersion);
-
-            const checkExtensionCompatibilityApiResp = await fetch(
-                url.toString(),
-                {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        futureShopwareVersion: input.futureVersion,
-                        plugins: input.extensions,
-                    }),
-                },
-            );
-
-            return (await checkExtensionCompatibilityApiResp.json()) as ShopwareExtensionCompatibility[];
         }),
     getLatestShopwareVersion: publicProcedure.query(async () => {
-        const installApiResp = await fetch(
-            'https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/all-supported-php-versions-by-shopware-version.json',
-            {
-                method: 'GET',
-                headers: {
-                    Accept: 'application/json',
-                    'User-Agent': 'Shopmon',
-                },
-            },
-        );
-
-        return (await installApiResp.json()) as ShopwareVersion[];
+        return await InfoService.getLatestShopwareVersion();
     }),
 });
-
-interface ShopwareExtensionCompatibility {
-    name: string;
-    label: string;
-    iconPath: string;
-    status: {
-        name: string;
-        label: string;
-        type: string;
-    };
-}
-
-interface ShopwareVersion {
-    [version: string]: string[];
-}

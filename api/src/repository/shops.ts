@@ -1,10 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '#src/db.ts';
-import { sendAlert } from '#src/mail/mail.ts';
-import { deleteSitespeedReport } from '#src/service/sitespeed';
-import * as LockRepository from './lock.ts';
-import { deleteShopScrapeInfo } from './scrapeInfo.ts';
-import Users from './users.ts';
 
 interface CreateShopRequest {
     organizationId: string;
@@ -14,13 +9,6 @@ interface CreateShopRequest {
     clientId: string;
     clientSecret: string;
     projectId: number;
-}
-
-export interface ShopAlert {
-    shopId: string;
-    key: string;
-    subject: string;
-    message: string;
 }
 
 export interface Shop {
@@ -66,19 +54,6 @@ async function deleteShop(con: Drizzle, id: number): Promise<void> {
         .where(eq(schema.shopSitespeed.shopId, id))
         .execute();
     await con.delete(schema.shop).where(eq(schema.shop.id, id)).execute();
-
-    await deleteShopScrapeInfo(id);
-
-    // Clean up sitespeed results from filesystem
-    try {
-        await deleteSitespeedReport(id);
-    } catch (error) {
-        // Log the error but don't fail the shop deletion
-        console.error(
-            `Failed to clean up sitespeed results for shop ${id}:`,
-            error,
-        );
-    }
 }
 
 async function getUsersOfShop(con: Drizzle, shopId: number) {
@@ -122,46 +97,19 @@ async function deleteShopsByOrganization(organizationId: string) {
     await Promise.all(promises);
 }
 
-async function notify(
+async function countByProject(
     con: Drizzle,
-    shopId: number,
-    key: string,
-    notification: Omit<
-        typeof schema.userNotification.$inferInsert,
-        'createdAt' | 'key' | 'userId'
-    >,
-): Promise<void> {
-    const users = await getUsersOfShop(con, shopId);
+    projectId: number,
+): Promise<number> {
+    const result = await con
+        .select({
+            id: schema.shop.id,
+        })
+        .from(schema.shop)
+        .where(eq(schema.shop.projectId, projectId))
+        .all();
 
-    for (const user of users) {
-        await Users.createNotification(con, user.id, key, notification);
-    }
-}
-
-async function alert(con: Drizzle, alert: ShopAlert): Promise<void> {
-    const users = await getUsersOfShop(con, Number.parseInt(alert.shopId, 10));
-    const alertKey = `alert_${alert.key}_${alert.shopId}`;
-
-    if (await LockRepository.isLocked(alertKey)) {
-        return;
-    }
-
-    await LockRepository.createLock(alertKey);
-
-    const result = await con.query.shop.findFirst({
-        columns: {
-            name: true,
-        },
-        where: eq(schema.shop.id, Number.parseInt(alert.shopId, 10)),
-    });
-
-    if (result === undefined) {
-        return;
-    }
-
-    for (const user of users) {
-        await sendAlert(result, user, alert);
-    }
+    return result.length;
 }
 
 export default {
@@ -169,6 +117,5 @@ export default {
     deleteShop,
     getUsersOfShop,
     deleteShopsByOrganization,
-    notify,
-    alert,
+    countByProject,
 };

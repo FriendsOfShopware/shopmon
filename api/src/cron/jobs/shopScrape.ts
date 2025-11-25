@@ -15,6 +15,7 @@ import {
     saveShopScrapeInfo,
 } from '#src/repository/scrapeInfo.ts';
 import Shops, { type User } from '#src/repository/shops.ts';
+import * as ShopService from '#src/service/shop.ts';
 import type {
     CacheInfo,
     Extension,
@@ -250,7 +251,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                 }: Body: ${body}`;
             }
 
-            await Shops.notify(
+            await ShopService.notify(
                 con,
                 shop.id,
                 `shop.update-auth-error.${shop.id}`,
@@ -268,7 +269,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                 },
             );
 
-            await Shops.alert(con, {
+            await ShopService.alert(con, {
                 key: `shop.update-auth-error.${shop.id}`,
                 shopId: shop.id.toString(),
                 subject: 'Refresh shop data error',
@@ -350,19 +351,24 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
 
             console.log(error);
 
-            await Shops.notify(con, shop.id, `shop.not.updated_${shop.id}`, {
-                level: 'error',
-                title: `Shop: ${shop.name} could not be updated`,
-                message:
-                    'Could not connect to shop. Please check your credentials and try again.',
-                link: {
-                    name: 'account.shops.detail',
-                    params: {
-                        shopId: shop.id.toString(),
-                        slug: shop.organizationSlug,
+            await ShopService.notify(
+                con,
+                shop.id,
+                `shop.not.updated_${shop.id}`,
+                {
+                    level: 'error',
+                    title: `Shop: ${shop.name} could not be updated`,
+                    message:
+                        'Could not connect to shop. Please check your credentials and try again.',
+                    link: {
+                        name: 'account.shops.detail',
+                        params: {
+                            shopId: shop.id.toString(),
+                            slug: shop.organizationSlug,
+                        },
                     },
                 },
-            });
+            );
 
             await con
                 .update(schema.shop)
@@ -607,7 +613,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             const statusChangeKey = `shop.change-status.${shop.id}`;
 
             if (await shouldNotify(con, users, statusChangeKey)) {
-                await Shops.notify(con, shop.id, statusChangeKey, {
+                await ShopService.notify(con, shop.id, statusChangeKey, {
                     level: 'warning',
                     title: `Shop: ${shop.name} status changed`,
                     message: `Status changed from ${shop.status} to ${checkerResult.status}`,
@@ -620,7 +626,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     },
                 });
 
-                await Shops.alert(con, {
+                await ShopService.alert(con, {
                     key: statusChangeKey,
                     shopId: shop.id.toString(),
                     subject: `Shop ${shop.name} status changed to ${checkerResult.status}`,

@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { type Drizzle, getConnection, schema } from '#src/db.ts';
 
 async function existsByEmail(
@@ -25,6 +25,19 @@ async function existsById(con: Drizzle, id: string): Promise<boolean> {
     });
 
     return result !== undefined;
+}
+
+async function findById(con: Drizzle, id: string) {
+    return await con
+        .select({
+            id: schema.user.id,
+            displayName: schema.user.name,
+            email: schema.user.email,
+            createdAt: schema.user.createdAt,
+        })
+        .from(schema.user)
+        .where(eq(schema.user.id, id))
+        .get();
 }
 
 async function deleteById(con: Drizzle, id: string): Promise<void> {
@@ -129,11 +142,199 @@ async function hasAccessToShop(
     return result !== undefined;
 }
 
+async function findOrganizations(con: Drizzle, userId: string) {
+    return con
+        .select({
+            id: schema.organization.id,
+            name: schema.organization.name,
+            createdAt: schema.organization.createdAt,
+            slug: schema.organization.slug,
+            shopCount: sql<number>`(SELECT COUNT(1) FROM ${schema.shop} WHERE ${schema.shop.organizationId} = ${schema.organization.id})`,
+            memberCount: sql<number>`(SELECT COUNT(1) FROM ${schema.member} WHERE ${schema.member.organizationId} = ${schema.organization.id})`,
+        })
+        .from(schema.organization)
+        .innerJoin(
+            schema.member,
+            eq(schema.member.organizationId, schema.organization.id),
+        )
+        .where(eq(schema.member.userId, userId))
+        .all();
+}
+
+async function findShops(con: Drizzle, userId: string) {
+    return await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            nameCombined: sql<string>`CONCAT(${schema.project.name}, ' / ', ${schema.shop.name})`,
+            status: schema.shop.status,
+            url: schema.shop.url,
+            favicon: schema.shop.favicon,
+            createdAt: schema.shop.createdAt,
+            lastScrapedAt: schema.shop.lastScrapedAt,
+            shopwareVersion: schema.shop.shopwareVersion,
+            lastChangelog: schema.shop.lastChangelog,
+            organizationId: schema.shop.organizationId,
+            organizationName: sql<string>`${schema.organization.name}`.as(
+                'organization_name',
+            ),
+            organizationSlug: sql<string>`${schema.organization.slug}`.as(
+                'organization_slug',
+            ),
+            projectId: schema.shop.projectId,
+            projectName: sql<string>`${schema.project.name}`.as('project_name'),
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.member,
+            eq(schema.member.organizationId, schema.shop.organizationId),
+        )
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
+        .where(eq(schema.member.userId, userId))
+        .orderBy(schema.shop.name)
+        .all();
+}
+
+async function findShopsSimple(con: Drizzle, userId: string) {
+    return await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            organizationId: schema.shop.organizationId,
+            shopwareVersion: schema.shop.shopwareVersion,
+            organizationSlug: sql<string>`${schema.organization.slug}`.as(
+                'organization_slug',
+            ),
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.member,
+            eq(schema.member.organizationId, schema.shop.organizationId),
+        )
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .where(eq(schema.member.userId, userId))
+        .orderBy(schema.shop.name)
+        .all();
+}
+
+async function findProjects(con: Drizzle, userId: string) {
+    return await con
+        .select({
+            id: schema.project.id,
+            name: schema.project.name,
+            nameCombined: sql<string>`CONCAT(${schema.organization.name}, ' / ', ${schema.project.name})`,
+            organizationId: schema.project.organizationId,
+            organizationSlug: schema.organization.slug,
+            description: schema.project.description,
+            createdAt: schema.project.createdAt,
+        })
+        .from(schema.project)
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.project.organizationId),
+        )
+        .innerJoin(
+            schema.member,
+            and(
+                eq(schema.member.organizationId, schema.organization.id),
+                eq(schema.member.userId, userId),
+            ),
+        );
+}
+
+async function findChangelogs(con: Drizzle, userId: string) {
+    return await con
+        .select({
+            id: schema.shopChangelog.id,
+            shopId: schema.shopChangelog.shopId,
+            shopOrganizationId: schema.shop.organizationId,
+            organizationSlug: sql<string>`${schema.organization.slug}`.as(
+                'organization_slug',
+            ),
+            shopName: schema.shop.name,
+            shopFavicon: schema.shop.favicon,
+            extensions: schema.shopChangelog.extensions,
+            oldShopwareVersion: schema.shopChangelog.oldShopwareVersion,
+            newShopwareVersion: schema.shopChangelog.newShopwareVersion,
+            date: schema.shopChangelog.date,
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.member,
+            eq(schema.member.organizationId, schema.shop.organizationId),
+        )
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .innerJoin(
+            schema.shopChangelog,
+            eq(schema.shopChangelog.shopId, schema.shop.id),
+        )
+        .where(eq(schema.member.userId, userId))
+        .orderBy(desc(schema.shopChangelog.date))
+        .limit(10)
+        .all();
+}
+
+async function findSubscribedShops(
+    con: Drizzle,
+    userId: string,
+    shopIds: number[],
+) {
+    return await con
+        .select({
+            id: schema.shop.id,
+            name: schema.shop.name,
+            url: schema.shop.url,
+            favicon: schema.shop.favicon,
+            shopwareVersion: schema.shop.shopwareVersion,
+            organizationId: schema.shop.organizationId,
+            organizationName: sql<string>`${schema.organization.name}`.as(
+                'organization_name',
+            ),
+            organizationSlug: sql<string>`${schema.organization.slug}`.as(
+                'organization_slug',
+            ),
+        })
+        .from(schema.shop)
+        .innerJoin(
+            schema.organization,
+            eq(schema.organization.id, schema.shop.organizationId),
+        )
+        .innerJoin(
+            schema.member,
+            eq(schema.member.organizationId, schema.shop.organizationId),
+        )
+        .where(
+            and(
+                inArray(schema.shop.id, shopIds),
+                eq(schema.member.userId, userId),
+            ),
+        )
+        .orderBy(schema.shop.name)
+        .all();
+}
+
 export default {
     existsByEmail,
     existsById,
+    findById,
     deleteById,
     createNotification,
     hasAccessToProject,
     hasAccessToShop,
+    findOrganizations,
+    findShops,
+    findShopsSimple,
+    findProjects,
+    findChangelogs,
+    findSubscribedShops,
 };

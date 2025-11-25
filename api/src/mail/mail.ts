@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
-import type { Shop, ShopAlert, User } from '#src/repository/shops.ts';
+import type { Shop, User } from '#src/repository/shops.ts';
+import type { ShopAlert } from '#src/service/shop.ts';
 import alertTemplate from './sources/alert.js';
 import accountConfirmationTemplate from './sources/confirmation.js';
 import organizationInviteTemplate from './sources/org-invite.js';

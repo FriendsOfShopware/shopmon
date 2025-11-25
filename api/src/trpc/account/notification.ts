@@ -1,49 +1,28 @@
-import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { schema } from '#src/db.ts';
+import * as NotificationService from '#src/service/notification.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import { loggedInUserMiddleware } from '#src/trpc/middleware.ts';
 
 export const notificationRouter = router({
     list: publicProcedure.use(loggedInUserMiddleware).query(async ({ ctx }) => {
-        const results = await ctx.drizzle.query.userNotification.findMany({
-            where: eq(schema.userNotification.userId, ctx.user.id),
-        });
-
-        return results;
+        return await NotificationService.listNotifications(
+            ctx.drizzle,
+            ctx.user.id,
+        );
     }),
     delete: publicProcedure
         .use(loggedInUserMiddleware)
         .input(z.number().optional())
         .mutation(async ({ ctx, input }) => {
-            if (input) {
-                await ctx.drizzle
-                    .delete(schema.userNotification)
-                    .where(
-                        and(
-                            eq(schema.userNotification.id, input),
-                            eq(schema.userNotification.userId, ctx.user.id),
-                        ),
-                    )
-                    .execute();
-
-                return true;
-            }
-
-            await ctx.drizzle
-                .delete(schema.userNotification)
-                .where(eq(schema.userNotification.userId, ctx.user.id))
-                .execute();
-
-            return true;
+            return await NotificationService.deleteNotification(
+                ctx.drizzle,
+                ctx.user.id,
+                input,
+            );
         }),
     markAllRead: publicProcedure
         .use(loggedInUserMiddleware)
         .mutation(async ({ ctx }) => {
-            await ctx.drizzle
-                .update(schema.userNotification)
-                .set({ read: true })
-                .where(eq(schema.userNotification.userId, ctx.user.id))
-                .execute();
+            await NotificationService.markAllRead(ctx.drizzle, ctx.user.id);
         }),
 });
