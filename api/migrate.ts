@@ -1,5 +1,5 @@
-import { migrate } from 'drizzle-orm/libsql/migrator';
-import { getConnection } from './src/db.ts';
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
+import { getConnection } from '#src/db.ts';
 
 async function runMigrations() {
     console.log('Running migrations...');

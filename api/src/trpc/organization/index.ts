@@ -1,4 +1,4 @@
-import { router } from '../index.ts';
+import { router } from '#src/trpc/index.ts';
 import { projectRouter } from './project.ts';
 import { shopRouter } from './shop.ts';
 import { ssoRouter } from './sso.ts';

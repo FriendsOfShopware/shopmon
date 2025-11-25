@@ -1,7 +1,7 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
-import type { ShopScrapeInfo } from '../types/index.ts';
+import type { ShopScrapeInfo } from '#src/types/index.ts';
 
 const pGzip = promisify(gzip);
 const pGunzip = promisify(gunzip);

@@ -4,7 +4,7 @@ import type {
     Extension,
     QueueInfo,
     ScheduledTask,
-} from '../../types/index.ts';
+} from '#src/types/index.ts';
 import env from './checks/env.ts';
 import frosh_tools from './checks/frosh_tools.ts';
 import security from './checks/security.ts';

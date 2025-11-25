@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
-import { type Drizzle, getConnection, schema } from '../db.ts';
+import { type Drizzle, getConnection, schema } from '#src/db.ts';
 
 async function existsByEmail(
     con: Drizzle,
@@ -79,18 +79,9 @@ async function createNotification(
                 read: false,
             },
         })
-        .execute();
+        .returning();
 
-    const notificationResponse: typeof schema.userNotification.$inferSelect = {
-        ...notification,
-        key,
-        userId,
-        id: Number(result.lastInsertRowid),
-        read: false,
-        createdAt: new Date(),
-    };
-
-    return notificationResponse;
+    return result[0];
 }
 
 async function hasAccessToProject(userId: string, projectId: number) {

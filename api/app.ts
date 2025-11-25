@@ -1,8 +1,8 @@
-import './src/sentry.ts';
+import '#src/sentry.ts';
 import { captureException } from '@sentry/node';
-import { auth } from './src/auth.ts';
-import { createContext } from './src/trpc/context.ts';
-import { appRouter } from './src/trpc/router.ts';
+import { auth } from '#src/auth.ts';
+import { createContext } from '#src/trpc/context.ts';
+import { appRouter } from '#src/trpc/router.ts';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 export default {

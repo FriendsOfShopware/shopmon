@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
+import { type Drizzle, getConnection, schema } from '#src/db.ts';
+import { sendAlert } from '#src/mail/mail.ts';
 import { deleteSitespeedReport } from '#src/service/sitespeed';
-import { type Drizzle, getConnection, schema } from '../db.ts';
-import { sendAlert } from '../mail/mail.ts';
 import * as LockRepository from './lock.ts';
 import { deleteShopScrapeInfo } from './scrapeInfo.ts';
 import Users from './users.ts';
@@ -50,9 +50,9 @@ async function createShop(
             shopwareVersion: params.version,
             projectId: params.projectId,
         })
-        .execute();
+        .returning({ id: schema.shop.id });
 
-    return Number(result.lastInsertRowid);
+    return result[0].id;
 }
 
 async function deleteShop(con: Drizzle, id: number): Promise<void> {

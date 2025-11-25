@@ -1,12 +1,12 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { schema } from '../../db.ts';
-import { publicProcedure, router } from '../index.ts';
+import { schema } from '#src/db.ts';
+import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     loggedInUserMiddleware,
     organizationMiddleware,
-} from '../middleware.ts';
+} from '#src/trpc/middleware.ts';
 
 export const projectRouter = router({
     list: publicProcedure
@@ -53,9 +53,9 @@ export const projectRouter = router({
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
-                .execute();
+                .returning({ id: schema.project.id });
 
-            return Number(result.lastInsertRowid);
+            return result[0].id;
         }),
     update: publicProcedure
         .input(

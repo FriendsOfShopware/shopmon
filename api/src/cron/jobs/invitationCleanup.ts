@@ -1,5 +1,5 @@
 import { eq, or } from 'drizzle-orm';
-import { getConnection, invitation } from '../../db.ts';
+import { getConnection, invitation } from '#src/db.ts';
 
 export async function invitationCleanupJob() {
     const db = getConnection();

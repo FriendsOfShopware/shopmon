@@ -1,5 +1,5 @@
 import { logger } from '@sentry/node';
-import { cleanupExpiredLocks } from '../../repository/lock.ts';
+import { cleanupExpiredLocks } from '#src/repository/lock.ts';
 
 /**
  * Cron job to clean up expired locks
