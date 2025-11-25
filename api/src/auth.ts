@@ -6,7 +6,7 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { betterAuth } from 'better-auth/minimal';
 import { admin, organization } from 'better-auth/plugins';
 import { getConnection } from './db.ts';
-import shops from './repository/shops.ts';
+import shops from './modules/shop/shop.repository.ts';
 import users from './repository/users.ts';
 
 export const auth = betterAuth({

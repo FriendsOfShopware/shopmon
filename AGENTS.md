@@ -1,50 +1,67 @@
 # Project Architecture & Development Guidelines
 
-This project follows a strict **3-Layer Architecture** to ensure separation of concerns, testability, and maintainability. All new features and refactors must adhere to this pattern.
+This project follows a **Domain-Driven Modular Architecture**.
+This structure groups related functionality by **Domain (Feature)** rather than by Technical Layer.
 
-## The 3-Layer Pattern
+## Directory Structure
 
-### 1. Router Layer (`api/src/trpc/**/*.ts`)
+```
+api/src/
+  ├── modules/
+  │   ├── shop/                 <-- Domain Module
+  │   │   ├── shop.repository.ts   (Data Access)
+  │   │   ├── shop.service.ts      (Business Logic)
+  │   │   ├── shop.router.ts       (API / Transport)
+  │   │   └── shop.types.ts        (Domain Types)
+  │   ├── user/
+  │   └── ...
+  ├── trpc/                     <-- Shared / Legacy Routers
+  ├── service/                  <-- Shared / Legacy Services
+  └── repository/               <-- Shared / Legacy Repositories
+```
+
+## The 3-Layer Pattern (Applied per Module)
+
+Within each module, we strictly enforce the 3-Layer Pattern:
+
+### 1. Router (`*.router.ts`)
 *   **Responsibility:**
     *   Handle HTTP/tRPC requests.
     *   Validate inputs (Zod schemas).
     *   Check permissions/middleware.
-    *   **DELEGATE** work to the Service layer.
+    *   **DELEGATE** work to the Service.
 *   **Rules:**
-    *   ❌ **NO** direct database queries (no `drizzle` or `db` imports for business logic).
+    *   ❌ **NO** direct database queries.
     *   ❌ **NO** complex business logic.
-    *   ✅ **ONLY** call `Services`.
+    *   ✅ **ONLY** call Services.
 
-### 2. Service Layer (`api/src/service/**/*.ts`)
+### 2. Service (`*.service.ts`)
 *   **Responsibility:**
     *   Contain **ALL** business logic.
-    *   Orchestrate workflows (e.g., "Create User" -> "Save to DB" -> "Send Email").
-    *   Call multiple Repositories if needed.
+    *   Orchestrate workflows.
     *   Handle third-party integrations (Stripe, Mailer, etc.).
 *   **Rules:**
-    *   ✅ Can call `Repositories`.
-    *   ✅ Can call other `Services`.
-    *   ✅ Can call Helpers/Utils.
-    *   ❌ Should not deal with HTTP-specifics (like `req`, `res`).
+    *   ✅ Can call Repositories.
+    *   ✅ Can call other Services.
+    *   ❌ Should not deal with HTTP-specifics.
 
-### 3. Repository Layer (`api/src/repository/**/*.ts`)
+### 3. Repository (`*.repository.ts`)
 *   **Responsibility:**
     *   Pure Data Access Object (DAO).
-    *   Handle **CRUD** operations (Create, Read, Update, Delete).
-    *   Abstract the database technology (Drizzle).
+    *   Handle **CRUD** operations.
 *   **Rules:**
     *   ✅ **ONLY** interact with the database.
-    *   ❌ **NO** business logic (e.g., "if user is premium...").
-    *   ❌ **NO** side effects (sending emails, calling external APIs).
+    *   ❌ **NO** business logic.
+    *   ❌ **NO** side effects (sending emails).
     *   ❌ **NEVER** call Services.
 
 ---
 
 ## Refactoring Checklist
 
-When working on existing code, ensure it aligns with this structure:
+When working on existing code:
 
-1.  **Identify the "Fat":** Look for Routers containing DB queries or logic, or Repositories sending emails.
-2.  **Extract to Service:** Move the logic into a dedicated file in `api/src/service/`.
-3.  **Simplify Repository:** Ensure the Repository only does DB operations.
-4.  **Slim the Router:** Update the Router to simply call the new Service function.
+1.  **Identify the Domain:** Does this belong to `Shop`, `User`, `Project`, etc.?
+2.  **Create/Update Module:** Move files to `api/src/modules/<domain>/`.
+3.  **Rename Files:** Use the `entity.layer.ts` convention (e.g., `user.service.ts`).
+4.  **Refactor Logic:** Ensure logic is in the Service, DB calls in the Repository, and Validation in the Router.

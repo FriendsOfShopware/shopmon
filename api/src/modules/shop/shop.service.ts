@@ -18,9 +18,9 @@ import {
     getShopScrapeInfo,
     saveShopScrapeInfo,
 } from '#src/repository/scrapeInfo.ts';
-import Shops from '#src/repository/shops.ts';
 import Users from '#src/repository/users.ts';
 import { deleteSitespeedReport, getReportUrl } from '#src/service/sitespeed.ts';
+import Shops from './shop.repository.ts';
 
 export interface CreateShopInput {
     name: string;

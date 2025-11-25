@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import * as ShopService from '#src/service/shop.ts';
 import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     loggedInUserMiddleware,
     organizationMiddleware,
     shopMiddleware,
 } from '#src/trpc/middleware.ts';
+import * as ShopService from './shop.service.ts';
 
 export const shopRouter = router({
     list: publicProcedure

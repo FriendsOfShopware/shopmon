@@ -9,13 +9,13 @@ import {
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { decrypt } from '#src/crypto/index.ts';
 import { type Drizzle, getConnection, schema } from '#src/db.ts';
+import Shops, { type User } from '#src/modules/shop/shop.repository.ts';
+import * as ShopService from '#src/modules/shop/shop.service.ts';
 import { type CheckerInput, check } from '#src/object/status/registery.ts';
 import {
     getShopScrapeInfo,
     saveShopScrapeInfo,
 } from '#src/repository/scrapeInfo.ts';
-import Shops, { type User } from '#src/repository/shops.ts';
-import * as ShopService from '#src/service/shop.ts';
 import type {
     CacheInfo,
     Extension,
