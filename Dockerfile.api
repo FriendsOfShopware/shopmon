@@ -7,6 +7,8 @@ RUN bun install --production
 WORKDIR /app/api
 RUN bun build --target bun --production --bytecode --outdir=dist --sourcemap=external app.ts
 RUN bun build --target bun --production --bytecode --outdir=dist --sourcemap=external cron.ts
+RUN bun build --target bun --production --bytecode --outdir=dist --sourcemap=external migrate.ts
+RUN cp -R drizzle dist/
 
 FROM oven/bun:1
 
