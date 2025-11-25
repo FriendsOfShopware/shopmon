@@ -4,13 +4,7 @@ import {
     drizzle as drizzleSqlite,
     type LibSQLDatabase,
 } from 'drizzle-orm/libsql';
-import {
-    index,
-    integer,
-    sqliteTable,
-    text,
-    unique,
-} from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 import type { ExtensionDiff, NotificationLink } from './types/index.ts';
 
 type LastChangelog = {
@@ -147,110 +141,81 @@ export const user = sqliteTable('user', {
         .$type<string[]>(),
 });
 
-export const session = sqliteTable(
-    'session',
-    {
-        id: text('id').primaryKey(),
-        expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-        token: text('token').notNull().unique(),
-        createdAt: integer('created_at', { mode: 'timestamp' })
-            .$defaultFn(() => new Date())
-            .notNull(),
-        updatedAt: integer('updated_at', { mode: 'timestamp' })
-            .$defaultFn(() => new Date())
-            .$onUpdate(() => new Date())
-            .notNull(),
-        ipAddress: text('ip_address'),
-        userAgent: text('user_agent'),
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id, { onDelete: 'cascade' }),
-        impersonatedBy: text('impersonated_by'),
-        activeOrganizationId: text('active_organization_id'),
-    },
-    (table) => ({
-        userIdIdx: index('session_userId_idx').on(table.userId),
-    }),
-);
+export const session = sqliteTable('session', {
+    id: text('id').primaryKey(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .$onUpdate(() => new Date())
+        .notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    impersonatedBy: text('impersonated_by'),
+    activeOrganizationId: text('active_organization_id'),
+});
 
-export const account = sqliteTable(
-    'account',
-    {
-        id: text('id').primaryKey(),
-        accountId: text('account_id').notNull(),
-        providerId: text('provider_id').notNull(),
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id, { onDelete: 'cascade' }),
-        accessToken: text('access_token'),
-        refreshToken: text('refresh_token'),
-        idToken: text('id_token'),
-        accessTokenExpiresAt: integer('access_token_expires_at', {
-            mode: 'timestamp',
-        }),
-        refreshTokenExpiresAt: integer('refresh_token_expires_at', {
-            mode: 'timestamp',
-        }),
-        scope: text('scope'),
-        password: text('password'),
-        createdAt: integer('created_at', { mode: 'timestamp' })
-            .$defaultFn(() => new Date())
-            .notNull(),
-        updatedAt: integer('updated_at', { mode: 'timestamp' })
-            .$onUpdate(() => new Date())
-            .notNull(),
-    },
-    (table) => ({
-        userIdIdx: index('account_userId_idx').on(table.userId),
+export const account = sqliteTable('account', {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: integer('access_token_expires_at', {
+        mode: 'timestamp',
     }),
-);
+    refreshTokenExpiresAt: integer('refresh_token_expires_at', {
+        mode: 'timestamp',
+    }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$onUpdate(() => new Date())
+        .notNull(),
+});
 
-export const verification = sqliteTable(
-    'verification',
-    {
-        id: text('id').primaryKey(),
-        identifier: text('identifier').notNull(),
-        value: text('value').notNull(),
-        expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-        createdAt: integer('created_at', { mode: 'timestamp' })
-            .$defaultFn(() => new Date())
-            .notNull(),
-        updatedAt: integer('updated_at', { mode: 'timestamp' })
-            .$defaultFn(() => new Date())
-            .$onUpdate(() => new Date())
-            .notNull(),
-    },
-    (table) => ({
-        identifierIdx: index('verification_identifier_idx').on(
-            table.identifier,
-        ),
-    }),
-);
+export const verification = sqliteTable('verification', {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+        .$defaultFn(() => new Date())
+        .$onUpdate(() => new Date())
+        .notNull(),
+});
 
-export const passkey = sqliteTable(
-    'passkey',
-    {
-        id: text('id').primaryKey(),
-        name: text('name'),
-        publicKey: text('public_key').notNull(),
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id, { onDelete: 'cascade' }),
-        credentialID: text('credential_id').notNull(),
-        counter: integer('counter').notNull(),
-        deviceType: text('device_type').notNull(),
-        backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
-        transports: text('transports'),
-        createdAt: integer('created_at', { mode: 'timestamp' }),
-        aaguid: text('aaguid'),
-    },
-    (table) => ({
-        userIdIdx: index('passkey_userId_idx').on(table.userId),
-        credentialIdIdx: index('passkey_credentialID_idx').on(
-            table.credentialID,
-        ),
-    }),
-);
+export const passkey = sqliteTable('passkey', {
+    id: text('id').primaryKey(),
+    name: text('name'),
+    publicKey: text('public_key').notNull(),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_id').notNull(),
+    counter: integer('counter').notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
+    transports: text('transports'),
+    createdAt: integer('created_at', { mode: 'timestamp' }),
+    aaguid: text('aaguid'),
+});
 
 export const lock = sqliteTable('lock', {
     key: text('key').primaryKey(),
@@ -258,50 +223,31 @@ export const lock = sqliteTable('lock', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const member = sqliteTable(
-    'member',
-    {
-        id: text('id').primaryKey(),
-        organizationId: text('organization_id')
-            .notNull()
-            .references(() => organization.id, { onDelete: 'cascade' }),
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id, { onDelete: 'cascade' }),
-        role: text('role').default('member').notNull(),
-        createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    },
-    (table) => ({
-        organizationIdIdx: index('member_organizationId_idx').on(
-            table.organizationId,
-        ),
-        userIdIdx: index('member_userId_idx').on(table.userId),
-    }),
-);
+export const member = sqliteTable('member', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+        .notNull()
+        .references(() => organization.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role').default('member').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
 
-export const invitation = sqliteTable(
-    'invitation',
-    {
-        id: text('id').primaryKey(),
-        organizationId: text('organization_id')
-            .notNull()
-            .references(() => organization.id, { onDelete: 'cascade' }),
-        email: text('email').notNull(),
-        role: text('role'),
-        status: text('status').default('pending').notNull(),
-        expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-        createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-        inviterId: text('inviter_id')
-            .notNull()
-            .references(() => user.id, { onDelete: 'cascade' }),
-    },
-    (table) => ({
-        organizationIdIdx: index('invitation_organizationId_idx').on(
-            table.organizationId,
-        ),
-        emailIdx: index('invitation_email_idx').on(table.email),
-    }),
-);
+export const invitation = sqliteTable('invitation', {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+        .notNull()
+        .references(() => organization.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    role: text('role'),
+    status: text('status').default('pending').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    inviterId: text('inviter_id')
+        .notNull()
+        .references(() => user.id, { onDelete: 'cascade' }),
+});
 
 export const ssoProvider = sqliteTable('sso_provider', {
     id: text('id').primaryKey(),
@@ -312,6 +258,35 @@ export const ssoProvider = sqliteTable('sso_provider', {
     providerId: text('provider_id').notNull().unique(),
     organizationId: text('organization_id'),
     domain: text('domain').notNull(),
+});
+
+export const deploymentToken = sqliteTable('deployment_token', {
+    id: text('id').primaryKey(),
+    shopId: integer('shop_id')
+        .notNull()
+        .references(() => shop.id, { onDelete: 'cascade' }),
+    token: text('token').notNull().unique(),
+    name: text('name').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+});
+
+export const deployment = sqliteTable('deployment', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    shopId: integer('shop_id')
+        .notNull()
+        .references(() => shop.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    command: text('command').notNull(),
+    output: text('output').notNull(),
+    returnCode: integer('return_code').notNull(),
+    startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
+    endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+    executionTime: text('execution_time').notNull(), // stored as string to preserve decimal precision
+    composer: text('composer', { mode: 'json' })
+        .default({})
+        .$type<Record<string, string>>(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
 // Relations
@@ -339,6 +314,23 @@ export const organizationRelations = relations(organization, ({ many }) => ({
     shops: many(shop),
 }));
 
+export const deploymentRelations = relations(deployment, ({ one }) => ({
+    shop: one(shop, {
+        fields: [deployment.shopId],
+        references: [shop.id],
+    }),
+}));
+
+export const deploymentTokenRelations = relations(
+    deploymentToken,
+    ({ one }) => ({
+        shop: one(shop, {
+            fields: [deploymentToken.shopId],
+            references: [shop.id],
+        }),
+    }),
+);
+
 export const schema = {
     shop,
     shopSitespeed,
@@ -357,10 +349,16 @@ export const schema = {
     invitation,
     ssoProvider,
 
+    // Deployments
+    deployment,
+    deploymentToken,
+
     // Relations
     projectRelations,
     shopRelations,
     organizationRelations,
+    deploymentRelations,
+    deploymentTokenRelations,
 };
 
 export type Drizzle = LibSQLDatabase<typeof schema>;

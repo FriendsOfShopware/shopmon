@@ -44,7 +44,7 @@ load-fixtures: # Load fixtures
 	cd api && node --env-file-if-exists=.env apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'cd api && PORT=5789 node --env-file-if-exists=.env --no-warnings=ExperimentalWarning --watch src/index.ts' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'cd api && PORT=5789 bun --watch app.ts' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev
