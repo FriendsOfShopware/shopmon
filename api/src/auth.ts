@@ -1,7 +1,6 @@
 import { passkey } from '@better-auth/passkey';
 import { sso } from '@better-auth/sso';
 import * as Sentry from '@sentry/node';
-import { compare, hash } from 'bcrypt';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { createAuthMiddleware } from 'better-auth/api';
 import { betterAuth } from 'better-auth/minimal';
@@ -91,10 +90,13 @@ export const auth = betterAuth({
         },
         password: {
             hash: async (password) => {
-                return hash(password, 10);
+                return Bun.password.hash(password, {
+                    algorithm: 'bcrypt',
+                    cost: 10,
+                });
             },
             verify: async (data) => {
-                return compare(data.password, data.hash);
+                return Bun.password.verify(data.password, data.hash);
             },
         },
     },

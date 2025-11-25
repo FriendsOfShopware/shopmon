@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
+import { getConnection, schema } from '#src/db.ts';
 import { getScreenshotUrl, runSitespeedReport } from '#src/service/sitespeed';
-import { getConnection, schema } from '../../db.ts';
 
 export async function scrapeSitespeedForAllShops() {
     const drizzle = getConnection();

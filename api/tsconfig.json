@@ -20,12 +20,16 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
+		"baseUrl": ".",
+		"paths": {
+			"#src/*": ["./src/*"]
+		},
 
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false,
-		"types": ["@types/node"]
+		"types": ["@types/bun"]
 	},
 	"include": ["*.ts", "src/**/*", "src/types/env.d.ts"],
 	"exclude": ["node_modules", "dist", "test"]

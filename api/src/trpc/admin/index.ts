@@ -1,8 +1,8 @@
 import { count, desc, eq, ilike, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { schema } from '#src/db';
-import { publicProcedure, router } from '../index.ts';
-import { isAdminMiddleware } from '../middleware.ts';
+import { publicProcedure, router } from '#src/trpc/index.ts';
+import { isAdminMiddleware } from '#src/trpc/middleware.ts';
 
 const organizationsPaginationSchema = z.object({
     limit: z.number().min(1).max(100).default(20),

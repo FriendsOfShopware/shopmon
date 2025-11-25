@@ -8,23 +8,23 @@ import {
 import { TRPCError } from '@trpc/server';
 import { desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { getReportUrl } from '#src/service/sitespeed';
-import { scrapeSingleShop } from '../../cron/jobs/shopScrape.ts';
-import { scrapeSingleSitespeedShop } from '../../cron/jobs/sitespeedScrape.ts';
-import { decrypt, encrypt } from '../../crypto/index.ts';
-import { schema } from '../../db.ts';
+import { scrapeSingleShop } from '#src/cron/jobs/shopScrape.ts';
+import { scrapeSingleSitespeedShop } from '#src/cron/jobs/sitespeedScrape.ts';
+import { decrypt, encrypt } from '#src/crypto/index.ts';
+import { schema } from '#src/db.ts';
 import {
     getShopScrapeInfo,
     saveShopScrapeInfo,
-} from '../../repository/scrapeInfo.ts';
-import Shops from '../../repository/shops.ts';
-import Users from '../../repository/users.ts';
-import { publicProcedure, router } from '../index.ts';
+} from '#src/repository/scrapeInfo.ts';
+import Shops from '#src/repository/shops.ts';
+import Users from '#src/repository/users.ts';
+import { getReportUrl } from '#src/service/sitespeed';
+import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     loggedInUserMiddleware,
     organizationMiddleware,
     shopMiddleware,
-} from '../middleware.ts';
+} from '#src/trpc/middleware.ts';
 
 export const shopRouter = router({
     list: publicProcedure

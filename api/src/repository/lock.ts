@@ -1,5 +1,5 @@
 import { and, eq, gt, lt } from 'drizzle-orm';
-import { getConnection, lock } from '../db.ts';
+import { getConnection, lock } from '#src/db.ts';
 
 /**
  * Functions for managing locks

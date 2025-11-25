@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { schema } from '#src/db';
 import { getShopScrapeInfo } from '#src/repository/scrapeInfo';
-import { publicProcedure, router } from '../index.ts';
-import { loggedInUserMiddleware } from '../middleware.ts';
+import { publicProcedure, router } from '#src/trpc/index.ts';
+import { loggedInUserMiddleware } from '#src/trpc/middleware.ts';
 import { notificationRouter } from './notification.ts';
 
 interface Extension {

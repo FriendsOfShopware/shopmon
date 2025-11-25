@@ -8,18 +8,18 @@ setup: # Setup the project
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	@echo "Installing dependencies"
-	pnpm install
+	bun install
 
 tslint:
-	cd api && node ../node_modules/.bin/tsc --noEmit
+	cd api && bun ../node_modules/.bin/tsc --noEmit
 
 lint:
-	cd api && node_modules/.bin/tsc --noEmit
-	cd frontend && node_modules/.bin/eslint --cache
+	cd api && ../node_modules/.bin/tsc --noEmit
+	cd frontend && ../node_modules/.bin/eslint --cache
 	node_modules/.bin/biome ci
 
 lint-fix:
-	cd frontend && node_modules/.bin/eslint --cache --fix
+	cd frontend && ../node_modules/.bin/eslint --cache --fix
 	node_modules/.bin/biome check --fix --unsafe
 	node_modules/.bin/biome format --write
 
@@ -30,21 +30,21 @@ generate-custom-migration:
 	cd api && npx drizzle-kit generate --custom
 
 generate-email:
-	cd api && node generate-mjml.js
+	cd api && bun generate-mjml.js
 
 migrate:
-	cd api && node --env-file-if-exists=.env migrate.ts
+	cd api && bun migrate.ts
 
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
 	cd api && rm -rf shopmon.db*
-	cd api && node --env-file-if-exists=.env migrate.ts
-	cd api && node --env-file-if-exists=.env apply-fixtures.ts
+	cd api && bun migrate.ts
+	cd api && bun apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'cd api && PORT=5789 node --env-file-if-exists=.env --no-warnings=ExperimentalWarning --watch src/index.ts' 'npm --prefix frontend run dev:local'
+	npx concurrently -- 'cd api && PORT=5789 bun --watch app.ts' 'npm --prefix frontend run dev:local'
 
 dev-to-prod:
 	npm --prefix frontend run dev

@@ -1,13 +1,13 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { ssoProvider } from '../../db.ts';
-import { publicProcedure, router } from '../index.ts';
+import { ssoProvider } from '#src/db.ts';
+import { publicProcedure, router } from '#src/trpc/index.ts';
 import {
     hasPermissionMiddleware,
     loggedInUserMiddleware,
     organizationMiddleware,
-} from '../middleware.ts';
+} from '#src/trpc/middleware.ts';
 
 export const ssoRouter = router({
     list: publicProcedure

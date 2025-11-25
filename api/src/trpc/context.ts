@@ -1,7 +1,7 @@
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import type { Session, User } from 'better-auth/types';
-import { auth } from '../auth.ts';
-import { type Drizzle, getConnection } from '../db.ts';
+import { auth } from '#src/auth.ts';
+import { type Drizzle, getConnection } from '#src/db.ts';
 
 export type context = {
     user: (User & { notifications: string[]; role: 'user' | 'admin' }) | null;

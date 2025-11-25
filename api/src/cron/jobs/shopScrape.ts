@@ -7,22 +7,22 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { decrypt } from '../../crypto/index.ts';
-import { type Drizzle, getConnection, schema } from '../../db.ts';
-import { type CheckerInput, check } from '../../object/status/registery.ts';
+import { decrypt } from '#src/crypto/index.ts';
+import { type Drizzle, getConnection, schema } from '#src/db.ts';
+import { type CheckerInput, check } from '#src/object/status/registery.ts';
 import {
     getShopScrapeInfo,
     saveShopScrapeInfo,
-} from '../../repository/scrapeInfo.ts';
-import Shops, { type User } from '../../repository/shops.ts';
+} from '#src/repository/scrapeInfo.ts';
+import Shops, { type User } from '#src/repository/shops.ts';
 import type {
     CacheInfo,
     Extension,
     ExtensionChangelog,
     ExtensionDiff,
     QueueInfo,
-} from '../../types/index.ts';
-import versionCompare from '../../util.ts';
+} from '#src/types/index.ts';
+import versionCompare from '#src/util.ts';
 
 interface SQLShop {
     id: number;

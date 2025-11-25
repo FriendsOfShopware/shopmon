@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
-import { auth } from '../auth.ts';
-import { schema } from '../db.ts';
+import { auth } from '#src/auth.ts';
+import { schema } from '#src/db.ts';
 import type { context } from './context.ts';
 import { t } from './index.ts';
 
