@@ -25,7 +25,7 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false,
-		"types": ["@types/node"]
+		"types": ["@types/bun"]
 	},
 	"include": ["*.ts", "src/**/*", "src/types/env.d.ts"],
 	"exclude": ["node_modules", "dist", "test"]
