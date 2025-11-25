@@ -11,7 +11,7 @@
 		"@better-auth/sso": "catalog:",
 		"@hono/node-server": "^1.19.6",
 		"@libsql/client": "^0.15.15",
-		"@sentry/node": "^10.26.0",
+		"@sentry/node": "^10.27.0",
 		"@shopware-ag/app-server-sdk": "^1.1.29",
 		"@trpc/server": "^11.7.2",
 		"bcrypt": "^6.0.0",
