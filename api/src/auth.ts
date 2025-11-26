@@ -85,9 +85,7 @@ export const auth = betterAuth({
         enabled: true,
         requireEmailVerification: true,
         async sendResetPassword(data, _request) {
-            const { sendMailResetPassword } = await import(
-                './modules/user/mail/user.mail.ts'
-            );
+            const { sendMailResetPassword } = await import('./mail/mail.ts');
             await sendMailResetPassword(data.user.email, data.token);
         },
         password: {
@@ -110,9 +108,7 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, token }) => {
-            const { sendMailConfirmToUser } = await import(
-                './modules/user/mail/user.mail.ts'
-            );
+            const { sendMailConfirmToUser } = await import('./mail/mail.ts');
             await sendMailConfirmToUser(user.email, token);
         },
     },
@@ -125,9 +121,7 @@ export const auth = betterAuth({
         enabled: true,
         sendResetPasswordEmail: async ({ user, token }) => {
             // Import dynamically to avoid circular dependency
-            const { sendMailResetPassword } = await import(
-                './modules/user/mail/user.mail.ts'
-            );
+            const { sendMailResetPassword } = await import('./mail/mail.ts');
             await sendMailResetPassword(user.email, token);
         },
     },
@@ -147,7 +141,7 @@ export const auth = betterAuth({
         organization({
             sendInvitationEmail: async (data) => {
                 const { sendMailInviteToOrganization } = await import(
-                    './modules/organization/mail/organization.mail.ts'
+                    './mail/mail.ts'
                 );
                 await sendMailInviteToOrganization(
                     data.email,
