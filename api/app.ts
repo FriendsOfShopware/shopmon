@@ -1,4 +1,3 @@
-import '#src/plugins/mjml.ts';
 import '#src/sentry.ts';
 import { captureException } from '@sentry/node';
 import { auth } from '#src/auth.ts';

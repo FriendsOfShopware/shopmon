@@ -1,10 +1,10 @@
 import nodemailer from 'nodemailer';
 import type { Shop, User } from '#src/modules/shop/shop.repository.ts';
 import type { ShopAlert } from '#src/modules/shop/shop.service.ts';
-import alertTemplate from './sources/alert.mjml';
-import accountConfirmationTemplate from './sources/confirmation.mjml';
-import organizationInviteTemplate from './sources/org-invite.mjml';
-import passwordResetTemplate from './sources/password-reset.mjml';
+import alertTemplate from './sources/alert.js';
+import accountConfirmationTemplate from './sources/confirmation.js';
+import organizationInviteTemplate from './sources/org-invite.js';
+import passwordResetTemplate from './sources/password-reset.js';
 
 interface MaiLRequest {
     to: string;
