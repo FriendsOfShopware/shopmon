@@ -18,8 +18,13 @@
 	}
 
 	&-primary {
-		background-color: var(--color-primary-light);
-		color: var(--color-primary);
+		background-color: #dbeafe;
+		color: #1d4ed8;
+
+		.dark & {
+			background-color: #1e3a5f;
+			color: #93c5fd;
+		}
 	}
 
 	&-info {

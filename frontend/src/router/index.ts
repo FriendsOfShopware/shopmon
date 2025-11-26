@@ -124,6 +124,14 @@ export const router = createRouter({
                     component: () => import('@/views/shop/AddProject.vue'),
                 },
                 {
+                    name: 'account.projects.apikeys',
+                    path: 'projects/:projectId(\\d+)/api-keys',
+                    component: () => import('@/views/shop/ProjectApiKeys.vue'),
+                    meta: {
+                        title: 'API Keys',
+                    },
+                },
+                {
                     name: 'account.shops.edit',
                     path: 'organizations/:slug/shops/:shopId(\\d+)/edit',
                     component: () => import('@/views/shop/EditShop.vue'),

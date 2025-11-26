@@ -58,6 +58,12 @@
                                 </menu-item>
 
                                 <menu-item>
+                                    <router-link class="menu-item" :to="{ name: 'account.projects.apikeys', params: { projectId: project.id } }">
+                                        <icon-fa6-solid:key class="icon" aria-hidden="true" /> API Keys
+                                    </router-link>
+                                </menu-item>
+
+                                <menu-item>
                                     <button class="menu-item" :disabled="(projectShops[project.id]?.length || 0) > 0" @click="confirmDeleteProject(project)">
                                         <icon-fa6-solid:trash class="icon" aria-hidden="true" /> Delete Project
                                     </button>
