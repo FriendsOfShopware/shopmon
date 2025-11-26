@@ -1,7 +1,7 @@
 x-env: &env
   MAIL_FROM: "Shopmon <noreply@fos.gg>"
   APP_FILES_DIR: /app/uploads
-  APP_DATABASE_PATH: /app/db/shopmon.db
+  DATABASE_URL: postgresql://shopmon:${POSTGRES_PASSWORD}@postgres:5432/shopmon
   APP_OAUTH_GITHUB_CLIENT_ID: ${APP_OAUTH_GITHUB_CLIENT_ID}
   APP_OAUTH_GITHUB_CLIENT_SECRET: ${APP_OAUTH_GITHUB_CLIENT_SECRET}
   # From 1password
@@ -20,13 +20,33 @@ x-env: &env
   SENTRY_DSN: ${SENTRY_DSN}
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    networks:
+      - shopmon
+    environment:
+      POSTGRES_USER: shopmon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: shopmon
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopmon"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   migrate:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       <<: *env
     command: "migrate.ts"
     volumes:
-      - db:/app/db
       - uploads:/app/uploads
 
   frontend:
@@ -54,6 +74,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     environment:
       <<: *env
     labels:
@@ -70,7 +92,6 @@ services:
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
     volumes:
-      - db:/app/db
       - uploads:/app/api/files
 
   cron:
@@ -78,6 +99,9 @@ services:
     networks:
       - shopmon
       - traefik
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       <<: *env
     volumes_from:
@@ -85,18 +109,23 @@ services:
     command: "cron.js"
 
   backup:
-    image: offen/docker-volume-backup:latest
-    volumes:
-      - db:/backup
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    networks:
+      - shopmon
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      AWS_REGION: ${AWS_REGION}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
-      AWS_S3_PATH: db/${ENVIRONMENT}
-      AWS_ENDPOINT: ${AWS_ENDPOINT}
-      BACKUP_RETENTION_DAYS: 14
-      BACKUP_CRON_EXPRESSION: "@hourly"
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: shopmon
+      POSTGRES_USER: shopmon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SCHEDULE: "@hourly"
+      BACKUP_KEEP_DAYS: 14
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+    volumes:
+      - postgres_backups:/backups
 
 networks:
   traefik:
@@ -105,5 +134,6 @@ networks:
   shopmon:
 
 volumes:
-  db:
+  postgres_data:
+  postgres_backups:
   uploads:

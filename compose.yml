@@ -1,4 +1,14 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shopmon
+      POSTGRES_PASSWORD: shopmon
+      POSTGRES_DB: shopmon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
   mailpit:
     image: axllent/mailpit
     ports:
@@ -41,3 +51,6 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; exit 0; "
+
+volumes:
+  postgres_data:

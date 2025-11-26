@@ -11,7 +11,7 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 ### API (Bun + TypeScript)
 - Located in `/api/`
 - Built with TypeScript, tRPC, Hono framework
-- Uses Drizzle ORM with SQLite (Cloudflare D1 in production)
+- Uses Drizzle ORM with PostgreSQL
 - Sentry for error tracking
 - Deployed via Docker containers
 
@@ -23,9 +23,15 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 - Built with Vite
 
 ### Database
-- SQLite with Drizzle ORM
+- PostgreSQL with Drizzle ORM
 - Migrations in `/api/drizzle/`
 - Schema defined in `/api/src/db.ts`
+- Shop scrape data stored in dedicated tables (previously gzipped files):
+  - `shop_scrape_info`: Main scrape info with cache info
+  - `shop_extension`: Extensions for each shop
+  - `shop_scheduled_task`: Scheduled tasks for each shop
+  - `shop_queue_info`: Queue info for each shop
+  - `shop_check`: Check results for each shop
 
 ## Common Commands
 
@@ -33,6 +39,9 @@ Shopmon is a SaaS application for monitoring multiple Shopware instances. It tra
 ```bash
 # Install dependencies for both API and frontend
 make setup
+
+# Start PostgreSQL for development
+docker compose up -d postgres
 
 # Run database migrations
 make migrate
@@ -72,6 +81,9 @@ bun run db:migrate
 # 1. Run bunx --bun drizzle-kit generate --custom --name=<migration_name>
 # 2. Edit the generated file in api/drizzle/migrations/
 # 3. Run: bun run db:migrate
+
+# Migrate from SQLite to PostgreSQL (one-time migration)
+DATABASE_URL=postgresql://... SQLITE_PATH=./shopmon.db bun run scripts/migrate-sqlite-to-postgres.ts
 ```
 
 ### Frontend-specific Commands
@@ -111,10 +123,11 @@ bun run biome:fix         # Auto-fix issues
 - Password reset with expiring tokens
 
 ### Database Schema
-- User management: `user`, `user_notification`, `sessions`, `user_passkeys`
-- Organization/Shop: `organization`, `shop`, `shop_scrape_info`
-- Monitoring data: `shop_changelog`, `shop_sitespeed`, `shop_extension`
-- Task tracking: `scheduled_task`, `scheduled_task_run`
+- User management: `user`, `user_notification`, `session`, `passkey`
+- Organization/Shop: `organization`, `project`, `shop`
+- Shop scrape data: `shop_scrape_info`, `shop_extension`, `shop_scheduled_task`, `shop_queue_info`, `shop_check`
+- Monitoring data: `shop_changelog`, `shop_sitespeed`
+- Deployments: `deployment`, `deployment_token`
 - Notifications: User's `notifications` column stores array of strings like `shop-123` for subscriptions
 
 ### Email Templates
@@ -140,7 +153,7 @@ bun run biome:fix         # Auto-fix issues
 ### API Environment Variables
 ```bash
 APP_SECRET              # Encryption key (required)
-APP_DATABASE_PATH       # SQLite database path
+DATABASE_URL            # PostgreSQL connection string (e.g., postgresql://user:pass@localhost:5432/shopmon)
 APP_FILES_DIR           # File storage directory
 SMTP_HOST/PORT/USER/PASS # Email configuration
 APP_SITESPEED_ENDPOINT  # Sitespeed.io service URL (default: http://localhost:3001)
@@ -163,16 +176,17 @@ SHOPMON_API_URL         # API URL (defaults to production)
 
 ## Deployment
 
-- Docker multi-stage build in root `Dockerfile`
+- Docker multi-stage build in root `Dockerfile.api`
 - GitHub Actions workflow in `.github/workflows/`
 - Staging deployment to `shea.shyim.de`
 - Uses 1Password for secrets management
 - Production uses Docker Compose (`compose.deploy.yml`)
+- PostgreSQL database with automated backups
 
 ## Security Patterns
 
 - Client secrets encrypted using Node crypto module
 - JWT tokens with configurable expiry
-- Foreign key constraints in SQLite
+- Foreign key constraints in PostgreSQL
 - Session cleanup removes expired tokens
 - Password reset tokens expire after 24 hours

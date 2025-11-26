@@ -14,7 +14,7 @@ import { decrypt, encrypt } from '#src/crypto/index.ts';
 import { schema } from '#src/db.ts';
 import {
     getShopScrapeInfo,
-    saveShopScrapeInfo,
+    updateScheduledTask,
 } from '#src/repository/scrapeInfo.ts';
 import Shops from '#src/repository/shops.ts';
 import Users from '#src/repository/users.ts';
@@ -417,22 +417,14 @@ export const shopRouter = router({
                 nextExecutionTime: nextExecutionTime,
             });
 
-            const scrapeResult = await getShopScrapeInfo(input.shopId);
+            // Update the scheduled task directly in the database
+            await updateScheduledTask(input.shopId, input.taskId, {
+                status: 'scheduled',
+                nextExecutionTime: nextExecutionTime,
+                overdue: false,
+            });
 
-            // If there is no scrape result, we don't need to update the scheduled task
-            if (scrapeResult === null) {
-                return true;
-            }
-
-            for (const task of scrapeResult.scheduledTask) {
-                if (task.id === input.taskId) {
-                    task.status = 'scheduled';
-                    task.nextExecutionTime = nextExecutionTime;
-                    task.overdue = false;
-                }
-            }
-
-            await saveShopScrapeInfo(input.shopId, scrapeResult);
+            return true;
         }),
     subscribeToNotifications: publicProcedure
         .input(
