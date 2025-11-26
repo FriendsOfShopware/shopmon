@@ -26,6 +26,7 @@ import type {
     ExtensionDiff,
     QueueInfo,
 } from '#src/types/index.ts';
+import versionCompare from '#src/util.ts';
 
 interface SQLShop {
     id: number;
@@ -324,7 +325,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     client.post<{ data: ShopwareScheduledTask[] }>(
                         '/search/scheduled-task',
                     ),
-                    Bun.semver.order(shop.shopwareVersion, '6.4.7.0') < 0
+                    versionCompare(shop.shopwareVersion, '6.4.7.0') < 0
                         ? client.post<{ data: ShopwareQueue[] }>(
                               '/search/message-queue-stats',
                           )
@@ -464,12 +465,12 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
 
                             for (const changelog of storePlugin.changelog) {
                                 if (
-                                    Bun.semver.order(
+                                    versionCompare(
                                         changelog.version,
                                         extension.version,
                                     ) > 0
                                 ) {
-                                    const compare = Bun.semver.order(
+                                    const compare = versionCompare(
                                         changelog.version,
                                         extension.latestVersion,
                                     );
@@ -585,7 +586,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         const favicon = await getFavicon(shop.url);
 
         let queue: QueueInfo[] = [];
-        if (Bun.semver.order(shop.shopwareVersion, '6.4.7.0') < 0) {
+        if (versionCompare(shop.shopwareVersion, '6.4.7.0') < 0) {
             // For older versions, the response has a data property
             const queueData = responses.queue.body as { data: ShopwareQueue[] };
             queue = queueData.data.filter(
