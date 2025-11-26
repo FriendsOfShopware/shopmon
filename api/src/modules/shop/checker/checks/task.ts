@@ -1,5 +1,5 @@
-import type { Checker, CheckerInput, CheckerOutput } from '../registery.ts';
 import type { ScheduledTask } from '#src/types/index.ts';
+import type { Checker, CheckerInput, CheckerOutput } from '../registery.ts';
 
 export default class implements Checker {
     async check(input: CheckerInput, result: CheckerOutput): Promise<void> {
