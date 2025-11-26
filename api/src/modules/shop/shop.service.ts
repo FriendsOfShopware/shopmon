@@ -10,8 +10,8 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { scrapeSingleShop } from '#src/cron/jobs/shopScrape.ts';
 import { scrapeSingleSitespeedShop } from '#src/cron/jobs/sitespeedScrape.ts';
 import { type Drizzle, schema } from '#src/db.ts';
-import { sendAlert } from '#src/mail/mail.ts';
 import * as LockRepository from '#src/modules/lock/lock.repository.ts';
+import { sendAlert } from '#src/modules/shop/mail/shop.mail.ts';
 import {
     deleteShopScrapeInfo,
     getShopScrapeInfo,
