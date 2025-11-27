@@ -7,16 +7,21 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { type Drizzle, getConnection, schema } from '#src/db.ts';
+import {
+    type Drizzle,
+    getConnection,
+    schema,
+    shopCache,
+    shopCheck,
+    shopExtension,
+    shopQueue,
+    shopScheduledTask,
+} from '#src/db.ts';
 import {
     type CheckerInput,
     check,
 } from '#src/modules/shop/checker/registery.ts';
 import { decrypt } from '#src/modules/shop/crypto.ts';
-import {
-    getShopScrapeInfo,
-    saveShopScrapeInfo,
-} from '#src/modules/shop/scrape-info.repository.ts';
 import Shops, { type User } from '#src/modules/shop/shop.repository.ts';
 import * as ShopService from '#src/modules/shop/shop.service.ts';
 import type {
@@ -493,11 +498,15 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             }
         }
 
-        const oldShopScrapeInfo = await getShopScrapeInfo(shop.id);
+        // Get old extensions directly from the database
+        const oldExtensions = await con
+            .select()
+            .from(shopExtension)
+            .where(eq(shopExtension.shopId, shop.id));
 
         const extensionsDiff: ExtensionDiff[] = [];
-        if (oldShopScrapeInfo) {
-            for (const oldExtension of oldShopScrapeInfo.extensions) {
+        if (oldExtensions.length > 0) {
+            for (const oldExtension of oldExtensions) {
                 let exists = false;
 
                 for (const newExtension of extensions) {
@@ -551,7 +560,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             for (const newExtension of extensions) {
                 let exists = false;
 
-                for (const oldExtension of oldShopScrapeInfo.extensions) {
+                for (const oldExtension of oldExtensions) {
                     if (oldExtension.name === newExtension.name) {
                         exists = true;
                     }
@@ -649,13 +658,98 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             .where(eq(schema.shop.id, shop.id))
             .execute();
 
-        await saveShopScrapeInfo(shop.id, {
-            extensions: input.extensions,
-            scheduledTask: input.scheduledTasks,
-            queueInfo: input.queueInfo,
-            cacheInfo: input.cacheInfo,
-            checks: checkerResult.checks,
-            createdAt: new Date(),
+        // Save scrape info directly to tables using a transaction
+        await con.transaction(async (tx) => {
+            // Delete existing data
+            await Promise.all([
+                tx
+                    .delete(shopExtension)
+                    .where(eq(shopExtension.shopId, shop.id)),
+                tx
+                    .delete(shopScheduledTask)
+                    .where(eq(shopScheduledTask.shopId, shop.id)),
+                tx.delete(shopQueue).where(eq(shopQueue.shopId, shop.id)),
+                tx.delete(shopCache).where(eq(shopCache.shopId, shop.id)),
+                tx.delete(shopCheck).where(eq(shopCheck.shopId, shop.id)),
+            ]);
+
+            // Insert new data
+            const insertPromises: Promise<unknown>[] = [];
+
+            if (input.extensions.length > 0) {
+                insertPromises.push(
+                    tx.insert(shopExtension).values(
+                        input.extensions.map((ext) => ({
+                            shopId: shop.id,
+                            name: ext.name,
+                            label: ext.label,
+                            active: ext.active,
+                            version: ext.version,
+                            latestVersion: ext.latestVersion,
+                            installed: ext.installed,
+                            ratingAverage: ext.ratingAverage,
+                            storeLink: ext.storeLink,
+                            changelog: ext.changelog,
+                            installedAt: ext.installedAt,
+                        })),
+                    ),
+                );
+            }
+
+            if (input.scheduledTasks.length > 0) {
+                insertPromises.push(
+                    tx.insert(shopScheduledTask).values(
+                        input.scheduledTasks.map((task) => ({
+                            shopId: shop.id,
+                            taskId: task.id,
+                            name: task.name,
+                            status: task.status,
+                            interval: task.interval,
+                            overdue: task.overdue,
+                            lastExecutionTime: task.lastExecutionTime,
+                            nextExecutionTime: task.nextExecutionTime,
+                        })),
+                    ),
+                );
+            }
+
+            if (input.queueInfo.length > 0) {
+                insertPromises.push(
+                    tx.insert(shopQueue).values(
+                        input.queueInfo.map((q) => ({
+                            shopId: shop.id,
+                            name: q.name,
+                            size: q.size,
+                        })),
+                    ),
+                );
+            }
+
+            insertPromises.push(
+                tx.insert(shopCache).values({
+                    shopId: shop.id,
+                    environment: input.cacheInfo.environment,
+                    httpCache: input.cacheInfo.httpCache,
+                    cacheAdapter: input.cacheInfo.cacheAdapter,
+                }),
+            );
+
+            if (checkerResult.checks.length > 0) {
+                insertPromises.push(
+                    tx.insert(shopCheck).values(
+                        checkerResult.checks.map((c) => ({
+                            shopId: shop.id,
+                            checkId: c.id,
+                            level: c.level,
+                            message: c.message,
+                            source: c.source,
+                            link: c.link,
+                        })),
+                    ),
+                );
+            }
+
+            await Promise.all(insertPromises);
         });
 
         const hasShopUpdate = Object.keys(shopUpdate).length !== 0;

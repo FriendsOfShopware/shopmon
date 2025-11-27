@@ -223,6 +223,102 @@ export const lock = sqliteTable('lock', {
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+// Shop scrape info tables (flat structure)
+export const shopExtension = sqliteTable(
+    'shop_extension',
+    {
+        id: integer('id').primaryKey({ autoIncrement: true }),
+        shopId: integer('shop_id')
+            .notNull()
+            .references(() => shop.id, { onDelete: 'cascade' }),
+        name: text('name').notNull(),
+        label: text('label').notNull(),
+        active: integer('active', { mode: 'boolean' }).notNull(),
+        version: text('version').notNull(),
+        latestVersion: text('latest_version'),
+        installed: integer('installed', { mode: 'boolean' }).notNull(),
+        ratingAverage: integer('rating_average'),
+        storeLink: text('store_link'),
+        changelog: text('changelog', { mode: 'json' }).$type<
+            | {
+                  version: string;
+                  text: string;
+                  creationDate: string;
+                  isCompatible: boolean;
+              }[]
+            | null
+        >(),
+        installedAt: text('installed_at'),
+    },
+    (table) => ({
+        shopExtUnique: unique().on(table.shopId, table.name),
+    }),
+);
+
+export const shopScheduledTask = sqliteTable(
+    'shop_scheduled_task',
+    {
+        id: integer('id').primaryKey({ autoIncrement: true }),
+        shopId: integer('shop_id')
+            .notNull()
+            .references(() => shop.id, { onDelete: 'cascade' }),
+        taskId: text('task_id').notNull(),
+        name: text('name').notNull(),
+        status: text('status').notNull(),
+        interval: integer('interval').notNull(),
+        overdue: integer('overdue', { mode: 'boolean' }).notNull(),
+        lastExecutionTime: text('last_execution_time'),
+        nextExecutionTime: text('next_execution_time'),
+    },
+    (table) => ({
+        shopTaskUnique: unique().on(table.shopId, table.taskId),
+    }),
+);
+
+export const shopQueue = sqliteTable(
+    'shop_queue',
+    {
+        id: integer('id').primaryKey({ autoIncrement: true }),
+        shopId: integer('shop_id')
+            .notNull()
+            .references(() => shop.id, { onDelete: 'cascade' }),
+        name: text('name').notNull(),
+        size: integer('size').notNull(),
+    },
+    (table) => ({
+        shopQueueUnique: unique().on(table.shopId, table.name),
+    }),
+);
+
+export const shopCache = sqliteTable('shop_cache', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    shopId: integer('shop_id')
+        .notNull()
+        .references(() => shop.id, { onDelete: 'cascade' })
+        .unique(),
+    environment: text('environment').notNull(),
+    httpCache: integer('http_cache', { mode: 'boolean' }).notNull(),
+    cacheAdapter: text('cache_adapter').notNull(),
+});
+
+export const shopCheck = sqliteTable(
+    'shop_check',
+    {
+        id: integer('id').primaryKey({ autoIncrement: true }),
+        shopId: integer('shop_id')
+            .notNull()
+            .references(() => shop.id, { onDelete: 'cascade' }),
+        checkId: text('check_id').notNull(),
+        level: text('level').notNull(),
+        message: text('message').notNull(),
+        source: text('source').notNull(),
+        link: text('link'),
+    },
+    (table) => ({
+        shopCheckUnique: unique().on(table.shopId, table.checkId),
+    }),
+);
+
 export const member = sqliteTable('member', {
     id: text('id').primaryKey(),
     organizationId: text('organization_id')
@@ -312,6 +408,13 @@ export const schema = {
     shopSitespeed,
     shopChangelog,
     userNotification,
+
+    // Shop scrape info tables
+    shopExtension,
+    shopScheduledTask,
+    shopQueue,
+    shopCache,
+    shopCheck,
 
     // Better Auth
     user,

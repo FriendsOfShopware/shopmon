@@ -1,26 +1,7 @@
-import type { Drizzle } from '#src/db.ts';
-import { getShopScrapeInfo } from '#src/modules/shop/scrape-info.repository.ts';
+import { inArray } from 'drizzle-orm';
+import { type Drizzle, shopExtension } from '#src/db.ts';
+import type { Extension } from '#src/types/index.ts';
 import UsersRepository from './user.repository.ts';
-
-interface Extension {
-    name: string;
-    label: string;
-    active: boolean;
-    version: string;
-    latestVersion: string | null;
-    installed: boolean;
-    ratingAverage: number | null;
-    storeLink: string | null;
-    changelog: ExtensionChangelog[] | null;
-    installedAt: string | null;
-}
-
-interface ExtensionChangelog {
-    version: string;
-    text: string;
-    creationDate: string;
-    isCompatible: boolean;
-}
 
 export interface UserExtension extends Extension {
     shops: {
@@ -42,34 +23,53 @@ export const getCurrentUser = async (db: Drizzle, userId: string) => {
 };
 
 export const getCurrentUserExtensions = async (db: Drizzle, userId: string) => {
-    const result = await UsersRepository.findShopsSimple(db, userId);
+    const shops = await UsersRepository.findShopsSimple(db, userId);
+
+    if (shops.length === 0) {
+        return [];
+    }
+
+    const shopIds = shops.map((s) => s.id);
+    const shopMap = new Map(shops.map((s) => [s.id, s]));
+
+    // Query all extensions for all user's shops in one query
+    const extensions = await db
+        .select()
+        .from(shopExtension)
+        .where(inArray(shopExtension.shopId, shopIds));
 
     const json = {} as { [key: string]: UserExtension };
 
-    for (const row of result) {
-        const scrapeResult = await getShopScrapeInfo(row.id);
+    for (const ext of extensions) {
+        const shop = shopMap.get(ext.shopId);
+        if (!shop) continue;
 
-        if (!scrapeResult) {
-            continue;
+        if (json[ext.name] === undefined) {
+            json[ext.name] = {
+                name: ext.name,
+                label: ext.label,
+                active: ext.active,
+                version: ext.version,
+                latestVersion: ext.latestVersion,
+                installed: ext.installed,
+                ratingAverage: ext.ratingAverage,
+                storeLink: ext.storeLink,
+                changelog: ext.changelog ?? null,
+                installedAt: ext.installedAt,
+                shops: {},
+            } as UserExtension;
         }
 
-        for (const extension of scrapeResult.extensions) {
-            if (json[extension.name] === undefined) {
-                json[extension.name] = extension as UserExtension;
-                json[extension.name].shops = {};
-            }
-
-            json[extension.name].shops[row.id] = {
-                id: row.id,
-                name: row.name,
-                organizationId: row.organizationId,
-                organizationSlug: row.organizationSlug,
-                shopwareVersion: row.shopwareVersion,
-                installed: extension.installed,
-                active: extension.active,
-                version: extension.version,
-            };
-        }
+        json[ext.name].shops[ext.shopId] = {
+            id: shop.id,
+            name: shop.name,
+            organizationId: shop.organizationId,
+            organizationSlug: shop.organizationSlug,
+            shopwareVersion: shop.shopwareVersion,
+            installed: ext.installed,
+            active: ext.active,
+            version: ext.version,
+        };
     }
 
     return Object.values(json);

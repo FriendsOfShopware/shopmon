@@ -6,17 +6,21 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { TRPCError } from '@trpc/server';
-import { desc, eq, sql } from 'drizzle-orm';
-import { type Drizzle, schema } from '#src/db.ts';
+import { and, desc, eq, sql } from 'drizzle-orm';
+import {
+    type Drizzle,
+    schema,
+    shopCache,
+    shopCheck,
+    shopExtension,
+    shopQueue,
+    shopScheduledTask,
+} from '#src/db.ts';
 import * as LockRepository from '#src/modules/lock/lock.repository.ts';
 import { scrapeSingleShop } from '#src/modules/shop/jobs/shop-scrape.job.ts';
 import { scrapeSingleSitespeedShop } from '#src/modules/shop/jobs/sitespeed-scrape.job.ts';
 import { sendAlert } from '#src/modules/shop/mail/mail.service.ts';
-import {
-    deleteShopScrapeInfo,
-    getShopScrapeInfo,
-    saveShopScrapeInfo,
-} from '#src/modules/shop/scrape-info.repository.ts';
+import { deleteShopScrapeInfo } from '#src/modules/shop/scrape-info.repository.ts';
 import {
     deleteSitespeedReport,
     getReportUrl,
@@ -124,11 +128,50 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
         orderBy: [desc(schema.shopChangelog.date)],
     });
 
-    const [shop, sitespeed, shopChangelog, scrapeInfo] = await Promise.all([
+    const extensionsQuery = db
+        .select()
+        .from(shopExtension)
+        .where(eq(shopExtension.shopId, shopId));
+
+    const scheduledTasksQuery = db
+        .select()
+        .from(shopScheduledTask)
+        .where(eq(shopScheduledTask.shopId, shopId));
+
+    const queuesQuery = db
+        .select()
+        .from(shopQueue)
+        .where(eq(shopQueue.shopId, shopId));
+
+    const cacheQuery = db
+        .select()
+        .from(shopCache)
+        .where(eq(shopCache.shopId, shopId))
+        .limit(1);
+
+    const checksQuery = db
+        .select()
+        .from(shopCheck)
+        .where(eq(shopCheck.shopId, shopId));
+
+    const [
+        shop,
+        sitespeed,
+        shopChangelog,
+        extensions,
+        scheduledTasks,
+        queues,
+        cache,
+        checks,
+    ] = await Promise.all([
         shopQuery,
         sitespeedQuery,
         shopChangelogQuery,
-        getShopScrapeInfo(shopId),
+        extensionsQuery,
+        scheduledTasksQuery,
+        queuesQuery,
+        cacheQuery,
+        checksQuery,
     ]);
 
     if (shop === undefined) {
@@ -140,7 +183,45 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
 
     return {
         ...shop,
-        ...scrapeInfo,
+        extensions: extensions.map((ext) => ({
+            name: ext.name,
+            label: ext.label,
+            active: ext.active,
+            version: ext.version,
+            latestVersion: ext.latestVersion,
+            installed: ext.installed,
+            ratingAverage: ext.ratingAverage,
+            storeLink: ext.storeLink,
+            changelog: ext.changelog ?? null,
+            installedAt: ext.installedAt,
+        })),
+        scheduledTask: scheduledTasks.map((task) => ({
+            id: task.taskId,
+            name: task.name,
+            status: task.status,
+            interval: task.interval,
+            overdue: task.overdue,
+            lastExecutionTime: task.lastExecutionTime,
+            nextExecutionTime: task.nextExecutionTime,
+        })),
+        queueInfo: queues.map((queue) => ({
+            name: queue.name,
+            size: queue.size,
+        })),
+        cacheInfo: cache[0]
+            ? {
+                  environment: cache[0].environment,
+                  httpCache: cache[0].httpCache,
+                  cacheAdapter: cache[0].cacheAdapter,
+              }
+            : null,
+        checks: checks.map((check) => ({
+            id: check.checkId,
+            level: check.level as 'green' | 'yellow' | 'red',
+            message: check.message,
+            source: check.source,
+            link: check.link,
+        })),
         sitespeed: sitespeed,
         sitespeedReportUrl: getReportUrl(shopId),
         changelog: shopChangelog,
@@ -391,22 +472,21 @@ export const rescheduleTask = async (
         nextExecutionTime: nextExecutionTime,
     });
 
-    const scrapeResult = await getShopScrapeInfo(shopId);
-
-    // If there is no scrape result, we don't need to update the scheduled task
-    if (scrapeResult === null) {
-        return;
-    }
-
-    for (const task of scrapeResult.scheduledTask) {
-        if (task.id === taskId) {
-            task.status = 'scheduled';
-            task.nextExecutionTime = nextExecutionTime;
-            task.overdue = false;
-        }
-    }
-
-    await saveShopScrapeInfo(shopId, scrapeResult);
+    // Update the scheduled task directly in the database
+    await db
+        .update(shopScheduledTask)
+        .set({
+            status: 'scheduled',
+            nextExecutionTime: nextExecutionTime,
+            overdue: false,
+        })
+        .where(
+            and(
+                eq(shopScheduledTask.shopId, shopId),
+                eq(shopScheduledTask.taskId, taskId),
+            ),
+        )
+        .execute();
 };
 
 export const subscribeToNotifications = async (
