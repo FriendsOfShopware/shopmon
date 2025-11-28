@@ -1,3 +1,7 @@
+x-volumes: &volumes
+  - db:/app/db
+  - uploads:/app/api/files
+
 x-env: &env
   MAIL_FROM: "Shopmon <noreply@fos.gg>"
   APP_FILES_DIR: /app/uploads
@@ -25,8 +29,7 @@ services:
     environment:
       <<: *env
     command: "migrate.js"
-    volumes_from:
-      - api
+    volumes: *volumes
 
   frontend:
     image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}
@@ -68,9 +71,7 @@ services:
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress=true
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
-    volumes:
-      - db:/app/db
-      - uploads:/app/api/files
+    volumes: *volumes
 
   cron:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
@@ -79,8 +80,7 @@ services:
       - traefik
     environment:
       <<: *env
-    volumes_from:
-      - api
+    volumes: *volumes
     command: "cron.js"
 
   backup:
