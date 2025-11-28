@@ -190,6 +190,20 @@
       "when": 1763915310532,
       "tag": "0026_organic_network",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1764183461975,
+      "tag": "0027_slimy_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1764233253713,
+      "tag": "0028_shop-scrape-info-tables",
+      "breakpoints": true
     }
   ]
 }

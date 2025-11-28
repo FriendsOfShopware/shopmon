@@ -4,10 +4,10 @@ import {
     SimpleShop,
 } from '@shopware-ag/app-server-sdk';
 import { auth } from '#src/auth.ts';
-import { scrapeSingleShop } from '#src/cron/jobs/shopScrape.ts';
-import { encrypt } from '#src/crypto/index.ts';
+import { scrapeSingleShop } from '#src/modules/shop/jobs/shop-scrape.job.ts';
+import { encrypt } from '#src/modules/shop/crypto.ts';
 import { getConnection, schema } from '#src/db.ts';
-import shops from '#src/repository/shops.ts';
+import shops from '#src/modules/shop/shop.repository.ts';
 import { eq } from 'drizzle-orm';
 
 const user1 = await auth.api.signUpEmail({

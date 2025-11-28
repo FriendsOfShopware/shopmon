@@ -6,8 +6,8 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { betterAuth } from 'better-auth/minimal';
 import { admin, organization } from 'better-auth/plugins';
 import { getConnection } from './db.ts';
-import shops from './repository/shops.ts';
-import users from './repository/users.ts';
+import shops from './modules/shop/shop.repository.ts';
+import users from './modules/user/user.repository.ts';
 
 export const auth = betterAuth({
     baseURL: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -85,7 +85,9 @@ export const auth = betterAuth({
         enabled: true,
         requireEmailVerification: true,
         async sendResetPassword(data, _request) {
-            const { sendMailResetPassword } = await import('./mail/mail.ts');
+            const { sendMailResetPassword } = await import(
+                './modules/user/mail/mail.service.ts'
+            );
             await sendMailResetPassword(data.user.email, data.token);
         },
         password: {
@@ -108,7 +110,9 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, token }) => {
-            const { sendMailConfirmToUser } = await import('./mail/mail.ts');
+            const { sendMailConfirmToUser } = await import(
+                './modules/user/mail/mail.service.ts'
+            );
             await sendMailConfirmToUser(user.email, token);
         },
     },
@@ -121,7 +125,9 @@ export const auth = betterAuth({
         enabled: true,
         sendResetPasswordEmail: async ({ user, token }) => {
             // Import dynamically to avoid circular dependency
-            const { sendMailResetPassword } = await import('./mail/mail.ts');
+            const { sendMailResetPassword } = await import(
+                './modules/user/mail/mail.service.ts'
+            );
             await sendMailResetPassword(user.email, token);
         },
     },
@@ -141,7 +147,7 @@ export const auth = betterAuth({
         organization({
             sendInvitationEmail: async (data) => {
                 const { sendMailInviteToOrganization } = await import(
-                    './mail/mail.ts'
+                    './modules/organization/mail/mail.service.ts'
                 );
                 await sendMailInviteToOrganization(
                     data.email,

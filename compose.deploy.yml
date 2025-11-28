@@ -24,10 +24,9 @@ services:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
     environment:
       <<: *env
-    command: "migrate.ts"
-    volumes:
-      - db:/app/db
-      - uploads:/app/uploads
+    command: "migrate.js"
+    volumes_from:
+      - api
 
   frontend:
     image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}

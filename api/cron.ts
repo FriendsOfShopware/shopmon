@@ -1,8 +1,8 @@
 import * as cron from 'node-cron';
-import { invitationCleanupJob } from '#src/cron/jobs/invitationCleanup';
-import { lockCleanupJob } from '#src/cron/jobs/lockCleanup';
-import { shopScrapeJob } from '#src/cron/jobs/shopScrape';
-import { scrapeSitespeedForAllShops } from '#src/cron/jobs/sitespeedScrape';
+import { invitationCleanupJob } from '#src/modules/organization/jobs/invitation-cleanup.job';
+import { lockCleanupJob } from '#src/modules/shared/jobs/lock-cleanup.job';
+import { shopScrapeJob } from '#src/modules/shop/jobs/shop-scrape.job';
+import { scrapeSitespeedForAllShops } from '#src/modules/shop/jobs/sitespeed-scrape.job';
 
 console.log('Registered cron jobs...');
 
