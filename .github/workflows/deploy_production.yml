@@ -52,14 +52,6 @@ jobs:
                 build-args:
                   SENTRY_RELEASE=${{ github.sha }}
 
-            - name: Build and push (sitespeed)
-              uses: docker/build-push-action@v6
-              with:
-                push: true
-                tags: ghcr.io/friendsofshopware/shopmon/sitespeed:production
-                platforms: linux/arm64
-                context: sitespeed-service
-
             - name: Create Sentry release
               uses: getsentry/action-release@v3
               env:
