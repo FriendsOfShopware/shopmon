@@ -47,8 +47,8 @@
 		"@iconify-json/octicon": "^1.2.19",
 		"@iconify-json/ri": "^1.2.6",
 		"@trpc/server": "^11.7.2",
-		"@typescript-eslint/eslint-plugin": "8.48.0",
-		"@typescript-eslint/parser": "8.48.0",
+		"@typescript-eslint/eslint-plugin": "8.48.1",
+		"@typescript-eslint/parser": "8.48.1",
 		"@vitejs/plugin-vue": "6.0.2",
 		"autoprefixer": "10.4.22",
 		"eslint": "^9.39.1",
@@ -57,7 +57,7 @@
 		"postcss": "^8.5.3",
 		"postcss-nested": "^7.0.2",
 		"typescript": "catalog:",
-		"vite": "7.2.4",
+		"vite": "7.2.7",
 		"vue-eslint-parser": "^10.2.0"
 	}
 }
