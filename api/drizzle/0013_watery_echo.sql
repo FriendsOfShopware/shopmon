@@ -1,1 +1,0 @@
-ALTER TABLE `shop` ADD `connection_issue_count` integer DEFAULT 0 NOT NULL;

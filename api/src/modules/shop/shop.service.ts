@@ -78,7 +78,7 @@ export const listShops = async (db: Drizzle, orgId: string) => {
         .from(schema.shop)
         .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.shop.organizationId, orgId))
-        .all();
+        ;
 
     return result === undefined ? [] : result;
 };
@@ -116,7 +116,7 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
         )
         .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.shop.id, shopId))
-        .get();
+        .then((rows) => rows[0]);
 
     const sitespeedQuery = db.query.shopSitespeed.findMany({
         where: eq(schema.shopSitespeed.shopId, shopId),

@@ -1,10 +1,17 @@
-import { Database } from 'bun:sqlite';
 import { relations } from 'drizzle-orm';
+import { type PostgresJsDatabase, drizzle } from 'drizzle-orm/postgres-js';
 import {
-    type BunSQLiteDatabase,
-    drizzle as drizzleSqlite,
-} from 'drizzle-orm/bun-sqlite';
-import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+    boolean,
+    integer,
+    jsonb,
+    pgTable,
+    real,
+    serial,
+    text,
+    timestamp,
+    unique,
+} from 'drizzle-orm/pg-core';
+import postgres from 'postgres';
 import type { ExtensionDiff, NotificationLink } from './types/index.ts';
 
 type LastChangelog = {
@@ -13,28 +20,28 @@ type LastChangelog = {
     to: string;
 };
 
-export const organization = sqliteTable('organization', {
+export const organization = pgTable('organization', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     slug: text('slug').unique(),
     logo: text('logo'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
     metadata: text('metadata'),
 });
 
-export const project = sqliteTable('project', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
+export const project = pgTable('project', {
+    id: serial('id').primaryKey(),
     organizationId: text('organization_id')
         .notNull()
         .references(() => organization.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     description: text('description'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
 });
 
-export const shop = sqliteTable('shop', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
+export const shop = pgTable('shop', {
+    id: serial('id').primaryKey(),
     organizationId: text('organization_id')
         .notNull()
         .references(() => organization.id),
@@ -48,56 +55,42 @@ export const shop = sqliteTable('shop', {
     clientId: text('client_id').notNull(),
     clientSecret: text('client_secret').notNull(),
     shopwareVersion: text('shopware_version').notNull(),
-    lastScrapedAt: integer('last_scraped_at', { mode: 'timestamp' }),
+    lastScrapedAt: timestamp('last_scraped_at'),
     lastScrapedError: text('last_scraped_error'),
-    ignores: text('ignores', { mode: 'json' })
-        .default([])
-        .$type<string[]>()
-        .notNull(),
+    ignores: jsonb('ignores').default([]).$type<string[]>().notNull(),
     shopImage: text('shop_image'),
-    lastChangelog: text('last_changelog', { mode: 'json' })
-        .default('{}')
-        .$type<LastChangelog>(),
-    connectionIssueCount: integer('connection_issue_count')
-        .default(0)
-        .notNull(),
-    sitespeedEnabled: integer('sitespeed_enabled', { mode: 'boolean' })
-        .default(false)
-        .notNull(),
-    sitespeedUrls: text('sitespeed_urls', { mode: 'json' })
-        .default([])
-        .$type<string[]>()
-        .notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    lastChangelog: jsonb('last_changelog').default({}).$type<LastChangelog>(),
+    connectionIssueCount: integer('connection_issue_count').default(0).notNull(),
+    sitespeedEnabled: boolean('sitespeed_enabled').default(false).notNull(),
+    sitespeedUrls: jsonb('sitespeed_urls').default([]).$type<string[]>().notNull(),
+    createdAt: timestamp('created_at').notNull(),
 });
 
-export const shopSitespeed = sqliteTable('shop_sitespeed', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
+export const shopSitespeed = pgTable('shop_sitespeed', {
+    id: serial('id').primaryKey(),
     shopId: integer('shop_id').references(() => shop.id),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
     ttfb: integer('ttfb'),
     fullyLoaded: integer('fully_loaded'),
     largestContentfulPaint: integer('largest_contentful_paint'),
     firstContentfulPaint: integer('first_contentful_paint'),
-    cumulativeLayoutShift: integer('cumulative_layout_shift'),
+    cumulativeLayoutShift: real('cumulative_layout_shift'),
     transferSize: integer('transfer_size'),
 });
 
-export const shopChangelog = sqliteTable('shop_changelog', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
+export const shopChangelog = pgTable('shop_changelog', {
+    id: serial('id').primaryKey(),
     shopId: integer('shop_id').references(() => shop.id),
-    extensions: text('extensions', { mode: 'json' })
-        .notNull()
-        .$type<ExtensionDiff[]>(),
+    extensions: jsonb('extensions').notNull().$type<ExtensionDiff[]>(),
     oldShopwareVersion: text('old_shopware_version'),
     newShopwareVersion: text('new_shopware_version'),
-    date: integer('date', { mode: 'timestamp' }).notNull(),
+    date: timestamp('date').notNull(),
 });
 
-export const userNotification = sqliteTable(
+export const userNotification = pgTable(
     'user_notification',
     {
-        id: integer('id').primaryKey({ autoIncrement: true }),
+        id: serial('id').primaryKey(),
         userId: text('user_id')
             .notNull()
             .references(() => user.id),
@@ -105,50 +98,36 @@ export const userNotification = sqliteTable(
         level: text('level').notNull(),
         title: text('title').notNull(),
         message: text('message').notNull(),
-        link: text('link', { mode: 'json' })
-            .notNull()
-            .$type<NotificationLink>(),
-        read: integer('read', { mode: 'boolean' }).notNull().default(false),
-        createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+        link: jsonb('link').notNull().$type<NotificationLink>(),
+        read: boolean('read').notNull().default(false),
+        createdAt: timestamp('created_at').notNull(),
     },
-    (table) => {
-        return {
-            keyUnique: unique().on(table.userId, table.key),
-        };
-    },
+    (table) => ({
+        keyUnique: unique().on(table.userId, table.key),
+    }),
 );
 
-export const user = sqliteTable('user', {
+export const user = pgTable('user', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
-    emailVerified: integer('email_verified', { mode: 'boolean' })
-        .$defaultFn(() => !1)
-        .notNull(),
+    emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
     image: text('image'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .$defaultFn(() => new Date())
-        .notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
-        .$defaultFn(() => new Date())
-        .notNull(),
+    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    updatedAt: timestamp('updated_at').$defaultFn(() => new Date()).notNull(),
     role: text('role').default('user').notNull(),
-    banned: integer('banned', { mode: 'boolean' }).default(false),
+    banned: boolean('banned').default(false),
     banReason: text('ban_reason'),
-    banExpires: integer('ban_expires', { mode: 'timestamp' }),
-    notifications: text('notifications', { mode: 'json' })
-        .default([])
-        .$type<string[]>(),
+    banExpires: timestamp('ban_expires'),
+    notifications: jsonb('notifications').default([]).$type<string[]>(),
 });
 
-export const session = sqliteTable('session', {
+export const session = pgTable('session', {
     id: text('id').primaryKey(),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
     token: text('token').notNull().unique(),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .$defaultFn(() => new Date())
-        .notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    updatedAt: timestamp('updated_at')
         .$defaultFn(() => new Date())
         .$onUpdate(() => new Date())
         .notNull(),
@@ -161,7 +140,7 @@ export const session = sqliteTable('session', {
     activeOrganizationId: text('active_organization_id'),
 });
 
-export const account = sqliteTable('account', {
+export const account = pgTable('account', {
     id: text('id').primaryKey(),
     accountId: text('account_id').notNull(),
     providerId: text('provider_id').notNull(),
@@ -171,37 +150,27 @@ export const account = sqliteTable('account', {
     accessToken: text('access_token'),
     refreshToken: text('refresh_token'),
     idToken: text('id_token'),
-    accessTokenExpiresAt: integer('access_token_expires_at', {
-        mode: 'timestamp',
-    }),
-    refreshTokenExpiresAt: integer('refresh_token_expires_at', {
-        mode: 'timestamp',
-    }),
+    accessTokenExpiresAt: timestamp('access_token_expires_at'),
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
     scope: text('scope'),
     password: text('password'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .$defaultFn(() => new Date())
-        .notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
-        .$onUpdate(() => new Date())
-        .notNull(),
+    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    updatedAt: timestamp('updated_at').$onUpdate(() => new Date()).notNull(),
 });
 
-export const verification = sqliteTable('verification', {
+export const verification = pgTable('verification', {
     id: text('id').primaryKey(),
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' })
-        .$defaultFn(() => new Date())
-        .notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' })
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    updatedAt: timestamp('updated_at')
         .$defaultFn(() => new Date())
         .$onUpdate(() => new Date())
         .notNull(),
 });
 
-export const passkey = sqliteTable('passkey', {
+export const passkey = pgTable('passkey', {
     id: text('id').primaryKey(),
     name: text('name'),
     publicKey: text('public_key').notNull(),
@@ -211,35 +180,35 @@ export const passkey = sqliteTable('passkey', {
     credentialID: text('credential_id').notNull(),
     counter: integer('counter').notNull(),
     deviceType: text('device_type').notNull(),
-    backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
+    backedUp: boolean('backed_up').notNull(),
     transports: text('transports'),
-    createdAt: integer('created_at', { mode: 'timestamp' }),
+    createdAt: timestamp('created_at'),
     aaguid: text('aaguid'),
 });
 
-export const lock = sqliteTable('lock', {
+export const lock = pgTable('lock', {
     key: text('key').primaryKey(),
-    expires: integer('expires', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    expires: timestamp('expires').notNull(),
+    createdAt: timestamp('created_at').notNull(),
 });
 
 // Shop scrape info tables (flat structure)
-export const shopExtension = sqliteTable(
+export const shopExtension = pgTable(
     'shop_extension',
     {
-        id: integer('id').primaryKey({ autoIncrement: true }),
+        id: serial('id').primaryKey(),
         shopId: integer('shop_id')
             .notNull()
             .references(() => shop.id, { onDelete: 'cascade' }),
         name: text('name').notNull(),
         label: text('label').notNull(),
-        active: integer('active', { mode: 'boolean' }).notNull(),
+        active: boolean('active').notNull(),
         version: text('version').notNull(),
         latestVersion: text('latest_version'),
-        installed: integer('installed', { mode: 'boolean' }).notNull(),
+        installed: boolean('installed').notNull(),
         ratingAverage: integer('rating_average'),
         storeLink: text('store_link'),
-        changelog: text('changelog', { mode: 'json' }).$type<
+        changelog: jsonb('changelog').$type<
             | {
                   version: string;
                   text: string;
@@ -255,10 +224,10 @@ export const shopExtension = sqliteTable(
     }),
 );
 
-export const shopScheduledTask = sqliteTable(
+export const shopScheduledTask = pgTable(
     'shop_scheduled_task',
     {
-        id: integer('id').primaryKey({ autoIncrement: true }),
+        id: serial('id').primaryKey(),
         shopId: integer('shop_id')
             .notNull()
             .references(() => shop.id, { onDelete: 'cascade' }),
@@ -266,7 +235,7 @@ export const shopScheduledTask = sqliteTable(
         name: text('name').notNull(),
         status: text('status').notNull(),
         interval: integer('interval').notNull(),
-        overdue: integer('overdue', { mode: 'boolean' }).notNull(),
+        overdue: boolean('overdue').notNull(),
         lastExecutionTime: text('last_execution_time'),
         nextExecutionTime: text('next_execution_time'),
     },
@@ -275,10 +244,10 @@ export const shopScheduledTask = sqliteTable(
     }),
 );
 
-export const shopQueue = sqliteTable(
+export const shopQueue = pgTable(
     'shop_queue',
     {
-        id: integer('id').primaryKey({ autoIncrement: true }),
+        id: serial('id').primaryKey(),
         shopId: integer('shop_id')
             .notNull()
             .references(() => shop.id, { onDelete: 'cascade' }),
@@ -290,21 +259,21 @@ export const shopQueue = sqliteTable(
     }),
 );
 
-export const shopCache = sqliteTable('shop_cache', {
-    id: integer('id').primaryKey({ autoIncrement: true }),
+export const shopCache = pgTable('shop_cache', {
+    id: serial('id').primaryKey(),
     shopId: integer('shop_id')
         .notNull()
         .references(() => shop.id, { onDelete: 'cascade' })
         .unique(),
     environment: text('environment').notNull(),
-    httpCache: integer('http_cache', { mode: 'boolean' }).notNull(),
+    httpCache: boolean('http_cache').notNull(),
     cacheAdapter: text('cache_adapter').notNull(),
 });
 
-export const shopCheck = sqliteTable(
+export const shopCheck = pgTable(
     'shop_check',
     {
-        id: integer('id').primaryKey({ autoIncrement: true }),
+        id: serial('id').primaryKey(),
         shopId: integer('shop_id')
             .notNull()
             .references(() => shop.id, { onDelete: 'cascade' }),
@@ -319,7 +288,7 @@ export const shopCheck = sqliteTable(
     }),
 );
 
-export const member = sqliteTable('member', {
+export const member = pgTable('member', {
     id: text('id').primaryKey(),
     organizationId: text('organization_id')
         .notNull()
@@ -328,10 +297,10 @@ export const member = sqliteTable('member', {
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
     role: text('role').default('member').notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    createdAt: timestamp('created_at').notNull(),
 });
 
-export const invitation = sqliteTable('invitation', {
+export const invitation = pgTable('invitation', {
     id: text('id').primaryKey(),
     organizationId: text('organization_id')
         .notNull()
@@ -339,13 +308,13 @@ export const invitation = sqliteTable('invitation', {
     email: text('email').notNull(),
     role: text('role'),
     status: text('status').default('pending').notNull(),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
     inviterId: text('inviter_id')
         .notNull()
         .references(() => user.id, { onDelete: 'cascade' }),
 });
 
-export const ssoProvider = sqliteTable('sso_provider', {
+export const ssoProvider = pgTable('sso_provider', {
     id: text('id').primaryKey(),
     issuer: text('issuer').notNull(),
     oidcConfig: text('oidc_config'),
@@ -358,16 +327,16 @@ export const ssoProvider = sqliteTable('sso_provider', {
 
 export type ApiKeyScope = 'deployments';
 
-export const projectApiKey = sqliteTable('project_api_key', {
+export const projectApiKey = pgTable('project_api_key', {
     id: text('id').primaryKey(),
     projectId: integer('project_id')
         .notNull()
         .references(() => project.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     token: text('token').notNull().unique(),
-    scopes: text('scopes', { mode: 'json' }).notNull().$type<ApiKeyScope[]>(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
+    scopes: jsonb('scopes').notNull().$type<ApiKeyScope[]>(),
+    createdAt: timestamp('created_at').notNull(),
+    lastUsedAt: timestamp('last_used_at'),
 });
 
 // Relations
@@ -431,6 +400,9 @@ export const schema = {
     // Project API Keys
     projectApiKey,
 
+    // Lock
+    lock,
+
     // Relations
     projectRelations,
     projectApiKeyRelations,
@@ -438,28 +410,28 @@ export const schema = {
     organizationRelations,
 };
 
-export type Drizzle = BunSQLiteDatabase<typeof schema>;
-let drizzle: Drizzle | undefined;
+export type Drizzle = PostgresJsDatabase<typeof schema>;
+let db: Drizzle | undefined;
+let sqlClient: ReturnType<typeof postgres> | undefined;
 
-export function getConnection(applyPragmas = true) {
-    if (drizzle !== undefined) {
-        return drizzle;
+export function getConnection() {
+    if (db !== undefined) {
+        return db;
     }
 
-    const dbPath = process.env.APP_DATABASE_PATH || 'shopmon.db';
+    const connectionString =
+        process.env.DATABASE_URL || 'postgres://shopmon:shopmon@localhost:5432/shopmon';
 
-    const database = new Database(dbPath);
+    sqlClient = postgres(connectionString);
+    db = drizzle(sqlClient, { schema });
 
-    if (applyPragmas) {
-        database.run('PRAGMA journal_mode = WAL');
-        database.run('PRAGMA cache_size = -64000');
-        database.run('PRAGMA foreign_keys = ON');
-        database.run('PRAGMA synchronous = NORMAL');
-        database.run('PRAGMA temp_store = MEMORY');
-        database.run('PRAGMA wal_autocheckpoint = 0');
+    return db;
+}
+
+export async function closeConnection() {
+    if (sqlClient) {
+        await sqlClient.end();
+        sqlClient = undefined;
+        db = undefined;
     }
-
-    drizzle = drizzleSqlite(database, { schema });
-
-    return drizzle;
 }

@@ -52,7 +52,7 @@ async function listOrganizations(
             })
             .from(schema.organization)
             .orderBy(desc(schema.organization.createdAt))
-            .all();
+            ;
         return { organizations, total: organizations.length };
     }
 
@@ -152,7 +152,7 @@ async function listOrganizations(
                     ? conditions.reduce((acc, condition) => acc && condition)
                     : undefined,
             )
-            .get(),
+            .then((rows) => rows[0]),
     ]);
 
     return {
@@ -182,7 +182,7 @@ async function listShops(con: Drizzle, params?: ShopListParams) {
                 eq(schema.shop.organizationId, schema.organization.id),
             )
             .orderBy(desc(schema.shop.createdAt))
-            .all();
+            ;
         return { shops, total: shops.length };
     }
 
@@ -305,7 +305,7 @@ async function listShops(con: Drizzle, params?: ShopListParams) {
                     ? conditions.reduce((acc, condition) => acc && condition)
                     : undefined,
             )
-            .get(),
+            .then((rows) => rows[0]),
     ]);
 
     return {
@@ -317,8 +317,8 @@ async function listShops(con: Drizzle, params?: ShopListParams) {
 async function getStats(con: Drizzle) {
     const [usersResult, organizationsResult, shopsStatsResult] =
         await Promise.all([
-            con.select({ count: count() }).from(schema.user).get(),
-            con.select({ count: count() }).from(schema.organization).get(),
+            con.select({ count: count() }).from(schema.user).then((rows) => rows[0]),
+            con.select({ count: count() }).from(schema.organization).then((rows) => rows[0]),
             con
                 .select({
                     total: count().as('total'),
@@ -333,7 +333,7 @@ async function getStats(con: Drizzle) {
                     ).as('redCount'),
                 })
                 .from(schema.shop)
-                .get(),
+                .then((rows) => rows[0]),
         ]);
 
     const shopsByStatus = {

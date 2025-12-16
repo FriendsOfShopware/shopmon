@@ -71,7 +71,7 @@ async function getUsersOfShop(con: Drizzle, shopId: number) {
         )
         .innerJoin(schema.user, eq(schema.user.id, schema.member.userId))
         .where(eq(schema.shop.id, shopId))
-        .all();
+        ;
 
     // Filter users who have subscribed to notifications for this shop
     const shopKey = `shop-${shopId}`;
@@ -107,7 +107,7 @@ async function countByProject(
         })
         .from(schema.shop)
         .where(eq(schema.shop.projectId, projectId))
-        .all();
+        ;
 
     return result.length;
 }

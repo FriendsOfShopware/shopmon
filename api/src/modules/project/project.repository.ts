@@ -24,7 +24,7 @@ async function findAllByOrganization(con: Drizzle, organizationId: string) {
         })
         .from(schema.project)
         .where(eq(schema.project.organizationId, organizationId))
-        .all();
+        ;
 }
 
 async function create(con: Drizzle, input: CreateProjectInput) {

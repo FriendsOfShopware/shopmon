@@ -20,7 +20,7 @@ async function findAllByProject(con: Drizzle, projectId: number) {
         })
         .from(schema.projectApiKey)
         .where(eq(schema.projectApiKey.projectId, projectId))
-        .all();
+        ;
 }
 
 async function create(con: Drizzle, input: CreateApiKeyInput) {

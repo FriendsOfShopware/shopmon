@@ -1,4 +1,15 @@
 services:
+  db:
+    image: postgres:18.1
+    environment:
+      POSTGRES_DB: shopmon
+      POSTGRES_USER: shopmon
+      POSTGRES_PASSWORD: shopmon
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+
   mailpit:
     image: axllent/mailpit
     ports:
@@ -40,4 +51,7 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; exit 0; "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; /usr/bin/mc mb -p myminio/shopmon; exit 0; "
+
+volumes:
+  db-data:

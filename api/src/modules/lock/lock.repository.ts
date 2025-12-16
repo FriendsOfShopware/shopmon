@@ -3,7 +3,8 @@ import { getConnection, lock } from '#src/db.ts';
 
 export async function isLocked(key: string): Promise<boolean> {
     const con = getConnection();
-    const result = await con.select().from(lock).where(eq(lock.key, key)).get();
+    const results = await con.select().from(lock).where(eq(lock.key, key));
+    const result = results[0];
 
     if (!result) {
         return false;

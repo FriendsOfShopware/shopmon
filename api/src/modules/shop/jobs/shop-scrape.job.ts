@@ -130,7 +130,7 @@ export async function shopScrapeJob() {
             schema.organization,
             eq(schema.organization.id, schema.shop.organizationId),
         )
-        .all();
+        ;
 
     console.log(`Found ${shops.length} shops to scrape`);
 
@@ -145,7 +145,7 @@ export async function shopScrapeJob() {
 export async function scrapeSingleShop(shopId: number) {
     const con = getConnection();
 
-    const shop = await con
+    const shops = await con
         .select({
             id: schema.shop.id,
             name: schema.shop.name,
@@ -165,8 +165,9 @@ export async function scrapeSingleShop(shopId: number) {
             schema.organization,
             eq(schema.organization.id, schema.shop.organizationId),
         )
-        .where(eq(schema.shop.id, shopId))
-        .get();
+        .where(eq(schema.shop.id, shopId));
+
+    const shop = shops[0];
 
     if (!shop) {
         throw new Error(`Shop with ID ${shopId} not found`);
@@ -196,7 +197,7 @@ async function shouldNotify(
             ),
         )
         .orderBy(asc(schema.userNotification.createdAt))
-        .all();
+        ;
 
     if (notificationResult.length === 0) {
         return true;

@@ -35,11 +35,17 @@ generate-email:
 migrate:
 	cd api && bun migrate.ts
 
+migrate-from-sqlite: # Migrate data from SQLite to PostgreSQL
+	cd api && bun migrate-sqlite-to-postgres.ts $(SQLITE_PATH)
+
+drop-db: # Drop the PostgreSQL database
+	docker compose exec -T db psql -U shopmon -c "DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
 load-fixtures: # Load fixtures
 	@echo "Loading fixtures"
 	@echo "Create api/.env if not exists"
 	@test -f api/.env || cp api/.env.example api/.env
-	cd api && rm -rf shopmon.db*
+	$(MAKE) drop-db
 	cd api && bun migrate.ts
 	cd api && bun apply-fixtures.ts
 
