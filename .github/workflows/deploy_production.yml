@@ -1,5 +1,6 @@
 name: Deploy Production
 on:
+  workflow_dispatch:
   release:
     types:
       - created
@@ -61,5 +62,16 @@ jobs:
               with:
                 environment: production
 
-            - name: Trigger Deployment
-              run: curl -X POST ${{ secrets.DEPLOY_URL }}
+            - name: Setup opkssh
+              uses: openpubkey/setup-opkssh@v1
+              with:
+                ssh-hosts-to-scan: 'shea.shyim.de'
+
+            - name: Install 1Password CLI
+              uses: 1password/install-cli-action@v2
+
+            - name: Deploy to Production
+              run: op run --env-file .env.production -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
+              env:
+                OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+                DOCKER_HOST: ssh://root@shea.shyim.de
