@@ -1,5 +1,4 @@
 import { relations } from 'drizzle-orm';
-import { type PostgresJsDatabase, drizzle } from 'drizzle-orm/postgres-js';
 import {
     boolean,
     integer,
@@ -11,6 +10,7 @@ import {
     timestamp,
     unique,
 } from 'drizzle-orm/pg-core';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import type { ExtensionDiff, NotificationLink } from './types/index.ts';
 
