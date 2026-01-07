@@ -156,8 +156,7 @@ async function findOrganizations(con: Drizzle, userId: string) {
             schema.member,
             eq(schema.member.organizationId, schema.organization.id),
         )
-        .where(eq(schema.member.userId, userId))
-        ;
+        .where(eq(schema.member.userId, userId));
 }
 
 async function findShops(con: Drizzle, userId: string) {
@@ -194,8 +193,7 @@ async function findShops(con: Drizzle, userId: string) {
         )
         .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.member.userId, userId))
-        .orderBy(schema.shop.name)
-        ;
+        .orderBy(schema.shop.name);
 }
 
 async function findShopsSimple(con: Drizzle, userId: string) {
@@ -219,8 +217,7 @@ async function findShopsSimple(con: Drizzle, userId: string) {
             eq(schema.organization.id, schema.shop.organizationId),
         )
         .where(eq(schema.member.userId, userId))
-        .orderBy(schema.shop.name)
-        ;
+        .orderBy(schema.shop.name);
 }
 
 async function findProjects(con: Drizzle, userId: string) {
@@ -279,8 +276,7 @@ async function findChangelogs(con: Drizzle, userId: string) {
         )
         .where(eq(schema.member.userId, userId))
         .orderBy(desc(schema.shopChangelog.date))
-        .limit(10)
-        ;
+        .limit(10);
 }
 
 async function findSubscribedShops(
@@ -318,8 +314,7 @@ async function findSubscribedShops(
                 eq(schema.member.userId, userId),
             ),
         )
-        .orderBy(schema.shop.name)
-        ;
+        .orderBy(schema.shop.name);
 }
 
 export default {

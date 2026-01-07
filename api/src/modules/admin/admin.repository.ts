@@ -51,8 +51,7 @@ async function listOrganizations(
                 memberCount: sql<number>`(SELECT COUNT(*) FROM member WHERE organization_id = ${schema.organization.id})`,
             })
             .from(schema.organization)
-            .orderBy(desc(schema.organization.createdAt))
-            ;
+            .orderBy(desc(schema.organization.createdAt));
         return { organizations, total: organizations.length };
     }
 
@@ -181,8 +180,7 @@ async function listShops(con: Drizzle, params?: ShopListParams) {
                 schema.organization,
                 eq(schema.shop.organizationId, schema.organization.id),
             )
-            .orderBy(desc(schema.shop.createdAt))
-            ;
+            .orderBy(desc(schema.shop.createdAt));
         return { shops, total: shops.length };
     }
 
@@ -317,8 +315,14 @@ async function listShops(con: Drizzle, params?: ShopListParams) {
 async function getStats(con: Drizzle) {
     const [usersResult, organizationsResult, shopsStatsResult] =
         await Promise.all([
-            con.select({ count: count() }).from(schema.user).then((rows) => rows[0]),
-            con.select({ count: count() }).from(schema.organization).then((rows) => rows[0]),
+            con
+                .select({ count: count() })
+                .from(schema.user)
+                .then((rows) => rows[0]),
+            con
+                .select({ count: count() })
+                .from(schema.organization)
+                .then((rows) => rows[0]),
             con
                 .select({
                     total: count().as('total'),

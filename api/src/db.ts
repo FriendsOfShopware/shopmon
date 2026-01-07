@@ -60,9 +60,14 @@ export const shop = pgTable('shop', {
     ignores: jsonb('ignores').default([]).$type<string[]>().notNull(),
     shopImage: text('shop_image'),
     lastChangelog: jsonb('last_changelog').default({}).$type<LastChangelog>(),
-    connectionIssueCount: integer('connection_issue_count').default(0).notNull(),
+    connectionIssueCount: integer('connection_issue_count')
+        .default(0)
+        .notNull(),
     sitespeedEnabled: boolean('sitespeed_enabled').default(false).notNull(),
-    sitespeedUrls: jsonb('sitespeed_urls').default([]).$type<string[]>().notNull(),
+    sitespeedUrls: jsonb('sitespeed_urls')
+        .default([])
+        .$type<string[]>()
+        .notNull(),
     createdAt: timestamp('created_at').notNull(),
 });
 
@@ -111,10 +116,16 @@ export const user = pgTable('user', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
-    emailVerified: boolean('email_verified').$defaultFn(() => false).notNull(),
+    emailVerified: boolean('email_verified')
+        .$defaultFn(() => false)
+        .notNull(),
     image: text('image'),
-    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp('updated_at').$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp('created_at')
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: timestamp('updated_at')
+        .$defaultFn(() => new Date())
+        .notNull(),
     role: text('role').default('user').notNull(),
     banned: boolean('banned').default(false),
     banReason: text('ban_reason'),
@@ -126,7 +137,9 @@ export const session = pgTable('session', {
     id: text('id').primaryKey(),
     expiresAt: timestamp('expires_at').notNull(),
     token: text('token').notNull().unique(),
-    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp('created_at')
+        .$defaultFn(() => new Date())
+        .notNull(),
     updatedAt: timestamp('updated_at')
         .$defaultFn(() => new Date())
         .$onUpdate(() => new Date())
@@ -154,8 +167,12 @@ export const account = pgTable('account', {
     refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
     scope: text('scope'),
     password: text('password'),
-    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp('updated_at').$onUpdate(() => new Date()).notNull(),
+    createdAt: timestamp('created_at')
+        .$defaultFn(() => new Date())
+        .notNull(),
+    updatedAt: timestamp('updated_at')
+        .$onUpdate(() => new Date())
+        .notNull(),
 });
 
 export const verification = pgTable('verification', {
@@ -163,7 +180,9 @@ export const verification = pgTable('verification', {
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
     expiresAt: timestamp('expires_at').notNull(),
-    createdAt: timestamp('created_at').$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp('created_at')
+        .$defaultFn(() => new Date())
+        .notNull(),
     updatedAt: timestamp('updated_at')
         .$defaultFn(() => new Date())
         .$onUpdate(() => new Date())
@@ -420,7 +439,8 @@ export function getConnection() {
     }
 
     const connectionString =
-        process.env.DATABASE_URL || 'postgres://shopmon:shopmon@localhost:5432/shopmon';
+        process.env.DATABASE_URL ||
+        'postgres://shopmon:shopmon@localhost:5432/shopmon';
 
     sqlClient = postgres(connectionString);
     db = drizzle(sqlClient, { schema });

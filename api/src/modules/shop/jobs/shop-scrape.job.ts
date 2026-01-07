@@ -129,8 +129,7 @@ export async function shopScrapeJob() {
         .innerJoin(
             schema.organization,
             eq(schema.organization.id, schema.shop.organizationId),
-        )
-        ;
+        );
 
     console.log(`Found ${shops.length} shops to scrape`);
 
@@ -196,8 +195,7 @@ async function shouldNotify(
                 eq(schema.userNotification.read, false),
             ),
         )
-        .orderBy(asc(schema.userNotification.createdAt))
-        ;
+        .orderBy(asc(schema.userNotification.createdAt));
 
     if (notificationResult.length === 0) {
         return true;

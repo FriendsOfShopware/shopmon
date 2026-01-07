@@ -77,8 +77,7 @@ export const listShops = async (db: Drizzle, orgId: string) => {
         })
         .from(schema.shop)
         .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
-        .where(eq(schema.shop.organizationId, orgId))
-        ;
+        .where(eq(schema.shop.organizationId, orgId));
 
     return result === undefined ? [] : result;
 };
