@@ -35,9 +35,6 @@ generate-email:
 migrate:
 	cd api && bun migrate.ts
 
-migrate-from-sqlite: # Migrate data from SQLite to PostgreSQL
-	cd api && bun migrate-sqlite-to-postgres.ts $(SQLITE_PATH)
-
 drop-db: # Drop the PostgreSQL database
 	docker compose exec -T db psql -U shopmon -c "DROP SCHEMA IF EXISTS drizzle CASCADE; DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 

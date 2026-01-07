@@ -7,7 +7,7 @@ const outdir = "dist";
 await rm(outdir, { recursive: true, force: true });
 
 // Build all entry points
-const entrypoints = ["app.ts", "cron.ts", "migrate.ts", "migrate-sqlite-to-postgres.ts"];
+const entrypoints = ["app.ts", "cron.ts", "migrate.ts"];
 
 console.log("Building entrypoints:", entrypoints.join(", "));
 
