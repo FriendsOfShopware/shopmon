@@ -39,7 +39,7 @@ export const organizationMiddleware = t.middleware(async (opts) => {
         ctx: context & { user: number };
     };
 
-    const result = ctx.drizzle
+    const results = await ctx.drizzle
         .select({
             id: schema.member.id,
         })
@@ -49,10 +49,9 @@ export const organizationMiddleware = t.middleware(async (opts) => {
                 eq(schema.member.organizationId, input.orgId),
                 eq(schema.member.userId, ctx.user.id),
             ),
-        )
-        .get();
+        );
 
-    if (!result) {
+    if (!results[0]) {
         throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You are not a member of this organization',
@@ -98,7 +97,7 @@ export const shopMiddleware = t.middleware(async (opts) => {
         ctx: context & { user: NonNullable<context['user']> };
     };
 
-    const result = await ctx.drizzle
+    const results = await ctx.drizzle
         .select({
             orgId: schema.shop.organizationId,
         })
@@ -112,10 +111,9 @@ export const shopMiddleware = t.middleware(async (opts) => {
                 eq(schema.shop.id, input.shopId),
                 eq(schema.member.userId, ctx.user.id),
             ),
-        )
-        .get();
+        );
 
-    if (!result) {
+    if (!results[0]) {
         throw new TRPCError({ code: 'NOT_FOUND' });
     }
 

@@ -21,7 +21,7 @@ async function findById(
     organizationId: string,
     providerId: string,
 ) {
-    return await con
+    const result = await con
         .select()
         .from(ssoProvider)
         .where(
@@ -29,8 +29,8 @@ async function findById(
                 eq(ssoProvider.providerId, providerId),
                 eq(ssoProvider.organizationId, organizationId),
             ),
-        )
-        .get();
+        );
+    return result[0];
 }
 
 async function update(con: Drizzle, input: UpdateSSOProviderInput) {

@@ -23,8 +23,7 @@ async function findAllByOrganization(con: Drizzle, organizationId: string) {
             organizationId: schema.project.organizationId,
         })
         .from(schema.project)
-        .where(eq(schema.project.organizationId, organizationId))
-        .all();
+        .where(eq(schema.project.organizationId, organizationId));
 }
 
 async function create(con: Drizzle, input: CreateProjectInput) {

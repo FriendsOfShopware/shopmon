@@ -6,7 +6,7 @@ import {
 import { auth } from '#src/auth.ts';
 import { scrapeSingleShop } from '#src/modules/shop/jobs/shop-scrape.job.ts';
 import { encrypt } from '#src/modules/shop/crypto.ts';
-import { getConnection, schema } from '#src/db.ts';
+import { closeConnection, getConnection, schema } from '#src/db.ts';
 import shops from '#src/modules/shop/shop.repository.ts';
 import { eq } from 'drizzle-orm';
 
@@ -120,3 +120,5 @@ console.log('Organization:', org.name);
 console.log('Shop:', shop.getShopUrl());
 
 console.log('All users have the password "password".');
+
+await closeConnection();

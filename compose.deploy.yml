@@ -1,11 +1,6 @@
-x-volumes: &volumes
-  - db:/app/db
-  - uploads:/app/api/files
-
 x-env: &env
+  DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
   MAIL_FROM: "Shopmon <noreply@fos.gg>"
-  APP_FILES_DIR: /app/uploads
-  APP_DATABASE_PATH: /app/db/shopmon.db
   APP_OAUTH_GITHUB_CLIENT_ID: ${APP_OAUTH_GITHUB_CLIENT_ID}
   APP_OAUTH_GITHUB_CLIENT_SECRET: ${APP_OAUTH_GITHUB_CLIENT_SECRET}
   # From 1password
@@ -26,10 +21,13 @@ x-env: &env
 services:
   migrate:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+    depends_on:
+      - db
     environment:
       <<: *env
     command: "migrate.js"
-    volumes: *volumes
 
   frontend:
     image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}
@@ -56,6 +54,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    volumes:
+      - db:/app/db
     environment:
       <<: *env
     labels:
@@ -71,31 +71,35 @@ services:
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress=true
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
-    volumes: *volumes
 
   cron:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
     networks:
       - shopmon
-      - traefik
+    depends_on:
+      - db
     environment:
       <<: *env
-    volumes: *volumes
     command: "cron.js"
 
-  backup:
-    image: offen/docker-volume-backup:latest
-    volumes:
-      - db:/backup
+  db:
+    image: postgres:18.1
+    labels:
+      - docker-backup.enable=true
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.type=postgres
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.schedule=0 * * * *
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.retention=12
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.type=postgres
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.schedule=0 3 * * *
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.retention=7
+    networks:
+      - shopmon
     environment:
-      AWS_REGION: ${AWS_REGION}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
-      AWS_S3_PATH: db/${ENVIRONMENT}
-      AWS_ENDPOINT: ${AWS_ENDPOINT}
-      BACKUP_RETENTION_DAYS: 14
-      BACKUP_CRON_EXPRESSION: "@hourly"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql
 
 networks:
   traefik:
@@ -104,5 +108,6 @@ networks:
   shopmon:
 
 volumes:
+  # Old SQLITE DB
   db:
-  uploads:
+  db-data:

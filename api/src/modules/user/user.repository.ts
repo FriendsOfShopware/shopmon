@@ -28,7 +28,7 @@ async function existsById(con: Drizzle, id: string): Promise<boolean> {
 }
 
 async function findById(con: Drizzle, id: string) {
-    return await con
+    const result = await con
         .select({
             id: schema.user.id,
             displayName: schema.user.name,
@@ -36,8 +36,8 @@ async function findById(con: Drizzle, id: string) {
             createdAt: schema.user.createdAt,
         })
         .from(schema.user)
-        .where(eq(schema.user.id, id))
-        .get();
+        .where(eq(schema.user.id, id));
+    return result[0];
 }
 
 async function deleteById(con: Drizzle, id: string): Promise<void> {
@@ -98,7 +98,7 @@ async function createNotification(
 }
 
 async function hasAccessToProject(userId: string, projectId: number) {
-    return await getConnection()
+    const result = await getConnection()
         .select({
             id: schema.project.id,
             organizationId: schema.project.organizationId,
@@ -117,15 +117,15 @@ async function hasAccessToProject(userId: string, projectId: number) {
                 eq(schema.project.id, projectId),
                 eq(schema.member.userId, userId),
             ),
-        )
-        .get();
+        );
+    return result[0];
 }
 
 async function hasAccessToShop(
     userId: string,
     shopId: number,
 ): Promise<boolean> {
-    const result = await getConnection()
+    const results = await getConnection()
         .select({
             id: schema.shop.id,
         })
@@ -136,10 +136,9 @@ async function hasAccessToShop(
         )
         .where(
             and(eq(schema.shop.id, shopId), eq(schema.member.userId, userId)),
-        )
-        .get();
+        );
 
-    return result !== undefined;
+    return results[0] !== undefined;
 }
 
 async function findOrganizations(con: Drizzle, userId: string) {
@@ -157,8 +156,7 @@ async function findOrganizations(con: Drizzle, userId: string) {
             schema.member,
             eq(schema.member.organizationId, schema.organization.id),
         )
-        .where(eq(schema.member.userId, userId))
-        .all();
+        .where(eq(schema.member.userId, userId));
 }
 
 async function findShops(con: Drizzle, userId: string) {
@@ -195,8 +193,7 @@ async function findShops(con: Drizzle, userId: string) {
         )
         .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.member.userId, userId))
-        .orderBy(schema.shop.name)
-        .all();
+        .orderBy(schema.shop.name);
 }
 
 async function findShopsSimple(con: Drizzle, userId: string) {
@@ -220,8 +217,7 @@ async function findShopsSimple(con: Drizzle, userId: string) {
             eq(schema.organization.id, schema.shop.organizationId),
         )
         .where(eq(schema.member.userId, userId))
-        .orderBy(schema.shop.name)
-        .all();
+        .orderBy(schema.shop.name);
 }
 
 async function findProjects(con: Drizzle, userId: string) {
@@ -280,8 +276,7 @@ async function findChangelogs(con: Drizzle, userId: string) {
         )
         .where(eq(schema.member.userId, userId))
         .orderBy(desc(schema.shopChangelog.date))
-        .limit(10)
-        .all();
+        .limit(10);
 }
 
 async function findSubscribedShops(
@@ -319,8 +314,7 @@ async function findSubscribedShops(
                 eq(schema.member.userId, userId),
             ),
         )
-        .orderBy(schema.shop.name)
-        .all();
+        .orderBy(schema.shop.name);
 }
 
 export default {

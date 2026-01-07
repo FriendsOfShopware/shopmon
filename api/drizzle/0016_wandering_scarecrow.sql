@@ -1,1 +1,0 @@
-ALTER TABLE `user` ADD `notifications` text DEFAULT '[]' NOT NULL;

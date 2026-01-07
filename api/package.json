@@ -17,6 +17,7 @@
 		"mjml": "^4.17.1",
 		"node-cron": "^4.2.1",
 		"nodemailer": "^7.0.10",
+		"postgres": "^3.4.7",
 		"zod": "^4.1.13"
 	},
 	"devDependencies": {

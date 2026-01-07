@@ -14,7 +14,7 @@ export const auth = betterAuth({
     basePath: '/auth',
     secret: process.env.APP_SECRET,
     database: drizzleAdapter(getConnection(), {
-        provider: 'sqlite',
+        provider: 'pg',
     }),
     user: {
         additionalFields: {
