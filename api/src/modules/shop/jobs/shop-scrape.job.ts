@@ -734,18 +734,29 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             );
 
             if (checkerResult.checks.length > 0) {
-                insertPromises.push(
-                    tx.insert(shopCheck).values(
-                        checkerResult.checks.map((c) => ({
-                            shopId: shop.id,
-                            checkId: c.id,
-                            level: c.level,
-                            message: c.message,
-                            source: c.source,
-                            link: c.link,
-                        })),
-                    ),
-                );
+                for (const c of checkerResult.checks) {
+                    insertPromises.push(
+                        tx
+                            .insert(shopCheck)
+                            .values({
+                                shopId: shop.id,
+                                checkId: c.id,
+                                level: c.level,
+                                message: c.message,
+                                source: c.source,
+                                link: c.link,
+                            })
+                            .onConflictDoUpdate({
+                                target: [shopCheck.shopId, shopCheck.checkId],
+                                set: {
+                                    level: c.level,
+                                    message: c.message,
+                                    source: c.source,
+                                    link: c.link,
+                                },
+                            }),
+                    );
+                }
             }
 
             await Promise.all(insertPromises);
