@@ -68,7 +68,7 @@ jobs:
               uses: 1password/install-cli-action@v2
 
             - name: Deploy to Staging
-              run: op run --env-file .env.staging -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
+              run: op run --env-file .env.staging --no-masking -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
               env:
                 OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
                 DOCKER_HOST: ssh://root@shea.shyim.de

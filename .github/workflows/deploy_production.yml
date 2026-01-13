@@ -71,7 +71,7 @@ jobs:
               uses: 1password/install-cli-action@v2
 
             - name: Deploy to Production
-              run: op run --env-file .env.production -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
+              run: op run --env-file .env.production --no-masking -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
               env:
                 OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
                 DOCKER_HOST: ssh://root@shea.shyim.de
