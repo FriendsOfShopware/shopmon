@@ -1,3 +1,4 @@
+import '#src/sentry.ts';
 import * as cron from 'node-cron';
 import { invitationCleanupJob } from '#src/modules/organization/jobs/invitation-cleanup.job';
 import { lockCleanupJob } from '#src/modules/shared/jobs/lock-cleanup.job';
