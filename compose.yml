@@ -16,7 +16,7 @@ services:
       - "8025:8025"
       - "1025:1025"
   demoshop:
-    image: ghcr.io/friendsofshopware/shopware-demo-environment:6.7.0
+    image: ghcr.io/friendsofshopware/shopware-demo-environment:6.7.5
     environment:
       APP_URL: "http://localhost:3889"
       EXTENSIONS: "frosh/tools:* frosh/shopmon:*"
