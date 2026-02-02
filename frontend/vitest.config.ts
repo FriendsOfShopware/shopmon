@@ -39,5 +39,7 @@ export default defineConfig({
         'src/**/__tests__/**',
       ],
     },
+    // Setup file to configure global stubs
+    setupFiles: ['./src/test-setup.ts'],
   },
 });
