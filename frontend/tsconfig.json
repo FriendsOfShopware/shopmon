@@ -3,7 +3,7 @@
 		"strict": true,
 		"baseUrl": "src",
 		"target": "esnext",
-		"moduleResolution": "Node",
+		"moduleResolution": "bundler",
 		"module": "ES2020",
 		"skipLibCheck": true,
 		"paths": {
@@ -12,7 +12,7 @@
 		"strictNullChecks": true,
 		"lib": ["DOM", "DOM.Iterable", "ES2015", "ESNext"],
 		"jsx": "preserve",
-		"types": ["unplugin-icons/types/vue"]
+		"types": ["unplugin-icons/types/vue", "vitest/globals"]
 	},
-	"exclude": ["node_modules", "dist", "test"]
+	"exclude": ["node_modules", "dist"]
 }
