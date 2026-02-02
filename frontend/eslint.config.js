@@ -134,6 +134,55 @@ export default [
         },
     },
 
+    // Test files configuration
+    {
+        files: ['**/*.spec.ts'],
+        languageOptions: {
+            parser: vueParser,
+            parserOptions: {
+                parser: typescriptParser,
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+                extraFileExtensions: ['.vue'],
+                project: './tsconfig.json',
+                tsconfigRootDir: import.meta.dirname,
+            },
+            globals: {
+                // Vitest globals
+                describe: 'readonly',
+                it: 'readonly',
+                expect: 'readonly',
+                vi: 'readonly',
+                beforeEach: 'readonly',
+                afterEach: 'readonly',
+                beforeAll: 'readonly',
+                afterAll: 'readonly',
+                // Browser globals
+                window: 'readonly',
+                document: 'readonly',
+                console: 'readonly',
+                // Vue globals
+                defineProps: 'readonly',
+                defineEmits: 'readonly',
+                defineExpose: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': typescript,
+            vue,
+        },
+        rules: {
+            // Allow multiple components in test files (for stubs)
+            'vue/one-component-per-file': 'off',
+            // Allow test stubs without prop types
+            'vue/require-prop-types': 'off',
+            // Allow any in test mocks
+            '@typescript-eslint/no-explicit-any': 'off',
+            // General rules
+            'no-console': 'off',
+        },
+    },
+
     // Biome configuration - must be last to override conflicting rules
     biome,
 ];
