@@ -15,13 +15,11 @@ tslint:
 
 lint:
 	cd api && ../node_modules/.bin/tsc --noEmit
-	cd frontend && ../node_modules/.bin/eslint --cache
-	node_modules/.bin/biome ci
+	bun oxlint
+	bun oxfmt --check
 
 lint-fix:
-	cd frontend && ../node_modules/.bin/eslint --cache --fix
-	node_modules/.bin/biome check --fix --unsafe
-	node_modules/.bin/biome format --write
+	bun oxfmt
 
 generate-migration:
 	cd api && npx drizzle-kit generate

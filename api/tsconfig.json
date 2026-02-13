@@ -1,36 +1,36 @@
 {
-	"compilerOptions": {
-		// Environment setup & latest features
-		"lib": ["ESNext"],
-		"target": "ESNext",
-		"module": "nodenext",
-		"moduleDetection": "force",
-		"jsx": "react-jsx",
-		"allowJs": true,
+  "compilerOptions": {
+    // Environment setup & latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
 
-		// Bundler mode
-		"allowImportingTsExtensions": true,
-		"verbatimModuleSyntax": true,
-		"erasableSyntaxOnly": true,
-		"noEmit": true,
+    // Bundler mode
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noEmit": true,
 
-		// Best practices
-		"strict": false,
-		"skipLibCheck": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
-		"baseUrl": ".",
-		"paths": {
-			"#src/*": ["./src/*"]
-		},
+    // Best practices
+    "strict": false,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "baseUrl": ".",
+    "paths": {
+      "#src/*": ["./src/*"]
+    },
 
-		// Some stricter flags (disabled by default)
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false,
-		"types": ["@types/bun"]
-	},
-	"include": ["*.ts", "src/**/*", "src/types/env.d.ts", "src/mjml.d.ts"],
-	"exclude": ["node_modules", "dist", "test"]
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "types": ["@types/bun"]
+  },
+  "include": ["*.ts", "src/**/*", "src/types/env.d.ts", "src/mjml.d.ts"],
+  "exclude": ["node_modules", "dist", "test"]
 }

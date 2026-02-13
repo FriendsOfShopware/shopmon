@@ -1,20 +1,17 @@
-import type { Drizzle } from '#src/db.ts';
+import type { Drizzle } from "#src/db.ts";
 import AdminRepository, {
-    type OrganizationListParams,
-    type ShopListParams,
-} from './admin.repository.ts';
+  type OrganizationListParams,
+  type ShopListParams,
+} from "./admin.repository.ts";
 
-export const listOrganizations = async (
-    db: Drizzle,
-    params?: OrganizationListParams,
-) => {
-    return await AdminRepository.listOrganizations(db, params);
+export const listOrganizations = async (db: Drizzle, params?: OrganizationListParams) => {
+  return await AdminRepository.listOrganizations(db, params);
 };
 
 export const listShops = async (db: Drizzle, params?: ShopListParams) => {
-    return await AdminRepository.listShops(db, params);
+  return await AdminRepository.listShops(db, params);
 };
 
 export const getStats = async (db: Drizzle) => {
-    return await AdminRepository.getStats(db);
+  return await AdminRepository.getStats(db);
 };

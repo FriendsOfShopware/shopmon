@@ -1,0 +1,24 @@
+{
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "no-unused-vars": "error",
+    "no-debugger": "error",
+    "no-console": "warn",
+    "prefer-const": "error"
+  },
+  "ignore": [
+    "dist",
+    "node_modules",
+    "*.config.js",
+    "*.config.mjs",
+    "*.config.ts",
+    ".vite",
+    "components.d.ts",
+    "auto-imports.d.ts"
+  ]
+}
