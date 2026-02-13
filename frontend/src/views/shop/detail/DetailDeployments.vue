@@ -357,7 +357,6 @@ const formatDuration = (seconds: string) => {
   return `${num.toFixed(2)}s`;
 };
 
-// Watch for shop to be available
 watch(
   shop,
   (newShop) => {

@@ -351,10 +351,6 @@ const names = [
   "zhukovsky",
 ];
 
-/**
- * Generate a random name in the format "adjective_name"
- * Similar to Docker's container naming convention
- */
 export function generateRandomName(): string {
   const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
   const name = names[Math.floor(Math.random() * names.length)];

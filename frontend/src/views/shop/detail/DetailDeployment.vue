@@ -134,39 +134,33 @@ const ansiToHtml = (text: string) => {
   if (!text) return "";
 
   const ansiColors: Record<number, string> = {
-    // Reset
     0: "</span>",
-    // Regular colors
-    30: "#24292e", // Black
-    31: "#f85149", // Red
-    32: "#3fb950", // Green
-    33: "#d29922", // Yellow
-    34: "#58a6ff", // Blue
-    35: "#bc8cff", // Magenta
-    36: "#39c5cf", // Cyan
-    37: "#c9d1d9", // White
-    // Bright colors
-    90: "#6e7681", // Bright Black (Gray)
-    91: "#ff7b72", // Bright Red
-    92: "#56d364", // Bright Green
-    93: "#e3b341", // Bright Yellow
-    94: "#79c0ff", // Bright Blue
-    95: "#d2a8ff", // Bright Magenta
-    96: "#56d4dd", // Bright Cyan
-    97: "#f0f6fc", // Bright White
-    // Default/Reset
-    39: "#c9d1d9", // Default foreground
+    30: "#24292e",
+    31: "#f85149",
+    32: "#3fb950",
+    33: "#d29922",
+    34: "#58a6ff",
+    35: "#bc8cff",
+    36: "#39c5cf",
+    37: "#c9d1d9",
+    39: "#c9d1d9",
+    90: "#6e7681",
+    91: "#ff7b72",
+    92: "#56d364",
+    93: "#e3b341",
+    94: "#79c0ff",
+    95: "#d2a8ff",
+    96: "#56d4dd",
+    97: "#f0f6fc",
   };
 
   let html = "";
   let currentColor = "";
 
-  // Replace ANSI escape sequences with HTML
   const parts = text.split(/\x1b\[/);
 
   for (let i = 0; i < parts.length; i++) {
     if (i === 0) {
-      // First part has no escape sequence
       html += parts[i];
       continue;
     }
@@ -178,17 +172,14 @@ const ansiToHtml = (text: string) => {
 
       for (const code of codes) {
         if (code === 0) {
-          // Reset
           if (currentColor) {
             html += "</span>";
             currentColor = "";
           }
         } else if (ansiColors[code]) {
-          // Close previous color if exists
           if (currentColor) {
             html += "</span>";
           }
-          // Open new color
           currentColor = ansiColors[code];
           html += `<span style="color: ${currentColor}">`;
         }
@@ -200,7 +191,6 @@ const ansiToHtml = (text: string) => {
     }
   }
 
-  // Close any remaining open span
   if (currentColor) {
     html += "</span>";
   }
@@ -213,7 +203,6 @@ const formattedOutput = computed(() => {
   return ansiToHtml(deployment.value.output);
 });
 
-// Watch for shop to be available
 watch(
   shop,
   (newShop) => {
@@ -411,14 +400,12 @@ onMounted(() => {
   -moz-tab-size: 4;
 }
 
-/* Style ANSI-like patterns for better terminal look */
 .output-content::before {
   content: "";
   display: block;
   height: 0;
 }
 
-/* Add scrollbar styling for dark theme */
 .output-container::-webkit-scrollbar {
   width: 10px;
   height: 10px;

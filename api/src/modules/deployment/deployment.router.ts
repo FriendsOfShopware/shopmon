@@ -63,7 +63,6 @@ export const deploymentRouter = router({
         });
       }
 
-      // Verify deployment belongs to the shop
       if (deploymentRecord.shopId !== input.shopId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -109,7 +108,6 @@ export const deploymentRouter = router({
     .use(loggedInUserMiddleware)
     .use(shopMiddleware)
     .mutation(async ({ ctx, input }) => {
-      // Generate a random token (using crypto)
       const token = crypto.randomUUID().replace(/-/g, "");
       const id = crypto.randomUUID();
 
@@ -122,7 +120,6 @@ export const deploymentRouter = router({
         lastUsedAt: null,
       });
 
-      // Return token only on creation (won't be shown again)
       return {
         id,
         token,
@@ -141,7 +138,6 @@ export const deploymentRouter = router({
     .use(loggedInUserMiddleware)
     .use(shopMiddleware)
     .mutation(async ({ ctx, input }) => {
-      // Verify token belongs to shop
       const result = await ctx.drizzle
         .select()
         .from(deploymentToken)
@@ -178,7 +174,6 @@ export const deploymentRouter = router({
     .use(loggedInUserMiddleware)
     .use(shopMiddleware)
     .mutation(async ({ ctx, input }) => {
-      // Verify deployment belongs to shop
       const result = await ctx.drizzle
         .select()
         .from(deployment)

@@ -11,7 +11,7 @@ export function isValidGitUrl(url: string) {
   try {
     new URL(normalizeGitUrl(url));
     return true;
-  } catch (_error) {
+  } catch {
     return false;
   }
 }

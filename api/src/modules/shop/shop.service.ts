@@ -254,7 +254,6 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
 };
 
 export const deleteShop = async (db: Drizzle, shopId: number) => {
-  // Delete S3 deployment outputs before DB cascade removes the rows
   try {
     await deleteDeploymentOutputsByShopId(db, shopId);
   } catch (error) {
@@ -266,23 +265,12 @@ export const deleteShop = async (db: Drizzle, shopId: number) => {
 
   console.log(`Shop ${shopId} deleted`);
 
-  // Clean up sitespeed results from filesystem
-  // Note: The repo previously called this, but it's better here or in the repo?
-  // The original repo code had this.
-  // We will update the repo to ONLY do DB deletes, so we do FS cleanup here.
   try {
     await deleteSitespeedReport(shopId);
   } catch (error) {
     console.error(`Failed to clean up sitespeed results for shop ${shopId}:`, error);
   }
 
-  // We also need to remove the sitespeed folder manually as done in updateSitespeedSettings?
-  // The original repo code had this inside deleteShop:
-  // await deleteSitespeedReport(id);
-  // But updateSitespeedSettings had:
-  // await fs.rm(path.join('./files/sitespeed', input.shopId.toString()), { recursive: true, force: true });
-  // We should probably unify this. deleteSitespeedReport calls the external service.
-  // The local file cleanup seems to be separate.
 };
 
 export const update = async (db: Drizzle, userId: string, input: UpdateShopInput) => {
