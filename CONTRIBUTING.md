@@ -117,7 +117,7 @@ If your changes require database modifications:
 
 ## Code Style
 
-We use [oxfmt](https://oxc.rs/) for code formatting and [ESLint](https://eslint.org/) for linting. The oxfmt configuration is in `.oxfmt.toml` and ESLint configuration is in `frontend/eslint.config.js`.
+We use [oxfmt](https://oxc.rs/) for code formatting and [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting. Both are part of the oxc toolchain. The oxfmt configuration is in `.oxfmt.toml` and oxlint configuration is in `oxlintrc.json`.
 
 ### Key Guidelines
 

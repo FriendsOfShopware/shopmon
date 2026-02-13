@@ -228,7 +228,7 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
   let resp: HttpClientResponse<{ version: string }>;
   try {
     resp = await client.get("/_info/config");
-  } catch (_e) {
+  } catch {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Cannot reach shop. Check your credentials and shop URL.",
@@ -323,7 +323,7 @@ export const update = async (db: Drizzle, userId: string, input: UpdateShopInput
 
     try {
       await client.get("/_info/config");
-    } catch (_e) {
+    } catch {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Cannot reach shop. Check your credentials and shop URL.",

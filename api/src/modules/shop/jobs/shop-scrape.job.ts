@@ -430,7 +430,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     version: changelog.version,
                     text: changelog.text,
                     creationDate: changelog.creationDate.date,
-                    isCompatible: compare < 0 || compare === 0,
+                    isCompatible: compare <= 0,
                   } as ExtensionChangelog);
                 }
               }

@@ -307,12 +307,12 @@ const schema = Yup.object().shape({
   projectId: Yup.number().required("Project is required"),
   clientId: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
-    // Valid Yup schema method
+    // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
     then: () => Yup.string().required("If you change the URL you need to provide Client-ID"),
   }),
   clientSecret: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
-    // Valid Yup schema method
+    // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
     then: () => Yup.string().required("If you change the URL you need to provide Client-Secret"),
   }),
 });

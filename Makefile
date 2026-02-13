@@ -15,11 +15,10 @@ tslint:
 
 lint:
 	cd api && ../node_modules/.bin/tsc --noEmit
-	cd frontend && ../node_modules/.bin/eslint --cache
+	bun oxlint
 	bun oxfmt --check
 
 lint-fix:
-	cd frontend && ../node_modules/.bin/eslint --cache --fix
 	bun oxfmt
 
 generate-migration:

@@ -12,7 +12,8 @@
     }
   },
   "devDependencies": {
-    "oxfmt": "^0.32.0"
+    "oxfmt": "^0.32.0",
+    "oxlint": "^1.47.0"
   },
   "overrides": {
     "better-sqlite3": "npm:empty-npm-package@1.0.0",
