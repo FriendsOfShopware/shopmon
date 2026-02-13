@@ -1,44 +1,49 @@
 .badge {
-	font-size: 0.75rem;
-	line-height: 1;
-	font-weight: 600;
-	display: inline-block;
-	padding: 0.25rem 0.5rem;
-	border-radius: 0.25rem;
-	background-color: #d1d5db;
-	color: var(--text-color);
-	vertical-align: 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 600;
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #d1d5db;
+  color: var(--text-color);
+  vertical-align: 0.2rem;
 
-	&:not(:first-child) {
-		margin-left: 0.5rem;
-	}
+  &:not(:first-child) {
+    margin-left: 0.5rem;
+  }
 
-	.dark & {
-		color: #111827;
-	}
+  .dark & {
+    color: #111827;
+  }
 
-	&-primary {
-		background-color: var(--color-primary-light);
-		color: var(--color-primary);
-	}
+  &-primary {
+    background-color: #dbeafe;
+    color: #1d4ed8;
 
-	&-info {
-		background-color: var(--info-color);
-		color: #fff;
-	}
+    .dark & {
+      background-color: #1e3a5f;
+      color: #93c5fd;
+    }
+  }
 
-	&-warning {
-		background-color: var(--warning-color);
-	}
+  &-info {
+    background-color: var(--info-color);
+    color: #fff;
+  }
 
-	&-error,
-	&-danger {
-		background-color: var(--error-color);
-		color: #fff;
-	}
+  &-warning {
+    background-color: var(--warning-color);
+  }
 
-	&-success {
-		background-color: #10b981;
-		color: #fff;
-	}
+  &-error,
+  &-danger {
+    background-color: var(--error-color);
+    color: #fff;
+  }
+
+  &-success {
+    background-color: #10b981;
+    color: #fff;
+  }
 }

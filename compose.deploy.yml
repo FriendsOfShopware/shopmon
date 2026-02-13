@@ -1,7 +1,6 @@
 x-env: &env
+  DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
   MAIL_FROM: "Shopmon <noreply@fos.gg>"
-  APP_FILES_DIR: /app/uploads
-  APP_DATABASE_PATH: /app/db/shopmon.db
   APP_OAUTH_GITHUB_CLIENT_ID: ${APP_OAUTH_GITHUB_CLIENT_ID}
   APP_OAUTH_GITHUB_CLIENT_SECRET: ${APP_OAUTH_GITHUB_CLIENT_SECRET}
   # From 1password
@@ -13,19 +12,22 @@ x-env: &env
   SMTP_USER: ${SMTP_USER}
   SMTP_PASS: ${SMTP_PASS}
   SMTP_REPLY_TO: ${SMTP_REPLY_TO}
-  APP_SITESPEED_ENDPOINT: http://sitespeed:3001
+  APP_SITESPEED_ENDPOINT: https://sitespeed.fos.gg
+  APP_SITESPEED_PREFIX: shopmon-${ENVIRONMENT}-
+  APP_SITESPEED_API_KEY: ${APP_SITESPEED_API_KEY}
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT}
   SENTRY_DSN: ${SENTRY_DSN}
 
 services:
   migrate:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+    depends_on:
+      - db
     environment:
       <<: *env
-    command: "migrate.ts"
-    volumes:
-      - db:/app/db
-      - uploads:/app/uploads
+    command: "migrate.js"
 
   frontend:
     image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}
@@ -52,13 +54,15 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    volumes:
+      - db:/app/db
     environment:
       <<: *env
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_default
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.entrypoints=websecure
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`) || PathPrefix(`/sitespeed`))
+      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`))
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls=true
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.certresolver=cloudflare
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.domains[0].main=fos.gg
@@ -67,33 +71,35 @@ services:
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress=true
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
-    volumes:
-      - db:/app/db
-      - uploads:/app/api/files
 
-  sitespeed:
-    image: ghcr.io/friendsofshopware/shopmon/sitespeed:${ENVIRONMENT}
+  cron:
+    image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
+    networks:
+      - shopmon
+    depends_on:
+      - db
+    environment:
+      <<: *env
+    command: "cron.js"
+
+  db:
+    image: postgres:18.1
+    labels:
+      - docker-backup.enable=true
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.type=postgres
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.schedule=0 * * * *
+      - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.retention=12
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.type=postgres
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.schedule=0 3 * * *
+      - docker-backup.shopmon-${ENVIRONMENT}-db-daily.retention=7
     networks:
       - shopmon
     environment:
-      APP_SITESPEED_DATA_FOLDER: /app/uploads/sitespeed
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - uploads:/app/uploads
-
-  backup:
-    image: litestream/litestream
-    volumes:
-      - db:/data
-    command: ["replicate", "--config", "/etc/litestream.yml"]
-    configs:
-      - source: litestream
-        target: /etc/litestream.yml
-    environment:
-      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID}
-      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY}
-      LITESTREAM_AGE_PUBLIC_KEY: ${LITESTREAM_AGE_PUBLIC_KEY}
-      LITESTREAM_AGE_PRIVATE_KEY: ${LITESTREAM_AGE_PRIVATE_KEY}
-      ENVIRONMENT: ${ENVIRONMENT}
+      - db-data:/var/lib/postgresql
 
 networks:
   traefik:
@@ -102,18 +108,6 @@ networks:
   shopmon:
 
 volumes:
+  # Old SQLITE DB
   db:
-  uploads:
-
-configs:
-  litestream:
-    content: |
-      addr: ":9090"
-      dbs:
-        - path: /data/shopmon.db
-          replica:
-            type: s3
-            bucket: shopmon-backups
-            path: db/$ENVIRONMENT/
-            endpoint: s3.eu-central-003.backblazeb2.com
-            force-path-style: true
+  db-data:

@@ -1,0 +1,17 @@
+[formatting]
+indent_width = 4
+indent_style = "space"
+quote_style = "single"
+line_width = 120
+
+[files]
+include = [
+  "api/src/**/*.ts",
+  "frontend/src/components/**/*.{ts,vue}",
+  "frontend/src/composables/**/*.{ts,vue}",
+  "frontend/src/helpers/**/*.{ts,vue}",
+  "frontend/src/layouts/**/*.{ts,vue}",
+  "frontend/src/router/**/*.{ts,vue}",
+  "frontend/src/views/**/*.{ts,vue}",
+  "frontend/src/App.vue",
+]

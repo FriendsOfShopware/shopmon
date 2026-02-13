@@ -1,0 +1,1 @@
+ALTER TABLE "shop_sitespeed" ALTER COLUMN "cumulative_layout_shift" SET DATA TYPE real;

@@ -1,16 +1,12 @@
-FROM node:24-alpine AS build
+FROM oven/bun:1 AS build
 
-RUN corepack enable
-COPY pnpm* /app/
-COPY frontend/package.json /app/frontend/
+COPY . /app/
 
 WORKDIR /app
-RUN pnpm install
-
-COPY frontend /app/frontend
+RUN bun install
 
 WORKDIR /app/frontend
-RUN pnpm run build
+RUN bun run build
 
 FROM cgr.dev/chainguard/nginx
 

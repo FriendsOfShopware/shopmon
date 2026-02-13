@@ -2,10 +2,10 @@
 
 Shopmon is an application from FriendsOfShopware to manage multiple Shopware instances.
 
-* Credentials are saved in a SQLite database
-  * Client secrets are encrypted using [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
-* API runs on Bun runtime
-* Mails are sent via SMTP
+- Credentials are saved in a SQLite database
+  - Client secrets are encrypted using [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
+- API runs on Bun runtime
+- Mails are sent via SMTP
 
 ## Features
 
@@ -97,6 +97,7 @@ make dev
 ```
 
 This will start:
+
 - API server on http://localhost:3000
 - Frontend dev server on http://localhost:5173
 
@@ -115,16 +116,19 @@ make up
 For production deployment, you can use the provided Docker setup:
 
 1. Build the Docker image:
+
 ```bash
 docker build -t shopmon .
 ```
 
 2. Run with docker compose:
+
 ```bash
 docker compose -f compose.deploy.yml up -d
 ```
 
 Make sure to:
+
 - Use a strong APP_SECRET
 - Configure proper email settings
 - Set up persistent volumes for database and uploads

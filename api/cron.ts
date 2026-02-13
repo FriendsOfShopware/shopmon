@@ -1,0 +1,48 @@
+import "#src/sentry.ts";
+import * as cron from "node-cron";
+import { invitationCleanupJob } from "#src/modules/organization/jobs/invitation-cleanup.job";
+import { lockCleanupJob } from "#src/modules/shared/jobs/lock-cleanup.job";
+import { shopScrapeJob } from "#src/modules/shop/jobs/shop-scrape.job";
+import { scrapeSitespeedForAllShops } from "#src/modules/shop/jobs/sitespeed-scrape.job";
+
+console.log("Registered cron jobs...");
+
+// Run shop scrape every hour
+cron.schedule("0 * * * *", async () => {
+  console.log("Running shop scrape job...");
+  try {
+    await shopScrapeJob();
+  } catch (error) {
+    console.error("Shop scrape job failed:", error);
+  }
+});
+
+// Run sitespeed scrape once daily at 3 AM
+cron.schedule("0 3 * * *", async () => {
+  console.log("Running sitespeed scrape job...");
+  try {
+    await scrapeSitespeedForAllShops();
+  } catch (error) {
+    console.error("Sitespeed scrape job failed:", error);
+  }
+});
+
+// Run lock cleanup job every day at 4 AM
+cron.schedule("0 4 * * *", async () => {
+  console.log("Running lock cleanup job...");
+  try {
+    await lockCleanupJob();
+  } catch (error) {
+    console.error("Lock cleanup job failed:", error);
+  }
+});
+
+// Run invitation cleanup job every day at 5 AM
+cron.schedule("0 5 * * *", async () => {
+  console.log("Running invitation cleanup job...");
+  try {
+    await invitationCleanupJob();
+  } catch (error) {
+    console.error("Invitation cleanup job failed:", error);
+  }
+});

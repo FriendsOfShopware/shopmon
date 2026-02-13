@@ -1,11 +1,22 @@
 services:
+  db:
+    image: postgres:18.1
+    environment:
+      POSTGRES_DB: shopmon
+      POSTGRES_USER: shopmon
+      POSTGRES_PASSWORD: shopmon
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+
   mailpit:
     image: axllent/mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
   demoshop:
-    image: ghcr.io/friendsofshopware/shopware-demo-environment:6.7.0
+    image: ghcr.io/friendsofshopware/shopware-demo-environment:6.7.7
     environment:
       APP_URL: "http://localhost:3889"
       EXTENSIONS: "frosh/tools:* frosh/shopmon:*"
@@ -14,15 +25,33 @@ services:
     ports:
       - "3889:8000"
   sitespeed-service:
-    build:
-      context: sitespeed-service
+    image: ghcr.io/shyim/sitespeed.io-api:main
     ports:
       - "3001:3001"
-    develop:
-      watch:
-        - action: rebuild
-          path: sitespeed-service/index.ts
-    volumes:
-      - ./api/files/sitespeed-results:/app/results
     environment:
-      - APP_SITESPEED_DATA_FOLDER=/app/results
+      S3_SERVICE_URL: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET_NAME: sitespeed-results
+      ASPNETCORE_ENVIRONMENT: Development
+      AUTH_TOKEN: secret
+      S3_DISABLE_PAYLOAD_SIGNING: "false"
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; /usr/bin/mc mb -p myminio/shopmon; exit 0; "
+
+volumes:
+  db-data:

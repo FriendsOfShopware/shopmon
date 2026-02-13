@@ -1,26 +1,22 @@
-FROM node:24-alpine AS api
+FROM oven/bun:1 AS build
 
-RUN corepack enable
-COPY pnpm* /app/
-COPY api/package.json /app/api/
+COPY . /app
 
 WORKDIR /app
-RUN pnpm install --production
-
-COPY api /app/api
-    
+RUN bun install --production
 WORKDIR /app/api
+RUN bun run build.ts
 
-FROM node:24-alpine
+FROM oven/bun:1
 
 ARG SENTRY_RELEASE="unknown"
 ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 
-COPY --from=api /app/ /app/
+COPY --from=build /app/api/dist /app/
 
-WORKDIR /app/api
+WORKDIR /app
 ENV NODE_ENV=production
 EXPOSE 3000
-ENTRYPOINT [ "node", "--no-warnings=ExperimentalWarning" ]
+ENTRYPOINT [ "bun" ]
 
-CMD [ "src/index.ts" ]
+CMD [ "app.js" ]

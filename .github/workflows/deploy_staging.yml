@@ -3,69 +3,70 @@ on:
   workflow_dispatch:
 
 permissions:
-    contents: read
-    id-token: write
-    packages: write
+  contents: read
+  id-token: write
+  packages: write
 
 jobs:
-    deploy:
-        runs-on: ubuntu-24.04-arm
-        environment:
-            name: staging
-            url: https://shopmon-staging.fos.gg
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v5
+  deploy:
+    runs-on: ubuntu-24.04-arm
+    environment:
+      name: staging
+      url: https://shopmon-staging.fos.gg
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-            - name: Login to GitHub Container Registry
-              uses: docker/login-action@v3
-              with:
-                registry: ghcr.io
-                username: ${{ github.actor }}
-                password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Install and configure Namespace CLI
-              uses: namespacelabs/nscloud-setup@v0
+      - name: Install and configure Namespace CLI
+        uses: namespacelabs/nscloud-setup@v0
 
-            - name: Configure Namespace powered Buildx
-              uses: namespacelabs/nscloud-setup-buildx-action@v0
+      - name: Configure Namespace powered Buildx
+        uses: namespacelabs/nscloud-setup-buildx-action@v0
 
-            - name: Build and push (frontend)
-              uses: docker/build-push-action@v6
-              with:
-                push: true
-                tags: ghcr.io/friendsofshopware/shopmon/frontend:staging
-                platforms: linux/arm64
-                file: Dockerfile.frontend
-                build-args:
-                  SENTRY_RELEASE=${{ github.sha }}
+      - name: Build and push (frontend)
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/friendsofshopware/shopmon/frontend:staging
+          platforms: linux/arm64
+          file: Dockerfile.frontend
+          build-args: SENTRY_RELEASE=${{ github.sha }}
 
-            - name: Build and push (api)
-              uses: docker/build-push-action@v6
-              with:
-                push: true
-                tags: ghcr.io/friendsofshopware/shopmon/api:staging
-                file: Dockerfile.api
-                platforms: linux/arm64
-                build-args:
-                  SENTRY_RELEASE=${{ github.sha }}
+      - name: Build and push (api)
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/friendsofshopware/shopmon/api:staging
+          file: Dockerfile.api
+          platforms: linux/arm64
+          build-args: SENTRY_RELEASE=${{ github.sha }}
 
-            - name: Build and push (sitespeed)
-              uses: docker/build-push-action@v6
-              with:
-                push: true
-                tags: ghcr.io/friendsofshopware/shopmon/sitespeed:staging
-                platforms: linux/arm64
-                context: sitespeed-service
+      - name: Create Sentry release
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: staging
 
-            - name: Create Sentry release
-              uses: getsentry/action-release@v3
-              env:
-                SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-                SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-                SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-              with:
-                environment: staging
+      - name: Setup opkssh
+        uses: openpubkey/setup-opkssh@v1
+        with:
+          ssh-hosts-to-scan: "shea.shyim.de"
 
-            - name: Trigger Deployment
-              run: curl -X POST ${{ secrets.DEPLOY_URL }}
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v2
+
+      - name: Deploy to Staging
+        run: op run --env-file .env.staging --no-masking -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DOCKER_HOST: ssh://root@shea.shyim.de
