@@ -407,13 +407,16 @@ export const passkeyRelations = relations(passkey, ({ one }) => ({
   }),
 }));
 
-export const deploymentToken = pgTable("deployment_token", {
+export type ProductTokenScope = "deployment";
+
+export const productToken = pgTable("product_token", {
   id: text("id").primaryKey(),
   shopId: integer("shop_id")
     .notNull()
     .references(() => shop.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
   name: text("name").notNull(),
+  scope: text("scope").notNull().$type<ProductTokenScope>(),
   createdAt: timestamp("created_at").notNull(),
   lastUsedAt: timestamp("last_used_at"),
 });
@@ -503,9 +506,9 @@ export const deploymentRelations = relations(deployment, ({ one }) => ({
   }),
 }));
 
-export const deploymentTokenRelations = relations(deploymentToken, ({ one }) => ({
+export const productTokenRelations = relations(productToken, ({ one }) => ({
   shop: one(shop, {
-    fields: [deploymentToken.shopId],
+    fields: [productToken.shopId],
     references: [shop.id],
   }),
 }));
@@ -543,7 +546,7 @@ export const schema = {
 
   // Deployments
   deployment,
-  deploymentToken,
+  productToken,
 
   // Auth Relations
   userRelations,
@@ -560,7 +563,7 @@ export const schema = {
   shopRelations,
   organizationRelations,
   deploymentRelations,
-  deploymentTokenRelations,
+  productTokenRelations,
 };
 
 export type Drizzle = PostgresJsDatabase<typeof schema>;

@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { deployment, deploymentToken, organization, shop } from "#src/db.ts";
+import { deployment, productToken, organization, shop } from "#src/db.ts";
 import { generateRandomName } from "#src/helpers/nameGenerator.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
 import { presignDeploymentOutputUpload } from "./deployment.storage.ts";
@@ -31,15 +31,22 @@ export const cliRouter = router({
 
     const tokenResult = await ctx.drizzle
       .select()
-      .from(deploymentToken)
-      .where(eq(deploymentToken.token, token));
+      .from(productToken)
+      .where(eq(productToken.token, token));
 
-    const deploymentTokenRecord = tokenResult[0];
+    const productTokenRecord = tokenResult[0];
 
-    if (!deploymentTokenRecord) {
+    if (!productTokenRecord) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Invalid token",
+      });
+    }
+
+    if (productTokenRecord.scope !== "deployment") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Token does not have deployment scope",
       });
     }
 
@@ -48,7 +55,7 @@ export const cliRouter = router({
     const result = await ctx.drizzle
       .insert(deployment)
       .values({
-        shopId: deploymentTokenRecord.shopId,
+        shopId: productTokenRecord.shopId,
         name,
         command: input.command,
         returnCode: input.return_code,
@@ -66,9 +73,9 @@ export const cliRouter = router({
     const upload_url = presignDeploymentOutputUpload(deploymentId);
 
     await ctx.drizzle
-      .update(deploymentToken)
+      .update(productToken)
       .set({ lastUsedAt: new Date() })
-      .where(eq(deploymentToken.id, deploymentTokenRecord.id));
+      .where(eq(productToken.id, productTokenRecord.id));
 
     const shopResult = await ctx.drizzle
       .select({
@@ -76,12 +83,12 @@ export const cliRouter = router({
       })
       .from(shop)
       .innerJoin(organization, eq(shop.organizationId, organization.id))
-      .where(eq(shop.id, deploymentTokenRecord.shopId));
+      .where(eq(shop.id, productTokenRecord.shopId));
 
     const shopData = shopResult[0];
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-    const deploymentUrl = `${frontendUrl}/app/organizations/${shopData?.organizationSlug}/shops/${deploymentTokenRecord.shopId}/deployments/${deploymentId}`;
+    const deploymentUrl = `${frontendUrl}/app/organizations/${shopData?.organizationSlug}/shops/${productTokenRecord.shopId}/deployments/${deploymentId}`;
 
     return {
       success: true,

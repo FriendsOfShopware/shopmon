@@ -2,7 +2,7 @@
   <div class="deployments-container">
     <div class="panel panel-table">
       <div class="panel-header">
-        <h3>Deployment Tokens</h3>
+        <h3>Product Tokens</h3>
         <button class="btn btn-primary btn-sm" @click="showCreateTokenDialog = true">
           <icon-fa6-solid:plus class="icon" />
           Create Token
@@ -13,6 +13,7 @@
         v-if="tokens && tokens.length > 0"
         :columns="[
           { key: 'name', name: 'Name', class: 'token-name-col', sortable: true },
+          { key: 'scope', name: 'Scope', class: 'token-scope-col', sortable: true },
           { key: 'createdAt', name: 'Created', class: 'token-created-col', sortable: true },
           { key: 'lastUsedAt', name: 'Last Used', class: 'token-used-col', sortable: true },
         ]"
@@ -20,6 +21,10 @@
       >
         <template #cell-name="{ row }">
           {{ row.name }}
+        </template>
+
+        <template #cell-scope="{ row }">
+          <span class="scope-badge">{{ row.scope }}</span>
         </template>
 
         <template #cell-createdAt="{ row }">
@@ -40,7 +45,7 @@
       </data-table>
       <div v-else class="empty-state">
         <icon-fa6-solid:key class="empty-icon" />
-        <p>No deployment tokens created yet.</p>
+        <p>No product tokens created yet.</p>
       </div>
     </div>
 
@@ -123,7 +128,7 @@
         <icon-fa6-solid:key class="icon icon-info" />
       </template>
 
-      <template #title> Create Deployment Token </template>
+      <template #title> Create Product Token </template>
 
       <template #content>
         <div v-if="!newToken" class="form-group">
@@ -172,7 +177,7 @@
         <icon-fa6-solid:triangle-exclamation class="icon icon-error" />
       </template>
 
-      <template #title> Delete Deployment Token </template>
+      <template #title> Delete Product Token </template>
 
       <template #content>
         Are you sure you want to delete the token "{{ tokenToDelete?.name }}"? This action cannot be
@@ -404,6 +409,10 @@ onMounted(() => {
   width: 180px;
 }
 
+.token-scope-col {
+  width: 130px;
+}
+
 .token-used-col {
   width: 180px;
 }
@@ -499,6 +508,17 @@ onMounted(() => {
   border-radius: 4px;
   font-family: monospace;
   word-break: break-all;
+}
+
+.scope-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
 }
 
 .form-group {

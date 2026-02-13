@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { deployment, deploymentToken } from "#src/db.ts";
+import { deployment, productToken } from "#src/db.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
 import { loggedInUserMiddleware, shopMiddleware } from "#src/trpc/middleware.ts";
 import { deleteDeploymentOutput, getDeploymentOutput } from "./deployment.storage.ts";
@@ -86,14 +86,15 @@ export const deploymentRouter = router({
     .query(async ({ ctx, input }) => {
       const tokens = await ctx.drizzle
         .select({
-          id: deploymentToken.id,
-          name: deploymentToken.name,
-          createdAt: deploymentToken.createdAt,
-          lastUsedAt: deploymentToken.lastUsedAt,
+          id: productToken.id,
+          name: productToken.name,
+          scope: productToken.scope,
+          createdAt: productToken.createdAt,
+          lastUsedAt: productToken.lastUsedAt,
         })
-        .from(deploymentToken)
-        .where(eq(deploymentToken.shopId, input.shopId))
-        .orderBy(desc(deploymentToken.createdAt));
+        .from(productToken)
+        .where(eq(productToken.shopId, input.shopId))
+        .orderBy(desc(productToken.createdAt));
 
       return tokens;
     }),
@@ -111,11 +112,12 @@ export const deploymentRouter = router({
       const token = crypto.randomUUID().replace(/-/g, "");
       const id = crypto.randomUUID();
 
-      await ctx.drizzle.insert(deploymentToken).values({
+      await ctx.drizzle.insert(productToken).values({
         id,
         shopId: input.shopId,
         token,
         name: input.name,
+        scope: "deployment",
         createdAt: new Date(),
         lastUsedAt: null,
       });
@@ -124,6 +126,7 @@ export const deploymentRouter = router({
         id,
         token,
         name: input.name,
+        scope: "deployment" as const,
         createdAt: new Date(),
       };
     }),
@@ -140,8 +143,8 @@ export const deploymentRouter = router({
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.drizzle
         .select()
-        .from(deploymentToken)
-        .where(eq(deploymentToken.id, input.tokenId));
+        .from(productToken)
+        .where(eq(productToken.id, input.tokenId));
 
       const token = result[0];
 
@@ -159,7 +162,7 @@ export const deploymentRouter = router({
         });
       }
 
-      await ctx.drizzle.delete(deploymentToken).where(eq(deploymentToken.id, input.tokenId));
+      await ctx.drizzle.delete(productToken).where(eq(productToken.id, input.tokenId));
 
       return { success: true };
     }),

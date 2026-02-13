@@ -81,14 +81,15 @@ export const deploymentRouter = router({
     .query(async ({ ctx, input }) => {
       const tokens = await ctx.drizzle
         .select({
-          id: schema.deploymentToken.id,
-          name: schema.deploymentToken.name,
-          createdAt: schema.deploymentToken.createdAt,
-          lastUsedAt: schema.deploymentToken.lastUsedAt,
+          id: schema.productToken.id,
+          name: schema.productToken.name,
+          scope: schema.productToken.scope,
+          createdAt: schema.productToken.createdAt,
+          lastUsedAt: schema.productToken.lastUsedAt,
         })
-        .from(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.shopId, input.shopId))
-        .orderBy(desc(schema.deploymentToken.createdAt));
+        .from(schema.productToken)
+        .where(eq(schema.productToken.shopId, input.shopId))
+        .orderBy(desc(schema.productToken.createdAt));
 
       return tokens;
     }),
@@ -106,11 +107,12 @@ export const deploymentRouter = router({
       const token = crypto.randomUUID().replace(/-/g, "");
       const id = crypto.randomUUID();
 
-      await ctx.drizzle.insert(schema.deploymentToken).values({
+      await ctx.drizzle.insert(schema.productToken).values({
         id,
         shopId: input.shopId,
         token,
         name: input.name,
+        scope: "deployment",
         createdAt: new Date(),
       });
 
@@ -118,6 +120,7 @@ export const deploymentRouter = router({
         id,
         token,
         name: input.name,
+        scope: "deployment" as const,
         createdAt: new Date(),
       };
     }),
@@ -134,8 +137,8 @@ export const deploymentRouter = router({
     .mutation(async ({ ctx, input }) => {
       const [token] = await ctx.drizzle
         .select()
-        .from(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.id, input.tokenId));
+        .from(schema.productToken)
+        .where(eq(schema.productToken.id, input.tokenId));
 
       if (!token) {
         throw new TRPCError({
@@ -152,8 +155,8 @@ export const deploymentRouter = router({
       }
 
       await ctx.drizzle
-        .delete(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.id, input.tokenId));
+        .delete(schema.productToken)
+        .where(eq(schema.productToken.id, input.tokenId));
 
       return { success: true };
     }),
