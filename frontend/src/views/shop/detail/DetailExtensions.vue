@@ -125,24 +125,22 @@ function getExtensionState(extension: Extension) {
   margin-left: 0.4rem;
 }
 
-.extension-changelog {
-  &-item {
-    margin-bottom: 0.75rem;
-  }
+.extension-changelog-item {
+  margin-bottom: 0.75rem;
+}
 
-  &-title {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
+.extension-changelog-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
 
-  &-date {
-    color: var(--text-color-muted);
-    font-weight: normal;
-  }
+.extension-changelog-date {
+  color: var(--text-color-muted);
+  font-weight: normal;
+}
 
-  &-content {
-    padding-left: 1.5rem;
-  }
+.extension-changelog-content {
+  padding-left: 1.5rem;
 }
 
 .extension-update-available {

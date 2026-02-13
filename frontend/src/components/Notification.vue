@@ -62,55 +62,55 @@ const { alert, clear } = alertComposable;
   box-shadow:
     0 1px 3px 0 rgba(0, 0, 0, 0.1),
     0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
 
-  &-info {
-    border-left-color: var(--info-color);
+.notification-info {
+  border-left-color: var(--info-color);
+}
+
+.notification-success {
+  border-left-color: var(--success-color);
+}
+
+.notification-warning {
+  border-left-color: var(--warning-color);
+}
+
+.notification-error {
+  border-left-color: var(--error-color);
+}
+
+.notification-close {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
   }
+}
 
-  &-success {
-    border-left-color: var(--success-color);
-  }
+.notification-icon {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
 
-  &-warning {
-    border-left-color: var(--warning-color);
-  }
+.notification-content {
+  flex: 1;
+}
 
-  &-error {
-    border-left-color: var(--error-color);
-  }
+.notification-title {
+  font-weight: 500;
+}
 
-  &-close {
-    position: absolute;
-    top: 0.25rem;
-    right: 0.25rem;
-    width: 1rem;
-    height: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.5;
-
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  &-icon {
-    display: flex;
-    justify-content: center;
-    margin-top: 0.25rem;
-  }
-
-  &-content {
-    flex: 1;
-  }
-
-  &-title {
-    font-weight: 500;
-  }
-
-  .dark & {
-    box-shadow: none;
-  }
+.dark .notification {
+  box-shadow: none;
 }
 </style>

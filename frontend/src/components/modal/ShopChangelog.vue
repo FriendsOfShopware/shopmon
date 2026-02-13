@@ -58,34 +58,32 @@ defineEmits<{
 </script>
 
 <style scoped>
-.modal-changelog {
-  &-title-date {
+.modal-changelog-title-date {
+  font-weight: normal;
+  color: var(--text-color-muted);
+}
+
+.modal-changelog-subtitle {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.modal-changelog-logs {
+  list-style: disc;
+
+  li {
+    margin-left: 1rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.modal-changelog-extension-name {
+  font-weight: 500;
+
+  span {
     font-weight: normal;
     color: var(--text-color-muted);
-  }
-
-  &-subtitle {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    margin-top: 0.5rem;
-  }
-
-  &-logs {
-    list-style: disc;
-
-    li {
-      margin-left: 1rem;
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  &-extension-name {
-    font-weight: 500;
-
-    span {
-      font-weight: normal;
-      color: var(--text-color-muted);
-    }
   }
 }
 </style>

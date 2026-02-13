@@ -5,25 +5,25 @@
   border-radius: 9999px;
   background-color: #d1d5db;
   white-space: nowrap;
+}
 
-  .dark & {
-    color: #111827;
-  }
+.dark .pill {
+  color: #111827;
+}
 
-  &-success {
-    background-color: var(--success-color);
-  }
+.pill-success {
+  background-color: var(--success-color);
+}
 
-  &-info {
-    background-color: var(--info-color);
-  }
+.pill-info {
+  background-color: var(--info-color);
+}
 
-  &-warning {
-    background-color: var(--warning-color);
-  }
+.pill-warning {
+  background-color: var(--warning-color);
+}
 
-  &-error {
-    background-color: var(--error-color);
-    color: #ffffff;
-  }
+.pill-error {
+  background-color: var(--error-color);
+  color: #ffffff;
 }

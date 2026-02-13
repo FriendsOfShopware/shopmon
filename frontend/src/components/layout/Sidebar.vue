@@ -148,10 +148,10 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
     0 1px 2px 0 rgba(0, 0, 0, 0.06);
   width: 100%;
   flex-shrink: 0;
+}
 
-  .dark & {
-    box-shadow: none;
-  }
+.dark .sidebar {
+  box-shadow: none;
 }
 
 /* Main */

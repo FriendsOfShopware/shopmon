@@ -37,41 +37,41 @@ function getIconComponent(type) {
   padding: 1rem;
   border-radius: 0.375rem;
   border: 1px solid transparent;
+}
 
-  &-icon {
-    flex-shrink: 0;
+.alert-icon {
+  flex-shrink: 0;
 
-    svg {
-      width: 1.25rem;
-      height: 1.25rem;
-      vertical-align: -0.4em;
-    }
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    vertical-align: -0.4em;
   }
+}
 
-  &-content {
-    flex: 1;
-    margin-left: 0.75rem;
-    padding-top: 0.15rem;
-  }
+.alert-content {
+  flex: 1;
+  margin-left: 0.75rem;
+  padding-top: 0.15rem;
+}
 
-  &-info {
-    border-color: var(--info-color);
-    background-color: var(--info-background);
-  }
+.alert-info {
+  border-color: var(--info-color);
+  background-color: var(--info-background);
+}
 
-  &-success {
-    border-color: var(--success-color);
-    background-color: var(--success-background);
-  }
+.alert-success {
+  border-color: var(--success-color);
+  background-color: var(--success-background);
+}
 
-  &-warning {
-    border-color: var(--warning-color);
-    background-color: var(--warning-background);
-  }
+.alert-warning {
+  border-color: var(--warning-color);
+  background-color: var(--warning-background);
+}
 
-  &-error {
-    border-color: var(--error-color);
-    background-color: var(--error-background);
-  }
+.alert-error {
+  border-color: var(--error-color);
+  background-color: var(--error-background);
 }
 </style>

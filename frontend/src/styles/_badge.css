@@ -12,38 +12,38 @@
   &:not(:first-child) {
     margin-left: 0.5rem;
   }
+}
 
-  .dark & {
-    color: #111827;
-  }
+.dark .badge {
+  color: #111827;
+}
 
-  &-primary {
-    background-color: #dbeafe;
-    color: #1d4ed8;
+.badge-primary {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
 
-    .dark & {
-      background-color: #1e3a5f;
-      color: #93c5fd;
-    }
-  }
+.dark .badge-primary {
+  background-color: #1e3a5f;
+  color: #93c5fd;
+}
 
-  &-info {
-    background-color: var(--info-color);
-    color: #fff;
-  }
+.badge-info {
+  background-color: var(--info-color);
+  color: #fff;
+}
 
-  &-warning {
-    background-color: var(--warning-color);
-  }
+.badge-warning {
+  background-color: var(--warning-color);
+}
 
-  &-error,
-  &-danger {
-    background-color: var(--error-color);
-    color: #fff;
-  }
+.badge-error,
+.badge-danger {
+  background-color: var(--error-color);
+  color: #fff;
+}
 
-  &-success {
-    background-color: #10b981;
-    color: #fff;
-  }
+.badge-success {
+  background-color: #10b981;
+  color: #fff;
 }

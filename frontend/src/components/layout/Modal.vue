@@ -84,10 +84,10 @@ const emit = defineEmits<{ close: [] }>();
   inset: 0;
   background-color: #6b7280bf;
   transition: opacity 0.3s ease;
+}
 
-  .dark & {
-    background-color: #171717cc;
-  }
+.dark .modal-overlay {
+  background-color: #171717cc;
 }
 
 .modal-container {

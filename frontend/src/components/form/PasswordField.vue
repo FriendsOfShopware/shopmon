@@ -73,9 +73,9 @@ const passwordLabel = computed(() => props.label ?? "Password");
   &:hover {
     opacity: 1;
   }
+}
 
-  &-icon {
-    width: 1.25rem;
-  }
+.password-toggle-icon {
+  width: 1.25rem;
 }
 </style>
