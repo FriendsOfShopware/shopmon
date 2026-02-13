@@ -29,6 +29,13 @@
       "when": 1771011061730,
       "tag": "0003_fresh_shriek",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1771015142076,
+      "tag": "0004_stale_shatterstar",
+      "breakpoints": true
     }
   ]
 }

@@ -46,7 +46,7 @@
           }"
           :class="{
             'nav-link': true,
-            'active': isRouteActive(item.route),
+            active: isRouteActive(item.route),
           }"
           active-class=""
           exact-active-class=""
@@ -81,16 +81,18 @@ const props = defineProps<{
 }>();
 
 const isRouteActive = (routeName: string) => {
-    // Exact match
-    if (route.name === routeName) return true;
+  // Exact match
+  if (route.name === routeName) return true;
 
-    // Check if current route is a child of deployments
-    if (routeName === 'account.shops.detail.deployments' &&
-        route.name === 'account.shops.detail.deployment') {
-        return true;
-    }
+  // Check if current route is a child of deployments
+  if (
+    routeName === "account.shops.detail.deployments" &&
+    route.name === "account.shops.detail.deployment"
+  ) {
+    return true;
+  }
 
-    return false;
+  return false;
 };
 
 const detailNavigation = computed(() => [

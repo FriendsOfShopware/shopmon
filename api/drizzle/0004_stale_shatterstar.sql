@@ -1,0 +1,1 @@
+ALTER TABLE "deployment" DROP COLUMN "output";

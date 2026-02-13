@@ -407,34 +407,31 @@ export const passkeyRelations = relations(passkey, ({ one }) => ({
   }),
 }));
 
-export const deploymentToken = pgTable('deployment_token', {
-  id: text('id').primaryKey(),
-  shopId: integer('shop_id')
+export const deploymentToken = pgTable("deployment_token", {
+  id: text("id").primaryKey(),
+  shopId: integer("shop_id")
     .notNull()
-    .references(() => shop.id, { onDelete: 'cascade' }),
-  token: text('token').notNull().unique(),
-  name: text('name').notNull(),
-  createdAt: timestamp('created_at').notNull(),
-  lastUsedAt: timestamp('last_used_at'),
+    .references(() => shop.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
 });
 
-export const deployment = pgTable('deployment', {
-  id: serial('id').primaryKey(),
-  shopId: integer('shop_id')
+export const deployment = pgTable("deployment", {
+  id: serial("id").primaryKey(),
+  shopId: integer("shop_id")
     .notNull()
-    .references(() => shop.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  command: text('command').notNull(),
-  output: text('output').notNull(),
-  returnCode: integer('return_code').notNull(),
-  startDate: timestamp('start_date').notNull(),
-  endDate: timestamp('end_date').notNull(),
-  executionTime: text('execution_time').notNull(), // stored as string to preserve decimal precision
-  composer: jsonb('composer')
-    .default({})
-    .$type<Record<string, string>>(),
-  reference: text('reference'),
-  createdAt: timestamp('created_at').notNull(),
+    .references(() => shop.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  command: text("command").notNull(),
+  returnCode: integer("return_code").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  executionTime: text("execution_time").notNull(), // stored as string to preserve decimal precision
+  composer: jsonb("composer").default({}).$type<Record<string, string>>(),
+  reference: text("reference"),
+  createdAt: timestamp("created_at").notNull(),
 });
 
 export const memberRelations = relations(member, ({ one }) => ({
@@ -500,21 +497,18 @@ export const organizationRelations = relations(organization, ({ many }) => ({
 }));
 
 export const deploymentRelations = relations(deployment, ({ one }) => ({
-    shop: one(shop, {
-        fields: [deployment.shopId],
-        references: [shop.id],
-    }),
+  shop: one(shop, {
+    fields: [deployment.shopId],
+    references: [shop.id],
+  }),
 }));
 
-export const deploymentTokenRelations = relations(
-    deploymentToken,
-    ({ one }) => ({
-        shop: one(shop, {
-            fields: [deploymentToken.shopId],
-            references: [shop.id],
-        }),
-    }),
-);
+export const deploymentTokenRelations = relations(deploymentToken, ({ one }) => ({
+  shop: one(shop, {
+    fields: [deploymentToken.shopId],
+    references: [shop.id],
+  }),
+}));
 
 export const schema = {
   shop,
@@ -566,7 +560,7 @@ export const schema = {
   shopRelations,
   organizationRelations,
   deploymentRelations,
-  deploymentTokenRelations
+  deploymentTokenRelations,
 };
 
 export type Drizzle = PostgresJsDatabase<typeof schema>;

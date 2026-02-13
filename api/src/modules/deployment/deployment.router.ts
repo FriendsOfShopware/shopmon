@@ -3,10 +3,8 @@ import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { deployment, deploymentToken } from "#src/db.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
-import {
-  loggedInUserMiddleware,
-  shopMiddleware,
-} from "#src/trpc/middleware.ts";
+import { loggedInUserMiddleware, shopMiddleware } from "#src/trpc/middleware.ts";
+import { deleteDeploymentOutput, getDeploymentOutput } from "./deployment.storage.ts";
 
 export const deploymentRouter = router({
   list: publicProcedure
@@ -73,7 +71,9 @@ export const deploymentRouter = router({
         });
       }
 
-      return deploymentRecord;
+      const output = await getDeploymentOutput(deploymentRecord.id);
+
+      return { ...deploymentRecord, output };
     }),
 
   listTokens: publicProcedure
@@ -163,9 +163,7 @@ export const deploymentRouter = router({
         });
       }
 
-      await ctx.drizzle
-        .delete(deploymentToken)
-        .where(eq(deploymentToken.id, input.tokenId));
+      await ctx.drizzle.delete(deploymentToken).where(eq(deploymentToken.id, input.tokenId));
 
       return { success: true };
     }),
@@ -202,9 +200,9 @@ export const deploymentRouter = router({
         });
       }
 
-      await ctx.drizzle
-        .delete(deployment)
-        .where(eq(deployment.id, input.deploymentId));
+      await deleteDeploymentOutput(input.deploymentId);
+
+      await ctx.drizzle.delete(deployment).where(eq(deployment.id, input.deploymentId));
 
       return { success: true };
     }),

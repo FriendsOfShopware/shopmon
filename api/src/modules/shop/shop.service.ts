@@ -16,6 +16,7 @@ import * as LockRepository from "#src/modules/lock/lock.repository.ts";
 import { scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
 import { scrapeSingleSitespeedShop } from "#src/modules/shop/jobs/sitespeed-scrape.job.ts";
 import { sendAlert } from "#src/modules/shop/mail/mail.service.ts";
+import { deleteDeploymentOutputsByShopId } from "#src/modules/deployment/deployment.storage.ts";
 import { deleteShopScrapeInfo } from "#src/modules/shop/scrape-info.repository.ts";
 import { deleteSitespeedReport, getReportUrl } from "#src/modules/shop/sitespeed.service.ts";
 import Users from "#src/modules/user/user.repository.ts";
@@ -253,6 +254,13 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
 };
 
 export const deleteShop = async (db: Drizzle, shopId: number) => {
+  // Delete S3 deployment outputs before DB cascade removes the rows
+  try {
+    await deleteDeploymentOutputsByShopId(db, shopId);
+  } catch (error) {
+    console.error(`Failed to clean up deployment outputs for shop ${shopId}:`, error);
+  }
+
   await Shops.deleteShop(db, shopId);
   await deleteShopScrapeInfo(shopId);
 

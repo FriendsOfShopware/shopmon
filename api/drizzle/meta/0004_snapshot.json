@@ -1,6 +1,6 @@
 {
-  "id": "e0323895-4fc7-4f4c-806c-c2e271858456",
-  "prevId": "ec738fce-8102-470a-9d80-78642906f525",
+  "id": "571cc4c8-3217-43f3-897b-c424ffccca95",
+  "prevId": "e0323895-4fc7-4f4c-806c-c2e271858456",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -145,12 +145,6 @@
         },
         "command": {
           "name": "command",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "output": {
-          "name": "output",
           "type": "text",
           "primaryKey": false,
           "notNull": true
