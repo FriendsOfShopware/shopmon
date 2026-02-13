@@ -322,26 +322,12 @@ import {trpcClient} from '@/helpers/trpc';
 import {useAlert} from '@/composables/useAlert';
 import {sumChanges} from '@/helpers/changelog';
 
-const {error} = useAlert();
-const {
-    shop,
-    shopwareVersions,
-    latestShopwareVersion,
-} = useShopDetail();
+const { error } = useAlert();
+const { shop, shopwareVersions, latestShopwareVersion } = useShopDetail();
 
-const {
-    viewExtensionChangelogDialog,
-    dialogExtension,
-    openExtensionChangelog,
-    closeExtensionChangelog,
-} = useExtensionChangelogModal();
+const { viewExtensionChangelogDialog, dialogExtension, openExtensionChangelog, closeExtensionChangelog } = useExtensionChangelogModal();
 
-const {
-    viewShopChangelogDialog,
-    dialogShopChangelog,
-    openShopChangelog,
-    closeShopChangelog,
-} = useShopChangelogModal();
+const { viewShopChangelogDialog, dialogShopChangelog, openShopChangelog, closeShopChangelog } = useShopChangelogModal();
 
 // Computed properties for the overview panels
 const allCriticalChecks = computed(() => {
@@ -353,15 +339,13 @@ const allCriticalChecks = computed(() => {
 });
 
 const sortedCriticalChecks = computed(() => {
-    const checks = allCriticalChecks.value;
-    const sorted = [...checks].sort((a, b) => {
+    return [...allCriticalChecks.value].sort((a, b) => {
         if (a.level === 'red' && b.level !== 'red') return -1;
         if (a.level !== 'red' && b.level === 'red') return 1;
         if (a.level === 'yellow' && b.level === 'green') return -1;
         if (a.level === 'green' && b.level === 'yellow') return 1;
         return 0;
-    });
-    return sorted.slice(0, 5); // Limit to first 10
+    }).slice(0, 5); // Limit to first 10
 });
 
 const outdatedExtensions = computed(() => {
@@ -370,24 +354,23 @@ const outdatedExtensions = computed(() => {
         ext.installed &&
         ext.latestVersion &&
         ext.version !== ext.latestVersion
-    ).slice(0, 5); // Limit to 5 most important
+    ).slice(0, 5);
 });
 
 const overdueTasks = computed(() => {
     if (!shop.value?.scheduledTask) return [];
-    const now = new Date();
-    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
     return shop.value.scheduledTask.filter(task =>
         task.overdue &&
         new Date(task.nextExecutionTime) < fifteenMinutesAgo
-    ).splice(0, 5);
+    ).slice(0, 5);
 });
 
 
 const recentChangelogs = computed(() => {
     if (!shop.value?.changelog) return [];
-    return shop.value.changelog.slice(0, 5); // Last 5 changelogs
+    return shop.value.changelog.slice(0, 5);
 });
 
 function getOverdueTime(nextExecutionTime: string): string {

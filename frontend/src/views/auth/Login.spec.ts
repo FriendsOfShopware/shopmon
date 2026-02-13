@@ -25,7 +25,7 @@ const FieldStub = defineComponent({
   setup(props, { emit }) {
     return () => h('input', {
       name: props.name,
-      type: props.type || 'text',
+      type: props.type ?? 'text',
       placeholder: props.placeholder,
       class: props.class,
       id: props.id,

@@ -115,6 +115,11 @@ export default [
             'no-debugger': 'error',
             'prefer-const': 'error',
             'no-var': 'error',
+
+            // Disable no-useless-assignment for Vue files
+            // This rule doesn't understand Vue's <script setup> pattern where
+            // variables are exposed to templates automatically
+            'no-useless-assignment': 'off',
         },
     },
 

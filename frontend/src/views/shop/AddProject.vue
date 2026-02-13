@@ -121,11 +121,14 @@ const schema = Yup.object().shape({
     organizationId: Yup.string().required('Organization is required'),
 });
 
-const initialValues = computed(() => ({
-    name: '',
-    description: '',
-    organizationId: organizations.value.data?.[0]?.id ?? '',
-}));
+const initialValues = computed(() => {
+    const firstOrgId = organizations.value.data?.[0]?.id ?? '';
+    return {
+        name: '',
+        description: '',
+        organizationId: firstOrgId,
+    };
+});
 
 const onSubmit = async (values: Record<string, unknown>) => {
     try {

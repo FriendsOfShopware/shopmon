@@ -92,8 +92,7 @@
 <script lang="ts" setup generic="RowData extends Record<string, any>, RowKey extends Extract<keyof RowData, string>">
 import { createNewSortInstance } from 'fast-sort';
 import Fuse from 'fuse.js';
-import { computed, useSlots } from 'vue';
-import { reactive } from 'vue';
+import { computed, useSlots, reactive } from 'vue';
 
 const slots = useSlots();
 
@@ -170,8 +169,6 @@ function getSortByValue(row: RowData, propertyPath: string): unknown {
 
 const sortedFilteredData = computed(() => {
     let data = props.data;
-    const sortBy = sorting.sortBy;
-    const sortDesc = sorting.sortDesc;
 
     if (props.searchTerm.length >= 3) {
         const fuse = new Fuse(data, {
@@ -182,22 +179,22 @@ const sortedFilteredData = computed(() => {
         data = fuse.search(props.searchTerm).map((result) => result.item);
     }
 
-    if (sortBy) {
-        const rowConfig = props.columns.find((row) => row.key === sortBy);
+    if (sorting.sortBy) {
+        const rowConfig = props.columns.find((row) => row.key === sorting.sortBy);
 
         if (!rowConfig) {
             throw new Error(
-                `Cannot find row with key ${sortBy}, falling to index row with key`,
+                `Cannot find row with key ${sorting.sortBy}, falling to index row with key`,
             );
         }
 
-        if (sortDesc) {
+        if (sorting.sortDesc) {
             data = naturalSort(data).desc((d) =>
-                getSortByValue(d, rowConfig.sortPath ?? sortBy),
+                getSortByValue(d, rowConfig.sortPath ?? sorting.sortBy),
             );
         } else {
             data = naturalSort(data).asc((d) =>
-                getSortByValue(d, rowConfig.sortPath ?? sortBy),
+                getSortByValue(d, rowConfig.sortPath ?? sorting.sortBy),
             );
         }
     }

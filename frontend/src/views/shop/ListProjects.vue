@@ -222,11 +222,13 @@ const editSchema = Yup.object().shape({
 
 // Get organization slug from the first shop or first project
 const organizationSlug = computed(() => {
-    if (shops.value.length > 0) {
-        return shops.value[0].organizationSlug;
+    const firstShop = shops.value[0];
+    if (firstShop) {
+        return firstShop.organizationSlug;
     }
-    if (projects.value.length > 0) {
-        return projects.value[0].organizationSlug;
+    const firstProject = projects.value[0];
+    if (firstProject) {
+        return firstProject.organizationSlug;
     }
     return (route.params.slug as string) || '';
 });
@@ -242,9 +244,10 @@ const projectShops = computed(() => {
     const grouped: Record<number, typeof shops.value> = {};
 
     for (const shop of shops.value) {
-        if (shop.projectId) {
-            grouped[shop.projectId] ??= [];
-            grouped[shop.projectId].push(shop);
+        const projectId = shop.projectId;
+        if (projectId) {
+            grouped[projectId] ??= [];
+            grouped[projectId].push(shop);
         }
     }
 

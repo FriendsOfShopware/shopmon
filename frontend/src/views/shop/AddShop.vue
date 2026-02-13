@@ -185,12 +185,11 @@ trpcClient.account.currentUserProjects.query().then((data) => {
 
 const isValidUrl = (url: string) => {
     try {
-        new URL(url);
-         
+        const parsedUrl = new URL(url);
+        return !!parsedUrl;
     } catch (e) {
         return false;
     }
-    return true;
 };
 
 const schema = Yup.object().shape({
@@ -227,11 +226,11 @@ const onSubmit = async (values: Record<string, unknown>) => {
     }
 };
 
-const openPluginModal = () => {
+function openPluginModal() {
     showPluginModal.value = true;
     pluginBase64.value = '';
     pluginError.value = '';
-};
+}
 
 const closePluginModal = () => {
     showPluginModal.value = false;
@@ -239,18 +238,18 @@ const closePluginModal = () => {
     pluginError.value = '';
 };
 
-const processPluginData = () => {
+function processPluginData() {
     try {
         pluginError.value = '';
-        
+
         if (!pluginBase64.value.trim()) {
             pluginError.value = 'Please enter a base64 string';
             return;
         }
-        
+
         const decodedString = window.atob(pluginBase64.value.trim());
         const data = JSON.parse(decodedString);
-        
+
         if (!data.url || !data.clientId || !data.clientSecret) {
             pluginError.value = 'Invalid data: missing required fields (url, clientId, clientSecret)';
             return;
@@ -259,10 +258,10 @@ const processPluginData = () => {
         formRef.value.setFieldValue('shopUrl', data.url);
         formRef.value.setFieldValue('clientId', data.clientId);
         formRef.value.setFieldValue('clientSecret', data.clientSecret);
-        
+
         closePluginModal();
     } catch (e) {
         pluginError.value = 'Invalid base64 string or JSON format';
     }
-};
+}
 </script>

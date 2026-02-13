@@ -126,7 +126,6 @@
 <script setup lang="ts">
 import { useDarkMode } from '@/composables/useDarkMode';
 const { getThemeImage } = useDarkMode();
-
 </script>
 
 <style scoped>

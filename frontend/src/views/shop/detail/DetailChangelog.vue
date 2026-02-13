@@ -36,12 +36,7 @@ import { useShopChangelogModal } from '@/composables/useShopChangelogModal';
 import ShopChangelog from '@/components/modal/ShopChangelog.vue';
 
 const { shop } = useShopDetail();
-const {
-    viewShopChangelogDialog,
-    dialogShopChangelog,
-    openShopChangelog,
-    closeShopChangelog,
-} = useShopChangelogModal();
+const { viewShopChangelogDialog, dialogShopChangelog, openShopChangelog, closeShopChangelog } = useShopChangelogModal();
 </script>
 
 <style>

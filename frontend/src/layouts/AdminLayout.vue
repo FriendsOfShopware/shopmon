@@ -72,9 +72,7 @@
 <script setup lang="ts">
 import ImpersonationBanner from '@/components/ImpersonationBanner.vue';
 import Logo from '@/components/Logo.vue';
-import {RouterLink, RouterView, useRoute} from 'vue-router';
-
-const $route = useRoute();
+import {RouterLink, RouterView} from 'vue-router';
 </script>
 
 <style scoped>

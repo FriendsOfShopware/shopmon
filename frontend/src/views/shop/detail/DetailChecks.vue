@@ -47,9 +47,7 @@ import { trpcClient } from '@/helpers/trpc';
 import { useShopDetail } from "@/composables/useShopDetail";
 import { computed } from 'vue';
 
-const {
-    shop,
-} = useShopDetail();
+const { shop } = useShopDetail();
 
 // Sort checks by status: red first, then yellow, then green
 const sortedChecks = computed(() => {
