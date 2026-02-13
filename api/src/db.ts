@@ -428,7 +428,7 @@ export const deployment = pgTable("deployment", {
   returnCode: integer("return_code").notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
-  executionTime: text("execution_time").notNull(),
+  executionTime: real("execution_time").notNull(),
   composer: jsonb("composer").default({}).$type<Record<string, string>>(),
   reference: text("reference"),
   createdAt: timestamp("created_at").notNull(),

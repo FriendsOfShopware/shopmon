@@ -270,7 +270,6 @@ export const deleteShop = async (db: Drizzle, shopId: number) => {
   } catch (error) {
     console.error(`Failed to clean up sitespeed results for shop ${shopId}:`, error);
   }
-
 };
 
 export const update = async (db: Drizzle, userId: string, input: UpdateShopInput) => {

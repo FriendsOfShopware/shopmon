@@ -54,7 +54,7 @@ export const cliRouter = router({
         returnCode: input.return_code,
         startDate: new Date(input.start_date),
         endDate: new Date(input.end_date),
-        executionTime: input.execution_time.toString(),
+        executionTime: input.execution_time,
         composer: (input.composer || {}) as Record<string, string>,
         reference: input.reference,
         createdAt: new Date(),
