@@ -165,7 +165,7 @@ const isValidUrl = (url: string) => {
   try {
     const parsedUrl = new URL(url);
     return !!parsedUrl;
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 };
@@ -236,7 +236,7 @@ function processPluginData() {
     formRef.value.setFieldValue("clientSecret", data.clientSecret);
 
     closePluginModal();
-  } catch (e) {
+  } catch (_e) {
     pluginError.value = "Invalid base64 string or JSON format";
   }
 }

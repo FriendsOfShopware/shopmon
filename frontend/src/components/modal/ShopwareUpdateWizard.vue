@@ -72,11 +72,24 @@
 </template>
 
 <script setup lang="ts">
+interface ExtensionCompatibility {
+  type: string;
+  label: string;
+}
+
+interface Extension {
+  name: string;
+  label: string;
+  active: boolean;
+  compatibility?: ExtensionCompatibility;
+  storeLink?: string;
+}
+
 interface Props {
   show: boolean;
   shopwareVersions: string[] | null;
   loading: boolean;
-  extensions: any[] | null;
+  extensions: Extension[] | null;
 }
 
 defineProps<Props>();

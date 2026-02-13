@@ -156,7 +156,7 @@
       <form @submit.prevent="onSitespeedSubmit">
         <div class="mb-1">
           <label for="sitespeedEnabled">Sitespeed Enabled</label>
-          <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="field">
+          <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="field" />
         </div>
 
         <div v-if="sitespeedEnabled">
@@ -169,7 +169,7 @@
                 type="url"
                 class="field"
                 placeholder="https://example.com"
-              >
+              />
 
               <button type="button" class="btn btn-icon" @click="removeSitespeedUrl(index)">
                 <icon-fa6-solid:xmark />
@@ -428,7 +428,7 @@ function processPluginData() {
     formRef.value.setFieldValue("clientSecret", data.clientSecret);
 
     closePluginModal();
-  } catch (e) {
+  } catch (_e) {
     pluginError.value = "Invalid base64 string or JSON format";
   }
 }

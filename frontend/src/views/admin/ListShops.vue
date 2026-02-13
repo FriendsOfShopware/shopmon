@@ -14,7 +14,7 @@
           placeholder="Search shops by name or URL..."
           class="field search-input"
           @input="debouncedSearch"
-        >
+        />
       </div>
 
       <div class="filter-container">

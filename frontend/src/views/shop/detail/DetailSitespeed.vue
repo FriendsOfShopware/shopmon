@@ -99,6 +99,16 @@ const timeMetrics = [
   { key: "firstContentfulPaint", label: "FCP" },
 ];
 
+interface SitespeedDataItem {
+  createdAt: string;
+  ttfb?: number;
+  fullyLoaded?: number;
+  largestContentfulPaint?: number;
+  firstContentfulPaint?: number;
+  cumulativeLayoutShift?: number;
+  transferSize?: number;
+}
+
 interface ChartConfig {
   canvasRef: Ref<HTMLCanvasElement | null>;
   chartInstance: Ref<Chart | null>;
@@ -108,9 +118,9 @@ interface ChartConfig {
     label: string;
     dataKey?: string;
 
-    valueFormatter?: (item: any) => number;
+    valueFormatter?: (_item: SitespeedDataItem) => number;
 
-    tooltipFormatter?: (value: number) => string;
+    tooltipFormatter?: (_value: number) => string;
   }>;
 }
 
@@ -173,7 +183,7 @@ const createChart = (config: ChartConfig) => {
     label: dataset.label,
     data: sortedData.map((item) => ({
       x: new Date(item.createdAt).getTime(),
-      y: dataset.valueFormatter!(item),
+      y: dataset.valueFormatter?.(item) ?? 0,
     })),
   }));
 
@@ -203,7 +213,7 @@ const createChart = (config: ChartConfig) => {
             label: function (context) {
               const dataset = config.datasets[context.datasetIndex];
               const value = context.parsed.y;
-              return `${context.dataset.label}: ${dataset.tooltipFormatter!(value)}`;
+              return `${context.dataset.label}: ${dataset.tooltipFormatter?.(value) ?? value}`;
             },
             title: function (tooltipItems) {
               if (tooltipItems.length > 0) {

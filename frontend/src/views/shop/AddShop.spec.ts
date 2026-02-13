@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h } from "vue";
 import AddShop from "./AddShop.vue";
 
 // Stubs

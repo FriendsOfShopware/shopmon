@@ -47,7 +47,9 @@ const FieldStub = defineComponent({
 
 // Mock auth client
 const mockUser = { id: "1", email: "test@example.com", name: "Test User" };
-const mockSessionData = ref<{ data: { user: typeof mockUser } | null }>({ data: { user: mockUser } });
+const mockSessionData = ref<{ data: { user: typeof mockUser } | null }>({
+  data: { user: mockUser },
+});
 
 vi.mock("@/helpers/auth-client", () => ({
   authClient: {

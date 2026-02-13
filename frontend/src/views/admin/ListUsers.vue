@@ -14,7 +14,7 @@
           placeholder="Search users by email..."
           class="field search-input"
           @input="debouncedSearch"
-        >
+        />
       </div>
 
       <div class="filter-container">

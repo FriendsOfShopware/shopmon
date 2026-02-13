@@ -91,7 +91,7 @@ function generateSlug(str: string): string {
 function onNameChange(
   event: Event,
 
-  setFieldValue: (field: string, value: unknown) => void,
+  setFieldValue: (_field: string, _value: unknown) => void,
 ) {
   if (!slugManuallyEdited.value) {
     const target = event.target as HTMLInputElement;

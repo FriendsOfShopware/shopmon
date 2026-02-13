@@ -12,7 +12,7 @@
 
   <div class="row">
     <div class="col-highlights panel">
-      <img src="/home/dashboard.svg" alt="Shopmon Dashboard">
+      <img src="/home/dashboard.svg" alt="Shopmon Dashboard" />
       <h3>Dashboard overview</h3>
       <p>
         Maintain a complete overview of all your shops with the most important information using the
@@ -21,14 +21,14 @@
     </div>
 
     <div class="col-highlights panel">
-      <img src="/home/automatic-performancechecks.svg" alt="Automatic Performancechecks">
+      <img src="/home/automatic-performancechecks.svg" alt="Automatic Performancechecks" />
 
       <h3>Automatic performance checks</h3>
       <p>Get notified when your shop status changes based on Frosh-Tools performance checks</p>
     </div>
 
     <div class="col-highlights panel">
-      <img src="/home/speed.png" alt="Sitespeed.io logo">
+      <img src="/home/speed.png" alt="Sitespeed.io logo" />
       <h3>Performance monitoring</h3>
       <p>
         Daily automated page speed checks with an overview of the most important metrics over time
@@ -46,7 +46,7 @@
     </div>
 
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-dashboard.png')" alt="Shopmon dashboard">
+      <img :src="getThemeImage('/home/shopmon-dashboard.png')" alt="Shopmon dashboard" />
     </div>
   </div>
 
@@ -55,7 +55,7 @@
       <img
         :src="getThemeImage('/home/shopmon-performance-checks.png')"
         alt="Shopmon performance checks"
-      >
+      />
     </div>
 
     <div class="col-text">
@@ -82,13 +82,13 @@
     </div>
 
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-extensions.png')" alt="Shopmon extensions">
+      <img :src="getThemeImage('/home/shopmon-extensions.png')" alt="Shopmon extensions" />
     </div>
   </div>
 
   <div class="row row-center">
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-sitespeed.png')" alt="Shopmon sitespeed">
+      <img :src="getThemeImage('/home/shopmon-sitespeed.png')" alt="Shopmon sitespeed" />
     </div>
 
     <div class="col-text">

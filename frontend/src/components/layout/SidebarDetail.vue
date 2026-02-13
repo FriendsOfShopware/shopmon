@@ -12,7 +12,7 @@
 
     <div ref="sidebarRef" :class="['sidebar', 'sidebar-detail', { 'mobile-open': isMobileOpen }]">
       <div class="shop-image-container">
-        <img v-if="shop.shopImage" :src="`${shop.shopImage}`" class="shop-image">
+        <img v-if="shop.shopImage" :src="`${shop.shopImage}`" class="shop-image" />
         <icon-fa6-solid:image v-else class="placeholder-image" />
       </div>
 

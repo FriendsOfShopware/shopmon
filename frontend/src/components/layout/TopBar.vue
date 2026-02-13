@@ -104,7 +104,7 @@
         <menu-container as="div" class="menu">
           <menu-button class="action action-user">
             <span class="sr-only">Open user menu</span>
-            <img class="user-avatar" :src="userAvatar" alt="">
+            <img class="user-avatar" :src="userAvatar" alt="" />
           </menu-button>
 
           <transition
@@ -163,7 +163,7 @@
           <div class="top-bar-mobile-user">
             <div class="top-bar-mobile-user-info">
               <div class="top-bar-mobile-user-avatar">
-                <img :src="userAvatar" alt="avatar" class="user-avatar">
+                <img :src="userAvatar" alt="avatar" class="user-avatar" />
               </div>
 
               <div class="top-bar-mobile-user-details">
@@ -243,7 +243,7 @@ if (session.value.data?.user.email) {
           .join("");
         userAvatar.value = `https://api.dicebear.com/7.x/personas/svg?seed=${seed}&d=identicon`;
       });
-  } catch (error) {
+  } catch {
     // Web crypto API is not supported, fallback to default avatar
     // Silent fallback, no need for console error
   }

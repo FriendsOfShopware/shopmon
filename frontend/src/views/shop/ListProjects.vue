@@ -102,7 +102,7 @@
                   :src="shop.favicon"
                   alt="Shop favicon"
                   class="item-logo-img"
-                >
+                />
                 <icon-fa6-solid:store v-else />
               </div>
 

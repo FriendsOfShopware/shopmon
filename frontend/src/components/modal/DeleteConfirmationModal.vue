@@ -39,7 +39,7 @@
           class="field"
           autocomplete="off"
           @input="$emit('password-change', passwordValue)"
-        >
+        />
       </div>
     </template>
 

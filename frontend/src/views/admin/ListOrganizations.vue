@@ -14,7 +14,7 @@
           placeholder="Search organizations by name or slug..."
           class="field search-input"
           @input="debouncedSearch"
-        >
+        />
       </div>
 
       <div class="filter-container">
@@ -42,7 +42,7 @@
     >
       <template #cell-logo="{ row }">
         <div class="logo-container">
-          <img v-if="row.logo" :src="row.logo" :alt="row.name" class="organization-logo">
+          <img v-if="row.logo" :src="row.logo" :alt="row.name" class="organization-logo" />
           <div v-else class="logo-placeholder">
             <icon-fa6-solid:building class="icon" />
           </div>

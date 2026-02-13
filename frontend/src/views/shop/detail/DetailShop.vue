@@ -311,9 +311,19 @@ import { useShopDetail } from "@/composables/useShopDetail";
 import { useShopChangelogModal } from "@/composables/useShopChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import { ref, computed } from "vue";
-import { trpcClient } from "@/helpers/trpc";
+import { trpcClient, type RouterOutput } from "@/helpers/trpc";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
+
+type Extension = NonNullable<RouterOutput["organization"]["shop"]["get"]>["extensions"][number];
+
+type ExtensionWithCompatibility = Extension & {
+  compatibility: {
+    name: string;
+    label: string;
+    type: string;
+  } | null;
+};
 
 const { error } = useAlert();
 const { shop, shopwareVersions, latestShopwareVersion } = useShopDetail();
@@ -391,7 +401,7 @@ function getOverdueTime(nextExecutionTime: string): string {
 // For update wizard
 const viewUpdateWizardDialog = ref(false);
 const loadingUpdateWizard = ref(false);
-const dialogUpdateWizard = ref<any[] | null>(null);
+const dialogUpdateWizard = ref<ExtensionWithCompatibility[] | null>(null);
 
 function openUpdateWizard() {
   dialogUpdateWizard.value = null;
@@ -419,7 +429,9 @@ async function loadUpdateWizard(version: string) {
   try {
     const pluginCompatibility = await trpcClient.info.checkExtensionCompatibility.query(body);
 
-    const extensions = JSON.parse(JSON.stringify(shop.value?.extensions)) as any[];
+    const extensions = JSON.parse(
+      JSON.stringify(shop.value?.extensions),
+    ) as ExtensionWithCompatibility[];
 
     for (const extension of extensions) {
       const compatibility = pluginCompatibility.find((plugin) => plugin.name === extension.name);

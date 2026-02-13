@@ -10,7 +10,7 @@
 
     <template v-else>
       <div class="panel">
-        <input v-model="term" class="field field-search" placeholder="Search ...">
+        <input v-model="term" class="field field-search" placeholder="Search ..." />
       </div>
 
       <div class="panel panel-table">

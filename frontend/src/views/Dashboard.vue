@@ -20,7 +20,7 @@
             class="item-link item-wrapper"
           >
             <div class="item-logo">
-              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img">
+              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img" />
             </div>
 
             <div class="item-info">
@@ -29,7 +29,7 @@
               </div>
 
               <div class="item-content">
-                {{ shop.projectName }}<br>
+                {{ shop.projectName }}<br />
                 {{ shop.shopwareVersion }}
               </div>
 

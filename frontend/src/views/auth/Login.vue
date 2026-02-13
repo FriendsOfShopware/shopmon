@@ -93,7 +93,7 @@
           class="field"
           placeholder="Enter your work email"
           @keyup.enter="ssoLogin"
-        >
+        />
         <button
           type="button"
           class="btn btn-secondary icon-only"

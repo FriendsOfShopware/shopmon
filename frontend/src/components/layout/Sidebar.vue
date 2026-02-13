@@ -43,7 +43,7 @@
             class="nav-link"
           >
             <div class="nav-link-icon">
-              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img">
+              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img" />
               <icon-fa6-solid:earth-americas v-else class="placeholder-image" />
             </div>
 

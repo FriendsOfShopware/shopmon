@@ -163,7 +163,7 @@
                 :value="callbackUrl"
                 readonly
                 class="field field-readonly"
-              >
+              />
               <p class="field-help">
                 Use this URL as the redirect/callback URL in your identity provider configuration
               </p>

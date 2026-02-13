@@ -80,8 +80,15 @@ export default [
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-non-null-assertion": "warn",
 
-      // Duplicate to regular unused-vars
-      "@typescript-eslint/no-unused-vars": "off",
+      // Use TypeScript-aware unused vars rule
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "no-unused-vars": "off",
 
       // Type-aware rules (require TypeScript compilation)
       "@typescript-eslint/no-floating-promises": "off",
@@ -108,6 +115,7 @@ export default [
       "vue/no-mutating-props": "warn", // Warning instead of error
       "vue/singleline-html-element-content-newline": "off", // Too strict
       "vue/attributes-order": "warn", // Warning instead of error
+      "vue/html-self-closing": "off", // Conflicts with oxfmt formatter
 
       // General rules
       "no-console": "warn",
