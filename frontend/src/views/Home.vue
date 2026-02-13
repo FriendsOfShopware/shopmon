@@ -229,10 +229,6 @@ h4 {
     flex-direction: column;
   }
 
-  &-center {
-    align-items: center;
-  }
-
   .col-highlights {
     flex: 0 0 auto;
     width: 30.666666%;
@@ -263,10 +259,6 @@ h4 {
         0 1px 3px 0 rgba(0, 0, 0, 0.1),
         0 1px 2px 0 rgba(0, 0, 0, 0.06);
 
-      .dark & {
-        box-shadow: unset;
-      }
-
       @media all and (max-width: 800px) {
         border-radius: 0.5rem;
       }
@@ -295,5 +287,13 @@ h4 {
       margin-bottom: 2rem;
     }
   }
+}
+
+.row-center {
+  align-items: center;
+}
+
+.dark .col-img img {
+  box-shadow: unset;
 }
 </style>

@@ -16,6 +16,7 @@ import * as LockRepository from "#src/modules/lock/lock.repository.ts";
 import { scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
 import { scrapeSingleSitespeedShop } from "#src/modules/shop/jobs/sitespeed-scrape.job.ts";
 import { sendAlert } from "#src/modules/shop/mail/mail.service.ts";
+import { deleteDeploymentOutputsByShopId } from "#src/modules/deployment/deployment.storage.ts";
 import { deleteShopScrapeInfo } from "#src/modules/shop/scrape-info.repository.ts";
 import { deleteSitespeedReport, getReportUrl } from "#src/modules/shop/sitespeed.service.ts";
 import Users from "#src/modules/user/user.repository.ts";
@@ -253,28 +254,22 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
 };
 
 export const deleteShop = async (db: Drizzle, shopId: number) => {
+  try {
+    await deleteDeploymentOutputsByShopId(db, shopId);
+  } catch (error) {
+    console.error(`Failed to clean up deployment outputs for shop ${shopId}:`, error);
+  }
+
   await Shops.deleteShop(db, shopId);
   await deleteShopScrapeInfo(shopId);
 
   console.log(`Shop ${shopId} deleted`);
 
-  // Clean up sitespeed results from filesystem
-  // Note: The repo previously called this, but it's better here or in the repo?
-  // The original repo code had this.
-  // We will update the repo to ONLY do DB deletes, so we do FS cleanup here.
   try {
     await deleteSitespeedReport(shopId);
   } catch (error) {
     console.error(`Failed to clean up sitespeed results for shop ${shopId}:`, error);
   }
-
-  // We also need to remove the sitespeed folder manually as done in updateSitespeedSettings?
-  // The original repo code had this inside deleteShop:
-  // await deleteSitespeedReport(id);
-  // But updateSitespeedSettings had:
-  // await fs.rm(path.join('./files/sitespeed', input.shopId.toString()), { recursive: true, force: true });
-  // We should probably unify this. deleteSitespeedReport calls the external service.
-  // The local file cleanup seems to be separate.
 };
 
 export const update = async (db: Drizzle, userId: string, input: UpdateShopInput) => {

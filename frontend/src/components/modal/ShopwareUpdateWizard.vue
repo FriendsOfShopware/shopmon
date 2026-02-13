@@ -104,43 +104,41 @@ defineEmits<{
   .field {
     margin-bottom: 0.75rem;
   }
+}
 
-  &-loader {
-    text-align: center;
+.update-wizard-loader {
+  text-align: center;
+}
+
+.update-wizard-refresh {
+  opacity: 0.2;
+}
+
+.update-wizard-plugins-heading {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.update-wizard-plugin {
+  background-color: var(--item-background);
+  padding: 0.5rem;
+  display: flex;
+
+  &:nth-child(odd) {
+    background-color: var(--item-odd-background);
   }
 
-  &-refresh {
-    opacity: 0.2;
+  &:hover {
+    background-color: var(--item-hover-background);
   }
+}
 
-  &-plugins {
-    &-heading {
-      font-size: 1.125rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-  }
+.update-wizard-plugin-icon {
+  margin-right: 0.5rem;
+}
 
-  &-plugin {
-    background-color: var(--item-background);
-    padding: 0.5rem;
-    display: flex;
-
-    &:nth-child(odd) {
-      background-color: var(--item-odd-background);
-    }
-
-    &:hover {
-      background-color: var(--item-hover-background);
-    }
-
-    &-icon {
-      margin-right: 0.5rem;
-    }
-
-    &-technical-name {
-      opacity: 0.6;
-    }
-  }
+.update-wizard-plugin-technical-name {
+  opacity: 0.6;
 }
 </style>

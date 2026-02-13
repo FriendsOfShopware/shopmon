@@ -407,6 +407,33 @@ export const passkeyRelations = relations(passkey, ({ one }) => ({
   }),
 }));
 
+export const deploymentToken = pgTable("deployment_token", {
+  id: text("id").primaryKey(),
+  shopId: integer("shop_id")
+    .notNull()
+    .references(() => shop.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+export const deployment = pgTable("deployment", {
+  id: serial("id").primaryKey(),
+  shopId: integer("shop_id")
+    .notNull()
+    .references(() => shop.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  command: text("command").notNull(),
+  returnCode: integer("return_code").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  executionTime: real("execution_time").notNull(),
+  composer: jsonb("composer").default({}).$type<Record<string, string>>(),
+  reference: text("reference"),
+  createdAt: timestamp("created_at").notNull(),
+});
+
 export const memberRelations = relations(member, ({ one }) => ({
   organization: one(organization, {
     fields: [member.organizationId],
@@ -469,6 +496,20 @@ export const organizationRelations = relations(organization, ({ many }) => ({
   shops: many(shop),
 }));
 
+export const deploymentRelations = relations(deployment, ({ one }) => ({
+  shop: one(shop, {
+    fields: [deployment.shopId],
+    references: [shop.id],
+  }),
+}));
+
+export const deploymentTokenRelations = relations(deploymentToken, ({ one }) => ({
+  shop: one(shop, {
+    fields: [deploymentToken.shopId],
+    references: [shop.id],
+  }),
+}));
+
 export const schema = {
   shop,
   shopSitespeed,
@@ -500,6 +541,10 @@ export const schema = {
   // Lock
   lock,
 
+  // Deployments
+  deployment,
+  deploymentToken,
+
   // Auth Relations
   userRelations,
   sessionRelations,
@@ -514,6 +559,8 @@ export const schema = {
   projectApiKeyRelations,
   shopRelations,
   organizationRelations,
+  deploymentRelations,
+  deploymentTokenRelations,
 };
 
 export type Drizzle = PostgresJsDatabase<typeof schema>;

@@ -478,24 +478,22 @@ async function onChangeRole(values: Record<string, unknown>) {
   }
 }
 
-.organization-members {
-  &-header {
-    display: flex;
-    padding: 1.5rem 2rem;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--panel-border-color);
+.organization-members-header {
+  display: flex;
+  padding: 1.5rem 2rem;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--panel-border-color);
 
-    @media (min-width: 1024px) {
-      padding-left: 2rem;
-      padding-right: 2rem;
-    }
+  @media (min-width: 1024px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
+}
 
-  &-heading {
-    font-size: 1.25rem;
-    font-weight: 500;
-  }
+.organization-members-heading {
+  font-size: 1.25rem;
+  font-weight: 500;
 }
 
 .sso-empty {

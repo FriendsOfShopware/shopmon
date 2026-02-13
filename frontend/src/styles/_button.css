@@ -62,60 +62,60 @@ button,
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
 
-  &-sm {
-    padding: 0.25rem 0.75rem;
-    font-size: 1rem;
-  }
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+}
 
-  &-primary {
-    border-color: var(--primary-color);
+.btn-primary {
+  border-color: var(--primary-color);
+  color: #fff;
+  background-color: var(--primary-color);
+
+  &:hover {
+    background-color: #0284c7;
     color: #fff;
-    background-color: var(--primary-color);
-
-    &:hover {
-      background-color: #0284c7;
-      color: #fff;
-    }
   }
+}
 
-  &-primary-outline {
-    background: #0284c7;
-    border-color: transparent;
+.btn-primary-outline {
+  background: #0284c7;
+  border-color: transparent;
+  color: #fff;
+  transition: background 0.4s;
+
+  &:hover {
+    background: #0284c777;
     color: #fff;
-    transition: background 0.4s;
-
-    &:hover {
-      background: #0284c777;
-      color: #fff;
-    }
   }
+}
 
-  &-danger {
+.btn-danger {
+  border-color: #dc2626;
+  color: #fff;
+  background-color: #dc2626;
+
+  &:hover {
     border-color: #dc2626;
+    background-color: #b91c1c;
     color: #fff;
-    background-color: #dc2626;
-
-    &:hover {
-      border-color: #dc2626;
-      background-color: #b91c1c;
-      color: #fff;
-    }
   }
+}
 
-  &-danger-outline {
-    border-color: #dc2626;
+.btn-danger-outline {
+  border-color: #dc2626;
 
-    &:hover {
-      border-color: #b91c1c;
-    }
+  &:hover {
+    border-color: #b91c1c;
   }
+}
 
-  &-block {
-    width: 100%;
+.btn-block {
+  width: 100%;
 
-    .icon {
-      margin-left: -1.75rem;
-    }
+  .icon {
+    margin-left: -1.75rem;
   }
 }

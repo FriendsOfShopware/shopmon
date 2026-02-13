@@ -46,9 +46,10 @@
           }"
           :class="{
             'nav-link': true,
+            active: isRouteActive(item.route),
           }"
           active-class=""
-          exact-active-class="active"
+          exact-active-class=""
         >
           <component
             :is="$router.resolve({ name: item.route }).meta.icon"
@@ -78,6 +79,21 @@ const toggleRef = ref<HTMLElement | null>(null);
 const props = defineProps<{
   shop: RouterOutput["organization"]["shop"]["get"] | null;
 }>();
+
+const isRouteActive = (routeName: string) => {
+  // Exact match
+  if (route.name === routeName) return true;
+
+  // Check if current route is a child of deployments
+  if (
+    routeName === "account.shops.detail.deployments" &&
+    route.name === "account.shops.detail.deployment"
+  ) {
+    return true;
+  }
+
+  return false;
+};
 
 const detailNavigation = computed(() => [
   {
@@ -113,6 +129,11 @@ const detailNavigation = computed(() => [
     name: "Changelog",
     route: "account.shops.detail.changelog",
     count: props.shop?.changelog?.length ?? 0,
+  },
+  {
+    name: "Deployments",
+    route: "account.shops.detail.deployments",
+    count: props.shop?.deploymentsCount ?? 0,
   },
 ]);
 

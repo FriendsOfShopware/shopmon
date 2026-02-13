@@ -369,39 +369,39 @@ async function logout() {
   @media all and (min-width: 768px) {
     position: relative;
   }
+}
 
-  &-count {
-    position: absolute;
-    right: -0.4rem;
-    top: 0;
-    background-color: #ef4444;
-    border-radius: 9999px;
-    padding: 2px;
-    min-width: 16px;
-    font-size: 10px;
-    line-height: 12px;
-    color: #ffffff;
-    font-weight: bold;
-  }
+.notifications-count {
+  position: absolute;
+  right: -0.4rem;
+  top: 0;
+  background-color: #ef4444;
+  border-radius: 9999px;
+  padding: 2px;
+  min-width: 16px;
+  font-size: 10px;
+  line-height: 12px;
+  color: #ffffff;
+  font-weight: bold;
+}
 
-  &-header {
-    padding: 1rem;
-    font-weight: 500;
-    border-bottom: 1px solid var(--notification-border-color);
-    display: flex;
-    justify-content: space-between;
-  }
+.notifications-header {
+  padding: 1rem;
+  font-weight: 500;
+  border-bottom: 1px solid var(--notification-border-color);
+  display: flex;
+  justify-content: space-between;
+}
 
-  &-empty {
-    padding: 1rem;
-  }
+.notifications-empty {
+  padding: 1rem;
+}
 
-  &-delete {
-    opacity: 0.3;
+.notifications-delete {
+  opacity: 0.3;
 
-    &:hover {
-      opacity: 1;
-    }
+  &:hover {
+    opacity: 1;
   }
 }
 
@@ -544,39 +544,39 @@ async function logout() {
 .top-bar-mobile-user {
   padding: 1rem 0 0.75rem;
   border-top: 1px solid #38bdf8;
+}
 
-  &-info {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-    display: flex;
-    align-items: center;
+.top-bar-mobile-user-info {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.top-bar-mobile-user-avatar {
+  flex-shrink: 0;
+
+  .user-avatar {
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 9999px;
+    background: #38bdf8;
   }
+}
 
-  &-avatar {
-    flex-shrink: 0;
+.top-bar-mobile-user-details {
+  margin-left: 0.75rem;
+}
 
-    .user-avatar {
-      height: 2.5rem;
-      width: 2.5rem;
-      border-radius: 9999px;
-      background: #38bdf8;
-    }
-  }
+.top-bar-mobile-user-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+}
 
-  &-details {
-    margin-left: 0.75rem;
-  }
-
-  &-name {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #ffffff;
-  }
-
-  &-email {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #e7e5e4;
-  }
+.top-bar-mobile-user-email {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e7e5e4;
 }
 </style>

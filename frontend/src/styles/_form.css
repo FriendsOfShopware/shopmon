@@ -20,19 +20,6 @@
     color: #6b7280;
   }
 
-  select& {
-    background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23111827" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
-    background-position: calc(100% - 1rem) calc(0.75rem + 2px);
-    background-size: 0.6rem 0.6rem;
-    background-repeat: no-repeat;
-    padding-right: 25px;
-    cursor: pointer;
-
-    .dark & {
-      background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23a3a3a3" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
-    }
-  }
-
   &:focus {
     border-color: var(--primary-color);
     z-index: 10;
@@ -55,11 +42,6 @@
     border-color: var(--error-color);
   }
 
-  &-error-message {
-    color: var(--error-color);
-    text-align: left;
-  }
-
   &[type="checkbox"] {
     width: 1rem;
     height: 1rem;
@@ -70,11 +52,6 @@
     cursor: pointer;
     margin-right: 0.35rem;
     border-radius: 0.25rem;
-
-    label + & {
-      margin-left: 0.35rem;
-      margin-right: 0;
-    }
 
     &:checked {
       background-color: var(--primary-color);
@@ -89,13 +66,36 @@
   }
 }
 
+select.field {
+  background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23111827" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
+  background-position: calc(100% - 1rem) calc(0.75rem + 2px);
+  background-size: 0.6rem 0.6rem;
+  background-repeat: no-repeat;
+  padding-right: 25px;
+  cursor: pointer;
+}
+
+.dark select.field {
+  background-image: url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="%23a3a3a3" xmlns="http://www.w3.org/2000/svg"><path d="M0.94 0L4 3.09042L7.06 0L8 0.951417L4 5L0 0.951417L0.94 0Z" /></svg>');
+}
+
+.field-error-message {
+  color: var(--error-color);
+  text-align: left;
+}
+
+label + .field[type="checkbox"] {
+  margin-left: 0.35rem;
+  margin-right: 0;
+}
+
 .form-submit {
   display: flex;
   justify-content: flex-end;
+}
 
-  .form-group:has(+ &) {
-    padding-bottom: 1rem;
-  }
+.form-group:has(+ .form-submit) {
+  padding-bottom: 1rem;
 }
 
 label {

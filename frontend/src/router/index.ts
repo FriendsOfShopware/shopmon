@@ -15,6 +15,7 @@ import FaFileWaveform from "~icons/fa6-solid/file-waveform";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaPlug from "~icons/fa6-solid/plug";
 import FaRocket from "~icons/fa6-solid/rocket";
+import FaCodeBranch from "~icons/fa6-solid/code-branch";
 import Dashboard from "~icons/ri/dashboard-fill";
 import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
@@ -196,6 +197,23 @@ export const router = createRouter({
               meta: {
                 title: "Changelog",
                 icon: FaFileWaveform,
+              },
+            },
+            {
+              name: "account.shops.detail.deployments",
+              path: "deployments",
+              component: () => import("@/views/shop/detail/DetailDeployments.vue"),
+              meta: {
+                title: "Deployments",
+                icon: FaCodeBranch,
+              },
+            },
+            {
+              name: "account.shops.detail.deployment",
+              path: "deployments/:deploymentId(\\d+)",
+              component: () => import("@/views/shop/detail/DetailDeployment.vue"),
+              meta: {
+                title: "Deployment Details",
               },
             },
           ],

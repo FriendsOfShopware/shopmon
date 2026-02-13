@@ -105,8 +105,7 @@ defineProps<{
     background-color: var(--panel-border-color);
   }
 
-  &:hover,
-  &-active {
+  &:hover {
     color: #0ea5e9;
 
     &::before {
@@ -123,23 +122,31 @@ defineProps<{
   }
 }
 
+.tab-active {
+  color: #0ea5e9;
+
+  &::before {
+    width: 100%;
+  }
+}
+
 .tab-panels {
   margin-top: 1px;
 }
 
 .tab-panel {
   overflow-y: auto;
+}
 
-  &-default {
-    padding: 1.5rem;
-  }
+.tab-panel-default {
+  padding: 1.5rem;
+}
 
-  &-code {
-    background-color: var(--panel-border-color);
-    display: inline-block;
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-  }
+.tab-panel-code {
+  background-color: var(--panel-border-color);
+  display: inline-block;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
 }
 </style>

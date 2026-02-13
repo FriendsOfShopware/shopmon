@@ -50,25 +50,25 @@ withDefaults(
 <style scoped>
 .element-empty {
   text-align: center;
+}
 
-  &-icon {
-    width: 3rem;
-    height: 3rem;
-    margin: 0 auto 0.5rem;
-  }
+.element-empty-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.5rem;
+}
 
-  &-title {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-    font-weight: 500;
-  }
+.element-empty-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
 
-  &-description {
-    margin-top: 0.25rem;
-  }
+.element-empty-description {
+  margin-top: 0.25rem;
+}
 
-  &-cta {
-    margin-top: 1.5rem;
-  }
+.element-empty-cta {
+  margin-top: 1.5rem;
 }
 </style>

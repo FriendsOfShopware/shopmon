@@ -38,15 +38,15 @@ defineProps<{ title: string; subTitle?: string }>();
     margin-top: 1rem;
   }
 
-  .dark & {
-    box-shadow: none;
-  }
-
   label {
     display: block;
     margin-bottom: 0.25rem;
     font-weight: 500;
     cursor: pointer;
   }
+}
+
+.dark .content {
+  box-shadow: none;
 }
 </style>

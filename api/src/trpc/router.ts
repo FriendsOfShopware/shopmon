@@ -1,4 +1,6 @@
 import { adminRouter } from "#src/modules/admin/admin.router.ts";
+import { cliRouter } from "#src/modules/deployment/cli.router.ts";
+import { deploymentRouter } from "#src/modules/deployment/deployment.router.ts";
 import { infoRouter } from "#src/modules/info/info.router.ts";
 import { projectRouter } from "#src/modules/project/project.router.ts";
 import { apiKeyRouter } from "#src/modules/project/project-api-key.router.ts";
@@ -12,6 +14,7 @@ export const organizationRouter = router({
   sso: ssoRouter,
   project: projectRouter,
   apiKey: apiKeyRouter,
+  deployment: deploymentRouter,
 });
 
 export const appRouter = router({
@@ -21,6 +24,7 @@ export const appRouter = router({
   shop: shopRouter,
   admin: adminRouter,
   info: infoRouter,
+  cli: cliRouter,
 });
 
 export type AppRouter = typeof appRouter;

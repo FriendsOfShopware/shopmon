@@ -65,52 +65,52 @@ defineEmits<{
   list-style: none;
   margin: 0;
   padding: 0;
+}
 
-  &-name {
-    font-weight: normal;
-    color: var(--text-color-muted);
+.extension-changelog-name {
+  font-weight: normal;
+  color: var(--text-color-muted);
+}
+
+.extension-changelog-item {
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.extension-changelog-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.extension-changelog-date {
+  font-weight: normal;
+  color: var(--text-color-muted);
+}
+
+.extension-changelog-content {
+  line-height: 1.6;
+
+  :deep(ul) {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
   }
 
-  &-item {
-    margin-bottom: 1.5rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
+  :deep(li) {
+    margin: 0.25rem 0;
   }
 
-  &-title {
+  :deep(p) {
+    margin: 0.5rem 0;
+  }
+
+  :deep(strong) {
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  &-date {
-    font-weight: normal;
-    color: var(--text-color-muted);
-  }
-
-  &-content {
-    line-height: 1.6;
-
-    :deep(ul) {
-      margin: 0.5rem 0;
-      padding-left: 1.5rem;
-    }
-
-    :deep(li) {
-      margin: 0.25rem 0;
-    }
-
-    :deep(p) {
-      margin: 0.5rem 0;
-    }
-
-    :deep(strong) {
-      font-weight: 600;
-    }
   }
 }
 </style>

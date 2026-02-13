@@ -36,22 +36,18 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       AUTH_TOKEN: secret
       S3_DISABLE_PAYLOAD_SIGNING: "false"
-  minio:
-    image: minio/minio
+  rustfs:
+    image: rustfs/rustfs:latest
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
 
   createbuckets:
     image: minio/mc
     depends_on:
-      - minio
+      - rustfs
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb -p myminio/sitespeed-results; /usr/bin/mc mb -p myminio/shopmon; exit 0; "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://rustfs:9000 rustfsadmin rustfsadmin; /usr/bin/mc mb -p myminio/sitespeed-results; /usr/bin/mc mb -p myminio/shopmon; exit 0; "
 
 volumes:
   db-data:
