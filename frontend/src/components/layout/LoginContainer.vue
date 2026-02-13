@@ -17,7 +17,8 @@
 <script setup lang="ts">
 import { useDarkMode } from '@/composables/useDarkMode';
 
-const { darkMode, toggleDarkMode } = useDarkMode();
+const darkModeComposable = useDarkMode();
+const { darkMode, toggleDarkMode } = darkModeComposable;
 </script>
 
 <style>

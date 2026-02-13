@@ -30,7 +30,8 @@
 <script setup lang="ts">
 import { useAlert } from '@/composables/useAlert';
 
-const { alert, clear } = useAlert();
+const alertComposable = useAlert();
+const { alert, clear } = alertComposable;
 </script>
 
 <style scoped>

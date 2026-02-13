@@ -23,7 +23,7 @@
 
 <script lang="ts" setup>
 import { Field } from 'vee-validate';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 const props = defineProps<{
     label?: string;
@@ -33,7 +33,7 @@ const props = defineProps<{
 }>();
 
 const passwordType = ref('password');
-const passwordLabel = props.label ?? 'Password';
+const passwordLabel = computed(() => props.label ?? 'Password');
 </script>
 
 <style>

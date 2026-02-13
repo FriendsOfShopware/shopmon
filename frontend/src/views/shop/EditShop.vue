@@ -331,7 +331,8 @@ const isSitespeedFormValid = computed(() => {
         return true; // Always valid when disabled
     }
     // Check if at least one non-empty URL exists
-    return sitespeedUrls.value.some(url => url.trim() !== '');
+    const hasNonEmptyUrl = sitespeedUrls.value.some(url => url.trim() !== '');
+    return hasNonEmptyUrl;
 });
 
 const schema = Yup.object().shape({
@@ -433,11 +434,11 @@ async function onSitespeedSubmit() {
     }
 }
 
-const openPluginModal = () => {
+function openPluginModal() {
     showPluginModal.value = true;
     pluginBase64.value = '';
     pluginError.value = '';
-};
+}
 
 const closePluginModal = () => {
     showPluginModal.value = false;
@@ -445,7 +446,7 @@ const closePluginModal = () => {
     pluginError.value = '';
 };
 
-const processPluginData = () => {
+function processPluginData() {
     try {
         pluginError.value = '';
 
@@ -470,7 +471,7 @@ const processPluginData = () => {
     } catch (e) {
         pluginError.value = 'Invalid base64 string or JSON format';
     }
-};
+}
 </script>
 
 <style>

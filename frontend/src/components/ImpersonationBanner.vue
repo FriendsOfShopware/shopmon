@@ -22,11 +22,10 @@ const alert = useAlert();
 
 const isImpersonating = computed(() => {
     // Check if the session has impersonation data
-    const sessionData = session.value?.data;
-    if (!sessionData) return false;
+    if (!session.value?.data) return false;
 
     // Better-auth stores impersonatedBy in the session object
-    return !!sessionData.session?.impersonatedBy;
+    return !!session.value.data.session?.impersonatedBy;
 });
 
 async function stopImpersonating() {

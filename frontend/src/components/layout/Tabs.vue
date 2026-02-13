@@ -37,7 +37,7 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue';
 import type { FunctionalComponent } from 'vue';
 
-const props = defineProps<{
+defineProps<{
     labels: Array<{
         key: string;
         title: string;

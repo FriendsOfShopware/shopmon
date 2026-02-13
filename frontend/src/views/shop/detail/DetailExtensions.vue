@@ -70,16 +70,9 @@ import ExtensionChangelog from '@/components/modal/ExtensionChangelog.vue';
 
 type Extension = RouterOutput['account']['currentUserExtensions'][number];
 
-const {
-    shop,
-} = useShopDetail();
+const { shop } = useShopDetail();
 
-const {
-    viewExtensionChangelogDialog,
-    dialogExtension,
-    openExtensionChangelog,
-    closeExtensionChangelog,
-} = useExtensionChangelogModal();
+const { viewExtensionChangelogDialog, dialogExtension, openExtensionChangelog, closeExtensionChangelog } = useExtensionChangelogModal();
 
 function getExtensionState(extension: Extension) {
     if (!extension.installed) {

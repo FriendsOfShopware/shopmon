@@ -98,7 +98,7 @@ vi.mock('@/helpers/trpc', () => ({
 
 // Mock changelog helper
 vi.mock('@/helpers/changelog', () => ({
-  sumChanges: (row: any) => row.extensions?.length || 0,
+  sumChanges: (row: any) => row.extensions?.length ?? 0,
 }));
 
 // Mock formatter

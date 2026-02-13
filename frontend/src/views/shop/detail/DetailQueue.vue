@@ -14,7 +14,5 @@
 <script setup lang="ts">
 import { useShopDetail } from '@/composables/useShopDetail';
 
-const {
-    shop,
-} = useShopDetail();
+const { shop } = useShopDetail();
 </script>

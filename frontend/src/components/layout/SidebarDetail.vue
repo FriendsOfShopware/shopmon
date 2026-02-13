@@ -91,41 +91,42 @@ const props = defineProps<{
 }>();
 
 const detailNavigation = computed(() => [
-    { 
-        name: 'Shop Information', 
+    {
+        name: 'Shop Information',
         route: 'account.shops.detail'
     },
-    { 
-        name: 'Checks', 
+    {
+        name: 'Checks',
         route: 'account.shops.detail.checks',
         count: props.shop?.checks?.length ?? 0
     },
-    { 
-        name: 'Extensions', 
+    {
+        name: 'Extensions',
         route: 'account.shops.detail.extensions',
         count: props.shop?.extensions?.length ?? 0
     },
-    { 
-        name: 'Scheduled Tasks', 
+    {
+        name: 'Scheduled Tasks',
         route: 'account.shops.detail.tasks',
         count: props.shop?.scheduledTask?.length ?? 0
     },
-    { 
-        name: 'Queue', 
+    {
+        name: 'Queue',
         route: 'account.shops.detail.queue',
         count: props.shop?.queueInfo?.length ?? 0
     },
-    { 
-        name: 'Sitespeed', 
+    {
+        name: 'Sitespeed',
         route: 'account.shops.detail.sitespeed',
         count: props.shop?.sitespeed?.length ?? 0
     },
-    { 
-        name: 'Changelog', 
+    {
+        name: 'Changelog',
         route: 'account.shops.detail.changelog',
         count: props.shop?.changelog?.length ?? 0
     }
 ]);
+
 function toggleMobileOpen() {
     isMobileOpen.value = !isMobileOpen.value;
 }

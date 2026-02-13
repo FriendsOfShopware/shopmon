@@ -36,7 +36,7 @@ const FieldStub = defineComponent({
   setup(props, { emit }) {
     return () => h('input', {
       name: props.name,
-      type: props.type || 'text',
+      type: props.type ?? 'text',
       class: props.class,
       id: props.id,
       autocomplete: props.autocomplete,
