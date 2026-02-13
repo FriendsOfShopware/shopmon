@@ -35,6 +35,7 @@ Thank you for your interest in contributing to Shopmon! This document provides g
 ### Initial Setup
 
 1. Install dependencies:
+
    ```bash
    make setup
    make up
@@ -53,6 +54,7 @@ This will create a few users and a shop with sample data to help you get started
    ```
 
 This will start:
+
 - API server on http://localhost:5789
 - Frontend dev server on http://localhost:3000
 
@@ -87,13 +89,14 @@ git checkout -b fix/your-bug-fix
    - Database migrations: `/api/drizzle/`
 
 2. Run code quality checks:
+
    ```bash
-   bun run biome:check
+   make lint
    ```
 
 3. Fix any issues:
    ```bash
-   bun run biome:fix
+   make lint-fix
    ```
 
 ### Database Changes
@@ -101,6 +104,7 @@ git checkout -b fix/your-bug-fix
 If your changes require database modifications:
 
 1. Generate a new migration:
+
    ```bash
    cd api
    bun run db:generate
@@ -113,7 +117,7 @@ If your changes require database modifications:
 
 ## Code Style
 
-We use [Biome](https://biomejs.dev/) for code formatting and linting. The configuration is in `biome.json`.
+We use [oxfmt](https://oxc.rs/) for code formatting and [ESLint](https://eslint.org/) for linting. The oxfmt configuration is in `.oxfmt.toml` and ESLint configuration is in `frontend/eslint.config.js`.
 
 ### Key Guidelines
 
@@ -155,6 +159,7 @@ Currently, the project doesn't have automated tests. If you'd like to contribute
 ## Submitting Changes
 
 1. Commit your changes with clear, descriptive messages:
+
    ```bash
    git commit -m "feat: add shop health dashboard"
    # or
@@ -162,6 +167,7 @@ Currently, the project doesn't have automated tests. If you'd like to contribute
    ```
 
 2. Push to your fork:
+
    ```bash
    git push origin your-branch-name
    ```

@@ -25,35 +25,38 @@ api/src/
 Within each module, we strictly enforce the 3-Layer Pattern:
 
 ### 1. Router (`*.router.ts`)
-*   **Responsibility:**
-    *   Handle HTTP/tRPC requests.
-    *   Validate inputs (Zod schemas).
-    *   Check permissions/middleware.
-    *   **DELEGATE** work to the Service.
-*   **Rules:**
-    *   ❌ **NO** direct database queries.
-    *   ❌ **NO** complex business logic.
-    *   ✅ **ONLY** call Services.
+
+- **Responsibility:**
+  - Handle HTTP/tRPC requests.
+  - Validate inputs (Zod schemas).
+  - Check permissions/middleware.
+  - **DELEGATE** work to the Service.
+- **Rules:**
+  - ❌ **NO** direct database queries.
+  - ❌ **NO** complex business logic.
+  - ✅ **ONLY** call Services.
 
 ### 2. Service (`*.service.ts`)
-*   **Responsibility:**
-    *   Contain **ALL** business logic.
-    *   Orchestrate workflows.
-    *   Handle third-party integrations (Stripe, Mailer, etc.).
-*   **Rules:**
-    *   ✅ Can call Repositories.
-    *   ✅ Can call other Services.
-    *   ❌ Should not deal with HTTP-specifics.
+
+- **Responsibility:**
+  - Contain **ALL** business logic.
+  - Orchestrate workflows.
+  - Handle third-party integrations (Stripe, Mailer, etc.).
+- **Rules:**
+  - ✅ Can call Repositories.
+  - ✅ Can call other Services.
+  - ❌ Should not deal with HTTP-specifics.
 
 ### 3. Repository (`*.repository.ts`)
-*   **Responsibility:**
-    *   Pure Data Access Object (DAO).
-    *   Handle **CRUD** operations.
-*   **Rules:**
-    *   ✅ **ONLY** interact with the database.
-    *   ❌ **NO** business logic.
-    *   ❌ **NO** side effects (sending emails).
-    *   ❌ **NEVER** call Services.
+
+- **Responsibility:**
+  - Pure Data Access Object (DAO).
+  - Handle **CRUD** operations.
+- **Rules:**
+  - ✅ **ONLY** interact with the database.
+  - ❌ **NO** business logic.
+  - ❌ **NO** side effects (sending emails).
+  - ❌ **NEVER** call Services.
 
 ---
 

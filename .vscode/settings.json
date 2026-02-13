@@ -1,26 +1,25 @@
 {
-	"css.lint.unknownAtRules": "ignore",
-	"search.exclude": {
-		".devenv": true,
-		".direnv": true,
-		"**/node_modules": true,
-		"**/bower_components": true,
-		"**/*.code-search": true,
-		"**/.wrangler": true,
-		"api/worker.api.js": true,
-		"api/worker.api.js.map": true
-	},
-	"editor.renderWhitespace": "all",
-	"editor.renderControlCharacters": true,
-	"files.insertFinalNewline": true,
-	"[javascript]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"[vue]": {
-		"editor.defaultFormatter": "biomejs.biome"
-	},
-	"biome.lsp.bin": "node_modules/@biomejs/biome/bin/biome",
-	"makefile.configureOnOpen": false,
-	"IDX.aI.enableInlineCompletion": true,
-	"IDX.aI.enableCodebaseIndexing": true
+  "css.lint.unknownAtRules": "ignore",
+  "search.exclude": {
+    ".devenv": true,
+    ".direnv": true,
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/.wrangler": true,
+    "api/worker.api.js": true,
+    "api/worker.api.js.map": true
+  },
+  "editor.renderWhitespace": "all",
+  "editor.renderControlCharacters": true,
+  "files.insertFinalNewline": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  }
 }

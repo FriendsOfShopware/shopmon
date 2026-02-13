@@ -1,29 +1,29 @@
 .pill {
-	font-size: 0.75rem;
-	display: inline-block;
-	padding: 0.125rem 0.5rem;
-	border-radius: 9999px;
-	background-color: #d1d5db;
-	white-space: nowrap;
+  font-size: 0.75rem;
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: #d1d5db;
+  white-space: nowrap;
 
-	.dark & {
-		color: #111827;
-	}
+  .dark & {
+    color: #111827;
+  }
 
-	&-success {
-		background-color: var(--success-color);
-	}
+  &-success {
+    background-color: var(--success-color);
+  }
 
-	&-info {
-		background-color: var(--info-color);
-	}
+  &-info {
+    background-color: var(--info-color);
+  }
 
-	&-warning {
-		background-color: var(--warning-color);
-	}
+  &-warning {
+    background-color: var(--warning-color);
+  }
 
-	&-error {
-		background-color: var(--error-color);
-		color: #ffffff;
-	}
+  &-error {
+    background-color: var(--error-color);
+    color: #ffffff;
+  }
 }

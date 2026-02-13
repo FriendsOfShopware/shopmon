@@ -1,16 +1,14 @@
 <template>
-    <login-container>
-        <Notification />
-        <router-view />
-    </login-container>
+  <login-container>
+    <Notification />
+    <router-view />
+  </login-container>
 
-    <layout-footer />
+  <layout-footer />
 </template>
 
 <script setup lang="ts">
-import Notification from '@/components/Notification.vue';
+import Notification from "@/components/Notification.vue";
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

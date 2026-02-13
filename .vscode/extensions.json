@@ -1,8 +1,8 @@
 {
-	"recommendations": [
-		"lukashass.volar",
-		"johnsoncodehk.vscode-typescript-vue-plugin",
-		"redhat.vscode-xml",
-		"biomejs.biome"
-	]
+  "recommendations": [
+    "lukashass.volar",
+    "johnsoncodehk.vscode-typescript-vue-plugin",
+    "redhat.vscode-xml",
+    "oxc.oxc-vscode"
+  ]
 }

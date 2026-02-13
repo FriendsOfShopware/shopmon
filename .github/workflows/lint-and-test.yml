@@ -1,56 +1,59 @@
 name: Lint and Test
 on:
-    pull_request:
-        branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-    biome:
-        name: Biome
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+  oxfmt:
+    name: oxfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            - name: Setup Biome
-              uses: biomejs/setup-biome@v2
-              with:
-                version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Run Biome
-              run: biome ci .
+      - name: Install Dependencies
+        run: bun install
 
-    tslint:
-        name: TypeScript Lint
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+      - name: Run oxfmt
+        run: bun oxfmt --check
 
-            - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                bun-version: latest
+  tslint:
+    name: TypeScript Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            - name: Install Dependencies
-              run: bun install
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Run Lint
-              run: make lint
+      - name: Install Dependencies
+        run: bun install
 
-    vitest:
-        name: Frontend Tests
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+      - name: Run Lint
+        run: make lint
 
-            - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                bun-version: latest
+  vitest:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            - name: Install Dependencies
-              run: bun install
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Run Vitest
-              run: cd frontend && bun run test:run
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Run Vitest
+        run: cd frontend && bun run test:run
