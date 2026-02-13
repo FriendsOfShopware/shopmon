@@ -147,7 +147,7 @@
                         id="tokenName"
                         v-model="tokenName"
                         type="text"
-                        class="form-control"
+                        class="field"
                         placeholder="e.g., Production Server"
                     />
                 </div>
