@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { deployment, deploymentToken, organization, shop } from "#src/db.ts";
+import { generateRandomName } from "#src/helpers/nameGenerator.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
 import { presignDeploymentOutputUpload } from "./deployment.storage.ts";
 
@@ -14,14 +15,6 @@ const deploymentSchema = z.object({
   composer: z.record(z.string(), z.string()).optional(),
   reference: z.string().optional(),
 });
-
-function generateRandomName(): string {
-  const adjectives = ["happy", "clever", "brave", "swift", "calm", "bright", "kind", "wise"];
-  const nouns = ["panda", "tiger", "eagle", "dolphin", "wolf", "falcon", "bear", "fox"];
-  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const noun = nouns[Math.floor(Math.random() * nouns.length)];
-  return `${adj}-${noun}`;
-}
 
 export const cliRouter = router({
   createDeployment: publicProcedure.input(deploymentSchema).mutation(async ({ ctx, input }) => {
