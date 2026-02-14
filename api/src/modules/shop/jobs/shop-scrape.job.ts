@@ -16,6 +16,8 @@ import {
   shopExtension,
   shopQueue,
   shopScheduledTask,
+  storeExtension,
+  storeExtensionVersion,
 } from "#src/db.ts";
 import { type CheckerInput, check } from "#src/modules/shop/checker/registery.ts";
 import { decrypt } from "#src/modules/shop/crypto.ts";
@@ -28,6 +30,13 @@ import type {
   ExtensionDiff,
   QueueInfo,
 } from "#src/types/index.ts";
+
+/** Extension with resolved store data for use during scrape */
+interface ScrapeExtension extends Extension {
+  storeExtensionId: number | null;
+  /** Raw changelog entries from the store (version + text + date), not yet filtered by compatibility */
+  storeChangelogs: { version: string; text: string; releaseDate: string }[];
+}
 import versionCompare from "#src/util.ts";
 
 interface SQLShop {
@@ -348,7 +357,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
       return;
     }
 
-    const extensions: Extension[] = [];
+    const extensions: ScrapeExtension[] = [];
 
     for (const plugin of responses.plugin.body.data) {
       extensions.push({
@@ -362,7 +371,9 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         changelog: null,
         installed: plugin.installedAt !== null,
         installedAt: plugin.installedAt,
-      } as Extension);
+        storeExtensionId: null,
+        storeChangelogs: [],
+      });
     }
 
     for (const app of responses.app.body.data) {
@@ -377,7 +388,9 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         changelog: null,
         installed: true,
         installedAt: app.createdAt,
-      } as Extension);
+        storeExtensionId: null,
+        storeChangelogs: [],
+      });
     }
 
     const scheduledTasks = responses.scheduledTask.body.data.map((task: ShopwareScheduledTask) => {
@@ -412,13 +425,63 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
           );
 
           if (storePlugin) {
-            extension.latestVersion = storePlugin.version;
-            extension.ratingAverage = storePlugin.ratingAverage;
-            extension.storeLink = storePlugin.link.replace(
+            const normalizedStoreLink = storePlugin.link.replace(
               "http://store.shopware.com:80",
               "https://store.shopware.com",
             );
 
+            extension.latestVersion = storePlugin.version;
+            extension.ratingAverage = storePlugin.ratingAverage;
+            extension.storeLink = normalizedStoreLink;
+
+            // Upsert into store_extension
+            const [upserted] = await con
+              .insert(storeExtension)
+              .values({
+                name: storePlugin.name,
+                ratingAverage: storePlugin.ratingAverage,
+                storeLink: normalizedStoreLink,
+                updatedAt: new Date(),
+              })
+              .onConflictDoUpdate({
+                target: storeExtension.name,
+                set: {
+                  ratingAverage: storePlugin.ratingAverage,
+                  storeLink: normalizedStoreLink,
+                  updatedAt: new Date(),
+                },
+              })
+              .returning({ id: storeExtension.id });
+
+            extension.storeExtensionId = upserted.id;
+
+            // Upsert all changelog versions into store_extension_version
+            if (storePlugin.changelog.length > 0) {
+              for (const cl of storePlugin.changelog) {
+                await con
+                  .insert(storeExtensionVersion)
+                  .values({
+                    storeExtensionId: upserted.id,
+                    version: cl.version,
+                    changelog: cl.text,
+                    releaseDate: cl.creationDate.date,
+                  })
+                  .onConflictDoNothing({
+                    target: [
+                      storeExtensionVersion.storeExtensionId,
+                      storeExtensionVersion.version,
+                    ],
+                  });
+              }
+
+              extension.storeChangelogs = storePlugin.changelog.map((cl) => ({
+                version: cl.version,
+                text: cl.text,
+                releaseDate: cl.creationDate.date,
+              }));
+            }
+
+            // Build the filtered changelog for change detection (same logic as before)
             if (storePlugin.latestVersion !== extension.version) {
               const changelogs: ExtensionChangelog[] = [];
 
@@ -431,7 +494,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
                     text: changelog.text,
                     creationDate: changelog.creationDate.date,
                     isCompatible: compare <= 0,
-                  } as ExtensionChangelog);
+                  });
                 }
               }
 
@@ -459,7 +522,7 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
             let changelog: ExtensionChangelog[] | null = null;
             if (oldExtension.version !== newExtension.version) {
               state = "updated";
-              changelog = oldExtension.changelog;
+              changelog = newExtension.changelog;
             } else if (oldExtension.active === true && newExtension.active === false) {
               state = "deactivated";
             } else if (oldExtension.active === false && newExtension.active === true) {
@@ -608,20 +671,18 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
       // Insert new data
       const insertPromises: Promise<unknown>[] = [];
 
-      if (input.extensions.length > 0) {
+      if (extensions.length > 0) {
         insertPromises.push(
           tx.insert(shopExtension).values(
-            input.extensions.map((ext) => ({
+            extensions.map((ext) => ({
               shopId: shop.id,
+              storeExtensionId: ext.storeExtensionId,
               name: ext.name,
               label: ext.label,
               active: ext.active,
               version: ext.version,
               latestVersion: ext.latestVersion,
               installed: ext.installed,
-              ratingAverage: ext.ratingAverage,
-              storeLink: ext.storeLink,
-              changelog: ext.changelog,
               installedAt: ext.installedAt,
             })),
           ),

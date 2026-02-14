@@ -214,6 +214,31 @@ export const lock = pgTable("lock", {
   createdAt: timestamp("created_at").notNull(),
 });
 
+// Normalized store extension data from api.shopware.com
+export const storeExtension = pgTable("store_extension", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  ratingAverage: real("rating_average"),
+  storeLink: text("store_link"),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const storeExtensionVersion = pgTable(
+  "store_extension_version",
+  {
+    id: serial("id").primaryKey(),
+    storeExtensionId: integer("store_extension_id")
+      .notNull()
+      .references(() => storeExtension.id, { onDelete: "cascade" }),
+    version: text("version").notNull(),
+    changelog: text("changelog"),
+    releaseDate: text("release_date"),
+  },
+  (table) => ({
+    extVersionUnique: unique().on(table.storeExtensionId, table.version),
+  }),
+);
+
 // Shop scrape info tables (flat structure)
 export const shopExtension = pgTable(
   "shop_extension",
@@ -222,23 +247,16 @@ export const shopExtension = pgTable(
     shopId: integer("shop_id")
       .notNull()
       .references(() => shop.id, { onDelete: "cascade" }),
+    storeExtensionId: integer("store_extension_id").references(
+      () => storeExtension.id,
+      { onDelete: "set null" },
+    ),
     name: text("name").notNull(),
     label: text("label").notNull(),
     active: boolean("active").notNull(),
     version: text("version").notNull(),
     latestVersion: text("latest_version"),
     installed: boolean("installed").notNull(),
-    ratingAverage: integer("rating_average"),
-    storeLink: text("store_link"),
-    changelog: jsonb("changelog").$type<
-      | {
-          version: string;
-          text: string;
-          creationDate: string;
-          isCompatible: boolean;
-        }[]
-      | null
-    >(),
     installedAt: text("installed_at"),
   },
   (table) => ({
@@ -510,11 +528,38 @@ export const deploymentTokenRelations = relations(deploymentToken, ({ one }) => 
   }),
 }));
 
+export const storeExtensionRelations = relations(storeExtension, ({ many }) => ({
+  versions: many(storeExtensionVersion),
+  shopExtensions: many(shopExtension),
+}));
+
+export const storeExtensionVersionRelations = relations(storeExtensionVersion, ({ one }) => ({
+  storeExtension: one(storeExtension, {
+    fields: [storeExtensionVersion.storeExtensionId],
+    references: [storeExtension.id],
+  }),
+}));
+
+export const shopExtensionRelations = relations(shopExtension, ({ one }) => ({
+  shop: one(shop, {
+    fields: [shopExtension.shopId],
+    references: [shop.id],
+  }),
+  storeExtension: one(storeExtension, {
+    fields: [shopExtension.storeExtensionId],
+    references: [storeExtension.id],
+  }),
+}));
+
 export const schema = {
   shop,
   shopSitespeed,
   shopChangelog,
   userNotification,
+
+  // Normalized store extension data
+  storeExtension,
+  storeExtensionVersion,
 
   // Shop scrape info tables
   shopExtension,
@@ -553,6 +598,11 @@ export const schema = {
   memberRelations,
   invitationRelations,
   ssoProviderRelations,
+
+  // Store Extension Relations
+  storeExtensionRelations,
+  storeExtensionVersionRelations,
+  shopExtensionRelations,
 
   // App Relations
   projectRelations,

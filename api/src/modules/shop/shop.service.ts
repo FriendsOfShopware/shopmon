@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { HttpClient, type HttpClientResponse, SimpleShop } from "@shopware-ag/app-server-sdk";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   type Drizzle,
   schema,
@@ -11,6 +11,8 @@ import {
   shopExtension,
   shopQueue,
   shopScheduledTask,
+  storeExtension,
+  storeExtensionVersion,
 } from "#src/db.ts";
 import * as LockRepository from "#src/modules/lock/lock.repository.ts";
 import { scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
@@ -20,6 +22,7 @@ import { deleteDeploymentOutputsByShopId } from "#src/modules/deployment/deploym
 import { deleteShopScrapeInfo } from "#src/modules/shop/scrape-info.repository.ts";
 import { deleteSitespeedReport, getReportUrl } from "#src/modules/shop/sitespeed.service.ts";
 import Users from "#src/modules/user/user.repository.ts";
+import versionCompare from "#src/util.ts";
 import { decrypt, encrypt } from "./crypto.ts";
 import Shops from "./shop.repository.ts";
 
@@ -116,7 +119,22 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
     orderBy: [desc(schema.shopChangelog.date)],
   });
 
-  const extensionsQuery = db.select().from(shopExtension).where(eq(shopExtension.shopId, shopId));
+  const extensionsQuery = db
+    .select({
+      name: shopExtension.name,
+      label: shopExtension.label,
+      active: shopExtension.active,
+      version: shopExtension.version,
+      latestVersion: shopExtension.latestVersion,
+      installed: shopExtension.installed,
+      installedAt: shopExtension.installedAt,
+      storeExtensionId: shopExtension.storeExtensionId,
+      ratingAverage: storeExtension.ratingAverage,
+      storeLink: storeExtension.storeLink,
+    })
+    .from(shopExtension)
+    .leftJoin(storeExtension, eq(shopExtension.storeExtensionId, storeExtension.id))
+    .where(eq(shopExtension.shopId, shopId));
 
   const scheduledTasksQuery = db
     .select()
@@ -148,20 +166,63 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
     });
   }
 
+  // Fetch changelog versions for extensions that have a store link
+  const storeExtIds = extensions
+    .map((ext) => ext.storeExtensionId)
+    .filter((id): id is number => id !== null);
+
+  const allVersions =
+    storeExtIds.length > 0
+      ? await db
+          .select()
+          .from(storeExtensionVersion)
+          .where(inArray(storeExtensionVersion.storeExtensionId, storeExtIds))
+      : [];
+
+  // Group versions by storeExtensionId
+  const versionsByExtId = new Map<number, typeof allVersions>();
+  for (const v of allVersions) {
+    const list = versionsByExtId.get(v.storeExtensionId) || [];
+    list.push(v);
+    versionsByExtId.set(v.storeExtensionId, list);
+  }
+
   return {
     ...shop,
-    extensions: extensions.map((ext) => ({
-      name: ext.name,
-      label: ext.label,
-      active: ext.active,
-      version: ext.version,
-      latestVersion: ext.latestVersion,
-      installed: ext.installed,
-      ratingAverage: ext.ratingAverage,
-      storeLink: ext.storeLink,
-      changelog: ext.changelog ?? null,
-      installedAt: ext.installedAt,
-    })),
+    extensions: extensions.map((ext) => {
+      let changelog: {
+        version: string;
+        text: string;
+        creationDate: string;
+        isCompatible: boolean;
+      }[] | null = null;
+
+      if (ext.storeExtensionId && ext.latestVersion && ext.latestVersion !== ext.version) {
+        const versions = versionsByExtId.get(ext.storeExtensionId) || [];
+        changelog = versions
+          .filter((v) => versionCompare(v.version, ext.version) > 0)
+          .map((v) => ({
+            version: v.version,
+            text: v.changelog || "",
+            creationDate: v.releaseDate || "",
+            isCompatible: versionCompare(v.version, ext.latestVersion!) <= 0,
+          }));
+        if (changelog.length === 0) changelog = null;
+      }
+
+      return {
+        name: ext.name,
+        label: ext.label,
+        active: ext.active,
+        version: ext.version,
+        latestVersion: ext.latestVersion,
+        installed: ext.installed,
+        ratingAverage: ext.ratingAverage ?? null,
+        storeLink: ext.storeLink ?? null,
+        changelog,
+        installedAt: ext.installedAt,
+      };
+    }),
     scheduledTask: scheduledTasks.map((task) => ({
       id: task.taskId,
       name: task.name,
