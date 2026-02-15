@@ -46,6 +46,23 @@
         </div>
 
         <div>
+          <label for="gitUrl">Git Repository URL</label>
+
+          <field
+            id="gitUrl"
+            type="url"
+            name="gitUrl"
+            class="field"
+            placeholder="https://github.com/org/repo"
+            :class="{ 'has-error': errors.gitUrl }"
+          />
+
+          <div class="field-error-message">
+            {{ errors.gitUrl }}
+          </div>
+        </div>
+
+        <div>
           <label for="organizationId">Organization</label>
 
           <field id="organizationId" v-slot="{ field }" name="organizationId">
@@ -95,6 +112,7 @@ const organizations = authClient.useListOrganizations();
 const schema = Yup.object().shape({
   name: Yup.string().required("Project name is required"),
   description: Yup.string().optional(),
+  gitUrl: Yup.string().url("Must be a valid URL").optional(),
   organizationId: Yup.string().required("Organization is required"),
 });
 
@@ -103,6 +121,7 @@ const initialValues = computed(() => {
   return {
     name: "",
     description: "",
+    gitUrl: "",
     organizationId: firstOrgId,
   };
 });
@@ -114,6 +133,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
       orgId: typedValues.organizationId,
       name: typedValues.name,
       description: typedValues.description ?? undefined,
+      gitUrl: typedValues.gitUrl || undefined,
     };
     await trpcClient.organization.project.create.mutate(input);
 

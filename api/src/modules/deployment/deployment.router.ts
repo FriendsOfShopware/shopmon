@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { deployment, deploymentToken } from "#src/db.ts";
+import { deployment, shop, project } from "#src/db.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
 import { loggedInUserMiddleware, shopMiddleware } from "#src/trpc/middleware.ts";
 import { deleteDeploymentOutput, getDeploymentOutput } from "./deployment.storage.ts";
@@ -28,9 +28,12 @@ export const deploymentRouter = router({
           endDate: deployment.endDate,
           executionTime: deployment.executionTime,
           reference: deployment.reference,
+          gitUrl: project.gitUrl,
           createdAt: deployment.createdAt,
         })
         .from(deployment)
+        .innerJoin(shop, eq(shop.id, deployment.shopId))
+        .innerJoin(project, eq(project.id, shop.projectId))
         .where(eq(deployment.shopId, input.shopId))
         .orderBy(desc(deployment.createdAt))
         .limit(input.limit)
@@ -50,8 +53,23 @@ export const deploymentRouter = router({
     .use(shopMiddleware)
     .query(async ({ ctx, input }) => {
       const result = await ctx.drizzle
-        .select()
+        .select({
+          id: deployment.id,
+          shopId: deployment.shopId,
+          name: deployment.name,
+          command: deployment.command,
+          returnCode: deployment.returnCode,
+          startDate: deployment.startDate,
+          endDate: deployment.endDate,
+          executionTime: deployment.executionTime,
+          composer: deployment.composer,
+          reference: deployment.reference,
+          gitUrl: project.gitUrl,
+          createdAt: deployment.createdAt,
+        })
         .from(deployment)
+        .innerJoin(shop, eq(shop.id, deployment.shopId))
+        .innerJoin(project, eq(project.id, shop.projectId))
         .where(eq(deployment.id, input.deploymentId));
 
       const deploymentRecord = result[0];
@@ -73,95 +91,6 @@ export const deploymentRouter = router({
       const output = await getDeploymentOutput(deploymentRecord.id);
 
       return { ...deploymentRecord, output };
-    }),
-
-  listTokens: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .query(async ({ ctx, input }) => {
-      const tokens = await ctx.drizzle
-        .select({
-          id: deploymentToken.id,
-          name: deploymentToken.name,
-          createdAt: deploymentToken.createdAt,
-          lastUsedAt: deploymentToken.lastUsedAt,
-        })
-        .from(deploymentToken)
-        .where(eq(deploymentToken.shopId, input.shopId))
-        .orderBy(desc(deploymentToken.createdAt));
-
-      return tokens;
-    }),
-
-  createToken: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-        name: z.string().min(1).max(100),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .mutation(async ({ ctx, input }) => {
-      const token = crypto.randomUUID().replace(/-/g, "");
-      const id = crypto.randomUUID();
-
-      await ctx.drizzle.insert(deploymentToken).values({
-        id,
-        shopId: input.shopId,
-        token,
-        name: input.name,
-        createdAt: new Date(),
-        lastUsedAt: null,
-      });
-
-      return {
-        id,
-        token,
-        name: input.name,
-        createdAt: new Date(),
-      };
-    }),
-
-  deleteToken: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-        tokenId: z.string(),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.drizzle
-        .select()
-        .from(deploymentToken)
-        .where(eq(deploymentToken.id, input.tokenId));
-
-      const token = result[0];
-
-      if (!token) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Token not found",
-        });
-      }
-
-      if (token.shopId !== input.shopId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Token does not belong to this shop",
-        });
-      }
-
-      await ctx.drizzle.delete(deploymentToken).where(eq(deploymentToken.id, input.tokenId));
-
-      return { success: true };
     }),
 
   delete: publicProcedure

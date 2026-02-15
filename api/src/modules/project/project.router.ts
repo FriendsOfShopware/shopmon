@@ -21,6 +21,7 @@ export const projectRouter = router({
         orgId: z.string(),
         name: z.string(),
         description: z.string().optional(),
+        gitUrl: z.string().url().optional(),
       }),
     )
     .use(loggedInUserMiddleware)
@@ -35,6 +36,7 @@ export const projectRouter = router({
         projectId: z.number(),
         name: z.string().optional(),
         description: z.string().optional(),
+        gitUrl: z.string().url().nullish(),
       }),
     )
     .use(loggedInUserMiddleware)

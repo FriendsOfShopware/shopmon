@@ -129,17 +129,33 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
 
   const checksQuery = db.select().from(shopCheck).where(eq(shopCheck.shopId, shopId));
 
-  const [shop, sitespeed, shopChangelog, extensions, scheduledTasks, queues, cache, checks] =
-    await Promise.all([
-      shopQuery,
-      sitespeedQuery,
-      shopChangelogQuery,
-      extensionsQuery,
-      scheduledTasksQuery,
-      queuesQuery,
-      cacheQuery,
-      checksQuery,
-    ]);
+  const deploymentsCountQuery = db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(schema.deployment)
+    .where(eq(schema.deployment.shopId, shopId))
+    .then((rows) => rows[0]?.count ?? 0);
+
+  const [
+    shop,
+    sitespeed,
+    shopChangelog,
+    extensions,
+    scheduledTasks,
+    queues,
+    cache,
+    checks,
+    deploymentsCount,
+  ] = await Promise.all([
+    shopQuery,
+    sitespeedQuery,
+    shopChangelogQuery,
+    extensionsQuery,
+    scheduledTasksQuery,
+    queuesQuery,
+    cacheQuery,
+    checksQuery,
+    deploymentsCountQuery,
+  ]);
 
   if (shop === undefined) {
     throw new TRPCError({
@@ -192,6 +208,7 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
     sitespeed: sitespeed,
     sitespeedReportUrl: getReportUrl(shopId),
     changelog: shopChangelog,
+    deploymentsCount,
   };
 };
 

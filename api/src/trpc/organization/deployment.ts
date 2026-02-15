@@ -27,9 +27,12 @@ export const deploymentRouter = router({
           endDate: schema.deployment.endDate,
           executionTime: schema.deployment.executionTime,
           reference: schema.deployment.reference,
+          gitUrl: schema.project.gitUrl,
           createdAt: schema.deployment.createdAt,
         })
         .from(schema.deployment)
+        .innerJoin(schema.shop, eq(schema.shop.id, schema.deployment.shopId))
+        .innerJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.deployment.shopId, input.shopId))
         .orderBy(desc(schema.deployment.createdAt))
         .limit(input.limit)
@@ -49,8 +52,23 @@ export const deploymentRouter = router({
     .use(shopMiddleware)
     .query(async ({ ctx, input }) => {
       const [deployment] = await ctx.drizzle
-        .select()
+        .select({
+          id: schema.deployment.id,
+          shopId: schema.deployment.shopId,
+          name: schema.deployment.name,
+          command: schema.deployment.command,
+          returnCode: schema.deployment.returnCode,
+          startDate: schema.deployment.startDate,
+          endDate: schema.deployment.endDate,
+          executionTime: schema.deployment.executionTime,
+          composer: schema.deployment.composer,
+          reference: schema.deployment.reference,
+          gitUrl: schema.project.gitUrl,
+          createdAt: schema.deployment.createdAt,
+        })
         .from(schema.deployment)
+        .innerJoin(schema.shop, eq(schema.shop.id, schema.deployment.shopId))
+        .innerJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
         .where(eq(schema.deployment.id, input.deploymentId));
 
       if (!deployment) {
@@ -68,94 +86,6 @@ export const deploymentRouter = router({
       }
 
       return deployment;
-    }),
-
-  listTokens: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .query(async ({ ctx, input }) => {
-      const tokens = await ctx.drizzle
-        .select({
-          id: schema.deploymentToken.id,
-          name: schema.deploymentToken.name,
-          createdAt: schema.deploymentToken.createdAt,
-          lastUsedAt: schema.deploymentToken.lastUsedAt,
-        })
-        .from(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.shopId, input.shopId))
-        .orderBy(desc(schema.deploymentToken.createdAt));
-
-      return tokens;
-    }),
-
-  createToken: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-        name: z.string().min(1).max(100),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .mutation(async ({ ctx, input }) => {
-      const token = crypto.randomUUID().replace(/-/g, "");
-      const id = crypto.randomUUID();
-
-      await ctx.drizzle.insert(schema.deploymentToken).values({
-        id,
-        shopId: input.shopId,
-        token,
-        name: input.name,
-        createdAt: new Date(),
-      });
-
-      return {
-        id,
-        token,
-        name: input.name,
-        createdAt: new Date(),
-      };
-    }),
-
-  deleteToken: publicProcedure
-    .input(
-      z.object({
-        shopId: z.number(),
-        tokenId: z.string(),
-      }),
-    )
-    .use(loggedInUserMiddleware)
-    .use(shopMiddleware)
-    .mutation(async ({ ctx, input }) => {
-      const [token] = await ctx.drizzle
-        .select()
-        .from(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.id, input.tokenId));
-
-      if (!token) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Token not found",
-        });
-      }
-
-      if (token.shopId !== input.shopId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Token does not belong to this shop",
-        });
-      }
-
-      await ctx.drizzle
-        .delete(schema.deploymentToken)
-        .where(eq(schema.deploymentToken.id, input.tokenId));
-
-      return { success: true };
     }),
 
   delete: publicProcedure

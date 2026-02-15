@@ -1,12 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { deployment, deploymentToken, organization, shop } from "#src/db.ts";
+import { deployment, organization, shop } from "#src/db.ts";
 import { generateRandomName } from "#src/helpers/nameGenerator.ts";
+import ApiKeys from "#src/modules/project/project-api-key.repository.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
 import { presignDeploymentOutputUpload } from "./deployment.storage.ts";
 
 const deploymentSchema = z.object({
+  shop_id: z.number(),
   command: z.string(),
   return_code: z.number(),
   start_date: z.string(),
@@ -29,17 +31,45 @@ export const cliRouter = router({
 
     const token = authHeader.substring(7);
 
-    const tokenResult = await ctx.drizzle
-      .select()
-      .from(deploymentToken)
-      .where(eq(deploymentToken.token, token));
+    const apiKey = await ApiKeys.findByToken(ctx.drizzle, token);
 
-    const deploymentTokenRecord = tokenResult[0];
-
-    if (!deploymentTokenRecord) {
+    if (!apiKey) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Invalid token",
+      });
+    }
+
+    if (!apiKey.scopes.includes("deployments")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "API key does not have the deployments scope",
+      });
+    }
+
+    const shopResult = await ctx.drizzle
+      .select({
+        id: shop.id,
+        projectId: shop.projectId,
+        organizationSlug: organization.slug,
+      })
+      .from(shop)
+      .innerJoin(organization, eq(shop.organizationId, organization.id))
+      .where(eq(shop.id, input.shop_id));
+
+    const shopData = shopResult[0];
+
+    if (!shopData) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Shop not found",
+      });
+    }
+
+    if (shopData.projectId !== apiKey.projectId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Shop does not belong to the API key's project",
       });
     }
 
@@ -48,7 +78,7 @@ export const cliRouter = router({
     const result = await ctx.drizzle
       .insert(deployment)
       .values({
-        shopId: deploymentTokenRecord.shopId,
+        shopId: input.shop_id,
         name,
         command: input.command,
         returnCode: input.return_code,
@@ -65,23 +95,10 @@ export const cliRouter = router({
 
     const upload_url = presignDeploymentOutputUpload(deploymentId);
 
-    await ctx.drizzle
-      .update(deploymentToken)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(deploymentToken.id, deploymentTokenRecord.id));
-
-    const shopResult = await ctx.drizzle
-      .select({
-        organizationSlug: organization.slug,
-      })
-      .from(shop)
-      .innerJoin(organization, eq(shop.organizationId, organization.id))
-      .where(eq(shop.id, deploymentTokenRecord.shopId));
-
-    const shopData = shopResult[0];
+    await ApiKeys.updateLastUsedAt(ctx.drizzle, apiKey.id);
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-    const deploymentUrl = `${frontendUrl}/app/organizations/${shopData?.organizationSlug}/shops/${deploymentTokenRecord.shopId}/deployments/${deploymentId}`;
+    const deploymentUrl = `${frontendUrl}/app/organizations/${shopData.organizationSlug}/shops/${input.shop_id}/deployments/${deploymentId}`;
 
     return {
       success: true,

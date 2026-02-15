@@ -6,6 +6,9 @@
   "imports": {
     "#src/*": "./src/*.ts"
   },
+  "scripts": {
+    "dev": "PORT=5789 bun --watch app.ts"
+  },
   "dependencies": {
     "@better-auth/passkey": "catalog:",
     "@better-auth/sso": "catalog:",

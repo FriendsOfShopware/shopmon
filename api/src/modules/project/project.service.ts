@@ -7,6 +7,7 @@ export interface CreateProjectDTO {
   orgId: string;
   name: string;
   description?: string;
+  gitUrl?: string;
 }
 
 export interface UpdateProjectDTO {
@@ -14,6 +15,7 @@ export interface UpdateProjectDTO {
   projectId: number;
   name?: string;
   description?: string;
+  gitUrl?: string | null;
 }
 
 export interface DeleteProjectDTO {
@@ -31,6 +33,7 @@ export const createProject = async (db: Drizzle, input: CreateProjectDTO) => {
     organizationId: input.orgId,
     name: input.name,
     description: input.description,
+    gitUrl: input.gitUrl,
   });
 };
 
@@ -47,6 +50,7 @@ export const updateProject = async (db: Drizzle, input: UpdateProjectDTO) => {
   await Projects.update(db, input.projectId, {
     name: input.name,
     description: input.description,
+    gitUrl: input.gitUrl,
   });
 
   return true;

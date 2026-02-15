@@ -40,16 +40,16 @@
           <span class="detail-value">{{ formatDateTime(deployment.endDate) }}</span>
         </div>
 
-        <div v-if="deployment.reference" class="detail-row">
+        <div v-if="deployment.reference && deployment.gitUrl" class="detail-row">
           <span class="detail-label">Reference:</span>
           <a
-            :href="deployment.reference"
+            :href="`${deployment.gitUrl}/commit/${deployment.reference}`"
             target="_blank"
             rel="noopener noreferrer"
             class="detail-value detail-link"
           >
             <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-            View Commit
+            {{ deployment.reference.substring(0, 8) }}
           </a>
         </div>
       </div>
