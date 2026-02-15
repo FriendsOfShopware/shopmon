@@ -45,10 +45,7 @@ load-fixtures: # Load fixtures
 	cd api && bun apply-fixtures.ts
 
 dev: # Run the project locally
-	npx concurrently -- 'cd api && PORT=5789 bun --watch app.ts' 'npm --prefix frontend run dev:local'
-
-dev-to-prod:
-	npm --prefix frontend run dev
+	@bun run --parallel --workspaces dev
 
 up: # Build and run the demo shop
 	docker compose up -d

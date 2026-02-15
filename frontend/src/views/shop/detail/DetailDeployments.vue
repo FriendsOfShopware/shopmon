@@ -1,47 +1,47 @@
 <template>
   <div class="deployments-container">
-    <div class="panel panel-table">
-      <div class="panel-header">
-        <h3>Deployment Tokens</h3>
-        <button class="btn btn-primary btn-sm" @click="showCreateTokenDialog = true">
-          <icon-fa6-solid:plus class="icon" />
-          Create Token
-        </button>
+    <div v-if="shop" class="panel setup-card">
+      <h3 class="setup-title">How to Track Deployments</h3>
+      <p class="setup-description">
+        Use the
+        <a
+          href="https://github.com/FriendsOfShopware/shopmon-cli"
+          target="_blank"
+          rel="noopener noreferrer"
+          >shopmon-cli</a
+        >
+        to report deployments. Set the following environment variables and wrap your deployment
+        command:
+      </p>
+
+      <div class="setup-env">
+        <div class="env-row">
+          <span class="env-key">SHOPMON_SHOP_ID</span>
+          <code class="env-value">{{ shop.id }}</code>
+        </div>
+        <div class="env-row">
+          <span class="env-key">SHOPMON_API_KEY</span>
+          <span class="env-value env-placeholder">
+            <router-link
+              :to="{ name: 'account.projects.apikeys', params: { projectId: shop.projectId } }"
+            >
+              Manage API Keys
+            </router-link>
+          </span>
+        </div>
       </div>
 
-      <data-table
-        v-if="tokens && tokens.length > 0"
-        :columns="[
-          { key: 'name', name: 'Name', class: 'token-name-col', sortable: true },
-          { key: 'createdAt', name: 'Created', class: 'token-created-col', sortable: true },
-          { key: 'lastUsedAt', name: 'Last Used', class: 'token-used-col', sortable: true },
-        ]"
-        :data="tokens"
-      >
-        <template #cell-name="{ row }">
-          {{ row.name }}
-        </template>
-
-        <template #cell-createdAt="{ row }">
-          {{ formatDateTime(row.createdAt) }}
-        </template>
-
-        <template #cell-lastUsedAt="{ row }">
-          {{ row.lastUsedAt ? formatDateTime(row.lastUsedAt) : "Never" }}
-        </template>
-
-        <template #cell-actions="{ row }">
-          <div class="action-buttons">
-            <button class="btn btn-danger btn-sm" @click="confirmDeleteToken(row)">
-              <icon-fa6-solid:trash class="icon" />
-            </button>
-          </div>
-        </template>
-      </data-table>
-      <div v-else class="empty-state">
-        <icon-fa6-solid:key class="empty-icon" />
-        <p>No deployment tokens created yet.</p>
+      <div class="setup-command">
+        <code>{{ cliCommand }}</code>
       </div>
+
+      <p class="setup-hint">
+        The CLI automatically uses the local <code>git HEAD</code> commit SHA to link deployments to
+        your git repository. If that is not available, you can set
+        <code>SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to specify it manually. The target git
+        repository URL can be configured in the
+        <router-link :to="{ name: 'account.project.list' }">project settings</router-link>.
+      </p>
     </div>
 
     <div class="panel panel-table">
@@ -82,14 +82,14 @@
         <template #cell-actions="{ row }">
           <div class="action-buttons">
             <a
-              v-if="row.reference"
-              :href="row.reference"
+              v-if="row.reference && row.gitUrl"
+              :href="`${row.gitUrl}/commit/${row.reference}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn btn-sm btn-secondary"
-              title="Open reference link"
+              class="btn btn-secondary"
+              title="Open commit"
             >
-              <icon-fa6-solid:arrow-up-right-from-square class="icon" />
+              <icon-fa6-solid:arrow-up-right-from-square />
             </a>
             <router-link
               :to="{
@@ -102,11 +102,11 @@
               }"
               class="btn btn-sm"
             >
-              <icon-fa6-solid:eye class="icon" />
+              <icon-fa6-solid:eye />
               View
             </router-link>
-            <button class="btn btn-danger btn-sm" @click="confirmDeleteDeployment(row)">
-              <icon-fa6-solid:trash class="icon" />
+            <button class="btn btn-danger" @click="confirmDeleteDeployment(row)">
+              <icon-fa6-solid:trash />
             </button>
           </div>
         </template>
@@ -116,81 +116,6 @@
         <p>No deployments recorded yet.</p>
       </div>
     </div>
-
-    <!-- Create Token Modal -->
-    <modal :show="showCreateTokenDialog" close-x-mark @close="showCreateTokenDialog = false">
-      <template #icon>
-        <icon-fa6-solid:key class="icon icon-info" />
-      </template>
-
-      <template #title> Create Deployment Token </template>
-
-      <template #content>
-        <div v-if="!newToken" class="form-group">
-          <label for="tokenName">Token Name</label>
-          <input
-            id="tokenName"
-            v-model="tokenName"
-            type="text"
-            class="field"
-            placeholder="e.g., Production Server"
-          />
-        </div>
-        <div v-else class="token-created">
-          <alert type="success">
-            Token created successfully! Copy it now - you won't be able to see it again.
-          </alert>
-          <div class="token-display">
-            <code>{{ newToken }}</code>
-            <button class="btn btn-sm" @click="copyToken">
-              <icon-fa6-solid:copy class="icon" />
-              Copy
-            </button>
-          </div>
-        </div>
-      </template>
-
-      <template #footer>
-        <button
-          v-if="!newToken"
-          type="button"
-          class="btn btn-primary"
-          :disabled="!tokenName || isCreatingToken"
-          @click="createToken"
-        >
-          Create Token
-        </button>
-        <button v-else type="button" class="btn btn-primary" @click="closeCreateTokenDialog">
-          Close
-        </button>
-      </template>
-    </modal>
-
-    <!-- Delete Token Confirmation Modal -->
-    <modal :show="showDeleteTokenDialog" close-x-mark @close="showDeleteTokenDialog = false">
-      <template #icon>
-        <icon-fa6-solid:triangle-exclamation class="icon icon-error" />
-      </template>
-
-      <template #title> Delete Deployment Token </template>
-
-      <template #content>
-        Are you sure you want to delete the token "{{ tokenToDelete?.name }}"? This action cannot be
-        undone.
-      </template>
-
-      <template #footer>
-        <button
-          type="button"
-          class="btn btn-danger"
-          :disabled="isDeletingToken"
-          @click="deleteToken"
-        >
-          Delete
-        </button>
-        <button type="button" class="btn" @click="showDeleteTokenDialog = false">Cancel</button>
-      </template>
-    </modal>
 
     <!-- Delete Deployment Confirmation Modal -->
     <modal
@@ -226,28 +151,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { formatDateTime } from "@/helpers/formatter";
 import { trpcClient } from "@/helpers/trpc";
-import Alert from "@/components/layout/Alert.vue";
 import Modal from "@/components/layout/Modal.vue";
 
 const route = useRoute();
 const { shop } = useShopDetail();
 
+const cliCommand = computed(() => {
+  const parts = [];
+  if (window.location.host !== "shopmon.fos.gg") {
+    parts.push(`SHOPMON_BASE_URL=${window.location.protocol}//${window.location.host}`);
+  }
+  parts.push(`SHOPMON_SHOP_ID=${shop.value?.id ?? ""}`);
+  parts.push("SHOPMON_API_KEY=your-api-key");
+  parts.push("./shopmon-cli deploy -- vendor/bin/shopware-deployment-helper run");
+  return parts.join(" ");
+});
+
 const deployments = ref<any[]>([]);
-const tokens = ref<any[]>([]);
-const showCreateTokenDialog = ref(false);
-const showDeleteTokenDialog = ref(false);
 const showDeleteDeploymentDialog = ref(false);
-const tokenName = ref("");
-const newToken = ref("");
-const isCreatingToken = ref(false);
-const isDeletingToken = ref(false);
 const isDeletingDeployment = ref(false);
-const tokenToDelete = ref<any>(null);
 const deploymentToDelete = ref<any>(null);
 
 const loadDeployments = async () => {
@@ -261,58 +188,6 @@ const loadDeployments = async () => {
     });
   } catch (error) {
     console.error("Failed to load deployments:", error);
-  }
-};
-
-const loadTokens = async () => {
-  if (!shop.value) return;
-
-  try {
-    tokens.value = await trpcClient.organization.deployment.listTokens.query({
-      shopId: shop.value.id,
-    });
-  } catch (error) {
-    console.error("Failed to load tokens:", error);
-  }
-};
-
-const createToken = async () => {
-  if (!shop.value || !tokenName.value) return;
-
-  isCreatingToken.value = true;
-  try {
-    const result = await trpcClient.organization.deployment.createToken.mutate({
-      shopId: shop.value.id,
-      name: tokenName.value,
-    });
-
-    newToken.value = result.token;
-    await loadTokens();
-  } finally {
-    isCreatingToken.value = false;
-  }
-};
-
-const confirmDeleteToken = (token: any) => {
-  tokenToDelete.value = token;
-  showDeleteTokenDialog.value = true;
-};
-
-const deleteToken = async () => {
-  if (!shop.value || !tokenToDelete.value) return;
-
-  isDeletingToken.value = true;
-  try {
-    await trpcClient.organization.deployment.deleteToken.mutate({
-      shopId: shop.value.id,
-      tokenId: tokenToDelete.value.id,
-    });
-
-    await loadTokens();
-    showDeleteTokenDialog.value = false;
-    tokenToDelete.value = null;
-  } finally {
-    isDeletingToken.value = false;
   }
 };
 
@@ -339,16 +214,6 @@ const deleteDeployment = async () => {
   }
 };
 
-const closeCreateTokenDialog = () => {
-  showCreateTokenDialog.value = false;
-  tokenName.value = "";
-  newToken.value = "";
-};
-
-const copyToken = async () => {
-  await navigator.clipboard.writeText(newToken.value);
-};
-
 const formatDuration = (seconds: string) => {
   const num = parseFloat(seconds);
   if (num < 1) {
@@ -362,7 +227,6 @@ watch(
   (newShop) => {
     if (newShop) {
       loadDeployments();
-      loadTokens();
     }
   },
   { immediate: true },
@@ -371,7 +235,6 @@ watch(
 onMounted(() => {
   if (shop.value) {
     loadDeployments();
-    loadTokens();
   }
 });
 </script>
@@ -394,18 +257,6 @@ onMounted(() => {
 .panel-header h3 {
   margin: 0;
   font-size: 1.1rem;
-}
-
-.token-name-col {
-  width: 250px;
-}
-
-.token-created-col {
-  width: 180px;
-}
-
-.token-used-col {
-  width: 180px;
 }
 
 .deployment-name {
@@ -479,35 +330,103 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.token-created {
+.setup-card {
+  padding: 1.25rem;
+}
+
+.setup-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.setup-description {
+  margin: 0 0 1rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.setup-description a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.setup-description a:hover {
+  text-decoration: underline;
+}
+
+.setup-env {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.token-display {
-  display: flex;
   gap: 0.5rem;
-  align-items: center;
-}
-
-.token-display code {
-  flex: 1;
-  padding: 0.75rem;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-family: monospace;
-  word-break: break-all;
-}
-
-.form-group {
   margin-bottom: 1rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
+.env-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.env-key {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 180px;
+}
+
+.env-value {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: var(--surface-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.env-placeholder a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.env-placeholder a:hover {
+  text-decoration: underline;
+}
+
+.setup-command {
+  background: #0d1117;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+}
+
+.setup-hint {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.setup-hint a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.setup-hint a:hover {
+  text-decoration: underline;
+}
+
+.setup-hint code {
+  font-size: 0.8125rem;
+  background: var(--surface-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+.setup-command code {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
+  font-size: 0.8125rem;
+  color: #c9d1d9;
 }
 </style>

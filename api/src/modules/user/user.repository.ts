@@ -176,6 +176,7 @@ async function findProjects(con: Drizzle, userId: string) {
       organizationId: schema.project.organizationId,
       organizationSlug: schema.organization.slug,
       description: schema.project.description,
+      gitUrl: schema.project.gitUrl,
       createdAt: schema.project.createdAt,
     })
     .from(schema.project)

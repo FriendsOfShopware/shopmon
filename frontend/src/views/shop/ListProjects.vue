@@ -183,6 +183,24 @@
           </div>
         </div>
 
+        <div class="mt-1">
+          <label for="gitUrl">Git Repository URL</label>
+
+          <field
+            id="gitUrl"
+            type="url"
+            name="gitUrl"
+            class="field"
+            autocomplete="off"
+            placeholder="https://github.com/org/repo"
+            :class="{ 'has-error': errors.gitUrl }"
+          />
+
+          <div class="field-error-message">
+            {{ errors.gitUrl }}
+          </div>
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="editModalVisible = false">
             Cancel
@@ -226,13 +244,14 @@ const loading = ref(true);
 const shops = ref<RouterOutput["account"]["currentUserShops"]>([]);
 const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
 const editModalVisible = ref(false);
-const editingProject = ref({ id: 0, name: "", description: "" });
+const editingProject = ref({ id: 0, name: "", description: "", gitUrl: "" });
 const showDeleteModal = ref(false);
 const deletingProject = ref<(typeof projects.value)[0] | null>(null);
 
 const editSchema = Yup.object().shape({
   name: Yup.string().required("Project name is required"),
   description: Yup.string().optional(),
+  gitUrl: Yup.string().url("Must be a valid URL").optional(),
 });
 
 // Get organization slug from the first shop or first project
@@ -289,6 +308,7 @@ function editProject(project: (typeof projects.value)[0]) {
     id: project.id,
     name: project.name,
     description: project.description ?? "",
+    gitUrl: project.gitUrl ?? "",
   };
   editModalVisible.value = true;
 }
@@ -304,6 +324,7 @@ async function updateProject(values: Record<string, unknown>) {
       projectId: editingProject.value.id,
       name: typedValues.name,
       description: typedValues.description ?? "",
+      gitUrl: typedValues.gitUrl || null,
     });
 
     projects.value = await trpcClient.account.currentUserProjects.query();
