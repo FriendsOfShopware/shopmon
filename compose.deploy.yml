@@ -88,7 +88,7 @@ services:
     command: "cron.js"
 
   db:
-    image: postgres:18.2
+    image: postgres:18.3
     labels:
       - docker-backup.enable=true
       - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.type=postgres
