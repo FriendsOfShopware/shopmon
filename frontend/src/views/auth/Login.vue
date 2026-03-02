@@ -131,13 +131,20 @@ const schema = Yup.object().shape({
 function goToDashboard() {
   const sess = authClient.useSession();
 
-  watch(sess, (user) => {
-    if (user.data?.user) {
+  const stop = watch(
+    sess,
+    async (user) => {
+      if (!user.data?.user) {
+        return;
+      }
+
+      stop();
       const redirectUrl = returnUrl.value ?? "/app/dashboard";
       clearReturnUrl();
-      router.push(redirectUrl);
-    }
-  });
+      await router.push(redirectUrl);
+    },
+    { immediate: true },
+  );
 }
 
 async function onSubmit(values: Record<string, unknown>) {
