@@ -23,7 +23,11 @@
           <span class="env-key">SHOPMON_API_KEY</span>
           <span class="env-value env-placeholder">
             <router-link
-              :to="{ name: 'account.projects.apikeys', params: { projectId: shop.projectId } }"
+              :to="{
+                name: 'account.projects.edit',
+                params: { projectId: shop.projectId },
+                hash: '#api-keys',
+              }"
             >
               Manage API Keys
             </router-link>

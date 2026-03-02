@@ -208,12 +208,18 @@ describe("ListProjects", () => {
     expect(wrapper.text()).toContain("Get started by creating your first project");
   });
 
-  it("has project actions menu", async () => {
+  it("shows an edit project button", async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // Menu container should exist for each project
-    expect(wrapper.text()).toContain("Test Project");
+    expect(wrapper.text()).toContain("Edit Project");
+  });
+
+  it("shows an add shop shortcut on the project card", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Add to this project");
   });
 
   it("displays shop favicon or fallback icon", async () => {
