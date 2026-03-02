@@ -31,6 +31,7 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
       id: true,
       url: true,
       name: true,
+      activeDeploymentId: true,
       sitespeedEnabled: true,
       sitespeedUrls: true,
       connectionIssueCount: true,
@@ -71,6 +72,7 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
       .insert(schema.shopSitespeed)
       .values({
         shopId: shop.id,
+        deploymentId: shop.activeDeploymentId,
         createdAt: new Date(),
         ttfb: result.ttfb || null,
         fullyLoaded: result.fullyLoaded || null,

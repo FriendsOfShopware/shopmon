@@ -75,23 +75,32 @@ export const cliRouter = router({
 
     const name = generateRandomName();
 
-    const result = await ctx.drizzle
-      .insert(deployment)
-      .values({
-        shopId: input.shop_id,
-        name,
-        command: input.command,
-        returnCode: input.return_code,
-        startDate: new Date(input.start_date),
-        endDate: new Date(input.end_date),
-        executionTime: input.execution_time,
-        composer: (input.composer || {}) as Record<string, string>,
-        reference: input.reference,
-        createdAt: new Date(),
-      })
-      .returning({ id: deployment.id });
+    const deploymentId = await ctx.drizzle.transaction(async (tx) => {
+      const result = await tx
+        .insert(deployment)
+        .values({
+          shopId: input.shop_id,
+          name,
+          command: input.command,
+          returnCode: input.return_code,
+          startDate: new Date(input.start_date),
+          endDate: new Date(input.end_date),
+          executionTime: input.execution_time,
+          composer: (input.composer || {}) as Record<string, string>,
+          reference: input.reference,
+          createdAt: new Date(),
+        })
+        .returning({ id: deployment.id });
 
-    const deploymentId = result[0].id;
+      const createdDeploymentId = result[0].id;
+
+      await tx
+        .update(shop)
+        .set({ activeDeploymentId: createdDeploymentId })
+        .where(eq(shop.id, input.shop_id));
+
+      return createdDeploymentId;
+    });
 
     const upload_url = presignDeploymentOutputUpload(deploymentId);
 

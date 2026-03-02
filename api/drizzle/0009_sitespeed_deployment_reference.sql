@@ -1,0 +1,2 @@
+ALTER TABLE "shop_sitespeed" ADD COLUMN "deployment_id" integer;--> statement-breakpoint
+ALTER TABLE "shop_sitespeed" ADD CONSTRAINT "shop_sitespeed_deployment_id_deployment_id_fk" FOREIGN KEY ("deployment_id") REFERENCES "public"."deployment"("id") ON DELETE set null ON UPDATE no action;

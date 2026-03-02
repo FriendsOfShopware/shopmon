@@ -62,6 +62,9 @@ export const shop = pgTable("shop", {
   ignores: jsonb("ignores").default([]).$type<string[]>().notNull(),
   shopImage: text("shop_image"),
   lastChangelog: jsonb("last_changelog").default({}).$type<LastChangelog>(),
+  activeDeploymentId: integer("active_deployment_id").references(() => deployment.id, {
+    onDelete: "set null",
+  }),
   connectionIssueCount: integer("connection_issue_count").default(0).notNull(),
   sitespeedEnabled: boolean("sitespeed_enabled").default(false).notNull(),
   sitespeedUrls: jsonb("sitespeed_urls").default([]).$type<string[]>().notNull(),
@@ -71,6 +74,9 @@ export const shop = pgTable("shop", {
 export const shopSitespeed = pgTable("shop_sitespeed", {
   id: serial("id").primaryKey(),
   shopId: integer("shop_id").references(() => shop.id),
+  deploymentId: integer("deployment_id").references(() => deployment.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").notNull(),
   ttfb: integer("ttfb"),
   fullyLoaded: integer("fully_loaded"),
@@ -470,6 +476,17 @@ export const projectApiKeyRelations = relations(projectApiKey, ({ one }) => ({
   }),
 }));
 
+export const shopSitespeedRelations = relations(shopSitespeed, ({ one }) => ({
+  shop: one(shop, {
+    fields: [shopSitespeed.shopId],
+    references: [shop.id],
+  }),
+  deployment: one(deployment, {
+    fields: [shopSitespeed.deploymentId],
+    references: [deployment.id],
+  }),
+}));
+
 export const shopRelations = relations(shop, ({ one }) => ({
   organization: one(organization, {
     fields: [shop.organizationId],
@@ -478,6 +495,10 @@ export const shopRelations = relations(shop, ({ one }) => ({
   project: one(project, {
     fields: [shop.projectId],
     references: [project.id],
+  }),
+  activeDeployment: one(deployment, {
+    fields: [shop.activeDeploymentId],
+    references: [deployment.id],
   }),
 }));
 
@@ -539,6 +560,7 @@ export const schema = {
   // App Relations
   projectRelations,
   projectApiKeyRelations,
+  shopSitespeedRelations,
   shopRelations,
   organizationRelations,
   deploymentRelations,

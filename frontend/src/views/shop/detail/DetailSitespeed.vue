@@ -31,6 +31,7 @@
       v-if="shop"
       :columns="[
         { key: 'createdAt', name: 'Checked At' },
+        { key: 'deployment', name: 'Deployment' },
         { key: 'ttfb', name: 'TTFB' },
         { key: 'fullyLoaded', name: 'Fully Loaded' },
         { key: 'largestContentfulPaint', name: 'Largest Contentful Paint' },
@@ -60,6 +61,22 @@
       </template>
       <template #cell-createdAt="{ row }">
         {{ formatDateTime(row.createdAt) }}
+      </template>
+      <template #cell-deployment="{ row }">
+        <router-link
+          v-if="row.deployment"
+          :to="{
+            name: 'account.shops.detail.deployment',
+            params: {
+              slug: $route.params.slug,
+              shopId: $route.params.shopId,
+              deploymentId: row.deployment.id,
+            },
+          }"
+        >
+          {{ row.deployment.name || `Deployment #${row.deployment.id}` }}
+        </router-link>
+        <span v-else>-</span>
       </template>
     </data-table>
   </div>
@@ -101,6 +118,10 @@ const timeMetrics = [
 
 interface SitespeedDataItem {
   createdAt: string;
+  deployment?: {
+    id: number;
+    name: string;
+  } | null;
   ttfb?: number;
   fullyLoaded?: number;
   largestContentfulPaint?: number;
