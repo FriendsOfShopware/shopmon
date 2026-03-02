@@ -120,11 +120,11 @@ export const router = createRouter({
           component: () => import("@/views/shop/AddProject.vue"),
         },
         {
-          name: "account.projects.apikeys",
-          path: "projects/:projectId(\\d+)/api-keys",
-          component: () => import("@/views/shop/ProjectApiKeys.vue"),
+          name: "account.projects.edit",
+          path: "projects/:projectId(\\d+)/edit",
+          component: () => import("@/views/shop/EditProject.vue"),
           meta: {
-            title: "API Keys",
+            title: "Edit Project",
           },
         },
         {
