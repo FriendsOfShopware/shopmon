@@ -127,12 +127,6 @@ describe("Login", () => {
     expect(wrapper.text()).toContain("Create an account");
   });
 
-  it("displays database migration notice", () => {
-    const wrapper = mountComponent();
-    expect(wrapper.text()).toContain("Database Migration Notice");
-    expect(wrapper.text()).toContain("you may need to reset your password");
-  });
-
   it("has email input field", () => {
     const wrapper = mountComponent();
     const emailInput = wrapper.find('input[name="email"]');
