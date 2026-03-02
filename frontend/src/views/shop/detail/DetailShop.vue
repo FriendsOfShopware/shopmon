@@ -59,6 +59,29 @@
         </div>
 
         <div class="shop-info-item">
+          <dt>Last Deployment</dt>
+
+          <dd v-if="shop.activeDeployment" class="deployment-info">
+            <router-link
+              :to="{
+                name: 'account.shops.detail.deployment',
+                params: {
+                  slug: $route.params.slug,
+                  shopId: $route.params.shopId,
+                  deploymentId: shop.activeDeployment.id,
+                },
+              }"
+            >
+              {{ shop.activeDeployment.name || `Deployment #${shop.activeDeployment.id}` }}
+            </router-link>
+
+            <span>{{ formatDateTime(shop.activeDeployment.createdAt) }}</span>
+          </dd>
+
+          <dd v-else>never</dd>
+        </div>
+
+        <div class="shop-info-item">
           <dt>Environment</dt>
 
           <dd>
@@ -502,6 +525,11 @@ async function loadUpdateWizard(version: string) {
   dd {
     color: var(--text-color-muted);
   }
+}
+
+.deployment-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .auto-update-info {

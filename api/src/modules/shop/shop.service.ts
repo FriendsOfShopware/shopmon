@@ -99,17 +99,41 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
       projectDescription: schema.project.description,
       sitespeedEnabled: schema.shop.sitespeedEnabled,
       sitespeedUrls: schema.shop.sitespeedUrls,
+      activeDeploymentId: schema.shop.activeDeploymentId,
+      activeDeploymentName: schema.deployment.name,
+      activeDeploymentCreatedAt: schema.deployment.createdAt,
     })
     .from(schema.shop)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.shop.organizationId))
     .leftJoin(schema.project, eq(schema.project.id, schema.shop.projectId))
+    .leftJoin(
+      schema.deployment,
+      and(
+        eq(schema.deployment.id, schema.shop.activeDeploymentId),
+        eq(schema.deployment.shopId, schema.shop.id),
+      ),
+    )
     .where(eq(schema.shop.id, shopId))
     .then((rows) => rows[0]);
 
-  const sitespeedQuery = db.query.shopSitespeed.findMany({
-    where: eq(schema.shopSitespeed.shopId, shopId),
-    orderBy: [desc(schema.shopSitespeed.createdAt)],
-  });
+  const sitespeedQuery = db
+    .select({
+      id: schema.shopSitespeed.id,
+      shopId: schema.shopSitespeed.shopId,
+      deploymentId: schema.shopSitespeed.deploymentId,
+      createdAt: schema.shopSitespeed.createdAt,
+      ttfb: schema.shopSitespeed.ttfb,
+      fullyLoaded: schema.shopSitespeed.fullyLoaded,
+      largestContentfulPaint: schema.shopSitespeed.largestContentfulPaint,
+      firstContentfulPaint: schema.shopSitespeed.firstContentfulPaint,
+      cumulativeLayoutShift: schema.shopSitespeed.cumulativeLayoutShift,
+      transferSize: schema.shopSitespeed.transferSize,
+      deploymentName: schema.deployment.name,
+    })
+    .from(schema.shopSitespeed)
+    .leftJoin(schema.deployment, eq(schema.deployment.id, schema.shopSitespeed.deploymentId))
+    .where(eq(schema.shopSitespeed.shopId, shopId))
+    .orderBy(desc(schema.shopSitespeed.createdAt));
 
   const shopChangelogQuery = db.query.shopChangelog.findMany({
     where: eq(schema.shopChangelog.shopId, shopId),
@@ -164,8 +188,19 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
     });
   }
 
+  const { activeDeploymentId, activeDeploymentName, activeDeploymentCreatedAt, ...shopDetails } =
+    shop;
+
   return {
-    ...shop,
+    ...shopDetails,
+    activeDeployment:
+      activeDeploymentId !== null && activeDeploymentCreatedAt !== null
+        ? {
+            id: activeDeploymentId,
+            name: activeDeploymentName,
+            createdAt: activeDeploymentCreatedAt,
+          }
+        : null,
     extensions: extensions.map((ext) => ({
       name: ext.name,
       label: ext.label,
@@ -205,7 +240,25 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
       source: check.source,
       link: check.link,
     })),
-    sitespeed: sitespeed,
+    sitespeed: sitespeed.map((entry) => ({
+      id: entry.id,
+      shopId: entry.shopId,
+      deploymentId: entry.deploymentId,
+      createdAt: entry.createdAt,
+      ttfb: entry.ttfb,
+      fullyLoaded: entry.fullyLoaded,
+      largestContentfulPaint: entry.largestContentfulPaint,
+      firstContentfulPaint: entry.firstContentfulPaint,
+      cumulativeLayoutShift: entry.cumulativeLayoutShift,
+      transferSize: entry.transferSize,
+      deployment:
+        entry.deploymentId !== null
+          ? {
+              id: entry.deploymentId,
+              name: entry.deploymentName,
+            }
+          : null,
+    })),
     sitespeedReportUrl: getReportUrl(shopId),
     changelog: shopChangelog,
     deploymentsCount,

@@ -27,13 +27,12 @@ services:
   sitespeed-service:
     image: ghcr.io/shyim/sitespeed.io-api:main
     ports:
-      - "3001:3001"
+      - "3001:8080"
     environment:
-      S3_SERVICE_URL: http://minio:9000
-      S3_ACCESS_KEY: minioadmin
-      S3_SECRET_KEY: minioadmin
+      S3_SERVICE_URL: http://rustfs:9000
+      S3_ACCESS_KEY: rustfsadmin
+      S3_SECRET_KEY: rustfsadmin
       S3_BUCKET_NAME: sitespeed-results
-      ASPNETCORE_ENVIRONMENT: Development
       AUTH_TOKEN: secret
       S3_DISABLE_PAYLOAD_SIGNING: "false"
   rustfs:
