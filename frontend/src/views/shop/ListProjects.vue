@@ -107,7 +107,6 @@
       </div>
     </div>
   </main-container>
-
 </template>
 
 <script setup lang="ts">

@@ -223,7 +223,12 @@
 
       <template #footer>
         <button type="button" class="btn" @click="closeAddKeyModal">Cancel</button>
-        <button type="submit" class="btn btn-primary" form="apiKeyForm" :disabled="isCreatingApiKey">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          form="apiKeyForm"
+          :disabled="isCreatingApiKey"
+        >
           <icon-fa6-solid:key v-if="!isCreatingApiKey" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           Create API Key
@@ -239,8 +244,7 @@
         <Alert type="warning">
           <p><strong>Copy your API key now!</strong></p>
           <p>
-            This is the only time you will see this key. Make sure to copy it and store it
-            securely.
+            This is the only time you will see this key. Make sure to copy it and store it securely.
           </p>
         </Alert>
 
