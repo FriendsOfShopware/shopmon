@@ -35,6 +35,28 @@
                 {{ extension.old_version }}
               </template>
             </template>
+
+            <ul
+              v-if="extension.state === 'updated' && extension.changelog?.length"
+              class="extension-changelog"
+            >
+              <li
+                v-for="entry in extension.changelog"
+                :key="entry.version"
+                class="extension-changelog-item"
+              >
+                <div class="extension-changelog-title">
+                  {{ entry.version }} -
+                  <span class="extension-changelog-date">
+                    {{ formatDateTime(entry.creationDate) }}
+                  </span>
+                </div>
+
+                <!-- eslint-disable vue/no-v-html -->
+                <div class="extension-changelog-content" v-html="entry.text" />
+                <!-- eslint-enable vue/no-v-html -->
+              </li>
+            </ul>
           </li>
         </ul>
       </div>
@@ -58,6 +80,7 @@ defineEmits<{
 </script>
 
 <style scoped>
+.extension-changelog-date,
 .modal-changelog-title-date {
   font-weight: normal;
   color: var(--text-color-muted);
