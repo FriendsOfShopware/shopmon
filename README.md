@@ -75,7 +75,7 @@ SMTP_PASS=your-password
 SMTP_FROM=noreply@yourdomain.com
 
 # Application
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 APP_FILES_DIR=./files
 
 # Monitoring (optional)
@@ -98,8 +98,8 @@ make dev
 
 This will start:
 
-- API server on http://localhost:3000
-- Frontend dev server on http://localhost:5173
+- API server on http://localhost:5789 (proxied by the frontend, not accessed directly)
+- Frontend dev server on http://localhost:3000 (open this in your browser)
 
 ### Additional services
 
@@ -108,6 +108,17 @@ To develop Shopmon easier, you can start a local mail catcher and a local Shopwa
 ```
 make up
 ```
+
+### Endpoints:
+
+| Application        | Link                        | Info                                                                                                          |
+| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Shopmon Frontend   | http://localhost:3000       |                                                                                                               |
+| Shopmon API        | http://localhost:5789       | Accessed via proxy                                                                                            |
+| Mailpit            | http://localhost:8025       | For mails                                                                                                     |
+| Demo Shop Frontend | http://localhost:3889       |                                                                                                               |
+| Demo Shop Admin    | http://localhost:3889/admin | Username: `admin`, Password: `shopware`                                                                       |
+| Demo Shop Api      | http://localhost:3889/api   | Client Id: `SWIAUZL4OXRKEG1RR3PMCEVNMG`, Client Secret: `aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks` |
 
 ## Configuration
 
