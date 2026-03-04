@@ -45,7 +45,7 @@ load-fixtures: # Load fixtures
 	cd api && bun apply-fixtures.ts
 
 dev: # Run the project locally
-	@bun run --filter '*' dev
+	@bun run --parallel --workspaces dev
 
 up: # Build and run the demo shop
 	docker compose up -d
