@@ -37,8 +37,9 @@
       <div class="whats-new-setup">
         <p class="whats-new-setup-title">Quick setup</p>
         <p>
-          Create a project API key, set <code>SHOPMON_SHOP_ID</code> and <code>SHOPMON_API_KEY</code>,
-          then wrap your deployment command with <code>shopmon-cli deploy -- your-command</code>.
+          Create a project API key, set <code>SHOPMON_SHOP_ID</code> and
+          <code>SHOPMON_API_KEY</code>, then wrap your deployment command with
+          <code>shopmon-cli deploy -- your-command</code>.
         </p>
       </div>
     </template>
@@ -82,8 +83,11 @@ defineEmits<{ close: [] }>();
   justify-content: center;
   border-radius: 999px;
   color: #fff;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 92%, white 8%), #0369a1);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary-color) 92%, white 8%),
+    #0369a1
+  );
 }
 
 .whats-new-hero {
