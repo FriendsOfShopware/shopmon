@@ -108,6 +108,7 @@ async function main() {
       clientSecret: await encrypt(process.env.APP_SECRET, shopClientSecret),
       version: resp.body.version,
       shopToken,
+      composerRepositories: [],
     });
 
     await scrapeSingleShop(shopId);

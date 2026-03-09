@@ -29,6 +29,15 @@ export interface CreateShopInput {
   clientSecret: string;
   projectId: number;
   shopToken: string;
+  composerRepositories?: ComposerRepository[];
+}
+
+export interface ComposerRepository {
+  url: string;
+  authType: "none" | "http-basic" | "bearer";
+  username?: string;
+  password?: string;
+  token?: string;
 }
 
 export interface UpdateShopInput {
@@ -39,6 +48,7 @@ export interface UpdateShopInput {
   clientSecret?: string;
   ignores?: string[];
   projectId?: number;
+  composerRepositories?: ComposerRepository[];
 }
 
 export interface ShopAlert {
@@ -100,6 +110,7 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
       sitespeedEnabled: schema.shop.sitespeedEnabled,
       sitespeedUrls: schema.shop.sitespeedUrls,
       shopToken: schema.shop.shopToken,
+      composerRepositories: schema.shop.composerRepositories,
       activeDeploymentId: schema.shop.activeDeploymentId,
       activeDeploymentName: schema.deployment.name,
       activeDeploymentCreatedAt: schema.deployment.createdAt,
@@ -311,6 +322,17 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
 
   const clientSecret = await encrypt(process.env.APP_SECRET, input.clientSecret);
 
+  const composerRepos = [];
+  for (const repo of input.composerRepositories || []) {
+    composerRepos.push({
+      url: repo.url,
+      authType: repo.authType || "none",
+      username: repo.username,
+      password: repo.password ? await encrypt(process.env.APP_SECRET, repo.password) : undefined,
+      token: repo.token ? await encrypt(process.env.APP_SECRET, repo.token) : undefined,
+    });
+  }
+
   const id = await Shops.createShop(db, {
     organizationId: project.organizationId,
     name: input.name,
@@ -320,6 +342,7 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
     version: resp.body.version,
     projectId: input.projectId,
     shopToken: input.shopToken,
+    composerRepositories: composerRepos,
   });
 
   await addShopScrapeJob(id);
@@ -359,6 +382,24 @@ export const update = async (db: Drizzle, userId: string, input: UpdateShopInput
     await db
       .update(schema.shop)
       .set({ ignores: input.ignores })
+      .where(eq(schema.shop.id, input.shopId))
+      .execute();
+  }
+
+  if (input.composerRepositories !== undefined) {
+    const composerRepos = [];
+    for (const repo of input.composerRepositories) {
+      composerRepos.push({
+        url: repo.url,
+        authType: repo.authType || "none",
+        username: repo.username,
+        password: repo.password ? await encrypt(process.env.APP_SECRET, repo.password) : undefined,
+        token: repo.token ? await encrypt(process.env.APP_SECRET, repo.token) : undefined,
+      });
+    }
+    await db
+      .update(schema.shop)
+      .set({ composerRepositories: composerRepos })
       .where(eq(schema.shop.id, input.shopId))
       .execute();
   }

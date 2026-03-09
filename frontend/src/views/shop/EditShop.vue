@@ -207,6 +207,85 @@
       </form>
     </form-group>
 
+    <form-group title="Custom Composer Repositories" class="panel">
+      <p>
+        Configure custom Composer repositories (e.g.,
+        <a href="https://packeton.org/" target="_blank">Packeton</a>) to check for extension updates
+        from private package sources.
+      </p>
+
+      <form @submit.prevent="onComposerReposSubmit">
+        <div class="composer-repos-container">
+          <div v-for="(repo, index) in composerRepos" :key="index" class="composer-repo-entry">
+            <div class="composer-repo-row">
+              <input
+                v-model="composerRepos[index].url"
+                type="url"
+                class="field"
+                placeholder="https://packages.example.com"
+                required
+              />
+
+              <button type="button" class="btn btn-icon" @click="removeComposerRepo(index)">
+                <icon-fa6-solid:xmark />
+              </button>
+            </div>
+
+            <div class="composer-repo-auth">
+              <select v-model="composerRepos[index].authType" class="field composer-auth-select">
+                <option value="none">No Authentication</option>
+                <option value="http-basic">HTTP Basic (Username + Password)</option>
+                <option value="bearer">Bearer Token</option>
+              </select>
+            </div>
+
+            <div v-if="composerRepos[index].authType === 'http-basic'" class="composer-repo-auth">
+              <input
+                v-model="composerRepos[index].username"
+                type="text"
+                class="field"
+                placeholder="Username"
+              />
+
+              <input
+                v-model="composerRepos[index].password"
+                type="password"
+                class="field"
+                placeholder="Password"
+              />
+            </div>
+
+            <div v-if="composerRepos[index].authType === 'bearer'" class="composer-repo-auth">
+              <input
+                v-model="composerRepos[index].token"
+                type="password"
+                class="field"
+                placeholder="Bearer token"
+              />
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-secondary" @click="addComposerRepo">
+            <icon-fa6-solid:plus class="icon" />
+            Add Repository
+          </button>
+        </div>
+
+        <div class="form-submit">
+          <button :disabled="isComposerReposSubmitting" type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk
+              v-if="!isComposerReposSubmitting"
+              class="icon"
+              aria-hidden="true"
+            />
+
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save Repositories
+          </button>
+        </div>
+      </form>
+    </form-group>
+
     <form-group :title="'Deleting shop ' + shop.name" class="panel">
       <p>Once you delete your shop, you will lose all data associated with it.</p>
 
@@ -276,6 +355,16 @@ async function loadShop() {
     sitespeedUrls.value = shop.value.sitespeedUrls ? [...shop.value.sitespeedUrls] : [];
   }
 
+  composerRepos.value = (shop.value as any).composerRepositories
+    ? (shop.value as any).composerRepositories.map((r: any) => ({
+        url: r.url,
+        authType: r.authType || "none",
+        username: r.username || "",
+        password: "",
+        token: "",
+      }))
+    : [];
+
   isLoading.value = false;
 }
 
@@ -285,6 +374,16 @@ const showShopDeletionModal = ref(false);
 const sitespeedUrls = ref<string[]>([]);
 const sitespeedEnabled = ref(false);
 const isSitespeedSubmitting = ref(false);
+const composerRepos = ref<
+  {
+    url: string;
+    authType: "none" | "http-basic" | "bearer";
+    username?: string;
+    password?: string;
+    token?: string;
+  }[]
+>([]);
+const isComposerReposSubmitting = ref(false);
 
 const showPluginModal = ref(false);
 const pluginBase64 = ref("");
@@ -364,6 +463,45 @@ function addSitespeedUrl() {
 
 function removeSitespeedUrl(index: number) {
   sitespeedUrls.value.splice(index, 1);
+}
+
+function addComposerRepo() {
+  composerRepos.value.push({ url: "", authType: "none", username: "", password: "", token: "" });
+}
+
+function removeComposerRepo(index: number) {
+  composerRepos.value.splice(index, 1);
+}
+
+async function onComposerReposSubmit() {
+  if (!shop.value) return;
+  try {
+    isComposerReposSubmitting.value = true;
+
+    const repos = composerRepos.value
+      .filter((r) => r.url.trim() !== "")
+      .map((r) => ({
+        url: r.url.trim(),
+        authType: r.authType,
+        username: r.authType === "http-basic" ? r.username?.trim() || undefined : undefined,
+        password: r.authType === "http-basic" ? r.password?.trim() || undefined : undefined,
+        token: r.authType === "bearer" ? r.token?.trim() || undefined : undefined,
+      }));
+
+    await trpcClient.organization.shop.update.mutate({
+      orgId: shop.value.organizationId,
+      shopId: shop.value.id,
+      projectId: selectedProjectId.value,
+      composerRepositories: repos,
+    });
+
+    await loadShop();
+    success("Composer repositories saved successfully");
+  } catch (e) {
+    error(e instanceof Error ? e.message : String(e));
+  } finally {
+    isComposerReposSubmitting.value = false;
+  }
 }
 
 async function onSitespeedSubmit() {
@@ -453,5 +591,37 @@ function processPluginData() {
 .btn-icon {
   padding: 0.5rem;
   min-width: auto;
+}
+
+.composer-repos-container {
+  margin-top: 0.5rem;
+}
+
+.composer-repo-entry {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 0.375rem;
+}
+
+.composer-repo-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.composer-repo-row input {
+  flex: 1;
+}
+
+.composer-repo-auth {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.composer-repo-auth input,
+.composer-repo-auth select {
+  flex: 1;
 }
 </style>

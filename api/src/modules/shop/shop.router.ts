@@ -7,6 +7,14 @@ import {
 } from "#src/trpc/middleware.ts";
 import * as ShopService from "./shop.service.ts";
 
+const composerRepositorySchema = z.object({
+  url: z.string().url(),
+  authType: z.enum(["none", "http-basic", "bearer"]).default("none"),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  token: z.string().optional(),
+});
+
 export const shopRouter = router({
   list: publicProcedure
     .input(
@@ -39,6 +47,7 @@ export const shopRouter = router({
         clientSecret: z.string(),
         projectId: z.number(),
         shopToken: z.string().min(1),
+        composerRepositories: z.array(composerRepositorySchema).optional().default([]),
       }),
     )
     .use(loggedInUserMiddleware)
@@ -68,6 +77,7 @@ export const shopRouter = router({
         clientSecret: z.string().optional(),
         ignores: z.array(z.string()).optional(),
         projectId: z.number(),
+        composerRepositories: z.array(composerRepositorySchema).optional(),
       }),
     )
     .use(loggedInUserMiddleware)

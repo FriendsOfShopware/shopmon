@@ -1,0 +1,1 @@
+ALTER TABLE "shop" ADD COLUMN "composer_repositories" jsonb DEFAULT '[]'::jsonb NOT NULL;
