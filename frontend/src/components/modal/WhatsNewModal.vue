@@ -42,6 +42,15 @@
           <code>shopmon-cli deploy -- your-command</code>.
         </p>
       </div>
+
+      <div v-if="sponsors.length" class="whats-new-sponsors">
+        <p class="whats-new-setup-title">New sponsors on the start page</p>
+        <p class="whats-new-sponsors-copy">
+          The public start page now highlights the companies supporting ongoing Shopmon development.
+        </p>
+
+        <sponsor-showcase :sponsors="sponsors" compact />
+      </div>
     </template>
 
     <template #footer>
@@ -68,6 +77,8 @@
 
 <script setup lang="ts">
 import Modal from "@/components/layout/Modal.vue";
+import SponsorShowcase from "@/components/SponsorShowcase.vue";
+import { sponsors } from "@/data/sponsors";
 
 defineProps<{ show: boolean }>();
 
@@ -158,5 +169,13 @@ defineEmits<{ close: [] }>();
   font-weight: 700;
   color: var(--item-title-color);
   margin-bottom: 0.35rem !important;
+}
+
+.whats-new-sponsors {
+  margin-top: 1rem;
+}
+
+.whats-new-sponsors-copy {
+  margin: 0 0 1rem;
 }
 </style>

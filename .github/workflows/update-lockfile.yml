@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '**/package.json'
+      - "**/package.json"
   workflow_dispatch:
 
 permissions:

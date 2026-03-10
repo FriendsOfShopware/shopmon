@@ -19,6 +19,16 @@ vi.mock("@/composables/useDarkMode", () => ({
   }),
 }));
 
+vi.mock("@/data/sponsors", () => ({
+  sponsors: [
+    {
+      name: "Acme Commerce",
+      url: "https://example.com/acme",
+      description: "Supporting Shopmon development.",
+    },
+  ],
+}));
+
 describe("Home", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,6 +89,12 @@ describe("Home", () => {
     expect(wrapper.text()).toContain("Forever Free");
     expect(wrapper.text()).toContain("Community Driven");
     expect(wrapper.text()).toContain("Open Source");
+  });
+
+  it("displays the sponsors section", () => {
+    const wrapper = mount(Home);
+    expect(wrapper.text()).toContain("Sponsors");
+    expect(wrapper.text()).toContain("Acme Commerce");
   });
 
   it("displays GitHub repository link", () => {
