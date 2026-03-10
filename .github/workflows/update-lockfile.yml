@@ -7,15 +7,24 @@ on:
       - '**/package.json'
 
 permissions:
-  contents: write
+  id-token: write
 
 jobs:
   update-lockfile:
     name: Update Lockfile
     runs-on: ubuntu-latest
     steps:
+      - name: Get Token
+        uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+        id: octo-sts
+        with:
+          scope: FriendsOfShopware/shopmon
+          identity: update-lockfile
+
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
