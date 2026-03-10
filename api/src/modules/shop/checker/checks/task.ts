@@ -4,7 +4,7 @@ import type { Checker, CheckerInput, CheckerOutput } from "../registery.ts";
 export default class implements Checker {
   async check(input: CheckerInput, result: CheckerOutput): Promise<void> {
     for (const task of input.scheduledTasks) {
-      if (isTaskOverdue(task) && task.interval > 3600) {
+      if (isTaskOverdue(task) && task.interval > 3600 && task.status !== "inactive") {
         result.warning(`task.${task.name}`, `Task ${task.name} is overdue`);
       }
     }

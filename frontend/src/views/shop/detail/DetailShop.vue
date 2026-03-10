@@ -393,7 +393,12 @@ const overdueTasks = computed(() => {
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
   return shop.value.scheduledTask
-    .filter((task) => task.overdue && new Date(task.nextExecutionTime) < fifteenMinutesAgo)
+    .filter(
+      (task) =>
+        task.overdue &&
+        task.status !== "inactive" &&
+        new Date(task.nextExecutionTime) < fifteenMinutesAgo,
+    )
     .slice(0, 5);
 });
 
