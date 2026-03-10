@@ -110,6 +110,15 @@
     </div>
   </div>
 
+  <div v-if="sponsors.length" class="row">
+    <sponsor-showcase
+      :sponsors="sponsors"
+      title="Sponsors"
+      description="Shopmon is supported by companies that help keep the project free and moving forward for the Shopware community."
+      title-tag="h4"
+    />
+  </div>
+
   <div class="section-primary">
     <div class="row row-center row-primary">
       <div class="col" style="text-align: right">
@@ -159,7 +168,10 @@
 </template>
 
 <script setup lang="ts">
+import SponsorShowcase from "@/components/SponsorShowcase.vue";
 import { useDarkMode } from "@/composables/useDarkMode";
+import { sponsors } from "@/data/sponsors";
+
 const { getThemeImage } = useDarkMode();
 </script>
 
