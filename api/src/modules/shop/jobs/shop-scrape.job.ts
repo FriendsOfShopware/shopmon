@@ -18,7 +18,7 @@ import {
 } from "#src/db.ts";
 import { type CheckerInput, check } from "#src/modules/shop/checker/registery.ts";
 import { decrypt } from "#src/modules/shop/crypto.ts";
-import { fetchComposerRepoVersions } from "#src/modules/shop/composer-repo.ts";
+import { fetchComposerRepoVersions } from "#src/modules/shop/composer-repo.service.ts";
 import Shops, { type User } from "#src/modules/shop/shop.repository.ts";
 import * as ShopService from "#src/modules/shop/shop.service.ts";
 import type {
