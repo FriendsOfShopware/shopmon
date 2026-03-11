@@ -31,7 +31,10 @@ function isStableVersion(version: string): boolean {
   return !lower.includes("alpha") && !lower.includes("beta") && !lower.includes("rc");
 }
 
-function processVersionList(versions: ComposerPackageVersion[], result: Map<string, ComposerRepoResult>): void {
+function processVersionList(
+  versions: ComposerPackageVersion[],
+  result: Map<string, ComposerRepoResult>,
+): void {
   let latestVersion: string | null = null;
   let technicalName: string | null = null;
   const stableVersions: { version: string; time?: string }[] = [];
@@ -116,7 +119,13 @@ export async function fetchComposerRepoVersions(repo: {
       // Fetch only listed packages
       for (const packageName of data["available-packages"]) {
         try {
-          await fetchPackageMetadata(packageName, metadataUrlTemplate, baseUrl, headers, technicalNameToLatest);
+          await fetchPackageMetadata(
+            packageName,
+            metadataUrlTemplate,
+            baseUrl,
+            headers,
+            technicalNameToLatest,
+          );
         } catch {
           // Skip individual package failures
         }
@@ -130,7 +139,13 @@ export async function fetchComposerRepoVersions(repo: {
         } else {
           // Try fetching via metadata-url for each package in the inline list
           try {
-            await fetchPackageMetadata(packageName, metadataUrlTemplate, baseUrl, headers, technicalNameToLatest);
+            await fetchPackageMetadata(
+              packageName,
+              metadataUrlTemplate,
+              baseUrl,
+              headers,
+              technicalNameToLatest,
+            );
           } catch {
             // Skip individual package failures
           }

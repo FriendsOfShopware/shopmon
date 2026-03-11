@@ -210,8 +210,8 @@
     <form-group title="Custom Composer Repositories" class="panel">
       <p>
         Configure custom Composer repositories (e.g.,
-        <a href="https://packagist.org/" target="_blank">Packagist</a>) to check for extension updates
-        from private package sources.
+        <a href="https://packagist.org/" target="_blank">Packagist</a>) to check for extension
+        updates from private package sources.
       </p>
 
       <form @submit.prevent="onComposerReposSubmit">

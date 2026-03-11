@@ -18,7 +18,7 @@ import {
 } from "#src/db.ts";
 import { type CheckerInput, check } from "#src/modules/shop/checker/registery.ts";
 import { decrypt } from "#src/modules/shop/crypto.ts";
-import { fetchComposerRepoVersions } from "#src/modules/shop/jobs/composer-repo.ts";
+import { fetchComposerRepoVersions } from "#src/modules/shop/composer-repo.ts";
 import Shops, { type User } from "#src/modules/shop/shop.repository.ts";
 import * as ShopService from "#src/modules/shop/shop.service.ts";
 import type {
@@ -191,7 +191,6 @@ async function shouldNotify(
 
   return timeDifference >= 24 * 60 * 60 * 1000;
 }
-
 
 async function updateShop(shop: SQLShop, con: Drizzle) {
   if (shop.connectionIssueCount >= 3) {
