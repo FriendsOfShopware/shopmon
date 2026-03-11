@@ -7,6 +7,7 @@ This structure groups related functionality by **Domain (Feature)** rather than 
 
 ```
 api/src/
+  ├── helpers/                  <-- Shared utility functions
   ├── modules/
   │   ├── shop/                 <-- Domain Module
   │   │   ├── shop.repository.ts   (Data Access)
@@ -15,9 +16,8 @@ api/src/
   │   │   └── shop.types.ts        (Domain Types)
   │   ├── user/
   │   └── ...
-  ├── trpc/                     <-- Shared / Legacy Routers
-  ├── service/                  <-- Shared / Legacy Services
-  └── repository/               <-- Shared / Legacy Repositories
+  ├── trpc/                     <-- Shared tRPC infrastructure (context, middleware, root router)
+  └── types/                    <-- Shared type definitions
 ```
 
 ## The 3-Layer Pattern (Applied per Module)
