@@ -18,6 +18,7 @@ import {
 } from "#src/db.ts";
 import { type CheckerInput, check } from "#src/modules/shop/checker/registery.ts";
 import { decrypt } from "#src/modules/shop/crypto.ts";
+import { fetchComposerRepoVersions } from "#src/modules/shop/jobs/composer-repo.ts";
 import Shops, { type User } from "#src/modules/shop/shop.repository.ts";
 import * as ShopService from "#src/modules/shop/shop.service.ts";
 import type {
@@ -191,136 +192,6 @@ async function shouldNotify(
   return timeDifference >= 24 * 60 * 60 * 1000;
 }
 
-interface ComposerPackageVersion {
-  version: string;
-  time?: string;
-  extra?: {
-    "shopware-plugin-class"?: string;
-  };
-}
-
-interface ComposerRepoResult {
-  latestVersion: string;
-  versions: { version: string; time?: string }[];
-}
-
-interface ComposerPackagesJson {
-  packages: Record<string, Record<string, ComposerPackageVersion> | ComposerPackageVersion[]>;
-  "metadata-url"?: string;
-  "available-packages"?: string[];
-}
-
-function extractTechnicalName(pluginClass: string): string {
-  const parts = pluginClass.split("\\");
-  return parts[parts.length - 1];
-}
-
-function isStableVersion(version: string): boolean {
-  if (version.startsWith("dev-") || version.startsWith("v-dev")) return false;
-  const lower = version.toLowerCase();
-  return !lower.includes("alpha") && !lower.includes("beta") && !lower.includes("rc");
-}
-
-function processVersionList(versions: ComposerPackageVersion[], result: Map<string, ComposerRepoResult>): void {
-  let latestVersion: string | null = null;
-  let technicalName: string | null = null;
-  const stableVersions: { version: string; time?: string }[] = [];
-
-  for (const meta of versions) {
-    if (!isStableVersion(meta.version)) continue;
-
-    const pluginClass = meta.extra?.["shopware-plugin-class"];
-    if (!pluginClass) continue;
-
-    technicalName = extractTechnicalName(pluginClass);
-
-    const normalizedVersion = meta.version.replace(/^v/, "");
-    stableVersions.push({ version: normalizedVersion, time: meta.time });
-    if (!latestVersion || versionCompare(normalizedVersion, latestVersion) > 0) {
-      latestVersion = normalizedVersion;
-    }
-  }
-
-  if (technicalName && latestVersion) {
-    result.set(technicalName, { latestVersion, versions: stableVersions });
-  }
-}
-
-async function fetchComposerRepoVersions(repo: {
-  url: string;
-  authType: "none" | "http-basic" | "bearer";
-  username?: string;
-  password?: string;
-  token?: string;
-}): Promise<Map<string, ComposerRepoResult>> {
-  const technicalNameToLatest = new Map<string, ComposerRepoResult>();
-
-  const headers: Record<string, string> = {};
-  if (repo.authType === "http-basic" && repo.username && repo.password) {
-    const decryptedPassword = await decrypt(process.env.APP_SECRET, repo.password);
-    headers.Authorization = `Basic ${btoa(`${repo.username}:${decryptedPassword}`)}`;
-  } else if (repo.authType === "bearer" && repo.token) {
-    const decryptedToken = await decrypt(process.env.APP_SECRET, repo.token);
-    headers.Authorization = `Bearer ${decryptedToken}`;
-  }
-
-  const baseUrl = repo.url.replace(/\/+$/, "");
-  const packagesUrl = baseUrl + "/packages.json";
-  const resp = await fetch(packagesUrl, { headers });
-
-  if (!resp.ok) {
-    console.warn(`Failed to fetch ${packagesUrl}: ${resp.status}`);
-    return technicalNameToLatest;
-  }
-
-  const data = (await resp.json()) as ComposerPackagesJson;
-
-  // Composer v2 lazy provider: metadata-url + available-packages
-  if (data["metadata-url"] && data["available-packages"]?.length) {
-    const metadataUrlTemplate = data["metadata-url"];
-
-    for (const packageName of data["available-packages"]) {
-      const metadataPath = metadataUrlTemplate.replace("%package%", packageName);
-      const metadataUrl = metadataPath.startsWith("http") ? metadataPath : baseUrl + metadataPath;
-
-      try {
-        const pkgResp = await fetch(metadataUrl, { headers });
-        if (!pkgResp.ok) continue;
-
-        const pkgData = (await pkgResp.json()) as {
-          packages: Record<string, ComposerPackageVersion[]>;
-        };
-
-        const versions = pkgData.packages?.[packageName];
-        if (Array.isArray(versions)) {
-          processVersionList(versions, technicalNameToLatest);
-        }
-      } catch {
-        // Skip individual package failures
-      }
-    }
-
-    return technicalNameToLatest;
-  }
-
-  // Composer v1 inline format: all versions in packages object
-  if (data.packages && Object.keys(data.packages).length > 0) {
-    for (const [, versions] of Object.entries(data.packages)) {
-      if (Array.isArray(versions)) {
-        processVersionList(versions, technicalNameToLatest);
-      } else {
-        // v1 dict format: { "1.0.0": {...}, "2.0.0": {...} }
-        const versionList = Object.entries(versions).map(([versionString, meta]) => ({
-          ...meta,
-          version: versionString,
-        }));
-        processVersionList(versionList, technicalNameToLatest);
-      }
-    }
-  }
-
-  return technicalNameToLatest;
-}
 
 async function updateShop(shop: SQLShop, con: Drizzle) {
   if (shop.connectionIssueCount >= 3) {
