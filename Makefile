@@ -52,3 +52,6 @@ up: # Build and run the demo shop
 	@echo "Demo shop is running at http://localhost:3889"
 	@echo "Integration: Key: SWIAUZL4OXRKEG1RR3PMCEVNMG, Secret: aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks"
 	@echo "Mailpit: http://localhost:8025"
+
+stop: # Stop the demo shop
+	docker compose stop
