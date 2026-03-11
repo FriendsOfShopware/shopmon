@@ -69,7 +69,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(version, packageName) in deployment.composer" :key="packageName">
+            <tr v-for="[packageName, version] in sortedComposer" :key="packageName">
               <td class="package-name">{{ packageName }}</td>
               <td class="package-version">{{ version }}</td>
             </tr>
@@ -197,6 +197,13 @@ const ansiToHtml = (text: string) => {
 
   return html;
 };
+
+const sortedComposer = computed(() => {
+  if (!deployment.value?.composer) return [];
+  return Object.entries(deployment.value.composer as Record<string, string>).sort((a, b) =>
+    a[0].localeCompare(b[0]),
+  );
+});
 
 const formattedOutput = computed(() => {
   if (!deployment.value?.output) return "";
