@@ -16,6 +16,7 @@ const deploymentSchema = z.object({
   execution_time: z.number(),
   composer: z.record(z.string(), z.string()).optional(),
   reference: z.string().optional(),
+  name: z.string().optional(),
 });
 
 export const cliRouter = router({
@@ -73,7 +74,7 @@ export const cliRouter = router({
       });
     }
 
-    const name = generateRandomName();
+    const name = input.name || generateRandomName();
 
     const deploymentId = await ctx.drizzle.transaction(async (tx) => {
       const result = await tx
