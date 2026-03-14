@@ -44,8 +44,8 @@ async function listOrganizations(con: Drizzle, params?: OrganizationListParams) 
         slug: schema.organization.slug,
         logo: schema.organization.logo,
         createdAt: schema.organization.createdAt,
-        shopCount: sql<number>`(SELECT COUNT(*) FROM shop WHERE organization_id = ${schema.organization.id})`,
-        memberCount: sql<number>`(SELECT COUNT(*) FROM member WHERE organization_id = ${schema.organization.id})`,
+        shopCount: sql<number>`(SELECT COUNT(*) FROM shop WHERE shop.organization_id = "organization"."id")`,
+        memberCount: sql<number>`(SELECT COUNT(*) FROM member WHERE member.organization_id = "organization"."id")`,
       })
       .from(schema.organization)
       .orderBy(desc(schema.organization.createdAt));
@@ -113,8 +113,8 @@ async function listOrganizations(con: Drizzle, params?: OrganizationListParams) 
         slug: schema.organization.slug,
         logo: schema.organization.logo,
         createdAt: schema.organization.createdAt,
-        shopCount: sql<number>`(SELECT COUNT(*) FROM shop WHERE organization_id = ${schema.organization.id})`,
-        memberCount: sql<number>`(SELECT COUNT(*) FROM member WHERE organization_id = ${schema.organization.id})`,
+        shopCount: sql<number>`(SELECT COUNT(*) FROM shop WHERE shop.organization_id = "organization"."id")`,
+        memberCount: sql<number>`(SELECT COUNT(*) FROM member WHERE member.organization_id = "organization"."id")`,
       })
       .from(schema.organization)
       .where(
