@@ -15,7 +15,6 @@
         "@better-auth/passkey": "catalog:",
         "@better-auth/sso": "catalog:",
         "@sentry/bun": "^10.27.0",
-        "@shopware-ag/app-server-sdk": "^2.0.0",
         "@trpc/server": "^11.7.2",
         "better-auth": "catalog:",
         "drizzle-orm": "^0.45.0",
@@ -611,8 +610,6 @@
     "@sentry/node-core": ["@sentry/node-core@10.38.0", "", { "dependencies": { "@apm-js-collab/tracing-hooks": "^0.3.1", "@sentry/core": "10.38.0", "@sentry/opentelemetry": "10.38.0", "import-in-the-middle": "^2.0.6" }, "peerDependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/context-async-hooks": "^1.30.1 || ^2.1.0", "@opentelemetry/core": "^1.30.1 || ^2.1.0", "@opentelemetry/instrumentation": ">=0.57.1 <1", "@opentelemetry/resources": "^1.30.1 || ^2.1.0", "@opentelemetry/sdk-trace-base": "^1.30.1 || ^2.1.0", "@opentelemetry/semantic-conventions": "^1.39.0" } }, "sha512-ErXtpedrY1HghgwM6AliilZPcUCoNNP1NThdO4YpeMq04wMX9/GMmFCu46TnCcg6b7IFIOSr2S4yD086PxLlHQ=="],
 
     "@sentry/opentelemetry": ["@sentry/opentelemetry@10.38.0", "", { "dependencies": { "@sentry/core": "10.38.0" }, "peerDependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/context-async-hooks": "^1.30.1 || ^2.1.0", "@opentelemetry/core": "^1.30.1 || ^2.1.0", "@opentelemetry/sdk-trace-base": "^1.30.1 || ^2.1.0", "@opentelemetry/semantic-conventions": "^1.39.0" } }, "sha512-YPVhWfYmC7nD3EJqEHGtjp4fp5LwtAbE5rt9egQ4hqJlYFvr8YEz9sdoqSZxO0cZzgs2v97HFl/nmWAXe52G2Q=="],
-
-    "@shopware-ag/app-server-sdk": ["@shopware-ag/app-server-sdk@2.0.0", "", { "peerDependencies": { "@aws-sdk/client-dynamodb": "^3", "@aws-sdk/lib-dynamodb": "^3", "better-sqlite3": "^11 || ^12", "hono": "^4" }, "optionalPeers": ["@aws-sdk/client-dynamodb", "@aws-sdk/lib-dynamodb", "better-sqlite3", "hono"] }, "sha512-vj5Sj00SxWYovNtMsfE0Y4Iu2lgRAWlSRoFKaH3/17gZqk4tCd8Od+kH3nSBIXLEXKG+QaqlEnxwjVzm1odJ7g=="],
 
     "@simplewebauthn/browser": ["@simplewebauthn/browser@13.2.2", "", {}, "sha512-FNW1oLQpTJyqG5kkDg5ZsotvWgmBaC6jCHR7Ej0qUNep36Wl9tj2eZu7J5rP+uhXgHaLk+QQ3lqcw2vS5MX1IA=="],
 

@@ -1,4 +1,4 @@
-import type { HttpClient } from "@shopware-ag/app-server-sdk";
+import type { HttpClient } from "#src/modules/shop/http-client.ts";
 import type { CacheInfo, Extension, QueueInfo, ScheduledTask } from "#src/types/index.ts";
 import env from "./checks/env.ts";
 import frosh_tools from "./checks/frosh_tools.ts";

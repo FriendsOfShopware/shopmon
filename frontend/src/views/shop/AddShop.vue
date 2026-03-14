@@ -60,6 +60,22 @@
         </div>
       </form-group>
 
+      <form-group title="Bypass Authentication Header">
+        <template #info>
+          If your website is protected by authentication, please configure the header
+          <code>shopmon-shop-token</code> with the value below to be excluded, so Shopmon can
+          function normally.
+        </template>
+
+        <div class="shop-token-display">
+          <code>{{ shopToken }}</code>
+
+          <button type="button" class="btn btn-sm btn-icon" @click="copyToken">
+            <icon-fa6-solid:copy />
+          </button>
+        </div>
+      </form-group>
+
       <form-group title="Integration">
         <template #info>
           The easiest way to get started is to install the
@@ -141,9 +157,23 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
-const { error } = useAlert();
+const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
+
+function generateShopToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+const shopToken = generateShopToken();
+
+async function copyToken() {
+  await navigator.clipboard.writeText(shopToken);
+  success("Token copied to clipboard");
+}
 
 const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
 const selectedProjectId = ref<number>(route.query.projectId ? Number(route.query.projectId) : 0);
@@ -193,6 +223,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
       clientId: typedValues.clientId,
       clientSecret: typedValues.clientSecret,
       projectId: selectedProjectId.value,
+      shopToken,
     };
     await trpcClient.organization.shop.create.mutate(input);
 
@@ -241,3 +272,16 @@ function processPluginData() {
   }
 }
 </script>
+
+<style scoped>
+.shop-token-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  code {
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+}
+</style>

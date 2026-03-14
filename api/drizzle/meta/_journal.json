@@ -71,6 +71,13 @@
       "when": 1772479209040,
       "tag": "0009_sitespeed_deployment_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773386019706,
+      "tag": "0010_shop_token",
+      "breakpoints": true
     }
   ]
 }

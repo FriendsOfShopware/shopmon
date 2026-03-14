@@ -120,6 +120,31 @@
             {{ shop.projectName }}
           </dd>
         </div>
+
+        <div class="shop-info-item shop-token-item">
+          <dt>
+            Bypass Authentication Header
+            <span
+              data-tooltip="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
+              class="tooltip-top-center"
+            >
+              <icon-fa6-solid:circle-info class="icon" />
+            </span>
+          </dt>
+
+          <dd class="shop-token-value">
+            <code>{{ shop.shopToken }}</code>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-icon tooltip-top-center"
+              data-tooltip="Copy token"
+              @click="copyToken"
+            >
+              <icon-fa6-solid:copy />
+            </button>
+          </dd>
+        </div>
       </dl>
     </div>
   </div>
@@ -348,8 +373,15 @@ type ExtensionWithCompatibility = Extension & {
   } | null;
 };
 
-const { error } = useAlert();
+const { error, success } = useAlert();
 const { shop, shopwareVersions, latestShopwareVersion } = useShopDetail();
+
+async function copyToken() {
+  if (shop.value?.shopToken) {
+    await navigator.clipboard.writeText(shop.value.shopToken);
+    success("Token copied to clipboard");
+  }
+}
 
 const {
   viewExtensionChangelogDialog,
@@ -529,6 +561,21 @@ async function loadUpdateWizard(version: string) {
 
   dd {
     color: var(--text-color-muted);
+  }
+}
+
+.shop-token-item {
+  grid-column: 1 / -1;
+}
+
+.shop-token-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  code {
+    font-size: 0.8rem;
+    word-break: break-all;
   }
 }
 

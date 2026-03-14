@@ -68,6 +68,7 @@ export const shop = pgTable("shop", {
   connectionIssueCount: integer("connection_issue_count").default(0).notNull(),
   sitespeedEnabled: boolean("sitespeed_enabled").default(false).notNull(),
   sitespeedUrls: jsonb("sitespeed_urls").default([]).$type<string[]>().notNull(),
+  shopToken: text("shop_token").notNull(),
   createdAt: timestamp("created_at").notNull(),
 });
 

@@ -38,6 +38,7 @@ export const shopRouter = router({
         clientId: z.string(),
         clientSecret: z.string(),
         projectId: z.number(),
+        shopToken: z.string().min(1),
       }),
     )
     .use(loggedInUserMiddleware)
