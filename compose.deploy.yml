@@ -22,6 +22,7 @@ x-env: &env
   APP_S3_SECRET_ACCESS_KEY: ${APP_S3_SECRET_ACCESS_KEY}
   APP_S3_BUCKET: ${APP_S3_BUCKET}
   APP_S3_REGION: ${APP_S3_REGION}
+  REDIS_URL: redis://redis:6379
 
 services:
   migrate:
@@ -67,7 +68,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik_default
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.entrypoints=websecure
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`))
+      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`) || PathPrefix(`/admin/queues`))
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls=true
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.certresolver=cloudflare
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.domains[0].main=fos.gg
@@ -77,15 +78,23 @@ services:
       - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
       - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
 
-  cron:
+  worker:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
     networks:
       - shopmon
     depends_on:
       - db
+      - redis
     environment:
       <<: *env
-    command: "cron.js"
+    command: "worker.js"
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - shopmon
+    volumes:
+      - redis-data:/data
 
   db:
     image: postgres:18.3
@@ -116,3 +125,4 @@ volumes:
   # Old SQLITE DB
   db:
   db-data:
+  redis-data:

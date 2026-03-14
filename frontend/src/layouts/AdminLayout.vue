@@ -46,6 +46,7 @@
             >
               Shops
             </RouterLink>
+            <a href="/admin/queues" class="nav-link" target="_blank"> Queues </a>
           </div>
         </div>
 

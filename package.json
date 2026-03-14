@@ -12,6 +12,7 @@
     }
   },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
     "oxfmt": "^0.40.0",
     "oxlint": "^1.47.0"
   },

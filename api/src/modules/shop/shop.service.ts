@@ -13,8 +13,7 @@ import {
   shopScheduledTask,
 } from "#src/db.ts";
 import * as LockRepository from "#src/modules/lock/lock.repository.ts";
-import { scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
-import { scrapeSingleSitespeedShop } from "#src/modules/shop/jobs/sitespeed-scrape.job.ts";
+import { addShopScrapeJob, addShopSitespeedJob } from "#src/modules/queue/queues.ts";
 import { sendAlert } from "#src/modules/shop/mail/mail.service.ts";
 import { deleteDeploymentOutputsByShopId } from "#src/modules/deployment/deployment.storage.ts";
 import { deleteShopScrapeInfo } from "#src/modules/shop/scrape-info.repository.ts";
@@ -323,7 +322,7 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
     shopToken: input.shopToken,
   });
 
-  await scrapeSingleShop(id);
+  await addShopScrapeJob(id);
 
   return id;
 };
@@ -423,10 +422,10 @@ export const update = async (db: Drizzle, userId: string, input: UpdateShopInput
 };
 
 export const refresh = async (shopId: number, sitespeed?: boolean) => {
-  await scrapeSingleShop(shopId);
+  await addShopScrapeJob(shopId);
 
   if (sitespeed) {
-    await scrapeSingleSitespeedShop(shopId);
+    await addShopSitespeedJob(shopId);
   }
 };
 

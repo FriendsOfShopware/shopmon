@@ -107,32 +107,14 @@ const STATES: { [key: string]: number } = {
 export async function shopScrapeJob() {
   const con = getConnection();
 
-  const shops = await con
-    .select({
-      id: schema.shop.id,
-      name: schema.shop.name,
-      status: schema.shop.status,
-      ignores: schema.shop.ignores,
-      url: schema.shop.url,
-      clientId: schema.shop.clientId,
-      clientSecret: schema.shop.clientSecret,
-      shopToken: schema.shop.shopToken,
-      shopwareVersion: schema.shop.shopwareVersion,
-      organizationId: schema.shop.organizationId,
-      organizationSlug: schema.organization.slug,
-      shopImage: schema.shop.shopImage,
-      connectionIssueCount: schema.shop.connectionIssueCount,
-    })
-    .from(schema.shop)
-    .innerJoin(schema.organization, eq(schema.organization.id, schema.shop.organizationId));
+  const shops = await con.select({ id: schema.shop.id }).from(schema.shop);
 
-  console.log(`Found ${shops.length} shops to scrape`);
+  console.log(`Found ${shops.length} shops to scrape, enqueueing individual jobs`);
 
-  // Process shops in parallel with a limit
-  const batchSize = 10;
-  for (let i = 0; i < shops.length; i += batchSize) {
-    const batch = shops.slice(i, i + batchSize);
-    await Promise.all(batch.map((shop) => updateShop(shop, con)));
+  const { addShopScrapeJob } = await import("#src/modules/queue/queues.ts");
+
+  for (const shop of shops) {
+    await addShopScrapeJob(shop.id);
   }
 }
 
