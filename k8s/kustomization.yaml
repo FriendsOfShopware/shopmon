@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - db.yaml
+  - migrate.yaml
+  - api.yaml
+  - cron.yaml
+  - frontend.yaml
+
+images:
+  - name: ghcr.io/friendsofshopware/shopmon/api
+    newTag: preview
+  - name: ghcr.io/friendsofshopware/shopmon/frontend
+    newTag: preview

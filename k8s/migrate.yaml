@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: shopmon
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: ghcr.io/friendsofshopware/shopmon/api:preview
+          command: ["bun", "migrate.js"]
+          envFrom:
+            - secretRef:
+                name: shopmon-secrets
+            - configMapRef:
+                name: shopmon-config

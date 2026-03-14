@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopmon-config
+  namespace: shopmon
+data:
+  MAIL_FROM: "Shopmon <noreply@fos.gg>"
+  APP_SITESPEED_ENDPOINT: "https://sitespeed.fos.gg"
+  NODE_ENV: "production"

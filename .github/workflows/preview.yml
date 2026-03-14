@@ -1,0 +1,139 @@
+name: Preview Environment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install and configure Namespace CLI
+        uses: namespacelabs/nscloud-setup@v0
+
+      - name: Configure Namespace powered Buildx
+        uses: namespacelabs/nscloud-setup-buildx-action@v0
+
+      - name: Build and push (frontend)
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          tags: ghcr.io/friendsofshopware/shopmon/frontend:pr-${{ github.event.pull_request.number }}
+          file: Dockerfile.frontend
+
+      - name: Build and push (api)
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          tags: ghcr.io/friendsofshopware/shopmon/api:pr-${{ github.event.pull_request.number }}
+          file: Dockerfile.api
+
+      - name: Create ephemeral Kubernetes cluster
+        id: create-cluster
+        uses: namespacelabs/nscloud-cluster-action@v0
+        with:
+          wait-kube-system: true
+
+      - name: Deploy to preview cluster
+        run: |
+          cd k8s
+          kustomize edit set image \
+            "ghcr.io/friendsofshopware/shopmon/api=ghcr.io/friendsofshopware/shopmon/api:pr-${{ github.event.pull_request.number }}" \
+            "ghcr.io/friendsofshopware/shopmon/frontend=ghcr.io/friendsofshopware/shopmon/frontend:pr-${{ github.event.pull_request.number }}"
+
+          kubectl apply -k .
+
+          echo "Waiting for database to be ready..."
+          kubectl wait --namespace=shopmon --for=condition=ready pod -l app=db --timeout=120s
+
+          echo "Waiting for migration job to complete..."
+          kubectl wait --namespace=shopmon --for=condition=complete job/migrate --timeout=120s
+
+          echo "Waiting for API to be ready..."
+          kubectl wait --namespace=shopmon --for=condition=ready pod -l app=api --timeout=120s
+
+          echo "Waiting for frontend to be ready..."
+          kubectl wait --namespace=shopmon --for=condition=ready pod -l app=frontend --timeout=120s
+
+      - name: Expose frontend
+        id: expose-frontend
+        uses: namespacelabs/nscloud-expose-kubernetes-action@v0
+        with:
+          instance-id: ${{ steps.create-cluster.outputs.instance-id }}
+          namespace: shopmon
+          service: frontend
+          port: "80"
+
+      - name: Expose API
+        id: expose-api
+        uses: namespacelabs/nscloud-expose-kubernetes-action@v0
+        with:
+          instance-id: ${{ steps.create-cluster.outputs.instance-id }}
+          namespace: shopmon
+          service: api
+          port: "3000"
+
+      - name: Update API with preview frontend URL
+        run: |
+          kubectl set env deployment/api -n shopmon FRONTEND_URL=${{ steps.expose-frontend.outputs.preview-url }}
+          kubectl rollout status deployment/api -n shopmon --timeout=60s
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Preview Environment
+
+            | Service | URL |
+            |---------|-----|
+            | Frontend | ${{ steps.expose-frontend.outputs.preview-url }} |
+            | API | ${{ steps.expose-api.outputs.preview-url }} |
+
+            > This environment will be automatically destroyed when the cluster expires.`;
+
+            // Find and update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('## Preview Environment')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

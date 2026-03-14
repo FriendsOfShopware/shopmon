@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cron
+  namespace: shopmon
+  labels:
+    app: cron
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cron
+  template:
+    metadata:
+      labels:
+        app: cron
+    spec:
+      initContainers:
+        - name: wait-for-migration
+          image: ghcr.io/groundnuty/k8s-wait-for:v2.0
+          args:
+            - job
+            - migrate
+      containers:
+        - name: cron
+          image: ghcr.io/friendsofshopware/shopmon/api:preview
+          command: ["bun", "cron.js"]
+          envFrom:
+            - secretRef:
+                name: shopmon-secrets
+            - configMapRef:
+                name: shopmon-config
