@@ -9,6 +9,7 @@ interface CreateShopRequest {
   clientId: string;
   clientSecret: string;
   projectId: number;
+  shopToken: string;
 }
 
 export interface Shop {
@@ -20,6 +21,13 @@ export interface User {
   displayName: string;
   email: string;
   notifications?: string[];
+}
+
+export function generateShopToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function createShop(con: Drizzle, params: CreateShopRequest): Promise<number> {
@@ -34,6 +42,7 @@ async function createShop(con: Drizzle, params: CreateShopRequest): Promise<numb
       createdAt: new Date(),
       shopwareVersion: params.version,
       projectId: params.projectId,
+      shopToken: params.shopToken,
     })
     .returning({ id: schema.shop.id });
 

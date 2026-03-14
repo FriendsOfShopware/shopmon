@@ -22,7 +22,7 @@ describe("useWhatsNew", () => {
   });
 
   it("keeps the modal closed when the current release was already seen", async () => {
-    const { WHATS_NEW_VERSION, useWhatsNew } = await import("./useWhatsNew");
+    const { WHATS_NEW_VERSION } = await import("./useWhatsNew");
 
     localStorage.setItem("shopmon-whats-new", WHATS_NEW_VERSION);
 

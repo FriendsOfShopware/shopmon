@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { HttpClient, type HttpClientResponse, SimpleShop } from "@shopware-ag/app-server-sdk";
+import { HttpClient, type HttpClientResponse } from "#src/modules/shop/http-client.ts";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import {
@@ -29,6 +29,7 @@ export interface CreateShopInput {
   clientId: string;
   clientSecret: string;
   projectId: number;
+  shopToken: string;
 }
 
 export interface UpdateShopInput {
@@ -99,6 +100,7 @@ export const getShopDetails = async (db: Drizzle, shopId: number) => {
       projectDescription: schema.project.description,
       sitespeedEnabled: schema.shop.sitespeedEnabled,
       sitespeedUrls: schema.shop.sitespeedUrls,
+      shopToken: schema.shop.shopToken,
       activeDeploymentId: schema.shop.activeDeploymentId,
       activeDeploymentName: schema.deployment.name,
       activeDeploymentCreatedAt: schema.deployment.createdAt,
@@ -291,10 +293,12 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
     });
   }
 
-  const shop = new SimpleShop("", input.shopUrl, "");
-  shop.setShopCredentials(input.clientId, input.clientSecret);
-
-  const client = new HttpClient(shop);
+  const client = new HttpClient({
+    url: input.shopUrl,
+    clientId: input.clientId,
+    clientSecret: input.clientSecret,
+    shopToken: input.shopToken,
+  });
 
   let resp: HttpClientResponse<{ version: string }>;
   try {
@@ -316,6 +320,7 @@ export const create = async (db: Drizzle, userId: string, input: CreateShopInput
     shopUrl: input.shopUrl,
     version: resp.body.version,
     projectId: input.projectId,
+    shopToken: input.shopToken,
   });
 
   await scrapeSingleShop(id);
@@ -380,11 +385,18 @@ export const update = async (db: Drizzle, userId: string, input: UpdateShopInput
   }
 
   if (input.shopUrl && input.clientId && input.clientSecret) {
-    // Try out the new credentials
-    const shop = new SimpleShop("", input.shopUrl, "");
-    shop.setShopCredentials(input.clientId, input.clientSecret);
+    const existingShop = await db.query.shop.findFirst({
+      columns: { shopToken: true },
+      where: eq(schema.shop.id, input.shopId),
+    });
 
-    const client = new HttpClient(shop);
+    // Try out the new credentials
+    const client = new HttpClient({
+      url: input.shopUrl,
+      clientId: input.clientId,
+      clientSecret: input.clientSecret,
+      shopToken: existingShop?.shopToken ?? "",
+    });
 
     try {
       await client.get("/_info/config");
@@ -424,6 +436,7 @@ export const clearCache = async (db: Drizzle, shopId: number) => {
       url: true,
       clientId: true,
       clientSecret: true,
+      shopToken: true,
     },
     where: eq(schema.shop.id, shopId),
   });
@@ -436,9 +449,12 @@ export const clearCache = async (db: Drizzle, shopId: number) => {
   }
 
   const clientSecret = await decrypt(process.env.APP_SECRET, shopData.clientSecret);
-  const shop = new SimpleShop("", shopData.url, "");
-  shop.setShopCredentials(shopData.clientId, clientSecret);
-  const client = new HttpClient(shop);
+  const client = new HttpClient({
+    url: shopData.url,
+    clientId: shopData.clientId,
+    clientSecret,
+    shopToken: shopData.shopToken,
+  });
 
   await client.delete("/_action/cache");
 };
@@ -449,6 +465,7 @@ export const rescheduleTask = async (db: Drizzle, shopId: number, taskId: string
       url: true,
       clientId: true,
       clientSecret: true,
+      shopToken: true,
     },
     where: eq(schema.shop.id, shopId),
   });
@@ -461,9 +478,12 @@ export const rescheduleTask = async (db: Drizzle, shopId: number, taskId: string
   }
 
   const clientSecret = await decrypt(process.env.APP_SECRET, shopData.clientSecret);
-  const shop = new SimpleShop("", shopData.url, "");
-  shop.setShopCredentials(shopData.clientId, clientSecret);
-  const client = new HttpClient(shop);
+  const client = new HttpClient({
+    url: shopData.url,
+    clientId: shopData.clientId,
+    clientSecret,
+    shopToken: shopData.shopToken,
+  });
 
   const nextExecutionTime: string = new Date().toISOString();
   await client.patch(`/scheduled-task/${taskId}`, {

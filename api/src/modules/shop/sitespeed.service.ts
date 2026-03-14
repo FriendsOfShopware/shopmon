@@ -15,8 +15,17 @@ export function getReportUrl(shopId: number) {
   return `${sitespeedServiceUrl}/result/${recordId}/index.html`;
 }
 
-export async function runSitespeedReport(shopId: number, urls: string[]) {
+export async function runSitespeedReport(
+  shopId: number,
+  urls: string[],
+  headers?: Record<string, string>,
+) {
   const recordId = getReportName(shopId);
+
+  const body: { urls: string[]; headers?: Record<string, string> } = { urls };
+  if (headers && Object.keys(headers).length > 0) {
+    body.headers = headers;
+  }
 
   const response = await fetch(`${sitespeedServiceUrl}/api/result/${recordId}`, {
     method: "POST",
@@ -24,9 +33,7 @@ export async function runSitespeedReport(shopId: number, urls: string[]) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.APP_SITESPEED_API_KEY || "secret"}`,
     },
-    body: JSON.stringify({
-      urls: urls,
-    }),
+    body: JSON.stringify(body),
   });
 
   return (await response.json()) as {

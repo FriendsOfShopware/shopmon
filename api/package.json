@@ -13,7 +13,6 @@
     "@better-auth/passkey": "catalog:",
     "@better-auth/sso": "catalog:",
     "@sentry/bun": "^10.27.0",
-    "@shopware-ag/app-server-sdk": "^2.0.0",
     "@trpc/server": "^11.7.2",
     "better-auth": "catalog:",
     "drizzle-orm": "^0.45.0",

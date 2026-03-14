@@ -35,6 +35,7 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
       sitespeedEnabled: true,
       sitespeedUrls: true,
       connectionIssueCount: true,
+      shopToken: true,
     },
     where: eq(schema.shop.id, shopId),
   });
@@ -65,7 +66,9 @@ export async function scrapeSingleSitespeedShop(shopId: number) {
   );
 
   try {
-    const result = await runSitespeedReport(shop.id, shop.sitespeedUrls);
+    const result = await runSitespeedReport(shop.id, shop.sitespeedUrls, {
+      "shopmon-shop-token": shop.shopToken,
+    });
 
     // Store the metrics in the database
     await drizzle

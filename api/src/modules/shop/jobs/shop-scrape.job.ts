@@ -4,8 +4,7 @@ import {
   ApiClientRequestFailed,
   HttpClient,
   type HttpClientResponse,
-  SimpleShop,
-} from "@shopware-ag/app-server-sdk";
+} from "#src/modules/shop/http-client.ts";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   type Drizzle,
@@ -39,6 +38,7 @@ interface SQLShop {
   url: string;
   clientId: string;
   clientSecret: string;
+  shopToken: string;
   shopwareVersion: string;
   ignores: string[];
   connectionIssueCount: number;
@@ -116,6 +116,7 @@ export async function shopScrapeJob() {
       url: schema.shop.url,
       clientId: schema.shop.clientId,
       clientSecret: schema.shop.clientSecret,
+      shopToken: schema.shop.shopToken,
       shopwareVersion: schema.shop.shopwareVersion,
       organizationId: schema.shop.organizationId,
       organizationSlug: schema.organization.slug,
@@ -147,6 +148,7 @@ export async function scrapeSingleShop(shopId: number) {
       url: schema.shop.url,
       clientId: schema.shop.clientId,
       clientSecret: schema.shop.clientSecret,
+      shopToken: schema.shop.shopToken,
       shopwareVersion: schema.shop.shopwareVersion,
       organizationId: schema.shop.organizationId,
       organizationSlug: schema.organization.slug,
@@ -213,9 +215,12 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
 
     const clientSecret = await decrypt(process.env.APP_SECRET, shop.clientSecret);
 
-    const apiShop = new SimpleShop("", shop.url, "");
-    apiShop.setShopCredentials(shop.clientId, clientSecret);
-    const client = new HttpClient(apiShop);
+    const client = new HttpClient({
+      url: shop.url,
+      clientId: shop.clientId,
+      clientSecret,
+      shopToken: shop.shopToken,
+    });
 
     try {
       await client.getToken();
