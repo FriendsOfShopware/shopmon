@@ -14,13 +14,13 @@ export async function scrapeSitespeedForAllShops() {
     where: eq(schema.shop.sitespeedEnabled, true),
   });
 
-  console.log(`Found ${shops.length} shops with sitespeed enabled`);
+  console.log(`Found ${shops.length} shops with sitespeed enabled, enqueueing individual jobs`);
+
+  const { addShopSitespeedJob } = await import("#src/modules/queue/queues.ts");
 
   for (const shop of shops) {
-    await scrapeSingleSitespeedShop(shop.id);
+    await addShopSitespeedJob(shop.id);
   }
-
-  console.log("Sitespeed scrape completed for all shops");
 }
 
 export async function scrapeSingleSitespeedShop(shopId: number) {
