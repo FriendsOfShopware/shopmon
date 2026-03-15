@@ -1,5 +1,0 @@
-deployment:
-  extension-management:
-    overrides:
-      SwagAnalytics:
-        state: ignore
