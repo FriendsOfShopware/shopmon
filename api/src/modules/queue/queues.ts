@@ -28,10 +28,10 @@ export function getMaintenanceQueue(): Queue {
 
 export async function addShopScrapeJob(shopId: number) {
   const queue = getShopQueue();
-  return queue.add("scrape", { shopId }, { jobId: `scrape-${shopId}` });
+  return queue.add("scrape", { shopId });
 }
 
 export async function addShopSitespeedJob(shopId: number) {
   const queue = getSitespeedQueue();
-  return queue.add("sitespeed", { shopId }, { jobId: `sitespeed-${shopId}` });
+  return queue.add("sitespeed", { shopId });
 }

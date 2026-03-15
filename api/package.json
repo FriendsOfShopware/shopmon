@@ -7,7 +7,8 @@
     "#src/*": "./src/*.ts"
   },
   "scripts": {
-    "dev": "PORT=5789 bun --watch app.ts"
+    "dev": "PORT=5789 bun --watch app.ts",
+    "dev:worker": "bun --watch worker.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "catalog:",
