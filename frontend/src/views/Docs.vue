@@ -36,12 +36,14 @@
         <div class="docs-content">
           <p>
             Shopmon is an open-source monitoring dashboard for Shopware 6 shops. It lets you monitor
-            all your Shopware environments from one central place — shop status, performance metrics,
-            extension updates, and security alerts in real-time.
+            all your Shopware environments from one central place — shop status, performance
+            metrics, extension updates, and security alerts in real-time.
           </p>
           <p>To start monitoring, you need to:</p>
           <ol>
-            <li>Create an <a href="#organizations">Organization</a> to group your team and shops</li>
+            <li>
+              Create an <a href="#organizations">Organization</a> to group your team and shops
+            </li>
             <li>Create a <a href="#projects">Project</a> within that organization</li>
             <li><a href="#connecting-shop">Connect a Shop</a> by providing API credentials</li>
           </ol>
@@ -155,7 +157,9 @@
           </p>
           <ul>
             <li>Each project has a name, description, and optional Git repository URL</li>
-            <li>The Git URL is used to link commits in the <a href="#deployments">Deployments</a> view</li>
+            <li>
+              The Git URL is used to link commits in the <a href="#deployments">Deployments</a> view
+            </li>
             <li>
               Projects can have <strong>API Keys</strong> with specific scopes (e.g.
               <code>deployments</code>) for CI/CD integration
@@ -179,7 +183,9 @@
             <li><strong>Shop name</strong> and favicon</li>
             <li><strong>Project</strong> it belongs to</li>
             <li><strong>Shopware version</strong></li>
-            <li><strong>Status indicator</strong> (green, yellow, or red) based on health checks</li>
+            <li>
+              <strong>Status indicator</strong> (green, yellow, or red) based on health checks
+            </li>
           </ul>
           <p>
             The dashboard also shows recent changes across all your shops, so you can see what has
@@ -247,8 +253,8 @@
           </dl>
 
           <Alert type="info">
-            You can suppress individual checks per shop using the ignore feature if they are
-            known false positives for your environment.
+            You can suppress individual checks per shop using the ignore feature if they are known
+            false positives for your environment.
           </Alert>
         </div>
       </section>
@@ -278,9 +284,10 @@
 
           <h4>Compatibility Check</h4>
           <p>
-            When a new Shopware version is available, use the built-in <strong>Compatibility Check</strong>
-            to verify whether your installed extensions are compatible with the target version before
-            upgrading.
+            When a new Shopware version is available, use the built-in
+            <strong>Compatibility Check</strong>
+            to verify whether your installed extensions are compatible with the target version
+            before upgrading.
           </p>
         </div>
       </section>
@@ -345,9 +352,10 @@
 
           <h4>Setup</h4>
           <p>
-            Configure up to 5 URLs per shop for monitoring. Measurements are taken daily and displayed
-            in a time-series chart. When linked with <a href="#deployments">Deployments</a>,
-            performance changes can be correlated with specific releases.
+            Configure up to 5 URLs per shop for monitoring. Measurements are taken daily and
+            displayed in a time-series chart. When linked with
+            <a href="#deployments">Deployments</a>, performance changes can be correlated with
+            specific releases.
           </p>
         </div>
       </section>
@@ -367,8 +375,9 @@
           <h4>CI/CD Integration</h4>
           <p>
             The easiest way to integrate deployments is using
-            <a href="https://github.com/FriendsOfShopware/shopmon-cli" target="_blank">shopmon-cli</a>,
-            which handles authentication and reporting automatically. Add it to your deployment
+            <a href="https://github.com/FriendsOfShopware/shopmon-cli" target="_blank"
+              >shopmon-cli</a
+            >, which handles authentication and reporting automatically. Add it to your deployment
             pipeline to track every release.
           </p>
           <ol>
@@ -410,7 +419,8 @@
         </h2>
         <div class="docs-content">
           <p>
-            Shopmon automatically detects and records changes to your shop environment on each scrape:
+            Shopmon automatically detects and records changes to your shop environment on each
+            scrape:
           </p>
           <ul>
             <li>Shopware version upgrades or downgrades</li>
@@ -442,8 +452,8 @@
           <h4>Email Alerts</h4>
           <p>
             You can subscribe to email alerts per shop. When subscribed, you'll receive an email
-            whenever the shop's status changes. Duplicate alerts are prevented — you won't be spammed
-            for the same issue.
+            whenever the shop's status changes. Duplicate alerts are prevented — you won't be
+            spammed for the same issue.
           </p>
         </div>
       </section>
@@ -465,8 +475,8 @@
             <code>shopmon-shop-token</code> with this token value to bypass authentication.
           </p>
           <p>
-            The token is displayed on the shop information page and during shop creation. You can copy
-            it to your clipboard with the copy button.
+            The token is displayed on the shop information page and during shop creation. You can
+            copy it to your clipboard with the copy button.
           </p>
         </div>
       </section>
@@ -479,7 +489,8 @@
         </h2>
         <div class="docs-content">
           <p>
-            Organizations can configure OpenID Connect (OIDC) based Single Sign-On for their members.
+            Organizations can configure OpenID Connect (OIDC) based Single Sign-On for their
+            members.
           </p>
           <ul>
             <li>
@@ -491,8 +502,8 @@
               provide the issuer URL
             </li>
             <li>
-              Users with matching email domains will be automatically redirected to the configured SSO
-              provider on login
+              Users with matching email domains will be automatically redirected to the configured
+              SSO provider on login
             </li>
           </ul>
           <p>
@@ -521,19 +532,23 @@
             <li>Shop favicon</li>
           </ul>
           <p>
-            After collecting data, all <a href="#health-checks">health checks</a> are executed and the
-            shop status is updated. If the status changes, <a href="#notifications">notifications</a>
+            After collecting data, all <a href="#health-checks">health checks</a> are executed and
+            the shop status is updated. If the status changes,
+            <a href="#notifications">notifications</a>
             are triggered.
           </p>
           <p>
-            You can also trigger a manual refresh from any shop's detail page using the refresh button
-            in the header.
+            You can also trigger a manual refresh from any shop's detail page using the refresh
+            button in the header.
           </p>
 
           <h4>Remote Actions</h4>
           <p>From the shop detail page, you can also:</p>
           <ul>
-            <li><strong>Clear Cache</strong> — Remotely clears your Shopware HTTP and application cache</li>
+            <li>
+              <strong>Clear Cache</strong> — Remotely clears your Shopware HTTP and application
+              cache
+            </li>
             <li>
               <strong>Reschedule Tasks</strong> — Reset stuck scheduled tasks back to "scheduled"
               status
