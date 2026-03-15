@@ -158,18 +158,21 @@ for (let i = 0; i < 8; i++) {
   const endDate = new Date(startDate.getTime() + executionTime * 1000);
   const returnCode = i === 3 ? 1 : 0; // one failed deployment
 
-  const [inserted] = await getConnection().insert(schema.deployment).values({
-    shopId,
-    name: deploymentNames[i],
-    command: deploymentCommands[i],
-    returnCode,
-    startDate,
-    endDate,
-    executionTime,
-    composer: { "shopware/core": "6.5.8.0", "shopware/storefront": "6.5.8.0" },
-    reference: `abc${(1000 + i).toString()}`,
-    createdAt: startDate,
-  }).returning({ id: schema.deployment.id });
+  const [inserted] = await getConnection()
+    .insert(schema.deployment)
+    .values({
+      shopId,
+      name: deploymentNames[i],
+      command: deploymentCommands[i],
+      returnCode,
+      startDate,
+      endDate,
+      executionTime,
+      composer: { "shopware/core": "6.5.8.0", "shopware/storefront": "6.5.8.0" },
+      reference: `abc${(1000 + i).toString()}`,
+      createdAt: startDate,
+    })
+    .returning({ id: schema.deployment.id });
 
   deploymentIds.push({ id: inserted.id, createdAt: startDate });
 
@@ -210,7 +213,7 @@ for (let hoursAgo = 7 * 24; hoursAgo >= 0; hoursAgo -= 6) {
     fullyLoaded: Math.round(baseFullyLoaded * jitter() * deploymentPenalty),
     largestContentfulPaint: Math.round(baseLcp * jitter() * deploymentPenalty),
     firstContentfulPaint: Math.round(baseFcp * jitter() * deploymentPenalty),
-    cumulativeLayoutShift: Math.round((baseCls * jitter() * deploymentPenalty) * 1000) / 1000,
+    cumulativeLayoutShift: Math.round(baseCls * jitter() * deploymentPenalty * 1000) / 1000,
     transferSize: Math.round(baseTransferSize * jitter()),
   });
 }
