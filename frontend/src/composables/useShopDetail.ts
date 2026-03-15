@@ -47,9 +47,10 @@ export function useShopDetail() {
 
       if (shop.value?.name) {
         const pageTitle = route.meta.title;
-        document.title = typeof pageTitle === "string"
-          ? `${pageTitle} - ${shop.value.name} | Shopmon`
-          : `${shop.value.name} | Shopmon`;
+        document.title =
+          typeof pageTitle === "string"
+            ? `${pageTitle} - ${shop.value.name} | Shopmon`
+            : `${shop.value.name} | Shopmon`;
       }
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
