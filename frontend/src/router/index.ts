@@ -326,13 +326,13 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
   }
 });
 
-const DEFAULT_TITLE = "Shopware Monitoring";
+const DEFAULT_TITLE = "Shopmon";
 router.afterEach(async (to) => {
   await nextTick();
 
   const title = to.meta.title;
   if (typeof title === "string") {
-    document.title = title;
+    document.title = `${title} | ${DEFAULT_TITLE}`;
     return;
   }
 
