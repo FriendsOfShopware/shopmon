@@ -83,13 +83,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick, Ref } from "vue";
+import { ref, onMounted, onUnmounted, watch, nextTick, Ref, computed } from "vue";
 import { Chart, registerables } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
 import "chartjs-adapter-date-fns";
 import { formatDateTime } from "@/helpers/formatter";
 import { useShopDetail } from "@/composables/useShopDetail";
 
 const { shop } = useShopDetail();
+
+Chart.register(annotationPlugin);
+
+// Extract unique deployments from sitespeed data for chart annotations
+const deploymentMarkers = computed(() => {
+  if (!shop.value?.sitespeed) return [];
+
+  const deploymentMap = new Map<number, { id: number; name: string; timestamp: number }>();
+
+  shop.value.sitespeed.forEach((item) => {
+    if (item.deployment?.id) {
+      const timestamp = new Date(item.createdAt).getTime();
+      if (!deploymentMap.has(item.deployment.id)) {
+        deploymentMap.set(item.deployment.id, {
+          id: item.deployment.id,
+          name: item.deployment.name || `Deployment #${item.deployment.id}`,
+          timestamp,
+        });
+      }
+    }
+  });
+
+  return Array.from(deploymentMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+});
 
 function formatBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return "0 Bytes";
@@ -208,6 +233,31 @@ const createChart = (config: ChartConfig) => {
     })),
   }));
 
+  // Create annotations for deployment markers
+  const annotations: Record<string, any> = {};
+  deploymentMarkers.value.forEach((deployment, index) => {
+    annotations[`deployment-${deployment.id}`] = {
+      type: "line",
+      xMin: deployment.timestamp,
+      xMax: deployment.timestamp,
+      borderColor: "rgba(99, 102, 241, 0.8)", // Indigo color
+      borderWidth: 2,
+      borderDash: [5, 5],
+      label: {
+        display: true,
+        content: deployment.name,
+        position: "start",
+        backgroundColor: "rgba(99, 102, 241, 0.8)",
+        color: "white",
+        font: {
+          size: 10,
+        },
+        rotation: 90,
+        yAdjust: -10,
+      },
+    };
+  });
+
   config.chartInstance.value = new Chart(ctx, {
     type: "line",
     data: {
@@ -221,6 +271,9 @@ const createChart = (config: ChartConfig) => {
         intersect: false,
       },
       plugins: {
+        annotation: {
+          annotations,
+        },
         title: {
           display: true,
           text: config.title,
