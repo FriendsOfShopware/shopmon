@@ -259,7 +259,7 @@ const createChart = (config: ChartConfig) => {
       type: "line",
       xMin: deployment.timestamp,
       xMax: deployment.timestamp,
-      borderColor: "rgba(99, 102, 241, 0.8)", // Indigo color
+      borderColor: "rgba(99, 102, 241, 0.8)",
       borderWidth: 2,
       borderDash: [5, 5],
       label: {
@@ -271,7 +271,7 @@ const createChart = (config: ChartConfig) => {
         font: {
           size: 10,
         },
-        rotation: 90,
+        rotation: 0,
         yAdjust: -10,
       },
     };
