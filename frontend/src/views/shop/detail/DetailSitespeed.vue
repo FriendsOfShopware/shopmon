@@ -233,25 +233,27 @@ const createChart = (config: ChartConfig) => {
     })),
   }));
 
-  // Create annotations for deployment markers
-  const annotations: Record<string, {
-    type: string;
-    xMin: number;
-    xMax: number;
-    borderColor: string;
-    borderWidth: number;
-    borderDash: number[];
-    label: {
-      display: boolean;
-      content: string;
-      position: string;
-      backgroundColor: string;
-      color: string;
-      font: { size: number };
-      rotation: number;
-      yAdjust: number;
-    };
-  }> = {};
+  const annotations: Record<
+    string,
+    {
+      type: string;
+      xMin: number;
+      xMax: number;
+      borderColor: string;
+      borderWidth: number;
+      borderDash: number[];
+      label: {
+        display: boolean;
+        content: string;
+        position: string;
+        backgroundColor: string;
+        color: string;
+        font: { size: number };
+        rotation: number;
+        yAdjust: number;
+      };
+    }
+  > = {};
   deploymentMarkers.value.forEach((deployment) => {
     annotations[`deployment-${deployment.id}`] = {
       type: "line",
