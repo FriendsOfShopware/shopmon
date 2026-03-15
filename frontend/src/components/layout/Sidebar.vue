@@ -89,6 +89,7 @@ const navigation = [
   { route: "account.project.list", active: "shop" },
   { route: "account.extension.list" },
   { route: "account.organizations.list", active: "organizations" },
+  { route: "account.docs" },
 ];
 
 function isActive(item: { route: string; active?: string }, $route: RouteLocationNormalizedLoaded) {
