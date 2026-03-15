@@ -19,6 +19,7 @@ import FaCodeBranch from "~icons/fa6-solid/code-branch";
 import Dashboard from "~icons/ri/dashboard-fill";
 import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
+import FaBook from "~icons/fa6-solid/book";
 
 const session = authClient.useSession();
 
@@ -254,6 +255,15 @@ export const router = createRouter({
           meta: {
             title: "My Extensions",
             icon: FaPlug,
+          },
+        },
+        {
+          name: "account.docs",
+          path: "docs",
+          component: () => import("@/views/Docs.vue"),
+          meta: {
+            title: "Documentation",
+            icon: FaBook,
           },
         },
         {
