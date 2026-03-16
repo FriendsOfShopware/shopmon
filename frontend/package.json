@@ -51,7 +51,7 @@
     "@vitejs/plugin-vue": "6.0.5",
     "@vitest/ui": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
-    "jsdom": "^28.0.0",
+    "jsdom": "^29.0.0",
     "typescript": "catalog:",
     "vite": "8.0.0",
     "vitest": "^4.0.18"
