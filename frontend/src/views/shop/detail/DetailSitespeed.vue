@@ -96,7 +96,12 @@ Chart.register(annotationPlugin);
 
 // Computed property to check if sitespeed data should be displayed
 const showSitespeedData = computed(() => {
-  return shop.value && shop.value.sitespeedEnabled && shop.value.sitespeed && shop.value.sitespeed.length > 0;
+  return (
+    shop.value &&
+    shop.value.sitespeedEnabled &&
+    shop.value.sitespeed &&
+    shop.value.sitespeed.length > 0
+  );
 });
 
 // Extract unique deployments from sitespeed data for chart annotations
