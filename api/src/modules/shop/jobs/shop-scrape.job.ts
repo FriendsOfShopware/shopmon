@@ -399,6 +399,8 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
           );
 
           if (storePlugin) {
+            const upgradeVersion = extension.latestVersion;
+
             extension.latestVersion = storePlugin.version;
             extension.ratingAverage = storePlugin.ratingAverage;
             extension.storeLink = storePlugin.link.replace(
@@ -411,14 +413,19 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
 
               for (const changelog of storePlugin.changelog) {
                 if (versionCompare(changelog.version, extension.version) > 0) {
-                  const compare = versionCompare(changelog.version, extension.latestVersion);
+                  if (
+                    upgradeVersion === null ||
+                    versionCompare(changelog.version, upgradeVersion) <= 0
+                  ) {
+                    const compare = versionCompare(changelog.version, extension.latestVersion);
 
-                  changelogs.push({
-                    version: changelog.version,
-                    text: changelog.text,
-                    creationDate: changelog.creationDate.date,
-                    isCompatible: compare <= 0,
-                  } as ExtensionChangelog);
+                    changelogs.push({
+                      version: changelog.version,
+                      text: changelog.text,
+                      creationDate: changelog.creationDate.date,
+                      isCompatible: compare <= 0,
+                    } as ExtensionChangelog);
+                  }
                 }
               }
 
