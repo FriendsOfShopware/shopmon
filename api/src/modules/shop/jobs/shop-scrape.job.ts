@@ -399,8 +399,6 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
           );
 
           if (storePlugin) {
-            // Preserve the upgrade version (the version Shopware says is available to upgrade to)
-            // before overwriting it with the store's latest version
             const upgradeVersion = extension.latestVersion;
 
             extension.latestVersion = storePlugin.version;
@@ -414,13 +412,11 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
               const changelogs: ExtensionChangelog[] = [];
 
               for (const changelog of storePlugin.changelog) {
-                // Only include changelog entries that are:
-                // 1. Greater than the current installed version
-                // 2. Less than or equal to the upgrade version (if available)
                 if (versionCompare(changelog.version, extension.version) > 0) {
-                  // If upgradeVersion is available, only include changelogs up to that version
-                  // Otherwise, include all changelogs (when upgradeVersion is null)
-                  if (upgradeVersion === null || versionCompare(changelog.version, upgradeVersion) <= 0) {
+                  if (
+                    upgradeVersion === null ||
+                    versionCompare(changelog.version, upgradeVersion) <= 0
+                  ) {
                     const compare = versionCompare(changelog.version, extension.latestVersion);
 
                     changelogs.push({
