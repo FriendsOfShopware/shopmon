@@ -5,7 +5,7 @@
   </Alert>
   <div class="mb-1">
     <a
-      v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
+      v-if="showSitespeedData"
       class="btn btn-primary-outline"
       :href="shop.sitespeedReportUrl"
       target="_blank"
@@ -14,24 +14,15 @@
     </a>
   </div>
 
-  <div
-    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
-    class="panel chart-panel"
-  >
+  <div v-if="showSitespeedData" class="panel chart-panel">
     <canvas ref="timeChartCanvas" width="800" height="400" />
   </div>
 
-  <div
-    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
-    class="panel chart-panel"
-  >
+  <div v-if="showSitespeedData" class="panel chart-panel">
     <canvas ref="transferSizeChartCanvas" width="800" height="400" />
   </div>
 
-  <div
-    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
-    class="panel chart-panel"
-  >
+  <div v-if="showSitespeedData" class="panel chart-panel">
     <canvas ref="clsChartCanvas" width="800" height="400" />
   </div>
 
@@ -102,6 +93,11 @@ import { useShopDetail } from "@/composables/useShopDetail";
 const { shop } = useShopDetail();
 
 Chart.register(annotationPlugin);
+
+// Computed property to check if sitespeed data should be displayed
+const showSitespeedData = computed(() => {
+  return shop.value && shop.value.sitespeedEnabled && shop.value.sitespeed && shop.value.sitespeed.length > 0;
+});
 
 // Extract unique deployments from sitespeed data for chart annotations
 const deploymentMarkers = computed(() => {
