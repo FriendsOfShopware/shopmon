@@ -14,15 +14,24 @@
     </a>
   </div>
 
-  <div v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0" class="panel chart-panel">
+  <div
+    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
+    class="panel chart-panel"
+  >
     <canvas ref="timeChartCanvas" width="800" height="400" />
   </div>
 
-  <div v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0" class="panel chart-panel">
+  <div
+    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
+    class="panel chart-panel"
+  >
     <canvas ref="transferSizeChartCanvas" width="800" height="400" />
   </div>
 
-  <div v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0" class="panel chart-panel">
+  <div
+    v-if="shop && shop.sitespeedEnabled && shop.sitespeed && shop.sitespeed.length > 0"
+    class="panel chart-panel"
+  >
     <canvas ref="clsChartCanvas" width="800" height="400" />
   </div>
 
