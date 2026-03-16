@@ -5,6 +5,7 @@ import { deployment, organization, shop } from "#src/db.ts";
 import { generateRandomName } from "#src/helpers/nameGenerator.ts";
 import ApiKeys from "#src/modules/project/project-api-key.repository.ts";
 import { publicProcedure, router } from "#src/trpc/index.ts";
+import { addShopSitespeedJob } from "#src/modules/queue/queues.ts";
 import { presignDeploymentOutputUpload } from "./deployment.storage.ts";
 
 const deploymentSchema = z.object({
@@ -106,6 +107,9 @@ export const cliRouter = router({
     const upload_url = presignDeploymentOutputUpload(deploymentId);
 
     await ApiKeys.updateLastUsedAt(ctx.drizzle, apiKey.id);
+
+    // Trigger sitespeed after 15 minutes to measure post-deployment performance
+    await addShopSitespeedJob(input.shop_id, { delay: 15 * 60 * 1000 });
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
     const deploymentUrl = `${frontendUrl}/app/organizations/${shopData.organizationSlug}/shops/${input.shop_id}/deployments/${deploymentId}`;
