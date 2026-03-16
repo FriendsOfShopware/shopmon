@@ -27,6 +27,7 @@ import type {
   ExtensionDiff,
   QueueInfo,
 } from "#src/types/index.ts";
+import { addShopSitespeedJob } from "#src/modules/queue/queues.ts";
 import versionCompare from "#src/util.ts";
 
 interface SQLShop {
@@ -705,6 +706,9 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
           date: new Date(),
         })
         .execute();
+
+      // Trigger sitespeed after 15 minutes to measure post-change performance
+      await addShopSitespeedJob(shop.id, { delay: 15 * 60 * 1000 });
     }
 
     if (hasShopUpdate && shopUpdate.from && shopUpdate.to) {

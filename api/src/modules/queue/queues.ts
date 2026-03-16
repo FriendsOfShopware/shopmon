@@ -31,7 +31,7 @@ export async function addShopScrapeJob(shopId: number) {
   return queue.add("scrape", { shopId });
 }
 
-export async function addShopSitespeedJob(shopId: number) {
+export async function addShopSitespeedJob(shopId: number, opts?: { delay?: number }) {
   const queue = getSitespeedQueue();
-  return queue.add("sitespeed", { shopId });
+  return queue.add("sitespeed", { shopId }, opts);
 }
