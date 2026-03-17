@@ -1,7 +1,12 @@
 import "#src/sentry.ts";
 import { Worker } from "bullmq";
 import { getRedisConnection } from "#src/modules/queue/connection.ts";
-import { getShopQueue, getSitespeedQueue, getMaintenanceQueue } from "#src/modules/queue/queues.ts";
+import {
+  getShopQueue,
+  getSitespeedQueue,
+  getMaintenanceQueue,
+  getUptimeQueue,
+} from "#src/modules/queue/queues.ts";
 import { shopScrapeJob, scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
 import {
   scrapeSitespeedForAllShops,
@@ -9,6 +14,8 @@ import {
 } from "#src/modules/shop/jobs/sitespeed-scrape.job.ts";
 import { lockCleanupJob } from "#src/modules/shared/jobs/lock-cleanup.job.ts";
 import { invitationCleanupJob } from "#src/modules/organization/jobs/invitation-cleanup.job.ts";
+import { checkAllShops } from "#src/modules/uptime/uptime.service.ts";
+import { aggregateAndCleanup } from "#src/modules/uptime/uptime.repository.ts";
 
 const connection = getRedisConnection();
 
@@ -65,6 +72,9 @@ const maintenanceWorker = new Worker(
       case "invitation-cleanup":
         await invitationCleanupJob();
         break;
+      case "uptime-cleanup":
+        await aggregateAndCleanup();
+        break;
       default:
         console.warn(`Unknown maintenance job: ${job.name}`);
     }
@@ -75,8 +85,27 @@ const maintenanceWorker = new Worker(
   },
 );
 
+// Uptime queue worker — checks shop availability
+// Concurrency 1 is fine: checkAllShops batches HTTP requests internally
+const uptimeWorker = new Worker(
+  "uptime",
+  async (job) => {
+    switch (job.name) {
+      case "check-all":
+        await checkAllShops();
+        break;
+      default:
+        console.warn(`Unknown uptime job: ${job.name}`);
+    }
+  },
+  {
+    connection,
+    concurrency: 1,
+  },
+);
+
 // Error handlers
-for (const worker of [shopWorker, sitespeedWorker, maintenanceWorker]) {
+for (const worker of [shopWorker, sitespeedWorker, maintenanceWorker, uptimeWorker]) {
   worker.on("failed", (job, err) => {
     console.error(`Job ${job?.name} (${job?.id}) failed:`, err);
   });
@@ -116,6 +145,21 @@ async function registerRepeatableJobs() {
     { name: "invitation-cleanup" },
   );
 
+  // Uptime checks every 2 minutes
+  const uptimeQueue = getUptimeQueue();
+  await uptimeQueue.upsertJobScheduler(
+    "uptime-check-all",
+    { pattern: "*/2 * * * *" },
+    { name: "check-all" },
+  );
+
+  // Uptime data cleanup daily at 4:30 AM
+  await maintenanceQueue.upsertJobScheduler(
+    "uptime-cleanup-daily",
+    { pattern: "30 4 * * *" },
+    { name: "uptime-cleanup" },
+  );
+
   console.log("Registered repeatable job schedulers");
 }
 
@@ -126,7 +170,12 @@ registerRepeatableJobs().then(() => {
 // Graceful shutdown
 function shutdown() {
   console.log("Shutting down workers...");
-  Promise.all([shopWorker.close(), sitespeedWorker.close(), maintenanceWorker.close()]).then(() => {
+  Promise.all([
+    shopWorker.close(),
+    sitespeedWorker.close(),
+    maintenanceWorker.close(),
+    uptimeWorker.close(),
+  ]).then(() => {
     process.exit(0);
   });
 }

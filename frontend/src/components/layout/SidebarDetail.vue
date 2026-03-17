@@ -121,6 +121,10 @@ const detailNavigation = computed(() => [
     count: props.shop?.queueInfo?.length ?? 0,
   },
   {
+    name: "Uptime",
+    route: "account.shops.detail.uptime",
+  },
+  {
     name: "Sitespeed",
     route: "account.shops.detail.sitespeed",
     count: props.shop?.sitespeed?.length ?? 0,

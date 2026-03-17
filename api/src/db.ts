@@ -69,8 +69,51 @@ export const shop = pgTable("shop", {
   sitespeedEnabled: boolean("sitespeed_enabled").default(false).notNull(),
   sitespeedUrls: jsonb("sitespeed_urls").default([]).$type<string[]>().notNull(),
   shopToken: text("shop_token").notNull(),
+  uptimeEnabled: boolean("uptime_enabled").default(false).notNull(),
+  uptimeStatus: text("uptime_status").default("unknown").notNull(),
+  uptimeLastCheckedAt: timestamp("uptime_last_checked_at"),
+  uptimeDownSince: timestamp("uptime_down_since"),
+  uptimeConsecutiveFails: integer("uptime_consecutive_fails").default(0).notNull(),
   createdAt: timestamp("created_at").notNull(),
 });
+
+export const shopUptime = pgTable(
+  "shop_uptime",
+  {
+    id: serial("id").primaryKey(),
+    shopId: integer("shop_id")
+      .notNull()
+      .references(() => shop.id, { onDelete: "cascade" }),
+    checkedAt: timestamp("checked_at").notNull(),
+    statusCode: integer("status_code"),
+    ttfb: integer("ttfb"),
+    responseTime: integer("response_time"),
+    isUp: boolean("is_up").notNull(),
+    error: text("error"),
+  },
+  (table) => [index("shop_uptime_shop_checked_idx").on(table.shopId, table.checkedAt)],
+);
+
+export const shopUptimeDaily = pgTable(
+  "shop_uptime_daily",
+  {
+    id: serial("id").primaryKey(),
+    shopId: integer("shop_id")
+      .notNull()
+      .references(() => shop.id, { onDelete: "cascade" }),
+    date: timestamp("date").notNull(),
+    totalChecks: integer("total_checks").notNull(),
+    upChecks: integer("up_checks").notNull(),
+    avgTtfb: integer("avg_ttfb"),
+    minTtfb: integer("min_ttfb"),
+    maxTtfb: integer("max_ttfb"),
+    avgResponseTime: integer("avg_response_time"),
+  },
+  (table) => [
+    index("shop_uptime_daily_shop_date_idx").on(table.shopId, table.date),
+    unique("shop_uptime_daily_shop_date_unique").on(table.shopId, table.date),
+  ],
+);
 
 export const shopSitespeed = pgTable("shop_sitespeed", {
   id: serial("id").primaryKey(),
@@ -477,6 +520,20 @@ export const projectApiKeyRelations = relations(projectApiKey, ({ one }) => ({
   }),
 }));
 
+export const shopUptimeRelations = relations(shopUptime, ({ one }) => ({
+  shop: one(shop, {
+    fields: [shopUptime.shopId],
+    references: [shop.id],
+  }),
+}));
+
+export const shopUptimeDailyRelations = relations(shopUptimeDaily, ({ one }) => ({
+  shop: one(shop, {
+    fields: [shopUptimeDaily.shopId],
+    references: [shop.id],
+  }),
+}));
+
 export const shopSitespeedRelations = relations(shopSitespeed, ({ one }) => ({
   shop: one(shop, {
     fields: [shopSitespeed.shopId],
@@ -518,6 +575,8 @@ export const deploymentRelations = relations(deployment, ({ one }) => ({
 export const schema = {
   shop,
   shopSitespeed,
+  shopUptime,
+  shopUptimeDaily,
   shopChangelog,
   userNotification,
 
@@ -561,6 +620,8 @@ export const schema = {
   // App Relations
   projectRelations,
   projectApiKeyRelations,
+  shopUptimeRelations,
+  shopUptimeDailyRelations,
   shopSitespeedRelations,
   shopRelations,
   organizationRelations,
