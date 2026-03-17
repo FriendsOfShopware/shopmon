@@ -4,6 +4,7 @@ import { getRedisConnection } from "./connection.ts";
 let shopQueue: Queue | undefined;
 let sitespeedQueue: Queue | undefined;
 let maintenanceQueue: Queue | undefined;
+let uptimeQueue: Queue | undefined;
 
 export function getShopQueue(): Queue {
   if (!shopQueue) {
@@ -24,6 +25,13 @@ export function getMaintenanceQueue(): Queue {
     maintenanceQueue = new Queue("maintenance", { connection: getRedisConnection() });
   }
   return maintenanceQueue;
+}
+
+export function getUptimeQueue(): Queue {
+  if (!uptimeQueue) {
+    uptimeQueue = new Queue("uptime", { connection: getRedisConnection() });
+  }
+  return uptimeQueue;
 }
 
 export async function addShopScrapeJob(shopId: number) {

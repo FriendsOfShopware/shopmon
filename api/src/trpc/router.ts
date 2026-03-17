@@ -6,6 +6,7 @@ import { projectRouter } from "#src/modules/project/project.router.ts";
 import { apiKeyRouter } from "#src/modules/project/project-api-key.router.ts";
 import { shopRouter } from "#src/modules/shop/shop.router.ts";
 import { ssoRouter } from "#src/modules/sso/sso.router.ts";
+import { uptimeRouter } from "#src/modules/uptime/uptime.router.ts";
 import { accountRouter } from "#src/modules/user/user.router.ts";
 import { publicProcedure, router } from "./index.ts";
 
@@ -15,6 +16,7 @@ export const organizationRouter = router({
   project: projectRouter,
   apiKey: apiKeyRouter,
   deployment: deploymentRouter,
+  uptime: uptimeRouter,
 });
 
 export const appRouter = router({
