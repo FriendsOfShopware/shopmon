@@ -54,9 +54,7 @@ export async function getUptimeStats(db: Drizzle, shopId: number, sinceDays = 30
       avgTtfb: sql<number>`round(avg(${shopUptime.ttfb}) filter (where ${shopUptime.ttfb} is not null))::int`,
     })
     .from(shopUptime)
-    .where(
-      sql`${shopUptime.shopId} = ${shopId} and ${shopUptime.checkedAt} >= ${since}`,
-    );
+    .where(sql`${shopUptime.shopId} = ${shopId} and ${shopUptime.checkedAt} >= ${since}`);
 
   const dailyResult = await db
     .select({
@@ -65,9 +63,7 @@ export async function getUptimeStats(db: Drizzle, shopId: number, sinceDays = 30
       avgTtfb: sql<number>`round(avg(${shopUptimeDaily.avgTtfb}) filter (where ${shopUptimeDaily.avgTtfb} is not null))::int`,
     })
     .from(shopUptimeDaily)
-    .where(
-      sql`${shopUptimeDaily.shopId} = ${shopId} and ${shopUptimeDaily.date} >= ${since}`,
-    );
+    .where(sql`${shopUptimeDaily.shopId} = ${shopId} and ${shopUptimeDaily.date} >= ${since}`);
 
   const recent = recentResult[0];
   const daily = dailyResult[0];
@@ -89,8 +85,7 @@ export async function getUptimeStats(db: Drizzle, shopId: number, sinceDays = 30
   return {
     totalChecks,
     upChecks,
-    uptimePercentage:
-      totalChecks > 0 ? Number(((upChecks / totalChecks) * 100).toFixed(2)) : null,
+    uptimePercentage: totalChecks > 0 ? Number(((upChecks / totalChecks) * 100).toFixed(2)) : null,
     avgTtfb,
   };
 }

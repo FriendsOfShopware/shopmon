@@ -1,7 +1,12 @@
 import "#src/sentry.ts";
 import { Worker } from "bullmq";
 import { getRedisConnection } from "#src/modules/queue/connection.ts";
-import { getShopQueue, getSitespeedQueue, getMaintenanceQueue, getUptimeQueue } from "#src/modules/queue/queues.ts";
+import {
+  getShopQueue,
+  getSitespeedQueue,
+  getMaintenanceQueue,
+  getUptimeQueue,
+} from "#src/modules/queue/queues.ts";
 import { shopScrapeJob, scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
 import {
   scrapeSitespeedForAllShops,
@@ -165,7 +170,12 @@ registerRepeatableJobs().then(() => {
 // Graceful shutdown
 function shutdown() {
   console.log("Shutting down workers...");
-  Promise.all([shopWorker.close(), sitespeedWorker.close(), maintenanceWorker.close(), uptimeWorker.close()]).then(() => {
+  Promise.all([
+    shopWorker.close(),
+    sitespeedWorker.close(),
+    maintenanceWorker.close(),
+    uptimeWorker.close(),
+  ]).then(() => {
     process.exit(0);
   });
 }

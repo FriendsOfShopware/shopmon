@@ -32,7 +32,13 @@ export async function performUptimeCheck(shopId: number) {
   const previousStatus = shopData.uptimeStatus;
   const newConsecutiveFails = result.isUp ? 0 : shopData.uptimeConsecutiveFails + 1;
   const isDown = newConsecutiveFails >= CONSECUTIVE_FAILS_THRESHOLD;
-  const newStatus = result.isUp ? "up" : isDown ? "down" : previousStatus === "down" ? "down" : "unknown";
+  const newStatus = result.isUp
+    ? "up"
+    : isDown
+      ? "down"
+      : previousStatus === "down"
+        ? "down"
+        : "unknown";
 
   const updates: Parameters<typeof UptimeRepository.updateShopUptimeStatus>[2] = {
     uptimeStatus: newStatus,
@@ -96,10 +102,7 @@ async function checkUrl(url: string): Promise<UptimeRepository.UptimeCheckResult
   }
 }
 
-async function notifyShopDown(
-  db: Drizzle,
-  shop: { id: number; name: string },
-) {
+async function notifyShopDown(db: Drizzle, shop: { id: number; name: string }) {
   const alertKey = `uptime-down.${shop.id}`;
 
   if (await LockRepository.isLocked(alertKey)) {
@@ -126,10 +129,7 @@ async function notifyShopDown(
   });
 }
 
-async function notifyShopRecovered(
-  db: Drizzle,
-  shop: { id: number; name: string },
-) {
+async function notifyShopRecovered(db: Drizzle, shop: { id: number; name: string }) {
   await ShopService.notify(db, shop.id, `shop.uptime-recovered.${shop.id}`, {
     level: "info",
     title: `Shop ${shop.name} is back up`,
@@ -190,10 +190,7 @@ export async function updateUptimeSettings(db: Drizzle, shopId: number, enabled:
     .execute();
 
   if (!enabled) {
-    await db
-      .delete(schema.shopUptime)
-      .where(eq(schema.shopUptime.shopId, shopId))
-      .execute();
+    await db.delete(schema.shopUptime).where(eq(schema.shopUptime.shopId, shopId)).execute();
 
     await db
       .delete(schema.shopUptimeDaily)

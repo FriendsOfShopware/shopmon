@@ -3,9 +3,7 @@
 
   <template v-else-if="uptimeData">
     <div v-if="!uptimeData.enabled" class="uptime-toggle">
-      <Alert type="info">
-        Uptime monitoring is not enabled for this shop.
-      </Alert>
+      <Alert type="info"> Uptime monitoring is not enabled for this shop. </Alert>
       <button class="btn btn-primary" :disabled="isToggling" @click="toggleUptime(true)">
         Enable Uptime Monitoring
       </button>
@@ -28,11 +26,11 @@
 
         <div class="uptime-stats panel">
           <div class="stat">
-            <span class="stat-value">{{ uptimeData.stats.uptimePercentage ?? '-' }}%</span>
+            <span class="stat-value">{{ uptimeData.stats.uptimePercentage ?? "-" }}%</span>
             <span class="stat-label">Uptime (30d)</span>
           </div>
           <div class="stat">
-            <span class="stat-value">{{ uptimeData.stats.avgTtfb ?? '-' }} ms</span>
+            <span class="stat-value">{{ uptimeData.stats.avgTtfb ?? "-" }} ms</span>
             <span class="stat-label">Avg TTFB</span>
           </div>
           <div class="stat">
@@ -77,20 +75,20 @@
           </template>
           <template #cell-isUp="{ row }">
             <span :class="row.isUp ? 'badge-up' : 'badge-down'">
-              {{ row.isUp ? 'UP' : 'DOWN' }}
+              {{ row.isUp ? "UP" : "DOWN" }}
             </span>
           </template>
           <template #cell-statusCode="{ row }">
-            {{ row.statusCode ?? '-' }}
+            {{ row.statusCode ?? "-" }}
           </template>
           <template #cell-ttfb="{ row }">
-            {{ row.ttfb ? `${row.ttfb} ms` : '-' }}
+            {{ row.ttfb ? `${row.ttfb} ms` : "-" }}
           </template>
           <template #cell-responseTime="{ row }">
-            {{ row.responseTime ? `${row.responseTime} ms` : '-' }}
+            {{ row.responseTime ? `${row.responseTime} ms` : "-" }}
           </template>
           <template #cell-error="{ row }">
-            {{ row.error ?? '-' }}
+            {{ row.error ?? "-" }}
           </template>
         </data-table>
       </div>
@@ -99,14 +97,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { Chart, registerables } from 'chart.js';
-import 'chartjs-adapter-date-fns';
-import { formatDateTime } from '@/helpers/formatter';
-import { trpcClient } from '@/helpers/trpc';
-import { useShopDetail } from '@/composables/useShopDetail';
-import { useAlert } from '@/composables/useAlert';
-import Alert from '@/components/layout/Alert.vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { Chart, registerables } from "chart.js";
+import "chartjs-adapter-date-fns";
+import { formatDateTime } from "@/helpers/formatter";
+import { trpcClient } from "@/helpers/trpc";
+import { useShopDetail } from "@/composables/useShopDetail";
+import { useAlert } from "@/composables/useAlert";
+import Alert from "@/components/layout/Alert.vue";
 
 Chart.register(...registerables);
 
@@ -125,14 +123,15 @@ let recentChart: Chart | null = null;
 let dailyUptimeChart: Chart | null = null;
 let dailyTtfbChart: Chart | null = null;
 
-const statusClass = ref('');
-const statusLabel = ref('');
+const statusClass = ref("");
+const statusLabel = ref("");
 
 function updateStatusDisplay() {
   if (!uptimeData.value) return;
   const status = uptimeData.value.status;
-  statusClass.value = status === 'up' ? 'status-up' : status === 'down' ? 'status-down' : 'status-unknown';
-  statusLabel.value = status === 'up' ? 'Operational' : status === 'down' ? 'Down' : 'Unknown';
+  statusClass.value =
+    status === "up" ? "status-up" : status === "down" ? "status-down" : "status-unknown";
+  statusLabel.value = status === "up" ? "Operational" : status === "down" ? "Down" : "Unknown";
 }
 
 async function loadUptimeData() {
@@ -160,7 +159,7 @@ async function toggleUptime(enabled: boolean) {
       shopId: shop.value.id,
       enabled,
     });
-    success(enabled ? 'Uptime monitoring enabled' : 'Uptime monitoring disabled');
+    success(enabled ? "Uptime monitoring enabled" : "Uptime monitoring disabled");
     await loadUptimeData();
   } catch (e) {
     showError(e instanceof Error ? e.message : String(e));
@@ -176,7 +175,7 @@ function createRecentTtfbChart() {
     recentChart.destroy();
   }
 
-  const ctx = recentTtfbChartCanvas.value.getContext('2d');
+  const ctx = recentTtfbChartCanvas.value.getContext("2d");
   if (!ctx) return;
 
   const sortedData = [...uptimeData.value.checks]
@@ -184,17 +183,17 @@ function createRecentTtfbChart() {
     .sort((a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime());
 
   recentChart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
       datasets: [
         {
-          label: 'TTFB (ms)',
+          label: "TTFB (ms)",
           data: sortedData.map((item) => ({
             x: new Date(item.checkedAt).getTime(),
             y: item.ttfb!,
           })),
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: "rgb(59, 130, 246)",
+          backgroundColor: "rgba(59, 130, 246, 0.1)",
           fill: true,
           tension: 0.3,
         },
@@ -203,23 +202,24 @@ function createRecentTtfbChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: "index", intersect: false },
       plugins: {
-        title: { display: true, text: 'TTFB — Recent Checks' },
+        title: { display: true, text: "TTFB — Recent Checks" },
         tooltip: {
           callbacks: {
             label: (context) => `TTFB: ${context.parsed.y}ms`,
-            title: (items) => items.length > 0 ? new Date(items[0].parsed.x).toLocaleString() : '',
+            title: (items) =>
+              items.length > 0 ? new Date(items[0].parsed.x).toLocaleString() : "",
           },
         },
       },
       scales: {
         x: {
-          type: 'time',
-          time: { unit: 'hour', displayFormats: { hour: 'MMM dd HH:mm' } },
-          title: { display: true, text: 'Time' },
+          type: "time",
+          time: { unit: "hour", displayFormats: { hour: "MMM dd HH:mm" } },
+          title: { display: true, text: "Time" },
         },
-        y: { beginAtZero: true, title: { display: true, text: 'TTFB (ms)' } },
+        y: { beginAtZero: true, title: { display: true, text: "TTFB (ms)" } },
       },
     },
   });
@@ -232,24 +232,28 @@ function createDailyUptimeChart() {
     dailyUptimeChart.destroy();
   }
 
-  const ctx = dailyUptimeChartCanvas.value.getContext('2d');
+  const ctx = dailyUptimeChartCanvas.value.getContext("2d");
   if (!ctx) return;
 
   const data = uptimeData.value.dailyStats;
 
   dailyUptimeChart = new Chart(ctx, {
-    type: 'bar',
+    type: "bar",
     data: {
       datasets: [
         {
-          label: 'Uptime %',
+          label: "Uptime %",
           data: data.map((d) => ({
             x: new Date(d.date).getTime(),
             y: d.totalChecks > 0 ? Number(((d.upChecks / d.totalChecks) * 100).toFixed(1)) : 0,
           })),
           backgroundColor: data.map((d) => {
             const pct = d.totalChecks > 0 ? (d.upChecks / d.totalChecks) * 100 : 0;
-            return pct >= 99 ? 'rgba(34, 197, 94, 0.7)' : pct >= 95 ? 'rgba(234, 179, 8, 0.7)' : 'rgba(239, 68, 68, 0.7)';
+            return pct >= 99
+              ? "rgba(34, 197, 94, 0.7)"
+              : pct >= 95
+                ? "rgba(234, 179, 8, 0.7)"
+                : "rgba(239, 68, 68, 0.7)";
           }),
         },
       ],
@@ -257,24 +261,25 @@ function createDailyUptimeChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: "index", intersect: false },
       plugins: {
-        title: { display: true, text: 'Daily Uptime — Last Year' },
+        title: { display: true, text: "Daily Uptime — Last Year" },
         legend: { display: false },
         tooltip: {
           callbacks: {
             label: (context) => `Uptime: ${context.parsed.y}%`,
-            title: (items) => items.length > 0 ? new Date(items[0].parsed.x).toLocaleDateString() : '',
+            title: (items) =>
+              items.length > 0 ? new Date(items[0].parsed.x).toLocaleDateString() : "",
           },
         },
       },
       scales: {
         x: {
-          type: 'time',
-          time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-          title: { display: true, text: 'Date' },
+          type: "time",
+          time: { unit: "month", displayFormats: { month: "MMM yyyy" } },
+          title: { display: true, text: "Date" },
         },
-        y: { min: 0, max: 100, title: { display: true, text: 'Uptime %' } },
+        y: { min: 0, max: 100, title: { display: true, text: "Uptime %" } },
       },
     },
   });
@@ -287,34 +292,34 @@ function createDailyTtfbChart() {
     dailyTtfbChart.destroy();
   }
 
-  const ctx = dailyTtfbChartCanvas.value.getContext('2d');
+  const ctx = dailyTtfbChartCanvas.value.getContext("2d");
   if (!ctx) return;
 
   const data = uptimeData.value.dailyStats.filter((d) => d.avgTtfb !== null);
 
   dailyTtfbChart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
       datasets: [
         {
-          label: 'Avg TTFB',
+          label: "Avg TTFB",
           data: data.map((d) => ({ x: new Date(d.date).getTime(), y: d.avgTtfb! })),
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: "rgb(59, 130, 246)",
+          backgroundColor: "rgba(59, 130, 246, 0.1)",
           fill: true,
           tension: 0.3,
         },
         {
-          label: 'Min TTFB',
+          label: "Min TTFB",
           data: data.map((d) => ({ x: new Date(d.date).getTime(), y: d.minTtfb ?? 0 })),
-          borderColor: 'rgba(34, 197, 94, 0.6)',
+          borderColor: "rgba(34, 197, 94, 0.6)",
           borderDash: [5, 5],
           pointRadius: 0,
         },
         {
-          label: 'Max TTFB',
+          label: "Max TTFB",
           data: data.map((d) => ({ x: new Date(d.date).getTime(), y: d.maxTtfb ?? 0 })),
-          borderColor: 'rgba(239, 68, 68, 0.6)',
+          borderColor: "rgba(239, 68, 68, 0.6)",
           borderDash: [5, 5],
           pointRadius: 0,
         },
@@ -323,23 +328,24 @@ function createDailyTtfbChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: "index", intersect: false },
       plugins: {
-        title: { display: true, text: 'Daily TTFB — Last Year' },
+        title: { display: true, text: "Daily TTFB — Last Year" },
         tooltip: {
           callbacks: {
             label: (context) => `${context.dataset.label}: ${context.parsed.y}ms`,
-            title: (items) => items.length > 0 ? new Date(items[0].parsed.x).toLocaleDateString() : '',
+            title: (items) =>
+              items.length > 0 ? new Date(items[0].parsed.x).toLocaleDateString() : "",
           },
         },
       },
       scales: {
         x: {
-          type: 'time',
-          time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-          title: { display: true, text: 'Date' },
+          type: "time",
+          time: { unit: "month", displayFormats: { month: "MMM yyyy" } },
+          title: { display: true, text: "Date" },
         },
-        y: { beginAtZero: true, title: { display: true, text: 'TTFB (ms)' } },
+        y: { beginAtZero: true, title: { display: true, text: "TTFB (ms)" } },
       },
     },
   });
@@ -352,9 +358,18 @@ function createAllCharts() {
 }
 
 function destroyAllCharts() {
-  if (recentChart) { recentChart.destroy(); recentChart = null; }
-  if (dailyUptimeChart) { dailyUptimeChart.destroy(); dailyUptimeChart = null; }
-  if (dailyTtfbChart) { dailyTtfbChart.destroy(); dailyTtfbChart = null; }
+  if (recentChart) {
+    recentChart.destroy();
+    recentChart = null;
+  }
+  if (dailyUptimeChart) {
+    dailyUptimeChart.destroy();
+    dailyUptimeChart = null;
+  }
+  if (dailyTtfbChart) {
+    dailyTtfbChart.destroy();
+    dailyTtfbChart = null;
+  }
 }
 
 onMounted(async () => {
@@ -446,8 +461,13 @@ watch(
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .status-text {
@@ -455,7 +475,8 @@ watch(
   font-weight: 600;
 }
 
-.down-since, .last-checked {
+.down-since,
+.last-checked {
   font-size: 0.875rem;
   color: var(--text-muted);
 }
