@@ -64,11 +64,7 @@
           </div>
 
           <div class="modal-footer">
-            <router-link
-              :to="{ name: 'account.project.list' }"
-              class="btn"
-              @click="$emit('close')"
-            >
+            <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
               <icon-fa6-solid:folder-open class="icon" />
               Open Projects
             </router-link>
