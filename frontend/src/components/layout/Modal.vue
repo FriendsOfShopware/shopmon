@@ -88,6 +88,7 @@ function onBackdropClick(event: MouseEvent) {
 .modal-panel {
   position: relative;
   background-color: var(--panel-background);
+  color: var(--text-color);
   border-radius: 0.5rem;
   padding: 1.25rem 1rem 1rem;
   text-align: left;
