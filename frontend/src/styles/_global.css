@@ -107,6 +107,12 @@ table th {
   }
 }
 
+.panel-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-color-muted);
+}
+
 .panel-title:not(:first-child),
 .panel-header:not(:first-child) {
   margin-top: 1.5rem;

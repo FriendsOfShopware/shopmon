@@ -17,17 +17,17 @@ describe("WhatsNewModal", () => {
     vi.clearAllMocks();
   });
 
-  it("renders deployment and sponsor content", () => {
+  it("renders packages mirror and sponsor content", () => {
     const wrapper = mount(WhatsNewModal, {
       props: {
         show: true,
       },
       global: {
         stubs: {
-          Modal: {
-            props: ["show"],
-            template:
-              '<div class="modal-stub" :data-show="String(show)"><slot name="title" /><slot name="content" /><slot name="footer" /></div>',
+          teleport: true,
+          SponsorShowcase: {
+            props: ["sponsors", "compact"],
+            template: '<div class="sponsor-stub">{{ sponsors.map(s => s.name).join(", ") }}</div>',
           },
           RouterLink: {
             props: ["to"],
@@ -37,25 +37,21 @@ describe("WhatsNewModal", () => {
       },
     });
 
-    expect(wrapper.find(".modal-stub").attributes("data-show")).toBe("true");
-    expect(wrapper.text()).toContain("What's new: Deployment tracking");
-    expect(wrapper.text()).toContain("Track deployments directly inside each shop");
+    expect(wrapper.find(".whats-new-overlay").exists()).toBe(true);
+    expect(wrapper.text()).toContain("What's new: Packages Mirror");
+    expect(wrapper.text()).toContain("75x faster Shopware store packages via Global CDN");
     expect(wrapper.text()).toContain("Acme Commerce");
-    expect(wrapper.text()).toContain("New sponsors on the start page");
   });
 
-  it("emits close when the primary button is clicked", async () => {
+  it("emits close when the close button is clicked", async () => {
     const wrapper = mount(WhatsNewModal, {
       props: {
         show: true,
       },
       global: {
         stubs: {
-          Modal: {
-            props: ["show"],
-            template:
-              '<div class="modal-stub" :data-show="String(show)"><slot name="title" /><slot name="content" /><slot name="footer" /></div>',
-          },
+          teleport: true,
+          SponsorShowcase: true,
           RouterLink: {
             props: ["to"],
             template: "<a><slot /></a>",
@@ -64,7 +60,7 @@ describe("WhatsNewModal", () => {
       },
     });
 
-    await wrapper.find("button").trigger("click");
+    await wrapper.find("button.btn-primary").trigger("click");
 
     expect(wrapper.emitted("close")).toHaveLength(1);
   });

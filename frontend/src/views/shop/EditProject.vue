@@ -158,6 +158,107 @@
         </div>
       </div>
 
+      <div v-if="isPackagesConfigured" id="packages-tokens" class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>Packages Tokens</h3>
+            <p class="text-muted panel-description">
+              Sync store packages through a Global CDN (~80ms vs ~6s). Tokens are synced
+              automatically every hour.
+            </p>
+          </div>
+          <button type="button" class="btn btn-primary" @click="showAddPackagesTokenModal = true">
+            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
+            Add Token
+          </button>
+        </div>
+
+        <div v-if="isPackagesTokensLoading" class="api-keys-loading">
+          <icon-line-md:loading-twotone-loop class="icon" />
+          Loading packages tokens...
+        </div>
+
+        <div v-else-if="packagesTokens.length === 0" class="api-keys-empty">
+          <icon-fa6-solid:cube class="icon icon-large" aria-hidden="true" />
+          <p>No packages tokens added yet.</p>
+          <p class="text-muted">Add a Shopware store token to sync packages through the mirror.</p>
+        </div>
+
+        <template v-else>
+          <div class="api-keys-list">
+            <div v-for="pt in packagesTokens" :key="pt.id" class="api-key-item">
+              <div class="api-key-info">
+                <h4>Token #{{ pt.id }}</h4>
+                <p v-if="pt.lastSyncedAt" class="text-muted">
+                  Last synced {{ timeAgo(pt.lastSyncedAt) }}
+                </p>
+                <p v-else class="text-muted">Not synced yet</p>
+              </div>
+              <div class="api-key-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  :disabled="isSyncingPackagesToken === pt.id"
+                  @click="syncPackagesToken(pt)"
+                >
+                  <icon-fa6-solid:arrows-rotate
+                    v-if="isSyncingPackagesToken !== pt.id"
+                    class="icon"
+                    aria-hidden="true"
+                  />
+                  <icon-line-md:loading-twotone-loop v-else class="icon" />
+                  Sync
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="confirmDeletePackagesToken(pt)"
+                >
+                  <icon-fa6-solid:trash class="icon" aria-hidden="true" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="packagesComposerUrl" class="composer-setup">
+            <h4>Composer Setup</h4>
+            <Alert type="warning">
+              <p>
+                Make sure to remove <code>packages.shopware.com</code> from your
+                <code>composer.json</code> repositories before adding the mirror, otherwise Composer
+                will still use the original source.
+              </p>
+            </Alert>
+            <p class="text-muted">
+              Add the mirror as a repository in your <code>composer.json</code>:
+            </p>
+            <div class="code-block">
+              <pre><code>{
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "{{ packagesComposerUrl }}"
+        }
+    ]
+}</code></pre>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                @click="copyComposerRepository"
+              >
+                <icon-fa6-solid:copy class="icon" aria-hidden="true" />
+                Copy
+              </button>
+            </div>
+            <p class="text-muted">Authenticate using your Shopware store token:</p>
+            <div class="code-block">
+              <pre><code>composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
+            </div>
+          </div>
+        </template>
+      </div>
+
       <form-group title="Danger Zone" class="panel">
         <p>Once you delete your project, you will lose all data associated with it.</p>
 
@@ -283,6 +384,69 @@
       @close="showDeleteProjectModal = false"
       @confirm="deleteProject"
     />
+
+    <!-- Add Packages Token Modal -->
+    <modal
+      :show="showAddPackagesTokenModal"
+      close-x-mark
+      @close="showAddPackagesTokenModal = false"
+    >
+      <template #title> Add Packages Token </template>
+
+      <template #content>
+        <vee-form
+          id="packagesTokenForm"
+          v-slot="{ errors }"
+          :validation-schema="packagesTokenSchema"
+          :initial-values="{ token: '' }"
+          class="api-key-form"
+          @submit="onSubmitPackagesToken"
+        >
+          <div class="form-group">
+            <label for="packagesToken">Shopware Store Token</label>
+            <field
+              id="packagesToken"
+              type="text"
+              name="token"
+              placeholder="Enter your Shopware store token"
+              class="field"
+              :class="{ 'has-error': errors.token }"
+            />
+            <div class="field-error-message">{{ errors.token }}</div>
+            <p class="field-help">
+              The token from your Shopware account used to access store packages
+            </p>
+          </div>
+        </vee-form>
+      </template>
+
+      <template #footer>
+        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">Cancel</button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          form="packagesTokenForm"
+          :disabled="isCreatingPackagesToken"
+        >
+          <icon-fa6-solid:plus v-if="!isCreatingPackagesToken" class="icon" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="icon" />
+          Add Token
+        </button>
+      </template>
+    </modal>
+
+    <!-- Delete Packages Token Modal -->
+    <delete-confirmation-modal
+      :show="showDeletePackagesTokenModal"
+      title="Delete Packages Token?"
+      :entity-name="`Token #${deletingPackagesToken?.id}`"
+      custom-consequence="Packages synced with this token will no longer be available through the mirror."
+      :reversed-buttons="true"
+      :is-loading="isDeletingPackagesToken"
+      confirm-button-text="Delete Token"
+      @close="showDeletePackagesTokenModal = false"
+      @confirm="deletePackagesToken"
+    />
   </main-container>
 </template>
 
@@ -290,7 +454,7 @@
 import Modal from "@/components/layout/Modal.vue";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { useAlert } from "@/composables/useAlert";
-import { formatDate } from "@/helpers/formatter";
+import { formatDate, timeAgo } from "@/helpers/formatter";
 import { type RouterOutput, trpcClient } from "@/helpers/trpc";
 import { Field, Form as VeeForm } from "vee-validate";
 import { computed, nextTick, onMounted, ref } from "vue";
@@ -300,6 +464,7 @@ import * as Yup from "yup";
 type Project = RouterOutput["account"]["currentUserProjects"][number];
 type ApiKey = RouterOutput["organization"]["apiKey"]["list"][number];
 type AvailableScope = RouterOutput["organization"]["apiKey"]["scopes"][number];
+type PackagesToken = RouterOutput["organization"]["packagesToken"]["list"][number];
 
 const route = useRoute();
 const router = useRouter();
@@ -327,7 +492,28 @@ const showDeleteProjectModal = ref(false);
 const deletingApiKey = ref<ApiKey | null>(null);
 const newToken = ref("");
 
+// Packages tokens
+const isPackagesConfigured = ref(false);
+const packagesComposerUrl = ref<string | null>(null);
+const packagesTokens = ref<PackagesToken[]>([]);
+const isPackagesTokensLoading = ref(false);
+const isCreatingPackagesToken = ref(false);
+const isDeletingPackagesToken = ref(false);
+const isSyncingPackagesToken = ref<number | null>(null);
+const showAddPackagesTokenModal = ref(false);
+const showDeletePackagesTokenModal = ref(false);
+const deletingPackagesToken = ref<PackagesToken | null>(null);
+
 const canDeleteProject = computed(() => shopsInProjectCount.value === 0);
+
+const packagesComposerHost = computed(() => {
+  if (!packagesComposerUrl.value) return "";
+  try {
+    return new URL(packagesComposerUrl.value).host;
+  } catch {
+    return packagesComposerUrl.value;
+  }
+});
 
 const projectFormInitialValues = computed(() => ({
   name: project.value?.name ?? "",
@@ -350,6 +536,10 @@ const apiKeySchema = Yup.object().shape({
     .of(Yup.string())
     .min(1, "At least one scope is required")
     .required("At least one scope is required"),
+});
+
+const packagesTokenSchema = Yup.object().shape({
+  token: Yup.string().required("Token is required").min(1, "Token is required"),
 });
 
 async function loadProjectSummary() {
@@ -403,7 +593,8 @@ async function loadPageData() {
       return;
     }
 
-    await Promise.all([loadApiKeys(), loadAvailableScopes()]);
+    await Promise.all([loadApiKeys(), loadAvailableScopes(), checkPackagesConfigured()]);
+    await loadPackagesTokens();
     await scrollToHashSection();
   } catch (error) {
     alert.error(`Failed to load project${error instanceof Error ? `: ${error.message}` : ""}`);
@@ -491,6 +682,18 @@ function copyToken() {
   alert.success("API key copied to clipboard");
 }
 
+function copyComposerRepository() {
+  if (!navigator.clipboard || !packagesComposerUrl.value) return;
+
+  const json = JSON.stringify(
+    { repositories: [{ type: "composer", url: packagesComposerUrl.value }] },
+    null,
+    4,
+  );
+  navigator.clipboard.writeText(json);
+  alert.success("Composer repository config copied to clipboard");
+}
+
 function confirmDeleteKey(apiKey: ApiKey) {
   deletingApiKey.value = apiKey;
   showDeleteApiKeyModal.value = true;
@@ -515,6 +718,110 @@ async function deleteApiKey() {
     alert.error(`Failed to delete API key${error instanceof Error ? `: ${error.message}` : ""}`);
   } finally {
     isDeletingApiKey.value = false;
+  }
+}
+
+async function checkPackagesConfigured() {
+  try {
+    const config = await trpcClient.organization.packagesToken.configuration.query();
+    isPackagesConfigured.value = config.configured;
+    packagesComposerUrl.value = config.composerUrl;
+  } catch {
+    isPackagesConfigured.value = false;
+  }
+}
+
+async function loadPackagesTokens() {
+  if (!project.value || !isPackagesConfigured.value) return;
+
+  isPackagesTokensLoading.value = true;
+  try {
+    packagesTokens.value = await trpcClient.organization.packagesToken.list.query({
+      orgId: project.value.organizationId,
+      projectId: project.value.id,
+    });
+  } catch (error) {
+    alert.error(
+      `Failed to load packages tokens${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
+  } finally {
+    isPackagesTokensLoading.value = false;
+  }
+}
+
+async function onSubmitPackagesToken(values: Record<string, unknown>) {
+  if (!project.value) return;
+
+  const typedValues = values as Yup.InferType<typeof packagesTokenSchema>;
+
+  isCreatingPackagesToken.value = true;
+  try {
+    await trpcClient.organization.packagesToken.create.mutate({
+      orgId: project.value.organizationId,
+      projectId: project.value.id,
+      token: typedValues.token,
+    });
+
+    showAddPackagesTokenModal.value = false;
+    await loadPackagesTokens();
+    alert.success("Packages token added successfully");
+  } catch (error) {
+    alert.error(
+      `Failed to add packages token${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
+  } finally {
+    isCreatingPackagesToken.value = false;
+  }
+}
+
+function confirmDeletePackagesToken(pt: PackagesToken) {
+  deletingPackagesToken.value = pt;
+  showDeletePackagesTokenModal.value = true;
+}
+
+async function deletePackagesToken() {
+  if (!deletingPackagesToken.value || !project.value) return;
+
+  isDeletingPackagesToken.value = true;
+  try {
+    await trpcClient.organization.packagesToken.delete.mutate({
+      orgId: project.value.organizationId,
+      projectId: project.value.id,
+      tokenId: deletingPackagesToken.value.id,
+    });
+
+    showDeletePackagesTokenModal.value = false;
+    deletingPackagesToken.value = null;
+    await loadPackagesTokens();
+    alert.success("Packages token deleted successfully");
+  } catch (error) {
+    alert.error(
+      `Failed to delete packages token${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
+  } finally {
+    isDeletingPackagesToken.value = false;
+  }
+}
+
+async function syncPackagesToken(pt: PackagesToken) {
+  if (!project.value) return;
+
+  isSyncingPackagesToken.value = pt.id;
+  try {
+    await trpcClient.organization.packagesToken.sync.mutate({
+      orgId: project.value.organizationId,
+      projectId: project.value.id,
+      tokenId: pt.id,
+    });
+
+    await loadPackagesTokens();
+    alert.success("Token sync triggered successfully");
+  } catch (error) {
+    alert.error(
+      `Failed to sync packages token${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
+  } finally {
+    isSyncingPackagesToken.value = null;
   }
 }
 
@@ -709,5 +1016,59 @@ onMounted(() => {
   font-family: monospace;
   font-size: 0.875rem;
   word-break: break-all;
+}
+
+.composer-setup {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--panel-border-color);
+
+  h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .text-muted {
+    font-size: 0.875rem;
+    color: var(--text-color-muted);
+    margin: 0.5rem 0;
+
+    code {
+      padding: 0.125rem 0.375rem;
+      background-color: var(--input-background-color);
+      border-radius: 0.25rem;
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+.code-block {
+  position: relative;
+  margin: 0.5rem 0 1rem;
+  background-color: var(--input-background-color);
+  border: 1px solid var(--input-border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+
+    code {
+      font-family: monospace;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+    }
+  }
+
+  .btn-sm {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
 }
 </style>

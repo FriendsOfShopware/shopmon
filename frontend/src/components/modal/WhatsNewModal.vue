@@ -1,82 +1,88 @@
 <template>
-  <modal :show="show" close-x-mark @close="$emit('close')">
-    <template #icon>
-      <div class="whats-new-icon">
-        <icon-fa6-solid:rocket class="icon" />
+  <teleport to="body">
+    <transition name="whats-new-fade">
+      <div v-if="show" class="whats-new-overlay" @click.self="$emit('close')">
+        <div class="whats-new-dialog">
+          <button class="modal-close-button" type="button" @click="$emit('close')">
+            <icon-fa6-solid:xmark aria-hidden="true" size="xl" />
+          </button>
+
+          <div class="modal-grid">
+            <div class="modal-icon">
+              <div class="whats-new-icon">
+                <icon-fa6-solid:rocket class="icon" />
+              </div>
+            </div>
+
+            <div class="modal-content">
+              <h3 class="modal-title">What's new: Packages Mirror</h3>
+
+              <div class="whats-new-hero">
+                <span class="whats-new-badge">New in March 2026</span>
+                <h4>75x faster Shopware store packages via Global CDN</h4>
+                <p>
+                  Add your Shopware store tokens to a project and serve packages through the Shopmon
+                  packages mirror — ~80ms instead of ~6s from
+                  <code>packages.shopware.com</code>.
+                </p>
+              </div>
+
+              <ul class="whats-new-list">
+                <li>
+                  <icon-fa6-solid:bolt class="icon" />
+                  Packages are cached on a Global CDN for near-instant Composer installs.
+                </li>
+                <li>
+                  <icon-fa6-solid:arrows-rotate class="icon" />
+                  Tokens sync automatically every hour — or trigger a manual sync any time.
+                </li>
+                <li>
+                  <icon-fa6-solid:shield-halved class="icon" />
+                  Tokens are validated against the Shopware store before being saved.
+                </li>
+              </ul>
+
+              <div class="whats-new-setup">
+                <p class="whats-new-setup-title">Quick setup</p>
+                <p>
+                  Add a Shopware store token in your project settings, then replace
+                  <code>packages.shopware.com</code> with the mirror URL in your
+                  <code>composer.json</code>. The exact snippets are shown after adding a token.
+                </p>
+              </div>
+
+              <div v-if="sponsors.length" class="whats-new-sponsors">
+                <p class="whats-new-setup-title">Sponsors</p>
+                <p class="whats-new-sponsors-copy">
+                  The public start page highlights the companies supporting ongoing Shopmon
+                  development.
+                </p>
+
+                <sponsor-showcase :sponsors="sponsors" compact />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
+              <icon-fa6-solid:folder-open class="icon" />
+              Open Projects
+            </router-link>
+
+            <router-link :to="{ name: 'account.docs' }" class="btn" @click="$emit('close')">
+              <icon-fa6-solid:book class="icon" />
+              Documentation
+            </router-link>
+
+            <button type="button" class="btn btn-primary" @click="$emit('close')">Close</button>
+          </div>
+        </div>
       </div>
-    </template>
-
-    <template #title>What's new: Deployment tracking</template>
-
-    <template #content>
-      <div class="whats-new-hero">
-        <span class="whats-new-badge">New in March 2026</span>
-        <h4>Track deployments directly inside each shop</h4>
-        <p>
-          You can report deployments with <code>shopmon-cli</code> and review them later from the
-          <strong>Deployments</strong> section of a shop.
-        </p>
-      </div>
-
-      <ul class="whats-new-list">
-        <li>
-          <icon-fa6-solid:clock-rotate-left class="icon" />
-          See a full deployment history with timestamps, duration, and success or failure state.
-        </li>
-        <li>
-          <icon-fa6-solid:file-lines class="icon" />
-          Open each deployment to inspect command output, exit code, and captured Composer package
-          versions.
-        </li>
-        <li>
-          <icon-fa6-solid:code-branch class="icon" />
-          Link deployments to commits automatically when your project has a Git Repository URL.
-        </li>
-      </ul>
-
-      <div class="whats-new-setup">
-        <p class="whats-new-setup-title">Quick setup</p>
-        <p>
-          Create a project API key, set <code>SHOPMON_SHOP_ID</code> and
-          <code>SHOPMON_API_KEY</code>, then wrap your deployment command with
-          <code>shopmon-cli deploy -- your-command</code>.
-        </p>
-      </div>
-
-      <div v-if="sponsors.length" class="whats-new-sponsors">
-        <p class="whats-new-setup-title">New sponsors on the start page</p>
-        <p class="whats-new-sponsors-copy">
-          The public start page now highlights the companies supporting ongoing Shopmon development.
-        </p>
-
-        <sponsor-showcase :sponsors="sponsors" compact />
-      </div>
-    </template>
-
-    <template #footer>
-      <a
-        href="https://github.com/FriendsOfShopware/shopmon-cli"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn"
-        @click="$emit('close')"
-      >
-        <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-        Open shopmon-cli
-      </a>
-
-      <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
-        <icon-fa6-solid:folder-open class="icon" />
-        Open Projects
-      </router-link>
-
-      <button type="button" class="btn btn-primary" @click="$emit('close')">Close</button>
-    </template>
-  </modal>
+    </transition>
+  </teleport>
 </template>
 
 <script setup lang="ts">
-import Modal from "@/components/layout/Modal.vue";
 import SponsorShowcase from "@/components/SponsorShowcase.vue";
 import { sponsors } from "@/data/sponsors";
 
@@ -86,6 +92,47 @@ defineEmits<{ close: [] }>();
 </script>
 
 <style scoped>
+.whats-new-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background-color: #6b7280bf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+:global(.dark) .whats-new-overlay {
+  background-color: #171717cc;
+}
+
+.whats-new-dialog {
+  position: relative;
+  background-color: var(--panel-background);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  text-align: left;
+  overflow: hidden;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  max-width: 52rem;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.whats-new-fade-enter-active,
+.whats-new-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.whats-new-fade-enter-from,
+.whats-new-fade-leave-to {
+  opacity: 0;
+}
+
 .whats-new-icon {
   width: 3rem;
   height: 3rem;
