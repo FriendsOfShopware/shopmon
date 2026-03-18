@@ -181,9 +181,7 @@
         <div v-else-if="packagesTokens.length === 0" class="api-keys-empty">
           <icon-fa6-solid:cube class="icon icon-large" aria-hidden="true" />
           <p>No packages tokens added yet.</p>
-          <p class="text-muted">
-            Add a Shopware store token to sync packages through the mirror.
-          </p>
+          <p class="text-muted">Add a Shopware store token to sync packages through the mirror.</p>
         </div>
 
         <template v-else>
@@ -211,7 +209,11 @@
                   <icon-line-md:loading-twotone-loop v-else class="icon" />
                   Sync
                 </button>
-                <button type="button" class="btn btn-danger" @click="confirmDeletePackagesToken(pt)">
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="confirmDeletePackagesToken(pt)"
+                >
                   <icon-fa6-solid:trash class="icon" aria-hidden="true" />
                   Delete
                 </button>
@@ -224,8 +226,8 @@
             <Alert type="warning">
               <p>
                 Make sure to remove <code>packages.shopware.com</code> from your
-                <code>composer.json</code> repositories before adding the mirror, otherwise
-                Composer will still use the original source.
+                <code>composer.json</code> repositories before adding the mirror, otherwise Composer
+                will still use the original source.
               </p>
             </Alert>
             <p class="text-muted">
@@ -240,14 +242,16 @@
         }
     ]
 }</code></pre>
-              <button type="button" class="btn btn-secondary btn-sm" @click="copyComposerRepository">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                @click="copyComposerRepository"
+              >
                 <icon-fa6-solid:copy class="icon" aria-hidden="true" />
                 Copy
               </button>
             </div>
-            <p class="text-muted">
-              Authenticate using your Shopware store token:
-            </p>
+            <p class="text-muted">Authenticate using your Shopware store token:</p>
             <div class="code-block">
               <pre><code>composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
             </div>
@@ -382,7 +386,11 @@
     />
 
     <!-- Add Packages Token Modal -->
-    <modal :show="showAddPackagesTokenModal" close-x-mark @close="showAddPackagesTokenModal = false">
+    <modal
+      :show="showAddPackagesTokenModal"
+      close-x-mark
+      @close="showAddPackagesTokenModal = false"
+    >
       <template #title> Add Packages Token </template>
 
       <template #content>
@@ -413,9 +421,7 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">
-          Cancel
-        </button>
+        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">Cancel</button>
         <button
           type="submit"
           class="btn btn-primary"

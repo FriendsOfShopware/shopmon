@@ -4,11 +4,9 @@ import { loggedInUserMiddleware, organizationMiddleware } from "#src/trpc/middle
 import * as PackagesTokenService from "./packages-token.service.ts";
 
 export const packagesTokenRouter = router({
-  configuration: publicProcedure
-    .use(loggedInUserMiddleware)
-    .query(() => {
-      return PackagesTokenService.getConfiguration();
-    }),
+  configuration: publicProcedure.use(loggedInUserMiddleware).query(() => {
+    return PackagesTokenService.getConfiguration();
+  }),
 
   list: publicProcedure
     .input(

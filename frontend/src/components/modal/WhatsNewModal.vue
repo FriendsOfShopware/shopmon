@@ -6,47 +6,46 @@
       </div>
     </template>
 
-    <template #title>What's new: Deployment tracking</template>
+    <template #title>What's new: Packages Mirror</template>
 
     <template #content>
       <div class="whats-new-hero">
         <span class="whats-new-badge">New in March 2026</span>
-        <h4>Track deployments directly inside each shop</h4>
+        <h4>75x faster Shopware store packages via Global CDN</h4>
         <p>
-          You can report deployments with <code>shopmon-cli</code> and review them later from the
-          <strong>Deployments</strong> section of a shop.
+          Add your Shopware store tokens to a project and serve packages through the Shopmon
+          packages mirror — ~80ms instead of ~6s from <code>packages.shopware.com</code>.
         </p>
       </div>
 
       <ul class="whats-new-list">
         <li>
-          <icon-fa6-solid:clock-rotate-left class="icon" />
-          See a full deployment history with timestamps, duration, and success or failure state.
+          <icon-fa6-solid:bolt class="icon" />
+          Packages are cached on a Global CDN for near-instant Composer installs.
         </li>
         <li>
-          <icon-fa6-solid:file-lines class="icon" />
-          Open each deployment to inspect command output, exit code, and captured Composer package
-          versions.
+          <icon-fa6-solid:arrows-rotate class="icon" />
+          Tokens sync automatically every hour — or trigger a manual sync any time.
         </li>
         <li>
-          <icon-fa6-solid:code-branch class="icon" />
-          Link deployments to commits automatically when your project has a Git Repository URL.
+          <icon-fa6-solid:shield-halved class="icon" />
+          Tokens are validated against the Shopware store before being saved.
         </li>
       </ul>
 
       <div class="whats-new-setup">
         <p class="whats-new-setup-title">Quick setup</p>
         <p>
-          Create a project API key, set <code>SHOPMON_SHOP_ID</code> and
-          <code>SHOPMON_API_KEY</code>, then wrap your deployment command with
-          <code>shopmon-cli deploy -- your-command</code>.
+          Add a Shopware store token in your project settings, then replace
+          <code>packages.shopware.com</code> with the mirror URL in your <code>composer.json</code>.
+          The exact snippets are shown after adding a token.
         </p>
       </div>
 
       <div v-if="sponsors.length" class="whats-new-sponsors">
-        <p class="whats-new-setup-title">New sponsors on the start page</p>
+        <p class="whats-new-setup-title">Sponsors</p>
         <p class="whats-new-sponsors-copy">
-          The public start page now highlights the companies supporting ongoing Shopmon development.
+          The public start page highlights the companies supporting ongoing Shopmon development.
         </p>
 
         <sponsor-showcase :sponsors="sponsors" compact />
@@ -54,20 +53,14 @@
     </template>
 
     <template #footer>
-      <a
-        href="https://github.com/FriendsOfShopware/shopmon-cli"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn"
-        @click="$emit('close')"
-      >
-        <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-        Open shopmon-cli
-      </a>
-
       <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
         <icon-fa6-solid:folder-open class="icon" />
         Open Projects
+      </router-link>
+
+      <router-link :to="{ name: 'docs' }" class="btn" @click="$emit('close')">
+        <icon-fa6-solid:book class="icon" />
+        Documentation
       </router-link>
 
       <button type="button" class="btn btn-primary" @click="$emit('close')">Close</button>
