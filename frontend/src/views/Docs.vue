@@ -23,6 +23,7 @@
           <li><a href="#changelog">Changelog</a></li>
           <li><a href="#notifications">Notifications</a></li>
           <li><a href="#shop-token">Bypass Authentication</a></li>
+          <li><a href="#packages-mirror">Packages Mirror</a></li>
           <li><a href="#sso">Single Sign-On (SSO)</a></li>
         </ul>
       </nav>
@@ -163,6 +164,10 @@
             <li>
               Projects can have <strong>API Keys</strong> with specific scopes (e.g.
               <code>deployments</code>) for CI/CD integration
+            </li>
+            <li>
+              Projects can manage <a href="#packages-mirror">Packages Mirror</a> tokens to serve
+              Shopware store packages through a fast CDN
             </li>
           </ul>
         </div>
@@ -478,6 +483,54 @@
             The token is displayed on the shop information page and during shop creation. You can
             copy it to your clipboard with the copy button.
           </p>
+        </div>
+      </section>
+
+      <!-- Packages Mirror -->
+      <section id="packages-mirror" class="docs-section panel">
+        <h2 class="panel-title">
+          <icon-fa6-solid:cube class="icon" />
+          Packages Mirror
+        </h2>
+        <div class="docs-content">
+          <p>
+            Shopmon can act as a proxy for Shopware store packages through a Global CDN, delivering
+            packages with ~80ms response times compared to ~6s from
+            <code>packages.shopware.com</code> — up to 75x faster.
+          </p>
+
+          <h4>How It Works</h4>
+          <p>
+            Add your Shopware store token to a project in the project settings. Shopmon registers it
+            with the packages mirror, which syncs available packages every hour. Your Composer
+            installs then pull packages from the mirror instead of the Shopware store directly.
+          </p>
+
+          <h4>Setup</h4>
+          <ol>
+            <li>
+              Go to your project settings and add your Shopware store token in the
+              <strong>Packages Tokens</strong> section
+            </li>
+            <li>
+              Remove <code>packages.shopware.com</code> from the <code>repositories</code> in your
+              <code>composer.json</code>
+            </li>
+            <li>
+              Add the mirror URL as a Composer repository (the exact snippet is shown in the project
+              settings after adding a token)
+            </li>
+            <li>
+              Authenticate with your Shopware store token using
+              <code>composer config --auth</code>
+            </li>
+          </ol>
+
+          <Alert type="info">
+            Tokens are validated against <code>packages.shopware.com</code> before being saved.
+            Syncing happens automatically every hour, but you can also trigger a manual sync from
+            the project settings.
+          </Alert>
         </div>
       </section>
 
