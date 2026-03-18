@@ -2,7 +2,7 @@ import { ref } from "vue";
 
 const WHATS_NEW_STORAGE_KEY = "shopmon-whats-new";
 
-export const WHATS_NEW_VERSION = "2026-03-deployments-sponsors";
+export const WHATS_NEW_VERSION = "2026-03-packages-mirror";
 
 const isOpen = ref(false);
 let initialized = false;
@@ -18,6 +18,7 @@ export function useWhatsNew() {
   }
 
   function dismiss() {
+    if (!isOpen.value) return;
     markAsSeen();
     isOpen.value = false;
   }
