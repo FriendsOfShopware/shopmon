@@ -1,17 +1,7 @@
 <template>
-  <dialog
-    ref="dialogRef"
-    class="modal-dialog"
-    @close="emit('close')"
-    @click="onBackdropClick"
-  >
+  <dialog ref="dialogRef" class="modal-dialog" @close="emit('close')" @click="onBackdropClick">
     <div class="modal-panel">
-      <button
-        v-if="closeXMark"
-        class="modal-close-button"
-        type="button"
-        @click="emit('close')"
-      >
+      <button v-if="closeXMark" class="modal-close-button" type="button" @click="emit('close')">
         <icon-fa6-solid:xmark aria-hidden="true" size="xl" />
       </button>
 

@@ -38,16 +38,15 @@
         <p class="whats-new-setup-title">Quick setup</p>
         <p>
           Add a Shopware store token in your project settings, then replace
-          <code>packages.shopware.com</code> with the mirror URL in your
-          <code>composer.json</code>. The exact snippets are shown after adding a token.
+          <code>packages.shopware.com</code> with the mirror URL in your <code>composer.json</code>.
+          The exact snippets are shown after adding a token.
         </p>
       </div>
 
       <div v-if="sponsors.length" class="whats-new-sponsors">
         <p class="whats-new-setup-title">Sponsors</p>
         <p class="whats-new-sponsors-copy">
-          The public start page highlights the companies supporting ongoing Shopmon
-          development.
+          The public start page highlights the companies supporting ongoing Shopmon development.
         </p>
 
         <sponsor-showcase :sponsors="sponsors" compact />
