@@ -23,6 +23,8 @@ x-env: &env
   APP_S3_BUCKET: ${APP_S3_BUCKET}
   APP_S3_REGION: ${APP_S3_REGION}
   REDIS_URL: redis://redis:6379
+  PACKAGES_API_URL: ${PACKAGES_API_URL}
+  PACKAGES_API_TOKEN: ${PACKAGES_API_TOKEN}
 
 services:
   migrate:
