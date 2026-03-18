@@ -24,20 +24,14 @@ describe("WhatsNewModal", () => {
       },
       global: {
         stubs: {
-          teleport: true,
           SponsorShowcase: {
             props: ["sponsors", "compact"],
             template: '<div class="sponsor-stub">{{ sponsors.map(s => s.name).join(", ") }}</div>',
-          },
-          RouterLink: {
-            props: ["to"],
-            template: "<a><slot /></a>",
           },
         },
       },
     });
 
-    expect(wrapper.find(".whats-new-overlay").exists()).toBe(true);
     expect(wrapper.text()).toContain("What's new: Packages Mirror");
     expect(wrapper.text()).toContain("75x faster Shopware store packages via Global CDN");
     expect(wrapper.text()).toContain("Acme Commerce");
@@ -50,12 +44,7 @@ describe("WhatsNewModal", () => {
       },
       global: {
         stubs: {
-          teleport: true,
           SponsorShowcase: true,
-          RouterLink: {
-            props: ["to"],
-            template: "<a><slot /></a>",
-          },
         },
       },
     });

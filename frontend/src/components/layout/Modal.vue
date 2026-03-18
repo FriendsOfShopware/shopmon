@@ -1,112 +1,88 @@
 <template>
-  <transition-root as="template" :show="show">
-    <headless-dialog as="div" class="modal" @close="emit('close')">
-      <transition-child
-        as="template"
-        enter="ease-out duration-300"
-        enter-from="opacity-0"
-        enter-to="opacity-100"
-        leave="ease-in duration-200"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
-      >
-        <div class="modal-overlay transform translate" />
-      </transition-child>
+  <dialog ref="dialogRef" class="modal-dialog" @close="emit('close')" @click="onBackdropClick">
+    <div class="modal-panel">
+      <button v-if="closeXMark" class="modal-close-button" type="button" @click="emit('close')">
+        <icon-fa6-solid:xmark aria-hidden="true" size="xl" />
+      </button>
 
-      <div class="modal-container">
-        <div class="modal-panel-wrapper">
-          <transition-child
-            as="template"
-            enter="ease-out"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="ease-in"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
-          >
-            <dialog-panel class="modal-panel transform transition">
-              <button
-                v-if="closeXMark"
-                class="modal-close-button"
-                type="button"
-                @click="emit('close')"
-              >
-                <icon-fa6-solid:xmark aria-hidden="true" size="xl" />
-              </button>
+      <div class="modal-grid">
+        <div v-if="!!$slots.icon" class="modal-icon">
+          <slot name="icon" />
+        </div>
 
-              <div class="modal-grid">
-                <div v-if="!!$slots.icon" class="modal-icon">
-                  <slot name="icon" />
-                </div>
+        <div class="modal-content">
+          <h3 v-if="!!$slots.title" class="modal-title">
+            <slot name="title" />
+          </h3>
 
-                <div class="modal-content">
-                  <dialog-title v-if="!!$slots.title" as="h3" class="modal-title">
-                    <slot name="title" />
-                  </dialog-title>
-
-                  <slot name="content" />
-                </div>
-              </div>
-
-              <div v-if="!!$slots.footer" class="modal-footer">
-                <slot name="footer" />
-              </div>
-            </dialog-panel>
-          </transition-child>
+          <slot name="content" />
         </div>
       </div>
-    </headless-dialog>
-  </transition-root>
+
+      <div v-if="!!$slots.footer" class="modal-footer">
+        <slot name="footer" />
+      </div>
+    </div>
+  </dialog>
 </template>
 
 <script setup lang="ts">
-import {
-  DialogPanel,
-  DialogTitle,
-  Dialog as HeadlessDialog,
-  TransitionChild,
-  TransitionRoot,
-} from "@headlessui/vue";
+import { ref, watch, onMounted } from "vue";
 
-defineProps<{ show: boolean; closeXMark?: boolean }>();
+const props = defineProps<{ show: boolean; closeXMark?: boolean }>();
 
 const emit = defineEmits<{ close: [] }>();
+
+const dialogRef = ref<HTMLDialogElement | null>(null);
+
+function syncDialog(show: boolean) {
+  const el = dialogRef.value;
+  if (!el) return;
+
+  if (show && !el.open) {
+    el.showModal();
+  } else if (!show && el.open) {
+    el.close();
+  }
+}
+
+watch(() => props.show, syncDialog);
+
+onMounted(() => syncDialog(props.show));
+
+function onBackdropClick(event: MouseEvent) {
+  if (event.target === dialogRef.value) {
+    emit("close");
+  }
+}
 </script>
 
 <style>
-.modal {
-  position: relative;
-  z-index: 10;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: #6b7280bf;
-  transition: opacity 0.3s ease;
-}
-
-.dark .modal-overlay {
-  background-color: #171717cc;
-}
-
-.modal-container {
-  position: fixed;
-  inset: 0;
-  overflow-y: auto;
-}
-
-.modal-panel-wrapper {
+.modal-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  padding: 1rem;
-  text-align: center;
+}
 
-  @media (min-width: 640px) {
-    padding: 0;
-  }
+.modal-dialog:not([open]) {
+  display: none;
+}
+
+.modal-dialog::backdrop {
+  background-color: #6b7280bf;
+}
+
+.dark .modal-dialog::backdrop,
+:global(.dark) .modal-dialog::backdrop {
+  background-color: #171717cc;
 }
 
 .modal-panel {
@@ -114,7 +90,6 @@ const emit = defineEmits<{ close: [] }>();
   background-color: var(--panel-background);
   border-radius: 0.5rem;
   padding: 1.25rem 1rem 1rem;
-  margin: 2rem 0;
   text-align: left;
   overflow: hidden;
   box-shadow:
@@ -122,6 +97,8 @@ const emit = defineEmits<{ close: [] }>();
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   max-width: 52rem;
   width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 
   @media (min-width: 640px) {
     padding: 1.5rem;
