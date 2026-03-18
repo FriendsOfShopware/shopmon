@@ -148,6 +148,7 @@ function onBackdropClick(event: MouseEvent) {
   line-height: 1.5rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
+  color: var(--item-title-color);
 }
 
 .modal-footer {

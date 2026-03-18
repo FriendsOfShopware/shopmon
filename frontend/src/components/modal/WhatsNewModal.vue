@@ -138,6 +138,7 @@ defineEmits<{ close: [] }>();
     border: 1px solid var(--panel-border-color);
     border-radius: 0.75rem;
     background: var(--item-background);
+    color: var(--text-color);
   }
 
   .icon {
@@ -153,6 +154,7 @@ defineEmits<{ close: [] }>();
   border-radius: 0.75rem;
   background: color-mix(in srgb, var(--primary-color) 8%, var(--panel-background));
   border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--panel-border-color));
+  color: var(--text-color);
 
   p {
     margin: 0;
@@ -171,5 +173,6 @@ defineEmits<{ close: [] }>();
 
 .whats-new-sponsors-copy {
   margin: 0 0 1rem;
+  color: var(--text-color);
 }
 </style>
