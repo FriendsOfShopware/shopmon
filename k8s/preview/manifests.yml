@@ -1,0 +1,483 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopmon-config
+data:
+  DATABASE_URL: "postgres://shopmon:shopmon@db:5432/shopmon"
+  REDIS_URL: "redis://redis:6379"
+  MAIL_FROM: "Shopmon <noreply@fos.gg>"
+  SMTP_HOST: "mailpit"
+  SMTP_PORT: "1025"
+  SMTP_SECURE: "false"
+  SENTRY_ENVIRONMENT: "preview"
+  APP_SITESPEED_ENDPOINT: "http://sitespeed-service:8080"
+  APP_SITESPEED_PREFIX: "shopmon-preview-"
+  APP_S3_ENDPOINT: "http://rustfs:9000"
+  APP_S3_REGION: "us-east-1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shopmon-secrets
+type: Opaque
+stringData:
+  POSTGRES_DB: "shopmon"
+  POSTGRES_USER: "shopmon"
+  POSTGRES_PASSWORD: "shopmon"
+  APP_SECRET: "preview-secret"
+  APP_SITESPEED_API_KEY: "secret"
+  APP_S3_ACCESS_KEY_ID: "rustfsadmin"
+  APP_S3_SECRET_ACCESS_KEY: "rustfsadmin"
+  APP_S3_BUCKET: "shopmon"
+---
+# PostgreSQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.3
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: shopmon-secrets
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: shopmon-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shopmon-secrets
+                  key: POSTGRES_PASSWORD
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:8-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+# Mailpit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  labels:
+    app: mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit
+          ports:
+            - containerPort: 8025
+              name: web
+            - containerPort: 1025
+              name: smtp
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+spec:
+  selector:
+    app: mailpit
+  ports:
+    - name: web
+      port: 8025
+      targetPort: 8025
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+---
+# Migration Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: migrate
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-db
+          image: postgres:18.3
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h db -p 5432 -U shopmon; do sleep 2; done"
+      containers:
+        - name: migrate
+          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          command: ["bun", "migrate.js"]
+          envFrom:
+            - configMapRef:
+                name: shopmon-config
+            - secretRef:
+                name: shopmon-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+# API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          command: ["bun", "app.js"]
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: shopmon-config
+            - secretRef:
+                name: shopmon-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  annotations:
+    kubernetes.namespace.so/expose: "true"
+    kubernetes.namespace.so/exposed-port-3000: "ingress-name=api,noauth"
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: LoadBalancer
+---
+# Worker
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          command: ["bun", "worker.js"]
+          envFrom:
+            - configMapRef:
+                name: shopmon-config
+            - secretRef:
+                name: shopmon-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+# Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-frontend:PREVIEW_TAG
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  annotations:
+    kubernetes.namespace.so/expose: "true"
+    kubernetes.namespace.so/exposed-port-8080: "ingress-name=frontend,noauth"
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+# RustFS (S3-compatible storage)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustfs
+  labels:
+    app: rustfs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rustfs
+  template:
+    metadata:
+      labels:
+        app: rustfs
+    spec:
+      containers:
+        - name: rustfs
+          image: rustfs/rustfs:latest
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustfs
+spec:
+  selector:
+    app: rustfs
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+---
+# Create S3 buckets
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: createbuckets
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: createbuckets
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-rustfs
+          image: busybox
+          command:
+            - sh
+            - -c
+            - "until wget -qO- http://rustfs:9000/minio/health/live; do sleep 2; done"
+      containers:
+        - name: mc
+          image: minio/mc
+          command:
+            - sh
+            - -c
+            - |
+              /usr/bin/mc alias set myminio http://rustfs:9000 rustfsadmin rustfsadmin
+              /usr/bin/mc mb -p myminio/sitespeed-results
+              /usr/bin/mc mb -p myminio/shopmon
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+---
+# Sitespeed service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sitespeed-service
+  labels:
+    app: sitespeed-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sitespeed-service
+  template:
+    metadata:
+      labels:
+        app: sitespeed-service
+    spec:
+      containers:
+        - name: sitespeed
+          image: ghcr.io/shyim/sitespeed.io-api:main
+          ports:
+            - containerPort: 8080
+          env:
+            - name: S3_SERVICE_URL
+              value: "http://rustfs:9000"
+            - name: S3_ACCESS_KEY
+              value: "rustfsadmin"
+            - name: S3_SECRET_KEY
+              value: "rustfsadmin"
+            - name: S3_BUCKET_NAME
+              value: "sitespeed-results"
+            - name: AUTH_TOKEN
+              value: "secret"
+            - name: S3_DISABLE_PAYLOAD_SIGNING
+              value: "false"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sitespeed-service
+spec:
+  selector:
+    app: sitespeed-service
+  ports:
+    - port: 8080
+      targetPort: 8080
