@@ -7,7 +7,7 @@ const outdir = "dist";
 await rm(outdir, { recursive: true, force: true });
 
 // Build all entry points
-const entrypoints = ["app.ts", "worker.ts", "migrate.ts"];
+const entrypoints = ["app.ts", "worker.ts", "migrate.ts", "apply-fixtures.ts"];
 
 console.log("Building entrypoints:", entrypoints.join(", "));
 

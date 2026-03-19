@@ -214,6 +214,72 @@ spec:
               memory: "256Mi"
               cpu: "300m"
 ---
+# Fixtures RBAC (needed to wait for migrate job)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fixtures
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fixtures
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fixtures
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fixtures
+subjects:
+  - kind: ServiceAccount
+    name: fixtures
+    namespace: default
+---
+# Fixtures Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fixtures
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: fixtures
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-migrate
+          image: bitnami/kubectl
+          command:
+            - sh
+            - -c
+            - "kubectl wait --for=condition=complete job/migrate --timeout=120s"
+      serviceAccountName: fixtures
+      containers:
+        - name: fixtures
+          image: nscr.io/pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          command: ["bun", "apply-fixtures.js", "--skip-shop"]
+          envFrom:
+            - configMapRef:
+                name: shopmon-config
+            - secretRef:
+                name: shopmon-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
 # API
 apiVersion: apps/v1
 kind: Deployment
@@ -500,6 +566,40 @@ spec:
               memory: "128Mi"
               cpu: "100m"
 ---
+# Sitespeed RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sitespeed-api
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sitespeed-api
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "delete", "get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sitespeed-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sitespeed-api
+subjects:
+  - kind: ServiceAccount
+    name: sitespeed-api
+    namespace: default
+---
 # Sitespeed service
 apiVersion: apps/v1
 kind: Deployment
@@ -517,12 +617,15 @@ spec:
       labels:
         app: sitespeed-service
     spec:
+      serviceAccountName: sitespeed-api
       containers:
         - name: sitespeed
           image: ghcr.io/shyim/sitespeed.io-api:main
           ports:
             - containerPort: 8080
           env:
+            - name: RUNNER_TYPE
+              value: kubernetes
             - name: S3_SERVICE_URL
               value: "http://rustfs:9000"
             - name: S3_ACCESS_KEY
