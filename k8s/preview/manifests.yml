@@ -199,7 +199,7 @@ spec:
             - "until pg_isready -h db -p 5432 -U shopmon; do sleep 2; done"
       containers:
         - name: migrate
-          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          image: nscr.io/pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
           command: ["bun", "migrate.js"]
           envFrom:
             - configMapRef:
@@ -233,7 +233,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          image: nscr.io/pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
           command: ["bun", "app.js"]
           ports:
             - containerPort: 3000
@@ -284,7 +284,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
+          image: nscr.io/pnssv1a0ofq1e/shopmon-api:PREVIEW_TAG
           command: ["bun", "worker.js"]
           envFrom:
             - configMapRef:
@@ -318,7 +318,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: nscr.io/tenant_pnssv1a0ofq1e/shopmon-frontend:PREVIEW_TAG
+          image: nscr.io/pnssv1a0ofq1e/shopmon-frontend:PREVIEW_TAG
           ports:
             - containerPort: 8080
           resources:

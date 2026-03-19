@@ -29,7 +29,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: nscr.io/tenant_pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }}
+          tags: nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }}
           platforms: linux/amd64
           file: Dockerfile.frontend
 
@@ -37,14 +37,14 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }}
+          tags: nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }}
           platforms: linux/amd64
           file: Dockerfile.api
 
       - name: Set image expiration (24h)
         run: |
-          nsc registry update-image-expiration nscr.io/tenant_pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
-          nsc registry update-image-expiration nscr.io/tenant_pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
+          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
+          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
 
       - name: Create ephemeral Kubernetes cluster
         id: cluster
