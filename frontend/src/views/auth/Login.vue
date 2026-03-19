@@ -37,7 +37,7 @@
     <button type="submit" class="btn btn-primary btn-block" :disabled="isSubmitting">
       <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Sign in
+      HAIIIIII
     </button>
 
     <div>
