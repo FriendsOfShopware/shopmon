@@ -79,17 +79,6 @@ jobs:
           name: frontend
           ingress: "noauth"
 
-      - name: Expose API
-        id: expose-api
-        uses: namespacelabs/nscloud-expose-kubernetes-action@v0
-        with:
-          instance-id: ${{ steps.cluster.outputs.instance-id }}
-          namespace: default
-          service: api
-          port: "3000"
-          name: api
-          ingress: "noauth"
-
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
@@ -99,6 +88,5 @@ jobs:
 
             | Service | URL |
             |---------|-----|
-            | Frontend | ${{ steps.expose-frontend.outputs.preview-url }} |
-            | API | ${{ steps.expose-api.outputs.preview-url }} |
+            | Preview | ${{ steps.expose-frontend.outputs.preview-url }} |
             | Cluster | ${{ steps.cluster.outputs.instance-url }} |
