@@ -73,7 +73,8 @@ async function main() {
     const { HttpClient } = await import("#src/modules/shop/http-client.ts");
     const { scrapeSingleShop } = await import("#src/modules/shop/jobs/shop-scrape.job.ts");
     const { encrypt } = await import("#src/modules/shop/crypto.ts");
-    const { default: shops, generateShopToken } = await import("#src/modules/shop/shop.repository.ts");
+    const { default: shops, generateShopToken } =
+      await import("#src/modules/shop/shop.repository.ts");
     const { S3Client } = await import("bun");
 
     await getConnection().insert(schema.project).values({

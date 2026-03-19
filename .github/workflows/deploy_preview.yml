@@ -1,8 +1,8 @@
 name: Deploy Preview
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -12,9 +12,26 @@ permissions:
 jobs:
   preview:
     runs-on: nscloud
+    if: >-
+      github.event.issue.pull_request
+      && github.event.comment.body == '/preview'
+      && (
+        github.event.comment.author_association == 'OWNER'
+        || github.event.comment.author_association == 'MEMBER'
+        || github.event.comment.author_association == 'COLLABORATOR'
+      )
     steps:
+      - name: Get PR ref
+        id: pr
+        run: |
+          echo "ref=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q .headRefName)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.ref }}
 
       - name: Install and configure Namespace CLI
         uses: namespacelabs/nscloud-setup@v0
@@ -29,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }}
+          tags: nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.issue.number }}
           platforms: linux/amd64
           file: Dockerfile.frontend
 
@@ -37,25 +54,25 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }}
+          tags: nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.issue.number }}
           platforms: linux/amd64
           file: Dockerfile.api
 
       - name: Set image expiration (24h)
         run: |
-          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
-          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.pull_request.number }} --ensure-minimum 24h
+          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.issue.number }} --ensure-minimum 24h
+          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.issue.number }} --ensure-minimum 24h
 
       - name: Create ephemeral Kubernetes cluster
         id: cluster
         uses: namespacelabs/nscloud-cluster-action@v0
         with:
           preview: true
-          unique-tag: preview-pr-${{ github.event.pull_request.number }}
+          unique-tag: preview-pr-${{ github.event.issue.number }}
 
       - name: Deploy manifests
         run: |
-          sed -e "s|PREVIEW_TAG|pr-${{ github.event.pull_request.number }}|g" \
+          sed -e "s|PREVIEW_TAG|pr-${{ github.event.issue.number }}|g" \
             k8s/preview/manifests.yml | kubectl apply -f -
 
       - name: Wait for migration
@@ -82,10 +99,17 @@ jobs:
           name: frontend
           ingress: "noauth"
 
+      - name: Set FRONTEND_URL and restart API
+        run: |
+          kubectl set env deployment/api FRONTEND_URL=${{ steps.expose-frontend.outputs.preview-url }}
+          kubectl set env deployment/worker FRONTEND_URL=${{ steps.expose-frontend.outputs.preview-url }}
+          kubectl rollout status deployment/api --timeout=120s
+          kubectl rollout status deployment/worker --timeout=120s
+
       - name: Comment on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ github.event.pull_request.number }}
+          issue-number: ${{ github.event.issue.number }}
           body: |
             **Preview environment deployed!**
 
