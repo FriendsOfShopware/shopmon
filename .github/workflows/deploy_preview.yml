@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   preview:
-    runs-on: ubuntu-24.04-arm
+    runs-on: nscloud
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
