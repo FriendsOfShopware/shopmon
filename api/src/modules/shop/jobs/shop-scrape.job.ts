@@ -27,7 +27,7 @@ import type {
   ExtensionDiff,
   QueueInfo,
 } from "#src/types/index.ts";
-import { addShopSitespeedJob } from "#src/modules/queue/queues.ts";
+import { addShopSitespeedJob, addComposerCheckJob } from "#src/modules/queue/queues.ts";
 import versionCompare from "#src/util.ts";
 
 interface SQLShop {
@@ -43,6 +43,13 @@ interface SQLShop {
   shopwareVersion: string;
   ignores: string[];
   connectionIssueCount: number;
+  composerRepositories: {
+    url: string;
+    authType: "none" | "http-basic" | "bearer";
+    username?: string;
+    password?: string;
+    token?: string;
+  }[];
 }
 
 interface ShopwareScheduledTask {
@@ -137,6 +144,7 @@ export async function scrapeSingleShop(shopId: number) {
       organizationSlug: schema.organization.slug,
       shopImage: schema.shop.shopImage,
       connectionIssueCount: schema.shop.connectionIssueCount,
+      composerRepositories: schema.shop.composerRepositories,
     })
     .from(schema.shop)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.shop.organizationId))
@@ -723,6 +731,11 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         })
         .where(eq(schema.shop.id, shop.id))
         .execute();
+    }
+
+    // Enqueue composer version check for shops with custom repositories
+    if (shop.composerRepositories && shop.composerRepositories.length > 0) {
+      await addComposerCheckJob(shop.id);
     }
 
     console.log(`Updated shop ${shop.id}`);

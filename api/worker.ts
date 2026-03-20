@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import { getRedisConnection } from "#src/modules/queue/connection.ts";
 import { getShopQueue, getSitespeedQueue, getMaintenanceQueue } from "#src/modules/queue/queues.ts";
 import { shopScrapeJob, scrapeSingleShop } from "#src/modules/shop/jobs/shop-scrape.job.ts";
+import { composerCheckJob } from "#src/modules/shop/jobs/composer-check.job.ts";
 import {
   scrapeSitespeedForAllShops,
   scrapeSingleSitespeedShop,
@@ -54,6 +55,24 @@ const sitespeedWorker = new Worker(
   },
 );
 
+// Composer queue worker — checks custom Composer repositories for extension versions
+const composerWorker = new Worker(
+  "composer",
+  async (job) => {
+    switch (job.name) {
+      case "composer-check":
+        await composerCheckJob(job.data.shopId);
+        break;
+      default:
+        console.warn(`Unknown composer job: ${job.name}`);
+    }
+  },
+  {
+    connection,
+    concurrency: 2,
+  },
+);
+
 // Maintenance queue worker — handles cleanup jobs
 const maintenanceWorker = new Worker(
   "maintenance",
@@ -76,7 +95,7 @@ const maintenanceWorker = new Worker(
 );
 
 // Error handlers
-for (const worker of [shopWorker, sitespeedWorker, maintenanceWorker]) {
+for (const worker of [shopWorker, sitespeedWorker, composerWorker, maintenanceWorker]) {
   worker.on("failed", (job, err) => {
     console.error(`Job ${job?.name} (${job?.id}) failed:`, err);
   });
@@ -126,7 +145,12 @@ registerRepeatableJobs().then(() => {
 // Graceful shutdown
 function shutdown() {
   console.log("Shutting down workers...");
-  Promise.all([shopWorker.close(), sitespeedWorker.close(), maintenanceWorker.close()]).then(() => {
+  Promise.all([
+    shopWorker.close(),
+    sitespeedWorker.close(),
+    composerWorker.close(),
+    maintenanceWorker.close(),
+  ]).then(() => {
     process.exit(0);
   });
 }

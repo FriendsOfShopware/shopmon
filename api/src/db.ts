@@ -69,6 +69,18 @@ export const shop = pgTable("shop", {
   sitespeedEnabled: boolean("sitespeed_enabled").default(false).notNull(),
   sitespeedUrls: jsonb("sitespeed_urls").default([]).$type<string[]>().notNull(),
   shopToken: text("shop_token").notNull(),
+  composerRepositories: jsonb("composer_repositories")
+    .default([])
+    .$type<
+      {
+        url: string;
+        authType: "none" | "http-basic" | "bearer";
+        username?: string;
+        password?: string;
+        token?: string;
+      }[]
+    >()
+    .notNull(),
   createdAt: timestamp("created_at").notNull(),
 });
 

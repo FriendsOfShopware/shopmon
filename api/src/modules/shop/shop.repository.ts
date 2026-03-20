@@ -10,6 +10,13 @@ interface CreateShopRequest {
   clientSecret: string;
   projectId: number;
   shopToken: string;
+  composerRepositories: {
+    url: string;
+    authType: "none" | "http-basic" | "bearer";
+    username?: string;
+    password?: string;
+    token?: string;
+  }[];
 }
 
 export interface Shop {
@@ -43,6 +50,7 @@ async function createShop(con: Drizzle, params: CreateShopRequest): Promise<numb
       shopwareVersion: params.version,
       projectId: params.projectId,
       shopToken: params.shopToken,
+      composerRepositories: params.composerRepositories,
     })
     .returning({ id: schema.shop.id });
 

@@ -78,6 +78,13 @@
       "when": 1773386019706,
       "tag": "0010_shop_token",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1774000000000,
+      "tag": "0011_composer_repositories",
+      "breakpoints": true
     }
   ]
 }
