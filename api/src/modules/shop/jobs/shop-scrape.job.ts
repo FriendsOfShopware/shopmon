@@ -18,7 +18,6 @@ import {
 } from "#src/db.ts";
 import { type CheckerInput, check } from "#src/modules/shop/checker/registery.ts";
 import { decrypt } from "#src/modules/shop/crypto.ts";
-import { fetchComposerRepoVersions } from "#src/modules/shop/composer-repo.service.ts";
 import Shops, { type User } from "#src/modules/shop/shop.repository.ts";
 import * as ShopService from "#src/modules/shop/shop.service.ts";
 import type {
@@ -28,7 +27,7 @@ import type {
   ExtensionDiff,
   QueueInfo,
 } from "#src/types/index.ts";
-import { addShopSitespeedJob } from "#src/modules/queue/queues.ts";
+import { addShopSitespeedJob, addComposerCheckJob } from "#src/modules/queue/queues.ts";
 import versionCompare from "#src/util.ts";
 
 interface SQLShop {
@@ -446,43 +445,6 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
       }
     }
 
-    // Check custom Composer repositories for extensions still missing latestVersion
-    if (shop.composerRepositories && shop.composerRepositories.length > 0) {
-      for (const repo of shop.composerRepositories) {
-        try {
-          const repoVersions = await fetchComposerRepoVersions(repo);
-
-          for (const extension of extensions) {
-            if (extension.latestVersion) continue;
-
-            const repoResult = repoVersions.get(extension.name);
-            if (repoResult) {
-              extension.latestVersion = repoResult.latestVersion;
-
-              // Build changelog from version history
-              if (repoResult.latestVersion !== extension.version) {
-                const changelogs: ExtensionChangelog[] = [];
-                for (const v of repoResult.versions) {
-                  if (versionCompare(v.version, extension.version) > 0) {
-                    changelogs.push({
-                      version: v.version,
-                      text: "",
-                      creationDate: v.time ?? new Date().toISOString(),
-                      isCompatible: versionCompare(v.version, repoResult.latestVersion) <= 0,
-                    });
-                  }
-                }
-                changelogs.sort((a, b) => versionCompare(b.version, a.version));
-                extension.changelog = changelogs;
-              }
-            }
-          }
-        } catch (e) {
-          console.warn(`Failed to check custom repo ${repo.url}: ${e}`);
-        }
-      }
-    }
-
     // Get old extensions directly from the database
     const oldExtensions = await con
       .select()
@@ -769,6 +731,11 @@ async function updateShop(shop: SQLShop, con: Drizzle) {
         })
         .where(eq(schema.shop.id, shop.id))
         .execute();
+    }
+
+    // Enqueue composer version check for shops with custom repositories
+    if (shop.composerRepositories && shop.composerRepositories.length > 0) {
+      await addComposerCheckJob(shop.id);
     }
 
     console.log(`Updated shop ${shop.id}`);
