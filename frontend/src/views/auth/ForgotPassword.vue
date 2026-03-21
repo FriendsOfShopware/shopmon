@@ -10,18 +10,7 @@
     :validation-schema="schema"
     @submit="onSubmit"
   >
-    <div>
-      <field
-        name="email"
-        placeholder="Email address"
-        type="text"
-        class="field"
-        :class="{ 'has-error': errors.email }"
-      />
-      <div class="field-error-message">
-        {{ errors.email }}
-      </div>
-    </div>
+    <InputField name="email" placeholder="Email address" :error="errors.email" />
 
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:envelope v-if="!isSubmitting" class="icon" aria-hidden="true" />

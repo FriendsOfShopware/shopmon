@@ -10,32 +10,8 @@
     @submit="onSubmit"
   >
     <div class="login-form-group">
-      <div>
-        <field
-          name="displayName"
-          placeholder="Display Name"
-          type="text"
-          class="field"
-          :class="{ 'has-error': errors.displayName }"
-        />
-        <div class="field-error-message">
-          {{ errors.displayName }}
-        </div>
-      </div>
-
-      <div>
-        <field
-          name="email"
-          placeholder="Email address"
-          type="text"
-          class="field"
-          :class="{ 'has-error': errors.email }"
-        />
-
-        <div class="field-error-message">
-          {{ errors.email }}
-        </div>
-      </div>
+      <InputField name="displayName" placeholder="Display Name" :error="errors.displayName" />
+      <InputField name="email" placeholder="Email address" :error="errors.email" />
 
       <PasswordField name="password" placeholder="Password" :error="errors.password" />
     </div>

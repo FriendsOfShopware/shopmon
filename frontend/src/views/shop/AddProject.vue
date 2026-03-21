@@ -9,78 +9,33 @@
         @submit="onSubmit"
       >
         <form-group title="Project information">
-          <div>
-            <label for="name">Name</label>
+          <InputField name="name" label="Name" :error="errors.name" />
 
-            <field
-              id="name"
-              type="text"
-              name="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
+          <TextareaField
+            name="description"
+            label="Description"
+            placeholder="Optional project description..."
+            :error="errors.description"
+          />
 
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
+          <InputField
+            name="gitUrl"
+            label="Git Repository URL"
+            type="url"
+            placeholder="https://github.com/org/repo"
+            :error="errors.gitUrl"
+          />
 
-          <div>
-            <label for="description">Description</label>
-
-            <field id="description" v-slot="{ field }" name="description">
-              <textarea
-                v-bind="field"
-                id="description"
-                class="field"
-                rows="4"
-                placeholder="Optional project description..."
-                :class="{ 'has-error': errors.description }"
-              />
-            </field>
-
-            <div class="field-error-message">
-              {{ errors.description }}
-            </div>
-          </div>
-
-          <div>
-            <label for="gitUrl">Git Repository URL</label>
-
-            <field
-              id="gitUrl"
-              type="url"
-              name="gitUrl"
-              class="field"
-              placeholder="https://github.com/org/repo"
-              :class="{ 'has-error': errors.gitUrl }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.gitUrl }}
-            </div>
-          </div>
-
-          <div>
-            <label for="organizationId">Organization</label>
-
-            <field id="organizationId" v-slot="{ field }" name="organizationId">
-              <select v-bind="field" class="field" :class="{ 'has-error': errors.organizationId }">
-                <option value="">Select an organization</option>
-                <option
-                  v-for="organization in organizations"
-                  :key="organization.id"
-                  :value="organization.id"
-                >
-                  {{ organization.name }}
-                </option>
-              </select>
-            </field>
-
-            <div class="field-error-message">
-              {{ errors.organizationId }}
-            </div>
-          </div>
+          <SelectField name="organizationId" label="Organization" :error="errors.organizationId">
+            <option value="">Select an organization</option>
+            <option
+              v-for="organization in organizations"
+              :key="organization.id"
+              :value="organization.id"
+            >
+              {{ organization.name }}
+            </option>
+          </SelectField>
         </form-group>
 
         <div class="form-submit">
@@ -98,7 +53,7 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
-import { Field, Form as VeeForm } from "vee-validate";
+import { Form as VeeForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";

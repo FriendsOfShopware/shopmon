@@ -152,28 +152,12 @@
           :initial-values="{ email: '', role: 'member' }"
           @submit="onAddMember"
         >
-          <label for="email">Email</label>
+          <InputField name="email" label="Email" autocomplete="email" :error="errors.email" />
 
-          <field
-            id="email"
-            type="text"
-            name="email"
-            autocomplete="email"
-            class="field"
-            :class="{ 'has-error': errors.email }"
-          />
-          <div class="field-error-message">
-            {{ errors.email }}
-          </div>
-
-          <label for="role">Role</label>
-          <field id="role" as="select" name="role" class="field">
+          <SelectField name="role" label="Role" :error="errors.role">
             <option value="member">Member</option>
             <option value="admin">Admin</option>
-          </field>
-          <div class="field-error-message">
-            {{ errors.role }}
-          </div>
+          </SelectField>
         </vee-form>
       </template>
 
@@ -201,22 +185,10 @@
           :initial-values="{ role: selectedMember?.role || 'member' }"
           @submit="onChangeRole"
         >
-          <label for="role">Role</label>
-
-          <field
-            id="role"
-            as="select"
-            name="role"
-            class="field"
-            :class="{ 'has-error': errors.role }"
-          >
+          <SelectField name="role" label="Role" :error="errors.role">
             <option value="member">Member</option>
             <option value="admin">Admin</option>
-          </field>
-
-          <div class="field-error-message">
-            {{ errors.role }}
-          </div>
+          </SelectField>
         </vee-form>
       </template>
 

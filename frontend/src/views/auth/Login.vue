@@ -15,21 +15,14 @@
     @submit="onSubmit"
   >
     <div class="login-form-group">
-      <div>
-        <label for="email-address" class="sr-only">Email address</label>
-        <field
-          id="email-address"
-          name="email"
-          type="email"
-          autocomplete="email"
-          required=""
-          class="field"
-          placeholder="Email address"
-          :class="{ 'has-error': errors.email }"
-        />
-
-        <div class="field-error-message">{{ errors.email }}</div>
-      </div>
+      <InputField
+        name="email"
+        type="email"
+        autocomplete="email"
+        placeholder="Email address"
+        required
+        :error="errors.email"
+      />
 
       <PasswordField name="password" placeholder="Password" :error="errors.password" />
     </div>
@@ -77,24 +70,24 @@
     <div class="sso-section">
       <div class="text-divider">Enterprise SSO</div>
 
-      <div class="sso-input-group">
-        <input
-          v-model="ssoEmail"
-          type="email"
-          class="field"
-          placeholder="Enter your work email"
-          @keyup.enter="ssoLogin"
-        />
-        <button
-          type="button"
-          class="btn btn-secondary icon-only"
-          :disabled="isSSOLoading || !ssoEmail"
-          @click="ssoLogin"
-        >
-          <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-        </button>
-      </div>
+      <BaseInput
+        v-model="ssoEmail"
+        type="email"
+        placeholder="Enter your work email"
+        @keyup.enter="ssoLogin"
+      >
+        <template #append>
+          <button
+            type="button"
+            class="btn btn-secondary icon-only"
+            :disabled="isSSOLoading || !ssoEmail"
+            @click="ssoLogin"
+          >
+            <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+          </button>
+        </template>
+      </BaseInput>
       <p class="sso-help">Use your company email to sign in with SSO</p>
     </div>
   </div>

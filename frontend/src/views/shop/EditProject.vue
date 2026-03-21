@@ -38,57 +38,22 @@
           @submit="onSubmitProject"
         >
           <form-group title="Project Information">
-            <div>
-              <label for="name">Name</label>
+            <InputField name="name" label="Name" :error="errors.name" />
 
-              <field
-                id="name"
-                type="text"
-                name="name"
-                class="field"
-                :class="{ 'has-error': errors.name }"
-              />
+            <TextareaField
+              name="description"
+              label="Description"
+              placeholder="Optional project description..."
+              :error="errors.description"
+            />
 
-              <div class="field-error-message">
-                {{ errors.name }}
-              </div>
-            </div>
-
-            <div>
-              <label for="description">Description</label>
-
-              <field id="description" v-slot="{ field }" name="description">
-                <textarea
-                  v-bind="field"
-                  id="description"
-                  class="field"
-                  rows="4"
-                  placeholder="Optional project description..."
-                  :class="{ 'has-error': errors.description }"
-                />
-              </field>
-
-              <div class="field-error-message">
-                {{ errors.description }}
-              </div>
-            </div>
-
-            <div>
-              <label for="gitUrl">Git Repository URL</label>
-
-              <field
-                id="gitUrl"
-                type="url"
-                name="gitUrl"
-                class="field"
-                placeholder="https://github.com/org/repo"
-                :class="{ 'has-error': errors.gitUrl }"
-              />
-
-              <div class="field-error-message">
-                {{ errors.gitUrl }}
-              </div>
-            </div>
+            <InputField
+              name="gitUrl"
+              label="Git Repository URL"
+              type="url"
+              placeholder="https://github.com/org/repo"
+              :error="errors.gitUrl"
+            />
           </form-group>
 
           <div class="form-submit">
@@ -294,16 +259,7 @@
           @submit="onSubmitApiKey"
         >
           <div class="form-group">
-            <label for="apiKeyName">Name</label>
-            <field
-              id="apiKeyName"
-              type="text"
-              name="name"
-              placeholder="My API Key"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-            <div class="field-error-message">{{ errors.name }}</div>
+            <InputField name="name" label="Name" placeholder="My API Key" :error="errors.name" />
             <p class="field-help">A descriptive name to identify this API key</p>
           </div>
 
@@ -405,16 +361,12 @@
           @submit="onSubmitPackagesToken"
         >
           <div class="form-group">
-            <label for="packagesToken">Shopware Store Token</label>
-            <field
-              id="packagesToken"
-              type="text"
+            <InputField
               name="token"
+              label="Shopware Store Token"
               placeholder="Enter your Shopware store token"
-              class="field"
-              :class="{ 'has-error': errors.token }"
+              :error="errors.token"
             />
-            <div class="field-error-message">{{ errors.token }}</div>
             <p class="field-help">
               The token from your Shopware account used to access store packages
             </p>

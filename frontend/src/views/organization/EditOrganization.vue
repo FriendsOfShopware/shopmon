@@ -18,20 +18,7 @@
         @submit="onSaveOrganization"
       >
         <form-group title="Organization Information">
-          <div>
-            <label for="Name">Name</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
+          <InputField name="name" label="Name" autocomplete="name" :error="errors.name" />
         </form-group>
 
         <div class="form-submit">
@@ -68,7 +55,7 @@ import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 
-import { Field, Form as VeeForm } from "vee-validate";
+import { Form as VeeForm } from "vee-validate";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";

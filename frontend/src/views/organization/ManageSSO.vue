@@ -101,50 +101,43 @@
           @submit="onSubmitProvider"
         >
           <div class="form-group">
-            <label for="domain">Domain</label>
-            <field
-              id="domain"
-              type="text"
+            <InputField
               name="domain"
+              label="Domain"
               placeholder="example.com"
-              class="field"
-              :class="{ 'has-error': errors.domain }"
+              :error="errors.domain"
             />
-            <div class="field-error-message">{{ errors.domain }}</div>
             <p class="field-help">
               Users with email addresses from this domain will use this SSO provider
             </p>
           </div>
 
           <div class="form-group">
-            <label for="issuer">Issuer URL</label>
-            <div class="issuer-input-group">
-              <field
-                id="issuer"
-                v-model="issuerUrl"
-                type="url"
-                name="issuer"
-                placeholder="https://auth.example.com"
-                class="field"
-                :class="{ 'has-error': errors.issuer }"
-              />
-              <button
-                v-if="!isEditMode"
-                type="button"
-                class="btn btn-secondary"
-                :disabled="isDiscovering || !issuerUrl"
-                @click="discoverOpenIdConfig"
-              >
-                <icon-fa6-solid:magnifying-glass
-                  v-if="!isDiscovering"
-                  class="icon"
-                  aria-hidden="true"
-                />
-                <icon-line-md:loading-twotone-loop v-else class="icon" />
-                Discover
-              </button>
-            </div>
-            <div class="field-error-message">{{ errors.issuer }}</div>
+            <InputField
+              name="issuer"
+              label="Issuer URL"
+              type="url"
+              placeholder="https://auth.example.com"
+              :error="errors.issuer"
+              @update:model-value="issuerUrl = $event"
+            >
+              <template v-if="!isEditMode" #append>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  :disabled="isDiscovering || !issuerUrl"
+                  @click="discoverOpenIdConfig"
+                >
+                  <icon-fa6-solid:magnifying-glass
+                    v-if="!isDiscovering"
+                    class="icon"
+                    aria-hidden="true"
+                  />
+                  <icon-line-md:loading-twotone-loop v-else class="icon" />
+                  Discover
+                </button>
+              </template>
+            </InputField>
             <p class="field-help">
               {{
                 isEditMode
@@ -158,13 +151,11 @@
             <h4>OIDC Configuration</h4>
 
             <div class="form-group">
-              <label for="callbackUrl">Callback URL</label>
-              <input
-                id="callbackUrl"
-                type="text"
-                :value="callbackUrl"
+              <BaseInput
+                name="callbackUrl"
+                label="Callback URL"
+                :model-value="callbackUrl"
                 readonly
-                class="field field-readonly"
               />
               <p class="field-help">
                 Use this URL as the redirect/callback URL in your identity provider configuration
@@ -172,72 +163,52 @@
             </div>
 
             <div class="form-group">
-              <label for="clientId">Client ID</label>
-              <field
-                id="clientId"
-                type="text"
-                name="clientId"
-                class="field"
-                :class="{ 'has-error': errors.clientId }"
-              />
-              <div class="field-error-message">{{ errors.clientId }}</div>
+              <InputField name="clientId" label="Client ID" :error="errors.clientId" />
             </div>
 
             <div class="form-group">
-              <label for="clientSecret">Client Secret</label>
-              <field
-                id="clientSecret"
-                type="password"
+              <InputField
                 name="clientSecret"
+                label="Client Secret"
+                type="password"
                 :placeholder="isEditMode ? 'Leave empty to keep existing secret' : ''"
-                class="field"
-                :class="{ 'has-error': errors.clientSecret }"
+                :error="errors.clientSecret"
               />
-              <div class="field-error-message">{{ errors.clientSecret }}</div>
               <p v-if="isEditMode" class="field-help">
                 Leave empty to keep the existing client secret
               </p>
             </div>
 
             <div class="form-group">
-              <label for="authorizationEndpoint">Authorization Endpoint</label>
-              <field
-                id="authorizationEndpoint"
-                type="url"
+              <InputField
                 name="authorizationEndpoint"
+                label="Authorization Endpoint"
+                type="url"
                 placeholder="https://auth.example.com/oauth2/authorize"
-                class="field"
-                :class="{ 'has-error': errors.authorizationEndpoint }"
+                :error="errors.authorizationEndpoint"
               />
-              <div class="field-error-message">{{ errors.authorizationEndpoint }}</div>
               <p class="field-help">OAuth2 authorization endpoint URL</p>
             </div>
 
             <div class="form-group">
-              <label for="tokenEndpoint">Token Endpoint</label>
-              <field
-                id="tokenEndpoint"
-                type="url"
+              <InputField
                 name="tokenEndpoint"
+                label="Token Endpoint"
+                type="url"
                 placeholder="https://auth.example.com/oauth2/token"
-                class="field"
-                :class="{ 'has-error': errors.tokenEndpoint }"
+                :error="errors.tokenEndpoint"
               />
-              <div class="field-error-message">{{ errors.tokenEndpoint }}</div>
               <p class="field-help">OAuth2 token endpoint URL</p>
             </div>
 
             <div class="form-group">
-              <label for="jwksEndpoint">JWKS Endpoint</label>
-              <field
-                id="jwksEndpoint"
-                type="url"
+              <InputField
                 name="jwksEndpoint"
+                label="JWKS Endpoint"
+                type="url"
                 placeholder="https://auth.example.com/.well-known/jwks.json"
-                class="field"
-                :class="{ 'has-error': errors.jwksEndpoint }"
+                :error="errors.jwksEndpoint"
               />
-              <div class="field-error-message">{{ errors.jwksEndpoint }}</div>
               <p class="field-help">JSON Web Key Set (JWKS) endpoint URL</p>
             </div>
           </div>
@@ -676,32 +647,6 @@ onMounted(() => {
     &:last-child {
       margin-bottom: 0;
     }
-  }
-}
-
-.issuer-input-group {
-  display: flex;
-  gap: 0.5rem;
-
-  input {
-    flex: 1;
-  }
-
-  button {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    white-space: nowrap;
-  }
-}
-
-.field-readonly {
-  background-color: var(--panel-background-color);
-  color: var(--text-color-muted);
-  cursor: default;
-
-  &:focus {
-    box-shadow: none;
-    border-color: var(--input-border-color);
   }
 }
 </style>

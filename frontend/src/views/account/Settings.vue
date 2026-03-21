@@ -5,12 +5,11 @@
       <form-group title="Profile" sub-title="Your display name">
         <div>
           <label for="name">Name</label>
-          <input
+          <BaseInput
             id="name"
             v-model="profileName"
             type="text"
             autocomplete="name"
-            class="field"
           />
         </div>
       </form-group>
@@ -257,7 +256,7 @@
 
       <template #content>
         Please give a name to your new Passkey Device.
-        <input v-model="passKeyName" type="text" autocomplete="off" class="field" />
+        <BaseInput v-model="passKeyName" name="name" autocomplete="off" />
       </template>
 
       <template #footer>
