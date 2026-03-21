@@ -1,97 +1,97 @@
 <template>
   <header-container title="New Project" />
   <main-container>
-    <vee-form
-      v-if="!organizations.isPending"
-      v-slot="{ errors, isSubmitting }"
-      :validation-schema="schema"
-      :initial-values="initialValues"
-      class="panel"
-      @submit="onSubmit"
-    >
-      <form-group title="Project information">
-        <div>
-          <label for="name">Name</label>
+    <Panel v-if="!organizations.isPending">
+      <vee-form
+        v-slot="{ errors, isSubmitting }"
+        :validation-schema="schema"
+        :initial-values="initialValues"
+        @submit="onSubmit"
+      >
+        <form-group title="Project information">
+          <div>
+            <label for="name">Name</label>
 
-          <field
-            id="name"
-            type="text"
-            name="name"
-            class="field"
-            :class="{ 'has-error': errors.name }"
-          />
-
-          <div class="field-error-message">
-            {{ errors.name }}
-          </div>
-        </div>
-
-        <div>
-          <label for="description">Description</label>
-
-          <field id="description" v-slot="{ field }" name="description">
-            <textarea
-              v-bind="field"
-              id="description"
+            <field
+              id="name"
+              type="text"
+              name="name"
               class="field"
-              rows="4"
-              placeholder="Optional project description..."
-              :class="{ 'has-error': errors.description }"
+              :class="{ 'has-error': errors.name }"
             />
-          </field>
 
-          <div class="field-error-message">
-            {{ errors.description }}
+            <div class="field-error-message">
+              {{ errors.name }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="gitUrl">Git Repository URL</label>
+          <div>
+            <label for="description">Description</label>
 
-          <field
-            id="gitUrl"
-            type="url"
-            name="gitUrl"
-            class="field"
-            placeholder="https://github.com/org/repo"
-            :class="{ 'has-error': errors.gitUrl }"
-          />
+            <field id="description" v-slot="{ field }" name="description">
+              <textarea
+                v-bind="field"
+                id="description"
+                class="field"
+                rows="4"
+                placeholder="Optional project description..."
+                :class="{ 'has-error': errors.description }"
+              />
+            </field>
 
-          <div class="field-error-message">
-            {{ errors.gitUrl }}
+            <div class="field-error-message">
+              {{ errors.description }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="organizationId">Organization</label>
+          <div>
+            <label for="gitUrl">Git Repository URL</label>
 
-          <field id="organizationId" v-slot="{ field }" name="organizationId">
-            <select v-bind="field" class="field" :class="{ 'has-error': errors.organizationId }">
-              <option value="">Select an organization</option>
-              <option
-                v-for="organization in organizations.data"
-                :key="organization.id"
-                :value="organization.id"
-              >
-                {{ organization.name }}
-              </option>
-            </select>
-          </field>
+            <field
+              id="gitUrl"
+              type="url"
+              name="gitUrl"
+              class="field"
+              placeholder="https://github.com/org/repo"
+              :class="{ 'has-error': errors.gitUrl }"
+            />
 
-          <div class="field-error-message">
-            {{ errors.organizationId }}
+            <div class="field-error-message">
+              {{ errors.gitUrl }}
+            </div>
           </div>
-        </div>
-      </form-group>
 
-      <div class="form-submit">
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
-        </button>
-      </div>
-    </vee-form>
+          <div>
+            <label for="organizationId">Organization</label>
+
+            <field id="organizationId" v-slot="{ field }" name="organizationId">
+              <select v-bind="field" class="field" :class="{ 'has-error': errors.organizationId }">
+                <option value="">Select an organization</option>
+                <option
+                  v-for="organization in organizations.data"
+                  :key="organization.id"
+                  :value="organization.id"
+                >
+                  {{ organization.name }}
+                </option>
+              </select>
+            </field>
+
+            <div class="field-error-message">
+              {{ errors.organizationId }}
+            </div>
+          </div>
+        </form-group>
+
+        <div class="form-submit">
+          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save
+          </button>
+        </div>
+      </vee-form>
+    </Panel>
   </main-container>
 </template>
 

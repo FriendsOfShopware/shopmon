@@ -7,7 +7,7 @@
   </header-container>
 
   <main-container>
-    <div v-if="!organizations.data || organizations.data.length === 0" class="panel">
+    <Panel v-if="!organizations.data || organizations.data.length === 0">
       <element-empty
         title="No Organization"
         :route="{ name: 'account.organizations.new' }"
@@ -15,9 +15,9 @@
       >
         Get started by adding your first organization.
       </element-empty>
-    </div>
+    </Panel>
 
-    <div v-else class="panel panel-table">
+    <Panel v-else variant="table">
       <data-table
         :columns="[
           { key: 'name', name: 'Name', sortable: true },
@@ -36,7 +36,7 @@
           {{ row.slug }}
         </template>
       </data-table>
-    </div>
+    </Panel>
   </main-container>
 </template>
 

@@ -19,92 +19,104 @@
   </header-container>
 
   <main-container>
-    <div v-if="isPageLoading" class="panel state-panel">
+    <Panel v-if="isPageLoading" class="state-panel">
       <icon-line-md:loading-twotone-loop class="icon" />
       Loading project...
-    </div>
+    </Panel>
 
-    <div v-else-if="!project" class="panel state-panel">
+    <Panel v-else-if="!project" class="state-panel">
       <p>Project not found.</p>
-    </div>
+    </Panel>
 
     <template v-else>
-      <vee-form
-        :key="`project-${project.id}`"
-        v-slot="{ errors, isSubmitting }"
-        class="panel"
-        :validation-schema="projectSchema"
-        :initial-values="projectFormInitialValues"
-        @submit="onSubmitProject"
-      >
-        <form-group title="Project Information">
-          <div>
-            <label for="name">Name</label>
+      <Panel>
+        <vee-form
+          :key="`project-${project.id}`"
+          v-slot="{ errors, isSubmitting }"
+          :validation-schema="projectSchema"
+          :initial-values="projectFormInitialValues"
+          @submit="onSubmitProject"
+        >
+          <form-group title="Project Information">
+            <div>
+              <label for="name">Name</label>
 
-            <field
-              id="name"
-              type="text"
-              name="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="description">Description</label>
-
-            <field id="description" v-slot="{ field }" name="description">
-              <textarea
-                v-bind="field"
-                id="description"
+              <field
+                id="name"
+                type="text"
+                name="name"
                 class="field"
-                rows="4"
-                placeholder="Optional project description..."
-                :class="{ 'has-error': errors.description }"
+                :class="{ 'has-error': errors.name }"
               />
-            </field>
 
-            <div class="field-error-message">
-              {{ errors.description }}
+              <div class="field-error-message">
+                {{ errors.name }}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label for="gitUrl">Git Repository URL</label>
+            <div>
+              <label for="description">Description</label>
 
-            <field
-              id="gitUrl"
-              type="url"
-              name="gitUrl"
-              class="field"
-              placeholder="https://github.com/org/repo"
-              :class="{ 'has-error': errors.gitUrl }"
-            />
+              <field id="description" v-slot="{ field }" name="description">
+                <textarea
+                  v-bind="field"
+                  id="description"
+                  class="field"
+                  rows="4"
+                  placeholder="Optional project description..."
+                  :class="{ 'has-error': errors.description }"
+                />
+              </field>
 
-            <div class="field-error-message">
-              {{ errors.gitUrl }}
+              <div class="field-error-message">
+                {{ errors.description }}
+              </div>
             </div>
-          </div>
-        </form-group>
 
-        <div class="form-submit">
-          <button :disabled="isSubmitting || isSavingProject" type="submit" class="btn btn-primary">
-            <icon-fa6-solid:floppy-disk
-              v-if="!(isSubmitting || isSavingProject)"
-              class="icon"
-              aria-hidden="true"
-            />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            <div>
+              <label for="gitUrl">Git Repository URL</label>
+
+              <field
+                id="gitUrl"
+                type="url"
+                name="gitUrl"
+                class="field"
+                placeholder="https://github.com/org/repo"
+                :class="{ 'has-error': errors.gitUrl }"
+              />
+
+              <div class="field-error-message">
+                {{ errors.gitUrl }}
+              </div>
+            </div>
+          </form-group>
+
+          <div class="form-submit">
+            <button
+              :disabled="isSubmitting || isSavingProject"
+              type="submit"
+              class="btn btn-primary"
+            >
+              <icon-fa6-solid:floppy-disk
+                v-if="!(isSubmitting || isSavingProject)"
+                class="icon"
+                aria-hidden="true"
+              />
+              <icon-line-md:loading-twotone-loop v-else class="icon" />
+              Save
+            </button>
+          </div>
+        </vee-form>
+      </Panel>
+
+      <Panel id="api-keys" title="API Keys">
+        <template #action>
+          <button type="button" class="btn btn-primary" @click="openAddKeyModal">
+            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
+            Create API Key
           </button>
-        </div>
-      </vee-form>
+        </template>
 
-      <div id="api-keys" class="panel">
         <Alert type="info">
           <p><strong>API Key Information</strong></p>
           <p>
@@ -112,14 +124,6 @@
             specific scopes to limit what actions it can perform.
           </p>
         </Alert>
-
-        <div class="panel-header">
-          <h3>API Keys</h3>
-          <button type="button" class="btn btn-primary" @click="openAddKeyModal">
-            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            Create API Key
-          </button>
-        </div>
 
         <div v-if="isApiKeysLoading" class="api-keys-loading">
           <icon-line-md:loading-twotone-loop class="icon" />
@@ -156,22 +160,20 @@
             </div>
           </div>
         </div>
-      </div>
+      </Panel>
 
-      <div v-if="isPackagesConfigured" id="packages-tokens" class="panel">
-        <div class="panel-header">
-          <div>
-            <h3>Packages Tokens</h3>
-            <p class="text-muted panel-description">
-              Sync store packages through a Global CDN (~80ms vs ~6s). Tokens are synced
-              automatically every hour.
-            </p>
-          </div>
+      <Panel
+        v-if="isPackagesConfigured"
+        id="packages-tokens"
+        title="Packages Tokens"
+        description="Sync store packages through a Global CDN (~80ms vs ~6s). Tokens are synced automatically every hour."
+      >
+        <template #action>
           <button type="button" class="btn btn-primary" @click="showAddPackagesTokenModal = true">
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
             Add Token
           </button>
-        </div>
+        </template>
 
         <div v-if="isPackagesTokensLoading" class="api-keys-loading">
           <icon-line-md:loading-twotone-loop class="icon" />
@@ -257,9 +259,9 @@
             </div>
           </div>
         </template>
-      </div>
+      </Panel>
 
-      <form-group title="Danger Zone" class="panel">
+      <Panel title="Danger Zone">
         <p>Once you delete your project, you will lose all data associated with it.</p>
 
         <p v-if="!canDeleteProject" class="delete-project-warning">
@@ -275,7 +277,7 @@
           <icon-fa6-solid:trash class="icon" aria-hidden="true" />
           Delete project
         </button>
-      </form-group>
+      </Panel>
     </template>
 
     <!-- Add API Key Modal -->

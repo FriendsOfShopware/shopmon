@@ -1,5 +1,5 @@
 <template>
-  <div class="panel panel-table">
+  <Panel variant="table">
     <data-table
       v-if="shop"
       :columns="[
@@ -8,7 +8,7 @@
       ]"
       :data="shop.queueInfo || []"
     />
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts">

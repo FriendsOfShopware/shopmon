@@ -1,11 +1,11 @@
 <template>
   <div v-if="shops">
     <header-container title="Dashboard" />
-    <div class="panel">
-      <h2 class="panel-title">
+    <Panel>
+      <template #title>
         <icon-fa6-solid:shop />
         My Shops
-      </h2>
+      </template>
 
       <div class="item-grid">
         <div v-for="shop in shops" :key="shop.id" class="item">
@@ -40,13 +40,13 @@
           </router-link>
         </div>
       </div>
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <h2 class="panel-title">
+    <Panel>
+      <template #title>
         <icon-fa6-solid:building />
         My Organizations
-      </h2>
+      </template>
 
       <div class="item-grid">
         <div v-for="organization in organizations" :key="organization.id" class="item">
@@ -70,13 +70,13 @@
           </router-link>
         </div>
       </div>
-    </div>
+    </Panel>
 
-    <div v-if="changelogs.length > 0" class="panel">
-      <h2 class="panel-title">
+    <Panel v-if="changelogs.length > 0">
+      <template #title>
         <icon-fa6-solid:file-waveform />
         Last Changes
-      </h2>
+      </template>
 
       <data-table
         :columns="[
@@ -108,7 +108,7 @@
           {{ formatDateTime(row.date) }}
         </template>
       </data-table>
-    </div>
+    </Panel>
   </div>
 </template>
 

@@ -3,37 +3,37 @@
     <h1>Shopmon - The Open-Source Dashboard for Shopware Developers</h1>
   </div>
 
-  <div class="panel panel-intro">
+  <Panel class="panel-intro">
     <h2>Everything at a glance</h2>
     Monitor all your Shopware environments from one central dashboard. Shop status, performance
     metrics, extension updates, and security alerts - all in real-time without switching between
     tools.
-  </div>
+  </Panel>
 
   <div class="row">
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <img src="/home/dashboard.svg" alt="Shopmon Dashboard" />
       <h3>Dashboard overview</h3>
       <p>
         Maintain a complete overview of all your shops with the most important information using the
         Shopmon Dashboard
       </p>
-    </div>
+    </Panel>
 
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <img src="/home/automatic-performancechecks.svg" alt="Automatic Performancechecks" />
 
       <h3>Automatic performance checks</h3>
       <p>Get notified when your shop status changes based on Frosh-Tools performance checks</p>
-    </div>
+    </Panel>
 
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <img src="/home/speed.png" alt="Sitespeed.io logo" />
       <h3>Performance monitoring</h3>
       <p>
         Daily automated page speed checks with an overview of the most important metrics over time
       </p>
-    </div>
+    </Panel>
   </div>
 
   <div class="row row-center">
@@ -136,16 +136,16 @@
   </div>
 
   <div class="row">
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <icon-fluent:money-off-24-regular class="icon" aria-hidden="true" />
       <h3>Forever Free</h3>
       <p>
         No hidden costs, subscription fees, or limitations. Shopmon is completely free to use for
         everyone, forever.
       </p>
-    </div>
+    </Panel>
 
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <icon-fluent:people-community-12-filled class="icon" aria-hidden="true" />
       <h3>Community Driven</h3>
       <p>
@@ -153,9 +153,9 @@
         <a href="https://github.com/FriendsOfShopware" target="_blank">Join</a> our growing network
         of developers contributing daily.
       </p>
-    </div>
+    </Panel>
 
-    <div class="col-highlights panel">
+    <Panel class="col-highlights">
       <icon-mdi:github class="icon" aria-hidden="true" />
       <h3>Open Source</h3>
       <p>
@@ -163,7 +163,7 @@
         codebase on
         <a href="https://github.com/FriendsOfShopware/shopmon" target="_blank">GitHub</a>.
       </p>
-    </div>
+    </Panel>
   </div>
 </template>
 

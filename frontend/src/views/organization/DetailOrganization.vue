@@ -11,9 +11,7 @@
   </header-container>
 
   <main-container v-if="organization">
-    <div class="panel organization-info">
-      <h3 class="panel-title">Organization Information</h3>
-
+    <Panel title="Organization Information" class="organization-info">
       <dl class="organization-info-list">
         <div class="organization-info-item">
           <dt>Organization Name</dt>
@@ -36,17 +34,15 @@
           </dd>
         </div>
       </dl>
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <div class="panel-header">
-        <h3>Members</h3>
-
+    <Panel title="Members">
+      <template #action>
         <button class="btn btn-sm btn-primary" type="button" @click="showAddMemberModal = true">
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
           Add
         </button>
-      </div>
+      </template>
 
       <DataTable
         :columns="[
@@ -89,11 +85,9 @@
           </button>
         </template>
       </DataTable>
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <h3 class="panel-title">Invitations</h3>
-
+    <Panel title="Invitations">
       <DataTable
         :columns="[
           { key: 'email', name: 'Email' },
@@ -114,12 +108,10 @@
           </button>
         </template>
       </DataTable>
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <div class="panel-header">
-        <h3>SSO Configuration</h3>
-
+    <Panel title="SSO Configuration">
+      <template #action>
         <router-link
           :to="{ name: 'account.organizations.sso', params: { slug: organization.data.slug } }"
           type="button"
@@ -128,7 +120,7 @@
           <icon-fa6-solid:key class="icon" aria-hidden="true" />
           Manage SSO
         </router-link>
-      </div>
+      </template>
 
       <div v-if="ssoProviders.length === 0" class="sso-empty">
         <p>No SSO providers configured yet.</p>
@@ -145,20 +137,16 @@
         ]"
         :data="ssoProviders"
       />
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <div class="panel-header">
-        <h3>Leave Organization</h3>
-      </div>
-
+    <Panel title="Leave Organization">
       <p class="mb-1">
         If you leave this organization, you will lose access to all resources and data associated
         with it.
       </p>
 
       <button class="btn btn-danger mt-2" @click="leaveOrganization()">Leave Organization</button>
-    </div>
+    </Panel>
 
     <modal :show="showAddMemberModal" close-x-mark @close="showAddMemberModal = false">
       <template #title> Add member </template>

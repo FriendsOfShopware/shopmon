@@ -3,8 +3,8 @@
   <main-container>
     <div class="docs">
       <!-- Table of Contents -->
-      <nav class="docs-nav panel">
-        <h3 class="panel-title">
+      <nav class="docs-nav">
+        <h3 class="docs-title">
           <icon-fa6-solid:list class="icon" />
           Contents
         </h3>
@@ -29,8 +29,8 @@
       </nav>
 
       <!-- Getting Started -->
-      <section id="getting-started" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="getting-started" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:rocket class="icon" />
           Getting Started
         </h2>
@@ -52,8 +52,8 @@
       </section>
 
       <!-- Connecting a Shop -->
-      <section id="connecting-shop" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="connecting-shop" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:plug class="icon" />
           Connecting a Shop
         </h2>
@@ -119,8 +119,8 @@
       </section>
 
       <!-- Organizations -->
-      <section id="organizations" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="organizations" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:building class="icon" />
           Organizations
         </h2>
@@ -146,8 +146,8 @@
       </section>
 
       <!-- Projects -->
-      <section id="projects" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="projects" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:folder class="icon" />
           Projects
         </h2>
@@ -174,8 +174,8 @@
       </section>
 
       <!-- Dashboard -->
-      <section id="dashboard-overview" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="dashboard-overview" class="docs-section">
+        <h2 class="docs-title">
           <icon-ri:dashboard-fill class="icon" />
           Dashboard Overview
         </h2>
@@ -200,8 +200,8 @@
       </section>
 
       <!-- Health Checks -->
-      <section id="health-checks" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="health-checks" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:circle-check class="icon" />
           Health Checks
         </h2>
@@ -265,8 +265,8 @@
       </section>
 
       <!-- Extensions -->
-      <section id="extensions" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="extensions" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:plug class="icon" />
           Extensions
         </h2>
@@ -298,8 +298,8 @@
       </section>
 
       <!-- Scheduled Tasks -->
-      <section id="scheduled-tasks" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="scheduled-tasks" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:list-check class="icon" />
           Scheduled Tasks
         </h2>
@@ -319,8 +319,8 @@
       </section>
 
       <!-- Queue -->
-      <section id="queue" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="queue" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:bars-staggered class="icon" />
           Queue Monitoring
         </h2>
@@ -333,8 +333,8 @@
       </section>
 
       <!-- Sitespeed -->
-      <section id="sitespeed" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="sitespeed" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:rocket class="icon" />
           Performance Monitoring (Sitespeed)
         </h2>
@@ -366,8 +366,8 @@
       </section>
 
       <!-- Deployments -->
-      <section id="deployments" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="deployments" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:code-branch class="icon" />
           Deployments
         </h2>
@@ -417,8 +417,8 @@
       </section>
 
       <!-- Changelog -->
-      <section id="changelog" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="changelog" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:file-waveform class="icon" />
           Changelog
         </h2>
@@ -440,8 +440,8 @@
       </section>
 
       <!-- Notifications -->
-      <section id="notifications" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="notifications" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:bell class="icon" />
           Notifications
         </h2>
@@ -464,8 +464,8 @@
       </section>
 
       <!-- Shop Token -->
-      <section id="shop-token" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="shop-token" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:key class="icon" />
           Bypass Authentication
         </h2>
@@ -487,8 +487,8 @@
       </section>
 
       <!-- Packages Mirror -->
-      <section id="packages-mirror" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="packages-mirror" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:cube class="icon" />
           Packages Mirror
         </h2>
@@ -535,8 +535,8 @@
       </section>
 
       <!-- SSO -->
-      <section id="sso" class="docs-section panel">
-        <h2 class="panel-title">
+      <section id="sso" class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:right-to-bracket class="icon" />
           Single Sign-On (SSO)
         </h2>
@@ -566,8 +566,8 @@
       </section>
 
       <!-- Scraping Info -->
-      <section class="docs-section panel">
-        <h2 class="panel-title">
+      <section class="docs-section">
+        <h2 class="docs-title">
           <icon-fa6-solid:rotate class="icon" />
           How Scraping Works
         </h2>
@@ -620,7 +620,33 @@
   max-width: 800px;
 }
 
-.docs-nav {
+.docs-nav,
+.docs-section {
+  background-color: var(--panel-background);
+  padding: 1.25rem;
+  border-radius: 0.375rem;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  margin-bottom: 2rem;
+}
+
+.dark .docs-nav,
+.dark .docs-section {
+  box-shadow: none;
+}
+
+.docs-title {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--panel-border-color);
+
+  .icon {
+    margin-right: 0.25rem;
+  }
 }
 
 .docs-toc {
