@@ -1,6 +1,6 @@
 <template>
   <div class="deployments-container">
-    <div v-if="shop" class="panel setup-card">
+    <Panel v-if="shop" class="setup-card">
       <h3 class="setup-title">How to Track Deployments</h3>
       <p class="setup-description">
         Use the
@@ -46,13 +46,9 @@
         repository URL can be configured in the
         <router-link :to="{ name: 'account.project.list' }">project settings</router-link>.
       </p>
-    </div>
+    </Panel>
 
-    <div class="panel panel-table">
-      <div class="panel-header">
-        <h3>Deployment History</h3>
-      </div>
-
+    <Panel variant="table" title="Deployment History">
       <data-table
         v-if="deployments && deployments.length > 0"
         :columns="[
@@ -119,7 +115,7 @@
         <icon-fa6-solid:rocket class="empty-icon" />
         <p>No deployments recorded yet.</p>
       </div>
-    </div>
+    </Panel>
 
     <!-- Delete Deployment Confirmation Modal -->
     <modal
@@ -248,19 +244,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.panel-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
 }
 
 .deployment-name {

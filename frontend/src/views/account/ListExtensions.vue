@@ -2,18 +2,18 @@
   <header-container title="My Extensions" />
 
   <main-container v-if="extensions">
-    <div v-if="extensions.length === 0" class="panel">
+    <Panel v-if="extensions.length === 0">
       <element-empty title="No Extensions" button="Add Shop" :route="{ name: 'account.shops.new' }">
         Get started by adding your first Shop.
       </element-empty>
-    </div>
+    </Panel>
 
     <template v-else>
-      <div class="panel">
+      <Panel>
         <input v-model="term" class="field field-search" placeholder="Search ..." />
-      </div>
+      </Panel>
 
-      <div class="panel panel-table">
+      <Panel variant="table">
         <data-table
           :columns="[
             {
@@ -94,7 +94,7 @@
             </template>
           </template>
         </data-table>
-      </div>
+      </Panel>
     </template>
   </main-container>
 

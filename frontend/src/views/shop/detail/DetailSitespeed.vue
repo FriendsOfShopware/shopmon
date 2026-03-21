@@ -14,19 +14,19 @@
     </a>
   </div>
 
-  <div v-if="showSitespeedData" class="panel chart-panel">
+  <Panel v-if="showSitespeedData" class="chart-panel">
     <canvas ref="timeChartCanvas" width="800" height="400" />
-  </div>
+  </Panel>
 
-  <div v-if="showSitespeedData" class="panel chart-panel">
+  <Panel v-if="showSitespeedData" class="chart-panel">
     <canvas ref="transferSizeChartCanvas" width="800" height="400" />
-  </div>
+  </Panel>
 
-  <div v-if="showSitespeedData" class="panel chart-panel">
+  <Panel v-if="showSitespeedData" class="chart-panel">
     <canvas ref="clsChartCanvas" width="800" height="400" />
-  </div>
+  </Panel>
 
-  <div v-if="shop && shop.sitespeedEnabled" class="panel panel-table">
+  <Panel v-if="shop && shop.sitespeedEnabled" variant="table">
     <data-table
       v-if="shop"
       :columns="[
@@ -79,7 +79,7 @@
         <span v-else>-</span>
       </template>
     </data-table>
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts">

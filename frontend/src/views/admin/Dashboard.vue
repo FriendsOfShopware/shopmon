@@ -1,7 +1,7 @@
 <template>
   <HeaderContainer title="Admin Dashboard" />
 
-  <div class="panel">
+  <Panel>
     <Alert v-if="error" type="danger">
       {{ error }}
     </Alert>
@@ -66,7 +66,7 @@
       </router-link>
       <router-link to="/admin/shops" class="btn btn-primary"> Manage Shops </router-link>
     </div>
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts">

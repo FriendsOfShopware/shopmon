@@ -11,10 +11,10 @@ vi.mock("@/components/layout/HeaderContainer.vue", () => ({
   },
 }));
 
-vi.mock("@/components/layout/MainContainer.vue", () => ({
+vi.mock("@/components/layout/Panel.vue", () => ({
   default: {
-    name: "MainContainer",
-    template: "<main><slot /></main>",
+    name: "Panel",
+    template: "<div class='panel'><slot /></div>",
   },
 }));
 
@@ -45,18 +45,13 @@ describe("Imprint", () => {
     expect(wrapper.text()).toContain("E-Mail: shopmon at fos.gg");
   });
 
-  it("uses main-container component", () => {
+  it("uses Panel component", () => {
     const wrapper = mount(Imprint);
-    expect(wrapper.find("main").exists()).toBe(true);
+    expect(wrapper.find(".panel").exists()).toBe(true);
   });
 
-  it("has correct CSS class on page container", () => {
+  it("has container class on wrapper", () => {
     const wrapper = mount(Imprint);
-    expect(wrapper.find(".imprint-page").exists()).toBe(true);
-  });
-
-  it("has correct CSS class on content container", () => {
-    const wrapper = mount(Imprint);
-    expect(wrapper.find(".imprint-content").exists()).toBe(true);
+    expect(wrapper.find(".container").exists()).toBe(true);
   });
 });

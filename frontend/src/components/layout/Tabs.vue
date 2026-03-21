@@ -1,5 +1,5 @@
 <template>
-  <div class="panel tab-container">
+  <Panel class="tab-container">
     <tab-group>
       <tab-list class="tabs-list">
         <tab v-for="label in props.labels" :key="label.key" v-slot="{ selected }" as="template">
@@ -27,7 +27,7 @@
         </tab-panel>
       </tab-panels>
     </tab-group>
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts" generic="T extends string">

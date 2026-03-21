@@ -9,7 +9,7 @@
   </header-container>
 
   <main-container v-if="!loading">
-    <div v-if="projects.length === 0" class="panel">
+    <Panel v-if="projects.length === 0">
       <element-empty
         title="No Projects"
         button="Add Project"
@@ -17,23 +17,18 @@
       >
         Get started by creating your first project and adding shops to it.
       </element-empty>
-    </div>
+    </Panel>
 
     <div v-else>
       <!-- Projects -->
-      <div v-for="project in projects" :key="project.id" class="project-panel panel">
-        <div class="panel-header">
-          <div class="project-info">
-            <h3>{{ project.nameCombined }}</h3>
-
-            <p v-if="project.description" class="project-description">{{ project.description }}</p>
-
-            <p class="project-meta">
-              <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
-              <span class="separator">•</span>
-              <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
-            </p>
-          </div>
+      <Panel
+        v-for="project in projects"
+        :key="project.id"
+        class="project-panel"
+        :description="project.description || undefined"
+      >
+        <template #title>{{ project.nameCombined }}</template>
+        <template #action>
           <router-link
             :to="{ name: 'account.projects.edit', params: { projectId: project.id } }"
             class="btn btn-secondary"
@@ -41,7 +36,13 @@
             <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
             Edit Project
           </router-link>
-        </div>
+        </template>
+
+        <p class="project-meta">
+          <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
+          <span class="separator">•</span>
+          <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
+        </p>
 
         <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
           <div v-for="shop in projectShops[project.id]" :key="shop.id" class="item">
@@ -104,7 +105,7 @@
         >
           No shops in this project yet.
         </element-empty>
-      </div>
+      </Panel>
     </div>
   </main-container>
 </template>

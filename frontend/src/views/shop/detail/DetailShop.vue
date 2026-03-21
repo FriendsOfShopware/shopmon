@@ -1,9 +1,9 @@
 <template>
-  <div v-if="shop" class="shop-info panel">
-    <h3 class="panel-title">
+  <Panel v-if="shop" class="shop-info">
+    <template #title>
       <icon-fa6-solid:circle-info class="icon" />
       Shop Information
-    </h3>
+    </template>
 
     <div class="shop-info-grid">
       <dl class="shop-info-list">
@@ -147,13 +147,13 @@
         </div>
       </dl>
     </div>
-  </div>
+  </Panel>
 
-  <div class="panel">
-    <h3 class="panel-title">
+  <Panel>
+    <template #title>
       <icon-fa6-solid:circle-check class="icon" />
       Security & Health Checks
-    </h3>
+    </template>
 
     <Alert v-if="sortedCriticalChecks.length === 0" type="success">
       All security checks passed
@@ -189,13 +189,13 @@
         View all checks
       </router-link>
     </div>
-  </div>
+  </Panel>
 
-  <div class="panel">
-    <h3 class="panel-title">
+  <Panel>
+    <template #title>
       <icon-fa6-solid:plug class="icon" />
       Extensions
-    </h3>
+    </template>
 
     <Alert v-if="outdatedExtensions.length === 0" type="success">
       All extensions are up to date
@@ -243,13 +243,13 @@
         View all extensions
       </router-link>
     </div>
-  </div>
+  </Panel>
 
-  <div class="panel">
-    <h3 class="panel-title">
+  <Panel>
+    <template #title>
       <icon-fa6-solid:list-check class="icon" />
       Scheduled Tasks
-    </h3>
+    </template>
 
     <Alert v-if="overdueTasks.length === 0" type="success"> No overdue scheduled tasks </Alert>
 
@@ -283,13 +283,13 @@
         View all scheduled tasks
       </router-link>
     </div>
-  </div>
+  </Panel>
 
-  <div class="panel">
-    <h3 class="panel-title">
+  <Panel>
+    <template #title>
       <icon-fa6-solid:clock-rotate-left class="icon" />
       Recent Changes
-    </h3>
+    </template>
 
     <Alert v-if="recentChangelogs.length === 0" type="info"> No recent changes recorded </Alert>
 
@@ -326,7 +326,7 @@
         View all changes
       </router-link>
     </div>
-  </div>
+  </Panel>
 
   <!-- Shop Changelog Modal -->
   <shop-changelog

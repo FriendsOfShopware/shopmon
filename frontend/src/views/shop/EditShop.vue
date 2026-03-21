@@ -16,129 +16,130 @@
   </header-container>
 
   <main-container v-if="shop">
-    <vee-form
-      ref="formRef"
-      v-slot="{ errors, isSubmitting }"
-      :validation-schema="schema"
-      :initial-values="shop"
-      class="panel"
-      @submit="onSubmit"
-    >
-      <form-group title="Shop information">
-        <div>
-          <label for="Name">Name</label>
+    <Panel>
+      <vee-form
+        ref="formRef"
+        v-slot="{ errors, isSubmitting }"
+        :validation-schema="schema"
+        :initial-values="shop"
+        @submit="onSubmit"
+      >
+        <form-group title="Shop information">
+          <div>
+            <label for="Name">Name</label>
 
-          <field
-            id="name"
-            type="text"
-            name="name"
-            autocomplete="name"
-            class="field"
-            :value="shop.name"
-            :class="{ 'has-error': errors.name }"
-          />
+            <field
+              id="name"
+              type="text"
+              name="name"
+              autocomplete="name"
+              class="field"
+              :value="shop.name"
+              :class="{ 'has-error': errors.name }"
+            />
 
-          <div class="field-error-message">
-            {{ errors.name }}
+            <div class="field-error-message">
+              {{ errors.name }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="projectId">Project</label>
+          <div>
+            <label for="projectId">Project</label>
 
-          <field id="projectId" name="projectId">
-            <select v-model="selectedProjectId" class="field">
-              <option v-for="project in projects" :key="project.id" :value="project.id">
-                {{ project.nameCombined }}
-              </option>
-            </select>
-          </field>
+            <field id="projectId" name="projectId">
+              <select v-model="selectedProjectId" class="field">
+                <option v-for="project in projects" :key="project.id" :value="project.id">
+                  {{ project.nameCombined }}
+                </option>
+              </select>
+            </field>
 
-          <div class="field-error-message">
-            {{ errors.projectId }}
+            <div class="field-error-message">
+              {{ errors.projectId }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="shopUrl">URL</label>
+          <div>
+            <label for="shopUrl">URL</label>
 
-          <field
-            id="shopUrl"
-            type="text"
-            name="shopUrl"
-            autocomplete="url"
-            class="field"
-            :value="shop.url"
-            :class="{ 'has-error': errors.shopUrl }"
-          />
+            <field
+              id="shopUrl"
+              type="text"
+              name="shopUrl"
+              autocomplete="url"
+              class="field"
+              :value="shop.url"
+              :class="{ 'has-error': errors.shopUrl }"
+            />
 
-          <div class="field-error-message">
-            {{ errors.shopUrl }}
+            <div class="field-error-message">
+              {{ errors.shopUrl }}
+            </div>
           </div>
-        </div>
-      </form-group>
+        </form-group>
 
-      <form-group title="Integration">
-        <template #info>
-          The easiest way to get started is to install the
-          <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank"
-            >Shopmon Plugin</a
-          >
-          or create an integration in your Shopware Administration with the following
-          <a
-            href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
-          >
-            permissions
-          </a>
-        </template>
+        <form-group title="Integration">
+          <template #info>
+            The easiest way to get started is to install the
+            <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank"
+              >Shopmon Plugin</a
+            >
+            or create an integration in your Shopware Administration with the following
+            <a
+              href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
+            >
+              permissions
+            </a>
+          </template>
 
-        <button type="button" class="btn btn-secondary" @click="openPluginModal">
-          Connect using Shopmon Plugin
-        </button>
+          <button type="button" class="btn btn-secondary" @click="openPluginModal">
+            Connect using Shopmon Plugin
+          </button>
 
-        <div>
-          <label for="clientId">Client-ID</label>
+          <div>
+            <label for="clientId">Client-ID</label>
 
-          <field
-            id="clientId"
-            type="text"
-            name="clientId"
-            class="field"
-            :class="{ 'has-error': errors.clientId }"
-          />
+            <field
+              id="clientId"
+              type="text"
+              name="clientId"
+              class="field"
+              :class="{ 'has-error': errors.clientId }"
+            />
 
-          <div class="field-error-message">
-            {{ errors.clientId }}
+            <div class="field-error-message">
+              {{ errors.clientId }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="clientSecret">Client-Secret</label>
+          <div>
+            <label for="clientSecret">Client-Secret</label>
 
-          <field
-            id="clientSecret"
-            type="text"
-            name="clientSecret"
-            class="field"
-            :class="{ 'has-error': errors.clientSecret }"
-          />
+            <field
+              id="clientSecret"
+              type="text"
+              name="clientSecret"
+              class="field"
+              :class="{ 'has-error': errors.clientSecret }"
+            />
 
-          <div class="field-error-message">
-            {{ errors.clientSecret }}
+            <div class="field-error-message">
+              {{ errors.clientSecret }}
+            </div>
           </div>
+        </form-group>
+
+        <div class="form-submit">
+          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save
+          </button>
         </div>
-      </form-group>
+      </vee-form>
+    </Panel>
 
-      <div class="form-submit">
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
-        </button>
-      </div>
-    </vee-form>
-
-    <form-group v-if="shop" title="Sitespeed" class="panel">
+    <Panel v-if="shop" title="Sitespeed">
       <p>
         <a href="https://www.sitespeed.io/" target="_blank">Sitespeed.io</a> allows you to monitor
         the performance of your shop's frontend.
@@ -205,16 +206,16 @@
           </button>
         </div>
       </form>
-    </form-group>
+    </Panel>
 
-    <form-group :title="'Deleting shop ' + shop.name" class="panel">
+    <Panel :title="'Deleting shop ' + shop.name">
       <p>Once you delete your shop, you will lose all data associated with it.</p>
 
       <button type="button" class="btn btn-danger" @click="showShopDeletionModal = true">
         <icon-fa6-solid:trash class="icon icon-delete" />
         Delete shop
       </button>
-    </form-group>
+    </Panel>
 
     <delete-confirmation-modal
       :show="showShopDeletionModal"

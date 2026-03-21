@@ -11,17 +11,8 @@
   </header-container>
 
   <main-container>
-    <div class="panel">
-      <Alert type="info">
-        <p><strong>Single Sign-On Information</strong></p>
-        <p>
-          Users who sign in through SSO will automatically become members of this organization.
-          Configure your identity provider to allow users from your domain to access Shopmon.
-        </p>
-      </Alert>
-
-      <div class="panel-header">
-        <h3 class="sso-heading">SSO Providers</h3>
+    <Panel title="SSO Providers">
+      <template #action>
         <button
           v-if="canManageOrganization"
           type="button"
@@ -31,7 +22,15 @@
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
           Add Provider
         </button>
-      </div>
+      </template>
+
+      <Alert type="info">
+        <p><strong>Single Sign-On Information</strong></p>
+        <p>
+          Users who sign in through SSO will automatically become members of this organization.
+          Configure your identity provider to allow users from your domain to access Shopmon.
+        </p>
+      </Alert>
 
       <div v-if="isLoading" class="sso-loading">
         <icon-line-md:loading-twotone-loop class="icon" />
@@ -81,7 +80,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </Panel>
 
     <!-- Add Provider Modal -->
     <modal :show="showAddProviderModal" close-x-mark @close="closeProviderModal">

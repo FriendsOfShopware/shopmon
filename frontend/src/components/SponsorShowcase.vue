@@ -14,7 +14,7 @@
         v-for="sponsor in sponsors"
         :key="sponsor.name"
         :href="sponsor.url"
-        class="panel sponsor-showcase-card"
+        class="sponsor-showcase-card"
         target="_blank"
         rel="noreferrer noopener"
       >
@@ -89,6 +89,11 @@ withDefaults(
   color: inherit;
   text-align: center;
   text-decoration: none;
+  background-color: var(--panel-background);
+  border-radius: 0.375rem;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;

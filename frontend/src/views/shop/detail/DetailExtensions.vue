@@ -1,5 +1,5 @@
 <template>
-  <div class="panel panel-table">
+  <Panel variant="table">
     <data-table
       v-if="shop"
       :columns="[
@@ -58,7 +58,7 @@
         </template>
       </template>
     </data-table>
-  </div>
+  </Panel>
 
   <!-- Extension Changelog Modal -->
   <extension-changelog

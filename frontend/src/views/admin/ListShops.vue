@@ -1,7 +1,7 @@
 <template>
   <HeaderContainer title="Shop Management" />
 
-  <div class="panel">
+  <Panel>
     <Alert v-if="error" type="danger">
       {{ error }}
     </Alert>
@@ -100,7 +100,7 @@
         Next
       </button>
     </div>
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts">

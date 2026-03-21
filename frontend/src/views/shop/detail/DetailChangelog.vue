@@ -1,5 +1,5 @@
 <template>
-  <div class="panel panel-table">
+  <Panel variant="table">
     <data-table
       v-if="shop"
       :columns="[
@@ -18,7 +18,7 @@
         </span>
       </template>
     </data-table>
-  </div>
+  </Panel>
 
   <!-- Changelog Modal -->
   <shop-changelog

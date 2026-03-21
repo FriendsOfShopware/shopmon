@@ -10,66 +10,63 @@
   </header-container>
 
   <main-container v-if="organization?.data">
-    <vee-form
-      v-slot="{ errors, isSubmitting }"
-      :validation-schema="schema"
-      :initial-values="organization.data"
-      class="panel"
-      @submit="onSaveOrganization"
-    >
-      <form-group title="Organization Information">
-        <div>
-          <label for="Name">Name</label>
-          <field
-            id="name"
-            type="text"
-            name="name"
-            autocomplete="name"
-            class="field"
-            :class="{ 'has-error': errors.name }"
-          />
-          <div class="field-error-message">
-            {{ errors.name }}
+    <Panel>
+      <vee-form
+        v-slot="{ errors, isSubmitting }"
+        :validation-schema="schema"
+        :initial-values="organization.data"
+        @submit="onSaveOrganization"
+      >
+        <form-group title="Organization Information">
+          <div>
+            <label for="Name">Name</label>
+            <field
+              id="name"
+              type="text"
+              name="name"
+              autocomplete="name"
+              class="field"
+              :class="{ 'has-error': errors.name }"
+            />
+            <div class="field-error-message">
+              {{ errors.name }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="slug">Slug</label>
-          <field
-            id="slug"
-            type="text"
-            name="slug"
-            autocomplete="slug"
-            class="field"
-            :class="{ 'has-error': errors.slug }"
-          />
-          <div class="field-error-message">
-            {{ errors.slug }}
+          <div>
+            <label for="slug">Slug</label>
+            <field
+              id="slug"
+              type="text"
+              name="slug"
+              autocomplete="slug"
+              class="field"
+              :class="{ 'has-error': errors.slug }"
+            />
+            <div class="field-error-message">
+              {{ errors.slug }}
+            </div>
           </div>
+        </form-group>
+
+        <div class="form-submit">
+          <button type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save
+          </button>
         </div>
-      </form-group>
+      </vee-form>
+    </Panel>
 
-      <div class="form-submit">
-        <button type="submit" class="btn btn-primary">
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
-        </button>
-      </div>
-    </vee-form>
-
-    <form-group
-      v-if="canDeleteOrganization"
-      :title="'Deleting organization ' + organization.data.name"
-      class="panel"
-    >
+    <Panel v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name">
       <p>Once you delete your organization, you will lose all data associated with it.</p>
 
       <button type="button" class="btn btn-danger" @click="showOrganizationDeletionModal = true">
         <icon-fa6-solid:trash class="icon" />
         Delete organization
       </button>
-    </form-group>
+    </Panel>
 
     <delete-confirmation-modal
       :show="showOrganizationDeletionModal"

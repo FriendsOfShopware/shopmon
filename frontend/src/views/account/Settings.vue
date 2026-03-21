@@ -1,80 +1,81 @@
 <template>
   <header-container title="Settings" />
   <main-container>
-    <vee-form
-      v-slot="{ errors, isSubmitting }"
-      :validation-schema="schema"
-      :initial-values="user"
-      class="panel"
-      @submit="onSubmit"
-    >
-      <form-group title="Account" sub-title="Manage Your Account">
-        <PasswordField
-          name="currentPassword"
-          label="Current Password"
-          :error="errors.currentPassword"
-        />
-
-        <div>
-          <label for="name">Name</label>
-          <field
-            id="name"
-            type="text"
-            name="name"
-            autocomplete="name"
-            class="field"
-            :class="{ 'has-error': errors.name }"
+    <Panel>
+      <vee-form
+        v-slot="{ errors, isSubmitting }"
+        :validation-schema="schema"
+        :initial-values="user"
+        @submit="onSubmit"
+      >
+        <form-group title="Account" sub-title="Manage Your Account">
+          <PasswordField
+            name="currentPassword"
+            label="Current Password"
+            :error="errors.currentPassword"
           />
-          <div class="field-error-message">
-            {{ errors.name }}
+
+          <div>
+            <label for="name">Name</label>
+            <field
+              id="name"
+              type="text"
+              name="name"
+              autocomplete="name"
+              class="field"
+              :class="{ 'has-error': errors.name }"
+            />
+            <div class="field-error-message">
+              {{ errors.name }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="email">Email address</label>
-          <field
-            id="email"
-            type="text"
-            name="email"
-            autocomplete="email"
-            class="field"
-            :class="{ 'has-error': errors.email }"
-          />
-          <div class="field-error-message">
-            {{ errors.email }}
+          <div>
+            <label for="email">Email address</label>
+            <field
+              id="email"
+              type="text"
+              name="email"
+              autocomplete="email"
+              class="field"
+              :class="{ 'has-error': errors.email }"
+            />
+            <div class="field-error-message">
+              {{ errors.email }}
+            </div>
           </div>
+
+          <PasswordField name="newPassword" label="New Password" :error="errors.newPassword" />
+
+          <p>Login using your GitHub account</p>
+
+          <button
+            v-if="!connectedProviders.includes('github')"
+            type="button"
+            class="btn btn-primary"
+            @click="linkSocial('github')"
+          >
+            <icon-fa6-brands:github class="icon" aria-hidden="true" />
+            Link GitHub
+          </button>
+
+          <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
+            <icon-fa6-brands:github class="icon" aria-hidden="true" />
+            Unlink from GitHub
+          </button>
+        </form-group>
+
+        <div class="form-submit">
+          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save
+          </button>
         </div>
+      </vee-form>
+    </Panel>
 
-        <PasswordField name="newPassword" label="New Password" :error="errors.newPassword" />
-
-        <p>Login using your GitHub account</p>
-
-        <button
-          v-if="!connectedProviders.includes('github')"
-          type="button"
-          class="btn btn-primary"
-          @click="linkSocial('github')"
-        >
-          <icon-fa6-brands:github class="icon" aria-hidden="true" />
-          Link GitHub
-        </button>
-
-        <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
-          <icon-fa6-brands:github class="icon" aria-hidden="true" />
-          Unlink from GitHub
-        </button>
-      </form-group>
-
-      <div class="form-submit">
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
-        </button>
-      </div>
-    </vee-form>
-
-    <div class="panel">
+    <Panel>
       <form-group title="Passkey Devices" class="form-group-table">
         <data-table
           v-if="passkeys"
@@ -103,80 +104,84 @@
           Add a new Device
         </button>
       </div>
-    </div>
+    </Panel>
 
-    <form-group title="Sessions" class="form-group-table panel">
-      <data-table
-        v-if="sessions && sessions.length"
-        :columns="[
-          { key: 'userAgent', name: 'User Agent', sortable: true },
-          { key: 'createdAt', name: 'Created At', sortable: true },
-        ]"
-        :data="sessions"
-      >
-        <template #cell-actions="{ row }">
-          <button
-            v-if="row.token !== session.data?.session.token"
-            type="button"
-            class="tooltip-top-left"
-            data-tooltip="Delete"
-            @click="removeSession(row)"
-          >
-            <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
-          </button>
-        </template>
-      </data-table>
-    </form-group>
+    <Panel>
+      <form-group title="Sessions" class="form-group-table">
+        <data-table
+          v-if="sessions && sessions.length"
+          :columns="[
+            { key: 'userAgent', name: 'User Agent', sortable: true },
+            { key: 'createdAt', name: 'Created At', sortable: true },
+          ]"
+          :data="sessions"
+        >
+          <template #cell-actions="{ row }">
+            <button
+              v-if="row.token !== session.data?.session.token"
+              type="button"
+              class="tooltip-top-left"
+              data-tooltip="Delete"
+              @click="removeSession(row)"
+            >
+              <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
+            </button>
+          </template>
+        </data-table>
+      </form-group>
+    </Panel>
 
-    <form-group title="Notifications" class="form-group-table panel">
-      <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
-        <icon-fa6-regular:bell-slash class="empty-state-icon" />
-        <p class="empty-state-text">You are not subscribed to any shop notifications.</p>
+    <Panel>
+      <form-group title="Notifications" class="form-group-table">
+        <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
+          <icon-fa6-regular:bell-slash class="empty-state-icon" />
+          <p class="empty-state-text">You are not subscribed to any shop notifications.</p>
 
-        <p class="empty-state-subtext">
-          Visit a shop's detail page and click the watch button to receive notifications about
-          changes.
-        </p>
-      </div>
+          <p class="empty-state-subtext">
+            Visit a shop's detail page and click the watch button to receive notifications about
+            changes.
+          </p>
+        </div>
 
-      <data-table
-        v-else
-        :columns="[
-          { key: 'name', name: 'Shop Name', sortable: true },
-          { key: 'organizationName', name: 'Organization', sortable: true },
-          { key: 'shopwareVersion', name: 'Version', sortable: true },
-        ]"
-        :data="subscribedShops"
-      >
-        <template #cell-name="{ row }">
-          <router-link
-            :to="{
-              name: 'account.shops.detail',
-              params: {
-                slug: row.organizationSlug,
-                shopId: row.id,
-              },
-            }"
-            class="link"
-          >
-            {{ row.name }}
-          </router-link>
-        </template>
+        <data-table
+          v-else
+          :columns="[
+            { key: 'name', name: 'Shop Name', sortable: true },
+            { key: 'organizationName', name: 'Organization', sortable: true },
+            { key: 'shopwareVersion', name: 'Version', sortable: true },
+          ]"
+          :data="subscribedShops"
+        >
+          <template #cell-name="{ row }">
+            <router-link
+              :to="{
+                name: 'account.shops.detail',
+                params: {
+                  slug: row.organizationSlug,
+                  shopId: row.id,
+                },
+              }"
+              class="link"
+            >
+              {{ row.name }}
+            </router-link>
+          </template>
 
-        <template #cell-actions="{ row }">
-          <button
-            type="button"
-            class="tooltip-top-left"
-            data-tooltip="Unsubscribe"
-            @click="unsubscribeFromShop(row.id)"
-          >
-            <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
-          </button>
-        </template>
-      </data-table>
-    </form-group>
+          <template #cell-actions="{ row }">
+            <button
+              type="button"
+              class="tooltip-top-left"
+              data-tooltip="Unsubscribe"
+              @click="unsubscribeFromShop(row.id)"
+            >
+              <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
+            </button>
+          </template>
+        </data-table>
+      </form-group>
+    </Panel>
 
-    <form-group title="Deleting your Account" class="panel">
+    <Panel title="Deleting your Account">
       <Alert v-if="!canDeleteAccount" type="error">
         To delete your account, you must delete first all organizations or leave them.
       </Alert>
@@ -192,7 +197,7 @@
         <icon-fa6-solid:trash class="icon icon-trash" />
         Delete account
       </button>
-    </form-group>
+    </Panel>
 
     <delete-confirmation-modal
       :show="showAccountDeletionModal"

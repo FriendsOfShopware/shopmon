@@ -1,54 +1,55 @@
 <template>
   <header-container title="New Organization" />
   <main-container v-if="session.data?.user">
-    <vee-form
-      v-slot="{ errors, isSubmitting, setFieldValue }"
-      :validation-schema="schema"
-      class="panel"
-      @submit="onCreateOrganization"
-    >
-      <form-group title="Organization Information">
-        <div>
-          <label for="Name">Name</label>
-          <field
-            id="name"
-            type="text"
-            name="name"
-            autocomplete="name"
-            class="field"
-            :class="{ 'has-error': errors.name }"
-            @input="(e) => onNameChange(e, setFieldValue)"
-          />
-          <div class="field-error-message">
-            {{ errors.name }}
+    <Panel>
+      <vee-form
+        v-slot="{ errors, isSubmitting, setFieldValue }"
+        :validation-schema="schema"
+        @submit="onCreateOrganization"
+      >
+        <form-group title="Organization Information">
+          <div>
+            <label for="Name">Name</label>
+            <field
+              id="name"
+              type="text"
+              name="name"
+              autocomplete="name"
+              class="field"
+              :class="{ 'has-error': errors.name }"
+              @input="(e) => onNameChange(e, setFieldValue)"
+            />
+            <div class="field-error-message">
+              {{ errors.name }}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label for="slug">Slug</label>
-          <field
-            id="slug"
-            type="text"
-            name="slug"
-            autocomplete="slug"
-            class="field"
-            :class="{ 'has-error': errors.slug }"
-            @input="onSlugManualEdit"
-          />
-          <div class="field-error-message">
-            {{ errors.slug }}
+          <div>
+            <label for="slug">Slug</label>
+            <field
+              id="slug"
+              type="text"
+              name="slug"
+              autocomplete="slug"
+              class="field"
+              :class="{ 'has-error': errors.slug }"
+              @input="onSlugManualEdit"
+            />
+            <div class="field-error-message">
+              {{ errors.slug }}
+            </div>
           </div>
-        </div>
-      </form-group>
+        </form-group>
 
-      <div class="form-submit">
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
-        </button>
-      </div>
-    </vee-form>
+        <div class="form-submit">
+          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="icon" />
+            Save
+          </button>
+        </div>
+      </vee-form>
+    </Panel>
   </main-container>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
   <div class="form-group">
-    <h3 class="panel-title">{{ title }}</h3>
+    <h3 class="form-group-title">{{ title }}</h3>
     <p v-if="subTitle" class="form-group-subtitle">{{ subTitle }}</p>
 
     <Alert v-if="$slots.info" type="info">
@@ -19,7 +19,12 @@ defineProps<{ title: string; subTitle?: string }>();
 
 <style scoped>
 .form-group-title {
-  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--panel-border-color);
 }
 
 .form-group + .form-group {

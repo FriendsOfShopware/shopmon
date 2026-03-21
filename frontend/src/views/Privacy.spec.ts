@@ -11,10 +11,10 @@ vi.mock("@/components/layout/HeaderContainer.vue", () => ({
   },
 }));
 
-vi.mock("@/components/layout/MainContainer.vue", () => ({
+vi.mock("@/components/layout/Panel.vue", () => ({
   default: {
-    name: "MainContainer",
-    template: "<main><slot /></main>",
+    name: "Panel",
+    template: "<div class='panel'><slot /></div>",
   },
 }));
 
@@ -75,8 +75,8 @@ describe("Privacy", () => {
     expect(wrapper.text()).toContain("shopmon at fos.gg");
   });
 
-  it("uses main-container component", () => {
+  it("uses Panel component", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.find("main").exists()).toBe(true);
+    expect(wrapper.find(".panel").exists()).toBe(true);
   });
 });

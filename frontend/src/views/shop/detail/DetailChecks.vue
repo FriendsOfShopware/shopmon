@@ -1,5 +1,5 @@
 <template>
-  <div class="panel panel-table">
+  <Panel variant="table">
     <data-table v-if="shop" :columns="[{ key: 'message', name: 'Message' }]" :data="sortedChecks">
       <template #cell-message="{ row }">
         <status-icon :status="row.level" />
@@ -35,7 +35,7 @@
         </button>
       </template>
     </data-table>
-  </div>
+  </Panel>
 </template>
 
 <script setup lang="ts">

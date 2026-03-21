@@ -4,9 +4,7 @@
       <h2 class="deployment-name">{{ deployment.name }}</h2>
     </div>
 
-    <div class="panel deployment-details-panel">
-      <h3 class="panel-title">Deployment Details</h3>
-
+    <Panel title="Deployment Details" class="deployment-details-panel">
       <div class="details-grid">
         <div class="detail-row">
           <span class="detail-label">Duration:</span>
@@ -53,13 +51,13 @@
           </a>
         </div>
       </div>
-    </div>
+    </Panel>
 
-    <div v-if="deployment.composer && Object.keys(deployment.composer).length > 0" class="panel">
-      <h3 class="panel-title">
+    <Panel v-if="deployment.composer && Object.keys(deployment.composer).length > 0">
+      <template #title>
         <icon-fa6-solid:box class="icon" />
         Composer Packages
-      </h3>
+      </template>
       <div class="composer-table-container">
         <table class="composer-table">
           <thead>
@@ -76,17 +74,17 @@
           </tbody>
         </table>
       </div>
-    </div>
+    </Panel>
 
-    <div class="panel">
-      <h3 class="panel-title">
+    <Panel>
+      <template #title>
         <icon-fa6-solid:terminal class="icon" />
         Output
-      </h3>
+      </template>
       <div class="output-container">
         <pre class="output-content" v-html="formattedOutput"></pre>
       </div>
-    </div>
+    </Panel>
   </div>
   <div v-else class="loading">Loading deployment details...</div>
 </template>
@@ -245,12 +243,6 @@ onMounted(() => {
 
 .deployment-details-panel {
   padding: 1.5rem;
-}
-
-.deployment-details-panel .panel-title {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
 }
 
 .details-grid {
