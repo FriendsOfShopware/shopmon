@@ -44,19 +44,6 @@ const passwordLabel = computed(() => props.label ?? "Password");
   position: relative;
 }
 
-.password-field {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.password-field.has-error {
-  border-color: #dc3545;
-}
-
 .password-toggle {
   position: absolute;
   right: 0;
@@ -73,9 +60,5 @@ const passwordLabel = computed(() => props.label ?? "Password");
   &:hover {
     opacity: 1;
   }
-}
-
-.password-toggle-icon {
-  width: 1.25rem;
 }
 </style>

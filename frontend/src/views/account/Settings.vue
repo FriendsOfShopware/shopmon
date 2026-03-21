@@ -15,35 +15,13 @@
             :error="errors.currentPassword"
           />
 
-          <div>
-            <label for="name">Name</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="email">Email address</label>
-            <field
-              id="email"
-              type="text"
-              name="email"
-              autocomplete="email"
-              class="field"
-              :class="{ 'has-error': errors.email }"
-            />
-            <div class="field-error-message">
-              {{ errors.email }}
-            </div>
-          </div>
+          <InputField name="name" label="Name" autocomplete="name" :error="errors.name" />
+          <InputField
+            name="email"
+            label="Email address"
+            autocomplete="email"
+            :error="errors.email"
+          />
 
           <PasswordField name="newPassword" label="New Password" :error="errors.newPassword" />
 
@@ -218,7 +196,7 @@
 
       <template #content>
         Please give a name to your new Passkey Device.
-        <field v-model="passKeyName" type="text" name="name" autocomplete="off" class="field" />
+        <BaseInput v-model="passKeyName" name="name" autocomplete="off" />
       </template>
 
       <template #footer>
