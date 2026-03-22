@@ -7,13 +7,16 @@ import (
 	"syscall"
 	"time"
 
-	goqueue "github.com/shyim/go-queue"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	cron "github.com/robfig/cron/v3"
+	"github.com/shyim/go-queue"
+	goqueue "github.com/shyim/go-queue"
+	queueotel "github.com/shyim/go-queue/middleware/otel"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +33,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName+"-worker", cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	defer otelShutdown(context.Background())
 
 	// Database
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
@@ -90,6 +96,10 @@ func runWorker(cmd *cobra.Command, args []string) error {
 			Delay:      5 * time.Second,
 			Multiplier: 2.0,
 			MaxDelay:   1 * time.Minute,
+		},
+		Middleware: []queue.Middleware{
+			queueotel.Middleware(),        // tracing
+			queueotel.MetricsMiddleware(), // metrics
 		},
 		ErrorHandler: func(ctx context.Context, env *goqueue.Envelope, err error) {
 			slog.Error("job failed", "type", env.Type, "error", err)

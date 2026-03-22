@@ -4,6 +4,7 @@ import (
 	"context"
 
 	goqueue "github.com/shyim/go-queue"
+	queueotel "github.com/shyim/go-queue/middleware/otel"
 	"github.com/shyim/go-queue/transport/postgres"
 
 	"github.com/friendsofshopware/shopmon/api/internal/config"
@@ -34,6 +35,11 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 	})
 
 	bus := goqueue.NewBus()
+
+	if cfg.OtelEnabled {
+		bus.AddDispatchMiddleware(queueotel.DispatchMiddleware())
+	}
+
 	bus.AddTransport(TransportName, transport)
 
 	shopScrape := NewShopScrapeHandler(pool, q, cfg, bus, mailSvc)

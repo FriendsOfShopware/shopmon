@@ -41,6 +41,7 @@ services:
       AUTH_TOKEN: secret
       S3_DISABLE_PAYLOAD_SIGNING: "false"
       DOCKER_NETWORK: shopmon_default
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 

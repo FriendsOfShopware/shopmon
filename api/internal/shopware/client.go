@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -54,7 +53,7 @@ func NewClient(baseURL, clientID, clientSecret, shopToken string) *Client {
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		shopToken:    shopToken,
-		httpClient:   httputil.NewHTTPClient(httputil.WithTimeout(30 * time.Second)),
+		httpClient:   &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
