@@ -8,37 +8,20 @@
         @submit="onCreateOrganization"
       >
         <form-group title="Organization Information">
-          <div>
-            <label for="Name">Name</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-              @input="(e) => onNameChange(e, setFieldValue)"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="slug">Slug</label>
-            <field
-              id="slug"
-              type="text"
-              name="slug"
-              autocomplete="slug"
-              class="field"
-              :class="{ 'has-error': errors.slug }"
-              @input="onSlugManualEdit"
-            />
-            <div class="field-error-message">
-              {{ errors.slug }}
-            </div>
-          </div>
+          <InputField
+            name="name"
+            label="Name"
+            autocomplete="name"
+            :error="errors.name"
+            @input="(e: Event) => onNameChange(e, setFieldValue)"
+          />
+          <InputField
+            name="slug"
+            label="Slug"
+            autocomplete="slug"
+            :error="errors.slug"
+            @input="onSlugManualEdit"
+          />
         </form-group>
 
         <div class="form-submit">

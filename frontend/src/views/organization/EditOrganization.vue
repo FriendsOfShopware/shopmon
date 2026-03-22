@@ -18,35 +18,8 @@
         @submit="onSaveOrganization"
       >
         <form-group title="Organization Information">
-          <div>
-            <label for="Name">Name</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="slug">Slug</label>
-            <field
-              id="slug"
-              type="text"
-              name="slug"
-              autocomplete="slug"
-              class="field"
-              :class="{ 'has-error': errors.slug }"
-            />
-            <div class="field-error-message">
-              {{ errors.slug }}
-            </div>
-          </div>
+          <InputField name="name" label="Name" autocomplete="name" :error="errors.name" />
+          <InputField name="slug" label="Slug" autocomplete="slug" :error="errors.slug" />
         </form-group>
 
         <div class="form-submit">

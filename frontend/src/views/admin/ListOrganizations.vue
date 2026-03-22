@@ -8,30 +8,28 @@
 
     <div class="organizations-filter">
       <div class="search-container">
-        <input
+        <BaseInput
           v-model="searchQuery"
-          type="text"
           placeholder="Search organizations by name or slug..."
-          class="field search-input"
           @input="debouncedSearch"
         />
       </div>
 
       <div class="filter-container">
-        <select v-model="sortBy" class="field" @change="loadOrganizations">
+        <BaseSelect v-model="sortBy" @change="loadOrganizations">
           <option value="createdAt">Sort by Created</option>
           <option value="name">Sort by Name</option>
           <option value="slug">Sort by Slug</option>
           <option value="shopCount">Sort by Shops</option>
           <option value="memberCount">Sort by Members</option>
-        </select>
+        </BaseSelect>
       </div>
 
       <div class="filter-container">
-        <select v-model="sortDirection" class="field" @change="loadOrganizations">
+        <BaseSelect v-model="sortDirection" @change="loadOrganizations">
           <option value="desc">Descending</option>
           <option value="asc">Ascending</option>
-        </select>
+        </BaseSelect>
       </div>
     </div>
 

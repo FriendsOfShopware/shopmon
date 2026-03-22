@@ -10,54 +10,21 @@
         @submit="onSubmit"
       >
         <form-group title="Shop information">
-          <div>
-            <label for="Name">Name</label>
+          <InputField name="name" label="Name" :error="errors.name" />
 
-            <field
-              id="name"
-              type="text"
-              name="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
+          <BaseSelect
+            v-model="selectedProjectId"
+            name="projectId"
+            label="Project"
+            required
+            :error="errors.projectId"
+          >
+            <option v-for="project in projects" :key="project.id" :value="project.id">
+              {{ project.nameCombined }}
+            </option>
+          </BaseSelect>
 
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="projectId">Project</label>
-
-            <field id="projectId" name="projectId">
-              <select v-model="selectedProjectId" class="field" required>
-                <option v-for="project in projects" :key="project.id" :value="project.id">
-                  {{ project.nameCombined }}
-                </option>
-              </select>
-            </field>
-
-            <div class="field-error-message">
-              {{ errors.projectId }}
-            </div>
-          </div>
-
-          <div>
-            <label for="shopUrl">URL</label>
-
-            <field
-              id="shopUrl"
-              type="text"
-              name="shopUrl"
-              autocomplete="url"
-              class="field"
-              :class="{ 'has-error': errors.shop_url }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.shopUrl }}
-            </div>
-          </div>
+          <InputField name="shopUrl" label="URL" autocomplete="url" :error="errors.shopUrl" />
         </form-group>
 
         <form-group title="Bypass Authentication Header">
@@ -94,37 +61,8 @@
             Connect using Shopmon Plugin
           </button>
 
-          <div>
-            <label for="clientId">Client-ID</label>
-
-            <field
-              id="clientId"
-              type="text"
-              name="clientId"
-              class="field"
-              :class="{ 'has-error': errors.clientId }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.clientId }}
-            </div>
-          </div>
-
-          <div>
-            <label for="clientSecret">Client-Secret</label>
-
-            <field
-              id="clientSecret"
-              type="text"
-              name="clientSecret"
-              class="field"
-              :class="{ 'has-error': errors.clientSecret }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.clientSecret }}
-            </div>
-          </div>
+          <InputField name="clientId" label="Client-ID" :error="errors.clientId" />
+          <InputField name="clientSecret" label="Client-Secret" :error="errors.clientSecret" />
         </form-group>
 
         <div class="form-submit">

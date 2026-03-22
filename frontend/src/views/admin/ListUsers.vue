@@ -8,21 +8,19 @@
 
     <div class="users-filter">
       <div class="search-container">
-        <input
+        <BaseInput
           v-model="searchQuery"
-          type="text"
           placeholder="Search users by email..."
-          class="field search-input"
           @input="debouncedSearch"
         />
       </div>
 
       <div class="filter-container">
-        <select v-model="roleFilter" class="field" @change="loadUsers">
+        <BaseSelect v-model="roleFilter" @change="loadUsers">
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
           <option value="user">User</option>
-        </select>
+        </BaseSelect>
       </div>
     </div>
 
