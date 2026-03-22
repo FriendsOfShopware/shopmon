@@ -56,4 +56,13 @@ export const adminRouter = router({
   getStats: publicProcedure.use(isAdminMiddleware).query(async ({ ctx }) => {
     return await AdminService.getStats(ctx.drizzle);
   }),
+  getGrowthData: publicProcedure.use(isAdminMiddleware).query(async ({ ctx }) => {
+    return await AdminService.getGrowthData(ctx.drizzle);
+  }),
+  getRecentActivity: publicProcedure.use(isAdminMiddleware).query(async ({ ctx }) => {
+    return await AdminService.getRecentActivity(ctx.drizzle);
+  }),
+  getShopwareVersions: publicProcedure.use(isAdminMiddleware).query(async ({ ctx }) => {
+    return await AdminService.getShopwareVersions(ctx.drizzle);
+  }),
 });
