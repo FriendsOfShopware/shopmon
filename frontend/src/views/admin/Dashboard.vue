@@ -12,7 +12,6 @@
     </div>
 
     <div v-if="!loading && stats" class="stats-grid">
-      <!-- Users Stat -->
       <div class="stat-card">
         <div class="stat-header">
           <h3 class="stat-title">Total Users</h3>
@@ -22,7 +21,6 @@
         <p class="stat-description">Active users in the system</p>
       </div>
 
-      <!-- Organizations Stat -->
       <div class="stat-card">
         <div class="stat-header">
           <h3 class="stat-title">Total Organizations</h3>
@@ -32,7 +30,6 @@
         <p class="stat-description">Registered organizations</p>
       </div>
 
-      <!-- Total Shops Stat -->
       <div class="stat-card">
         <div class="stat-header">
           <h3 class="stat-title">Total Shops</h3>
@@ -42,7 +39,6 @@
         <p class="stat-description">Monitored shops</p>
       </div>
 
-      <!-- Shop Status Breakdown -->
       <div class="stat-card status-breakdown">
         <div class="stat-header">
           <h3 class="stat-title">Shop Status</h3>
@@ -58,36 +54,214 @@
         </div>
       </div>
     </div>
+  </Panel>
 
-    <!-- Action Links -->
-    <div v-if="!loading && stats" class="action-links">
-      <router-link to="/admin/organizations" class="btn btn-primary">
-        Manage Organizations
-      </router-link>
-      <router-link to="/admin/shops" class="btn btn-primary"> Manage Shops </router-link>
+  <!-- Growth Charts -->
+  <div v-if="growthData" class="charts-grid">
+    <Panel title="User Growth">
+      <div class="chart-container">
+        <canvas ref="userChartCanvas" />
+      </div>
+    </Panel>
+
+    <Panel title="Shop Growth">
+      <div class="chart-container">
+        <canvas ref="shopChartCanvas" />
+      </div>
+    </Panel>
+  </div>
+
+  <!-- Shopware Version Distribution -->
+  <Panel v-if="versionData && versionData.length > 0" title="Shopware Version Distribution">
+    <div class="chart-container">
+      <canvas ref="versionChartCanvas" />
     </div>
   </Panel>
+
+  <!-- Recent Activity -->
+  <div v-if="activity" class="charts-grid">
+    <Panel title="Recent Signups">
+      <div v-if="activity.recentUsers.length === 0" class="empty-state">No recent signups</div>
+      <div v-else class="activity-list">
+        <div v-for="user in activity.recentUsers" :key="user.id" class="activity-item">
+          <div class="activity-info">
+            <span class="activity-name">{{ user.name }}</span>
+            <span class="activity-detail">{{ user.email }}</span>
+          </div>
+          <span class="activity-time">{{ formatDateTime(user.createdAt) }}</span>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel title="Recent Shops">
+      <div v-if="activity.recentShops.length === 0" class="empty-state">No recent shops</div>
+      <div v-else class="activity-list">
+        <div v-for="shop in activity.recentShops" :key="shop.id" class="activity-item">
+          <div class="activity-info">
+            <span class="activity-name">{{ shop.name }}</span>
+            <span class="activity-detail">{{ shop.organizationName }}</span>
+          </div>
+          <span class="activity-time">{{ formatDateTime(shop.createdAt) }}</span>
+        </div>
+      </div>
+    </Panel>
+  </div>
 </template>
 
 <script setup lang="ts">
 import Alert from "@/components/layout/Alert.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
+import Panel from "@/components/layout/Panel.vue";
 import { trpcClient } from "@/helpers/trpc";
-import { onMounted, ref } from "vue";
+import { formatDateTime } from "@/helpers/formatter";
+import { onMounted, onUnmounted, ref, nextTick, watch } from "vue";
+import { Chart, registerables } from "chart.js";
+
+Chart.register(...registerables);
 
 type Stats = Awaited<ReturnType<typeof trpcClient.admin.getStats.query>>;
+type GrowthData = Awaited<ReturnType<typeof trpcClient.admin.getGrowthData.query>>;
+type Activity = Awaited<ReturnType<typeof trpcClient.admin.getRecentActivity.query>>;
+type VersionData = Awaited<ReturnType<typeof trpcClient.admin.getShopwareVersions.query>>;
 
 const stats = ref<Stats | null>(null);
+const growthData = ref<GrowthData | null>(null);
+const activity = ref<Activity | null>(null);
+const versionData = ref<VersionData | null>(null);
 const loading = ref(true);
 const error = ref("");
+
+const userChartCanvas = ref<HTMLCanvasElement | null>(null);
+const shopChartCanvas = ref<HTMLCanvasElement | null>(null);
+const versionChartCanvas = ref<HTMLCanvasElement | null>(null);
+let userChartInstance: Chart | null = null;
+let shopChartInstance: Chart | null = null;
+let versionChartInstance: Chart | null = null;
+
+function createGrowthChart(
+  canvas: HTMLCanvasElement,
+  data: { month: string; count: number }[],
+  label: string,
+  color: string,
+) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  return new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.map((d) => d.month),
+      datasets: [
+        {
+          label,
+          data: data.map((d) => d.count),
+          borderColor: color,
+          backgroundColor: color + "20",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: "Month" },
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Total Count" },
+          ticks: { precision: 0 },
+        },
+      },
+    },
+  });
+}
+
+function createVersionChart(canvas: HTMLCanvasElement, data: { version: string; count: number }[]) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const colors = [
+    "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+    "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
+  ];
+
+  return new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: data.map((d) => d.version),
+      datasets: [
+        {
+          data: data.map((d) => d.count),
+          backgroundColor: data.map((_, i) => colors[i % colors.length] + "cc"),
+          borderColor: data.map((_, i) => colors[i % colors.length]),
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "right",
+        },
+      },
+    },
+  });
+}
+
+function renderCharts() {
+  if (userChartInstance) userChartInstance.destroy();
+  if (shopChartInstance) shopChartInstance.destroy();
+  if (versionChartInstance) versionChartInstance.destroy();
+
+  if (growthData.value) {
+    if (userChartCanvas.value) {
+      userChartInstance = createGrowthChart(
+        userChartCanvas.value,
+        growthData.value.users,
+        "Users",
+        "#6366f1",
+      );
+    }
+    if (shopChartCanvas.value) {
+      shopChartInstance = createGrowthChart(
+        shopChartCanvas.value,
+        growthData.value.shops,
+        "Shops",
+        "#10b981",
+      );
+    }
+  }
+
+  if (versionData.value && versionChartCanvas.value) {
+    versionChartInstance = createVersionChart(versionChartCanvas.value, versionData.value);
+  }
+}
 
 async function loadStats() {
   loading.value = true;
   error.value = "";
 
   try {
-    const response = await trpcClient.admin.getStats.query();
-    stats.value = response;
+    const [statsResponse, growthResponse, activityResponse, versionResponse] = await Promise.all([
+      trpcClient.admin.getStats.query(),
+      trpcClient.admin.getGrowthData.query(),
+      trpcClient.admin.getRecentActivity.query(),
+      trpcClient.admin.getShopwareVersions.query(),
+    ]);
+    stats.value = statsResponse;
+    growthData.value = growthResponse;
+    activity.value = activityResponse;
+    versionData.value = versionResponse;
   } catch (err) {
     error.value = `Failed to load dashboard stats: ${err instanceof Error ? err.message : String(err)}`;
   } finally {
@@ -95,8 +269,21 @@ async function loadStats() {
   }
 }
 
-onMounted(() => {
-  loadStats();
+onMounted(async () => {
+  await loadStats();
+  await nextTick();
+  renderCharts();
+});
+
+watch([growthData, versionData], async () => {
+  await nextTick();
+  renderCharts();
+});
+
+onUnmounted(() => {
+  if (userChartInstance) userChartInstance.destroy();
+  if (shopChartInstance) shopChartInstance.destroy();
+  if (versionChartInstance) versionChartInstance.destroy();
 });
 </script>
 
@@ -259,5 +446,69 @@ onMounted(() => {
   opacity: 0.9;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.activity-name {
+  font-weight: 600;
+  color: var(--text-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-detail {
+  font-size: 0.8rem;
+  color: var(--text-color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: var(--text-color-muted);
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color-muted);
 }
 </style>

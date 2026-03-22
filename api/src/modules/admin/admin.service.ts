@@ -15,3 +15,15 @@ export const listShops = async (db: Drizzle, params?: ShopListParams) => {
 export const getStats = async (db: Drizzle) => {
   return await AdminRepository.getStats(db);
 };
+
+export const getGrowthData = async (db: Drizzle) => {
+  return await AdminRepository.getGrowthData(db);
+};
+
+export const getRecentActivity = async (db: Drizzle) => {
+  return await AdminRepository.getRecentActivity(db);
+};
+
+export const getShopwareVersions = async (db: Drizzle) => {
+  return await AdminRepository.getShopwareVersions(db);
+};

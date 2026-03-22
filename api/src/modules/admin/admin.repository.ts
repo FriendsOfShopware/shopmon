@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, sql } from "drizzle-orm";
+import { count, desc, eq, ilike, sql, asc } from "drizzle-orm";
 import { type Drizzle, schema } from "#src/db.ts";
 
 export interface OrganizationListParams {
@@ -295,8 +295,87 @@ async function getStats(con: Drizzle) {
   };
 }
 
+async function getGrowthData(con: Drizzle) {
+  const [userGrowth, shopGrowth] = await Promise.all([
+    con
+      .select({
+        month: sql<string>`to_char(${schema.user.createdAt}, 'YYYY-MM')`.as("month"),
+        count: count(),
+      })
+      .from(schema.user)
+      .groupBy(sql`to_char(${schema.user.createdAt}, 'YYYY-MM')`)
+      .orderBy(asc(sql`to_char(${schema.user.createdAt}, 'YYYY-MM')`)),
+    con
+      .select({
+        month: sql<string>`to_char(${schema.shop.createdAt}, 'YYYY-MM')`.as("month"),
+        count: count(),
+      })
+      .from(schema.shop)
+      .groupBy(sql`to_char(${schema.shop.createdAt}, 'YYYY-MM')`)
+      .orderBy(asc(sql`to_char(${schema.shop.createdAt}, 'YYYY-MM')`)),
+  ]);
+
+  // Convert to cumulative counts
+  let userTotal = 0;
+  const cumulativeUsers = userGrowth.map((row) => {
+    userTotal += row.count;
+    return { month: row.month, count: userTotal };
+  });
+
+  let shopTotal = 0;
+  const cumulativeShops = shopGrowth.map((row) => {
+    shopTotal += row.count;
+    return { month: row.month, count: shopTotal };
+  });
+
+  return { users: cumulativeUsers, shops: cumulativeShops };
+}
+
+async function getRecentActivity(con: Drizzle) {
+  const [recentUsers, recentShops] = await Promise.all([
+    con
+      .select({
+        id: schema.user.id,
+        name: schema.user.name,
+        email: schema.user.email,
+        createdAt: schema.user.createdAt,
+      })
+      .from(schema.user)
+      .orderBy(desc(schema.user.createdAt))
+      .limit(10),
+    con
+      .select({
+        id: schema.shop.id,
+        name: schema.shop.name,
+        url: schema.shop.url,
+        organizationName: sql<string>`${schema.organization.name}`,
+        createdAt: schema.shop.createdAt,
+      })
+      .from(schema.shop)
+      .innerJoin(schema.organization, eq(schema.shop.organizationId, schema.organization.id))
+      .orderBy(desc(schema.shop.createdAt))
+      .limit(10),
+  ]);
+
+  return { recentUsers, recentShops };
+}
+
+async function getShopwareVersions(con: Drizzle) {
+  return await con
+    .select({
+      version: schema.shop.shopwareVersion,
+      count: count(),
+    })
+    .from(schema.shop)
+    .groupBy(schema.shop.shopwareVersion)
+    .orderBy(desc(count()));
+}
+
 export default {
   listOrganizations,
   listShops,
   getStats,
+  getGrowthData,
+  getRecentActivity,
+  getShopwareVersions,
 };
