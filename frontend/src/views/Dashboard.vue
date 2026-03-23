@@ -7,13 +7,22 @@
         My Shops
       </template>
 
-      <div class="item-grid">
+      <element-empty
+        v-if="shops.length === 0"
+        :route="{ name: 'account.shops.new' }"
+        title="No shops yet"
+        button="Add Shop"
+      >
+        Add your first Shopware shop to start monitoring.
+      </element-empty>
+
+      <div v-else class="item-grid">
         <div v-for="shop in shops" :key="shop.id" class="item">
           <router-link
             :to="{
               name: 'account.shops.detail',
               params: {
-                slug: shop.organizationSlug,
+                organizationId: shop.organizationId,
                 shopId: shop.id,
               },
             }"
@@ -51,7 +60,10 @@
       <div class="item-grid">
         <div v-for="organization in organizations" :key="organization.id" class="item">
           <router-link
-            :to="{ name: 'account.organizations.detail', params: { slug: organization.slug } }"
+            :to="{
+              name: 'account.organizations.detail',
+              params: { organizationId: organization.id },
+            }"
             class="item-link item-wrapper"
           >
             <div class="item-logo">
@@ -91,7 +103,7 @@
             :to="{
               name: 'account.shops.detail',
               params: {
-                slug: row.organizationSlug,
+                organizationId: row.shopOrganizationId,
                 shopId: row.shopId,
               },
             }"
@@ -115,24 +127,22 @@
 <script setup lang="ts">
 import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { ref } from "vue";
+import { useAccountShops } from "@/composables/useAccountShops";
 
-const organizations = ref<RouterOutput["account"]["listOrganizations"]>();
-trpcClient.account.listOrganizations.query().then((data) => {
+const organizations = ref<components["schemas"]["AccountOrganization"][]>();
+api.GET("/account/organizations").then(({ data }) => {
   organizations.value = data;
 });
 
-const shops = ref<RouterOutput["account"]["currentUserShops"]>([]);
+const { shops } = useAccountShops();
 
-trpcClient.account.currentUserShops.query().then((data) => {
-  shops.value = data;
-});
+const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
 
-const changelogs = ref<RouterOutput["account"]["currentUserChangelogs"]>([]);
-
-trpcClient.account.currentUserChangelogs.query().then((data) => {
-  changelogs.value = data;
+api.GET("/account/changelogs").then(({ data }) => {
+  if (data) changelogs.value = data;
 });
 </script>
 

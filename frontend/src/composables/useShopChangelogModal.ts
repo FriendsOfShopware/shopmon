@@ -1,11 +1,13 @@
 import { ref, type Ref } from "vue";
-import type { ShopChangelog } from "@/types/shop";
+import type { components } from "@/types/api";
+
+type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 export function useShopChangelogModal() {
   const viewShopChangelogDialog: Ref<boolean> = ref(false);
-  const dialogShopChangelog: Ref<ShopChangelog | null> = ref(null);
+  const dialogShopChangelog: Ref<AccountChangelog | null> = ref(null);
 
-  function openShopChangelog(shopChangelog: ShopChangelog | null) {
+  function openShopChangelog(shopChangelog: AccountChangelog | null) {
     dialogShopChangelog.value = shopChangelog;
     viewShopChangelogDialog.value = true;
   }

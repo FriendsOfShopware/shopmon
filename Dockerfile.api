@@ -1,22 +1,16 @@
-FROM oven/bun:1 AS build
-
-COPY . /app
+FROM golang:1.26-alpine AS build
 
 WORKDIR /app
-RUN bun install --production
-WORKDIR /app/api
-RUN bun run build.ts
+COPY api/go.mod api/go.sum ./
+RUN go mod download
 
-FROM oven/bun:1
+COPY api/ .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /shopmon .
 
-ARG SENTRY_RELEASE="unknown"
-ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+FROM gcr.io/distroless/static-debian13:nonroot
 
-COPY --from=build /app/api/dist /app/
+COPY --from=build /shopmon /usr/local/bin/shopmon
 
-WORKDIR /app
-ENV NODE_ENV=production
-EXPOSE 3000
-ENTRYPOINT [ "bun" ]
-
-CMD [ "app.js" ]
+EXPOSE 8080
+ENTRYPOINT ["shopmon"]
+CMD ["server"]

@@ -2,77 +2,135 @@
   <header-container title="Settings" />
   <main-container>
     <Panel>
-      <vee-form
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="user"
-        @submit="onSubmit"
-      >
-        <form-group title="Account" sub-title="Manage Your Account">
-          <PasswordField
-            name="currentPassword"
-            label="Current Password"
-            :error="errors.currentPassword"
+      <form-group title="Profile" sub-title="Your display name">
+        <div>
+          <label for="name">Name</label>
+          <input
+            id="name"
+            v-model="profileName"
+            type="text"
+            autocomplete="name"
+            class="field"
           />
-
-          <div>
-            <label for="name">Name</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="email">Email address</label>
-            <field
-              id="email"
-              type="text"
-              name="email"
-              autocomplete="email"
-              class="field"
-              :class="{ 'has-error': errors.email }"
-            />
-            <div class="field-error-message">
-              {{ errors.email }}
-            </div>
-          </div>
-
-          <PasswordField name="newPassword" label="New Password" :error="errors.newPassword" />
-
-          <p>Login using your GitHub account</p>
-
-          <button
-            v-if="!connectedProviders.includes('github')"
-            type="button"
-            class="btn btn-primary"
-            @click="linkSocial('github')"
-          >
-            <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            Link GitHub
-          </button>
-
-          <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
-            <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            Unlink from GitHub
-          </button>
-        </form-group>
-
-        <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
-          </button>
         </div>
-      </vee-form>
+      </form-group>
+
+      <div class="form-submit">
+        <button type="button" class="btn btn-primary" @click="saveProfile">
+          <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
+          Save
+        </button>
+      </div>
+    </Panel>
+
+    <Panel>
+      <form-group title="Email" sub-title="Change your email address">
+        <div>
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            v-model="emailAddress"
+            type="email"
+            autocomplete="email"
+            class="field"
+          />
+        </div>
+
+        <div>
+          <label for="emailCurrentPassword">Current Password</label>
+          <input
+            id="emailCurrentPassword"
+            v-model="emailCurrentPassword"
+            type="password"
+            autocomplete="current-password"
+            class="field"
+          />
+        </div>
+      </form-group>
+
+      <div class="form-submit">
+        <button type="button" class="btn btn-primary" @click="saveEmail">
+          <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
+          Save
+        </button>
+      </div>
+    </Panel>
+
+    <Panel>
+      <form-group title="Password" sub-title="Change your password">
+        <div>
+          <label for="currentPassword">Current Password</label>
+          <input
+            id="currentPassword"
+            v-model="currentPassword"
+            type="password"
+            autocomplete="current-password"
+            class="field"
+          />
+        </div>
+
+        <div>
+          <label for="newPassword">New Password</label>
+          <div class="password-wrapper">
+            <input
+              id="newPassword"
+              v-model="newPassword"
+              :type="newPasswordType"
+              autocomplete="new-password"
+              class="field field-password"
+            />
+            <div class="password-toggle" @click="newPasswordType = newPasswordType === 'password' ? 'text' : 'password'">
+              <icon-fa6-solid:eye v-if="newPasswordType === 'password'" class="icon" />
+              <icon-fa6-solid:eye-slash v-else class="icon" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label for="confirmPassword">Confirm New Password</label>
+          <div class="password-wrapper">
+            <input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              :type="confirmPasswordType"
+              autocomplete="new-password"
+              class="field field-password"
+            />
+            <div class="password-toggle" @click="confirmPasswordType = confirmPasswordType === 'password' ? 'text' : 'password'">
+              <icon-fa6-solid:eye v-if="confirmPasswordType === 'password'" class="icon" />
+              <icon-fa6-solid:eye-slash v-else class="icon" />
+            </div>
+          </div>
+        </div>
+      </form-group>
+
+      <div class="form-submit">
+        <button type="button" class="btn btn-primary" @click="savePassword">
+          <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
+          Save
+        </button>
+      </div>
+    </Panel>
+
+    <Panel>
+      <form-group title="Connected Accounts" sub-title="Link or unlink external login providers">
+        <p>Login using your GitHub account</p>
+
+        <button
+          v-if="!connectedProviders.includes('github')"
+          type="button"
+          class="btn btn-primary"
+          @click="linkSocial('github')"
+        >
+          <icon-fa6-brands:github class="icon" aria-hidden="true" />
+          Link GitHub
+        </button>
+
+        <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
+          <icon-fa6-brands:github class="icon" aria-hidden="true" />
+          Unlink from GitHub
+        </button>
+      </form-group>
     </Panel>
 
     <Panel>
@@ -118,7 +176,7 @@
         >
           <template #cell-actions="{ row }">
             <button
-              v-if="row.token !== session.data?.session.token"
+              v-if="row.id !== sessionData?.session?.id"
               type="button"
               class="tooltip-top-left"
               data-tooltip="Delete"
@@ -145,28 +203,9 @@
 
         <data-table
           v-else
-          :columns="[
-            { key: 'name', name: 'Shop Name', sortable: true },
-            { key: 'organizationName', name: 'Organization', sortable: true },
-            { key: 'shopwareVersion', name: 'Version', sortable: true },
-          ]"
+          :columns="[{ key: 'name', name: 'Shop Name', sortable: true }]"
           :data="subscribedShops"
         >
-          <template #cell-name="{ row }">
-            <router-link
-              :to="{
-                name: 'account.shops.detail',
-                params: {
-                  slug: row.organizationSlug,
-                  shopId: row.id,
-                },
-              }"
-              class="link"
-            >
-              {{ row.name }}
-            </router-link>
-          </template>
-
           <template #cell-actions="{ row }">
             <button
               type="button"
@@ -218,7 +257,7 @@
 
       <template #content>
         Please give a name to your new Passkey Device.
-        <field v-model="passKeyName" type="text" name="name" autocomplete="off" class="field" />
+        <input v-model="passKeyName" type="text" autocomplete="off" class="field" />
       </template>
 
       <template #footer>
@@ -234,102 +273,200 @@
         </button>
       </template>
     </Modal>
+
   </main-container>
 </template>
 
 <script setup lang="ts">
-import type { Passkey } from "better-auth/plugins/passkey";
-import { Field, Form as VeeForm } from "vee-validate";
-import { computed, ref } from "vue";
-import * as Yup from "yup";
+import { computed, onMounted, ref } from "vue";
 
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
-import type { Session } from "better-auth/types";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
+import { startRegistration } from "@simplewebauthn/browser";
 
-const session = authClient.useSession();
-const orgs = authClient.useListOrganizations();
+const { session: sessionData } = useSession();
 
 const alert = useAlert();
 
 const passKeyName = ref("");
 
-const passkeys = ref<Passkey[] | null>([]);
-const sessions = ref<Session[] | null>([]);
+interface PasskeyEntry {
+  id: string;
+  name: string | null;
+  createdAt: string;
+}
+interface SessionEntry {
+  id: string;
+  expiresAt: string;
+  createdAt: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+}
+
+const passkeys = ref<PasskeyEntry[] | null>([]);
+const sessions = ref<SessionEntry[] | null>([]);
 const connectedProviders = ref<string[]>([]);
-const subscribedShops = ref<RouterOutput["account"]["subscribedShops"] | null>(null);
+const subscribedShops = ref<components["schemas"]["SubscribedShop"][] | null>(null);
+const organizations = ref<{ id: string; name: string }[]>([]);
 
 const deleteCurrentPassword = ref("");
 
 const canDeleteAccount = computed(() => {
-  return orgs.value?.data?.length === 0;
+  return organizations.value.length === 0;
 });
 
-authClient.passkey.listUserPasskeys().then((data) => {
-  passkeys.value = data.data;
-});
+// Profile
+const profileName = ref(sessionData.value?.user?.name ?? "");
 
-authClient.listSessions().then((data) => {
-  sessions.value = data.data;
-});
+async function saveProfile() {
+  if (profileName.value === sessionData.value?.user.name) {
+    return;
+  }
 
-const user = {
-  name: session.value.data?.user?.name ?? "",
-  email: session.value.data?.user?.email ?? "",
-  currentPassword: "",
-  newPassword: "",
-};
+  if (profileName.value.length < 5) {
+    alert.error("Name must be at least 5 characters");
+    return;
+  }
+
+  const { error } = await api.POST("/auth/update-user", {
+    body: { name: profileName.value },
+  });
+
+  if (error) {
+    alert.error((error as { message?: string }).message ?? "Failed to update name");
+    return;
+  }
+
+  alert.success("Profile updated successfully");
+}
+
+// Email
+const emailAddress = ref(sessionData.value?.user?.email ?? "");
+const emailCurrentPassword = ref("");
+
+async function saveEmail() {
+  if (emailAddress.value === sessionData.value?.user.email) {
+    return;
+  }
+
+  if (!emailCurrentPassword.value) {
+    alert.error("Please enter your current password");
+    return;
+  }
+
+  const { error } = await api.POST("/auth/change-email", {
+    body: { newEmail: emailAddress.value, currentPassword: emailCurrentPassword.value },
+  });
+
+  if (error) {
+    alert.error((error as { message?: string }).message ?? "Failed to change email");
+    return;
+  }
+
+  emailCurrentPassword.value = "";
+  alert.success("Email updated successfully");
+}
+
+// Password
+const currentPassword = ref("");
+const newPassword = ref("");
+const newPasswordType = ref("password");
+const confirmPassword = ref("");
+const confirmPasswordType = ref("password");
+
+async function savePassword() {
+  if (!newPassword.value) {
+    return;
+  }
+
+  if (!currentPassword.value) {
+    alert.error("Please enter your current password");
+    return;
+  }
+
+  if (newPassword.value.length < 8) {
+    alert.error("Password must be at least 8 characters");
+    return;
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    alert.error("Passwords do not match");
+    return;
+  }
+
+  const { error } = await api.POST("/auth/change-password", {
+    body: { currentPassword: currentPassword.value, newPassword: newPassword.value },
+  });
+
+  if (error) {
+    alert.error((error as { message?: string }).message ?? "Failed to change password");
+    return;
+  }
+
+  currentPassword.value = "";
+  newPassword.value = "";
+  confirmPassword.value = "";
+  alert.success("Password changed successfully");
+}
+
+// Data loading
+async function loadPasskeys() {
+  try {
+    const { data } = await api.GET("/auth/passkey/list-user-passkeys");
+    if (data) {
+      passkeys.value = data;
+    }
+  } catch {
+    // silently ignore
+  }
+}
+
+async function loadSessions() {
+  try {
+    const { data } = await api.GET("/auth/list-sessions");
+    if (data) {
+      sessions.value = data;
+    }
+  } catch {
+    // silently ignore
+  }
+}
 
 async function loadLinkedAccounts() {
-  authClient.listAccounts().then((data) => {
-    if (data.data) {
-      connectedProviders.value = data.data?.map((account) => account.provider);
+  try {
+    const { data } = await api.GET("/auth/list-accounts");
+    if (data && Array.isArray(data)) {
+      connectedProviders.value = data.map((account) => account.provider);
     }
-  });
+  } catch {
+    // silently ignore
+  }
 }
-loadLinkedAccounts();
+
+async function loadOrganizations() {
+  try {
+    const { data } = await api.GET("/auth/list-organizations");
+    if (data) {
+      organizations.value = data;
+    }
+  } catch {
+    // silently ignore
+  }
+}
 
 async function loadSubscribedShops() {
   try {
-    subscribedShops.value = await trpcClient.account.subscribedShops.query();
+    const { data } = await api.GET("/account/subscribed-shops");
+    subscribedShops.value = data ?? null;
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
 }
-loadSubscribedShops();
 
 const showAccountDeletionModal = ref(false);
 const showPasskeyCreationModal = ref(false);
-
-const schema = Yup.object().shape({
-  currentPassword: Yup.string().required("Current password is required"),
-  email: Yup.string().email().required(),
-  name: Yup.string().min(5, "Name must be at least 5 characters"),
-  newPassword: Yup.string()
-    .transform((x) => (x === "" ? undefined : x))
-    .min(8, "Password must be at least 8 characters"),
-});
-
-async function onSubmit(values: Record<string, unknown>) {
-  await authClient.changeEmail({
-    newEmail: values.email as string,
-  });
-
-  if (values.displayName) {
-    await authClient.updateUser({
-      name: values.displayName as string,
-    });
-  }
-
-  if (values.newPassword) {
-    await authClient.changePassword({
-      currentPassword: values.currentPassword as string,
-      newPassword: values.newPassword as string,
-      revokeOtherSessions: true,
-    });
-  }
-}
 
 async function deleteUser() {
   if (deleteCurrentPassword.value === "") {
@@ -337,20 +474,22 @@ async function deleteUser() {
     return;
   }
 
-  const resp = await authClient.deleteUser({
-    password: deleteCurrentPassword.value,
-  });
+  try {
+    const { error } = await api.POST("/auth/delete-user");
 
-  if (resp.error) {
-    alert.error(resp.error.message ?? "An error occurred while deleting your account.");
-    return;
+    if (error) {
+      alert.error("An error occurred while deleting your account.");
+      return;
+    }
+
+    alert.success("Your account has been successfully deleted.");
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+    showAccountDeletionModal.value = false;
+  } catch {
+    alert.error("An error occurred while deleting your account.");
   }
-
-  alert.success("Your account has been successfully deleted.");
-  setTimeout(() => {
-    window.location.reload();
-  }, 2000);
-  showAccountDeletionModal.value = false;
 }
 
 async function createPasskey() {
@@ -359,33 +498,80 @@ async function createPasskey() {
     return;
   }
 
-  await authClient.passkey.addPasskey({ name: passKeyName.value });
-  authClient.passkey.listUserPasskeys().then((data) => {
-    passkeys.value = data.data;
-  });
-  showPasskeyCreationModal.value = false;
+  try {
+    // Get registration options from server
+    const { data: optionsData, error: optionsError } = await api.POST(
+      "/auth/passkey/register-options",
+    );
+
+    if (optionsError || !optionsData) {
+      alert.error("Failed to get passkey registration options");
+      return;
+    }
+
+    const { options, challengeKey } = optionsData as {
+      options: { publicKey: Parameters<typeof startRegistration>[0]["optionsJSON"] };
+      challengeKey: string;
+    };
+
+    // Run WebAuthn browser API
+    const attestation = await startRegistration({ optionsJSON: options.publicKey });
+
+    // Send attestation to server
+    const { error: registerError } = await api.POST("/auth/passkey/register", {
+      body: {
+        challengeKey,
+        name: passKeyName.value,
+        ...attestation,
+      } as never,
+    });
+
+    if (registerError) {
+      alert.error("Failed to register passkey");
+      return;
+    }
+
+    await loadPasskeys();
+    showPasskeyCreationModal.value = false;
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  }
 }
 
 async function removePasskey(id: string) {
-  await authClient.passkey.deletePasskey({ id });
-  authClient.passkey.listUserPasskeys().then((data) => {
-    passkeys.value = data.data;
-  });
+  try {
+    await api.POST("/auth/passkey/delete-passkey", {
+      body: { id },
+    });
+    await loadPasskeys();
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  }
 }
 
-async function removeSession(session: Session) {
-  await authClient.revokeSession({ token: session.token });
-  authClient.listSessions().then((data) => {
-    sessions.value = data.data;
-  });
+async function removeSession(session: SessionEntry) {
+  try {
+    await api.POST("/auth/revoke-session", {
+      body: { sessionId: session.id },
+    });
+    await loadSessions();
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  }
 }
 
 async function linkSocial(provider: "github") {
   try {
-    await authClient.linkSocial({
-      provider,
-      callbackURL: window.location.href,
+    const { data } = await api.POST("/auth/link-social", {
+      body: {
+        provider,
+        callbackURL: window.location.href,
+      },
     });
+
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
@@ -393,9 +579,16 @@ async function linkSocial(provider: "github") {
 
 async function unlinkSocial(providerId: string) {
   try {
-    await authClient.unlinkAccount({ providerId });
-    await loadLinkedAccounts();
-    alert.success(`Successfully unlinked your account from ${providerId}`);
+    const { error } = await api.POST("/auth/unlink-account", {
+      body: { providerId },
+    });
+
+    if (!error) {
+      await loadLinkedAccounts();
+      alert.success(`Successfully unlinked your account from ${providerId}`);
+    } else {
+      alert.error("Failed to unlink account");
+    }
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
@@ -403,8 +596,8 @@ async function unlinkSocial(providerId: string) {
 
 async function unsubscribeFromShop(shopId: number) {
   try {
-    await trpcClient.organization.shop.unsubscribeFromNotifications.mutate({
-      shopId,
+    await api.DELETE("/shops/{shopId}/subscribe", {
+      params: { path: { shopId } },
     });
     await loadSubscribedShops();
     alert.success("Successfully unsubscribed from shop notifications");
@@ -412,6 +605,14 @@ async function unsubscribeFromShop(shopId: number) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
 }
+
+onMounted(() => {
+  loadPasskeys();
+  loadSessions();
+  loadLinkedAccounts();
+  loadOrganizations();
+  loadSubscribedShops();
+});
 </script>
 
 <style scoped>
@@ -439,5 +640,27 @@ async function unsubscribeFromShop(shopId: number) {
   color: var(--text-color-muted);
   max-width: 28rem;
   margin: 0 auto;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-right: 0.75rem;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.4;
+  transition: opacity 0.4s;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 </style>

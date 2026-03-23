@@ -26,7 +26,6 @@
           <option value="shopwareVersion">Sort by Shopware Version</option>
           <option value="lastScrapedAt">Sort by Last Scraped</option>
           <option value="organizationName">Sort by Organization</option>
-          <option value="organizationSlug">Sort by Organization Slug</option>
         </select>
       </div>
 
@@ -62,23 +61,18 @@
       </template>
 
       <template #cell-lastScrapedAt="{ row }">
-        {{ formatDate(row.lastScrapedAt) }}
+        {{ row.lastScrapedAt ? formatDate(row.lastScrapedAt) : "-" }}
       </template>
 
       <template #cell-organizationName="{ row }">
         <router-link
-          :to="{ name: 'account.organizations.detail', params: { slug: row.organizationSlug } }"
+          :to="{
+            name: 'account.organizations.detail',
+            params: { organizationId: row.organizationId },
+          }"
         >
           {{ row.organizationName }}
         </router-link>
-      </template>
-
-      <template #cell-organizationSlug="{ row }">
-        <code class="slug">{{ row.organizationSlug }}</code>
-      </template>
-
-      <template #cell-createdAt="{ row }">
-        {{ formatDate(row.createdAt) }}
       </template>
     </DataTable>
 
@@ -107,25 +101,19 @@
 import Alert from "@/components/layout/Alert.vue";
 import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
 import { computed, onMounted, ref } from "vue";
 
-type Shop = Awaited<ReturnType<typeof trpcClient.admin.listShops.query>>["shops"][number];
+type Shop = components["schemas"]["AccountShop"];
 
 const shops = ref<Shop[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
 const sortBy = ref<
-  | "createdAt"
-  | "name"
-  | "url"
-  | "status"
-  | "shopwareVersion"
-  | "lastScrapedAt"
-  | "organizationName"
-  | "organizationSlug"
+  "createdAt" | "name" | "url" | "status" | "shopwareVersion" | "lastScrapedAt" | "organizationName"
 >("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
@@ -135,14 +123,12 @@ const totalShops = ref(0);
 const totalPages = computed(() => Math.ceil(totalShops.value / pageSize.value));
 
 const tableColumns = [
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "url", name: "URL", sortable: true, searchable: true },
-  { key: "status", name: "Status", sortable: true },
-  { key: "shopwareVersion", name: "Shopware Version", sortable: true },
-  { key: "lastScrapedAt", name: "Last Scraped", sortable: true },
-  { key: "organizationName", name: "Organization", sortable: true },
-  { key: "organizationSlug", name: "Organization Slug", sortable: true },
-  { key: "createdAt", name: "Created", sortable: true },
+  { key: "name" as const, name: "Name", sortable: true, searchable: true },
+  { key: "url" as const, name: "URL", sortable: true, searchable: true },
+  { key: "status" as const, name: "Status", sortable: true },
+  { key: "shopwareVersion" as const, name: "Shopware Version", sortable: true },
+  { key: "lastScrapedAt" as const, name: "Last Scraped", sortable: true },
+  { key: "organizationName" as const, name: "Organization", sortable: true },
 ];
 
 async function loadShops() {
@@ -160,8 +146,7 @@ async function loadShops() {
         | "status"
         | "shopwareVersion"
         | "lastScrapedAt"
-        | "organizationName"
-        | "organizationSlug";
+        | "organizationName";
       sortDirection: "asc" | "desc";
       searchField?: "name" | "url";
       searchOperator?: "contains";
@@ -181,14 +166,11 @@ async function loadShops() {
       query.searchValue = searchQuery.value;
     }
 
-    const response = await trpcClient.admin.listShops.query(query);
+    const { data: response } = await api.GET("/admin/shops", {
+      params: { query },
+    });
 
-    if (Array.isArray(response)) {
-      // When no input provided, response is an array
-      shops.value = response;
-      totalShops.value = response.length;
-    } else {
-      // When input provided, response is an object with shops and total
+    if (response) {
       shops.value = response.shops;
       totalShops.value = response.total;
     }
@@ -287,14 +269,6 @@ onMounted(() => {
 }
 
 .version {
-  background-color: var(--bg-color-muted);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-family: monospace;
-}
-
-.slug {
   background-color: var(--bg-color-muted);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;

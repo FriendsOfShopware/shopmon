@@ -1,7 +1,7 @@
 <template>
-  <header-container v-if="organization?.data?.name" :title="organization.data.name">
+  <header-container v-if="organization?.name" :title="organization.name">
     <router-link
-      :to="{ name: 'account.organizations.edit', params: { slug: organization.data.slug } }"
+      :to="{ name: 'account.organizations.edit', params: { organizationId: organization.id } }"
       type="button"
       class="btn btn-primary"
     >
@@ -16,21 +16,14 @@
         <div class="organization-info-item">
           <dt>Organization Name</dt>
           <dd>
-            {{ organization.data.name }}
+            {{ organization.name }}
           </dd>
         </div>
 
         <div class="organization-info-item">
           <dt>Members</dt>
           <dd>
-            {{ organization.data.members.length }}
-          </dd>
-        </div>
-
-        <div class="organization-info-item">
-          <dt>Slug</dt>
-          <dd>
-            {{ organization.data.slug }}
+            {{ members.length }}
           </dd>
         </div>
       </dl>
@@ -50,14 +43,14 @@
           { key: 'name', name: 'Name' },
           { key: 'role', name: 'Role' },
         ]"
-        :data="organization.data.members"
+        :data="members"
       >
         <template #cell-email="{ row }">
-          {{ row.user.email }}
+          {{ row.email }}
         </template>
 
         <template #cell-name="{ row }">
-          {{ row.user.name }}
+          {{ row.name }}
         </template>
 
         <template #cell-role="{ row }">
@@ -66,7 +59,7 @@
 
         <template #cell-actions="{ row }">
           <button
-            v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
+            v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
             class="tooltip tooltip-top-left"
             data-tooltip="Change Role"
@@ -75,11 +68,11 @@
             <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
           </button>
           <button
-            v-if="row.user.id !== session.data?.user.id && allowedToManageMembers"
+            v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
             class="tooltip tooltip-top-left"
             data-tooltip="Unassign"
-            @click="onRemoveMember(row.id)"
+            @click="onRemoveMember(row.userId)"
           >
             <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
           </button>
@@ -94,7 +87,7 @@
           { key: 'role', name: 'Role' },
           { key: 'status', name: 'Status' },
         ]"
-        :data="organization.data.invitations"
+        :data="invitations"
       >
         <template #cell-actions="{ row }">
           <button
@@ -113,7 +106,7 @@
     <Panel title="SSO Configuration">
       <template #action>
         <router-link
-          :to="{ name: 'account.organizations.sso', params: { slug: organization.data.slug } }"
+          :to="{ name: 'account.organizations.sso', params: { organizationId: organization.id } }"
           type="button"
           class="btn btn-sm btn-primary"
         >
@@ -249,39 +242,58 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { usePermissions } from "@/composables/usePermissions";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
 import { useRoute } from "vue-router";
 
-import { authClient } from "@/helpers/auth-client";
-import { trpcClient } from "@/helpers/trpc";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import * as Yup from "yup";
 
-const session = authClient.useSession();
+const { session: sessionData } = useSession();
 
 const route = useRoute();
 const alert = useAlert();
 
-const organization = ref<Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>>();
-const ssoProviders = ref<{ domain: string; issuer: string }[]>([]);
+interface OrganizationData {
+  id: string;
+  name: string;
+}
 
-const allowedToManageMembers = usePermissions(
-  computed(() => ({
-    organizationId: organization.value?.data?.id,
-    permissions: {
-      member: ["update", "delete"],
-    },
-  })),
-);
+interface OrganizationMember {
+  id: string;
+  userId: string;
+  role: string;
+  name: string;
+  email: string;
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+const organization = ref<OrganizationData | null>(null);
+const members = ref<OrganizationMember[]>([]);
+const invitations = ref<Invitation[]>([]);
+const ssoProviders = ref<components["schemas"]["SsoProvider"][]>([]);
+const allowedToManageMembers = ref(false);
 
 async function leaveOrganization() {
   if (!organization.value) return;
 
   try {
-    await authClient.organization.leave({
-      organizationId: organization.value.data.id,
+    const { error: respError } = await api.POST("/auth/organizations/{organizationId}/leave", {
+      params: { path: { organizationId: organization.value.id } },
     });
+
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to leave organization");
+      return;
+    }
 
     alert.success("You have left the organization successfully.");
     window.location.href = "/";
@@ -291,27 +303,48 @@ async function leaveOrganization() {
 }
 
 async function loadOrganization() {
-  authClient.organization
-    .getFullOrganization({
-      query: { organizationSlug: route.params.slug as string },
-    })
-    .then((org) => {
-      organization.value = org;
-
-      // Load SSO providers
-      if (organization.value?.data.id) {
-        trpcClient.organization.sso.list
-          .query({
-            orgId: organization.value.data.id,
-          })
-          .then((providers) => {
-            ssoProviders.value = providers;
-          })
-          .catch((err) => {
-            alert.error(err instanceof Error ? err.message : String(err));
-          });
-      }
+  try {
+    const { data } = await api.GET("/auth/get-full-organization", {
+      params: { query: { organizationId: route.params.organizationId as string } },
     });
+
+    if (!data) {
+      alert.error("Failed to load organization");
+      return;
+    }
+
+    organization.value = data as unknown as OrganizationData;
+    members.value = (data as unknown as { members?: OrganizationMember[] }).members ?? [];
+    invitations.value = (data as unknown as { invitations?: Invitation[] }).invitations ?? [];
+
+    // Check if user can manage members
+    try {
+      const { data: permData } = await api.POST("/auth/has-permission", {
+        body: {
+          organizationId: (data as unknown as OrganizationData).id,
+        },
+      });
+      allowedToManageMembers.value = permData?.success ?? false;
+    } catch {
+      // silently ignore permission check failure
+    }
+
+    // Load SSO providers
+    if (organization.value?.id) {
+      api
+        .GET("/organizations/{orgId}/sso-providers", {
+          params: { path: { orgId: organization.value.id } },
+        })
+        .then(({ data }) => {
+          if (data) ssoProviders.value = data;
+        })
+        .catch((err) => {
+          alert.error(err instanceof Error ? err.message : String(err));
+        });
+    }
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  }
 }
 
 loadOrganization();
@@ -322,16 +355,6 @@ const isSubmitting = ref(false);
 // Change role modal state
 const showChangeRoleModal = ref(false);
 const isChangingRole = ref(false);
-
-type OrganizationMember = {
-  id: string;
-  role: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
-};
 
 const selectedMember = ref<OrganizationMember | null>(null);
 
@@ -353,14 +376,23 @@ async function onAddMember(values: Record<string, unknown>) {
   isSubmitting.value = true;
   if (organization.value) {
     try {
-      await authClient.organization.inviteMember({
-        email: typedValues.email,
-        role: typedValues.role,
-        organizationId: organization.value.data.id,
-      });
+      const { error: respError } = await api.POST(
+        "/auth/organizations/{organizationId}/invitations",
+        {
+          params: { path: { organizationId: organization.value.id } },
+          body: {
+            email: typedValues.email,
+            role: typedValues.role,
+          },
+        },
+      );
 
-      showAddMemberModal.value = false;
-      await loadOrganization();
+      if (respError) {
+        alert.error((respError as { message?: string }).message ?? "Failed to invite member");
+      } else {
+        showAddMemberModal.value = false;
+        await loadOrganization();
+      }
     } catch (err) {
       alert.error(err instanceof Error ? err.message : String(err));
     }
@@ -371,9 +403,13 @@ async function onAddMember(values: Record<string, unknown>) {
 async function onRemoveMember(userId: string) {
   if (organization.value) {
     try {
-      await authClient.organization.removeMember({
-        memberIdOrEmail: userId,
-        organizationId: organization.value.data.id,
+      await api.DELETE("/auth/organizations/{organizationId}/members/{userId}", {
+        params: {
+          path: {
+            organizationId: organization.value.id,
+            userId,
+          },
+        },
       });
 
       await loadOrganization();
@@ -386,8 +422,8 @@ async function onRemoveMember(userId: string) {
 async function cancelInvitation(invitationId: string) {
   if (organization.value) {
     try {
-      await authClient.organization.cancelInvitation({
-        invitationId,
+      await api.POST("/auth/cancel-invitation", {
+        body: { invitationId },
       });
 
       await loadOrganization();
@@ -408,14 +444,21 @@ async function onChangeRole(values: Record<string, unknown>) {
 
   if (organization.value && selectedMember.value) {
     try {
-      const resp = await authClient.organization.updateMemberRole({
-        memberId: selectedMember.value.id,
-        role: typedValues.role,
-        organizationId: organization.value.data.id,
-      });
+      const { error: respError } = await api.PATCH(
+        "/auth/organizations/{organizationId}/members/{userId}",
+        {
+          params: {
+            path: {
+              organizationId: organization.value.id,
+              userId: selectedMember.value.userId,
+            },
+          },
+          body: { role: typedValues.role },
+        },
+      );
 
-      if (resp.error) {
-        alert.error(resp.error.message ?? "Failed to update member role");
+      if (respError) {
+        alert.error((respError as { message?: string }).message ?? "Failed to update member role");
         return;
       }
 

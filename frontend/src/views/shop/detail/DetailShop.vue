@@ -59,33 +59,30 @@
         </div>
 
         <div class="shop-info-item">
-          <dt>Last Deployment</dt>
+          <dt>Deployments</dt>
 
-          <dd v-if="shop.activeDeployment" class="deployment-info">
+          <dd v-if="shop.deploymentsCount > 0">
             <router-link
               :to="{
-                name: 'account.shops.detail.deployment',
+                name: 'account.shops.detail.deployments',
                 params: {
-                  slug: $route.params.slug,
+                  organizationId: $route.params.organizationId,
                   shopId: $route.params.shopId,
-                  deploymentId: shop.activeDeployment.id,
                 },
               }"
             >
-              {{ shop.activeDeployment.name || `Deployment #${shop.activeDeployment.id}` }}
+              {{ shop.deploymentsCount }} deployment{{ shop.deploymentsCount !== 1 ? "s" : "" }}
             </router-link>
-
-            <span>{{ formatDateTime(shop.activeDeployment.createdAt) }}</span>
           </dd>
 
-          <dd v-else>never</dd>
+          <dd v-else>none</dd>
         </div>
 
         <div class="shop-info-item">
           <dt>Environment</dt>
 
           <dd>
-            {{ shop.cacheInfo?.environment }}
+            {{ shop.cache?.environment }}
           </dd>
         </div>
 
@@ -93,7 +90,7 @@
           <dt>Cache Adapter</dt>
 
           <dd>
-            {{ shop.cacheInfo?.cacheAdapter }}
+            {{ shop.cache?.cacheAdapter }}
           </dd>
         </div>
 
@@ -101,7 +98,7 @@
           <dt>HTTP Cache</dt>
 
           <dd>
-            {{ shop.cacheInfo?.httpCache ? "Enabled" : "Disabled" }}
+            {{ shop.cache?.httpCache ? "Enabled" : "Disabled" }}
           </dd>
         </div>
 
@@ -179,7 +176,7 @@
         :to="{
           name: 'account.shops.detail.checks',
           params: {
-            slug: $route.params.slug,
+            organizationId: $route.params.organizationId,
             shopId: $route.params.shopId,
           },
         }"
@@ -233,7 +230,7 @@
         :to="{
           name: 'account.shops.detail.extensions',
           params: {
-            slug: $route.params.slug,
+            organizationId: $route.params.organizationId,
             shopId: $route.params.shopId,
           },
         }"
@@ -259,8 +256,9 @@
         <div class="issue-content">
           <span class="issue-message">{{ task.name }}</span>
           <span class="issue-source">
-            Last run: {{ formatDateTime(task.lastExecutionTime) }} ({{
-              getOverdueTime(task.nextExecutionTime)
+            Last run:
+            {{ task.lastExecutionTime ? formatDateTime(task.lastExecutionTime) : "-" }} ({{
+              getOverdueTime(task.nextExecutionTime ?? "")
             }}
             overdue)
           </span>
@@ -273,7 +271,7 @@
         :to="{
           name: 'account.shops.detail.tasks',
           params: {
-            slug: $route.params.slug,
+            organizationId: $route.params.organizationId,
             shopId: $route.params.shopId,
           },
         }"
@@ -316,7 +314,7 @@
         :to="{
           name: 'account.shops.detail.changelog',
           params: {
-            slug: $route.params.slug,
+            organizationId: $route.params.organizationId,
             shopId: $route.params.shopId,
           },
         }"
@@ -359,18 +357,19 @@ import { useShopDetail } from "@/composables/useShopDetail";
 import { useShopChangelogModal } from "@/composables/useShopChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import { ref, computed } from "vue";
-import { trpcClient, type RouterOutput } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
 
-type Extension = NonNullable<RouterOutput["organization"]["shop"]["get"]>["extensions"][number];
+type Extension = components["schemas"]["ShopExtension"];
 
 type ExtensionWithCompatibility = Extension & {
-  compatibility: {
+  compatibility?: {
     name: string;
     label: string;
     type: string;
-  } | null;
+  };
 };
 
 const { error, success } = useAlert();
@@ -421,22 +420,23 @@ const outdatedExtensions = computed(() => {
 });
 
 const overdueTasks = computed(() => {
-  if (!shop.value?.scheduledTask) return [];
+  if (!shop.value?.scheduledTasks) return [];
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-  return shop.value.scheduledTask
+  return shop.value.scheduledTasks
     .filter(
       (task) =>
         task.overdue &&
         task.status !== "inactive" &&
+        task.nextExecutionTime &&
         new Date(task.nextExecutionTime) < fifteenMinutesAgo,
     )
     .slice(0, 5);
 });
 
 const recentChangelogs = computed(() => {
-  if (!shop.value?.changelog) return [];
-  return shop.value.changelog.slice(0, 5);
+  if (!shop.value?.changelogs) return [];
+  return shop.value.changelogs.slice(0, 5);
 });
 
 function getOverdueTime(nextExecutionTime: string): string {
@@ -487,7 +487,11 @@ async function loadUpdateWizard(version: string) {
   };
 
   try {
-    const pluginCompatibility = await trpcClient.info.checkExtensionCompatibility.query(body);
+    const { data: pluginCompatibility } = await api.POST("/info/extension-compatibility", {
+      body,
+    });
+
+    if (!pluginCompatibility) return;
 
     const extensions = JSON.parse(
       JSON.stringify(shop.value?.extensions),
@@ -495,9 +499,10 @@ async function loadUpdateWizard(version: string) {
 
     for (const extension of extensions) {
       const compatibility = pluginCompatibility.find((plugin) => plugin.name === extension.name);
-      extension.compatibility = null;
+      extension.compatibility = undefined;
       if (compatibility) {
-        extension.compatibility = compatibility.status;
+        extension.compatibility =
+          compatibility.status as ExtensionWithCompatibility["compatibility"];
       }
     }
 

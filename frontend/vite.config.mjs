@@ -35,19 +35,7 @@ export default defineConfig({
   server: {
     hmr,
     proxy: {
-      "/auth": {
-        target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",
-        changeOrigin: true,
-      },
-      "/trpc": {
-        target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",
-        changeOrigin: true,
-      },
-      "/admin/queues": {
-        target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",
-        changeOrigin: true,
-      },
-      "/sitespeed": {
+      "/api": {
         target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",
         changeOrigin: true,
       },

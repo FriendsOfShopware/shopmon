@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
@@ -28,15 +28,15 @@ const isLoading = ref(true);
 const success = ref(false);
 
 onMounted(async () => {
-  const resp = await authClient.verifyEmail({
-    query: { token: route.params.token as string },
+  const resp = await api.GET("/auth/verify-email", {
+    params: { query: { token: route.params.token as string } },
   });
 
   if (resp.error) {
     success.value = false;
     isLoading.value = false;
 
-    alert.error(resp.error.message ?? "Failed to verify email");
+    alert.error((resp.error as { message?: string }).message ?? "Failed to verify email");
 
     return;
   }

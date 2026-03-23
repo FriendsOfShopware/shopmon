@@ -5,9 +5,9 @@
     </template>
 
     <template #content>
-      <ul v-if="extension?.changelog?.length > 0" class="extension-changelog">
+      <ul v-if="changelogEntries.length > 0" class="extension-changelog">
         <li
-          v-for="changeLog in extension.changelog"
+          v-for="changeLog in changelogEntries"
           :key="changeLog.version"
           class="extension-changelog-item"
         >
@@ -34,30 +34,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { formatDate } from "@/helpers/formatter";
-
-interface ExtensionChangelog {
-  version: string;
-  text: string;
-  creationDate: string;
-  isCompatible: boolean;
-}
-
-interface Extension {
-  name: string;
-  label: string;
-  changelog: ExtensionChangelog[] | null;
-}
+import type { ExtensionWithChangelog } from "@/composables/useExtensionChangelogModal";
 
 interface Props {
   show: boolean;
-  extension: Extension | null;
+  extension: ExtensionWithChangelog | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 defineEmits<{
   close: [];
 }>();
+
+const changelogEntries = computed(() => {
+  const cl = props.extension?.changelog;
+  if (Array.isArray(cl)) {
+    return cl;
+  }
+  return [];
+});
 </script>
 
 <style scoped>

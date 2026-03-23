@@ -1,9 +1,9 @@
 <template>
   <header-container title="New Organization" />
-  <main-container v-if="session.data?.user">
+  <main-container v-if="session?.user">
     <Panel>
       <vee-form
-        v-slot="{ errors, isSubmitting, setFieldValue }"
+        v-slot="{ errors, isSubmitting }"
         :validation-schema="schema"
         @submit="onCreateOrganization"
       >
@@ -17,26 +17,9 @@
               autocomplete="name"
               class="field"
               :class="{ 'has-error': errors.name }"
-              @input="(e) => onNameChange(e, setFieldValue)"
             />
             <div class="field-error-message">
               {{ errors.name }}
-            </div>
-          </div>
-
-          <div>
-            <label for="slug">Slug</label>
-            <field
-              id="slug"
-              type="text"
-              name="slug"
-              autocomplete="slug"
-              class="field"
-              :class="{ 'has-error': errors.slug }"
-              @input="onSlugManualEdit"
-            />
-            <div class="field-error-message">
-              {{ errors.slug }}
             </div>
           </div>
         </form-group>
@@ -55,65 +38,33 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
 
 import { Field, Form as VeeForm } from "vee-validate";
-import { ref } from "vue";
 import { useRouter } from "vue-router";
 import * as Yup from "yup";
 
-const session = authClient.useSession();
+const { session } = useSession();
 
 const { error } = useAlert();
 const router = useRouter();
 
-// Track if slug has been manually edited
-const slugManuallyEdited = ref(false);
-
 const schema = Yup.object().shape({
   name: Yup.string().required("Name for organization is required"),
-  slug: Yup.string()
-    .required("Slug for organization is required")
-    .matches(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase and can only contain letters, numbers, and hyphens",
-    ),
 });
-
-function generateSlug(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "") // Remove special characters
-    .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
-}
-
-function onNameChange(
-  event: Event,
-
-  setFieldValue: (_field: string, _value: unknown) => void,
-) {
-  if (!slugManuallyEdited.value) {
-    const target = event.target as HTMLInputElement;
-    const slug = generateSlug(target.value);
-    setFieldValue("slug", slug);
-  }
-}
-
-function onSlugManualEdit() {
-  slugManuallyEdited.value = true;
-}
 
 async function onCreateOrganization(values: Record<string, unknown>) {
   const typedValues = values as Yup.InferType<typeof schema>;
   try {
-    const resp = await authClient.organization.create({
-      name: typedValues.name,
-      slug: typedValues.slug,
+    const { error: respError } = await api.POST("/auth/organizations", {
+      body: {
+        name: typedValues.name,
+      },
     });
-    if (resp.error) {
-      error(resp.error.message ?? "Failed to create organization");
+
+    if (respError) {
+      error((respError as { message?: string }).message ?? "Failed to create organization");
       return;
     }
     await router.push({ name: "account.organizations.list" });

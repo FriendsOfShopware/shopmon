@@ -35,7 +35,8 @@ const mockShops = [
   {
     id: "1",
     name: "Test Shop 1",
-    organizationSlug: "test-org",
+    organizationId: "org-1",
+    organizationName: "Test Org",
     projectName: "Test Project",
     shopwareVersion: "6.5.0",
     status: "green",
@@ -44,7 +45,8 @@ const mockShops = [
   {
     id: "2",
     name: "Test Shop 2",
-    organizationSlug: "test-org",
+    organizationId: "org-1",
+    organizationName: "Test Org",
     projectName: "Another Project",
     shopwareVersion: "6.4.0",
     status: "red",
@@ -56,7 +58,6 @@ const mockOrganizations = [
   {
     id: "1",
     name: "Test Organization",
-    slug: "test-org",
     memberCount: 5,
     shopCount: 2,
   },
@@ -67,33 +68,24 @@ const mockChangelogs = [
     id: "1",
     shopId: "1",
     shopName: "Test Shop 1",
-    organizationSlug: "test-org",
+    shopOrganizationName: "Test Org",
+    shopOrganizationId: "org-1",
     extensions: [{ name: "Test Extension", oldVersion: "1.0.0", newVersion: "1.1.0" }],
     date: new Date("2024-01-15").toISOString(),
   },
 ];
 
-// Mock trpcClient
-const mockQueryResults: Record<string, any> = {
-  "account.listOrganizations": Promise.resolve(mockOrganizations),
-  "account.currentUserShops": Promise.resolve(mockShops),
-  "account.currentUserChangelogs": Promise.resolve(mockChangelogs),
-};
-
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      listOrganizations: {
-        query: () => mockQueryResults["account.listOrganizations"],
-      },
-      currentUserShops: {
-        query: () => mockQueryResults["account.currentUserShops"],
-      },
-      currentUserChangelogs: {
-        query: () => mockQueryResults["account.currentUserChangelogs"],
-      },
-    },
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock changelog helper
@@ -106,13 +98,24 @@ vi.mock("@/helpers/formatter", () => ({
   formatDateTime: (date: string) => new Date(date).toLocaleString(),
 }));
 
+import { api } from "@/helpers/api";
+
 describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset mock data
-    mockQueryResults["account.listOrganizations"] = Promise.resolve(mockOrganizations);
-    mockQueryResults["account.currentUserShops"] = Promise.resolve(mockShops);
-    mockQueryResults["account.currentUserChangelogs"] = Promise.resolve(mockChangelogs);
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/organizations") {
+        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
+      }
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      }
+      if (path === "/account/changelogs") {
+        return Promise.resolve({ data: mockChangelogs, error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
   });
 
   function mountComponent() {
@@ -183,7 +186,18 @@ describe("Dashboard", () => {
   });
 
   it("does not display Last Changes section when no changelogs", async () => {
-    mockQueryResults["account.currentUserChangelogs"] = Promise.resolve([]);
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/organizations") {
+        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
+      }
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      }
+      if (path === "/account/changelogs") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.text()).not.toContain("Last Changes");

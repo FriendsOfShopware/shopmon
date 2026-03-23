@@ -102,13 +102,15 @@
 
 <script setup lang="ts">
 import { Field, Form as VeeForm, configure } from "vee-validate";
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
 import { useReturnUrl } from "@/composables/useReturnUrl";
-import { authClient } from "@/helpers/auth-client";
+import { fetchSession } from "@/composables/useSession";
+import { api, setToken } from "@/helpers/api";
 import { useRouter } from "vue-router";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
@@ -128,60 +130,73 @@ const schema = Yup.object().shape({
   password: Yup.string().required("Password is required"),
 });
 
-function goToDashboard() {
-  const sess = authClient.useSession();
-
-  const stop = watch(
-    sess,
-    async (user) => {
-      if (!user.data?.user) {
-        return;
-      }
-
-      stop();
-      const redirectUrl = returnUrl.value ?? "/app/dashboard";
-      clearReturnUrl();
-      await router.push(redirectUrl);
-    },
-    { immediate: true },
-  );
+async function goToDashboard() {
+  await fetchSession();
+  const redirectUrl = returnUrl.value ?? "/app/dashboard";
+  clearReturnUrl();
+  await router.push(redirectUrl);
 }
 
 async function onSubmit(values: Record<string, unknown>) {
   const email = values.email as string;
   const password = values.password as string;
-  const resp = await authClient.signIn.email({
-    email,
-    password,
+  const { data, error } = await api.POST("/auth/sign-in/email", {
+    body: { email, password },
   });
 
-  if (resp.error) {
-    alert.error(resp.error.message ?? "Failed to sign in");
+  if (error) {
+    alert.error((error as { message?: string }).message ?? "Failed to sign in");
     return;
   }
 
-  goToDashboard();
+  if ((data as { token?: string })?.token) {
+    setToken((data as { token: string }).token);
+  }
+
+  await goToDashboard();
 }
 
 async function webauthnLogin() {
   isAuthenticated.value = true;
 
   try {
-    const resp = await authClient.signIn.passkey();
+    // Get login options from server
+    const { data: optionsData, error: optionsError } = await api.POST(
+      "/auth/passkey/login-options",
+    );
 
-    if (resp?.error) {
-      const { error } = useAlert();
-      error(resp.error.message ?? "Failed to sign in with Passkey");
+    if (optionsError || !optionsData) {
+      alert.error("Failed to get passkey login options");
       isAuthenticated.value = false;
       return;
     }
 
-    goToDashboard();
+    const { options, challengeKey } = optionsData as {
+      options: { publicKey: Parameters<typeof startAuthentication>[0]["optionsJSON"] };
+      challengeKey: string;
+    };
+
+    // Run WebAuthn browser API
+    const assertion = await startAuthentication({ optionsJSON: options.publicKey });
+
+    // Send assertion to server
+    const { data: loginData, error } = await api.POST("/auth/passkey/login", {
+      body: { challengeKey, ...assertion } as never,
+    });
+
+    if (error) {
+      alert.error((error as { message?: string }).message ?? "Failed to sign in with Passkey");
+      isAuthenticated.value = false;
+      return;
+    }
+
+    if ((loginData as unknown as { token?: string })?.token) {
+      setToken((loginData as unknown as { token: string }).token);
+    }
+
+    await goToDashboard();
   } catch (e: unknown) {
-    const { error } = useAlert();
-
-    error(e instanceof Error ? e.message : String(e));
-
+    alert.error(e instanceof Error ? e.message : String(e));
     isAuthenticated.value = false;
   }
 }
@@ -191,23 +206,20 @@ async function githubLogin() {
 
   try {
     const redirectUrl = returnUrl.value ?? "/";
-    const resp = await authClient.signIn.social({
-      provider: "github",
-      callbackURL: redirectUrl,
+    const { data, error } = await api.POST("/auth/sign-in/social", {
+      body: { provider: "github", callbackURL: redirectUrl },
     });
-    if (resp.error) {
-      const { error } = useAlert();
-      error(resp.error.message ?? "Failed to sign in with GitHub");
+
+    if (error || !data?.url) {
+      alert.error("Failed to sign in with GitHub");
       isGithubLoading.value = false;
       return;
     }
 
-    goToDashboard();
+    // Redirect to the OAuth provider
+    window.location.href = data.url;
   } catch (e: unknown) {
-    const { error } = useAlert();
-
-    error(e instanceof Error ? e.message : String(e));
-
+    alert.error(e instanceof Error ? e.message : String(e));
     isGithubLoading.value = false;
   }
 }
@@ -222,19 +234,21 @@ async function ssoLogin() {
 
   try {
     const redirectUrl = returnUrl.value ?? "/";
-    const result = await authClient.signIn.sso({
-      email: ssoEmail.value,
-      callbackURL: `${window.location.origin}${redirectUrl}`,
+    const { data, error } = await api.POST("/auth/sign-in/sso", {
+      body: {
+        email: ssoEmail.value,
+        callbackURL: `${window.location.origin}${redirectUrl}`,
+      },
     });
 
-    if (result.error) {
-      if (result.error.code === "SSO_PROVIDER_NOT_FOUND") {
+    if (error || !data?.url) {
+      if (error && (error as unknown as { status?: number }).status === 404) {
         alert.error("No SSO provider found for this email domain");
       } else {
-        alert.error(result.error.message ?? "SSO login failed");
+        alert.error((error as unknown as { message?: string })?.message ?? "SSO login failed");
       }
     } else {
-      goToDashboard();
+      window.location.href = data.url;
     }
   } catch (e: unknown) {
     alert.error(e instanceof Error ? e.message : "SSO login failed");

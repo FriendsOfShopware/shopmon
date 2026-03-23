@@ -1,1 +1,0 @@
-DROP TABLE "deployment_token" CASCADE;

@@ -45,19 +45,33 @@ const FieldStub = defineComponent({
   },
 });
 
-// Mock auth client
+// Mock user and session
 const mockUser = { id: "1", email: "test@example.com", name: "Test User" };
-const mockSessionData = ref<{ data: { user: typeof mockUser } | null }>({
-  data: { user: mockUser },
+const mockSessionRef = ref<{ user: typeof mockUser; session: Record<string, unknown> } | null>({
+  user: mockUser,
+  session: {},
 });
 
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    useSession: () => mockSessionData.value,
-    organization: {
-      create: vi.fn(),
-    },
+vi.mock("@/composables/useSession", () => ({
+  useSession: () => ({
+    session: mockSessionRef,
+    loading: ref(false),
+    fetchSession: vi.fn(),
+  }),
+  fetchSession: vi.fn(),
+}));
+
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock router
@@ -75,13 +89,17 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-// Import after mocks
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 
 describe("AddOrganization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSessionData.value = { data: { user: mockUser } };
+    mockSessionRef.value = { user: mockUser, session: {} };
+    vi.mocked(api.POST).mockResolvedValue({
+      data: {},
+      error: null,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -116,7 +134,7 @@ describe("AddOrganization", () => {
   });
 
   it("does not display form when user is not logged in", async () => {
-    mockSessionData.value = { data: null };
+    mockSessionRef.value = null;
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find("form").exists()).toBe(false);
@@ -128,14 +146,6 @@ describe("AddOrganization", () => {
     const input = wrapper.find('input[name="name"]');
     expect(input.exists()).toBe(true);
     expect(input.attributes("autocomplete")).toBe("name");
-  });
-
-  it("has slug input field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const input = wrapper.find('input[name="slug"]');
-    expect(input.exists()).toBe(true);
-    expect(input.attributes("autocomplete")).toBe("slug");
   });
 
   it("has save button", async () => {
@@ -156,40 +166,6 @@ describe("AddOrganization", () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.text()).toContain("Name");
-    expect(wrapper.text()).toContain("Slug");
-  });
-
-  it("generates slug from name automatically", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-
-    // The slug should auto-generate from name input
-    const nameInput = wrapper.find('input[name="name"]');
-    await nameInput.setValue("My New Organization");
-    await nameInput.trigger("input");
-    await flushPromises();
-
-    // Slug should be auto-generated
-    const slugInput = wrapper.find('input[name="slug"]');
-    // Note: Due to vee-validate and the complex interaction,
-    // we verify the field exists and has proper attributes
-    expect(slugInput.exists()).toBe(true);
-  });
-
-  it("allows manual slug editing", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-
-    const slugInput = wrapper.find('input[name="slug"]');
-    expect(slugInput.exists()).toBe(true);
-
-    // Just verify we can interact with the field
-    await slugInput.setValue("custom-slug");
-    await slugInput.trigger("input");
-    await flushPromises();
-
-    // Verify the input exists and received the value
-    expect(slugInput.exists()).toBe(true);
   });
 
   it("requires name field", async () => {
@@ -203,17 +179,5 @@ describe("AddOrganization", () => {
 
     // Should show error
     expect(mockError).not.toHaveBeenCalledWith("Name for organization is required");
-  });
-
-  it("requires slug field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-
-    const form = wrapper.find("form");
-    await form.trigger("submit");
-    await flushPromises();
-
-    // Form validation should prevent submission
-    expect(authClient.organization.create).not.toHaveBeenCalled();
   });
 });

@@ -1,70 +1,96 @@
 # Project Architecture & Development Guidelines
 
-This project follows a **Domain-Driven Modular Architecture**.
-This structure groups related functionality by **Domain (Feature)** rather than by Technical Layer.
+## Tech Stack
+
+- **API**: Go (chi router, sqlc, oapi-codegen, asynq)
+- **Frontend**: Vue.js + TypeScript
+- **Database**: PostgreSQL
+- **Queue**: Redis (asynq)
+- **Storage**: S3-compatible (deployment outputs)
 
 ## Directory Structure
 
 ```
-api/src/
-  ├── helpers/                  <-- Shared utility functions
-  ├── modules/
-  │   ├── shop/                 <-- Domain Module
-  │   │   ├── shop.repository.ts   (Data Access)
-  │   │   ├── shop.service.ts      (Business Logic)
-  │   │   ├── shop.router.ts       (API / Transport)
-  │   │   └── shop.types.ts        (Domain Types)
-  │   ├── user/
-  │   └── ...
-  ├── trpc/                     <-- Shared tRPC infrastructure (context, middleware, root router)
-  └── types/                    <-- Shared type definitions
+api/                          <-- Go API (single binary)
+  main.go                     <-- Cobra CLI entry point
+  server.go                   <-- HTTP server command
+  worker.go                   <-- Background worker command
+  migrate.go                  <-- Database migration command
+  fixtures.go                 <-- Test fixture seeding
+  internal/
+    auth/                     <-- Authentication (credentials, OAuth, SSO, passkeys, orgs, admin)
+    config/                   <-- Environment configuration
+    crypto/                   <-- AES-GCM encryption
+    database/queries/         <-- sqlc-generated data access
+    handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
+    httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
+    jobs/                     <-- Background jobs (shop scrape, sitespeed, cleanup)
+    mail/                     <-- SMTP service + email templates
+    middleware/               <-- HTTP middleware (auth, org membership, shop access)
+    queue/                    <-- Asynq task type definitions
+    shopware/                 <-- Shopware HTTP client
+      checker/                <-- Shop health check system (env, security, tasks, worker, frosh_tools)
+    storage/                  <-- S3 storage for deployment outputs
+    telemetry/                <-- OpenTelemetry tracing setup
+    testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)
+  migrations/                 <-- SQL migration files (golang-migrate)
+  openapi/
+    spec.yaml                 <-- OpenAPI 3.0.3 specification
+    generated/                <-- oapi-codegen generated server interface
+  sql/
+    schema.sql                <-- Full DDL for sqlc
+    queries/                  <-- sqlc query definitions
+frontend/                     <-- Vue.js frontend
 ```
 
-## The 3-Layer Pattern (Applied per Module)
+## API Architecture
 
-Within each module, we strictly enforce the 3-Layer Pattern:
+The Go API uses a handler-based architecture with sqlc for type-safe database queries and oapi-codegen for OpenAPI server interface generation.
 
-### 1. Router (`*.router.ts`)
+### Handler (`internal/handler/`)
+- Implements the generated `openapi.ServerInterface`
+- Uses `requireUser()` and `requireOrgMembership()` helpers for auth checks
+- Delegates to sqlc queries for data access
+- Returns responses using `httputil.WriteJSON()` / `httputil.WriteError()`
 
-- **Responsibility:**
-  - Handle HTTP/tRPC requests.
-  - Validate inputs (Zod schemas).
-  - Check permissions/middleware.
-  - **DELEGATE** work to the Service.
-- **Rules:**
-  - ❌ **NO** direct database queries.
-  - ❌ **NO** complex business logic.
-  - ✅ **ONLY** call Services.
+### Auth (`internal/auth/`)
+- Standalone auth system (no external auth libraries)
+- Email/password with bcrypt, GitHub OAuth, SSO/OIDC, WebAuthn passkeys
+- Organization management (CRUD, invitations, roles)
+- Admin endpoints (user management, ban/unban, impersonation)
+- Redis-backed challenge store for OAuth/WebAuthn flows
+- Rate limiting (20 req/60s per IP)
 
-### 2. Service (`*.service.ts`)
+### Background Jobs (`internal/jobs/`)
+- Shop scraping: fetches Shopware API data, runs health checkers, computes diffs, sends notifications
+- Sitespeed: performance measurement via external sitespeed service
+- Cleanup: expired locks and invitations
 
-- **Responsibility:**
-  - Contain **ALL** business logic.
-  - Orchestrate workflows.
-  - Handle third-party integrations (Stripe, Mailer, etc.).
-- **Rules:**
-  - ✅ Can call Repositories.
-  - ✅ Can call other Services.
-  - ❌ Should not deal with HTTP-specifics.
+### Database Queries (`sql/queries/`)
+- All database access goes through sqlc-generated code
+- Query files organized by domain: shop.sql, user.sql, project.sql, etc.
+- Generate with: `cd api && make generate`
 
-### 3. Repository (`*.repository.ts`)
+## CLI Commands
 
-- **Responsibility:**
-  - Pure Data Access Object (DAO).
-  - Handle **CRUD** operations.
-- **Rules:**
-  - ✅ **ONLY** interact with the database.
-  - ❌ **NO** business logic.
-  - ❌ **NO** side effects (sending emails).
-  - ❌ **NEVER** call Services.
+```
+shopmon server              # Start HTTP API server
+shopmon worker              # Start background worker
+shopmon migrate up          # Apply database migrations
+shopmon migrate down        # Rollback last migration
+shopmon migrate status      # Show current migration version
+shopmon fixtures            # Seed test data
+shopmon fixtures --skip-shop # Seed without shop data
+```
 
----
+## Development
 
-## Refactoring Checklist
-
-When working on existing code:
-
-1.  **Identify the Domain:** Does this belong to `Shop`, `User`, `Project`, etc.?
-2.  **Create/Update Module:** Move files to `api/src/modules/<domain>/`.
-3.  **Rename Files:** Use the `entity.layer.ts` convention (e.g., `user.service.ts`).
-4.  **Refactor Logic:** Ensure logic is in the Service, DB calls in the Repository, and Validation in the Router.
+```bash
+make up              # Start infrastructure (Postgres, Redis, demo shop, Mailpit)
+make migrate         # Apply migrations
+make load-fixtures   # Reset DB + migrate + seed fixtures
+make dev             # Run API server + frontend
+make dev-worker      # Run background worker
+make test            # Run integration tests
+make generate        # Regenerate sqlc + oapi-codegen
+```

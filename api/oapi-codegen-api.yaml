@@ -1,0 +1,19 @@
+package: api
+output: internal/api/server.gen.go
+generate:
+  chi-server: true
+  models: true
+output-options:
+  include-tags:
+    - Health
+    - Account
+    - Notifications
+    - Shops
+    - Projects
+    - ApiKeys
+    - PackagesToken
+    - Deployments
+    - CLI
+    - SSO
+    - Admin
+    - Info

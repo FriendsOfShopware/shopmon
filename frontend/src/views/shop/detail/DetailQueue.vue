@@ -6,7 +6,7 @@
         { key: 'name', name: 'Name', sortable: true },
         { key: 'size', name: 'Size', sortable: true },
       ]"
-      :data="shop.queueInfo || []"
+      :data="shop.queues || []"
     />
   </Panel>
 </template>

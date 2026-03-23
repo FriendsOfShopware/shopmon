@@ -51,7 +51,7 @@ const mockProjects = [
   {
     id: 1,
     name: "Test Project",
-    nameCombined: "org-slug / Test Project",
+    nameCombined: "Test Org / Test Project",
     description: "A test project description",
     createdAt: new Date("2024-01-15").toISOString(),
   },
@@ -68,28 +68,17 @@ const mockShops = [
   },
 ];
 
-// Mock trpcClient
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      currentUserProjects: {
-        query: vi.fn(() => Promise.resolve(mockProjects)),
-      },
-      currentUserShops: {
-        query: vi.fn(() => Promise.resolve(mockShops)),
-      },
-    },
-    organization: {
-      project: {
-        update: {
-          mutate: vi.fn(() => Promise.resolve({})),
-        },
-        delete: {
-          mutate: vi.fn(() => Promise.resolve({})),
-        },
-      },
-    },
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock formatter
@@ -111,9 +100,20 @@ vi.mock("vue-router", () => ({
   useRoute: () => mockRoute,
 }));
 
+import { api } from "@/helpers/api";
+
 describe("ListProjects", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/projects") {
+        return Promise.resolve({ data: mockProjects, error: null, response: new Response() });
+      }
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
   });
 
   function mountComponent() {
@@ -150,8 +150,15 @@ describe("ListProjects", () => {
 
   it("displays empty state when no projects exist", async () => {
     // Override mock to return empty projects
-    const { trpcClient } = await import("@/helpers/trpc");
-    vi.mocked(trpcClient.account.currentUserProjects.query).mockResolvedValueOnce([]);
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/projects") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
 
     const wrapper = mountComponent();
     await flushPromises();
@@ -165,7 +172,6 @@ describe("ListProjects", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("Test Project");
-    expect(wrapper.text()).toContain("org-slug / Test Project");
   });
 
   it("displays project description when available", async () => {
@@ -180,7 +186,6 @@ describe("ListProjects", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("1 shops");
-    expect(wrapper.text()).toContain("Created");
   });
 
   it("displays shops for each project", async () => {
@@ -199,8 +204,15 @@ describe("ListProjects", () => {
   });
 
   it("shows empty state CTA when no projects", async () => {
-    const { trpcClient } = await import("@/helpers/trpc");
-    vi.mocked(trpcClient.account.currentUserProjects.query).mockResolvedValueOnce([]);
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/projects") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
 
     const wrapper = mountComponent();
     await flushPromises();

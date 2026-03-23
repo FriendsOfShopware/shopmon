@@ -27,12 +27,12 @@
               and activated
             </template>
             <template v-if="extension.state === 'updated'">
-              from {{ extension.old_version }} to {{ extension.new_version }}
+              from {{ extension.oldVersion }} to {{ extension.newVersion }}
             </template>
             <template v-else>
-              {{ extension.new_version }}
-              <template v-if="!extension.new_version">
-                {{ extension.old_version }}
+              {{ extension.newVersion }}
+              <template v-if="!extension.newVersion">
+                {{ extension.oldVersion }}
               </template>
             </template>
 
@@ -66,11 +66,13 @@
 
 <script setup lang="ts">
 import { formatDateTime } from "@/helpers/formatter";
-import type { ShopChangelog } from "@/types/shop";
+import type { components } from "@/types/api";
+
+type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 interface Props {
   show: boolean;
-  changelog: ShopChangelog | null;
+  changelog: AccountChangelog | null;
 }
 
 defineProps<Props>();

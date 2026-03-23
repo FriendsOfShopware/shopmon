@@ -192,7 +192,7 @@
               <div class="api-key-info">
                 <h4>Token #{{ pt.id }}</h4>
                 <p v-if="pt.lastSyncedAt" class="text-muted">
-                  Last synced {{ timeAgo(pt.lastSyncedAt) }}
+                  Last synced {{ timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000) }}
                 </p>
                 <p v-else class="text-muted">Not synced yet</p>
               </div>
@@ -456,17 +456,19 @@
 import Modal from "@/components/layout/Modal.vue";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { useAlert } from "@/composables/useAlert";
+import { fetchAccountShops } from "@/composables/useAccountShops";
 import { formatDate, timeAgo } from "@/helpers/formatter";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
 import { computed, nextTick, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
-type Project = RouterOutput["account"]["currentUserProjects"][number];
-type ApiKey = RouterOutput["organization"]["apiKey"]["list"][number];
-type AvailableScope = RouterOutput["organization"]["apiKey"]["scopes"][number];
-type PackagesToken = RouterOutput["organization"]["packagesToken"]["list"][number];
+type Project = components["schemas"]["AccountProject"];
+type ApiKey = components["schemas"]["ApiKey"];
+type AvailableScope = components["schemas"]["ApiKeyScope"];
+type PackagesToken = components["schemas"]["PackagesToken"];
 
 const route = useRoute();
 const router = useRouter();
@@ -545,10 +547,12 @@ const packagesTokenSchema = Yup.object().shape({
 });
 
 async function loadProjectSummary() {
-  const [projectsData, shopsData] = await Promise.all([
-    trpcClient.account.currentUserProjects.query(),
-    trpcClient.account.currentUserShops.query(),
+  const [projectsRes, shopsData] = await Promise.all([
+    api.GET("/account/projects"),
+    fetchAccountShops(),
   ]);
+
+  const projectsData = projectsRes.data ?? [];
 
   project.value = projectsData.find((currentProject) => currentProject.id === projectId) ?? null;
   shopsInProjectCount.value = shopsData.filter((shop) => shop.projectId === projectId).length;
@@ -559,10 +563,10 @@ async function loadApiKeys() {
 
   isApiKeysLoading.value = true;
   try {
-    apiKeys.value = await trpcClient.organization.apiKey.list.query({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
+    const { data } = await api.GET("/organizations/{orgId}/projects/{projectId}/api-keys", {
+      params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
     });
+    apiKeys.value = data ?? [];
   } catch (error) {
     alert.error(`Failed to load API keys${error instanceof Error ? `: ${error.message}` : ""}`);
   } finally {
@@ -572,7 +576,8 @@ async function loadApiKeys() {
 
 async function loadAvailableScopes() {
   try {
-    availableScopes.value = await trpcClient.organization.apiKey.scopes.query();
+    const { data } = await api.GET("/api-key-scopes");
+    availableScopes.value = data ?? [];
   } catch (error) {
     alert.error(`Failed to load scopes${error instanceof Error ? `: ${error.message}` : ""}`);
   }
@@ -617,12 +622,13 @@ async function onSubmitProject(values: Record<string, unknown>) {
 
   isSavingProject.value = true;
   try {
-    await trpcClient.organization.project.update.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      name: typedValues.name,
-      description: typedValues.description ?? "",
-      gitUrl: typedValues.gitUrl || null,
+    await api.PATCH("/organizations/{orgId}/projects/{projectId}", {
+      params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
+      body: {
+        name: typedValues.name,
+        description: typedValues.description ?? "",
+        gitUrl: typedValues.gitUrl || undefined,
+      },
     });
 
     await loadProjectSummary();
@@ -654,14 +660,18 @@ async function onSubmitApiKey(values: Record<string, unknown>) {
 
   isCreatingApiKey.value = true;
   try {
-    const result = await trpcClient.organization.apiKey.create.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      name: typedValues.name,
-      scopes: typedValues.scopes as "deployments"[],
-    });
+    const { data: result } = await api.POST(
+      "/organizations/{orgId}/projects/{projectId}/api-keys",
+      {
+        params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
+        body: {
+          name: typedValues.name,
+          scopes: typedValues.scopes as string[],
+        },
+      },
+    );
 
-    newToken.value = result.token;
+    newToken.value = result?.token ?? "";
     closeAddKeyModal();
     showTokenModal.value = true;
 
@@ -706,10 +716,14 @@ async function deleteApiKey() {
 
   isDeletingApiKey.value = true;
   try {
-    await trpcClient.organization.apiKey.delete.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      apiKeyId: deletingApiKey.value.id,
+    await api.DELETE("/organizations/{orgId}/projects/{projectId}/api-keys/{keyId}", {
+      params: {
+        path: {
+          orgId: project.value.organizationId,
+          projectId: project.value.id,
+          keyId: deletingApiKey.value.id,
+        },
+      },
     });
 
     showDeleteApiKeyModal.value = false;
@@ -725,9 +739,9 @@ async function deleteApiKey() {
 
 async function checkPackagesConfigured() {
   try {
-    const config = await trpcClient.organization.packagesToken.configuration.query();
-    isPackagesConfigured.value = config.configured;
-    packagesComposerUrl.value = config.composerUrl;
+    const { data: config } = await api.GET("/packages-token/configuration");
+    isPackagesConfigured.value = config?.configured ?? false;
+    packagesComposerUrl.value = config?.composerUrl ?? null;
   } catch {
     isPackagesConfigured.value = false;
   }
@@ -738,10 +752,10 @@ async function loadPackagesTokens() {
 
   isPackagesTokensLoading.value = true;
   try {
-    packagesTokens.value = await trpcClient.organization.packagesToken.list.query({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
+    const { data } = await api.GET("/organizations/{orgId}/projects/{projectId}/packages-tokens", {
+      params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
     });
+    packagesTokens.value = data ?? [];
   } catch (error) {
     alert.error(
       `Failed to load packages tokens${error instanceof Error ? `: ${error.message}` : ""}`,
@@ -758,10 +772,9 @@ async function onSubmitPackagesToken(values: Record<string, unknown>) {
 
   isCreatingPackagesToken.value = true;
   try {
-    await trpcClient.organization.packagesToken.create.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      token: typedValues.token,
+    await api.POST("/organizations/{orgId}/projects/{projectId}/packages-tokens", {
+      params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
+      body: { token: typedValues.token },
     });
 
     showAddPackagesTokenModal.value = false;
@@ -786,10 +799,14 @@ async function deletePackagesToken() {
 
   isDeletingPackagesToken.value = true;
   try {
-    await trpcClient.organization.packagesToken.delete.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      tokenId: deletingPackagesToken.value.id,
+    await api.DELETE("/organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}", {
+      params: {
+        path: {
+          orgId: project.value.organizationId,
+          projectId: project.value.id,
+          tokenId: deletingPackagesToken.value.id,
+        },
+      },
     });
 
     showDeletePackagesTokenModal.value = false;
@@ -810,10 +827,10 @@ async function syncPackagesToken(pt: PackagesToken) {
 
   isSyncingPackagesToken.value = pt.id;
   try {
-    await trpcClient.organization.packagesToken.sync.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
-      tokenId: pt.id,
+    await api.POST("/organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync", {
+      params: {
+        path: { orgId: project.value.organizationId, projectId: project.value.id, tokenId: pt.id },
+      },
     });
 
     await loadPackagesTokens();
@@ -832,9 +849,8 @@ async function deleteProject() {
 
   isDeletingProject.value = true;
   try {
-    await trpcClient.organization.project.delete.mutate({
-      orgId: project.value.organizationId,
-      projectId: project.value.id,
+    await api.DELETE("/organizations/{orgId}/projects/{projectId}", {
+      params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
     });
 
     alert.success("Project deleted successfully");

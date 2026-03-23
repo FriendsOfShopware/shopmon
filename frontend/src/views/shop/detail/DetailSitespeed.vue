@@ -7,7 +7,7 @@
     <a
       v-if="showSitespeedData"
       class="btn btn-primary-outline"
-      :href="shop.sitespeedReportUrl"
+      :href="shop?.sitespeedDetailUrl ?? undefined"
       target="_blank"
     >
       <i class="fa fa-chart-line" /> View Sitespeed Report
@@ -39,7 +39,7 @@
         { key: 'cumulativeLayoutShift', name: 'Cumulative Layout Shift' },
         { key: 'transferSize', name: 'Transfer Size' },
       ]"
-      :data="shop.sitespeed || []"
+      :data="shop.sitespeeds || []"
     >
       <template #cell-ttfb="{ row }">
         {{ row.ttfb ? `${row.ttfb} ms` : "-" }}
@@ -68,7 +68,7 @@
           :to="{
             name: 'account.shops.detail.deployment',
             params: {
-              slug: $route.params.slug,
+              organizationId: $route.params.organizationId,
               shopId: $route.params.shopId,
               deploymentId: row.deployment.id,
             },
@@ -99,18 +99,18 @@ const showSitespeedData = computed(() => {
   return (
     shop.value &&
     shop.value.sitespeedEnabled &&
-    shop.value.sitespeed &&
-    shop.value.sitespeed.length > 0
+    shop.value.sitespeeds &&
+    shop.value.sitespeeds.length > 0
   );
 });
 
 // Extract unique deployments from sitespeed data for chart annotations
 const deploymentMarkers = computed(() => {
-  if (!shop.value?.sitespeed) return [];
+  if (!shop.value?.sitespeeds) return [];
 
   const deploymentMap = new Map<number, { id: number; name: string; timestamp: number }>();
 
-  shop.value.sitespeed.forEach((item) => {
+  shop.value.sitespeeds.forEach((item) => {
     if (item.deployment?.id) {
       const timestamp = new Date(item.createdAt).getTime();
       if (!deploymentMap.has(item.deployment.id)) {
@@ -157,12 +157,12 @@ interface SitespeedDataItem {
     id: number;
     name: string;
   } | null;
-  ttfb?: number;
-  fullyLoaded?: number;
-  largestContentfulPaint?: number;
-  firstContentfulPaint?: number;
-  cumulativeLayoutShift?: number;
-  transferSize?: number;
+  ttfb?: number | null;
+  fullyLoaded?: number | null;
+  largestContentfulPaint?: number | null;
+  firstContentfulPaint?: number | null;
+  cumulativeLayoutShift?: number | null;
+  transferSize?: number | null;
 }
 
 interface ChartConfig {
@@ -189,7 +189,8 @@ const chartConfigs: ChartConfig[] = [
     datasets: timeMetrics.map((metric) => ({
       label: metric.label,
       dataKey: metric.key,
-      valueFormatter: (item) => item[metric.key as keyof typeof item] as number,
+      valueFormatter: (item) =>
+        (item[metric.key as keyof typeof item] as number | null | undefined) ?? 0,
       tooltipFormatter: (value) => `${value}ms`,
     })),
   },
@@ -222,7 +223,7 @@ const chartConfigs: ChartConfig[] = [
 ];
 
 const createChart = (config: ChartConfig) => {
-  if (!config.canvasRef.value || !shop.value?.sitespeed) return;
+  if (!config.canvasRef.value || !shop.value?.sitespeeds) return;
 
   if (config.chartInstance.value) {
     config.chartInstance.value.destroy();
@@ -231,7 +232,7 @@ const createChart = (config: ChartConfig) => {
   const ctx = config.canvasRef.value.getContext("2d");
   if (!ctx) return;
 
-  const sortedData = [...shop.value.sitespeed].sort(
+  const sortedData = [...shop.value.sitespeeds].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
@@ -243,27 +244,8 @@ const createChart = (config: ChartConfig) => {
     })),
   }));
 
-  const annotations: Record<
-    string,
-    {
-      type: string;
-      xMin: number;
-      xMax: number;
-      borderColor: string;
-      borderWidth: number;
-      borderDash: number[];
-      label: {
-        display: boolean;
-        content: string;
-        position: string;
-        backgroundColor: string;
-        color: string;
-        font: { size: number };
-        rotation: number;
-        yAdjust: number;
-      };
-    }
-  > = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const annotations: Record<string, any> = {};
   deploymentMarkers.value.forEach((deployment) => {
     annotations[`deployment-${deployment.id}`] = {
       type: "line",
@@ -315,12 +297,12 @@ const createChart = (config: ChartConfig) => {
           callbacks: {
             label: function (context) {
               const dataset = config.datasets[context.datasetIndex];
-              const value = context.parsed.y;
+              const value = context.parsed.y ?? 0;
               return `${context.dataset.label}: ${dataset.tooltipFormatter?.(value) ?? value}`;
             },
             title: function (tooltipItems) {
               if (tooltipItems.length > 0) {
-                const timestamp = tooltipItems[0].parsed.x;
+                const timestamp = tooltipItems[0].parsed.x ?? 0;
                 return new Date(timestamp).toLocaleString();
               }
               return "";
@@ -360,7 +342,7 @@ const createAllCharts = () => {
 
 onMounted(async () => {
   await nextTick();
-  if (shop.value?.sitespeed) {
+  if (shop.value?.sitespeeds) {
     createAllCharts();
   }
 });
@@ -374,7 +356,7 @@ onUnmounted(() => {
 });
 
 watch(
-  () => shop.value?.sitespeed,
+  () => shop.value?.sitespeeds,
   async () => {
     await nextTick();
     createAllCharts();

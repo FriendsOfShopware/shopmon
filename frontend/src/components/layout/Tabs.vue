@@ -2,7 +2,7 @@
   <Panel class="tab-container">
     <tab-group>
       <tab-list class="tabs-list">
-        <tab v-for="label in props.labels" :key="label.key" v-slot="{ selected }" as="template">
+        <tab v-for="label in $props.labels" :key="label.key" v-slot="{ selected }" as="template">
           <button class="tab" :class="{ 'tab-active': selected }" type="button">
             <component :is="label.icon" v-if="label.icon" class="icon" />
             {{ label.title }}
@@ -14,7 +14,7 @@
       </tab-list>
 
       <tab-panels class="tab-panels">
-        <tab-panel v-for="label in props.labels" :key="label.key" class="tab-panel">
+        <tab-panel v-for="label in $props.labels" :key="label.key" class="tab-panel">
           <slot :name="`panel-${label.key}`" :label="label">
             <div class="tab-panel-default">
               <strong>{{ label.title }} Tab Panel</strong>. Use

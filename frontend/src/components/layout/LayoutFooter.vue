@@ -2,10 +2,8 @@
   <footer class="app-footer">
     <div class="container">
       <div class="footer-links">
-        <button v-if="session.data" type="button" class="footer-link" @click="open">
-          What's new
-        </button>
-        <span v-if="session.data" class="footer-separator">|</span>
+        <button v-if="session" type="button" class="footer-link" @click="open">What's new</button>
+        <span v-if="session" class="footer-separator">|</span>
         <router-link :to="{ name: 'privacy' }" class="footer-link"> Privacy </router-link>
         <span class="footer-separator">|</span>
         <router-link :to="{ name: 'imprint' }" class="footer-link"> Legal Notice </router-link>
@@ -19,14 +17,14 @@
 <script setup lang="ts">
 import WhatsNewModal from "@/components/modal/WhatsNewModal.vue";
 import { useWhatsNew } from "@/composables/useWhatsNew";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
 import { computed } from "vue";
 
-const session = authClient.useSession();
+const { session } = useSession();
 const { isOpen, open, dismiss } = useWhatsNew();
 
 const showWhatsNew = computed(() => {
-  return !!session.value.data && isOpen.value;
+  return !!session.value && isOpen.value;
 });
 </script>
 

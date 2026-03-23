@@ -62,19 +62,27 @@ vi.mock("vue-router", () => ({
   }),
 }));
 
-// Mock auth client
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    signIn: {
-      email: vi.fn(),
-      passkey: vi.fn(),
-      social: vi.fn(),
-      sso: vi.fn(),
-    },
-    useSession: vi.fn(() => ({
-      data: { user: { id: "1", email: "test@example.com" } },
-    })),
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
+}));
+
+// Mock useSession composable
+vi.mock("@/composables/useSession", () => ({
+  useSession: () => ({
+    session: { value: { user: { id: "1", email: "test@example.com" }, session: {} } },
+    loading: { value: false },
+    fetchSession: vi.fn(),
+  }),
+  fetchSession: vi.fn(),
 }));
 
 // Mock useAlert composable

@@ -48,7 +48,7 @@
       <template #cell-actions="{ row }">
         <div class="actions-group">
           <button
-            v-if="row.id != session?.data?.user?.id"
+            v-if="row.id != sessionData?.user?.id"
             class="btn btn-sm btn-primary"
             @click="impersonateUser(row.id)"
           >
@@ -57,7 +57,7 @@
           </button>
 
           <button
-            v-if="!row.banned && row.id != session?.data?.user?.id"
+            v-if="!row.banned && row.id != sessionData?.user?.id"
             class="btn btn-sm btn-danger"
             @click="banUser(row.id)"
           >
@@ -96,11 +96,21 @@
 import Alert from "@/components/layout/Alert.vue";
 import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
 import { computed, onMounted, ref } from "vue";
 
-type User = Awaited<ReturnType<typeof authClient.admin.listUsers>>["data"]["users"][number];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  banned: boolean;
+  emailVerified: boolean;
+  createdAt: string;
+  status?: string;
+}
 
 const users = ref<User[]>([]);
 const loading = ref(true);
@@ -111,16 +121,16 @@ const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
 
-const session = authClient.useSession();
+const { session: sessionData } = useSession();
 
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 
 const tableColumns = [
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "email", name: "Email", sortable: true, searchable: true },
-  { key: "role", name: "Role", sortable: true },
-  { key: "status", name: "Status" },
-  { key: "createdAt", name: "Created", sortable: true },
+  { key: "name" as const, name: "Name", sortable: true, searchable: true },
+  { key: "email" as const, name: "Email", sortable: true, searchable: true },
+  { key: "role" as const, name: "Role", sortable: true },
+  { key: "status" as const, name: "Status" },
+  { key: "createdAt" as const, name: "Created", sortable: true },
 ];
 
 async function loadUsers() {
@@ -128,32 +138,16 @@ async function loadUsers() {
   error.value = "";
 
   try {
-    const query: { [key: string]: unknown } = {
-      limit: pageSize.value,
-      offset: (currentPage.value - 1) * pageSize.value,
-      sortBy: "createdAt",
-      sortDirection: "desc" as const,
-    };
+    const { data, error: respError } = await api.GET("/auth/admin/users");
 
-    if (searchQuery.value) {
-      query.searchField = "email";
-      query.searchOperator = "contains";
-      query.searchValue = searchQuery.value;
-    }
-
-    if (roleFilter.value) {
-      query.filterField = "role";
-      query.filterOperator = "eq";
-      query.filterValue = roleFilter.value;
-    }
-
-    const response = await authClient.admin.listUsers({ query });
-
-    if (!response.error) {
-      users.value = response.data?.users ?? [];
-      totalUsers.value = response.data?.total ?? 0;
+    if (!respError && data) {
+      // The admin endpoint may return data in various shapes depending on server impl
+      const userData = data as unknown as { users?: User[]; total?: number };
+      users.value = userData.users ?? (Array.isArray(data) ? (data as User[]) : []);
+      totalUsers.value = userData.total ?? users.value.length;
     } else {
-      error.value = response.error.message ?? "Failed to load users";
+      error.value =
+        (respError as unknown as { message?: string })?.message ?? "Failed to load users";
     }
   } catch (err) {
     error.value = `Failed to load users: ${err instanceof Error ? err.message : String(err)}`;
@@ -164,13 +158,15 @@ async function loadUsers() {
 
 async function impersonateUser(userId: string) {
   try {
-    const response = await authClient.admin.impersonateUser({ userId });
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
+      params: { path: { userId } },
+    });
 
-    if (!response.error) {
+    if (!respError) {
       // Reload the page to apply the new session
       window.location.href = "/";
     } else {
-      error.value = response.error.message ?? "Failed to impersonate user";
+      error.value = (respError as { message?: string }).message ?? "Failed to impersonate user";
     }
   } catch (err) {
     error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
@@ -182,15 +178,15 @@ async function banUser(userId: string) {
   if (!reason) return;
 
   try {
-    const response = await authClient.admin.banUser({
-      userId,
-      banReason: reason,
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
+      params: { path: { userId } },
+      body: { banReason: reason },
     });
 
-    if (!response.error) {
+    if (!respError) {
       await loadUsers();
     } else {
-      error.value = response.error.message ?? "Failed to ban user";
+      error.value = (respError as { message?: string }).message ?? "Failed to ban user";
     }
   } catch (err) {
     error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
@@ -199,12 +195,14 @@ async function banUser(userId: string) {
 
 async function unbanUser(userId: string) {
   try {
-    const response = await authClient.admin.unbanUser({ userId });
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
+      params: { path: { userId } },
+    });
 
-    if (!response.error) {
+    if (!respError) {
       await loadUsers();
     } else {
-      error.value = response.error.message ?? "Failed to unban user";
+      error.value = (respError as { message?: string }).message ?? "Failed to unban user";
     }
   } catch (err) {
     error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;

@@ -1,0 +1,3592 @@
+openapi: 3.0.3
+info:
+  title: Shopmon API
+  description: Shopware monitoring application API
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: API base path
+
+tags:
+  - name: Health
+    description: Health check
+  - name: Account
+    description: Account information and aggregated data
+  - name: Notifications
+    description: User notifications
+  - name: Shops
+    description: Shop management and operations
+  - name: Projects
+    description: Project management
+  - name: ApiKeys
+    description: API key management
+  - name: PackagesToken
+    description: Packages token management
+  - name: Deployments
+    description: Deployment management
+  - name: CLI
+    description: CLI integration endpoints
+  - name: SSO
+    description: Single Sign-On provider management
+  - name: Admin
+    description: Admin-only endpoints
+  - name: Info
+    description: Public information endpoints
+  - name: Auth
+    description: Authentication (email/password, OAuth, SSO, passkeys)
+  - name: Organizations
+    description: Organization management
+  - name: AuthAdmin
+    description: Admin user management
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ──────────────────────────────────────────────
+  # Health
+  # ──────────────────────────────────────────────
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum: ["ok"]
+
+  # ──────────────────────────────────────────────
+  # Account
+  # ──────────────────────────────────────────────
+  /account/me:
+    get:
+      operationId: getAccountMe
+      tags: [Account]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/extensions:
+    get:
+      operationId: getAccountExtensions
+      tags: [Account]
+      summary: Get aggregated extensions across all shops
+      responses:
+        "200":
+          description: List of extensions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountExtension"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/organizations:
+    get:
+      operationId: getAccountOrganizations
+      tags: [Account]
+      summary: Get organizations the user belongs to
+      responses:
+        "200":
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountOrganization"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/shops:
+    get:
+      operationId: getAccountShops
+      tags: [Account]
+      summary: Get all shops accessible to the user
+      responses:
+        "200":
+          description: List of shops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountShop"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/projects:
+    get:
+      operationId: getAccountProjects
+      tags: [Account]
+      summary: Get all projects accessible to the user
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountProject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/changelogs:
+    get:
+      operationId: getAccountChangelogs
+      tags: [Account]
+      summary: Get changelogs across all shops
+      responses:
+        "200":
+          description: List of changelogs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountChangelog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /account/subscribed-shops:
+    get:
+      operationId: getAccountSubscribedShops
+      tags: [Account]
+      summary: Get shops the user is subscribed to for notifications
+      responses:
+        "200":
+          description: List of subscribed shops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscribedShop"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Notifications
+  # ──────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [Notifications]
+      summary: Get all notifications for the current user
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteAllNotifications
+      tags: [Notifications]
+      summary: Delete all notifications
+      responses:
+        "204":
+          description: All notifications deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /notifications/{id}:
+    delete:
+      operationId: deleteNotification
+      tags: [Notifications]
+      summary: Delete a single notification
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "204":
+          description: Notification deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /notifications/mark-read:
+    post:
+      operationId: markNotificationsRead
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        "204":
+          description: All notifications marked as read
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ──────────────────────────────────────────────
+  # Shops
+  # ──────────────────────────────────────────────
+  /organizations/{orgId}/shops:
+    get:
+      operationId: getOrganizationShops
+      tags: [Shops]
+      summary: Get all shops in an organization
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+      responses:
+        "200":
+          description: List of shops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountShop"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /shops:
+    post:
+      operationId: createShop
+      tags: [Shops]
+      summary: Create a new shop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShopRequest"
+      responses:
+        "201":
+          description: Shop created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /shops/{shopId}:
+    get:
+      operationId: getShop
+      tags: [Shops]
+      summary: Get full shop details
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "200":
+          description: Shop details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateShop
+      tags: [Shops]
+      summary: Update a shop
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShopRequest"
+      responses:
+        "200":
+          description: Shop updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteShop
+      tags: [Shops]
+      summary: Delete a shop
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "204":
+          description: Shop deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /shops/{shopId}/refresh:
+    post:
+      operationId: refreshShop
+      tags: [Shops]
+      summary: Refresh shop data from Shopware API
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sitespeed:
+                  type: boolean
+                  description: Also run sitespeed check
+      responses:
+        "204":
+          description: Shop refresh triggered
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /shops/{shopId}/clear-cache:
+    post:
+      operationId: clearShopCache
+      tags: [Shops]
+      summary: Clear Shopware cache for the shop
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "204":
+          description: Cache cleared
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /shops/{shopId}/tasks/{taskId}/reschedule:
+    post:
+      operationId: rescheduleTask
+      tags: [Shops]
+      summary: Reschedule a scheduled task
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "204":
+          description: Task rescheduled
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /shops/{shopId}/subscribe:
+    get:
+      operationId: getShopSubscription
+      tags: [Shops]
+      summary: Check notification subscription status
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "200":
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - subscribed
+                properties:
+                  subscribed:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: subscribeToShop
+      tags: [Shops]
+      summary: Subscribe to shop notifications
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "204":
+          description: Subscribed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      operationId: unsubscribeFromShop
+      tags: [Shops]
+      summary: Unsubscribe from shop notifications
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      responses:
+        "204":
+          description: Unsubscribed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /shops/{shopId}/sitespeed-settings:
+    put:
+      operationId: updateSitespeedSettings
+      tags: [Shops]
+      summary: Update sitespeed settings for a shop
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SitespeedSettingsRequest"
+      responses:
+        "200":
+          description: Sitespeed settings updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ──────────────────────────────────────────────
+  # Projects
+  # ──────────────────────────────────────────────
+  /organizations/{orgId}/projects:
+    get:
+      operationId: getOrganizationProjects
+      tags: [Projects]
+      summary: Get all projects in an organization
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createProject
+      tags: [Projects]
+      summary: Create a new project
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /organizations/{orgId}/projects/{projectId}:
+    patch:
+      operationId: updateProject
+      tags: [Projects]
+      summary: Update a project
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectRequest"
+      responses:
+        "200":
+          description: Project updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteProject
+      tags: [Projects]
+      summary: Delete a project
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "204":
+          description: Project deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # API Keys
+  # ──────────────────────────────────────────────
+  /api-key-scopes:
+    get:
+      operationId: getApiKeyScopes
+      tags: [ApiKeys]
+      summary: Get available API key scopes
+      security: []
+      responses:
+        "200":
+          description: List of available scopes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyScope"
+
+  /organizations/{orgId}/projects/{projectId}/api-keys:
+    get:
+      operationId: getApiKeys
+      tags: [ApiKeys]
+      summary: List API keys for a project
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createApiKey
+      tags: [ApiKeys]
+      summary: Create a new API key
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiKeyRequest"
+      responses:
+        "201":
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateApiKeyResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /organizations/{orgId}/projects/{projectId}/api-keys/{keyId}:
+    delete:
+      operationId: deleteApiKey
+      tags: [ApiKeys]
+      summary: Delete an API key
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/KeyId"
+      responses:
+        "204":
+          description: API key deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # Packages Token
+  # ──────────────────────────────────────────────
+  /packages-token/configuration:
+    get:
+      operationId: getPackagesTokenConfiguration
+      tags: [PackagesToken]
+      summary: Get packages token configuration
+      responses:
+        "200":
+          description: Packages token configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackagesTokenConfiguration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /organizations/{orgId}/projects/{projectId}/packages-tokens:
+    get:
+      operationId: getPackagesTokens
+      tags: [PackagesToken]
+      summary: List packages tokens for a project
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: List of packages tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PackagesToken"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createPackagesToken
+      tags: [PackagesToken]
+      summary: Create a new packages token
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackagesTokenRequest"
+      responses:
+        "201":
+          description: Packages token created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}:
+    delete:
+      operationId: deletePackagesToken
+      tags: [PackagesToken]
+      summary: Delete a packages token
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "204":
+          description: Packages token deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync:
+    post:
+      operationId: syncPackagesToken
+      tags: [PackagesToken]
+      summary: Sync a packages token
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "204":
+          description: Sync triggered
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # Deployments
+  # ──────────────────────────────────────────────
+  /shops/{shopId}/deployments:
+    get:
+      operationId: getDeployments
+      tags: [Deployments]
+      summary: List deployments for a shop
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of deployments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Deployment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /shops/{shopId}/deployments/{deploymentId}:
+    get:
+      operationId: getDeployment
+      tags: [Deployments]
+      summary: Get deployment details with output
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/DeploymentId"
+      responses:
+        "200":
+          description: Deployment details with output
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeploymentDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteDeployment
+      tags: [Deployments]
+      summary: Delete a deployment
+      parameters:
+        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/DeploymentId"
+      responses:
+        "204":
+          description: Deployment deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # CLI
+  # ──────────────────────────────────────────────
+  /cli/deployments:
+    post:
+      operationId: createCliDeployment
+      tags: [CLI]
+      summary: Create a deployment via CLI
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCliDeploymentRequest"
+      responses:
+        "201":
+          description: Deployment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCliDeploymentResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ──────────────────────────────────────────────
+  # SSO
+  # ──────────────────────────────────────────────
+  /organizations/{orgId}/sso-providers:
+    get:
+      operationId: getSsoProviders
+      tags: [SSO]
+      summary: List SSO providers for an organization
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+      responses:
+        "200":
+          description: List of SSO providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SsoProvider"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /sso/discover:
+    get:
+      operationId: discoverSso
+      tags: [SSO]
+      summary: Discover OIDC configuration from an issuer URL
+      parameters:
+        - name: issuer
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        "200":
+          description: Discovered OIDC configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SsoDiscovery"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /organizations/{orgId}/sso-providers/{providerId}:
+    put:
+      operationId: updateSsoProvider
+      tags: [SSO]
+      summary: Update an SSO provider
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProviderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSsoProviderRequest"
+      responses:
+        "200":
+          description: SSO provider updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteSsoProvider
+      tags: [SSO]
+      summary: Delete an SSO provider
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+        - $ref: "#/components/parameters/ProviderId"
+      responses:
+        "204":
+          description: SSO provider deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # Admin
+  # ──────────────────────────────────────────────
+  /admin/organizations:
+    get:
+      operationId: adminGetOrganizations
+      tags: [Admin]
+      summary: List all organizations (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [name, createdAt, shopCount, memberCount]
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: searchField
+          in: query
+          schema:
+            type: string
+        - name: searchOperator
+          in: query
+          schema:
+            type: string
+        - name: searchValue
+          in: query
+          schema:
+            type: string
+        - name: filterField
+          in: query
+          schema:
+            type: string
+        - name: filterOperator
+          in: query
+          schema:
+            type: string
+        - name: filterValue
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of organizations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganizationsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/shops:
+    get:
+      operationId: adminGetShops
+      tags: [Admin]
+      summary: List all shops (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: searchField
+          in: query
+          schema:
+            type: string
+        - name: searchOperator
+          in: query
+          schema:
+            type: string
+        - name: searchValue
+          in: query
+          schema:
+            type: string
+        - name: filterField
+          in: query
+          schema:
+            type: string
+        - name: filterOperator
+          in: query
+          schema:
+            type: string
+        - name: filterValue
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated list of shops
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminShopsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [Admin]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/growth:
+    get:
+      operationId: adminGetGrowth
+      tags: [Admin]
+      summary: Get growth data over time
+      responses:
+        "200":
+          description: Growth data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGrowth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/recent-activity:
+    get:
+      operationId: adminGetRecentActivity
+      tags: [Admin]
+      summary: Get recent user and shop activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRecentActivity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/shopware-versions:
+    get:
+      operationId: adminGetShopwareVersions
+      tags: [Admin]
+      summary: Get Shopware version distribution across shops
+      responses:
+        "200":
+          description: Version distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopwareVersionCount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ──────────────────────────────────────────────
+  # Info
+  # ──────────────────────────────────────────────
+  /info/extension-compatibility:
+    post:
+      operationId: checkExtensionCompatibility
+      tags: [Info]
+      summary: Check extension compatibility between Shopware versions
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtensionCompatibilityRequest"
+      responses:
+        "200":
+          description: Compatibility results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExtensionCompatibilityResult"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /info/shopware-versions:
+    get:
+      operationId: getShopwareVersions
+      tags: [Info]
+      summary: Get latest Shopware version information
+      security: []
+      responses:
+        "200":
+          description: Shopware version information
+
+  # ──────────────────────────────────────────────
+  # Auth – Authentication
+  # ──────────────────────────────────────────────
+  /auth/sign-up/email:
+    post:
+      operationId: signUpEmail
+      tags: [Auth]
+      summary: Register with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        "200":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/AuthUser"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/sign-in/email:
+    post:
+      operationId: signInEmail
+      tags: [Auth]
+      summary: Sign in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Signed in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/AuthUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Account is banned
+
+  /auth/sign-out:
+    post:
+      operationId: signOut
+      tags: [Auth]
+      summary: Sign out
+      responses:
+        "200":
+          description: Signed out
+
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [Auth]
+      summary: Get current session
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/AuthUser"
+                  session:
+                    $ref: "#/components/schemas/SessionInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/verify-email:
+    get:
+      operationId: verifyEmail
+      tags: [Auth]
+      summary: Verify email address
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified
+        "400":
+          description: Invalid or expired token
+
+  /auth/forget-password:
+    post:
+      operationId: forgetPassword
+      tags: [Auth]
+      summary: Request password reset email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Reset email sent (always returns success)
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [Auth]
+      summary: Reset password with token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset
+        "400":
+          description: Invalid token or weak password
+
+  /auth/sign-in/social:
+    post:
+      operationId: signInSocial
+      tags: [Auth]
+      summary: Initiate OAuth sign-in (GitHub)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider:
+                  type: string
+                  enum: [github]
+                callbackURL:
+                  type: string
+      responses:
+        "200":
+          description: Authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /auth/sign-in/sso:
+    post:
+      operationId: signInSSO
+      tags: [Auth]
+      summary: Initiate SSO sign-in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                callbackURL:
+                  type: string
+      responses:
+        "200":
+          description: Authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "404":
+          description: No SSO provider for this domain
+
+  /auth/passkey/register-options:
+    post:
+      operationId: passkeyRegisterOptions
+      tags: [Auth]
+      summary: Begin passkey registration
+      responses:
+        "200":
+          description: Registration options and challenge key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  options:
+                    type: object
+                  challengeKey:
+                    type: string
+
+  /auth/passkey/register:
+    post:
+      operationId: passkeyRegister
+      tags: [Auth]
+      summary: Complete passkey registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeKey]
+              properties:
+                challengeKey:
+                  type: string
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Passkey registered
+        "400":
+          description: Invalid or expired challenge
+
+  /auth/passkey/login-options:
+    post:
+      operationId: passkeyLoginOptions
+      tags: [Auth]
+      summary: Begin passkey login
+      security: []
+      responses:
+        "200":
+          description: Login options and challenge key
+
+  /auth/passkey/login:
+    post:
+      operationId: passkeyLogin
+      tags: [Auth]
+      summary: Complete passkey login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeKey]
+              properties:
+                challengeKey:
+                  type: string
+      responses:
+        "200":
+          description: Logged in
+        "401":
+          description: Authentication failed
+
+  # ──────────────────────────────────────────────
+  # Auth – Organization Management
+  # ──────────────────────────────────────────────
+  /auth/organizations:
+    post:
+      operationId: createOrganization
+      tags: [Organizations]
+      summary: Create an organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+
+  /auth/organizations/{organizationId}:
+    patch:
+      operationId: updateOrganization
+      tags: [Organizations]
+      summary: Update an organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                logo:
+                  type: string
+      responses:
+        "200":
+          description: Updated
+    delete:
+      operationId: deleteOrganization
+      tags: [Organizations]
+      summary: Delete an organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Only owners can delete
+
+  /auth/organizations/{organizationId}/members:
+    get:
+      operationId: listOrganizationMembers
+      tags: [Organizations]
+      summary: List organization members
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    userId:
+                      type: string
+                    role:
+                      type: string
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    image:
+                      type: string
+                      nullable: true
+
+  /auth/organizations/{organizationId}/members/{userId}:
+    patch:
+      operationId: setMemberRole
+      tags: [Organizations]
+      summary: Change a member's role
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+      responses:
+        "200":
+          description: Role updated
+    delete:
+      operationId: removeMember
+      tags: [Organizations]
+      summary: Remove a member from the organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member removed
+
+  /auth/organizations/{organizationId}/leave:
+    post:
+      operationId: leaveOrganization
+      tags: [Organizations]
+      summary: Leave an organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Left organization
+        "400":
+          description: Cannot leave as only owner
+
+  /auth/organizations/{organizationId}/invitations:
+    get:
+      operationId: listOrganizationInvitations
+      tags: [Organizations]
+      summary: List pending invitations
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of pending invitations
+    post:
+      operationId: inviteMember
+      tags: [Organizations]
+      summary: Invite a user to the organization
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  default: member
+      responses:
+        "200":
+          description: Invitation sent
+
+  /auth/invitations/{invitationId}/accept:
+    post:
+      operationId: acceptInvitation
+      tags: [Organizations]
+      summary: Accept an invitation
+      parameters:
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invitation accepted
+
+  /auth/invitations/{invitationId}/reject:
+    post:
+      operationId: rejectInvitation
+      tags: [Organizations]
+      summary: Reject an invitation
+      parameters:
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invitation rejected
+
+  # ──────────────────────────────────────────────
+  # Auth – Admin
+  # ──────────────────────────────────────────────
+  /auth/admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [AuthAdmin]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: List of users
+
+  /auth/admin/users/{userId}/role:
+    patch:
+      operationId: adminSetUserRole
+      tags: [AuthAdmin]
+      summary: Set a user's role
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [user, admin]
+      responses:
+        "200":
+          description: Role updated
+
+  /auth/admin/users/{userId}/ban:
+    post:
+      operationId: adminBanUser
+      tags: [AuthAdmin]
+      summary: Ban a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                banReason:
+                  type: string
+      responses:
+        "200":
+          description: User banned
+
+  /auth/admin/users/{userId}/unban:
+    post:
+      operationId: adminUnbanUser
+      tags: [AuthAdmin]
+      summary: Unban a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User unbanned
+
+  /auth/admin/users/{userId}/impersonate:
+    post:
+      operationId: adminImpersonate
+      tags: [AuthAdmin]
+      summary: Impersonate a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Impersonation session created
+
+  # ──────────────────────────────────────────────
+  # Auth – Additional Endpoints
+  # ──────────────────────────────────────────────
+  /auth/get-full-organization:
+    get:
+      operationId: getFullOrganization
+      tags: [Auth]
+      summary: Get full organization details by ID
+      parameters:
+        - name: organizationId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full organization details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  members:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        userId:
+                          type: string
+                        role:
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          type: string
+                  invitations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                        status:
+                          type: string
+
+  /auth/list-sessions:
+    get:
+      operationId: listSessions
+      tags: [Auth]
+      summary: List active sessions
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - expiresAt
+                    - createdAt
+                  properties:
+                    id:
+                      type: string
+                    expiresAt:
+                      type: string
+                      format: date-time
+                    createdAt:
+                      type: string
+                      format: date-time
+                    ipAddress:
+                      type: string
+                      nullable: true
+                    userAgent:
+                      type: string
+                      nullable: true
+                    impersonatedBy:
+                      type: string
+                      nullable: true
+
+  /auth/revoke-session:
+    post:
+      operationId: revokeSession
+      tags: [Auth]
+      summary: Revoke a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId:
+                  type: string
+      responses:
+        "200":
+          description: Session revoked
+
+  /auth/list-accounts:
+    get:
+      operationId: listAccounts
+      tags: [Auth]
+      summary: List linked auth providers
+      responses:
+        "200":
+          description: List of linked accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - provider
+                    - accountId
+                    - createdAt
+                  properties:
+                    id:
+                      type: string
+                    provider:
+                      type: string
+                    accountId:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+
+  /auth/unlink-account:
+    post:
+      operationId: unlinkAccount
+      tags: [Auth]
+      summary: Unlink an auth provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerId]
+              properties:
+                providerId:
+                  type: string
+      responses:
+        "200":
+          description: Account unlinked
+
+  /auth/change-email:
+    post:
+      operationId: changeEmail
+      tags: [Auth]
+      summary: Change email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newEmail, currentPassword]
+              properties:
+                newEmail:
+                  type: string
+                  format: email
+                currentPassword:
+                  type: string
+      responses:
+        "200":
+          description: Email changed
+
+  /auth/update-user:
+    post:
+      operationId: updateUser
+      tags: [Auth]
+      summary: Update user profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: User updated
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [Auth]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password changed
+        "401":
+          description: Current password incorrect
+
+  /auth/delete-user:
+    post:
+      operationId: deleteUser
+      tags: [Auth]
+      summary: Delete user account
+      responses:
+        "200":
+          description: User deleted
+
+  /auth/link-social:
+    post:
+      operationId: linkSocial
+      tags: [Auth]
+      summary: Link a social provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider:
+                  type: string
+                callbackURL:
+                  type: string
+      responses:
+        "200":
+          description: Authorization URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /auth/list-organizations:
+    get:
+      operationId: listUserOrganizations
+      tags: [Auth]
+      summary: List user's organizations
+      responses:
+        "200":
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    logo:
+                      type: string
+                      nullable: true
+                    createdAt:
+                      type: string
+                      format: date-time
+                    role:
+                      type: string
+
+  /auth/has-permission:
+    post:
+      operationId: hasPermission
+      tags: [Auth]
+      summary: Check organization permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId]
+              properties:
+                organizationId:
+                  type: string
+      responses:
+        "200":
+          description: Permission check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /auth/cancel-invitation:
+    post:
+      operationId: cancelInvitation
+      tags: [Auth]
+      summary: Cancel a pending invitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invitationId]
+              properties:
+                invitationId:
+                  type: string
+      responses:
+        "200":
+          description: Invitation cancelled
+
+  /auth/passkey/list-user-passkeys:
+    get:
+      operationId: listUserPasskeys
+      tags: [Auth]
+      summary: List user's passkeys
+      responses:
+        "200":
+          description: List of passkeys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - name
+                    - createdAt
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                      nullable: true
+                    deviceType:
+                      type: string
+                    backedUp:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+
+  /auth/passkey/delete-passkey:
+    post:
+      operationId: deletePasskey
+      tags: [Auth]
+      summary: Delete a passkey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+      responses:
+        "200":
+          description: Passkey deleted
+
+  /auth/sso/register:
+    post:
+      operationId: registerSSOProvider
+      tags: [Auth]
+      summary: Register an SSO provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, domain, issuer, clientId, clientSecret, authorizationEndpoint, tokenEndpoint, jwksEndpoint]
+              properties:
+                organizationId:
+                  type: string
+                domain:
+                  type: string
+                issuer:
+                  type: string
+                clientId:
+                  type: string
+                clientSecret:
+                  type: string
+                authorizationEndpoint:
+                  type: string
+                tokenEndpoint:
+                  type: string
+                jwksEndpoint:
+                  type: string
+      responses:
+        "200":
+          description: SSO provider registered
+
+  /auth/admin/stop-impersonating:
+    post:
+      operationId: adminStopImpersonating
+      tags: [AuthAdmin]
+      summary: Stop impersonating a user
+      responses:
+        "200":
+          description: Impersonation ended
+
+  /auth/exchange-code:
+    post:
+      operationId: exchangeCode
+      tags: [Auth]
+      summary: Exchange one-time authorization code for session token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+      responses:
+        "200":
+          description: Session token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "400":
+          description: Invalid or expired code
+
+components:
+  # ──────────────────────────────────────────────
+  # Security Schemes
+  # ──────────────────────────────────────────────
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token authentication
+
+  # ──────────────────────────────────────────────
+  # Parameters
+  # ──────────────────────────────────────────────
+  parameters:
+    OrgId:
+      name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Organization ID
+
+    ShopId:
+      name: shopId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Shop ID
+
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Project ID
+
+    DeploymentId:
+      name: deploymentId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Deployment ID
+
+    KeyId:
+      name: keyId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: API key ID
+
+    TokenId:
+      name: tokenId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Packages token ID
+
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Scheduled task ID
+
+    ProviderId:
+      name: providerId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: SSO provider ID
+
+    NotificationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Notification ID
+
+  # ──────────────────────────────────────────────
+  # Responses
+  # ──────────────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  # ──────────────────────────────────────────────
+  # Schemas
+  # ──────────────────────────────────────────────
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    # ── Account ──────────────────────────────────
+    UserProfile:
+      type: object
+      required:
+        - id
+        - displayName
+        - email
+        - createdAt
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+
+    AccountExtension:
+      type: object
+      required:
+        - name
+        - label
+        - version
+        - latestVersion
+        - active
+        - installed
+        - storeLink
+        - ratingAverage
+        - installedAt
+        - changelog
+        - shops
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        version:
+          type: string
+        latestVersion:
+          type: string
+        active:
+          type: boolean
+        installed:
+          type: boolean
+        storeLink:
+          type: string
+          nullable: true
+        ratingAverage:
+          type: number
+          nullable: true
+        installedAt:
+          type: string
+          nullable: true
+          format: date-time
+        changelog:
+          type: string
+          nullable: true
+        shops:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountExtensionShop"
+
+    AccountExtensionShop:
+      type: object
+      required:
+        - shopId
+        - shopName
+        - shopOrganizationName
+        - shopOrganizationId
+        - shopUrl
+        - active
+        - version
+        - latestVersion
+        - installed
+      properties:
+        shopId:
+          type: integer
+        shopName:
+          type: string
+        shopOrganizationName:
+          type: string
+        shopOrganizationId:
+          type: string
+        shopUrl:
+          type: string
+        active:
+          type: boolean
+        version:
+          type: string
+        latestVersion:
+          type: string
+        installed:
+          type: boolean
+
+    AccountOrganization:
+      type: object
+      required:
+        - id
+        - name
+        - logo
+        - createdAt
+        - shopCount
+        - memberCount
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        shopCount:
+          type: integer
+        memberCount:
+          type: integer
+
+    AccountShop:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - favicon
+        - status
+        - shopwareVersion
+        - lastScrapedAt
+        - lastScrapedError
+        - organizationId
+        - organizationName
+        - projectId
+        - projectName
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+        favicon:
+          type: string
+          nullable: true
+        status:
+          type: string
+        shopwareVersion:
+          type: string
+        lastScrapedAt:
+          type: string
+          nullable: true
+          format: date-time
+        lastScrapedError:
+          type: string
+          nullable: true
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        projectId:
+          type: integer
+          nullable: true
+        projectName:
+          type: string
+          nullable: true
+
+    AccountProject:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - gitUrl
+        - organizationId
+        - organizationName
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        gitUrl:
+          type: string
+          nullable: true
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+
+    AccountChangelog:
+      type: object
+      required:
+        - id
+        - shopId
+        - extensions
+        - oldShopwareVersion
+        - newShopwareVersion
+        - date
+        - shopName
+        - shopOrganizationName
+        - shopOrganizationId
+      properties:
+        id:
+          type: integer
+        shopId:
+          type: integer
+        extensions:
+          type: array
+          description: JSON data describing extension changes
+          items:
+            $ref: "#/components/schemas/ExtensionDiff"
+        oldShopwareVersion:
+          type: string
+          nullable: true
+        newShopwareVersion:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        shopName:
+          type: string
+        shopOrganizationName:
+          type: string
+        shopOrganizationId:
+          type: string
+
+    ExtensionDiff:
+      type: object
+      required:
+        - name
+        - label
+        - state
+        - active
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        state:
+          type: string
+        oldVersion:
+          type: string
+          nullable: true
+        newVersion:
+          type: string
+          nullable: true
+        changelog:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ExtensionChangelogEntry"
+        active:
+          type: boolean
+
+    ExtensionChangelogEntry:
+      type: object
+      required:
+        - version
+        - text
+        - creationDate
+        - isCompatible
+      properties:
+        version:
+          type: string
+        text:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        isCompatible:
+          type: boolean
+
+    SubscribedShop:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # ── Notifications ────────────────────────────
+    Notification:
+      type: object
+      required:
+        - id
+        - userId
+        - key
+        - level
+        - title
+        - message
+        - link
+        - read
+        - createdAt
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        key:
+          type: string
+        level:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        link:
+          allOf:
+            - $ref: "#/components/schemas/NotificationLink"
+          nullable: true
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationLink:
+      type: object
+      required:
+        - url
+        - label
+      properties:
+        url:
+          type: string
+        label:
+          type: string
+
+    # ── Shops ────────────────────────────────────
+    CreateShopRequest:
+      type: object
+      required:
+        - name
+        - shopUrl
+        - clientId
+        - clientSecret
+        - projectId
+      properties:
+        name:
+          type: string
+        shopUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        projectId:
+          type: integer
+        shopToken:
+          type: string
+          nullable: true
+
+    UpdateShopRequest:
+      type: object
+      required:
+        - projectId
+      properties:
+        name:
+          type: string
+        shopUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        ignores:
+          type: array
+          items:
+            type: string
+        projectId:
+          type: integer
+
+    ShopDetail:
+      type: object
+      required:
+        - id
+        - organizationId
+        - organizationName
+        - projectId
+        - projectName
+        - projectDescription
+        - name
+        - status
+        - url
+        - favicon
+        - shopwareVersion
+        - lastScrapedAt
+        - lastScrapedError
+        - ignores
+        - shopImage
+        - lastChangelog
+        - sitespeedEnabled
+        - sitespeedUrls
+        - sitespeedDetailUrl
+        - createdAt
+        - shopToken
+        - extensions
+        - scheduledTasks
+        - queues
+        - cache
+        - checks
+        - sitespeeds
+        - changelogs
+        - deploymentsCount
+      properties:
+        id:
+          type: integer
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        projectId:
+          type: integer
+          nullable: true
+        projectName:
+          type: string
+          nullable: true
+        projectDescription:
+          type: string
+          nullable: true
+        name:
+          type: string
+        status:
+          type: string
+        url:
+          type: string
+        favicon:
+          type: string
+          nullable: true
+        shopwareVersion:
+          type: string
+        lastScrapedAt:
+          type: string
+          nullable: true
+          format: date-time
+        lastScrapedError:
+          type: string
+          nullable: true
+        ignores:
+          type: array
+          nullable: true
+          items:
+            type: string
+        shopImage:
+          type: string
+          nullable: true
+        shopToken:
+          type: string
+        lastChangelog:
+          allOf:
+            - $ref: "#/components/schemas/AccountChangelog"
+          nullable: true
+        sitespeedEnabled:
+          type: boolean
+        sitespeedUrls:
+          type: array
+          nullable: true
+          items:
+            type: string
+        sitespeedDetailUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        extensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopExtension"
+        scheduledTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduledTask"
+        queues:
+          type: array
+          items:
+            $ref: "#/components/schemas/Queue"
+        cache:
+          allOf:
+            - $ref: "#/components/schemas/CacheInfo"
+          nullable: true
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopCheck"
+        sitespeeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sitespeed"
+        changelogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountChangelog"
+        deploymentsCount:
+          type: integer
+
+    ShopExtension:
+      type: object
+      required:
+        - name
+        - label
+        - version
+        - latestVersion
+        - active
+        - installed
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        version:
+          type: string
+        latestVersion:
+          type: string
+        active:
+          type: boolean
+        installed:
+          type: boolean
+        storeLink:
+          type: string
+          nullable: true
+        ratingAverage:
+          type: number
+          nullable: true
+        installedAt:
+          type: string
+          nullable: true
+          format: date-time
+        changelog:
+          type: string
+          nullable: true
+
+    ScheduledTask:
+      type: object
+      required:
+        - id
+        - name
+        - runInterval
+        - status
+        - overdue
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        runInterval:
+          type: integer
+        status:
+          type: string
+        lastExecutionTime:
+          type: string
+          nullable: true
+          format: date-time
+        nextExecutionTime:
+          type: string
+          nullable: true
+          format: date-time
+        overdue:
+          type: boolean
+
+    Queue:
+      type: object
+      required:
+        - name
+        - size
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+
+    CacheInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+        environment:
+          type: string
+        httpCache:
+          type: boolean
+        cacheAdapter:
+          type: string
+
+    ShopCheck:
+      type: object
+      required:
+        - id
+        - level
+        - message
+      properties:
+        id:
+          type: string
+        level:
+          type: string
+        message:
+          type: string
+        link:
+          type: string
+          nullable: true
+
+    Sitespeed:
+      type: object
+      required:
+        - createdAt
+      properties:
+        ttfb:
+          type: number
+          nullable: true
+        fullyLoaded:
+          type: number
+          nullable: true
+        largestContentfulPaint:
+          type: number
+          nullable: true
+        firstContentfulPaint:
+          type: number
+          nullable: true
+        cumulativeLayoutShift:
+          type: number
+          nullable: true
+        transferSize:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        deployment:
+          allOf:
+            - $ref: "#/components/schemas/SitespeedDeployment"
+          nullable: true
+
+    SitespeedDeployment:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    SitespeedSettingsRequest:
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+        urls:
+          type: array
+          items:
+            type: string
+          maxItems: 5
+
+    # ── Projects ─────────────────────────────────
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - gitUrl
+        - organizationId
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        gitUrl:
+          type: string
+          nullable: true
+        organizationId:
+          type: string
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        gitUrl:
+          type: string
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        gitUrl:
+          type: string
+
+    # ── API Keys ─────────────────────────────────
+    ApiKeyScope:
+      type: object
+      required:
+        - value
+        - label
+        - description
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+
+    ApiKey:
+      type: object
+      required:
+        - id
+        - name
+        - scopes
+        - createdAt
+        - lastUsedAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          nullable: true
+          format: date-time
+
+    CreateApiKeyRequest:
+      type: object
+      required:
+        - name
+        - scopes
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    CreateApiKeyResponse:
+      type: object
+      required:
+        - id
+        - token
+        - name
+        - scopes
+      properties:
+        id:
+          type: integer
+        token:
+          type: string
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    # ── Packages Token ───────────────────────────
+    PackagesTokenConfiguration:
+      type: object
+      required:
+        - configured
+        - composerUrl
+      properties:
+        configured:
+          type: boolean
+        composerUrl:
+          type: string
+          nullable: true
+
+    PackagesToken:
+      type: object
+      required:
+        - id
+        - source
+        - lastSyncedAt
+      properties:
+        id:
+          type: integer
+        source:
+          type: string
+        lastSyncedAt:
+          type: string
+          nullable: true
+          format: date-time
+
+    CreatePackagesTokenRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+
+    # ── Deployments ──────────────────────────────
+    Deployment:
+      type: object
+      required:
+        - id
+        - name
+        - command
+        - returnCode
+        - startDate
+        - endDate
+        - executionTime
+        - reference
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        command:
+          type: string
+        returnCode:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        executionTime:
+          type: number
+          description: Execution time in seconds
+        reference:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    DeploymentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Deployment"
+        - type: object
+          properties:
+            output:
+              type: string
+              nullable: true
+
+    CreateCliDeploymentRequest:
+      type: object
+      required:
+        - shop_id
+        - command
+        - return_code
+        - start_date
+        - end_date
+        - execution_time
+      properties:
+        shop_id:
+          type: integer
+        command:
+          type: string
+        return_code:
+          type: integer
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        execution_time:
+          type: number
+        composer:
+          type: string
+          nullable: true
+        reference:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+
+    CreateCliDeploymentResponse:
+      type: object
+      required:
+        - success
+        - name
+        - deployment_id
+        - url
+        - upload_url
+      properties:
+        success:
+          type: boolean
+        name:
+          type: string
+        deployment_id:
+          type: integer
+        url:
+          type: string
+        upload_url:
+          type: string
+
+    # ── SSO ──────────────────────────────────────
+    SsoProvider:
+      type: object
+      required:
+        - id
+        - domain
+        - issuer
+        - clientId
+        - authorizationEndpoint
+        - tokenEndpoint
+        - jwksEndpoint
+      properties:
+        id:
+          type: string
+        domain:
+          type: string
+        issuer:
+          type: string
+        clientId:
+          type: string
+        authorizationEndpoint:
+          type: string
+        tokenEndpoint:
+          type: string
+        jwksEndpoint:
+          type: string
+
+    SsoDiscovery:
+      type: object
+      required:
+        - issuer
+        - authorizationEndpoint
+        - tokenEndpoint
+        - jwksEndpoint
+        - userInfoEndpoint
+        - scopes
+      properties:
+        issuer:
+          type: string
+        authorizationEndpoint:
+          type: string
+        tokenEndpoint:
+          type: string
+        jwksEndpoint:
+          type: string
+        userInfoEndpoint:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+
+    UpdateSsoProviderRequest:
+      type: object
+      required:
+        - domain
+        - issuer
+        - clientId
+        - authorizationEndpoint
+        - tokenEndpoint
+        - jwksEndpoint
+      properties:
+        domain:
+          type: string
+        issuer:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        authorizationEndpoint:
+          type: string
+        tokenEndpoint:
+          type: string
+        jwksEndpoint:
+          type: string
+
+    # ── Admin ────────────────────────────────────
+    AdminOrganizationsResponse:
+      type: object
+      required:
+        - organizations
+        - total
+      properties:
+        organizations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountOrganization"
+        total:
+          type: integer
+
+    AdminShopsResponse:
+      type: object
+      required:
+        - shops
+        - total
+      properties:
+        shops:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountShop"
+        total:
+          type: integer
+
+    AdminStats:
+      type: object
+      required:
+        - totalUsers
+        - totalOrganizations
+        - totalShops
+        - shopsByStatus
+      properties:
+        totalUsers:
+          type: integer
+        totalOrganizations:
+          type: integer
+        totalShops:
+          type: integer
+        shopsByStatus:
+          type: object
+          required:
+            - green
+            - yellow
+            - red
+          properties:
+            green:
+              type: integer
+            yellow:
+              type: integer
+            red:
+              type: integer
+
+    AdminGrowth:
+      type: object
+      required:
+        - users
+        - shops
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrowthDataPoint"
+        shops:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrowthDataPoint"
+
+    GrowthDataPoint:
+      type: object
+      required:
+        - month
+        - count
+      properties:
+        month:
+          type: string
+        count:
+          type: integer
+
+    AdminRecentActivity:
+      type: object
+      required:
+        - recentUsers
+        - recentShops
+      properties:
+        recentUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        recentShops:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountShop"
+
+    ShopwareVersionCount:
+      type: object
+      required:
+        - version
+        - count
+      properties:
+        version:
+          type: string
+        count:
+          type: integer
+
+    # ── Info ─────────────────────────────────────
+    ExtensionCompatibilityRequest:
+      type: object
+      required:
+        - currentVersion
+        - futureVersion
+        - extensions
+      properties:
+        currentVersion:
+          type: string
+        futureVersion:
+          type: string
+        extensions:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - version
+            properties:
+              name:
+                type: string
+              version:
+                type: string
+
+    ExtensionCompatibilityResult:
+      type: object
+      required:
+        - name
+        - label
+        - iconPath
+        - status
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        iconPath:
+          type: string
+          nullable: true
+        status:
+          type: object
+          required:
+            - name
+            - label
+            - type
+          properties:
+            name:
+              type: string
+            label:
+              type: string
+            type:
+              type: string
+
+    # ── Auth ────────────────────────────────────
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+        notifications:
+          type: array
+          items:
+            type: string
+
+    SessionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        activeOrganizationId:
+          type: string
+          nullable: true

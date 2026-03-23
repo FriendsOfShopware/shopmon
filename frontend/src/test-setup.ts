@@ -10,6 +10,7 @@ if (typeof HTMLDialogElement !== "undefined") {
   };
 } else {
   // Fallback when jsdom exposes <dialog> as a generic HTMLElement
+  //@ts-expect-error
   HTMLElement.prototype.showModal ??= function () {
     this.setAttribute("open", "");
   };

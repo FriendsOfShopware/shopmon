@@ -1,0 +1,112 @@
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os/signal"
+	"syscall"
+	"time"
+
+	goqueue "github.com/shyim/go-queue"
+	"github.com/friendsofshopware/shopmon/api/internal/config"
+	"github.com/friendsofshopware/shopmon/api/internal/database"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/jobs"
+	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	cron "github.com/robfig/cron/v3"
+	"github.com/spf13/cobra"
+)
+
+func workerCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "worker",
+		Short: "Start the background worker",
+		RunE:  runWorker,
+	}
+}
+
+func runWorker(cmd *cobra.Command, args []string) error {
+	cfg := config.Load()
+
+	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Database
+	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	q := queries.New(pool)
+
+	// Mail
+	mailSvc := mail.NewService(mail.SMTPConfig{
+		Host:    cfg.SMTPHost,
+		Port:    cfg.SMTPPort,
+		Secure:  cfg.SMTPSecure,
+		User:    cfg.SMTPUser,
+		Pass:    cfg.SMTPPass,
+		From:    cfg.MailFrom,
+		ReplyTo: cfg.SMTPReplyTo,
+	})
+
+	// Queue bus with all handlers registered
+	bus, err := jobs.NewBus(ctx, pool, q, cfg, mailSvc)
+	if err != nil {
+		return err
+	}
+
+	// Cron scheduler for recurring tasks
+	c := cron.New()
+	c.AddFunc("0 * * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.ShopScrapeAll{}); err != nil {
+			slog.Error("failed to dispatch shop scrape all", "error", err)
+		}
+	})
+	c.AddFunc("0 3 * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.SitespeedScrapeAll{}); err != nil {
+			slog.Error("failed to dispatch sitespeed scrape all", "error", err)
+		}
+	})
+	c.AddFunc("0 4 * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.LockCleanup{}); err != nil {
+			slog.Error("failed to dispatch lock cleanup", "error", err)
+		}
+	})
+	c.AddFunc("0 5 * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.InvitationCleanup{}); err != nil {
+			slog.Error("failed to dispatch invitation cleanup", "error", err)
+		}
+	})
+	c.Start()
+
+	// Worker
+	worker := goqueue.NewWorker(bus, goqueue.WorkerConfig{
+		Concurrency:    10,
+		HandlerTimeout: 10 * time.Minute,
+		RetryStrategy: goqueue.RetryStrategy{
+			MaxRetries: 3,
+			Delay:      5 * time.Second,
+			Multiplier: 2.0,
+			MaxDelay:   1 * time.Minute,
+		},
+		ErrorHandler: func(ctx context.Context, env *goqueue.Envelope, err error) {
+			slog.Error("job failed", "type", env.Type, "error", err)
+		},
+	})
+
+	go func() {
+		slog.Info("starting worker")
+		if err := worker.Run(ctx); err != nil && err != context.Canceled {
+			slog.Error("worker error", "error", err)
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("shutting down worker...")
+	c.Stop()
+	slog.Info("worker stopped")
+
+	return nil
+}

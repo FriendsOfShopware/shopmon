@@ -49,7 +49,7 @@
       </template>
 
       <template #cell-ratingAverage="{ row }">
-        <rating-stars :rating="row.ratingAverage" />
+        <rating-stars :rating="row.ratingAverage ?? null" />
       </template>
 
       <template #cell-installedAt="{ row }">
@@ -70,12 +70,12 @@
 
 <script setup lang="ts">
 import { formatDateTime } from "@/helpers/formatter";
-import type { RouterOutput } from "@/helpers/trpc";
+import type { components } from "@/types/api";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
 
-type Extension = RouterOutput["account"]["currentUserExtensions"][number];
+type Extension = components["schemas"]["ShopExtension"];
 
 const { shop } = useShopDetail();
 

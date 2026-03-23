@@ -140,7 +140,7 @@
           <p>
             Go to
             <router-link :to="{ name: 'account.organizations.list' }">My Organisations</router-link>
-            and click "New Organization". Give it a name and an optional slug (used in URLs).
+            and click "New Organization". Give it a name to get started.
           </p>
         </div>
       </section>

@@ -27,7 +27,7 @@
         class="project-panel"
         :description="project.description || undefined"
       >
-        <template #title>{{ project.nameCombined }}</template>
+        <template #title>{{ project.name }}</template>
         <template #action>
           <router-link
             :to="{ name: 'account.projects.edit', params: { projectId: project.id } }"
@@ -40,8 +40,6 @@
 
         <p class="project-meta">
           <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
-          <span class="separator">•</span>
-          <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
         </p>
 
         <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
@@ -50,7 +48,7 @@
               :to="{
                 name: 'account.shops.detail',
                 params: {
-                  slug: shop.organizationSlug,
+                  organizationId: shop.organizationId,
                   shopId: shop.id,
                 },
               }"
@@ -113,12 +111,14 @@
 <script setup lang="ts">
 import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 import { formatDate } from "@/helpers/formatter";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { computed, ref } from "vue";
+import { useAccountShops } from "@/composables/useAccountShops";
 
 const loading = ref(true);
-const shops = ref<RouterOutput["account"]["currentUserShops"]>([]);
-const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
+const { shops } = useAccountShops();
+const projects = ref<components["schemas"]["AccountProject"][]>([]);
 
 // Group shops by project
 const projectShops = computed(() => {
@@ -135,14 +135,11 @@ const projectShops = computed(() => {
   return grouped;
 });
 
-// Load projects and shops in parallel
-Promise.all([
-  trpcClient.account.currentUserProjects.query(),
-  trpcClient.account.currentUserShops.query(),
-])
-  .then(([projectsData, shopsData]) => {
-    projects.value = projectsData;
-    shops.value = shopsData;
+// Load projects
+api
+  .GET("/account/projects")
+  .then((projectsRes) => {
+    if (projectsRes.data) projects.value = projectsRes.data;
     loading.value = false;
   })
   .catch(() => {

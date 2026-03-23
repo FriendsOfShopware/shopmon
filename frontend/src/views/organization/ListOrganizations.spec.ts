@@ -1,9 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h } from "vue";
 import ListOrganizations from "./ListOrganizations.vue";
 
-// Stubs
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+  },
+  getToken: vi.fn(() => "test-token"),
+  setToken: vi.fn(),
+}));
+
+vi.mock("@/composables/useSession", () => ({
+  useSession: () => ({
+    session: { value: { user: { id: "1", name: "Test" } } },
+    loading: { value: false },
+    fetchSession: vi.fn(),
+  }),
+  fetchSession: vi.fn(),
+}));
+
+import { api } from "@/helpers/api";
+
 const HeaderContainerStub = defineComponent({
   name: "HeaderContainer",
   props: ["title"],
@@ -23,37 +42,7 @@ const ElementEmptyStub = defineComponent({
   name: "ElementEmpty",
   props: ["title", "route", "button"],
   template:
-    '<div class="element-empty"><h3>{{ title }}</h3><slot /><a :href="route.name">{{ button }}</a></div>',
-});
-
-const DataTableStub = defineComponent({
-  name: "DataTable",
-  props: ["columns", "data"],
-  setup(props) {
-    return () =>
-      h("table", { class: "data-table" }, [
-        h(
-          "thead",
-          {},
-          h(
-            "tr",
-            {},
-            props.columns.map((col: any) => h("th", { key: col.key }, col.name)),
-          ),
-        ),
-        h(
-          "tbody",
-          {},
-          props.data.map((row: any) =>
-            h(
-              "tr",
-              { key: row.id },
-              props.columns.map((col: any) => h("td", { key: col.key }, row[col.key])),
-            ),
-          ),
-        ),
-      ]);
-  },
+    '<div class="element-empty"><h3>{{ title }}</h3><slot /><a :href="route?.name">{{ button }}</a></div>',
 });
 
 const RouterLinkStub = defineComponent({
@@ -64,43 +53,24 @@ const RouterLinkStub = defineComponent({
   },
 });
 
-// Mock organizations data
-const mockOrganizations = {
-  data: [
-    {
-      id: "1",
-      name: "Test Organization",
-      slug: "test-org",
-      memberCount: 5,
-      shopCount: 2,
-    },
-    {
-      id: "2",
-      name: "Another Org",
-      slug: "another-org",
-      memberCount: 3,
-      shopCount: 1,
-    },
-  ],
-};
-
-const emptyOrganizations = {
-  data: [],
-};
-
-// Mock authClient
-const mockOrganizationsData = ref(mockOrganizations);
-
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    useListOrganizations: () => mockOrganizationsData.value,
-  },
-}));
+const mockOrganizations = [
+  { id: "1", name: "Test Organization", role: "owner", createdAt: "2024-01-01" },
+  { id: "2", name: "Another Org", role: "member", createdAt: "2024-02-01" },
+];
 
 describe("ListOrganizations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockOrganizationsData.value = mockOrganizations;
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/auth/list-organizations") {
+        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
+      }
+      return Promise.resolve({
+        data: null,
+        error: { message: "not found" },
+        response: new Response(),
+      });
+    }) as any);
   });
 
   function mountComponent() {
@@ -110,8 +80,8 @@ describe("ListOrganizations", () => {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
           ElementEmpty: ElementEmptyStub,
-          DataTable: DataTableStub,
           RouterLink: RouterLinkStub,
+          Panel: { template: "<div><slot /><slot name='title' /></div>" },
         },
       },
     });
@@ -126,57 +96,44 @@ describe("ListOrganizations", () => {
   it("displays page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("My Organization");
+    expect(wrapper.text()).toContain("My Organization");
   });
 
-  it("displays Add Organization button in header", async () => {
+  it("displays Add Organization button", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.text()).toContain("Add Organization");
   });
 
-  it("displays organizations in data table when data exists", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.find(".data-table").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Test Organization");
-    expect(wrapper.text()).toContain("Another Org");
-  });
-
-  it("displays organization names in table", async () => {
+  it("displays organizations when data exists", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.text()).toContain("Test Organization");
     expect(wrapper.text()).toContain("Another Org");
   });
 
-  it("displays organization slugs", async () => {
+  it("displays organization names", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("test-org");
-    expect(wrapper.text()).toContain("another-org");
+    expect(wrapper.text()).toContain("Test Organization");
+    expect(wrapper.text()).toContain("Another Org");
   });
 
   it("displays empty state when no organizations exist", async () => {
-    mockOrganizationsData.value = emptyOrganizations;
+    vi.mocked(api.GET).mockImplementation((() =>
+      Promise.resolve({ data: [], error: null, response: new Response() })) as any);
+
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find(".element-empty").exists()).toBe(true);
-    expect(wrapper.text()).toContain("No Organization");
   });
 
   it("shows add organization button in empty state", async () => {
-    mockOrganizationsData.value = emptyOrganizations;
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Get started by adding your first organization");
-    expect(wrapper.text()).toContain("Add Organization");
-  });
+    vi.mocked(api.GET).mockImplementation((() =>
+      Promise.resolve({ data: [], error: null, response: new Response() })) as any);
 
-  it("displays correct table columns", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Name");
-    expect(wrapper.text()).toContain("Slug");
+    expect(wrapper.text()).toContain("Add Organization");
   });
 });

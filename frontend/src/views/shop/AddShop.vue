@@ -1,7 +1,45 @@
 <template>
   <header-container title="New Shop" />
   <main-container>
-    <Panel>
+    <Panel v-if="projects.length === 0 && projectsLoaded">
+      <div class="empty-project-state">
+        <div class="empty-project-icon">
+          <icon-fa6-solid:folder-tree aria-hidden="true" />
+        </div>
+
+        <h3 class="empty-project-title">Create a project first</h3>
+
+        <p class="empty-project-description">
+          Projects group related shop environments together. For example:
+        </p>
+
+        <div class="empty-project-example">
+          <div class="example-project">
+            <icon-fa6-solid:folder class="example-icon" aria-hidden="true" />
+            <span class="example-project-name">Toy Shop X</span>
+          </div>
+          <div class="example-shops">
+            <div class="example-shop">
+              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
+              Production
+            </div>
+            <div class="example-shop">
+              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
+              Staging
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-project-cta">
+          <router-link :to="{ name: 'account.projects.new', query: { redirect: $route.fullPath } }" class="btn btn-primary">
+            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
+            Create Project
+          </router-link>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel v-else>
       <vee-form
         ref="formRef"
         v-slot="{ errors, isSubmitting }"
@@ -32,7 +70,7 @@
             <field id="projectId" name="projectId">
               <select v-model="selectedProjectId" class="field" required>
                 <option v-for="project in projects" :key="project.id" :value="project.id">
-                  {{ project.nameCombined }}
+                  {{ project.organizationName + " / " + project.name }}
                 </option>
               </select>
             </field>
@@ -151,7 +189,8 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 
-import { type RouterInput, type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
 import { ref } from "vue";
 
@@ -176,7 +215,8 @@ async function copyToken() {
   success("Token copied to clipboard");
 }
 
-const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
+const projects = ref<components["schemas"]["AccountProject"][]>([]);
+const projectsLoaded = ref(false);
 const selectedProjectId = ref<number>(route.query.projectId ? Number(route.query.projectId) : 0);
 
 const showPluginModal = ref(false);
@@ -185,11 +225,14 @@ const pluginError = ref("");
 
 const formRef = ref();
 
-trpcClient.account.currentUserProjects.query().then((data) => {
-  projects.value = data;
-  if (!selectedProjectId.value && data.length > 0) {
-    selectedProjectId.value = data[0].id;
+api.GET("/account/projects").then(({ data }) => {
+  if (data) {
+    projects.value = data;
+    if (!selectedProjectId.value && data.length > 0) {
+      selectedProjectId.value = data[0].id;
+    }
   }
+  projectsLoaded.value = true;
 });
 
 const isValidUrl = (url: string) => {
@@ -218,15 +261,21 @@ const shops = {
 const onSubmit = async (values: Record<string, unknown>) => {
   try {
     const typedValues = values as Yup.InferType<typeof schema>;
-    const input: RouterInput["organization"]["shop"]["create"] = {
-      name: typedValues.name,
-      shopUrl: typedValues.shopUrl.replace(/\/+$/, ""),
-      clientId: typedValues.clientId,
-      clientSecret: typedValues.clientSecret,
-      projectId: selectedProjectId.value,
-      shopToken,
-    };
-    await trpcClient.organization.shop.create.mutate(input);
+    const { error: apiError } = await api.POST("/shops", {
+      body: {
+        name: typedValues.name,
+        shopUrl: typedValues.shopUrl.replace(/\/+$/, ""),
+        clientId: typedValues.clientId,
+        clientSecret: typedValues.clientSecret,
+        projectId: selectedProjectId.value,
+        shopToken,
+      },
+    });
+
+    if (apiError) {
+      error(apiError.message);
+      return;
+    }
 
     router.push({ name: "account.project.list" });
   } catch (e) {
@@ -284,5 +333,76 @@ function processPluginData() {
     font-size: 0.8rem;
     word-break: break-all;
   }
+}
+
+.empty-project-state {
+  text-align: center;
+  padding: 2rem 1rem 1rem;
+}
+
+.empty-project-icon {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  opacity: 0.7;
+  margin-bottom: 1rem;
+}
+
+.empty-project-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--item-title-color);
+  margin-bottom: 0.5rem;
+}
+
+.empty-project-description {
+  color: var(--text-color-muted);
+  margin-bottom: 1.5rem;
+}
+
+.empty-project-example {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--item-background);
+  border: 1px solid var(--panel-border-color);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.example-project {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: var(--item-title-color);
+}
+
+.example-shops {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-left: 1.5rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--panel-border-color);
+}
+
+.example-shop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-color-muted);
+}
+
+.example-icon {
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  opacity: 0.8;
+}
+
+.empty-project-cta {
+  margin-top: 2rem;
 }
 </style>

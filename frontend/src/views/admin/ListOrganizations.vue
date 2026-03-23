@@ -11,7 +11,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search organizations by name or slug..."
+          placeholder="Search organizations by name..."
           class="field search-input"
           @input="debouncedSearch"
         />
@@ -21,7 +21,6 @@
         <select v-model="sortBy" class="field" @change="loadOrganizations">
           <option value="createdAt">Sort by Created</option>
           <option value="name">Sort by Name</option>
-          <option value="slug">Sort by Slug</option>
           <option value="shopCount">Sort by Shops</option>
           <option value="memberCount">Sort by Members</option>
         </select>
@@ -50,13 +49,11 @@
       </template>
 
       <template #cell-name="{ row }">
-        <router-link :to="{ name: 'account.organizations.detail', params: { slug: row.slug } }">
+        <router-link
+          :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }"
+        >
           {{ row.name }}
         </router-link>
-      </template>
-
-      <template #cell-slug="{ row }">
-        <code class="slug">{{ row.slug }}</code>
       </template>
 
       <template #cell-shopCount="{ row }">
@@ -97,19 +94,18 @@
 import Alert from "@/components/layout/Alert.vue";
 import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
 import { computed, onMounted, ref } from "vue";
 
-type Organization = Awaited<
-  ReturnType<typeof trpcClient.admin.listOrganizations.query>
->["organizations"][number];
+type Organization = components["schemas"]["AccountOrganization"];
 
 const organizations = ref<Organization[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const sortBy = ref<"createdAt" | "name" | "slug" | "shopCount" | "memberCount">("createdAt");
+const sortBy = ref<"createdAt" | "name" | "shopCount" | "memberCount">("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const pageSize = ref(20);
@@ -118,12 +114,11 @@ const totalOrganizations = ref(0);
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
 
 const tableColumns = [
-  { key: "logo", name: "Logo" },
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "slug", name: "Slug", sortable: true, searchable: true },
-  { key: "shopCount", name: "Shops", sortable: true },
-  { key: "memberCount", name: "Members", sortable: true },
-  { key: "createdAt", name: "Created", sortable: true },
+  { key: "logo" as const, name: "Logo" },
+  { key: "name" as const, name: "Name", sortable: true, searchable: true },
+  { key: "shopCount" as const, name: "Shops", sortable: true },
+  { key: "memberCount" as const, name: "Members", sortable: true },
+  { key: "createdAt" as const, name: "Created", sortable: true },
 ];
 
 async function loadOrganizations() {
@@ -134,9 +129,9 @@ async function loadOrganizations() {
     const query: {
       limit: number;
       offset: number;
-      sortBy: "createdAt" | "name" | "slug" | "shopCount" | "memberCount";
+      sortBy: "createdAt" | "name" | "shopCount" | "memberCount";
       sortDirection: "asc" | "desc";
-      searchField?: "name" | "slug";
+      searchField?: "name";
       searchOperator?: "contains";
       searchValue?: string;
     } = {
@@ -147,21 +142,16 @@ async function loadOrganizations() {
     };
 
     if (searchQuery.value) {
-      // Search by name if it contains letters, otherwise by slug
-      const isNameSearch = /[a-zA-Z]/.test(searchQuery.value);
-      query.searchField = isNameSearch ? "name" : "slug";
+      query.searchField = "name";
       query.searchOperator = "contains";
       query.searchValue = searchQuery.value;
     }
 
-    const response = await trpcClient.admin.listOrganizations.query(query);
+    const { data: response } = await api.GET("/admin/organizations", {
+      params: { query },
+    });
 
-    if (Array.isArray(response)) {
-      // When no input provided, response is an array
-      organizations.value = response;
-      totalOrganizations.value = response.length;
-    } else {
-      // When input provided, response is an object with organizations and total
+    if (response) {
       organizations.value = response.organizations;
       totalOrganizations.value = response.total;
     }
@@ -264,14 +254,6 @@ onMounted(() => {
 .logo-placeholder .icon {
   width: 16px;
   height: 16px;
-}
-
-.slug {
-  background-color: var(--bg-color-muted);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-family: monospace;
 }
 
 .badge-info {

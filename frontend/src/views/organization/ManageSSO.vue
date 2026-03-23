@@ -1,7 +1,10 @@
 <template>
   <header-container title="SSO Configuration">
     <router-link
-      :to="{ name: 'account.organizations.detail', params: { slug: route.params.slug } }"
+      :to="{
+        name: 'account.organizations.detail',
+        params: { organizationId: route.params.organizationId },
+      }"
       type="button"
       class="btn"
     >
@@ -270,8 +273,8 @@
 import { useAlert } from "@/composables/useAlert";
 import { usePermissions } from "@/composables/usePermissions";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
-import { authClient } from "@/helpers/auth-client";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -309,8 +312,11 @@ const showAddProviderModal = ref(false);
 const showDeleteModal = ref(false);
 const deletingProvider = ref<SSOProvider | null>(null);
 const providerType = ref("oidc");
-const organization =
-  ref<Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>>(null);
+interface OrganizationData {
+  id: string;
+  name: string;
+}
+const organization = ref<OrganizationData | null>(null);
 
 const canManageOrganization = usePermissions(
   computed(() => ({
@@ -382,10 +388,16 @@ const callbackUrl = computed(() => {
 
 async function loadOrganization() {
   try {
-    const org = await authClient.organization.getFullOrganization({
-      query: { organizationSlug: route.params.slug as string },
+    const { data } = await api.GET("/auth/get-full-organization", {
+      params: { query: { organizationId: route.params.organizationId as string } },
     });
-    organization.value = org.data;
+
+    if (!data) {
+      alert.error("Failed to load organization");
+      return;
+    }
+
+    organization.value = data as unknown as OrganizationData;
     await loadProviders();
   } catch (error) {
     alert.error(`Failed to load organization${error instanceof Error ? `: ${error.message}` : ""}`);
@@ -397,10 +409,10 @@ async function loadProviders() {
 
   isLoading.value = true;
   try {
-    const providers = await trpcClient.organization.sso.list.query({
-      orgId: organization.value.id,
+    const { data: providers } = await api.GET("/organizations/{orgId}/sso-providers", {
+      params: { path: { orgId: organization.value.id } },
     });
-    ssoProviders.value = providers;
+    ssoProviders.value = (providers ?? []) as unknown as SSOProvider[];
   } catch (error) {
     alert.error(
       `Failed to load SSO providers${error instanceof Error ? `: ${error.message}` : ""}`,
@@ -441,9 +453,14 @@ async function discoverOpenIdConfig() {
 
   isDiscovering.value = true;
   try {
-    const config = await trpcClient.organization.sso.discoverOpenIdConfig.query({
-      issuer: issuerUrl.value,
+    const { data: config } = await api.GET("/sso/discover", {
+      params: { query: { issuer: issuerUrl.value } },
     });
+
+    if (!config) {
+      alert.error("Failed to discover OpenID configuration");
+      return;
+    }
 
     // Update form fields with discovered values
     const form = document.getElementById("providerForm") as HTMLFormElement;
@@ -487,35 +504,41 @@ async function onSubmitProvider(values: Record<string, unknown>) {
   try {
     if (isEditMode.value && editingProvider.value) {
       // Update existing provider
-      await trpcClient.organization.sso.update.mutate({
-        orgId: organization.value.id,
-        providerId: editingProvider.value.providerId,
-        domain: typedValues.domain,
-        issuer: typedValues.issuer,
-        clientId: typedValues.clientId,
-        clientSecret: typedValues.clientSecret ?? undefined,
-        authorizationEndpoint: typedValues.authorizationEndpoint,
-        tokenEndpoint: typedValues.tokenEndpoint,
-        jwksEndpoint: typedValues.jwksEndpoint,
+      await api.PUT("/organizations/{orgId}/sso-providers/{providerId}", {
+        params: {
+          path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
+        },
+        body: {
+          domain: typedValues.domain,
+          issuer: typedValues.issuer,
+          clientId: typedValues.clientId,
+          clientSecret: typedValues.clientSecret ?? undefined,
+          authorizationEndpoint: typedValues.authorizationEndpoint,
+          tokenEndpoint: typedValues.tokenEndpoint,
+          jwksEndpoint: typedValues.jwksEndpoint,
+        },
       });
 
       alert.success("SSO provider updated successfully");
     } else {
       // Create new provider
-      const resp = await authClient.sso.register({
-        providerId: currentProviderId.value,
-        domain: typedValues.domain,
-        issuer: typedValues.issuer,
-        organizationId: organization.value.id,
-        clientId: typedValues.clientId,
-        clientSecret: typedValues.clientSecret ?? "",
-        authorizationEndpoint: typedValues.authorizationEndpoint,
-        tokenEndpoint: typedValues.tokenEndpoint,
-        jwksEndpoint: typedValues.jwksEndpoint,
+      const { error: ssoError } = await api.POST("/auth/sso/register", {
+        body: {
+          domain: typedValues.domain,
+          issuer: typedValues.issuer,
+          organizationId: organization.value!.id,
+          clientId: typedValues.clientId,
+          clientSecret: typedValues.clientSecret ?? "",
+          authorizationEndpoint: typedValues.authorizationEndpoint,
+          tokenEndpoint: typedValues.tokenEndpoint,
+          jwksEndpoint: typedValues.jwksEndpoint,
+        },
       });
 
-      if (resp.error) {
-        alert.error(resp.error.message ?? "Failed to register SSO provider");
+      if (ssoError) {
+        alert.error(
+          (ssoError as { message?: string }).message ?? "Failed to register SSO provider",
+        );
         isSubmitting.value = false;
         return;
       }
@@ -543,9 +566,10 @@ async function deleteProvider() {
 
   isDeleting.value = true;
   try {
-    await trpcClient.organization.sso.delete.mutate({
-      orgId: organization.value.id,
-      providerId: deletingProvider.value.providerId,
+    await api.DELETE("/organizations/{orgId}/sso-providers/{providerId}", {
+      params: {
+        path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
+      },
     });
     alert.success("SSO provider deleted successfully");
     showDeleteModal.value = false;

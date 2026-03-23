@@ -82,7 +82,7 @@ interface Extension {
   label: string;
   active: boolean;
   compatibility?: ExtensionCompatibility;
-  storeLink?: string;
+  storeLink?: string | null;
 }
 
 interface Props {

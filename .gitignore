@@ -3,6 +3,8 @@
 /api/.env
 /api/shopmon*.db*
 /api/files
+/api/tmp
+/api/api
 node_modules
 frontend/components.d.ts
 litestream.yml

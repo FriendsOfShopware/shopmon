@@ -40,23 +40,23 @@ import { Field, Form as VeeForm } from "vee-validate";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 
 const schema = Yup.object().shape({
   email: Yup.string().required("Email is required"),
 });
 
-async function onSubmit(values: { email: string }): Promise<void> {
+async function onSubmit(values: Record<string, unknown>): Promise<void> {
   const { success, error } = useAlert();
 
-  const resp = await authClient.forgetPassword({ email: values.email });
-
-  if (resp.error) {
-    error(resp.error.message ?? "Failed to send password reset email");
-    return;
+  try {
+    await api.POST("/auth/forget-password", {
+      body: { email: values.email as string },
+    });
+    success("Password reset email sent");
+  } catch (e) {
+    error(e instanceof Error ? e.message : "Failed to send password reset email");
   }
-
-  success("Password reset email sent");
 }
 </script>
 

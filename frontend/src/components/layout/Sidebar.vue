@@ -35,7 +35,7 @@
             :to="{
               name: 'account.shops.detail',
               params: {
-                slug: shop.organizationSlug,
+                organizationId: shop.organizationId,
                 shopId: shop.id,
               },
             }"
@@ -62,15 +62,11 @@
 <script setup lang="ts">
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
-const shops = ref<RouterOutput["account"]["currentUserShops"]>([]);
-
-trpcClient.account.currentUserShops.query().then((data) => {
-  shops.value = data;
-});
-
-import { ref, computed } from "vue";
-import { RouterOutput, trpcClient } from "@/helpers/trpc";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useAccountShops } from "@/composables/useAccountShops";
+
+const { shops } = useAccountShops();
 
 const route = useRoute();
 

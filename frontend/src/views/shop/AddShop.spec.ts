@@ -69,7 +69,7 @@ const PluginConnectionModalStub = defineComponent({
 
 // Mock router
 const mockPush = vi.fn();
-const mockRoute = { query: {} };
+const mockRoute = { query: {} as Record<string, string> };
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => mockRoute,
@@ -81,22 +81,17 @@ const mockProjects = [
   { id: 2, nameCombined: "Project B" },
 ];
 
-// Mock trpcClient
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      currentUserProjects: {
-        query: vi.fn(() => Promise.resolve(mockProjects)),
-      },
-    },
-    organization: {
-      shop: {
-        create: {
-          mutate: vi.fn(() => Promise.resolve({})),
-        },
-      },
-    },
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock useAlert
@@ -107,10 +102,23 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
+import { api } from "@/helpers/api";
+
 describe("AddShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRoute.query = {};
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/projects") {
+        return Promise.resolve({ data: mockProjects, error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
+    vi.mocked(api.POST).mockResolvedValue({
+      data: {},
+      error: null,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {

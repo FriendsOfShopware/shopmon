@@ -1,15 +1,15 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { compareVersions } from "compare-versions";
-import { trpcClient } from "@/helpers/trpc";
-import type { RouterOutput } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 
 export function useShopDetail() {
   const route = useRoute();
   const { success, error } = useAlert();
 
-  const shop = ref<RouterOutput["organization"]["shop"]["get"] | null>(null);
+  const shop = ref<components["schemas"]["ShopDetail"] | null>(null);
   const isLoading = ref(false);
   const isRefreshing = ref(false);
   const isCacheClearing = ref(false);
@@ -26,24 +26,28 @@ export function useShopDetail() {
   async function loadShop() {
     isLoading.value = true;
     try {
-      shop.value = await trpcClient.organization.shop.get.query({
-        shopId: shopId.value,
+      const { data } = await api.GET("/shops/{shopId}", {
+        params: { path: { shopId: shopId.value } },
       });
+      shop.value = data ?? null;
 
       // Check notification subscription status
-      isSubscribed.value = await trpcClient.organization.shop.isSubscribedToNotifications.query({
-        shopId: shopId.value,
+      const { data: subData } = await api.GET("/shops/{shopId}/subscribe", {
+        params: { path: { shopId: shopId.value } },
       });
+      isSubscribed.value = subData?.subscribed ?? false;
 
-      const shopwareVersionsData = await trpcClient.info.getLatestShopwareVersion.query();
-      shopwareVersions.value = Object.keys(shopwareVersionsData)
-        .reverse()
-        .filter(
-          (version) =>
-            !version.includes("-RC") &&
-            compareVersions(shop.value?.shopwareVersion ?? "", version) < 0,
-        );
-      latestShopwareVersion.value = shopwareVersions.value[0];
+      const { data: shopwareVersionsData } = await api.GET("/info/shopware-versions");
+      if (shopwareVersionsData) {
+        shopwareVersions.value = Object.keys(shopwareVersionsData)
+          .reverse()
+          .filter(
+            (version) =>
+              !version.includes("-RC") &&
+              compareVersions(shop.value?.shopwareVersion ?? "", version) < 0,
+          );
+        latestShopwareVersion.value = shopwareVersions.value[0];
+      }
 
       if (shop.value?.name) {
         const pageTitle = route.meta.title;
@@ -64,9 +68,9 @@ export function useShopDetail() {
     if (shop.value?.organizationId && shop.value?.id) {
       try {
         isRefreshing.value = true;
-        await trpcClient.organization.shop.refreshShop.mutate({
-          shopId: shop.value.id,
-          sitespeed: sitespeed,
+        await api.POST("/shops/{shopId}/refresh", {
+          params: { path: { shopId: shop.value.id } },
+          body: { sitespeed },
         });
         isRefreshing.value = false;
         await loadShop();
@@ -82,8 +86,8 @@ export function useShopDetail() {
     if (shop.value?.organizationId && shop.value?.id) {
       try {
         isCacheClearing.value = true;
-        await trpcClient.organization.shop.clearShopCache.mutate({
-          shopId: shop.value.id,
+        await api.POST("/shops/{shopId}/clear-cache", {
+          params: { path: { shopId: shop.value.id } },
         });
         isCacheClearing.value = false;
         await loadShop();
@@ -102,14 +106,14 @@ export function useShopDetail() {
       isSubscribing.value = true;
 
       if (isSubscribed.value) {
-        await trpcClient.organization.shop.unsubscribeFromNotifications.mutate({
-          shopId: shop.value.id,
+        await api.DELETE("/shops/{shopId}/subscribe", {
+          params: { path: { shopId: shop.value.id } },
         });
         isSubscribed.value = false;
         success("You have unsubscribed from notifications for this shop");
       } else {
-        await trpcClient.organization.shop.subscribeToNotifications.mutate({
-          shopId: shop.value.id,
+        await api.POST("/shops/{shopId}/subscribe", {
+          params: { path: { shopId: shop.value.id } },
         });
         isSubscribed.value = true;
         success("You have subscribed to notifications for this shop");

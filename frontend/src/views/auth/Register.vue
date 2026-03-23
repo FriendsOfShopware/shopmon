@@ -59,7 +59,7 @@ import * as Yup from "yup";
 import { router } from "@/router";
 
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api, setToken } from "@/helpers/api";
 
 const alert = useAlert();
 
@@ -73,16 +73,22 @@ const schema = Yup.object().shape({
     .matches(/^(?=.*[!@#$%^&*])/, "Password must Contain  One Special Case Character"),
 });
 
-async function onSubmit(values: { email: string; password: string; displayName: string }) {
-  const resp = await authClient.signUp.email({
-    email: values.email,
-    password: values.password,
-    name: values.displayName,
+async function onSubmit(values: Record<string, unknown>) {
+  const { data, error } = await api.POST("/auth/sign-up/email", {
+    body: {
+      email: values.email as string,
+      password: values.password as string,
+      name: values.displayName as string,
+    },
   });
 
-  if (resp.error) {
-    alert.error(resp.error.message ?? "Failed to register");
+  if (error) {
+    alert.error((error as unknown as { message?: string }).message ?? "Failed to register");
     return;
+  }
+
+  if ((data as { token?: string })?.token) {
+    setToken((data as { token: string }).token);
   }
 
   await router.push({ name: "account.login" });

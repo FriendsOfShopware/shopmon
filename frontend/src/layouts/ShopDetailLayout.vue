@@ -5,7 +5,9 @@
     <header-container
       v-if="shop"
       :breadcrumb="
-        shop.nameCombined +
+        shop.organizationName +
+        ' / ' +
+        shop.name +
         (route.meta.title && route.name !== 'account.shops.detail' ? ' / ' + route.meta.title : '')
       "
       :title="shop.name"
@@ -54,7 +56,7 @@
           :to="{
             name: 'account.shops.edit',
             params: {
-              slug: route.params.slug,
+              organizationId: route.params.organizationId,
               shopId: shop.id,
             },
           }"
@@ -68,7 +70,7 @@
     </header-container>
 
     <main-container v-if="shop && shop.lastScrapedAt">
-      <alert v-if="shop.connectionIssueCount >= 3" class="shop-scrape-error" type="error">
+      <alert v-if="shop.lastScrapedError" class="shop-scrape-error" type="error">
         This shop will be not automatically updated anymore. Please update the API credentials or
         Shop URL to fix this issue.
       </alert>

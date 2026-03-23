@@ -49,13 +49,13 @@
                 :to="{
                   name: 'account.shops.detail',
                   params: {
-                    slug: shop.organizationSlug,
-                    shopId: shop.id,
+                    organizationId: shop.shopOrganizationId,
+                    shopId: shop.shopId,
                   },
                 }"
               >
                 <status-icon :status="getExtensionState(row)" :tooltip="true" />
-                {{ shop.name }}
+                {{ shop.shopName }}
               </router-link>
             </div>
           </template>
@@ -109,13 +109,14 @@
 <script setup lang="ts">
 import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 import { formatDateTime } from "@/helpers/formatter";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
 import { ref } from "vue";
 
 const term = ref("");
-const extensions = ref<RouterOutput["account"]["currentUserExtensions"]>([]);
+const extensions = ref<components["schemas"]["AccountExtension"][]>([]);
 
 const {
   viewExtensionChangelogDialog,
@@ -124,11 +125,11 @@ const {
   closeExtensionChangelog,
 } = useExtensionChangelogModal();
 
-trpcClient.account.currentUserExtensions.query().then((data) => {
-  extensions.value = data;
+api.GET("/account/extensions").then(({ data }) => {
+  if (data) extensions.value = data;
 });
 
-function getExtensionState(extension: RouterOutput["account"]["currentUserExtensions"][number]) {
+function getExtensionState(extension: components["schemas"]["AccountExtension"]) {
   if (!extension.installed) {
     return "not installed";
   }

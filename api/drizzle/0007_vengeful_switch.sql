@@ -1,1 +1,0 @@
-ALTER TABLE "project" ADD COLUMN "git_url" text;

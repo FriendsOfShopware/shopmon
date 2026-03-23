@@ -4,20 +4,20 @@
       v-if="shop"
       :columns="[
         { key: 'name', name: 'Name', sortable: true },
-        { key: 'interval', name: 'Interval' },
+        { key: 'runInterval', name: 'Interval' },
         { key: 'lastExecutionTime', name: 'Last Executed', sortable: true },
         { key: 'nextExecutionTime', name: 'Next Execution', sortable: true },
         { key: 'status', name: 'Status' },
       ]"
-      :data="shop.scheduledTask || []"
+      :data="shop.scheduledTasks || []"
       :default-sorting="{ by: 'nextExecutionTime' }"
     >
       <template #cell-lastExecutionTime="{ row }">
-        {{ formatDateTime(row.lastExecutionTime) }}
+        {{ row.lastExecutionTime ? formatDateTime(row.lastExecutionTime) : "-" }}
       </template>
 
       <template #cell-nextExecutionTime="{ row }">
-        {{ formatDateTime(row.nextExecutionTime) }}
+        {{ row.nextExecutionTime ? formatDateTime(row.nextExecutionTime) : "-" }}
       </template>
 
       <template #cell-status="{ row }">
@@ -70,7 +70,7 @@
 import { useAlert } from "@/composables/useAlert";
 import { formatDateTime } from "@/helpers/formatter";
 import { useShopDetail } from "@/composables/useShopDetail";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
 
 const { shop } = useShopDetail();
 
@@ -78,9 +78,8 @@ const { success, error } = useAlert();
 
 async function onReScheduleTask(taskId: string) {
   try {
-    await trpcClient.organization.shop.rescheduleTask.mutate({
-      shopId: shop.value?.id ?? 0,
-      taskId,
+    await api.POST("/shops/{shopId}/tasks/{taskId}/reschedule", {
+      params: { path: { shopId: shop.value?.id ?? 0, taskId } },
     });
     success("Task is re-scheduled");
   } catch (e) {

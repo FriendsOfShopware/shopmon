@@ -1,12 +1,11 @@
-FROM oven/bun:1 AS build
-
-COPY . /app/
+FROM node:22-alpine AS build
 
 WORKDIR /app
-RUN bun install
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm install
 
-WORKDIR /app/frontend
-RUN bun run build
+COPY frontend/ .
+RUN npm run build
 
 FROM cgr.dev/chainguard/nginx
 
@@ -43,6 +42,6 @@ server {
 }
 EOF
 
-COPY --from=build /app/frontend/dist /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 8080

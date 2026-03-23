@@ -2,7 +2,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 import { useRoute, useRouter } from "vue-router";
 
 const props = defineProps<{
@@ -14,13 +14,13 @@ const router = useRouter();
 const { error, success } = useAlert();
 
 if (props.action === "accept") {
-  authClient.organization
-    .acceptInvitation({
-      invitationId: route.params.token as string,
+  api
+    .POST("/auth/invitations/{invitationId}/accept", {
+      params: { path: { invitationId: route.params.token as string } },
     })
-    .then((resp) => {
-      if (resp.error) {
-        error(resp.error.message ?? "Failed to accept invitation");
+    .then(({ error: respError }) => {
+      if (respError) {
+        error((respError as { message?: string }).message ?? "Failed to accept invitation");
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });
@@ -28,13 +28,13 @@ if (props.action === "accept") {
       }
     });
 } else {
-  authClient.organization
-    .rejectInvitation({
-      invitationId: route.params.token as string,
+  api
+    .POST("/auth/invitations/{invitationId}/reject", {
+      params: { path: { invitationId: route.params.token as string } },
     })
-    .then((resp) => {
-      if (resp.error) {
-        error(resp.error.message ?? "Failed to reject invitation");
+    .then(({ error: respError }) => {
+      if (respError) {
+        error((respError as { message?: string }).message ?? "Failed to reject invitation");
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });

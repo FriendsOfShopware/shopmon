@@ -1,15 +1,16 @@
-import { authClient } from "@/helpers/auth-client";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { computed, ref } from "vue";
 
 const isLoading = ref(false);
 const isRefreshing = ref(false);
-const notifications = ref<RouterOutput["account"]["notification"]["list"]>([]);
+const notifications = ref<components["schemas"]["Notification"][]>([]);
 
 export function useNotifications() {
-  const session = authClient.useSession();
+  const { session } = useSession();
 
-  if (session.value.data?.user && notifications.value.length === 0) {
+  if (session.value?.user && notifications.value.length === 0) {
     loadNotifications();
   }
 
@@ -19,7 +20,8 @@ export function useNotifications() {
 
   async function loadNotifications() {
     isLoading.value = true;
-    notifications.value = await trpcClient.account.notification.list.query();
+    const { data } = await api.GET("/notifications");
+    notifications.value = data ?? [];
     isLoading.value = false;
   }
 
@@ -36,7 +38,7 @@ export function useNotifications() {
       return;
     }
 
-    await trpcClient.account.notification.markAllRead.mutate();
+    await api.POST("/notifications/mark-read");
 
     for (const notification of notifications.value) {
       notification.read = true;
@@ -44,12 +46,14 @@ export function useNotifications() {
   }
 
   async function deleteAllNotifications() {
-    await trpcClient.account.notification.delete.mutate();
+    await api.DELETE("/notifications");
     notifications.value = [];
   }
 
   async function deleteNotification(id: number) {
-    await trpcClient.account.notification.delete.mutate(id);
+    await api.DELETE("/notifications/{id}", {
+      params: { path: { id } },
+    });
     notifications.value = notifications.value.filter((e) => e.id !== id);
   }
 

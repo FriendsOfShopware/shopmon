@@ -15,7 +15,7 @@
 
       <template #cell-actions="{ row }">
         <button
-          v-if="shop.ignores.includes(row.id)"
+          v-if="shop.ignores?.includes(row.id)"
           data-tooltip="check is ignored"
           class="tooltip-top-left"
           type="button"
@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { computed } from "vue";
 
@@ -63,13 +63,14 @@ const { info } = useAlert();
 async function ignoreCheck(id: string) {
   if (!shop.value) return;
 
-  const updatedIgnores = [...shop.value.ignores, id];
+  const updatedIgnores = [...(shop.value.ignores ?? []), id];
 
-  await trpcClient.organization.shop.update.mutate({
-    orgId: shop.value.organizationId,
-    shopId: shop.value.id,
-    projectId: shop.value.projectId,
-    ignores: updatedIgnores,
+  await api.PATCH("/shops/{shopId}", {
+    params: { path: { shopId: shop.value.id } },
+    body: {
+      projectId: shop.value.projectId ?? 0,
+      ignores: updatedIgnores,
+    },
   });
 
   // Update shop data
@@ -80,13 +81,14 @@ async function ignoreCheck(id: string) {
 async function removeIgnore(id: string) {
   if (!shop.value) return;
 
-  const updatedIgnores = shop.value.ignores.filter((aid: string) => aid !== id);
+  const updatedIgnores = (shop.value.ignores ?? []).filter((aid: string) => aid !== id);
 
-  await trpcClient.organization.shop.update.mutate({
-    orgId: shop.value.organizationId,
-    shopId: shop.value.id,
-    projectId: shop.value.projectId,
-    ignores: updatedIgnores,
+  await api.PATCH("/shops/{shopId}", {
+    params: { path: { shopId: shop.value.id } },
+    body: {
+      projectId: shop.value.projectId ?? 0,
+      ignores: updatedIgnores,
+    },
   });
 
   // Update shop data

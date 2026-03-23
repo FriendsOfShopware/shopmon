@@ -85,7 +85,7 @@
       <div v-else class="activity-list">
         <div v-for="user in activity.recentUsers" :key="user.id" class="activity-item">
           <div class="activity-info">
-            <span class="activity-name">{{ user.name }}</span>
+            <span class="activity-name">{{ user.displayName }}</span>
             <span class="activity-detail">{{ user.email }}</span>
           </div>
           <span class="activity-time">{{ formatDateTime(user.createdAt) }}</span>
@@ -101,7 +101,9 @@
             <span class="activity-name">{{ shop.name }}</span>
             <span class="activity-detail">{{ shop.organizationName }}</span>
           </div>
-          <span class="activity-time">{{ formatDateTime(shop.createdAt) }}</span>
+          <span class="activity-time">{{
+            shop.lastScrapedAt ? formatDateTime(shop.lastScrapedAt) : ""
+          }}</span>
         </div>
       </div>
     </Panel>
@@ -112,17 +114,18 @@
 import Alert from "@/components/layout/Alert.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import Panel from "@/components/layout/Panel.vue";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { formatDateTime } from "@/helpers/formatter";
 import { onMounted, onUnmounted, ref, nextTick, watch } from "vue";
 import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
 
-type Stats = Awaited<ReturnType<typeof trpcClient.admin.getStats.query>>;
-type GrowthData = Awaited<ReturnType<typeof trpcClient.admin.getGrowthData.query>>;
-type Activity = Awaited<ReturnType<typeof trpcClient.admin.getRecentActivity.query>>;
-type VersionData = Awaited<ReturnType<typeof trpcClient.admin.getShopwareVersions.query>>;
+type Stats = components["schemas"]["AdminStats"];
+type GrowthData = components["schemas"]["AdminGrowth"];
+type Activity = components["schemas"]["AdminRecentActivity"];
+type VersionData = components["schemas"]["ShopwareVersionCount"][];
 
 const stats = ref<Stats | null>(null);
 const growthData = ref<GrowthData | null>(null);
@@ -189,8 +192,16 @@ function createVersionChart(canvas: HTMLCanvasElement, data: { version: string; 
   if (!ctx) return null;
 
   const colors = [
-    "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
+    "#6366f1",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#84cc16",
+    "#f97316",
+    "#14b8a6",
   ];
 
   return new Chart(ctx, {
@@ -252,16 +263,16 @@ async function loadStats() {
   error.value = "";
 
   try {
-    const [statsResponse, growthResponse, activityResponse, versionResponse] = await Promise.all([
-      trpcClient.admin.getStats.query(),
-      trpcClient.admin.getGrowthData.query(),
-      trpcClient.admin.getRecentActivity.query(),
-      trpcClient.admin.getShopwareVersions.query(),
+    const [statsRes, growthRes, activityRes, versionRes] = await Promise.all([
+      api.GET("/admin/stats"),
+      api.GET("/admin/growth"),
+      api.GET("/admin/recent-activity"),
+      api.GET("/admin/shopware-versions"),
     ]);
-    stats.value = statsResponse;
-    growthData.value = growthResponse;
-    activity.value = activityResponse;
-    versionData.value = versionResponse;
+    stats.value = statsRes.data ?? null;
+    growthData.value = growthRes.data ?? null;
+    activity.value = activityRes.data ?? null;
+    versionData.value = versionRes.data ?? null;
   } catch (err) {
     error.value = `Failed to load dashboard stats: ${err instanceof Error ? err.message : String(err)}`;
   } finally {

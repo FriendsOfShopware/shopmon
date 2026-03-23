@@ -41,11 +41,17 @@ const FieldStub = defineComponent({
   },
 });
 
-// Mock auth client
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    forgetPassword: vi.fn(),
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock useAlert composable

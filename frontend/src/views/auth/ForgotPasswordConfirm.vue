@@ -30,7 +30,7 @@ import { Form as VeeForm } from "vee-validate";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 
 const schema = Yup.object().shape({
   password: Yup.string()
@@ -47,13 +47,15 @@ const { success, error } = useAlert();
 async function onSubmit(values: Record<string, unknown>): Promise<void> {
   const password = values.password as string;
 
-  const resp = await authClient.resetPassword({
-    token: route.params.token as string,
-    newPassword: password,
+  const resp = await api.POST("/auth/reset-password", {
+    body: {
+      token: route.params.token as string,
+      newPassword: password,
+    },
   });
 
   if (resp.error) {
-    error(resp.error.message ?? "Failed to reset password");
+    error((resp.error as { message?: string }).message ?? "Failed to reset password");
     return;
   }
 

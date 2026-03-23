@@ -4,7 +4,7 @@
       <div class="impersonation-text">
         <icon-fa6-solid:user-secret class="impersonation-icon" />
         <span
-          >You are currently impersonating <strong>{{ session?.data?.user?.email }}</strong></span
+          >You are currently impersonating <strong>{{ session?.user?.email }}</strong></span
         >
       </div>
       <button class="btn btn-sm btn-stop" @click="stopImpersonating">Stop Impersonating</button>
@@ -14,23 +14,26 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
 import { computed } from "vue";
 
-const session = authClient.useSession();
+const { session } = useSession();
 const alert = useAlert();
 
 const isImpersonating = computed(() => {
-  // Check if the session has impersonation data
-  if (!session.value?.data) return false;
-
-  // Better-auth stores impersonatedBy in the session object
-  return !!session.value.data.session?.impersonatedBy;
+  if (!session.value) return false;
+  return !!session.value.session?.impersonatedBy;
 });
 
 async function stopImpersonating() {
   try {
-    await authClient.admin.stopImpersonating();
+    const { error } = await api.POST("/auth/admin/stop-impersonating");
+
+    if (error) {
+      throw new Error("Failed to stop impersonating");
+    }
+
     // Force a complete page reload to ensure clean session state
     window.location.reload();
   } catch (error) {

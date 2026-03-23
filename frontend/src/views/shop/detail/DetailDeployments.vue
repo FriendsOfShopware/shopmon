@@ -95,8 +95,8 @@
               :to="{
                 name: 'account.shops.detail.deployment',
                 params: {
-                  slug: $route.params.slug,
-                  shopId: shop.id,
+                  organizationId: $route.params.organizationId,
+                  shopId: shop?.id ?? 0,
                   deploymentId: row.id,
                 },
               }"
@@ -155,7 +155,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { formatDateTime } from "@/helpers/formatter";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
 import Modal from "@/components/layout/Modal.vue";
 
 const route = useRoute();
@@ -181,11 +181,13 @@ const loadDeployments = async () => {
   if (!shop.value) return;
 
   try {
-    deployments.value = await trpcClient.organization.deployment.list.query({
-      shopId: shop.value.id,
-      limit: 50,
-      offset: 0,
+    const { data } = await api.GET("/shops/{shopId}/deployments", {
+      params: {
+        path: { shopId: shop.value.id },
+        query: { limit: 50, offset: 0 },
+      },
     });
+    deployments.value = data ?? [];
   } catch (error) {
     console.error("Failed to load deployments:", error);
   }
@@ -201,9 +203,8 @@ const deleteDeployment = async () => {
 
   isDeletingDeployment.value = true;
   try {
-    await trpcClient.organization.deployment.delete.mutate({
-      shopId: shop.value.id,
-      deploymentId: deploymentToDelete.value.id,
+    await api.DELETE("/shops/{shopId}/deployments/{deploymentId}", {
+      params: { path: { shopId: shop.value.id, deploymentId: deploymentToDelete.value.id } },
     });
 
     await loadDeployments();

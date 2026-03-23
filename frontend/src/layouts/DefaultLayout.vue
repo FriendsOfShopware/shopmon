@@ -11,7 +11,7 @@
 
         <div class="top-bar-actions">
           <router-link
-            v-if="session.data"
+            v-if="session"
             :to="{ name: 'account.dashboard' }"
             class="btn btn-primary btn-sm"
           >
@@ -46,9 +46,9 @@
 
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
 
-const session = authClient.useSession();
+const { session } = useSession();
 const { darkMode, toggleDarkMode } = useDarkMode();
 </script>
 

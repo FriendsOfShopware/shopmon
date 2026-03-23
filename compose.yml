@@ -40,11 +40,23 @@ services:
       S3_BUCKET_NAME: sitespeed-results
       AUTH_TOKEN: secret
       S3_DISABLE_PAYLOAD_SIGNING: "false"
+      DOCKER_NETWORK: shopmon_default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
   rustfs:
     image: rustfs/rustfs:latest
     ports:
       - "9000:9000"
       - "9001:9001"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4318:4318"
 
   createbuckets:
     image: minio/mc

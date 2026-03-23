@@ -4,7 +4,7 @@
       :to="{
         name: 'account.shops.detail',
         params: {
-          slug: route.params.slug as string,
+          organizationId: route.params.organizationId as string,
           shopId: shop.id,
         },
       }"
@@ -49,7 +49,7 @@
             <field id="projectId" name="projectId">
               <select v-model="selectedProjectId" class="field">
                 <option v-for="project in projects" :key="project.id" :value="project.id">
-                  {{ project.nameCombined }}
+                  {{ project.name }}
                 </option>
               </select>
             </field>
@@ -238,7 +238,8 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 
 import { Field, Form as VeeForm } from "vee-validate";
 import { ref, computed } from "vue";
@@ -248,27 +249,29 @@ import * as Yup from "yup";
 const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
-const shop = ref<RouterOutput["organization"]["shop"]["get"] | null>(null);
+const shop = ref<components["schemas"]["ShopDetail"] | null>(null);
 const isLoading = ref(false);
-const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
+const projects = ref<components["schemas"]["AccountProject"][]>([]);
 const selectedProjectId = ref<number>(0);
 
 const shopId = Number.parseInt(route.params.shopId as string, 10);
 
-trpcClient.account.currentUserProjects.query().then((data) => {
-  projects.value = data;
+api.GET("/account/projects").then(({ data }) => {
+  if (data) projects.value = data;
 });
 
 async function loadShop() {
   isLoading.value = true;
-  shop.value = await trpcClient.organization.shop.get.query({
-    shopId,
+  const { data } = await api.GET("/shops/{shopId}", {
+    params: { path: { shopId } },
   });
+  shop.value = data ?? null;
 
   // Load projects for the organization
   if (shop.value?.organizationId) {
-    projects.value = await trpcClient.account.currentUserProjects.query();
-    selectedProjectId.value = shop.value.projectId;
+    const { data: projectsData } = await api.GET("/account/projects");
+    if (projectsData) projects.value = projectsData;
+    selectedProjectId.value = shop.value.projectId ?? 0;
   }
 
   // Initialize sitespeed settings
@@ -325,17 +328,21 @@ async function onSubmit(values: Record<string, unknown>) {
       if (typedValues.url) {
         typedValues.url = typedValues.url.replace(/\/+$/, "");
       }
-      await trpcClient.organization.shop.update.mutate({
-        orgId: shop.value.organizationId,
-        shopId: shop.value.id,
-        ...typedValues,
-        projectId: selectedProjectId.value,
+      await api.PATCH("/shops/{shopId}", {
+        params: { path: { shopId: shop.value.id } },
+        body: {
+          name: typedValues.name,
+          shopUrl: typedValues.url,
+          clientId: typedValues.clientId,
+          clientSecret: typedValues.clientSecret,
+          projectId: selectedProjectId.value,
+        },
       });
 
       router.push({
         name: "account.shops.detail",
         params: {
-          slug: route.params.slug as string,
+          organizationId: route.params.organizationId as string,
           shopId: shop.value.id,
         },
       });
@@ -348,8 +355,8 @@ async function onSubmit(values: Record<string, unknown>) {
 async function deleteShop() {
   if (shop.value) {
     try {
-      await trpcClient.organization.shop.delete.mutate({
-        shopId: shop.value.id,
+      await api.DELETE("/shops/{shopId}", {
+        params: { path: { shopId: shop.value.id } },
       });
 
       router.push({ name: "account.project.list" });
@@ -378,10 +385,12 @@ async function onSitespeedSubmit() {
         return;
       }
 
-      await trpcClient.organization.shop.updateSitespeedSettings.mutate({
-        shopId: shop.value.id,
-        enabled: sitespeedEnabled.value,
-        urls: sitespeedUrls.value,
+      await api.PUT("/shops/{shopId}/sitespeed-settings", {
+        params: { path: { shopId: shop.value.id } },
+        body: {
+          enabled: sitespeedEnabled.value,
+          urls: sitespeedUrls.value,
+        },
       });
 
       // Reload shop data to refresh the UI

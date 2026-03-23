@@ -7,17 +7,17 @@ interface ExtensionChangelog {
   isCompatible: boolean;
 }
 
-interface Extension {
+export interface ExtensionWithChangelog {
   name: string;
   label: string;
-  changelog: ExtensionChangelog[] | null;
+  changelog?: ExtensionChangelog[] | string | null;
 }
 
 export function useExtensionChangelogModal() {
   const viewExtensionChangelogDialog: Ref<boolean> = ref(false);
-  const dialogExtension: Ref<Extension | null> = ref(null);
+  const dialogExtension: Ref<ExtensionWithChangelog | null> = ref(null);
 
-  function openExtensionChangelog(extension: Extension | null) {
+  function openExtensionChangelog(extension: ExtensionWithChangelog | null) {
     dialogExtension.value = extension;
     viewExtensionChangelogDialog.value = true;
   }

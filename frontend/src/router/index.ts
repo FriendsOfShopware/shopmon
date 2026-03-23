@@ -1,7 +1,8 @@
 import { type RouteLocationNormalized, createRouter, createWebHistory } from "vue-router";
 
 import { useReturnUrl } from "@/composables/useReturnUrl";
-import { authClient } from "@/helpers/auth-client";
+import { useSession, fetchSession } from "@/composables/useSession";
+import { api, setToken } from "@/helpers/api";
 import AppLayout from "@/layouts/AppLayout.vue";
 import LoginLayout from "@/layouts/LoginLayout.vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
@@ -20,8 +21,6 @@ import Dashboard from "~icons/ri/dashboard-fill";
 import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
 import FaBook from "~icons/fa6-solid/book";
-
-const session = authClient.useSession();
 
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -130,11 +129,11 @@ export const router = createRouter({
         },
         {
           name: "account.shops.edit",
-          path: "organizations/:slug/shops/:shopId(\\d+)/edit",
+          path: "organizations/:organizationId/shops/:shopId(\\d+)/edit",
           component: () => import("@/views/shop/EditShop.vue"),
         },
         {
-          path: "organizations/:slug/shops/:shopId(\\d+)",
+          path: "organizations/:organizationId/shops/:shopId(\\d+)",
           component: ShopDetailLayout,
           children: [
             {
@@ -235,17 +234,17 @@ export const router = createRouter({
         },
         {
           name: "account.organizations.detail",
-          path: "organizations/:slug",
+          path: "organizations/:organizationId",
           component: () => import("@/views/organization/DetailOrganization.vue"),
         },
         {
           name: "account.organizations.edit",
-          path: "organizations/edit/:slug",
+          path: "organizations/edit/:organizationId",
           component: () => import("@/views/organization/EditOrganization.vue"),
         },
         {
           name: "account.organizations.sso",
-          path: "organizations/:slug/sso",
+          path: "organizations/:organizationId/sso",
           component: () => import("@/views/organization/ManageSSO.vue"),
         },
         {
@@ -289,21 +288,35 @@ export const router = createRouter({
     {
       path: "/:pathMatch(.*)*",
       name: "not-found",
-      redirect: { name: "home" },
+      redirect: () => ({ name: "home" }),
     },
   ],
 });
 
+let initialSessionLoaded = false;
+
 router.beforeEach(async (to: RouteLocationNormalized) => {
-  if (session.value.isPending) {
-    await new Promise((resolve) => {
-      const a = setInterval(() => {
-        if (!session.value.isPending) {
-          clearInterval(a);
-          resolve(true);
-        }
-      }, 50);
+  // Handle OAuth/SSO callback code — exchange for token
+  if (to.query.code && !to.query.state) {
+    const { data } = await api.POST("/auth/exchange-code" as any, {
+      body: { code: to.query.code as string },
     });
+    if (data?.token) {
+      setToken(data.token);
+      await fetchSession();
+    }
+    const { code: _removed, ...remainingQuery } = to.query;
+    return { path: to.path, query: remainingQuery };
+  }
+
+  const { session, loading } = useSession();
+
+  // On first navigation, wait for the session to load
+  if (!initialSessionLoaded) {
+    if (loading.value) {
+      await fetchSession();
+    }
+    initialSessionLoaded = true;
   }
 
   // redirect to the login page if not logged in and trying to access a restricted page
@@ -320,7 +333,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
   const authRequired = !publicPages.includes(to.name as string);
   const { setReturnUrl } = useReturnUrl();
 
-  if (authRequired && !session.value.data) {
+  if (authRequired && !session.value) {
     setReturnUrl(to.fullPath);
     return { name: "account.login" };
   } else if (to.name === "account.login") {
@@ -328,8 +341,8 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
   }
 
   // Check admin routes
-  if (to.path.startsWith("/admin") && session.value.data) {
-    const userRole = session.value.data.user.role;
+  if (to.path.startsWith("/admin") && session.value) {
+    const userRole = session.value.user.role;
     if (userRole !== "admin") {
       return { name: "home" };
     }

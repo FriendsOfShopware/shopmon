@@ -9,7 +9,7 @@ let initialized = false;
 export function useDarkMode(): {
   darkMode: Ref<boolean>;
   toggleDarkMode: () => void;
-  getThemeImage: () => Ref<string>;
+  getThemeImage: (imagePath: string) => string;
 } {
   // Initialize only once
   if (!initialized) {

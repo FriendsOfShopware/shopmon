@@ -1,5 +1,5 @@
 <template>
-  <disclosure v-if="session.data" v-slot="{ open }" as="div" class="top-bar">
+  <disclosure v-if="session" v-slot="{ open }" as="div" class="top-bar">
     <div class="top-bar-container container">
       <div class="top-bar-logo">
         <router-link :to="{ name: 'home' }">
@@ -81,9 +81,9 @@
 
                     <div class="notification-item-message">
                       {{ notification.message }}
-                      <router-link v-if="notification.link" :to="notification.link" type="a">
-                        more ...
-                      </router-link>
+                      <a v-if="notification.link" :href="notification.link.url">
+                        {{ notification.link.label || "more ..." }}
+                      </a>
                     </div>
                   </div>
 
@@ -117,7 +117,7 @@
           >
             <menu-items class="menu-panel">
               <div class="menu-header">
-                <div class="menu-name">Hi {{ session.data.user.name }}</div>
+                <div class="menu-name">Hi {{ session.user.name }}</div>
               </div>
 
               <menu-item v-for="item in userNavigation" :key="item.name">
@@ -146,7 +146,7 @@
           <div class="top-bar-mobile-links">
             <disclosure-button
               v-for="item in navigation"
-              :key="item.name"
+              :key="item.route"
               as="a"
               class="top-bar-mobile-link"
               @click="$router.push({ name: item.route })"
@@ -168,11 +168,11 @@
 
               <div class="top-bar-mobile-user-details">
                 <div class="top-bar-mobile-user-name">
-                  {{ session.data.user.name }}
+                  {{ session.user.name }}
                 </div>
 
                 <div class="top-bar-mobile-user-email">
-                  {{ session.data.user.email }}
+                  {{ session.user.email }}
                 </div>
               </div>
             </div>
@@ -199,6 +199,8 @@
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
 import { useNotifications } from "@/composables/useNotifications";
+import { useSession, clearSession } from "@/composables/useSession";
+import { api, setToken } from "@/helpers/api";
 
 import {
   Disclosure,
@@ -217,12 +219,11 @@ import { ref } from "vue";
 import FaGear from "~icons/fa6-solid/gear";
 import FaPowerOff from "~icons/fa6-solid/power-off";
 
-import { authClient } from "@/helpers/auth-client";
 import { formatDateTime } from "@/helpers/formatter";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const session = authClient.useSession();
+const { session } = useSession();
 
 const userAvatar = ref("https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon");
 
@@ -233,10 +234,10 @@ const navigation = [
   { route: "account.organizations.list", active: "organizations" },
 ];
 
-if (session.value.data?.user.email) {
+if (session.value?.user.email) {
   try {
     crypto.subtle
-      .digest("SHA-256", new TextEncoder().encode(session.value.data.user.email))
+      .digest("SHA-256", new TextEncoder().encode(session.value.user.email))
       .then((hash) => {
         const seed = Array.from(new Uint8Array(hash))
           .map((b) => b.toString(16).padStart(2, "0"))
@@ -264,10 +265,10 @@ const userNavigation = [
 ];
 
 async function logout() {
-  await authClient.signOut();
-  setTimeout(() => {
-    router.push({ name: "home" });
-  }, 50);
+  await api.POST("/auth/sign-out");
+  setToken(null);
+  clearSession();
+  router.push({ name: "home" });
 }
 </script>
 

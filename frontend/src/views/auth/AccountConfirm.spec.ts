@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { h, defineComponent } from "vue";
 import AccountConfirm from "./AccountConfirm.vue";
@@ -34,18 +34,20 @@ vi.mock("vue-router", () => ({
 
 // Track mock calls
 const mockCalls = {
-  verifyEmail: [] as any[],
   error: [] as string[],
 };
 
-// Mock auth client
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    verifyEmail: vi.fn((...args: any[]) => {
-      mockCalls.verifyEmail.push(args);
-      return Promise.resolve({ data: {}, error: null });
-    }),
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock useAlert composable
@@ -58,18 +60,17 @@ vi.mock("@/composables/useAlert", () => ({
 }));
 
 // Import after mocks
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 
 describe("AccountConfirm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCalls.verifyEmail = [];
     mockCalls.error = [];
   });
 
   it("renders loading state initially", () => {
     // Override the mock to return a pending promise
-    vi.mocked(authClient.verifyEmail).mockImplementationOnce(() => new Promise(() => {}));
+    vi.mocked(api.GET).mockImplementationOnce(() => new Promise(() => {}));
 
     const wrapper = mount(AccountConfirm, {
       global: {
@@ -86,10 +87,11 @@ describe("AccountConfirm", () => {
   });
 
   it("renders success state when email verification succeeds", async () => {
-    vi.mocked(authClient.verifyEmail).mockResolvedValueOnce({
+    vi.mocked(api.GET).mockResolvedValueOnce({
       data: {},
-      error: null,
-    });
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     const wrapper = mount(AccountConfirm, {
       global: {
@@ -109,10 +111,11 @@ describe("AccountConfirm", () => {
   });
 
   it("renders error state when token is expired", async () => {
-    vi.mocked(authClient.verifyEmail).mockResolvedValueOnce({
-      data: null,
+    vi.mocked(api.GET).mockResolvedValueOnce({
+      data: undefined,
       error: { message: "Token expired" },
-    });
+      response: new Response(),
+    } as any);
 
     const wrapper = mount(AccountConfirm, {
       global: {
@@ -131,10 +134,11 @@ describe("AccountConfirm", () => {
   });
 
   it("renders error state with default message when error has no message", async () => {
-    vi.mocked(authClient.verifyEmail).mockResolvedValueOnce({
-      data: null,
+    vi.mocked(api.GET).mockResolvedValueOnce({
+      data: undefined,
       error: {},
-    });
+      response: new Response(),
+    } as any);
 
     const wrapper = mount(AccountConfirm, {
       global: {
@@ -152,11 +156,12 @@ describe("AccountConfirm", () => {
     expect(mockCalls.error).toContain("Failed to verify email");
   });
 
-  it("calls verifyEmail with correct token on mount", async () => {
-    vi.mocked(authClient.verifyEmail).mockResolvedValueOnce({
+  it("calls api.GET with correct path and token on mount", async () => {
+    vi.mocked(api.GET).mockResolvedValueOnce({
       data: {},
-      error: null,
-    });
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     mount(AccountConfirm, {
       global: {
@@ -169,8 +174,8 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    expect(authClient.verifyEmail).toHaveBeenCalledWith({
-      query: { token: "test-token-123" },
+    expect(api.GET).toHaveBeenCalledWith("/auth/verify-email", {
+      params: { query: { token: "test-token-123" } },
     });
   });
 });

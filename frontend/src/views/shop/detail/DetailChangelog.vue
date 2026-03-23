@@ -4,17 +4,17 @@
       v-if="shop"
       :columns="[
         { key: 'date', name: 'Date', class: 'changelog-date', sortable: true },
-        { key: 'log', name: 'Log', sortable: false },
+        { key: 'extensions', name: 'Log', sortable: false },
       ]"
-      :data="shop.changelog"
+      :data="shop.changelogs"
     >
       <template #cell-date="{ row }">
         {{ formatDateTime(row.date) }}
       </template>
 
-      <template #cell-log="{ row }">
-        <span class="modal-open-changelog" @click="openShopChangelog(row)">
-          {{ sumChanges(row) }}
+      <template #cell-extensions="{ row }">
+        <span class="modal-open-changelog" @click="openShopChangelog(row as AccountChangelog)">
+          {{ sumChanges(row as AccountChangelog) }}
         </span>
       </template>
     </data-table>
@@ -31,9 +31,12 @@
 <script setup lang="ts">
 import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
+import type { components } from "@/types/api";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { useShopChangelogModal } from "@/composables/useShopChangelogModal";
 import ShopChangelog from "@/components/modal/ShopChangelog.vue";
+
+type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 const { shop } = useShopDetail();
 const { viewShopChangelogDialog, dialogShopChangelog, openShopChangelog, closeShopChangelog } =

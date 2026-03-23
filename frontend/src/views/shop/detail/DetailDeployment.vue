@@ -94,7 +94,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { formatDateTime } from "@/helpers/formatter";
-import { trpcClient } from "@/helpers/trpc";
+import { api } from "@/helpers/api";
 
 const route = useRoute();
 const { shop } = useShopDetail();
@@ -106,10 +106,10 @@ const loadDeployment = async () => {
 
   try {
     const deploymentId = parseInt(route.params.deploymentId as string, 10);
-    deployment.value = await trpcClient.organization.deployment.get.query({
-      shopId: shop.value.id,
-      deploymentId,
+    const { data } = await api.GET("/shops/{shopId}/deployments/{deploymentId}", {
+      params: { path: { shopId: shop.value.id, deploymentId } },
     });
+    deployment.value = data ?? null;
   } catch (error) {
     console.error("Failed to load deployment:", error);
   }

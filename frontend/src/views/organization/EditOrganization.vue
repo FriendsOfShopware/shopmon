@@ -1,7 +1,7 @@
 <template>
-  <header-container v-if="organization?.data" :title="'Edit ' + organization.data.name">
+  <header-container v-if="organization" :title="'Edit ' + organization.name">
     <router-link
-      :to="{ name: 'account.organizations.detail', params: { slug: organization.data.slug } }"
+      :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
       type="button"
       class="btn"
     >
@@ -9,12 +9,12 @@
     </router-link>
   </header-container>
 
-  <main-container v-if="organization?.data">
+  <main-container v-if="organization">
     <Panel>
       <vee-form
         v-slot="{ errors, isSubmitting }"
         :validation-schema="schema"
-        :initial-values="organization.data"
+        :initial-values="organization"
         @submit="onSaveOrganization"
       >
         <form-group title="Organization Information">
@@ -32,21 +32,6 @@
               {{ errors.name }}
             </div>
           </div>
-
-          <div>
-            <label for="slug">Slug</label>
-            <field
-              id="slug"
-              type="text"
-              name="slug"
-              autocomplete="slug"
-              class="field"
-              :class="{ 'has-error': errors.slug }"
-            />
-            <div class="field-error-message">
-              {{ errors.slug }}
-            </div>
-          </div>
         </form-group>
 
         <div class="form-submit">
@@ -59,7 +44,7 @@
       </vee-form>
     </Panel>
 
-    <Panel v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name">
+    <Panel v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.name">
       <p>Once you delete your organization, you will lose all data associated with it.</p>
 
       <button type="button" class="btn btn-danger" @click="showOrganizationDeletionModal = true">
@@ -71,7 +56,7 @@
     <delete-confirmation-modal
       :show="showOrganizationDeletionModal"
       title="Delete organization"
-      :entity-name="organization?.data?.name || 'this organization'"
+      :entity-name="organization?.name || 'this organization'"
       @close="showOrganizationDeletionModal = false"
       @confirm="deleteOrganization"
     />
@@ -80,7 +65,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 
 import { Field, Form as VeeForm } from "vee-validate";
@@ -92,55 +77,68 @@ const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-const organization = ref<Awaited<ReturnType<typeof authClient.organization.getFullOrganization>>>();
+interface OrganizationData {
+  id: string;
+  name: string;
+}
+
+const organization = ref<OrganizationData | null>(null);
 const canDeleteOrganization = ref<boolean>(false);
 
-authClient.organization
-  .getFullOrganization({
-    query: { organizationSlug: route.params.slug as string },
-  })
-  .then((org) => {
-    organization.value = org;
-    authClient.organization
-      .hasPermission({
-        organizationId: org.data?.id,
-        permissions: {
-          organization: ["delete"],
+async function loadOrganization() {
+  try {
+    const { data } = await api.GET("/auth/get-full-organization", {
+      params: { query: { organizationId: route.params.organizationId as string } },
+    });
+
+    if (!data) return;
+
+    organization.value = data as unknown as OrganizationData;
+
+    // Check delete permission
+    try {
+      const { data: permData } = await api.POST("/auth/has-permission", {
+        body: {
+          organizationId: (data as unknown as OrganizationData).id,
         },
-      })
-      .then((hasPermission) => {
-        canDeleteOrganization.value = hasPermission.data?.success ?? false;
       });
-  });
+      canDeleteOrganization.value = permData?.success ?? false;
+    } catch {
+      // silently ignore
+    }
+  } catch {
+    // silently ignore
+  }
+}
+
+loadOrganization();
 
 const showOrganizationDeletionModal = ref(false);
 
 const schema = Yup.object().shape({
   name: Yup.string().required("Name of organization is required"),
-  slug: Yup.string()
-    .required("Slug for organization is required")
-    .matches(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase and can only contain letters, numbers, and hyphens",
-    ),
 });
 
 async function onSaveOrganization(values: Record<string, unknown>) {
   const typedValues = values as Yup.InferType<typeof schema>;
   if (organization.value) {
     try {
-      await authClient.organization.update({
-        organizationId: organization.value.data.id,
-        data: {
+      const { error: respError } = await api.PATCH("/auth/organizations/{organizationId}", {
+        params: { path: { organizationId: organization.value.id } },
+        body: {
           name: typedValues.name,
-          slug: typedValues.slug,
         },
       });
+
+      if (respError) {
+        error((respError as { message?: string }).message ?? "Failed to update organization");
+        return;
+      }
 
       await router.push({
         name: "account.organizations.detail",
         params: {
-          slug: typedValues.slug,
+          organizationId: organization.value.id,
         },
       });
     } catch (err) {
@@ -152,12 +150,12 @@ async function onSaveOrganization(values: Record<string, unknown>) {
 async function deleteOrganization() {
   if (organization.value) {
     try {
-      const resp = await authClient.organization.delete({
-        organizationId: organization.value.data.id,
+      const { error: respError } = await api.DELETE("/auth/organizations/{organizationId}", {
+        params: { path: { organizationId: organization.value.id } },
       });
 
-      if (resp.error) {
-        error(resp.error.message ?? "Failed to delete organization");
+      if (respError) {
+        error((respError as { message?: string }).message ?? "Failed to delete organization");
         return;
       }
 

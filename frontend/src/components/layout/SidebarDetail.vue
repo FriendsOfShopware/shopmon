@@ -5,28 +5,32 @@
       class="sidebar-detail-toggle btn btn-primary btn-block"
       @click="toggleMobileOpen"
     >
-      {{ shop.nameCombined }}
+      {{ shop?.organizationName + " / " + shop?.name }}
       {{ route.meta.title && route.name !== "account.shops.detail" ? " / " : "" }}
       {{ route.meta.title }}
     </div>
 
     <div ref="sidebarRef" :class="['sidebar', 'sidebar-detail', { 'mobile-open': isMobileOpen }]">
       <div class="shop-image-container">
-        <img v-if="shop.shopImage" :src="`${shop.shopImage}`" class="shop-image" />
+        <img v-if="shop?.shopImage" :src="`${shop.shopImage}`" class="shop-image" />
         <icon-fa6-solid:image v-else class="placeholder-image" />
       </div>
 
       <div class="shop-name">
         <div class="sidebar-section-label">Environment:</div>
-        <h4>{{ shop.name }}</h4>
-        <status-icon :status="shop.status" />
+        <h4>{{ shop?.name }}</h4>
+        <status-icon :status="shop?.status ?? ''" />
         <div>
-          <a :href="shop.url" data-tooltip="Go to storefront" target="_blank">
+          <a :href="shop?.url" data-tooltip="Go to storefront" target="_blank">
             <icon-fa6-solid:store />
             Storefront
           </a>
           &nbsp;/&nbsp;
-          <a :href="shop.url + '/admin'" data-tooltip="Go to shopware admin" target="_blank">
+          <a
+            :href="(shop?.url ?? '') + '/admin'"
+            data-tooltip="Go to shopware admin"
+            target="_blank"
+          >
             <icon-fa6-solid:user-gear />
             Admin
           </a>
@@ -40,7 +44,7 @@
           :to="{
             name: item.route,
             params: {
-              slug: route.params.slug,
+              organizationId: route.params.organizationId,
               shopId: route.params.shopId,
             },
           }"
@@ -65,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RouterOutput } from "@/helpers/trpc";
+import type { components } from "@/types/api";
 import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import StatusIcon from "@/components/StatusIcon.vue";
@@ -77,7 +81,7 @@ const sidebarRef = ref<HTMLElement | null>(null);
 const toggleRef = ref<HTMLElement | null>(null);
 
 const props = defineProps<{
-  shop: RouterOutput["organization"]["shop"]["get"] | null;
+  shop: components["schemas"]["ShopDetail"] | null;
 }>();
 
 const isRouteActive = (routeName: string) => {
@@ -113,22 +117,22 @@ const detailNavigation = computed(() => [
   {
     name: "Scheduled Tasks",
     route: "account.shops.detail.tasks",
-    count: props.shop?.scheduledTask?.length ?? 0,
+    count: props.shop?.scheduledTasks?.length ?? 0,
   },
   {
     name: "Queue",
     route: "account.shops.detail.queue",
-    count: props.shop?.queueInfo?.length ?? 0,
+    count: props.shop?.queues?.length ?? 0,
   },
   {
     name: "Sitespeed",
     route: "account.shops.detail.sitespeed",
-    count: props.shop?.sitespeed?.length ?? 0,
+    count: props.shop?.sitespeeds?.length ?? 0,
   },
   {
     name: "Changelog",
     route: "account.shops.detail.changelog",
-    count: props.shop?.changelog?.length ?? 0,
+    count: props.shop?.changelogs?.length ?? 0,
   },
   {
     name: "Deployments",

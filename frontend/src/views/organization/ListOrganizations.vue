@@ -7,7 +7,7 @@
   </header-container>
 
   <main-container>
-    <Panel v-if="!organizations.data || organizations.data.length === 0">
+    <Panel v-if="!organizations || organizations.length === 0">
       <element-empty
         title="No Organization"
         :route="{ name: 'account.organizations.new' }"
@@ -19,21 +19,16 @@
 
     <Panel v-else variant="table">
       <data-table
-        :columns="[
-          { key: 'name', name: 'Name', sortable: true },
-          { key: 'slug', name: 'Slug', sortable: true },
-        ]"
-        :data="organizations.data || []"
+        :columns="[{ key: 'name', name: 'Name', sortable: true }]"
+        :data="organizations"
         class="bg-white dark:bg-neutral-800"
       >
         <template #cell-name="{ row }">
-          <router-link :to="{ name: 'account.organizations.detail', params: { slug: row.slug } }">
+          <router-link
+            :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }"
+          >
             {{ row.name }}
           </router-link>
-        </template>
-
-        <template #cell-slug="{ row }">
-          {{ row.slug }}
         </template>
       </data-table>
     </Panel>
@@ -42,7 +37,28 @@
 
 <script setup lang="ts">
 import ElementEmpty from "@/components/layout/ElementEmpty.vue";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
+import { onMounted, ref } from "vue";
 
-const organizations = authClient.useListOrganizations();
+interface Organization {
+  id: string;
+  name: string;
+}
+
+const organizations = ref<Organization[]>([]);
+
+async function loadOrganizations() {
+  try {
+    const { data } = await api.GET("/auth/list-organizations");
+    if (data) {
+      organizations.value = data;
+    }
+  } catch {
+    // silently ignore
+  }
+}
+
+onMounted(() => {
+  loadOrganizations();
+});
 </script>

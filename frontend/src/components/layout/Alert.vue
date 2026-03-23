@@ -17,7 +17,7 @@ import FaCircleXmark from "~icons/fa6-solid/circle-xmark";
 
 defineProps<{ type: string }>();
 
-function getIconComponent(type) {
+function getIconComponent(type: string) {
   switch (type) {
     case "error":
       return FaCircleXmark;
