@@ -21,7 +21,7 @@ require (
 	github.com/oapi-codegen/runtime v1.3.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shyim/go-queue v0.0.0-20260325151634-c8e1d62560e2
+	github.com/shyim/go-queue v0.0.0-20260326073507-4ecfa881b072
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.41.0

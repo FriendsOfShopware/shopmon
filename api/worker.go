@@ -98,7 +98,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 			MaxDelay:   1 * time.Minute,
 		},
 		Middleware: []queue.Middleware{
-			queueotel.Middleware(),        // tracing
+			queueotel.Middleware(
+				queueotel.WithSpanNameNormalizer(queueotel.DefaultSpanNameNormalizer),
+			), // tracing
 			queueotel.MetricsMiddleware(), // metrics
 		},
 		ErrorHandler: func(ctx context.Context, env *goqueue.Envelope, err error) {

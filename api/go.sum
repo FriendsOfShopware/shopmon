@@ -230,6 +230,10 @@ github.com/shirou/gopsutil/v4 v4.26.2 h1:X8i6sicvUFih4BmYIGT1m2wwgw2VG9YgrDTi7cI
 github.com/shirou/gopsutil/v4 v4.26.2/go.mod h1:LZ6ewCSkBqUpvSOf+LsTGnRinC6iaNUNMGBtDkJBaLQ=
 github.com/shyim/go-queue v0.0.0-20260325151634-c8e1d62560e2 h1:a/UX0OVFve2lmUGOJxHyuVlpuv/NZId4Uh6fcPASFCg=
 github.com/shyim/go-queue v0.0.0-20260325151634-c8e1d62560e2/go.mod h1:QN6shC84OfvNjDNBwEA2e15guEjwlJmbYrIr1vCrviA=
+github.com/shyim/go-queue v0.0.0-20260326054627-94dffe7f1f30 h1:s7Ou/JLLXQ1L7p4r4cCPtk2d/WrL/bgZ1Xq2G+7TbkI=
+github.com/shyim/go-queue v0.0.0-20260326054627-94dffe7f1f30/go.mod h1:QN6shC84OfvNjDNBwEA2e15guEjwlJmbYrIr1vCrviA=
+github.com/shyim/go-queue v0.0.0-20260326073507-4ecfa881b072 h1:YLE9igKVUzOL7TaIzh3ygcZ7X40cLGhESYIDxU2Gw9k=
+github.com/shyim/go-queue v0.0.0-20260326073507-4ecfa881b072/go.mod h1:QN6shC84OfvNjDNBwEA2e15guEjwlJmbYrIr1vCrviA=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=

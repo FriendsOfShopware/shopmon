@@ -37,7 +37,9 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 	bus := goqueue.NewBus()
 
 	if cfg.OtelEnabled {
-		bus.AddDispatchMiddleware(queueotel.DispatchMiddleware())
+		bus.AddDispatchMiddleware(queueotel.DispatchMiddleware(
+			queueotel.WithSpanNameNormalizer(queueotel.DefaultSpanNameNormalizer),
+		))
 	}
 
 	bus.AddTransport(TransportName, transport)
