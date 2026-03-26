@@ -153,7 +153,13 @@ func (h *Handler) DiscoverSso(w http.ResponseWriter, r *http.Request, params api
 
 	// Fetch the OpenID Connect discovery document
 	discoveryURL := issuer + "/.well-known/openid-configuration"
-	resp, err := httputil.NewHTTPClient().Get(discoveryURL)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, discoveryURL, nil)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create OIDC discovery request")
+		return
+	}
+
+	resp, err := httputil.NewHTTPClient().Do(req)
 	if err != nil {
 		slog.Error("failed to fetch OIDC discovery", "url", discoveryURL, "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch OIDC discovery document")

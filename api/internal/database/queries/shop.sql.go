@@ -433,21 +433,26 @@ func (q *Queries) GetShopForScrape(ctx context.Context, id int32) (GetShopForScr
 }
 
 const getShopNotificationSubscribers = `-- name: GetShopNotificationSubscribers :many
-SELECT u.id, u.name, u.email, u.notifications
+SELECT u.id, u.name, u.email
 FROM "user" u
 JOIN member m ON m.user_id = u.id
 WHERE m.organization_id = $1
+  AND u.notifications @> to_jsonb(ARRAY['shop-' || $2::text])::jsonb
 `
 
-type GetShopNotificationSubscribersRow struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Email         string `json:"email"`
-	Notifications []byte `json:"notifications"`
+type GetShopNotificationSubscribersParams struct {
+	OrganizationID string `json:"organization_id"`
+	ShopID         string `json:"shop_id"`
 }
 
-func (q *Queries) GetShopNotificationSubscribers(ctx context.Context, organizationID string) ([]GetShopNotificationSubscribersRow, error) {
-	rows, err := q.db.Query(ctx, getShopNotificationSubscribers, organizationID)
+type GetShopNotificationSubscribersRow struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func (q *Queries) GetShopNotificationSubscribers(ctx context.Context, arg GetShopNotificationSubscribersParams) ([]GetShopNotificationSubscribersRow, error) {
+	rows, err := q.db.Query(ctx, getShopNotificationSubscribers, arg.OrganizationID, arg.ShopID)
 	if err != nil {
 		return nil, err
 	}
@@ -455,12 +460,7 @@ func (q *Queries) GetShopNotificationSubscribers(ctx context.Context, organizati
 	items := []GetShopNotificationSubscribersRow{}
 	for rows.Next() {
 		var i GetShopNotificationSubscribersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Email,
-			&i.Notifications,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

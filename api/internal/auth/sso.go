@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -217,7 +218,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 
 	if sub == "" || email == "" {
 		// Try userinfo endpoint as fallback
-		userInfo, err := h.fetchUserInfo(tokenData.AccessToken, provider.Issuer)
+		userInfo, err := h.fetchUserInfo(r.Context(), tokenData.AccessToken, provider.Issuer)
 		if err != nil {
 			httputil.WriteError(w, http.StatusBadGateway, "could not get user info from SSO provider")
 			return
@@ -343,10 +344,15 @@ type userInfoResponse struct {
 	Picture string `json:"picture"`
 }
 
-func (h *AuthHandler) fetchUserInfo(accessToken, issuer string) (*userInfoResponse, error) {
+func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer string) (*userInfoResponse, error) {
 	// Discover userinfo endpoint
 	discoveryURL := issuer + "/.well-known/openid-configuration"
-	resp, err := httputil.NewHTTPClient().Get(discoveryURL)
+	discoveryReq, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := httputil.NewHTTPClient().Do(discoveryReq)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +368,10 @@ func (h *AuthHandler) fetchUserInfo(accessToken, issuer string) (*userInfoRespon
 	}
 
 	// Fetch userinfo
-	req, _ := http.NewRequest("GET", discovery.UserinfoEndpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discovery.UserinfoEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	uiResp, err := httputil.NewHTTPClient().Do(req)

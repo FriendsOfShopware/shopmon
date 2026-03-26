@@ -95,7 +95,13 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 
 // GetShopwareVersions returns the latest Shopware version information.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
-	resp, err := httputil.NewHTTPClient().Get(h.cfg.ShopwareVersionsURL)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, h.cfg.ShopwareVersionsURL, nil)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create versions request")
+		return
+	}
+
+	resp, err := httputil.NewHTTPClient().Do(req)
 	if err != nil {
 		slog.Error("failed to fetch shopware versions", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch shopware versions")

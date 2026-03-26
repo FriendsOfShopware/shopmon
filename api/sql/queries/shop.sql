@@ -138,7 +138,8 @@ INSERT INTO shop_sitespeed (shop_id, deployment_id, created_at, ttfb, fully_load
 VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8);
 
 -- name: GetShopNotificationSubscribers :many
-SELECT u.id, u.name, u.email, u.notifications
+SELECT u.id, u.name, u.email
 FROM "user" u
 JOIN member m ON m.user_id = u.id
-WHERE m.organization_id = $1;
+WHERE m.organization_id = @organization_id
+  AND u.notifications @> to_jsonb(ARRAY['shop-' || @shop_id::text])::jsonb;

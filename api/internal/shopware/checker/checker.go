@@ -63,7 +63,6 @@ type HTTPClient interface {
 }
 
 type Input struct {
-	Ctx            context.Context
 	Extensions     []Extension
 	Config         ShopConfig
 	ScheduledTasks []ScheduledTask
@@ -147,11 +146,11 @@ func (o *Output) Result() Result {
 }
 
 // RunAll runs all checkers concurrently and returns the aggregated result.
-func RunAll(input Input) Result {
+func RunAll(ctx context.Context, input Input) Result {
 	output := NewOutput(input.Ignores)
 
 	var wg sync.WaitGroup
-	checkers := []func(Input, *Output){
+	checkers := []func(context.Context, Input, *Output){
 		checkEnv,
 		checkWorker,
 		checkTasks,
@@ -161,9 +160,9 @@ func RunAll(input Input) Result {
 
 	wg.Add(len(checkers))
 	for _, fn := range checkers {
-		go func(check func(Input, *Output)) {
+		go func(check func(context.Context, Input, *Output)) {
 			defer wg.Done()
-			check(input, output)
+			check(ctx, input, output)
 		}(fn)
 	}
 	wg.Wait()

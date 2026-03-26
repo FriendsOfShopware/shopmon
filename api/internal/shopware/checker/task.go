@@ -1,11 +1,12 @@
 package checker
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
 
-func checkTasks(input Input, output *Output) {
+func checkTasks(_ context.Context, input Input, output *Output) {
 	for _, task := range input.ScheduledTasks {
 		if task.Status == "inactive" {
 			continue

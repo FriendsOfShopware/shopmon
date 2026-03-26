@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,8 +24,14 @@ type securityAdvisory struct {
 	Source string `json:"source"`
 }
 
-func checkSecurity(input Input, output *Output) {
-	resp, err := httputil.NewHTTPClient().Get("https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/security.json")
+func checkSecurity(ctx context.Context, input Input, output *Output) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/security.json", nil)
+	if err != nil {
+		slog.Warn("failed to create security advisories request", "error", err)
+		return
+	}
+
+	resp, err := httputil.NewHTTPClient().Do(req)
 	if err != nil {
 		slog.Warn("failed to fetch security advisories", "error", err)
 		return

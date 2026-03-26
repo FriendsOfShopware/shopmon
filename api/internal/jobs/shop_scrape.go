@@ -340,7 +340,6 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 	}
 
 	checkerInput := checker.Input{
-		Ctx:        ctx,
 		Extensions: checkerExtensions,
 		Config: checker.ShopConfig{
 			Version: shopConfig.Version,
@@ -362,7 +361,7 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 	}
 
 	_, checkSpan := tracer.Start(ctx, "shop.scrape.run_checks")
-	checkerResult := checker.RunAll(checkerInput)
+	checkerResult := checker.RunAll(ctx, checkerInput)
 	checkSpan.SetAttributes(attribute.String("check.status", string(checkerResult.Status)))
 	checkSpan.End()
 

@@ -1,6 +1,9 @@
 package checker
 
-import "strings"
+import (
+	"context"
+	"strings"
+)
 
 var validEnvironments = map[string]bool{
 	"production": true,
@@ -9,7 +12,7 @@ var validEnvironments = map[string]bool{
 	"stage":      true,
 }
 
-func checkEnv(input Input, output *Output) {
+func checkEnv(_ context.Context, input Input, output *Output) {
 	env := strings.ToLower(input.CacheInfo.Environment)
 	if !validEnvironments[env] {
 		output.Warning("shopware.env",

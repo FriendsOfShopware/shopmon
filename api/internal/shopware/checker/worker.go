@@ -1,6 +1,8 @@
 package checker
 
-func checkWorker(input Input, output *Output) {
+import "context"
+
+func checkWorker(_ context.Context, input Input, output *Output) {
 	if input.Config.AdminWorker.EnableAdminWorker {
 		output.Warning("admin.worker",
 			"The admin worker is enabled. This can cause performance issues. Consider using the CLI worker instead.",

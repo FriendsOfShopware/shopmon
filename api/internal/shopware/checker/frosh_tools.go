@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 )
@@ -26,7 +27,7 @@ var ignoredFroshChecks = map[string]bool{
 	"adminWorkerWarning":   true,
 }
 
-func checkFroshTools(input Input, output *Output) {
+func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	var found bool
 	for _, ext := range input.Extensions {
 		if ext.Name == "FroshTools" && ext.Active && ext.Installed {
@@ -43,7 +44,7 @@ func checkFroshTools(input Input, output *Output) {
 	}
 
 	// Fetch health status
-	healthData, err := input.Client.Get(input.Ctx, "/_action/frosh-tools/health/status")
+	healthData, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools health status", "error", err)
 		return
@@ -58,7 +59,7 @@ func checkFroshTools(input Input, output *Output) {
 	mapFroshChecks(healthChecks, output)
 
 	// Fetch performance status
-	perfData, err := input.Client.Get(input.Ctx, "/_action/frosh-tools/performance/status")
+	perfData, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools performance status", "error", err)
 		return

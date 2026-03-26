@@ -31,7 +31,10 @@ func (h *ShopScrapeHandler) handleStatusChange(ctx context.Context, shop queries
 	}
 
 	// Status degraded - send notifications
-	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, shop.OrganizationID)
+	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, queries.GetShopNotificationSubscribersParams{
+		OrganizationID: shop.OrganizationID,
+		ShopID:         strconv.Itoa(int(shop.ID)),
+	})
 	if err != nil {
 		slog.Warn("failed to get notification subscribers", "shopId", shop.ID, "error", err)
 		return
@@ -62,10 +65,6 @@ func (h *ShopScrapeHandler) handleStatusChange(ctx context.Context, shop queries
 	alertMessage := fmt.Sprintf("Status changed from %s to %s", shopDetail.Status, newStatus)
 
 	for _, user := range subscribers {
-		if !isUserSubscribedToShop(user, shop.ID) {
-			continue
-		}
-
 		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
 			UserID:  user.ID,
 			Key:     statusChangeKey,
@@ -90,7 +89,10 @@ func (h *ShopScrapeHandler) handleStatusChange(ctx context.Context, shop queries
 
 // notifyAuthError sends notifications when authentication fails.
 func (h *ShopScrapeHandler) notifyAuthError(ctx context.Context, shop queries.GetAllShopsRow, authErr error) {
-	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, shop.OrganizationID)
+	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, queries.GetShopNotificationSubscribersParams{
+		OrganizationID: shop.OrganizationID,
+		ShopID:         strconv.Itoa(int(shop.ID)),
+	})
 	if err != nil {
 		slog.Warn("failed to get notification subscribers", "shopId", shop.ID, "error", err)
 		return
@@ -125,10 +127,6 @@ func (h *ShopScrapeHandler) notifyAuthError(ctx context.Context, shop queries.Ge
 	alertMessage := fmt.Sprintf("Could not connect to shop. Please check your credentials and try again. %s", errMsg)
 
 	for _, user := range subscribers {
-		if !isUserSubscribedToShop(user, shop.ID) {
-			continue
-		}
-
 		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
 			UserID:  user.ID,
 			Key:     notifKey,
@@ -153,7 +151,10 @@ func (h *ShopScrapeHandler) notifyAuthError(ctx context.Context, shop queries.Ge
 
 // notifyDataFetchError sends notifications when data fetching fails.
 func (h *ShopScrapeHandler) notifyDataFetchError(ctx context.Context, shop queries.GetAllShopsRow, errMsg string) {
-	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, shop.OrganizationID)
+	subscribers, err := h.queries.GetShopNotificationSubscribers(ctx, queries.GetShopNotificationSubscribersParams{
+		OrganizationID: shop.OrganizationID,
+		ShopID:         strconv.Itoa(int(shop.ID)),
+	})
 	if err != nil {
 		slog.Warn("failed to get notification subscribers", "shopId", shop.ID, "error", err)
 		return
@@ -169,10 +170,6 @@ func (h *ShopScrapeHandler) notifyDataFetchError(ctx context.Context, shop queri
 	})
 
 	for _, user := range subscribers {
-		if !isUserSubscribedToShop(user, shop.ID) {
-			continue
-		}
-
 		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
 			UserID:  user.ID,
 			Key:     notifKey,
@@ -184,24 +181,4 @@ func (h *ShopScrapeHandler) notifyDataFetchError(ctx context.Context, shop queri
 			slog.Warn("failed to send data fetch error notification", "userId", user.ID, "shopId", shop.ID, "error", err)
 		}
 	}
-}
-
-// isUserSubscribedToShop checks if a user has subscribed to notifications for a specific shop.
-func isUserSubscribedToShop(user queries.GetShopNotificationSubscribersRow, shopID int32) bool {
-	if user.Notifications == nil {
-		return false
-	}
-
-	var notifications []string
-	if err := json.Unmarshal(user.Notifications, &notifications); err != nil {
-		return false
-	}
-
-	shopKey := fmt.Sprintf("shop-%d", shopID)
-	for _, n := range notifications {
-		if n == shopKey {
-			return true
-		}
-	}
-	return false
 }
