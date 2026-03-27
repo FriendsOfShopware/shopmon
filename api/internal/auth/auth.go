@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,7 +59,9 @@ func ValidateSession(ctx context.Context, pool *pgxpool.Pool, token string) (*Se
 	}
 
 	if notificationsJSON != nil {
-		json.Unmarshal(notificationsJSON, &su.User.Notifications)
+		if err := json.Unmarshal(notificationsJSON, &su.User.Notifications); err != nil {
+			slog.Error("failed to unmarshal user notifications", "error", err, "userID", su.User.ID)
+		}
 	}
 	if su.User.Notifications == nil {
 		su.User.Notifications = []string{}

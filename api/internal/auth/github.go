@@ -41,9 +41,12 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 	}
 
 	state := generateToken()
-	h.challenges.Set(r.Context(), "oauth:"+state, oauthState{
+	if err := h.challenges.Set(r.Context(), "oauth:"+state, oauthState{
 		CallbackURL: req.CallbackURL,
-	}, 10*time.Minute)
+	}, 10*time.Minute); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to store OAuth state")
+		return
+	}
 
 	authURL := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
 		url.QueryEscape(h.cfg.GithubClientID), url.QueryEscape(state))
@@ -77,7 +80,7 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code")
 		return
 	}
-	defer tokenResp.Body.Close()
+	defer func() { _ = tokenResp.Body.Close() }()
 
 	body, _ := io.ReadAll(tokenResp.Body)
 	params, _ := url.ParseQuery(string(body))
@@ -97,7 +100,7 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch GitHub user")
 		return
 	}
-	defer ghResp.Body.Close()
+	defer func() { _ = ghResp.Body.Close() }()
 
 	var ghUser struct {
 		ID        int64  `json:"id"`
@@ -106,7 +109,10 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 		Email     string `json:"email"`
 		AvatarURL string `json:"avatar_url"`
 	}
-	json.NewDecoder(ghResp.Body).Decode(&ghUser)
+	if err := json.NewDecoder(ghResp.Body).Decode(&ghUser); err != nil {
+		httputil.WriteError(w, http.StatusBadGateway, "failed to decode GitHub user response")
+		return
+	}
 
 	// If no public email, fetch from emails API
 	if ghUser.Email == "" {
@@ -116,13 +122,15 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 
 		emailResp, err := httputil.NewHTTPClient().Do(emailReq)
 		if err == nil {
-			defer emailResp.Body.Close()
+			defer func() { _ = emailResp.Body.Close() }()
 			var emails []struct {
 				Email    string `json:"email"`
 				Primary  bool   `json:"primary"`
 				Verified bool   `json:"verified"`
 			}
-			json.NewDecoder(emailResp.Body).Decode(&emails)
+			if err := json.NewDecoder(emailResp.Body).Decode(&emails); err != nil {
+				slog.Error("failed to decode GitHub emails response", "error", err)
+			}
 			for _, e := range emails {
 				if e.Primary && e.Verified {
 					ghUser.Email = e.Email
@@ -192,11 +200,13 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Update user avatar if not set
 	if ghUser.AvatarURL != "" {
-		h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
+		if err := h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
 			Name:  ghUser.Name,
 			Image: &ghUser.AvatarURL,
 			ID:    userID,
-		})
+		}); err != nil {
+			slog.Error("failed to update user profile from GitHub", "error", err, "userID", userID)
+		}
 	}
 
 	// Create a one-time code (not the token itself, for security)

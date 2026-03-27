@@ -50,7 +50,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 		httputil.WriteError(w, http.StatusBadGateway, "failed to get packages tokens")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -60,7 +60,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	_, _ = w.Write(body)
 }
 
 // CreatePackagesToken creates a new packages token.
@@ -86,7 +86,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 		httputil.WriteError(w, http.StatusBadGateway, "failed to create packages token")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -96,7 +96,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	_, _ = w.Write(body)
 }
 
 // DeletePackagesToken deletes a packages token.
@@ -121,7 +121,7 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 		httputil.WriteError(w, http.StatusBadGateway, "failed to delete packages token")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
 		w.WriteHeader(http.StatusNoContent)
@@ -136,7 +136,7 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	_, _ = w.Write(body)
 }
 
 // SyncPackagesToken syncs a packages token.
@@ -161,7 +161,7 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 		httputil.WriteError(w, http.StatusBadGateway, "failed to sync packages token")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
 		w.WriteHeader(http.StatusNoContent)
@@ -176,7 +176,7 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	_, _ = w.Write(body)
 }
 
 // packagesRequest creates an authenticated request to the packages API.

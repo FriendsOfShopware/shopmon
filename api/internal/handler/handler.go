@@ -52,22 +52,6 @@ func pgtimeToTimePtr(t pgtype.Timestamp) *time.Time {
 	return &t.Time
 }
 
-func intPtr(v int) *int {
-	return &v
-}
-
-func strPtr(v string) *string {
-	return &v
-}
-
-func boolPtr(v bool) *bool {
-	return &v
-}
-
-func float32Ptr(v float32) *float32 {
-	return &v
-}
-
 func sitespeedDetailUrl(cfg *config.Config, shopID int32, enabled bool) *string {
 	if !enabled || cfg.SitespeedEndpoint == "" {
 		return nil

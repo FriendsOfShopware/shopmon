@@ -68,10 +68,12 @@ func (h *ShopScrapeHandler) HandleScrapeAll(ctx context.Context, _ ShopScrapeAll
 
 		if err := h.scrapeShop(ctx, shop); err != nil {
 			slog.Error("failed to scrape shop", "shopId", shop.ID, "error", err)
-			h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
+			if err := h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
 				LastScrapedError: strPtr(err.Error()),
 				ID:               shop.ID,
-			})
+			}); err != nil {
+				slog.Error("failed to update shop scrape error", "shopId", shop.ID, "error", err)
+			}
 		}
 	}
 
@@ -93,22 +95,7 @@ func (h *ShopScrapeHandler) HandleScrape(ctx context.Context, msg ShopScrape) er
 		return fmt.Errorf("shop %d not found: %w", msg.ShopID, err)
 	}
 
-	shop := queries.GetAllShopsRow{
-		ID:                   row.ID,
-		Name:                 row.Name,
-		Url:                  row.Url,
-		ClientID:             row.ClientID,
-		ClientSecret:         row.ClientSecret,
-		ShopwareVersion:      row.ShopwareVersion,
-		OrganizationID:       row.OrganizationID,
-		Ignores:              row.Ignores,
-		LastScrapedAt:        row.LastScrapedAt,
-		LastScrapedError:     row.LastScrapedError,
-		ConnectionIssueCount: row.ConnectionIssueCount,
-		ShopToken:            row.ShopToken,
-		SitespeedEnabled:     row.SitespeedEnabled,
-		SitespeedUrls:        row.SitespeedUrls,
-	}
+	shop := queries.GetAllShopsRow(row)
 
 	if err := h.scrapeShop(ctx, shop); err != nil {
 		slog.Error("failed to scrape shop", "shopId", msg.ShopID, "error", err)
@@ -154,10 +141,12 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 		if err != nil {
 			log.Warn("authentication failed", "error", err)
 			h.notifyAuthError(ctx, shop, err)
-			h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
+			if err := h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
 				LastScrapedError: strPtr(fmt.Sprintf("Authentication failed: %v", err)),
 				ID:               shop.ID,
-			})
+			}); err != nil {
+				slog.Error("failed to update shop scrape error", "shopId", shop.ID, "error", err)
+			}
 			return nil
 		}
 	}
@@ -214,10 +203,12 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 	if fr.configErr != nil {
 		errMsg := fmt.Sprintf("failed to fetch shop config: %v", fr.configErr)
 		h.notifyDataFetchError(ctx, shop, errMsg)
-		h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
+		if err := h.queries.UpdateShopScrapeError(ctx, queries.UpdateShopScrapeErrorParams{
 			LastScrapedError: strPtr(errMsg),
 			ID:               shop.ID,
-		})
+		}); err != nil {
+			slog.Error("failed to update shop scrape error", "shopId", shop.ID, "error", err)
+		}
 		return nil
 	}
 
@@ -304,7 +295,9 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 
 	var ignores []string
 	if shop.Ignores != nil {
-		json.Unmarshal(shop.Ignores, &ignores)
+		if err := json.Unmarshal(shop.Ignores, &ignores); err != nil {
+			slog.Error("failed to unmarshal shop ignores", "shopId", shop.ID, "error", err)
+		}
 	}
 
 	checkerExtensions := make([]checker.Extension, len(extensions))
@@ -382,7 +375,7 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 		persistSpan.End()
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	txQueries := h.queries.WithTx(tx)
 

@@ -21,7 +21,7 @@ func TestPasskeyRegisterOptions(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -39,7 +39,7 @@ func TestPasskeyRegisterOptions_Unauthenticated(t *testing.T) {
 
 	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/register-options", "application/json", nil)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -49,7 +49,7 @@ func TestPasskeyLoginOptions(t *testing.T) {
 
 	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/login-options", "application/json", nil)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -86,7 +86,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 		ChallengeKey string          `json:"challengeKey"`
 	}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&regOptions))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	require.NotEmpty(t, regOptions.ChallengeKey)
 
 	// === Step 2: Create attestation response using virtual authenticator ===
@@ -109,7 +109,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -138,7 +138,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 		ChallengeKey string          `json:"challengeKey"`
 	}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&loginOptions))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	require.NotEmpty(t, loginOptions.ChallengeKey)
 
 	// Create assertion response
@@ -156,7 +156,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	// Complete login
 	resp, err = http.Post(env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(loginBody))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -176,7 +176,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+loginToken)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
@@ -194,7 +194,7 @@ func TestPasskeyRegister_InvalidChallenge(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -208,7 +208,7 @@ func TestPasskeyLogin_InvalidChallenge(t *testing.T) {
 
 	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -239,15 +239,19 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 			Options      json.RawMessage `json:"options"`
 			ChallengeKey string          `json:"challengeKey"`
 		}
-		json.NewDecoder(resp.Body).Decode(&opts)
-		resp.Body.Close()
+		if err := json.NewDecoder(resp.Body).Decode(&opts); err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
 
 		// Create attestation
 		attOpts, _ := virtualwebauthn.ParseAttestationOptions(string(opts.Options))
 		attResp := virtualwebauthn.CreateAttestationResponse(rp, authenticator, cred, *attOpts)
 
 		var attJSON map[string]interface{}
-		json.Unmarshal([]byte(attResp), &attJSON)
+		if err := json.Unmarshal([]byte(attResp), &attJSON); err != nil {
+			t.Fatal(err)
+		}
 		attJSON["challengeKey"] = opts.ChallengeKey
 		attJSON["name"] = name
 		body, _ := json.Marshal(attJSON)
@@ -259,11 +263,13 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 		resp, err = http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// Verify two passkeys stored
 	var count int
-	env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&count)
+	if err := env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 2, count)
 }

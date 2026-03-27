@@ -81,11 +81,14 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 	nonce := generateToken()
 
 	// Store state in Redis
-	h.challenges.Set(r.Context(), "sso:"+state, ssoState{
+	if err := h.challenges.Set(r.Context(), "sso:"+state, ssoState{
 		ProviderID:  provider.ProviderID,
 		CallbackURL: req.CallbackURL,
 		Nonce:       nonce,
-	}, 10*time.Minute)
+	}, 10*time.Minute); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to store SSO state")
+		return
+	}
 
 	// Build authorization URL
 	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.cfg.FrontendURL, provider.ProviderID)
@@ -157,7 +160,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code for token")
 		return
 	}
-	defer tokenResp.Body.Close()
+	defer func() { _ = tokenResp.Body.Close() }()
 
 	body, _ := io.ReadAll(tokenResp.Body)
 	if tokenResp.StatusCode != http.StatusOK {
@@ -292,11 +295,13 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Update profile picture if available
 	if picture != "" {
-		h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
+		if err := h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
 			Name:  name,
 			Image: &picture,
 			ID:    userID,
-		})
+		}); err != nil {
+			slog.Error("failed to update user profile from SSO", "error", err, "userID", userID)
+		}
 	}
 
 	// Organization auto-provisioning
@@ -306,12 +311,14 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 			UserID:         userID,
 		})
 		if !isMember {
-			h.queries.CreateMember(r.Context(), queries.CreateMemberParams{
+			if err := h.queries.CreateMember(r.Context(), queries.CreateMemberParams{
 				ID:             uuid.New().String(),
 				OrganizationID: *provider.OrganizationID,
 				UserID:         userID,
 				Role:           "member",
-			})
+			}); err != nil {
+				slog.Error("failed to auto-provision SSO org membership", "error", err, "userID", userID, "orgID", *provider.OrganizationID)
+			}
 		}
 	}
 
@@ -353,12 +360,14 @@ func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer str
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var discovery struct {
 		UserinfoEndpoint string `json:"userinfo_endpoint"`
 	}
-	json.NewDecoder(resp.Body).Decode(&discovery)
+	if err := json.NewDecoder(resp.Body).Decode(&discovery); err != nil {
+		return nil, fmt.Errorf("failed to decode OIDC discovery response: %w", err)
+	}
 
 	if discovery.UserinfoEndpoint == "" {
 		return nil, fmt.Errorf("no userinfo endpoint found")
@@ -375,9 +384,11 @@ func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer str
 	if err != nil {
 		return nil, err
 	}
-	defer uiResp.Body.Close()
+	defer func() { _ = uiResp.Body.Close() }()
 
 	var userInfo userInfoResponse
-	json.NewDecoder(uiResp.Body).Decode(&userInfo)
+	if err = json.NewDecoder(uiResp.Body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode userinfo response: %w", err)
+	}
 	return &userInfo, nil
 }

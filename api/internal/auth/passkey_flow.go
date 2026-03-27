@@ -74,10 +74,12 @@ func (h *AuthHandler) beginPasskeyRegistration(ctx context.Context, user *Sessio
 	}
 
 	challengeKey := generateToken()
-	h.challenges.Set(ctx, "webauthn:"+challengeKey, webauthnSessionEntry{
+	if err := h.challenges.Set(ctx, "webauthn:"+challengeKey, webauthnSessionEntry{
 		SessionData: sessionData,
 		UserID:      user.User.ID,
-	}, 5*time.Minute)
+	}, 5*time.Minute); err != nil {
+		return nil, err
+	}
 
 	return &passkeyOptionsResponse{
 		Options:      creation,
@@ -137,9 +139,11 @@ func (h *AuthHandler) beginPasskeyLogin(ctx context.Context) (*passkeyOptionsRes
 	}
 
 	challengeKey := generateToken()
-	h.challenges.Set(ctx, "webauthn:"+challengeKey, webauthnSessionEntry{
+	if err := h.challenges.Set(ctx, "webauthn:"+challengeKey, webauthnSessionEntry{
 		SessionData: sessionData,
-	}, 5*time.Minute)
+	}, 5*time.Minute); err != nil {
+		return nil, err
+	}
 
 	return &passkeyOptionsResponse{
 		Options:      assertion,

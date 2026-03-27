@@ -67,7 +67,7 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 		httputil.WriteError(w, http.StatusBadGateway, "failed to check extension compatibility")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -86,7 +86,7 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 		// Pass through raw response if it doesn't match our type
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(body)
+		_, _ = w.Write(body)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch shopware versions")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -117,5 +117,5 @@ func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(body)
+	_, _ = w.Write(body)
 }

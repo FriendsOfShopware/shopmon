@@ -46,7 +46,7 @@ func (s *Service) Send(to, subject, body string) error {
 
 	var msg strings.Builder
 	for k, v := range headers {
-		msg.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
+		fmt.Fprintf(&msg, "%s: %s\r\n", k, v)
 	}
 	msg.WriteString("\r\n")
 	msg.WriteString(body)
@@ -65,13 +65,13 @@ func (s *Service) Send(to, subject, body string) error {
 		if err != nil {
 			return fmt.Errorf("tls dial: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		client, err := smtp.NewClient(conn, s.cfg.Host)
 		if err != nil {
 			return fmt.Errorf("smtp client: %w", err)
 		}
-		defer client.Close()
+		defer func() { _ = client.Close() }()
 
 		if auth != nil {
 			if err := client.Auth(auth); err != nil {

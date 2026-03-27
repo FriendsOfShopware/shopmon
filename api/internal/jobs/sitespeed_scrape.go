@@ -61,7 +61,10 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 	// Get URLs to test - default is the shop URL
 	var urls []string
 	if shop.SitespeedUrls != nil {
-		json.Unmarshal(shop.SitespeedUrls, &urls)
+		if err := json.Unmarshal(shop.SitespeedUrls, &urls); err != nil {
+			slog.Error("failed to unmarshal sitespeed urls", "shopId", shop.ID, "error", err)
+			return nil
+		}
 	}
 	for i, u := range urls {
 		urls[i] = strings.Replace(u, "http://localhost:3889", "http://demoshop:8000", 1)
@@ -91,7 +94,7 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 	if err != nil {
 		return fmt.Errorf("call sitespeed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
@@ -108,9 +111,11 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 		CumulativeLayoutShift  *float32 `json:"cumulativeLayoutShift"`
 		TransferSize           *int32   `json:"transferSize"`
 	}
-	json.Unmarshal(body, &result)
+	if err := json.Unmarshal(body, &result); err != nil {
+		slog.Error("failed to unmarshal sitespeed result", "shopId", shop.ID, "error", err)
+	}
 
-	h.queries.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
+	if err := h.queries.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
 		ShopID:                 &shop.ID,
 		DeploymentID:           shop.ActiveDeploymentID,
 		Ttfb:                   result.TTFB,
@@ -119,13 +124,17 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 		FirstContentfulPaint:   result.FirstContentfulPaint,
 		CumulativeLayoutShift:  result.CumulativeLayoutShift,
 		TransferSize:           result.TransferSize,
-	})
+	}); err != nil {
+		slog.Error("failed to insert shop sitespeed", "shopId", shop.ID, "error", err)
+	}
 
 	screenshotURL := fmt.Sprintf("%s/screenshot/%s", h.cfg.SitespeedEndpoint, recordID)
-	h.queries.UpdateShopImage(ctx, queries.UpdateShopImageParams{
+	if err := h.queries.UpdateShopImage(ctx, queries.UpdateShopImageParams{
 		ShopImage: &screenshotURL,
 		ID:        shop.ID,
-	})
+	}); err != nil {
+		slog.Error("failed to update shop image", "shopId", shop.ID, "error", err)
+	}
 
 	log.Info("sitespeed scrape completed")
 	return nil

@@ -37,7 +37,7 @@ func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: pgtimeToTime(row.CreatedAt),
 		}
 
-		if row.Link != nil && len(row.Link) > 0 {
+		if len(row.Link) > 0 {
 			var link api.NotificationLink
 			if err := json.Unmarshal(row.Link, &link); err == nil && link.Url != "" {
 				n.Link = &link

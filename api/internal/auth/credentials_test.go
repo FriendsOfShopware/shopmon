@@ -22,7 +22,7 @@ func TestSignUpEmail(t *testing.T) {
 
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -48,7 +48,7 @@ func TestSignUpEmail_DuplicateEmail(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Try again with same email
@@ -57,7 +57,7 @@ func TestSignUpEmail_DuplicateEmail(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 }
 
@@ -69,7 +69,7 @@ func TestSignUpEmail_ShortPassword(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -79,7 +79,7 @@ func TestSignUpEmail_MissingFields(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{"email": "test@example.com"})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -92,7 +92,7 @@ func TestSignInEmail(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Now login
 	body, _ = json.Marshal(map[string]string{
@@ -100,7 +100,7 @@ func TestSignInEmail(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -124,14 +124,14 @@ func TestSignInEmail_WrongPassword(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	body, _ = json.Marshal(map[string]string{
 		"email": "wrong@example.com", "password": "wrongpassword!",
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -143,7 +143,7 @@ func TestSignInEmail_NonexistentUser(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -159,7 +159,7 @@ func TestGetSession(t *testing.T) {
 
 	var signUpResult map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	token := signUpResult["token"].(string)
 	require.NotEmpty(t, token)
 
@@ -169,7 +169,7 @@ func TestGetSession(t *testing.T) {
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -186,7 +186,7 @@ func TestGetSession_NoToken(t *testing.T) {
 
 	resp, err := http.Get(env.Server.URL + "/api/auth/session")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -202,7 +202,7 @@ func TestSignOut(t *testing.T) {
 
 	var signUpResult map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	token := signUpResult["token"].(string)
 	require.NotEmpty(t, token)
 
@@ -211,7 +211,7 @@ func TestSignOut(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Session should be invalid now
@@ -219,7 +219,7 @@ func TestSignOut(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -232,7 +232,7 @@ func TestVerifyEmail(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Get the verification token from DB
 	var verificationToken string
@@ -243,7 +243,7 @@ func TestVerifyEmail(t *testing.T) {
 	// Verify email
 	resp, err = http.Get(env.Server.URL + "/api/auth/verify-email?token=" + verificationToken)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Check user is now verified
@@ -259,7 +259,7 @@ func TestVerifyEmail_InvalidToken(t *testing.T) {
 
 	resp, err := http.Get(env.Server.URL + "/api/auth/verify-email?token=invalid-token")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -272,13 +272,13 @@ func TestForgetPassword(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Request password reset
 	body, _ = json.Marshal(map[string]string{"email": "forgot@example.com"})
 	resp, err = http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Verify a token was created (might have email verification token too)
@@ -296,7 +296,7 @@ func TestForgetPassword_NonexistentEmail(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{"email": "nobody@example.com"})
 	resp, err := http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
@@ -309,13 +309,13 @@ func TestResetPassword(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Request reset
 	body, _ = json.Marshal(map[string]string{"email": "reset@example.com"})
 	resp, err = http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Get the reset token (forget-password uses user.ID as identifier)
 	var resetToken string
@@ -332,7 +332,7 @@ func TestResetPassword(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Login with new password should work
@@ -341,7 +341,7 @@ func TestResetPassword(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Login with old password should fail
@@ -350,7 +350,7 @@ func TestResetPassword(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
@@ -362,7 +362,7 @@ func TestResetPassword_InvalidToken(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -375,7 +375,7 @@ func TestSignInEmail_BannedUser(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Ban the user directly in DB
 	_, err = env.Pool.Exec(t.Context(),
@@ -388,6 +388,6 @@ func TestSignInEmail_BannedUser(t *testing.T) {
 	})
 	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }

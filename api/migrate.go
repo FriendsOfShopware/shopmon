@@ -50,7 +50,7 @@ func migrateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer m.Close()
+			defer func() { _, _ = m.Close() }()
 
 			if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 				return err
@@ -70,7 +70,7 @@ func migrateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer m.Close()
+			defer func() { _, _ = m.Close() }()
 
 			if err := m.Steps(-1); err != nil {
 				return err
@@ -90,7 +90,7 @@ func migrateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer m.Close()
+			defer func() { _, _ = m.Close() }()
 
 			version, dirty, err := m.Version()
 			if err != nil {

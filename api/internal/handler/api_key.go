@@ -52,7 +52,9 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 	for _, row := range rows {
 		var scopes []string
 		if row.Scopes != nil {
-			json.Unmarshal(row.Scopes, &scopes)
+			if err := json.Unmarshal(row.Scopes, &scopes); err != nil {
+				slog.Error("failed to unmarshal api key scopes", "error", err)
+			}
 		}
 		if scopes == nil {
 			scopes = []string{}

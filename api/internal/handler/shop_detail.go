@@ -112,7 +112,7 @@ func (h *Handler) loadShopChangelogs(ctx context.Context, shopID int32) []querie
 
 func (h *Handler) buildShopDetail(shop *queries.GetShopByIDRow, aggregate shopDetailAggregate) api.ShopDetail {
 	var ignores *[]string
-	if shop.Ignores != nil && len(shop.Ignores) > 0 {
+	if len(shop.Ignores) > 0 {
 		var ign []string
 		if err := json.Unmarshal(shop.Ignores, &ign); err == nil {
 			ignores = &ign
@@ -120,7 +120,7 @@ func (h *Handler) buildShopDetail(shop *queries.GetShopByIDRow, aggregate shopDe
 	}
 
 	var sitespeedURLs *[]string
-	if shop.SitespeedUrls != nil && len(shop.SitespeedUrls) > 0 {
+	if len(shop.SitespeedUrls) > 0 {
 		var urls []string
 		if err := json.Unmarshal(shop.SitespeedUrls, &urls); err == nil {
 			sitespeedURLs = &urls
@@ -128,7 +128,7 @@ func (h *Handler) buildShopDetail(shop *queries.GetShopByIDRow, aggregate shopDe
 	}
 
 	var lastChangelog *api.AccountChangelog
-	if shop.LastChangelog != nil && len(shop.LastChangelog) > 0 {
+	if len(shop.LastChangelog) > 0 {
 		var changelog api.AccountChangelog
 		if err := json.Unmarshal(shop.LastChangelog, &changelog); err == nil && !changelog.Date.IsZero() {
 			lastChangelog = &changelog
@@ -184,7 +184,7 @@ func mapShopExtensions(rows []queries.ShopExtension) []api.ShopExtension {
 		}
 
 		var changelog *string
-		if row.Changelog != nil && len(row.Changelog) > 0 {
+		if len(row.Changelog) > 0 {
 			value := string(row.Changelog)
 			changelog = &value
 		}

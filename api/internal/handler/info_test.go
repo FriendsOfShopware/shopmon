@@ -41,7 +41,7 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 
 		// Return mock response
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]api.ExtensionCompatibilityResult{
+		_ = json.NewEncoder(w).Encode([]api.ExtensionCompatibilityResult{
 			{
 				Name:  "SwagPayPal",
 				Label: "PayPal",
@@ -79,7 +79,7 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -95,7 +95,7 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 func TestCheckExtensionCompatibility_APIError(t *testing.T) {
 	mockShopwareAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "internal error"}`))
+		_, _ = w.Write([]byte(`{"error": "internal error"}`))
 	}))
 	defer mockShopwareAPI.Close()
 
@@ -119,7 +119,7 @@ func TestCheckExtensionCompatibility_APIError(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
 }
@@ -127,7 +127,7 @@ func TestCheckExtensionCompatibility_APIError(t *testing.T) {
 func TestGetShopwareVersions(t *testing.T) {
 	mockVersionsAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"6.6.0.0": []string{"8.2", "8.3"},
 			"6.5.8.0": []string{"8.1", "8.2", "8.3"},
 		})
@@ -140,7 +140,7 @@ func TestGetShopwareVersions(t *testing.T) {
 
 	resp, err := http.Get(env.Server.URL + "/api/info/shopware-versions")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -160,7 +160,7 @@ func TestCheckExtensionCompatibility_InvalidBody(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }

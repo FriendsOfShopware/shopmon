@@ -112,12 +112,6 @@ type passkeyRegisterResponse struct {
 	Name string `json:"name"`
 }
 
-type basicUserResponse struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
 type authenticatedUserResponse struct {
 	ID            string   `json:"id"`
 	Name          string   `json:"name"`

@@ -165,7 +165,7 @@ func (h *Handler) DiscoverSso(w http.ResponseWriter, r *http.Request, params api
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch OIDC discovery document")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		httputil.WriteError(w, http.StatusBadGateway, "OIDC discovery endpoint returned non-200 status")

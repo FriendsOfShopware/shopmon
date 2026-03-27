@@ -62,7 +62,7 @@ func (s *S3Storage) GetDeploymentOutput(ctx context.Context, deploymentID int) (
 	if err != nil {
 		return "", fmt.Errorf("get object: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	decoder, err := zstd.NewReader(resp.Body)
 	if err != nil {

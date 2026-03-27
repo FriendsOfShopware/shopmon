@@ -98,7 +98,7 @@ func serveIndex(w http.ResponseWriter, r *http.Request, dist fs.FS) {
 	if r.Method == http.MethodHead {
 		return
 	}
-	w.Write(index)
+	_, _ = w.Write(index)
 }
 
 func setCacheHeaders(w http.ResponseWriter, assetPath string) {

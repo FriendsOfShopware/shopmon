@@ -36,7 +36,7 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		slog.Warn("failed to fetch security advisories", "error", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		slog.Warn("security advisories endpoint returned non-200", "status", resp.StatusCode)

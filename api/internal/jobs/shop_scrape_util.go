@@ -38,7 +38,7 @@ func (h *ShopScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntr
 		slog.Warn("failed to fetch store plugins", "error", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return
@@ -245,7 +245,7 @@ func getFavicon(shopURL string) *string {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil
@@ -266,7 +266,7 @@ func getFavicon(shopURL string) *string {
 	// Extract href from the matched tag
 	hrefRe := regexp.MustCompile(`(?i)href=["']([^"']+)["']`)
 	hrefMatch := hrefRe.FindSubmatch(match)
-	if hrefMatch == nil || len(hrefMatch) < 2 {
+	if len(hrefMatch) < 2 {
 		return nil
 	}
 

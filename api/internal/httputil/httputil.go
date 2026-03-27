@@ -29,7 +29,7 @@ func WriteError(w http.ResponseWriter, status int, message string) {
 
 // DecodeBody decodes a JSON request body into the given value.
 func DecodeBody(r *http.Request, v interface{}) error {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	return json.NewDecoder(r.Body).Decode(v)
 }
 

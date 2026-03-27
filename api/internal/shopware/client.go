@@ -82,7 +82,7 @@ func (c *Client) getToken() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("token request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -155,7 +155,7 @@ func (c *Client) request(ctx context.Context, method, path string, body interfac
 		span.SetStatus(codes.Error, err.Error())
 		return nil, fmt.Errorf("request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 

@@ -14,7 +14,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	cron "github.com/robfig/cron/v3"
-	"github.com/shyim/go-queue"
 	goqueue "github.com/shyim/go-queue"
 	queueotel "github.com/shyim/go-queue/middleware/otel"
 	"github.com/spf13/cobra"
@@ -35,7 +34,11 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	defer stop()
 
 	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName+"-worker", cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
-	defer otelShutdown(context.Background())
+	defer func() {
+		if err := otelShutdown(context.Background()); err != nil {
+			slog.Error("otel shutdown error", "error", err)
+		}
+	}()
 
 	// Database
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
@@ -65,26 +68,34 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	// Cron scheduler for recurring tasks
 	c := cron.New()
-	c.AddFunc("0 * * * *", func() {
+	if _, err := c.AddFunc("0 * * * *", func() {
 		if err := goqueue.Dispatch(context.Background(), bus, jobs.ShopScrapeAll{}); err != nil {
 			slog.Error("failed to dispatch shop scrape all", "error", err)
 		}
-	})
-	c.AddFunc("0 3 * * *", func() {
+	}); err != nil {
+		slog.Error("failed to add shop scrape cron", "error", err)
+	}
+	if _, err := c.AddFunc("0 3 * * *", func() {
 		if err := goqueue.Dispatch(context.Background(), bus, jobs.SitespeedScrapeAll{}); err != nil {
 			slog.Error("failed to dispatch sitespeed scrape all", "error", err)
 		}
-	})
-	c.AddFunc("0 4 * * *", func() {
+	}); err != nil {
+		slog.Error("failed to add sitespeed scrape cron", "error", err)
+	}
+	if _, err := c.AddFunc("0 4 * * *", func() {
 		if err := goqueue.Dispatch(context.Background(), bus, jobs.LockCleanup{}); err != nil {
 			slog.Error("failed to dispatch lock cleanup", "error", err)
 		}
-	})
-	c.AddFunc("0 5 * * *", func() {
+	}); err != nil {
+		slog.Error("failed to add lock cleanup cron", "error", err)
+	}
+	if _, err := c.AddFunc("0 5 * * *", func() {
 		if err := goqueue.Dispatch(context.Background(), bus, jobs.InvitationCleanup{}); err != nil {
 			slog.Error("failed to dispatch invitation cleanup", "error", err)
 		}
-	})
+	}); err != nil {
+		slog.Error("failed to add invitation cleanup cron", "error", err)
+	}
 	c.Start()
 
 	// Worker
@@ -97,7 +108,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 			Multiplier: 2.0,
 			MaxDelay:   1 * time.Minute,
 		},
-		Middleware: []queue.Middleware{
+		Middleware: []goqueue.Middleware{
 			queueotel.Middleware(
 				queueotel.WithSpanNameNormalizer(queueotel.DefaultSpanNameNormalizer),
 			), // tracing

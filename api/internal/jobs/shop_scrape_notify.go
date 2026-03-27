@@ -49,10 +49,12 @@ func (h *ShopScrapeHandler) handleStatusChange(ctx context.Context, shop queries
 
 	if sendEmails {
 		// Acquire lock for 1 hour to prevent duplicate alerts
-		h.queries.AcquireLock(ctx, queries.AcquireLockParams{
+		if err := h.queries.AcquireLock(ctx, queries.AcquireLockParams{
 			Key:     alertLockKey,
 			Expires: pgtype.Timestamp{Time: time.Now().Add(1 * time.Hour), Valid: true},
-		})
+		}); err != nil {
+			slog.Error("failed to acquire lock", "key", alertLockKey, "error", err)
+		}
 	}
 
 	linkJSON, _ := json.Marshal(notificationLink{
@@ -106,10 +108,12 @@ func (h *ShopScrapeHandler) notifyAuthError(ctx context.Context, shop queries.Ge
 	sendEmails := !locked
 
 	if sendEmails {
-		h.queries.AcquireLock(ctx, queries.AcquireLockParams{
+		if err := h.queries.AcquireLock(ctx, queries.AcquireLockParams{
 			Key:     alertLockKey,
 			Expires: pgtype.Timestamp{Time: time.Now().Add(1 * time.Hour), Valid: true},
-		})
+		}); err != nil {
+			slog.Error("failed to acquire lock", "key", alertLockKey, "error", err)
+		}
 	}
 
 	linkJSON, _ := json.Marshal(notificationLink{

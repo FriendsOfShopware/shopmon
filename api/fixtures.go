@@ -61,16 +61,22 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 
 		hashed, _ := bcrypt.GenerateFromPassword([]byte("password"), 10)
 		pw := string(hashed)
-		q.CreateAccount(ctx, queries.CreateAccountParams{
+		if err := q.CreateAccount(ctx, queries.CreateAccountParams{
 			ID: uuid.New().String(), AccountID: userID,
 			ProviderID: "credential", UserID: userID, Password: &pw,
-		})
+		}); err != nil {
+			slog.Error("failed to create account", "email", email, "error", err)
+		}
 
 		// Mark email verified
-		q.UpdateUserEmailVerified(ctx, userID)
+		if err := q.UpdateUserEmailVerified(ctx, userID); err != nil {
+			slog.Error("failed to verify user email", "email", email, "error", err)
+		}
 
 		if role == "admin" {
-			pool.Exec(ctx, `UPDATE "user" SET role = 'admin' WHERE id = $1`, userID)
+			if _, err := pool.Exec(ctx, `UPDATE "user" SET role = 'admin' WHERE id = $1`, userID); err != nil {
+				slog.Error("failed to set admin role", "email", email, "error", err)
+			}
 		}
 
 		return userID, nil
@@ -96,19 +102,27 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 
 	// Create organization
 	orgID := uuid.New().String()
-	q.CreateOrganization(ctx, queries.CreateOrganizationParams{
+	if _, err := q.CreateOrganization(ctx, queries.CreateOrganizationParams{
 		ID: orgID, Name: "Acme Corp", Slug: "acme-corp",
-	})
+	}); err != nil {
+		slog.Error("failed to create organization", "name", "Acme Corp", "error", err)
+	}
 
-	q.CreateMember(ctx, queries.CreateMemberParams{
+	if err := q.CreateMember(ctx, queries.CreateMemberParams{
 		ID: uuid.New().String(), OrganizationID: orgID, UserID: user1ID, Role: "owner",
-	})
-	q.CreateMember(ctx, queries.CreateMemberParams{
+	}); err != nil {
+		slog.Error("failed to create member", "user", "owner", "error", err)
+	}
+	if err := q.CreateMember(ctx, queries.CreateMemberParams{
 		ID: uuid.New().String(), OrganizationID: orgID, UserID: user2ID, Role: "admin",
-	})
-	q.CreateMember(ctx, queries.CreateMemberParams{
+	}); err != nil {
+		slog.Error("failed to create member", "user", "admin", "error", err)
+	}
+	if err := q.CreateMember(ctx, queries.CreateMemberParams{
 		ID: uuid.New().String(), OrganizationID: orgID, UserID: user3ID, Role: "member",
-	})
+	}); err != nil {
+		slog.Error("failed to create member", "user", "member", "error", err)
+	}
 
 	slog.Info("created users and organization",
 		"org", "Acme Corp",
@@ -255,7 +269,7 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		cls := float32(math.Round(baseCLS*jitter()*deploymentPenalty*1000) / 1000)
 		transferSize := int32(math.Round(baseTransferSize * jitter()))
 
-		q.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
+		if err := q.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
 			ShopID:                 &shopID,
 			DeploymentID:           deploymentID,
 			Ttfb:                   &ttfb,
@@ -264,17 +278,21 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 			FirstContentfulPaint:   &fcp,
 			CumulativeLayoutShift:  &cls,
 			TransferSize:           &transferSize,
-		})
+		}); err != nil {
+			slog.Error("failed to insert sitespeed entry", "shopId", shopID, "error", err)
+		}
 		sitespeedCount++
 	}
 
 	slog.Info("created sitespeed entries", "count", sitespeedCount)
 
 	if len(deployments) > 0 {
-		q.UpdateShopActiveDeployment(ctx, queries.UpdateShopActiveDeploymentParams{
+		if err := q.UpdateShopActiveDeployment(ctx, queries.UpdateShopActiveDeploymentParams{
 			ActiveDeploymentID: &deployments[0].id,
 			ID:                 shopID,
-		})
+		}); err != nil {
+			slog.Error("failed to update shop active deployment", "shopId", shopID, "error", err)
+		}
 	}
 
 	fmt.Println("Fixtures applied successfully")

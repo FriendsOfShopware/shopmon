@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -80,9 +81,11 @@ func (h *AuthHandler) inviteMemberFlow(ctx context.Context, cmd inviteMemberComm
 
 	acceptURL := h.cfg.FrontendURL + "/app/organizations/accept/" + invitationID
 	rejectURL := h.cfg.FrontendURL + "/app/organizations/reject/" + invitationID
-	h.mail.Send(cmd.Email,
+	if err := h.mail.Send(cmd.Email,
 		"You have been invited to join "+orgName+" at Shopmon",
-		mail.BuildOrgInviteEmail(cmd.InviterName, orgName, acceptURL, rejectURL))
+		mail.BuildOrgInviteEmail(cmd.InviterName, orgName, acceptURL, rejectURL)); err != nil {
+		slog.Error("failed to send organization invite email", "error", err, "email", cmd.Email)
+	}
 
 	return invitationID, nil
 }

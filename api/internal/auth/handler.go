@@ -171,7 +171,9 @@ func (h *AuthHandler) createOneTimeCode(r *http.Request, userID string) (string,
 	}
 
 	code := generateToken()
-	h.challenges.Set(r.Context(), "auth-code:"+code, sessionToken, 60*time.Second)
+	if err = h.challenges.Set(r.Context(), "auth-code:"+code, sessionToken, 60*time.Second); err != nil {
+		return "", err
+	}
 	return code, nil
 }
 

@@ -84,8 +84,10 @@ func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verifyURL := h.cfg.FrontendURL + "/account/confirm/" + verificationToken
-	h.mail.Send(req.Email, "Confirm your email address",
-		mail.BuildConfirmationEmail(req.Name, verifyURL))
+	if err := h.mail.Send(req.Email, "Confirm your email address",
+		mail.BuildConfirmationEmail(req.Name, verifyURL)); err != nil {
+		slog.Error("failed to send confirmation email", "error", err, "email", req.Email)
+	}
 
 	// Create session
 	token, err := h.createSession(r, userID)
@@ -160,7 +162,9 @@ func (h *AuthHandler) SignInEmail(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	token := httputil.ExtractToken(r)
 	if token != "" {
-		h.queries.DeleteSession(r.Context(), token)
+		if err := h.queries.DeleteSession(r.Context(), token); err != nil {
+			slog.Error("failed to delete session on sign out", "error", err)
+		}
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
@@ -253,8 +257,10 @@ func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL := h.cfg.FrontendURL + "/account/forgot-password/" + resetToken
-	h.mail.Send(req.Email, "Reset your password",
-		mail.BuildPasswordResetEmail(user.Name, resetURL))
+	if err := h.mail.Send(req.Email, "Reset your password",
+		mail.BuildPasswordResetEmail(user.Name, resetURL)); err != nil {
+		slog.Error("failed to send password reset email", "error", err, "email", req.Email)
+	}
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
@@ -294,8 +300,12 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.queries.DeleteUserSessions(r.Context(), verification.Identifier)
-	h.queries.DeleteVerification(r.Context(), verification.ID)
+	if err := h.queries.DeleteUserSessions(r.Context(), verification.Identifier); err != nil {
+		slog.Error("failed to delete user sessions after password reset", "error", err, "userID", verification.Identifier)
+	}
+	if err := h.queries.DeleteVerification(r.Context(), verification.ID); err != nil {
+		slog.Error("failed to delete verification after password reset", "error", err, "verificationID", verification.ID)
+	}
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }

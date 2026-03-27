@@ -37,7 +37,7 @@ func TestAdminListUsers(t *testing.T) {
 	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users", adminCookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -59,7 +59,7 @@ func TestAdminListUsers_NonAdmin(t *testing.T) {
 	cookie := signUp(t, env.Server.URL, "user@example.com", "password123", "User")
 
 	resp := authGet(t, env.Server.URL, "/api/auth/admin/users", cookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
@@ -75,7 +75,7 @@ func TestAdminSetRole(t *testing.T) {
 	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/role", userID), adminCookie, map[string]string{
 		"role": "admin",
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	result := decodeJSON(t, resp)
@@ -97,7 +97,7 @@ func TestAdminSetRole_Self(t *testing.T) {
 	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/role", adminID), adminCookie, map[string]string{
 		"role": "user",
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -113,7 +113,7 @@ func TestAdminBanUser(t *testing.T) {
 	resp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/ban", userID), adminCookie, map[string]string{
 		"banReason": reason,
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	result := decodeJSON(t, resp)
@@ -127,7 +127,7 @@ func TestAdminBanUser(t *testing.T) {
 
 	// Verify sessions are invalidated: the banned user's cookie should no longer work
 	resp2 := authGet(t, env.Server.URL, "/api/auth/admin/users", userCookie)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	// The user is not admin anyway, but more importantly their session is gone
 	// so they should get 401 (session invalid) or 403 (not admin).
 	assert.NotEqual(t, http.StatusOK, resp2.StatusCode)
@@ -144,12 +144,12 @@ func TestAdminUnbanUser(t *testing.T) {
 	resp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/ban", userID), adminCookie, map[string]string{
 		"banReason": "testing",
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Now unban
 	resp2 := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/unban", userID), adminCookie, nil)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	// Verify user is unbanned
@@ -167,7 +167,7 @@ func TestAdminImpersonate(t *testing.T) {
 	userID := getUserIDByEmail(t, env, "user@example.com")
 
 	resp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/impersonate", userID), adminToken, nil)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -188,7 +188,7 @@ func TestAdminImpersonate(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+impersonationToken)
 	resp2, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 

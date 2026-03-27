@@ -53,10 +53,6 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Group extensions by name, aggregating shops
-	type extKey struct {
-		Name    string
-		Version string
-	}
 	extMap := make(map[string]*api.AccountExtension)
 	extOrder := []string{}
 
@@ -77,7 +73,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var changelogStr *string
-			if row.Changelog != nil && len(row.Changelog) > 0 {
+			if len(row.Changelog) > 0 {
 				s := string(row.Changelog)
 				changelogStr = &s
 			}
@@ -254,7 +250,9 @@ func (h *Handler) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 
 		var extensions []api.ExtensionDiff
 		if row.Extensions != nil {
-			json.Unmarshal(row.Extensions, &extensions)
+			if err := json.Unmarshal(row.Extensions, &extensions); err != nil {
+				slog.Error("failed to unmarshal changelog extensions", "error", err)
+			}
 		}
 		if extensions == nil {
 			extensions = []api.ExtensionDiff{}

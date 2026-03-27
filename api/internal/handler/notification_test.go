@@ -23,7 +23,7 @@ func TestGetNotifications(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -37,7 +37,7 @@ func TestGetNotifications_Unauthenticated(t *testing.T) {
 
 	resp, err := http.Get(env.Server.URL + "/api/notifications")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -52,7 +52,7 @@ func TestDeleteNotification(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
@@ -62,7 +62,7 @@ func TestDeleteNotification(t *testing.T) {
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var notifications []api.Notification
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&notifications))
@@ -80,7 +80,7 @@ func TestDeleteAllNotifications(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
@@ -90,7 +90,7 @@ func TestDeleteAllNotifications(t *testing.T) {
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var notifications []api.Notification
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&notifications))
@@ -107,7 +107,7 @@ func TestMarkNotificationsRead(t *testing.T) {
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
@@ -117,7 +117,7 @@ func TestMarkNotificationsRead(t *testing.T) {
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var notifications []api.Notification
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&notifications))

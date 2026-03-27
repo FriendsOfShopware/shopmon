@@ -20,7 +20,7 @@ func signUp(t *testing.T, serverURL, email, password, name string) string {
 	})
 	resp, err := http.Post(serverURL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var result map[string]interface{}
@@ -85,7 +85,7 @@ func decodeJSON(t *testing.T, resp *http.Response) map[string]interface{} {
 func createOrg(t *testing.T, serverURL string, cookie string, name string) map[string]interface{} {
 	t.Helper()
 	resp := authPost(t, serverURL, "/api/auth/organizations", cookie, map[string]string{"name": name})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	return decodeJSON(t, resp)
 }
@@ -100,14 +100,14 @@ func inviteAndAccept(t *testing.T, serverURL string, ownerCookie string, orgID, 
 		"email": inviteeEmail,
 		"role":  "member",
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	inviteResult := decodeJSON(t, resp)
 	invitationID := inviteResult["id"].(string)
 
 	// Accept
 	resp2 := authPost(t, serverURL, fmt.Sprintf("/api/auth/invitations/%s/accept", invitationID), inviteeCookie, nil)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	return invitationID
@@ -129,7 +129,7 @@ func TestOrgCreate_Unauthenticated(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{"name": "Test Org"})
 	resp, err := http.Post(env.Server.URL+"/api/auth/organizations", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -145,7 +145,7 @@ func TestOrgUpdate(t *testing.T) {
 	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s", orgID), cookie, map[string]interface{}{
 		"name": newName,
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	result := decodeJSON(t, resp)
@@ -160,7 +160,7 @@ func TestOrgDelete(t *testing.T) {
 	orgID := org["id"].(string)
 
 	resp := authDelete(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s", orgID), cookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	result := decodeJSON(t, resp)
@@ -179,7 +179,7 @@ func TestOrgDelete_NonOwner(t *testing.T) {
 
 	// Member tries to delete — should be forbidden
 	resp := authDelete(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s", orgID), memberCookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
@@ -196,7 +196,7 @@ func TestOrgInviteAndAccept(t *testing.T) {
 
 	// Verify membership by listing members
 	resp := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var members []map[string]interface{}
@@ -217,19 +217,19 @@ func TestOrgInviteAndReject(t *testing.T) {
 		"email": "member@example.com",
 		"role":  "member",
 	})
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	inviteResult := decodeJSON(t, resp)
 	invitationID := inviteResult["id"].(string)
 
 	// Reject
 	resp2 := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/invitations/%s/reject", invitationID), memberCookie, nil)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	// Verify the member is NOT in the org
 	resp3 := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
 	var members []map[string]interface{}
@@ -249,7 +249,7 @@ func TestOrgRemoveMember(t *testing.T) {
 
 	// Get member's user ID from member list
 	resp := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var members []map[string]interface{}
@@ -268,12 +268,12 @@ func TestOrgRemoveMember(t *testing.T) {
 
 	// Remove the member
 	resp2 := authDelete(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members/%s", orgID, memberUserID), ownerCookie)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	// Verify member is removed
 	resp3 := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
 	var remaining []map[string]interface{}
@@ -293,12 +293,12 @@ func TestOrgLeave(t *testing.T) {
 
 	// Member leaves
 	resp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/leave", orgID), memberCookie, nil)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Verify only owner remains
 	resp2 := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	var members []map[string]interface{}
@@ -315,7 +315,7 @@ func TestOrgLeave_OnlyOwner(t *testing.T) {
 	orgID := org["id"].(string)
 
 	resp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/leave", orgID), cookie, nil)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -332,7 +332,7 @@ func TestOrgSetRole(t *testing.T) {
 
 	// Get member's user ID
 	resp := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var members []map[string]interface{}
@@ -351,12 +351,12 @@ func TestOrgSetRole(t *testing.T) {
 	resp2 := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members/%s", orgID, memberUserID), ownerCookie, map[string]string{
 		"role": "admin",
 	})
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
 	// Verify role changed
 	resp3 := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), ownerCookie)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
 	var updated []map[string]interface{}
@@ -377,7 +377,7 @@ func TestOrgListMembers(t *testing.T) {
 	orgID := org["id"].(string)
 
 	resp := authGet(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s/members", orgID), cookie)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 

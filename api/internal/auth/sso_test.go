@@ -28,7 +28,7 @@ func mockOIDCProvider(t *testing.T) (*httptest.Server, *rsa.PrivateKey) {
 		switch r.URL.Path {
 		case "/.well-known/openid-configuration":
 			baseURL := "http://" + r.Host
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"issuer":                 baseURL,
 				"authorization_endpoint": baseURL + "/authorize",
 				"token_endpoint":         baseURL + "/token",
@@ -42,7 +42,7 @@ func mockOIDCProvider(t *testing.T) (*httptest.Server, *rsa.PrivateKey) {
 			code := r.FormValue("code")
 			if code != "valid-code" {
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
 				return
 			}
 
@@ -57,14 +57,14 @@ func mockOIDCProvider(t *testing.T) (*httptest.Server, *rsa.PrivateKey) {
 			})
 			idToken, _ := token.SignedString(privateKey)
 
-			json.NewEncoder(w).Encode(map[string]string{
+			_ = json.NewEncoder(w).Encode(map[string]string{
 				"access_token": "mock-access-token",
 				"id_token":     idToken,
 				"token_type":   "Bearer",
 			})
 
 		case "/userinfo":
-			json.NewEncoder(w).Encode(map[string]string{
+			_ = json.NewEncoder(w).Encode(map[string]string{
 				"sub":   "sso-user-123",
 				"email": "ssouser@testcorp.com",
 				"name":  "SSO User",
@@ -108,8 +108,10 @@ func TestSignInSSO(t *testing.T) {
 		"name": "Test Corp",
 	})
 	var orgResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&orgResult)
-	resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&orgResult); err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)
 
 	seedSSOProvider(t, env, "testcorp-oidc", "testcorp.com", orgID, idp.URL)
@@ -121,7 +123,7 @@ func TestSignInSSO(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -141,7 +143,7 @@ func TestSignInSSO_UnknownDomain(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
@@ -154,7 +156,7 @@ func TestSignInSSO_InvalidEmail(t *testing.T) {
 	})
 	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -171,8 +173,10 @@ func TestSSOCallback(t *testing.T) {
 		"name": "Test Corp",
 	})
 	var orgResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&orgResult)
-	resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&orgResult); err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)
 
 	seedSSOProvider(t, env, "testcorp-oidc", "testcorp.com", orgID, idp.URL)
@@ -186,8 +190,8 @@ func TestSSOCallback(t *testing.T) {
 	require.NoError(t, err)
 
 	var initResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&initResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
+	_ = resp.Body.Close()
 
 	// Extract state from the authorization URL
 	authURL, err := url.Parse(initResult["url"])
@@ -207,7 +211,7 @@ func TestSSOCallback(t *testing.T) {
 	}
 	resp, err = client.Get(callbackURL)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should redirect to the callback URL with a one-time code
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
@@ -226,11 +230,11 @@ func TestSSOCallback(t *testing.T) {
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
 	resp, err = http.Post(env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var exchangeResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&exchangeResult)
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&exchangeResult))
 	ssoToken := exchangeResult["token"]
 	require.NotEmpty(t, ssoToken)
 
@@ -239,12 +243,12 @@ func TestSSOCallback(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+ssoToken)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var sessionResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&sessionResult)
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sessionResult))
 	user := sessionResult["user"].(map[string]interface{})
 	assert.Equal(t, "ssouser@testcorp.com", user["email"])
 	assert.Equal(t, "SSO User", user["name"])
@@ -262,8 +266,8 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 		"name": "Test Corp",
 	})
 	var orgResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&orgResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&orgResult))
+	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)
 
 	seedSSOProvider(t, env, "testcorp-oidc", "testcorp.com", orgID, idp.URL)
@@ -275,8 +279,8 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 	})
 	resp, _ = http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	var initResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&initResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
+	_ = resp.Body.Close()
 
 	authURL, _ := url.Parse(initResult["url"])
 	state := authURL.Query().Get("state")
@@ -288,7 +292,7 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 	}
 	resp, _ = client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Verify the SSO user was auto-added to the organization
 	var memberCount int
@@ -304,7 +308,7 @@ func TestSSOCallback_InvalidState(t *testing.T) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/some-provider?code=abc&state=invalid",
 		env.Server.URL))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
@@ -320,8 +324,8 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 		"name": "Test Corp",
 	})
 	var orgResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&orgResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&orgResult))
+	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)
 
 	seedSSOProvider(t, env, "testcorp-oidc", "testcorp.com", orgID, idp.URL)
@@ -332,8 +336,8 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 	})
 	resp, _ = http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	var initResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&initResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
+	_ = resp.Body.Close()
 
 	authURL, _ := url.Parse(initResult["url"])
 	state := authURL.Query().Get("state")
@@ -347,7 +351,7 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 	resp, err := client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=invalid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
 }
@@ -364,8 +368,8 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 		"name": "Test Corp",
 	})
 	var orgResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&orgResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&orgResult))
+	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)
 
 	seedSSOProvider(t, env, "testcorp-oidc", "testcorp.com", orgID, idp.URL)
@@ -380,8 +384,8 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	})
 	resp, _ = http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	var initResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&initResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
+	_ = resp.Body.Close()
 
 	authURL, _ := url.Parse(initResult["url"])
 	state := authURL.Query().Get("state")
@@ -393,7 +397,7 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	}
 	resp, _ = client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	// Extract code from redirect URL and exchange for token
 	location := resp.Header.Get("Location")
@@ -405,8 +409,8 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
 	resp, _ = http.Post(env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
 	var exchangeResult map[string]string
-	json.NewDecoder(resp.Body).Decode(&exchangeResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&exchangeResult))
+	_ = resp.Body.Close()
 	ssoToken := exchangeResult["token"]
 	require.NotEmpty(t, ssoToken)
 
@@ -416,14 +420,16 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	resp, _ = http.DefaultClient.Do(req)
 
 	var sessionResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&sessionResult)
-	resp.Body.Close()
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sessionResult))
+	_ = resp.Body.Close()
 	user := sessionResult["user"].(map[string]interface{})
 	assert.Equal(t, "ssouser@testcorp.com", user["email"])
 
 	// Should only be 1 user with that email
 	var userCount int
-	env.Pool.QueryRow(t.Context(),
-		`SELECT COUNT(*) FROM "user" WHERE email = 'ssouser@testcorp.com'`).Scan(&userCount)
+	if err := env.Pool.QueryRow(t.Context(),
+		`SELECT COUNT(*) FROM "user" WHERE email = 'ssouser@testcorp.com'`).Scan(&userCount); err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, 1, userCount)
 }

@@ -47,7 +47,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// OpenTelemetry
 	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
-	defer otelShutdown(context.Background())
+	defer func() {
+		if err := otelShutdown(context.Background()); err != nil {
+			slog.Error("otel shutdown error", "error", err)
+		}
+	}()
 
 	// Database
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
@@ -117,11 +121,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 		// OpenAPI spec & docs
 		apiRouter.Get("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/x-yaml")
-			w.Write(openapiSpec)
+			_, _ = w.Write(openapiSpec)
 		})
 		apiRouter.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte(`<!doctype html>
+			_, _ = w.Write([]byte(`<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">

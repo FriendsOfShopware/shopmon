@@ -55,11 +55,11 @@ func newSMTPServer(t *testing.T) *smtpServer {
 }
 
 func (s *smtpServer) handleConn(conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	scanner := bufio.NewScanner(conn)
 
 	write := func(msg string) {
-		fmt.Fprint(conn, msg+"\r\n")
+		_, _ = fmt.Fprint(conn, msg+"\r\n")
 	}
 
 	write("220 localhost ESMTP Test")
@@ -107,7 +107,7 @@ func (s *smtpServer) handleConn(conn net.Conn) {
 }
 
 func (s *smtpServer) close() {
-	s.ln.Close()
+	_ = s.ln.Close()
 	<-s.closed
 	s.wg.Wait()
 }
@@ -254,7 +254,7 @@ func TestSendSecure(t *testing.T) {
 		Certificates: []tls.Certificate{serverCert},
 	})
 	require.NoError(t, err)
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 
 	var msgs []string
 	done := make(chan struct{})
@@ -265,10 +265,10 @@ func TestSendSecure(t *testing.T) {
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		scanner := bufio.NewScanner(conn)
-		write := func(msg string) { fmt.Fprint(conn, msg+"\r\n") }
+		write := func(msg string) { _, _ = fmt.Fprint(conn, msg+"\r\n") }
 
 		write("220 localhost ESMTP Test")
 
