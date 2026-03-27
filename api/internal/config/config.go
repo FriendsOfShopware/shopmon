@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	AppSecret    string
-	DatabaseURL  string
-	RedisURL string
-	FrontendURL  string
+	AppSecret   string
+	DatabaseURL string
+	RedisURL    string
+	FrontendURL string
 
 	SMTPHost    string
 	SMTPPort    string
@@ -38,10 +38,10 @@ type Config struct {
 	PackagesAPIURL   string
 	PackagesAPIToken string
 
-	ShopwareAPIURL       string
-	ShopwareVersionsURL  string
+	ShopwareAPIURL      string
+	ShopwareVersionsURL string
 
-	OtelEnabled      bool
+	OtelEnabled       bool
 	OtelTraceEndpoint string
 	OtelLogEndpoint   string
 	OtelServiceName   string

@@ -1,20 +1,15 @@
 package auth
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/go-webauthn/webauthn/protocol"
-	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/google/uuid"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 )
 
 type webauthnSessionEntry struct {
@@ -104,244 +99,86 @@ func credentialToDBFields(cred *webauthn.Credential) (credentialID, publicKey, d
 
 // PasskeyRegisterOptions begins passkey registration (user must be logged in).
 func (h *AuthHandler) PasskeyRegisterOptions(w http.ResponseWriter, r *http.Request) {
-	token := httputil.ExtractToken(r)
-	su, err := ValidateSession(r.Context(), h.pool, token)
-	if err != nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "not authenticated")
+	su := h.requireAuth(w, r)
+	if su == nil {
 		return
 	}
 
-	dbPasskeys, _ := h.queries.GetPasskeysByUserID(r.Context(), su.User.ID)
-	var creds []webauthn.Credential
-	for _, p := range dbPasskeys {
-		creds = append(creds, dbPasskeyToCredential(p))
-	}
-
-	user := &webauthnUser{
-		id:          su.User.ID,
-		name:        su.User.Name,
-		email:       su.User.Email,
-		credentials: creds,
-	}
-
-	creation, sessionData, err := h.wan.BeginRegistration(user)
+	response, err := h.beginPasskeyRegistration(r.Context(), su)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin registration")
 		return
 	}
-
-	challengeKey := generateToken()
-	h.challenges.Set(r.Context(), "webauthn:"+challengeKey, webauthnSessionEntry{
-		SessionData: sessionData,
-		UserID:      su.User.ID,
-	}, 5*time.Minute)
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"options":      creation,
-		"challengeKey": challengeKey,
-	})
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // PasskeyRegister completes passkey registration.
 func (h *AuthHandler) PasskeyRegister(w http.ResponseWriter, r *http.Request) {
-	token := httputil.ExtractToken(r)
-	su, err := ValidateSession(r.Context(), h.pool, token)
-	if err != nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "not authenticated")
+	su := h.requireAuth(w, r)
+	if su == nil {
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "failed to read request body")
+	var meta passkeyRegisterMetadata
+	if _, err := readJSONBody(r, &meta); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-
-	var meta struct {
-		ChallengeKey string `json:"challengeKey"`
-		Name         string `json:"name"`
-	}
-	json.Unmarshal(body, &meta)
 
 	if meta.ChallengeKey == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "challengeKey is required")
 		return
 	}
 
-	var entry webauthnSessionEntry
-	if err := h.challenges.Get(r.Context(), "webauthn:"+meta.ChallengeKey, &entry); err != nil || entry.UserID != su.User.ID {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired challenge")
-		return
-	}
-
-	// Reconstruct body for the library
-	r.Body = io.NopCloser(bytes.NewReader(body))
-
-	user := &webauthnUser{
-		id:    su.User.ID,
-		name:  su.User.Name,
-		email: su.User.Email,
-	}
-
-	credential, err := h.wan.FinishRegistration(user, *entry.SessionData, r)
+	response, err := h.finishPasskeyRegistration(r.Context(), r, su, meta)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "registration failed: "+err.Error())
 		return
 	}
-
-	credentialID, publicKey, deviceType, counter, backedUp, transports, aaguid := credentialToDBFields(credential)
-
-	passkeyName := meta.Name
-	if passkeyName == "" {
-		passkeyName = "Passkey"
-	}
-
-	passkeyID := uuid.New().String()
-	if err := h.queries.CreatePasskey(r.Context(), queries.CreatePasskeyParams{
-		ID:           passkeyID,
-		Name:         &passkeyName,
-		PublicKey:    publicKey,
-		UserID:       su.User.ID,
-		CredentialID: credentialID,
-		Counter:      counter,
-		DeviceType:   deviceType,
-		BackedUp:     backedUp,
-		Transports:   transports,
-		Aaguid:       aaguid,
-	}); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to save passkey")
-		return
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"id":   passkeyID,
-		"name": passkeyName,
-	})
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // --- Login ---
 
 // PasskeyLoginOptions begins passkey authentication (no auth needed).
 func (h *AuthHandler) PasskeyLoginOptions(w http.ResponseWriter, r *http.Request) {
-	assertion, sessionData, err := h.wan.BeginDiscoverableLogin()
+	response, err := h.beginPasskeyLogin(r.Context())
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin login")
 		return
 	}
-
-	challengeKey := generateToken()
-	h.challenges.Set(r.Context(), "webauthn:"+challengeKey, webauthnSessionEntry{
-		SessionData: sessionData,
-	}, 5*time.Minute)
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"options":      assertion,
-		"challengeKey": challengeKey,
-	})
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // PasskeyLogin completes passkey authentication.
 func (h *AuthHandler) PasskeyLogin(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "failed to read request body")
+	var meta passkeyLoginMetadata
+	if _, err := readJSONBody(r, &meta); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-
-	var meta struct {
-		ChallengeKey string `json:"challengeKey"`
-	}
-	json.Unmarshal(body, &meta)
 
 	if meta.ChallengeKey == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "challengeKey is required")
 		return
 	}
 
-	var entry webauthnSessionEntry
-	if err := h.challenges.Get(r.Context(), "webauthn:"+meta.ChallengeKey, &entry); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired challenge")
-		return
-	}
-
-	r.Body = io.NopCloser(bytes.NewReader(body))
-
-	// Discoverable login handler — resolves user from the assertion's userHandle
-	var resolvedUserID string
-	handler := func(rawID, userHandle []byte) (webauthn.User, error) {
-		userID := string(userHandle)
-		resolvedUserID = userID
-
-		dbUser, err := h.queries.GetUserByID(r.Context(), userID)
-		if err != nil {
-			return nil, err
-		}
-
-		if dbUser.Banned != nil && *dbUser.Banned {
-			return nil, errBanned
-		}
-
-		dbPasskeys, err := h.queries.GetPasskeysByUserID(r.Context(), userID)
-		if err != nil || len(dbPasskeys) == 0 {
-			return nil, errNoPasskeys
-		}
-
-		var creds []webauthn.Credential
-		for _, p := range dbPasskeys {
-			creds = append(creds, dbPasskeyToCredential(p))
-		}
-
-		return &webauthnUser{
-			id:          dbUser.ID,
-			name:        dbUser.Name,
-			email:       dbUser.Email,
-			credentials: creds,
-		}, nil
-	}
-
-	credential, err := h.wan.FinishDiscoverableLogin(handler, *entry.SessionData, r)
+	response, err := h.finishPasskeyLogin(r, meta.ChallengeKey)
 	if err != nil {
+		if err == errChallenge {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		httputil.WriteError(w, http.StatusUnauthorized, "authentication failed")
 		return
 	}
-
-	userID := resolvedUserID
-
-	// Update sign counter
-	credIDEncoded := base64.RawURLEncoding.EncodeToString(credential.ID)
-	dbPasskey, err := h.queries.GetPasskeyByCredentialID(r.Context(), credIDEncoded)
-	if err == nil {
-		h.queries.UpdatePasskeyCounter(r.Context(), queries.UpdatePasskeyCounterParams{
-			Counter: int32(credential.Authenticator.SignCount),
-			ID:      dbPasskey.ID,
-		})
-	}
-	sessionToken, err := h.createSession(r, userID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create session")
-		return
-	}
-
-	// Fetch user info for the response
-	dbUser, err := h.queries.GetUserByID(r.Context(), userID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user")
-		return
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"token": sessionToken,
-		"user": map[string]interface{}{
-			"id":    dbUser.ID,
-			"name":  dbUser.Name,
-			"email": dbUser.Email,
-		},
-	})
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 var (
 	errBanned     = &passkeyError{"account is banned"}
 	errNoPasskeys = &passkeyError{"no passkeys found"}
+	errChallenge  = &passkeyError{"invalid or expired challenge"}
 )
 
 type passkeyError struct{ msg string }

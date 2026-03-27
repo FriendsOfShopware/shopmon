@@ -4,13 +4,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/mail"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (h *AuthHandler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +15,7 @@ func (h *AuthHandler) CreateOrganization(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var req struct {
-		Name string `json:"name"`
-	}
+	var req createOrganizationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -32,39 +26,16 @@ func (h *AuthHandler) CreateOrganization(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	orgID := uuid.New().String()
-	// Auto-generate slug from org ID for backwards compatibility with the DB column
-	slug := orgID
-
-	_, err := h.queries.CreateOrganization(r.Context(), queries.CreateOrganizationParams{
-		ID:   orgID,
-		Name: req.Name,
-		Slug: slug,
-	})
+	orgID, err := h.createOrganizationFlow(r.Context(), su.User.ID, httputil.ExtractToken(r), req.Name)
 	if err != nil {
 		slog.Error("failed to create organization", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create organization")
 		return
 	}
 
-	err = h.queries.CreateMember(r.Context(), queries.CreateMemberParams{
-		ID:             uuid.New().String(),
-		OrganizationID: orgID,
-		UserID:         su.User.ID,
-		Role:           "owner",
-	})
-	if err != nil {
-		slog.Error("failed to add owner to organization", "error", err)
-	}
-
-	h.queries.SetActiveOrganization(r.Context(), queries.SetActiveOrganizationParams{
-		ActiveOrganizationID: &orgID,
-		Token:                httputil.ExtractToken(r),
-	})
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"id":   orgID,
-		"name": req.Name,
+	httputil.WriteJSON(w, http.StatusOK, createOrganizationResponse{
+		ID:   orgID,
+		Name: req.Name,
 	})
 }
 
@@ -74,21 +45,13 @@ func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	var req struct {
-		Name *string `json:"name"`
-		Logo *string `json:"logo"`
-	}
+	var req updateOrganizationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	})
-	if err != nil || (role != "owner" && role != "admin") {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	if h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin") == "" {
 		return
 	}
 
@@ -107,14 +70,17 @@ func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request,
 		logo = req.Logo
 	}
 
-	h.queries.UpdateOrganization(r.Context(), queries.UpdateOrganizationParams{
+	if err := h.queries.UpdateOrganization(r.Context(), queries.UpdateOrganizationParams{
 		Name: name,
 		Slug: org.Slug,
 		Logo: logo,
 		ID:   organizationId,
-	})
+	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update organization")
+		return
+	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -132,8 +98,11 @@ func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	h.queries.DeleteOrganization(r.Context(), organizationId)
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	if err := h.queries.DeleteOrganization(r.Context(), organizationId); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete organization")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -142,11 +111,11 @@ func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organ
 		return
 	}
 
-	var req struct {
-		Email string `json:"email"`
-		Role  string `json:"role"`
+	var req inviteMemberRequest
+	if err := httputil.DecodeBody(r, &req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
 	}
-	json.NewDecoder(r.Body).Decode(&req)
 
 	if req.Email == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "email is required")
@@ -156,24 +125,16 @@ func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organ
 		req.Role = "member"
 	}
 
-	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	})
-	if err != nil || (role != "owner" && role != "admin") {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	if h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin") == "" {
 		return
 	}
 
-	invitationID := uuid.New().String()
-	reqRole := req.Role
-	_, err = h.queries.CreateInvitation(r.Context(), queries.CreateInvitationParams{
-		ID:             invitationID,
+	invitationID, err := h.inviteMemberFlow(r.Context(), inviteMemberCommand{
 		OrganizationID: organizationId,
-		Email:          req.Email,
-		Role:           &reqRole,
-		ExpiresAt:      pgtype.Timestamp{Time: time.Now().Add(7 * 24 * time.Hour), Valid: true},
 		InviterID:      su.User.ID,
+		InviterName:    su.User.Name,
+		Email:          req.Email,
+		Role:           req.Role,
 	})
 	if err != nil {
 		slog.Error("failed to create invitation", "error", err)
@@ -181,18 +142,7 @@ func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organ
 		return
 	}
 
-	// Send invitation email
-	org, _ := h.queries.GetOrganizationByID(r.Context(), organizationId)
-	acceptURL := h.cfg.FrontendURL + "/app/organizations/accept/" + invitationID
-	rejectURL := h.cfg.FrontendURL + "/app/organizations/reject/" + invitationID
-
-	orgName := org.Name
-
-	h.mail.Send(req.Email,
-		"You have been invited to join "+orgName+" at Shopmon",
-		mail.BuildOrgInviteEmail(su.User.Name, orgName, acceptURL, rejectURL))
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"id": invitationID})
+	httputil.WriteJSON(w, http.StatusOK, idResponse{ID: invitationID})
 }
 
 func (h *AuthHandler) AcceptInvitation(w http.ResponseWriter, r *http.Request, invitationId string) {
@@ -213,30 +163,13 @@ func (h *AuthHandler) AcceptInvitation(w http.ResponseWriter, r *http.Request, i
 		return
 	}
 
-	memberRole := "member"
-	if invitation.Role != nil {
-		memberRole = *invitation.Role
-	}
-
-	if err := h.queries.CreateMember(r.Context(), queries.CreateMemberParams{
-		ID:             uuid.New().String(),
-		OrganizationID: invitation.OrganizationID,
-		UserID:         su.User.ID,
-		Role:           memberRole,
-	}); err != nil {
-		slog.Error("failed to create member on invitation accept", "error", err, "userID", su.User.ID, "orgID", invitation.OrganizationID)
+	if err := h.acceptInvitationFlow(r.Context(), invitationId, invitation.OrganizationID, su.User.ID, invitation.Role); err != nil {
+		slog.Error("failed to accept invitation", "error", err, "userID", su.User.ID, "orgID", invitation.OrganizationID)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to join organization")
 		return
 	}
 
-	if err := h.queries.UpdateInvitationStatus(r.Context(), queries.UpdateInvitationStatusParams{
-		Status: "accepted",
-		ID:     invitationId,
-	}); err != nil {
-		slog.Warn("failed to update invitation status", "error", err, "invitationID", invitationId)
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) RejectInvitation(w http.ResponseWriter, r *http.Request, invitationId string) {
@@ -264,7 +197,7 @@ func (h *AuthHandler) RejectInvitation(w http.ResponseWriter, r *http.Request, i
 		slog.Warn("failed to update invitation status to rejected", "error", err, "invitationID", invitationId)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
@@ -273,12 +206,8 @@ func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organ
 		return
 	}
 
-	callerRole, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	})
-	if err != nil || (callerRole != "owner" && callerRole != "admin") {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	callerRole := h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin")
+	if callerRole == "" {
 		return
 	}
 
@@ -295,12 +224,15 @@ func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organ
 		}
 	}
 
-	h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
+	if err := h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
 		OrganizationID: organizationId,
 		UserID:         userId,
-	})
+	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to remove member")
+		return
+	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -309,24 +241,35 @@ func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	role, _ := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
+	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
 		OrganizationID: organizationId,
 		UserID:         su.User.ID,
 	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusForbidden, "not a member")
+		return
+	}
 	if role == "owner" {
-		ownerCount, _ := h.queries.CountOrgOwners(r.Context(), organizationId)
+		ownerCount, err := h.queries.CountOrgOwners(r.Context(), organizationId)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to leave organization")
+			return
+		}
 		if ownerCount <= 1 {
 			httputil.WriteError(w, http.StatusBadRequest, "cannot leave as the only owner. Transfer ownership first.")
 			return
 		}
 	}
 
-	h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
+	if err := h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
 		OrganizationID: organizationId,
 		UserID:         su.User.ID,
-	})
+	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to leave organization")
+		return
+	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
@@ -335,10 +278,11 @@ func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, orga
 		return
 	}
 
-	var req struct {
-		Role string `json:"role"`
+	var req setMemberRoleRequest
+	if err := httputil.DecodeBody(r, &req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
 	}
-	json.NewDecoder(r.Body).Decode(&req)
 
 	// Validate role
 	if req.Role != "owner" && req.Role != "admin" && req.Role != "member" {
@@ -355,13 +299,16 @@ func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, orga
 		return
 	}
 
-	h.queries.UpdateMemberRole(r.Context(), queries.UpdateMemberRoleParams{
+	if err := h.queries.UpdateMemberRole(r.Context(), queries.UpdateMemberRoleParams{
 		Role:           req.Role,
 		OrganizationID: organizationId,
 		UserID:         userId,
-	})
+	}); err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to update member role")
+		return
+	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -370,12 +317,7 @@ func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	isMember, _ := h.queries.IsOrganizationMember(r.Context(), queries.IsOrganizationMemberParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	})
-	if !isMember {
-		httputil.WriteError(w, http.StatusForbidden, "not a member")
+	if !h.requireOrgMembership(w, r, su.User.ID, organizationId) {
 		return
 	}
 
@@ -385,19 +327,7 @@ func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	result := make([]map[string]interface{}, 0, len(members))
-	for _, m := range members {
-		result = append(result, map[string]interface{}{
-			"id":     m.ID,
-			"userId": m.UserID,
-			"role":   m.Role,
-			"name":   m.UserName,
-			"email":  m.UserEmail,
-			"image":  m.UserImage,
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, result)
+	httputil.WriteJSON(w, http.StatusOK, mapOrganizationMembers(members))
 }
 
 func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -406,12 +336,7 @@ func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http
 		return
 	}
 
-	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	})
-	if err != nil || (role != "owner" && role != "admin") {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	if h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin") == "" {
 		return
 	}
 
@@ -421,17 +346,5 @@ func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http
 		return
 	}
 
-	result := make([]map[string]interface{}, 0, len(invitations))
-	for _, i := range invitations {
-		result = append(result, map[string]interface{}{
-			"id":          i.ID,
-			"email":       i.Email,
-			"role":        i.Role,
-			"status":      i.Status,
-			"expiresAt":   i.ExpiresAt.Time,
-			"inviterName": i.InviterName,
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, result)
+	httputil.WriteJSON(w, http.StatusOK, mapOrganizationInvitations(invitations))
 }

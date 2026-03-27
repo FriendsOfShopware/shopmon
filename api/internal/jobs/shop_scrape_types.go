@@ -76,16 +76,16 @@ type storeChangelog struct {
 
 // extensionEntry is a combined representation of plugins and apps.
 type extensionEntry struct {
-	Name          string                 `json:"name"`
-	Label         string                 `json:"label"`
-	Active        bool                   `json:"active"`
-	Version       string                 `json:"version"`
-	LatestVersion *string                `json:"latestVersion"`
-	Installed     bool                   `json:"installed"`
-	RatingAverage *float64               `json:"ratingAverage"`
-	StoreLink     *string                `json:"storeLink"`
-	Changelog     []extensionChangelog   `json:"changelog,omitempty"`
-	InstalledAt   *string                `json:"installedAt"`
+	Name          string               `json:"name"`
+	Label         string               `json:"label"`
+	Active        bool                 `json:"active"`
+	Version       string               `json:"version"`
+	LatestVersion *string              `json:"latestVersion"`
+	Installed     bool                 `json:"installed"`
+	RatingAverage *float64             `json:"ratingAverage"`
+	StoreLink     *string              `json:"storeLink"`
+	Changelog     []extensionChangelog `json:"changelog,omitempty"`
+	InstalledAt   *string              `json:"installedAt"`
 }
 
 type extensionChangelog struct {

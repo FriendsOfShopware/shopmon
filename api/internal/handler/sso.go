@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
 )
 
 // GetSsoProviders lists SSO providers for an organization.

@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -152,7 +152,7 @@ func TestDiscoverSso(t *testing.T) {
 				"issuer":                 "https://idp.example.com",
 				"authorization_endpoint": "https://idp.example.com/authorize",
 				"token_endpoint":         "https://idp.example.com/token",
-				"jwks_uri":              "https://idp.example.com/jwks",
+				"jwks_uri":               "https://idp.example.com/jwks",
 				"userinfo_endpoint":      "https://idp.example.com/userinfo",
 				"scopes_supported":       []string{"openid", "profile", "email"},
 			})

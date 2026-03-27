@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/google/uuid"
+	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/google/uuid"
 )
 
 // GetApiKeyScopes returns available API key scopes.
@@ -37,14 +37,7 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 		return
 	}
 
-	// Verify project belongs to organization
-	project, err := h.queries.GetProjectByID(r.Context(), int32(projectId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "project not found")
-		return
-	}
-	if project.OrganizationID != orgId {
-		httputil.WriteError(w, http.StatusForbidden, "project does not belong to this organization")
+	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
 		return
 	}
 
@@ -90,13 +83,7 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	project, err := h.queries.GetProjectByID(r.Context(), int32(projectId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "project not found")
-		return
-	}
-	if project.OrganizationID != orgId {
-		httputil.WriteError(w, http.StatusForbidden, "project does not belong to this organization")
+	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
 		return
 	}
 
@@ -158,13 +145,7 @@ func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	project, err := h.queries.GetProjectByID(r.Context(), int32(projectId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "project not found")
-		return
-	}
-	if project.OrganizationID != orgId {
-		httputil.WriteError(w, http.StatusForbidden, "project does not belong to this organization")
+	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
 		return
 	}
 

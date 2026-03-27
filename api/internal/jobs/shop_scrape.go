@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	goqueue "github.com/shyim/go-queue"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -17,6 +16,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
+	goqueue "github.com/shyim/go-queue"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -386,7 +386,12 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 
 	txQueries := h.queries.WithTx(tx)
 
-	txQueries.DeleteShopChecks(ctx, shop.ID)
+	if err := txQueries.DeleteShopChecks(ctx, shop.ID); err != nil {
+		persistSpan.RecordError(err)
+		persistSpan.SetStatus(codes.Error, err.Error())
+		persistSpan.End()
+		return fmt.Errorf("delete shop checks: %w", err)
+	}
 
 	extNames := make([]string, 0, len(extensions))
 	for _, ext := range extensions {
@@ -403,7 +408,7 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 			changelogJSON, _ = json.Marshal(ext.Changelog)
 		}
 
-		txQueries.UpsertShopExtension(ctx, queries.UpsertShopExtensionParams{
+		if err := txQueries.UpsertShopExtension(ctx, queries.UpsertShopExtensionParams{
 			ShopID:        shop.ID,
 			Name:          ext.Name,
 			Label:         ext.Label,
@@ -415,20 +420,30 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 			StoreLink:     ext.StoreLink,
 			Changelog:     changelogJSON,
 			InstalledAt:   ext.InstalledAt,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("upsert shop extension %s: %w", ext.Name, err)
+		}
 	}
 	if len(extNames) > 0 {
-		txQueries.DeleteShopExtensionsNotIn(ctx, queries.DeleteShopExtensionsNotInParams{
+		if err := txQueries.DeleteShopExtensionsNotIn(ctx, queries.DeleteShopExtensionsNotInParams{
 			ShopID:  shop.ID,
 			Column2: extNames,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("delete stale shop extensions: %w", err)
+		}
 	}
 
 	taskIDs := make([]string, 0, len(scheduledTasks))
 	for _, st := range scheduledTasks {
 		taskIDs = append(taskIDs, st.ID)
 		overdue := isScheduledTaskOverdue(st)
-		txQueries.UpsertShopScheduledTask(ctx, queries.UpsertShopScheduledTaskParams{
+		if err := txQueries.UpsertShopScheduledTask(ctx, queries.UpsertShopScheduledTaskParams{
 			ShopID:            shop.ID,
 			TaskID:            st.ID,
 			Name:              st.Name,
@@ -437,55 +452,85 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 			Overdue:           overdue,
 			LastExecutionTime: st.LastExecutionTime,
 			NextExecutionTime: st.NextExecutionTime,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("upsert scheduled task %s: %w", st.ID, err)
+		}
 	}
 	if len(taskIDs) > 0 {
-		txQueries.DeleteShopScheduledTasksNotIn(ctx, queries.DeleteShopScheduledTasksNotInParams{
+		if err := txQueries.DeleteShopScheduledTasksNotIn(ctx, queries.DeleteShopScheduledTasksNotInParams{
 			ShopID:  shop.ID,
 			Column2: taskIDs,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("delete stale scheduled tasks: %w", err)
+		}
 	}
 
 	queueNames := make([]string, 0, len(queueEntries))
 	for _, q := range queueEntries {
 		queueNames = append(queueNames, q.Name)
-		txQueries.UpsertShopQueue(ctx, queries.UpsertShopQueueParams{
+		if err := txQueries.UpsertShopQueue(ctx, queries.UpsertShopQueueParams{
 			ShopID: shop.ID,
 			Name:   q.Name,
 			Size:   q.Size,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("upsert shop queue %s: %w", q.Name, err)
+		}
 	}
 	if len(queueNames) > 0 {
-		txQueries.DeleteShopQueuesNotIn(ctx, queries.DeleteShopQueuesNotInParams{
+		if err := txQueries.DeleteShopQueuesNotIn(ctx, queries.DeleteShopQueuesNotInParams{
 			ShopID:  shop.ID,
 			Column2: queueNames,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("delete stale shop queues: %w", err)
+		}
 	}
 
 	cacheAdapter := cacheInfo.CacheAdapter
 	if cacheAdapter == "" {
 		cacheAdapter = "filesystem"
 	}
-	txQueries.UpsertShopCache(ctx, queries.UpsertShopCacheParams{
+	if err := txQueries.UpsertShopCache(ctx, queries.UpsertShopCacheParams{
 		ShopID:       shop.ID,
 		Environment:  cacheInfo.Environment,
 		HttpCache:    cacheInfo.HttpCache,
 		CacheAdapter: cacheAdapter,
-	})
+	}); err != nil {
+		persistSpan.RecordError(err)
+		persistSpan.SetStatus(codes.Error, err.Error())
+		persistSpan.End()
+		return fmt.Errorf("upsert shop cache: %w", err)
+	}
 
 	for _, c := range checkerResult.Checks {
 		var link *string
 		if c.Link != "" {
 			link = &c.Link
 		}
-		txQueries.InsertShopCheck(ctx, queries.InsertShopCheckParams{
+		if err := txQueries.InsertShopCheck(ctx, queries.InsertShopCheckParams{
 			ShopID:  shop.ID,
 			CheckID: c.ID,
 			Level:   string(c.Level),
 			Message: c.Message,
 			Source:  c.Source,
 			Link:    link,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("insert shop check %s: %w", c.ID, err)
+		}
 	}
 
 	hasShopwareUpdate := shop.ShopwareVersion != shopConfig.Version
@@ -510,17 +555,22 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 		}
 
 		shopID := shop.ID
-		txQueries.InsertShopChangelog(ctx, queries.InsertShopChangelogParams{
+		if err := txQueries.InsertShopChangelog(ctx, queries.InsertShopChangelogParams{
 			ShopID:             &shopID,
 			Extensions:         extensionsDiffJSON,
 			OldShopwareVersion: oldVersion,
 			NewShopwareVersion: newVersion,
-		})
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("insert shop changelog: %w", err)
+		}
 	}
 
 	favicon := getFavicon(shop.Url)
 
-	txQueries.UpdateShopAfterScrape(ctx, queries.UpdateShopAfterScrapeParams{
+	if err := txQueries.UpdateShopAfterScrape(ctx, queries.UpdateShopAfterScrapeParams{
 		Status:           newStatus,
 		ShopwareVersion:  shopConfig.Version,
 		LastScrapedError: nil,
@@ -528,7 +578,12 @@ func (h *ShopScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetAllS
 		ShopImage:        nil,
 		LastChangelog:    lastChangelogJSON,
 		ID:               shop.ID,
-	})
+	}); err != nil {
+		persistSpan.RecordError(err)
+		persistSpan.SetStatus(codes.Error, err.Error())
+		persistSpan.End()
+		return fmt.Errorf("update shop after scrape: %w", err)
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		persistSpan.RecordError(err)

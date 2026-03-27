@@ -34,10 +34,7 @@ type ssoState struct {
 
 // SignInSSO initiates SSO login by looking up provider by email domain.
 func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Email       string `json:"email"`
-		CallbackURL string `json:"callbackURL"`
-	}
+	var req ssoSignInRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -102,7 +99,7 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 		url.QueryEscape(nonce),
 	)
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"url": authURL})
+	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
 
 // SSOCallback handles the OIDC callback after IdP authentication.

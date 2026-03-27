@@ -19,10 +19,7 @@ type oauthState struct {
 }
 
 func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Provider    string `json:"provider"`
-		CallbackURL string `json:"callbackURL"`
-	}
+	var req socialSignInRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -51,7 +48,7 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 	authURL := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
 		url.QueryEscape(h.cfg.GithubClientID), url.QueryEscape(state))
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"url": authURL})
+	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
 
 func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {

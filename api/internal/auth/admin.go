@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
@@ -39,22 +38,7 @@ func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users := make([]map[string]interface{}, 0, len(rows))
-	for _, row := range rows {
-		users = append(users, map[string]interface{}{
-			"id":            row.ID,
-			"name":          row.Name,
-			"email":         row.Email,
-			"emailVerified": row.EmailVerified,
-			"image":         row.Image,
-			"role":          row.Role,
-			"banned":        row.Banned,
-			"banReason":     row.BanReason,
-			"createdAt":     row.CreatedAt.Time,
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, users)
+	httputil.WriteJSON(w, http.StatusOK, mapAdminUsers(rows))
 }
 
 func (h *AuthHandler) AdminSetUserRole(w http.ResponseWriter, r *http.Request, userId string) {
@@ -63,10 +47,11 @@ func (h *AuthHandler) AdminSetUserRole(w http.ResponseWriter, r *http.Request, u
 		return
 	}
 
-	var req struct {
-		Role string `json:"role"`
+	var req adminSetUserRoleRequest
+	if err := httputil.DecodeBody(r, &req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
 	}
-	json.NewDecoder(r.Body).Decode(&req)
 
 	if userId == su.User.ID {
 		httputil.WriteError(w, http.StatusBadRequest, "cannot change your own role")
@@ -87,7 +72,7 @@ func (h *AuthHandler) AdminSetUserRole(w http.ResponseWriter, r *http.Request, u
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) AdminBanUser(w http.ResponseWriter, r *http.Request, userId string) {
@@ -96,24 +81,28 @@ func (h *AuthHandler) AdminBanUser(w http.ResponseWriter, r *http.Request, userI
 		return
 	}
 
-	var req struct {
-		BanReason *string `json:"banReason"`
-	}
-	json.NewDecoder(r.Body).Decode(&req)
-
-	err := h.queries.AdminBanUser(r.Context(), queries.AdminBanUserParams{
-		BanReason: req.BanReason,
-		ID:        userId,
-	})
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to ban user")
+	var req adminBanUserRequest
+	if err := httputil.DecodeBody(r, &req); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	// Invalidate all sessions
-	h.queries.DeleteUserSessions(r.Context(), userId)
+	err := h.withTx(r.Context(), func(txq *queries.Queries) error {
+		if err := txq.AdminBanUser(r.Context(), queries.AdminBanUserParams{
+			BanReason: req.BanReason,
+			ID:        userId,
+		}); err != nil {
+			return err
+		}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		return txq.DeleteUserSessions(r.Context(), userId)
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to invalidate user sessions")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) AdminUnbanUser(w http.ResponseWriter, r *http.Request, userId string) {
@@ -128,7 +117,7 @@ func (h *AuthHandler) AdminUnbanUser(w http.ResponseWriter, r *http.Request, use
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 func (h *AuthHandler) AdminImpersonate(w http.ResponseWriter, r *http.Request, userId string) {
@@ -166,11 +155,11 @@ func (h *AuthHandler) AdminImpersonate(w http.ResponseWriter, r *http.Request, u
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"token": token,
-		"session": map[string]string{
-			"token":          token,
-			"impersonatedBy": su.User.ID,
+	httputil.WriteJSON(w, http.StatusOK, impersonationResponse{
+		Token: token,
+		Session: impersonationSessionResponse{
+			Token:          token,
+			ImpersonatedBy: su.User.ID,
 		},
 	})
 }

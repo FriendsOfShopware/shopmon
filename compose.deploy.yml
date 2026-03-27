@@ -35,24 +35,7 @@ services:
       - db
     environment:
       <<: *env
-    command: "migrate.js"
-
-  frontend:
-    image: ghcr.io/friendsofshopware/shopmon/frontend:${ENVIRONMENT}
-    networks:
-      - traefik
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.entrypoints=websecure
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`)
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls=true
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.certresolver=cloudflare
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].main=fos.gg
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].sans=*.fos.gg
-
-      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress=true
-      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress.encodings=zstd,gzip
-      - traefik.http.routers.shopmon-${ENVIRONMENT}.middlewares=shopmon-${ENVIRONMENT}
+    command: ["migrate", "up"]
 
   api:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
@@ -69,16 +52,16 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_default
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.entrypoints=websecure
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`) && (PathPrefix(`/trpc`) || PathPrefix(`/auth`) || PathPrefix(`/admin/queues`))
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls=true
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.certresolver=cloudflare
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.domains[0].main=fos.gg
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.tls.domains[0].sans=*.fos.gg
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.entrypoints=websecure
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls=true
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.certresolver=cloudflare
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].main=fos.gg
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.tls.domains[0].sans=*.fos.gg
 
-      - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress=true
-      - traefik.http.middlewares.shopmon-api-${ENVIRONMENT}.compress.encodings=zstd,gzip
-      - traefik.http.routers.shopmon-api-${ENVIRONMENT}.middlewares=shopmon-api-${ENVIRONMENT}
+      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress=true
+      - traefik.http.middlewares.shopmon-${ENVIRONMENT}.compress.encodings=zstd,gzip
+      - traefik.http.routers.shopmon-${ENVIRONMENT}.middlewares=shopmon-${ENVIRONMENT}
 
   worker:
     image: ghcr.io/friendsofshopware/shopmon/api:${ENVIRONMENT}
@@ -89,7 +72,7 @@ services:
       - redis
     environment:
       <<: *env
-    command: "worker.js"
+    command: ["worker"]
 
   redis:
     image: redis:8-alpine

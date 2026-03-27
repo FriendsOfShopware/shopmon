@@ -21,6 +21,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/friendsofshopware/shopmon/api/internal/storage"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
+	"github.com/friendsofshopware/shopmon/api/internal/webui"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/spf13/cobra"
@@ -156,6 +157,13 @@ func runServer(cmd *cobra.Command, args []string) error {
 			BaseRouter: apiRouter,
 		})
 	})
+
+	if frontendHandler, ok := webui.Handler(); ok {
+		slog.Info("serving embedded frontend")
+		r.NotFound(frontendHandler.ServeHTTP)
+	} else {
+		slog.Warn("no embedded frontend assets were found")
+	}
 
 	srv := &http.Server{
 		Addr:    cfg.ListenAddr,

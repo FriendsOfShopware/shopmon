@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // AdminGetStats returns admin dashboard statistics.

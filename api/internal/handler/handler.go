@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"time"
 
-	goqueue "github.com/shyim/go-queue"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/storage"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+	goqueue "github.com/shyim/go-queue"
 )
 
 // Ensure Handler implements ServerInterface at compile time
@@ -98,5 +98,54 @@ func (h *Handler) requireOrgMembership(w http.ResponseWriter, r *http.Request, u
 		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
 		return false
 	}
+	return true
+}
+
+func (h *Handler) loadAuthorizedShop(w http.ResponseWriter, r *http.Request, user *auth.User, shopID int32) (*queries.GetShopByIDRow, bool) {
+	shop, err := h.queries.GetShopByID(r.Context(), shopID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return nil, false
+	}
+
+	if !h.requireOrgMembership(w, r, user, shop.OrganizationID) {
+		return nil, false
+	}
+
+	return &shop, true
+}
+
+func (h *Handler) loadAuthorizedShopCredentials(w http.ResponseWriter, r *http.Request, user *auth.User, shopID int32) (*queries.GetShopCredentialsRow, bool) {
+	creds, err := h.queries.GetShopCredentials(r.Context(), shopID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return nil, false
+	}
+
+	orgID, err := h.queries.GetShopOrganizationID(r.Context(), shopID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return nil, false
+	}
+
+	if !h.requireOrgMembership(w, r, user, orgID) {
+		return nil, false
+	}
+
+	return &creds, true
+}
+
+func (h *Handler) requireProjectInOrganization(w http.ResponseWriter, r *http.Request, projectID int32, orgID string) bool {
+	project, err := h.queries.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusNotFound, "project not found")
+		return false
+	}
+
+	if project.OrganizationID != orgID {
+		httputil.WriteError(w, http.StatusForbidden, "project does not belong to this organization")
+		return false
+	}
+
 	return true
 }

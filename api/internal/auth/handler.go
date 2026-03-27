@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -87,6 +88,52 @@ func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *Sess
 	return su
 }
 
+func (h *AuthHandler) requireOrgRole(w http.ResponseWriter, r *http.Request, userID, organizationID string, allowedRoles ...string) string {
+	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
+		OrganizationID: organizationID,
+		UserID:         userID,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+		return ""
+	}
+
+	for _, allowedRole := range allowedRoles {
+		if role == allowedRole {
+			return role
+		}
+	}
+
+	httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	return ""
+}
+
+func (h *AuthHandler) requireOrgMembership(w http.ResponseWriter, r *http.Request, userID, organizationID string) bool {
+	err := h.requireOrganization(r.Context(), organizationID)
+	if err != nil {
+		if errors.Is(err, errOrganizationNotFound) {
+			httputil.WriteError(w, http.StatusNotFound, "organization not found")
+			return false
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load organization")
+		return false
+	}
+
+	role := h.requireOrgRole(w, r, userID, organizationID, "owner", "admin", "member")
+	return role != ""
+}
+
+var errOrganizationNotFound = errors.New("organization not found")
+
+func (h *AuthHandler) requireOrganization(ctx context.Context, organizationID string) error {
+	_, err := h.queries.GetOrganizationByID(ctx, organizationID)
+	if err != nil {
+		return errOrganizationNotFound
+	}
+
+	return nil
+}
+
 // validateCallbackURL checks that the callback URL is either empty (will default
 // to FrontendURL) or belongs to the same host as the configured frontend.
 func (h *AuthHandler) validateCallbackURL(callbackURL string) bool {
@@ -130,9 +177,7 @@ func (h *AuthHandler) createOneTimeCode(r *http.Request, userID string) (string,
 
 // ExchangeCode exchanges a one-time authorization code for a session token.
 func (h *AuthHandler) ExchangeCode(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Code string `json:"code"`
-	}
+	var req exchangeCodeRequest
 	if err := httputil.DecodeBody(r, &req); err != nil || req.Code == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "code is required")
 		return
@@ -144,7 +189,7 @@ func (h *AuthHandler) ExchangeCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"token": sessionToken})
+	httputil.WriteJSON(w, http.StatusOK, exchangeCodeResponse{Token: sessionToken})
 }
 
 // createSession creates a new session with a 30-day expiry.

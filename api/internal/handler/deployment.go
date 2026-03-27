@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // GetDeployments lists deployments for a shop.
@@ -20,13 +20,7 @@ func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, shopId 
 		return
 	}
 
-	orgID, err := h.queries.GetShopOrganizationID(r.Context(), int32(shopId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
-	}
-
-	if !h.requireOrgMembership(w, r, user, orgID) {
+	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
 		return
 	}
 
@@ -76,13 +70,7 @@ func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, shopId a
 		return
 	}
 
-	orgID, err := h.queries.GetShopOrganizationID(r.Context(), int32(shopId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
-	}
-
-	if !h.requireOrgMembership(w, r, user, orgID) {
+	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
 		return
 	}
 
@@ -131,13 +119,7 @@ func (h *Handler) DeleteDeployment(w http.ResponseWriter, r *http.Request, shopI
 		return
 	}
 
-	orgID, err := h.queries.GetShopOrganizationID(r.Context(), int32(shopId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
-	}
-
-	if !h.requireOrgMembership(w, r, user, orgID) {
+	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
 		return
 	}
 

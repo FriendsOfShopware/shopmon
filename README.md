@@ -124,13 +124,15 @@ make up
 
 ### Production Deployment
 
-For production deployment, you can use the provided Docker setup:
+For production deployment, you can use the single Docker image defined in [`Dockerfile`](./Dockerfile).
 
 1. Build the Docker image:
 
 ```bash
 docker build -t shopmon .
 ```
+
+This builds the frontend first and embeds the compiled assets into the Go API binary.
 
 2. Run with docker compose:
 
@@ -142,8 +144,7 @@ Make sure to:
 
 - Use a strong APP_SECRET
 - Configure proper email settings
-- Set up persistent volumes for database and uploads
-- Configure a reverse proxy (nginx, traefik, etc.) for HTTPS
+- Configure a reverse proxy (traefik, nginx, etc.) for HTTPS
 
 ## Contributing
 

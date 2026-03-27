@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type contextKey string
@@ -96,4 +96,3 @@ func AdminMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

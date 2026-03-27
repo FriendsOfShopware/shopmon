@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // handleStatusChange detects degradation and sends notifications.

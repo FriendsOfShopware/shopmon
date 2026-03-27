@@ -17,11 +17,7 @@ import (
 
 // SignUpEmail handles email+password registration.
 func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Name     string `json:"name"`
-	}
+	var req signUpEmailRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -98,22 +94,19 @@ func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"token": token,
-		"user": map[string]interface{}{
-			"id":    userID,
-			"name":  req.Name,
-			"email": req.Email,
+	httputil.WriteJSON(w, http.StatusOK, tokenUserResponse{
+		Token: token,
+		User: authenticatedUserResponse{
+			ID:    userID,
+			Name:  req.Name,
+			Email: req.Email,
 		},
 	})
 }
 
 // SignInEmail handles email+password login.
 func (h *AuthHandler) SignInEmail(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var req signInEmailRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -150,15 +143,15 @@ func (h *AuthHandler) SignInEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"token": token,
-		"user": map[string]interface{}{
-			"id":            user.ID,
-			"name":          user.Name,
-			"email":         user.Email,
-			"emailVerified": user.EmailVerified,
-			"image":         user.Image,
-			"role":          user.Role,
+	httputil.WriteJSON(w, http.StatusOK, tokenUserResponse{
+		Token: token,
+		User: authenticatedUserResponse{
+			ID:            user.ID,
+			Name:          user.Name,
+			Email:         user.Email,
+			EmailVerified: user.EmailVerified,
+			Image:         user.Image,
+			Role:          user.Role,
 		},
 	})
 }
@@ -169,7 +162,7 @@ func (h *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	if token != "" {
 		h.queries.DeleteSession(r.Context(), token)
 	}
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 // GetSession returns the current session and user.
@@ -186,20 +179,20 @@ func (h *AuthHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"user": map[string]interface{}{
-			"id":            su.User.ID,
-			"name":          su.User.Name,
-			"email":         su.User.Email,
-			"image":         su.User.Image,
-			"role":          su.User.Role,
-			"notifications": su.User.Notifications,
+	httputil.WriteJSON(w, http.StatusOK, currentSessionEnvelope{
+		User: authenticatedUserResponse{
+			ID:            su.User.ID,
+			Name:          su.User.Name,
+			Email:         su.User.Email,
+			Image:         su.User.Image,
+			Role:          su.User.Role,
+			Notifications: su.User.Notifications,
 		},
-		"session": map[string]interface{}{
-			"id":                   su.Session.ID,
-			"userId":               su.Session.UserID,
-			"expiresAt":            su.Session.ExpiresAt,
-			"activeOrganizationId": su.Session.ActiveOrganizationID,
+		Session: currentSessionResponse{
+			ID:                   su.Session.ID,
+			UserID:               su.Session.UserID,
+			ExpiresAt:            su.Session.ExpiresAt,
+			ActiveOrganizationID: su.Session.ActiveOrganizationID,
 		},
 	})
 }
@@ -231,14 +224,12 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request, params
 		slog.Warn("failed to delete verification", "error", err, "verificationID", verification.ID)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 // ForgetPassword sends a password reset email.
 func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Email string `json:"email"`
-	}
+	var req forgetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -247,7 +238,7 @@ func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 	// Always return success to prevent email enumeration
 	user, err := h.queries.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 		return
 	}
 
@@ -265,15 +256,12 @@ func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 	h.mail.Send(req.Email, "Reset your password",
 		mail.BuildPasswordResetEmail(user.Name, resetURL))
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
 // ResetPassword resets a user's password using a token.
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Token       string `json:"token"`
-		NewPassword string `json:"newPassword"`
-	}
+	var req resetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -309,5 +297,5 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	h.queries.DeleteUserSessions(r.Context(), verification.Identifier)
 	h.queries.DeleteVerification(r.Context(), verification.ID)
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }

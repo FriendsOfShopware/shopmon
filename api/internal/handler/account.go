@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // GetAccountMe returns the current user's profile.

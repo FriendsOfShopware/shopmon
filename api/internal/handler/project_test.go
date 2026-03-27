@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

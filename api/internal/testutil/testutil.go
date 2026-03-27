@@ -12,16 +12,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	apiserver "github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	apiserver "github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/handler"
-	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/redis"
@@ -125,12 +125,12 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	q := queries.New(pool)
 
 	cfg := &config.Config{
-		AppSecret:      "test-secret-key-32-bytes-long!!", // 32 bytes for AES-256
-		FrontendURL:    "http://localhost:3000",
-		MailFrom:       "test@shopmon.io",
-		RedisURL:       shared.redisURL,
-		WebAuthnRPID:   "localhost",
-		WebAuthnRPName: "Shopmon",
+		AppSecret:         "test-secret-key-32-bytes-long!!", // 32 bytes for AES-256
+		FrontendURL:       "http://localhost:3000",
+		MailFrom:          "test@shopmon.io",
+		RedisURL:          shared.redisURL,
+		WebAuthnRPID:      "localhost",
+		WebAuthnRPName:    "Shopmon",
 		WebAuthnRPOrigins: []string{"http://localhost:3000"},
 	}
 
