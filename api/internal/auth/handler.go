@@ -66,7 +66,7 @@ func (h *AuthHandler) requireAuth(w http.ResponseWriter, r *http.Request) *Sessi
 		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
 		return nil
 	}
-	su, err := ValidateSession(r.Context(), h.pool, token)
+	su, err := ValidateSession(r.Context(), h.queries, token)
 	if err != nil {
 		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
 		return nil

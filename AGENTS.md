@@ -2,11 +2,12 @@
 
 ## Tech Stack
 
-- **API**: Go (chi router, sqlc, oapi-codegen, asynq)
+- **API**: Go (chi router, sqlc, oapi-codegen, go-queue)
 - **Frontend**: Vue.js + TypeScript
-- **Database**: PostgreSQL
-- **Queue**: Redis (asynq)
+- **Database**: PostgreSQL (pgx)
+- **Queue**: PostgreSQL (go-queue)
 - **Storage**: S3-compatible (deployment outputs)
+- **Observability**: OpenTelemetry (traces + logs via OTLP)
 
 ## Directory Structure
 
@@ -21,55 +22,124 @@ api/                          <-- Go API (single binary)
     auth/                     <-- Authentication (credentials, OAuth, SSO, passkeys, orgs, admin)
     config/                   <-- Environment configuration
     crypto/                   <-- AES-GCM encryption
-    database/queries/         <-- sqlc-generated data access
+    database/queries/         <-- sqlc-generated data access (DO NOT EDIT)
     handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
     httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
     jobs/                     <-- Background jobs (shop scrape, sitespeed, cleanup)
     mail/                     <-- SMTP service + email templates
     middleware/               <-- HTTP middleware (auth, org membership, shop access)
-    queue/                    <-- Asynq task type definitions
+    queue/                    <-- Queue task type definitions
     shopware/                 <-- Shopware HTTP client
-      checker/                <-- Shop health check system (env, security, tasks, worker, frosh_tools)
+      checker/                <-- Shop health check system
     storage/                  <-- S3 storage for deployment outputs
-    telemetry/                <-- OpenTelemetry tracing setup
+    telemetry/                <-- OpenTelemetry tracing + logging setup
     testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)
+    webui/                    <-- Embedded frontend serving
   migrations/                 <-- SQL migration files (golang-migrate)
   openapi/
-    spec.yaml                 <-- OpenAPI 3.0.3 specification
-    generated/                <-- oapi-codegen generated server interface
+    spec.yaml                 <-- OpenAPI 3.0.3 specification (source of truth for API)
+    generated/                <-- oapi-codegen generated server interface (DO NOT EDIT)
   sql/
     schema.sql                <-- Full DDL for sqlc
     queries/                  <-- sqlc query definitions
 frontend/                     <-- Vue.js frontend
 ```
 
-## API Architecture
+## Code Conventions
 
-The Go API uses a handler-based architecture with sqlc for type-safe database queries and oapi-codegen for OpenAPI server interface generation.
+### Error Handling
 
-### Handler (`internal/handler/`)
-- Implements the generated `openapi.ServerInterface`
-- Uses `requireUser()` and `requireOrgMembership()` helpers for auth checks
-- Delegates to sqlc queries for data access
-- Returns responses using `httputil.WriteJSON()` / `httputil.WriteError()`
+- Wrap errors with context: `fmt.Errorf("create shop: %w", err)`
+- In handlers, log with `slog.Error` then respond with `httputil.WriteError`
+- In background jobs, record errors on the OTel span AND return them
+- **Never** silently discard errors — at minimum use `_ =` for intentional ignoring (e.g. `defer func() { _ = resp.Body.Close() }()`)
 
-### Auth (`internal/auth/`)
-- Standalone auth system (no external auth libraries)
-- Email/password with bcrypt, GitHub OAuth, SSO/OIDC, WebAuthn passkeys
-- Organization management (CRUD, invitations, roles)
-- Admin endpoints (user management, ban/unban, impersonation)
-- Redis-backed challenge store for OAuth/WebAuthn flows
-- Rate limiting (20 req/60s per IP)
+### Logging
 
-### Background Jobs (`internal/jobs/`)
-- Shop scraping: fetches Shopware API data, runs health checkers, computes diffs, sends notifications
-- Sitespeed: performance measurement via external sitespeed service
-- Cleanup: expired locks and invitations
+- Use `log/slog` exclusively (no `log`, no `fmt.Println`)
+- Always include structured context: `slog.Error("msg", "shopId", id, "error", err)`
+- Logs are automatically exported to OTLP when telemetry is enabled (dual stderr + OTLP output)
 
-### Database Queries (`sql/queries/`)
-- All database access goes through sqlc-generated code
-- Query files organized by domain: shop.sql, user.sql, project.sql, etc.
-- Generate with: `cd api && make generate`
+### Observability (OpenTelemetry)
+
+- HTTP server traces are handled by `otelhttp` middleware (automatic)
+- Background jobs get traces via `go-queue` OTel middleware (automatic)
+- For **manual spans** in jobs or complex operations:
+  ```go
+  var tracer = otel.Tracer("shopmon/jobs")
+
+  func (h *Handler) DoWork(ctx context.Context) error {
+      ctx, span := tracer.Start(ctx, "operation.name")
+      defer span.End()
+
+      span.SetAttributes(attribute.Int("key", value))
+
+      if err != nil {
+          span.RecordError(err)
+          span.SetStatus(codes.Error, err.Error())
+          return fmt.Errorf("operation: %w", err)
+      }
+      return nil
+  }
+  ```
+- **Errors that are logged with `slog.Error` automatically appear in OTel** — no extra work needed
+
+### Handler Pattern
+
+Handlers implement the generated `openapi.ServerInterface`:
+
+```go
+func (h *Handler) GetThing(w http.ResponseWriter, r *http.Request, id string) {
+    user := h.requireUser(w, r)       // returns nil + writes 401 if unauthenticated
+    if user == nil {
+        return
+    }
+
+    thing, err := h.queries.GetThing(r.Context(), id)
+    if err != nil {
+        slog.Error("failed to get thing", "id", id, "error", err)
+        httputil.WriteError(w, http.StatusInternalServerError, "failed to get thing")
+        return
+    }
+
+    httputil.WriteJSON(w, http.StatusOK, mapToResponse(thing))
+}
+```
+
+Key rules:
+- Use `h.requireUser()` / `h.requireOrgMembership()` for auth — they handle writing error responses
+- Use `httputil.WriteJSON()` and `httputil.WriteError()` for all responses
+- Use `r.Context()` for all database calls (propagates traces)
+
+### Database Access (sqlc)
+
+- All queries live in `sql/queries/*.sql` — one file per domain (shop.sql, user.sql, etc.)
+- Generated Go code is in `internal/database/queries/` — **never edit generated files**
+- To add/change a query: edit the `.sql` file, then run `make generate`
+- Query naming convention: `-- name: VerbNoun :one|:many|:exec`
+
+### Background Jobs
+
+- Job message types are plain structs (serialized as JSON by go-queue)
+- Handlers follow: `func (h *Handler) HandleX(ctx context.Context, msg MsgType) error`
+- Always create OTel spans for top-level job handlers
+- Register handlers in `internal/jobs/register.go`
+
+### Testing
+
+- Integration tests using testcontainers (real Postgres + Redis)
+- Test helpers in `internal/testutil/` — `Setup(t)` returns a `TestEnv` with seeded DB
+- Seed data with `env.SeedUser()`, `env.SeedOrganization()`, `env.SeedShop()`, etc.
+- Run tests: `make test`
+
+### API Changes
+
+When adding or modifying API endpoints:
+
+1. Edit `openapi/spec.yaml` (add paths, schemas, parameters)
+2. Run `make generate` (regenerates server interface)
+3. Implement the new method on `Handler` in `internal/handler/`
+4. Add sqlc queries if needed (`sql/queries/`, then `make generate`)
 
 ## CLI Commands
 

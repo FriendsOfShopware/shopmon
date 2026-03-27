@@ -147,7 +147,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	authHandler := auth.NewAuthHandler(pool, q, cfg, mailSvc)
 
 	r.Route("/api", func(apiRouter chi.Router) {
-		apiRouter.Use(middleware.OptionalAuthMiddleware(pool))
+		apiRouter.Use(middleware.OptionalAuthMiddleware(q))
 
 		// Auth routes (generated from OpenAPI spec)
 		authapi.HandlerWithOptions(authHandler, authapi.ChiServerOptions{

@@ -116,7 +116,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// API routes
 	r.Route("/api", func(apiRouter chi.Router) {
-		apiRouter.Use(middleware.OptionalAuthMiddleware(pool))
+		apiRouter.Use(middleware.OptionalAuthMiddleware(q))
 
 		// OpenAPI spec & docs
 		apiRouter.Get("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {

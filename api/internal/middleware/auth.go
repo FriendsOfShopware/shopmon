@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type contextKey string
@@ -30,7 +30,7 @@ func GetSession(ctx context.Context) *auth.Session {
 	return nil
 }
 
-func AuthMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler {
+func AuthMiddleware(q *queries.Queries) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := httputil.ExtractToken(r)
@@ -39,7 +39,7 @@ func AuthMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler {
 				return
 			}
 
-			su, err := auth.ValidateSession(r.Context(), pool, token)
+			su, err := auth.ValidateSession(r.Context(), q, token)
 			if err != nil {
 				httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
 				return
@@ -59,7 +59,7 @@ func AuthMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler {
 
 // OptionalAuthMiddleware sets user context if a valid token is present,
 // but does not block requests without authentication.
-func OptionalAuthMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler {
+func OptionalAuthMiddleware(q *queries.Queries) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := httputil.ExtractToken(r)
@@ -68,7 +68,7 @@ func OptionalAuthMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler 
 				return
 			}
 
-			su, err := auth.ValidateSession(r.Context(), pool, token)
+			su, err := auth.ValidateSession(r.Context(), q, token)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return

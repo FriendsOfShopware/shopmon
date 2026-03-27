@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 )
 
 type User struct {
@@ -33,33 +33,36 @@ type SessionUser struct {
 	Session Session
 }
 
-func ValidateSession(ctx context.Context, pool *pgxpool.Pool, token string) (*SessionUser, error) {
-	row := pool.QueryRow(ctx, `
-		SELECT s.id, s.expires_at, s.user_id, s.active_organization_id, s.impersonated_by,
-		       u.id, u.name, u.email, u.image, u.role, u.notifications, u.banned
-		FROM session s
-		JOIN "user" u ON u.id = s.user_id
-		WHERE s.token = $1 AND s.expires_at > NOW()
-	`, token)
-
-	var su SessionUser
-	var notificationsJSON []byte
-	err := row.Scan(
-		&su.Session.ID, &su.Session.ExpiresAt, &su.Session.UserID,
-		&su.Session.ActiveOrganizationID, &su.Session.ImpersonatedBy,
-		&su.User.ID, &su.User.Name, &su.User.Email, &su.User.Image,
-		&su.User.Role, &notificationsJSON, &su.User.Banned,
-	)
+func ValidateSession(ctx context.Context, q *queries.Queries, token string) (*SessionUser, error) {
+	row, err := q.GetSessionByToken(ctx, token)
 	if err != nil {
 		return nil, err
+	}
+
+	su := SessionUser{
+		Session: Session{
+			ID:                   row.ID,
+			UserID:               row.UserID,
+			ExpiresAt:            row.ExpiresAt.Time,
+			ActiveOrganizationID: row.ActiveOrganizationID,
+			ImpersonatedBy:       row.ImpersonatedBy,
+		},
+		User: User{
+			ID:     row.UserID_2,
+			Name:   row.UserName,
+			Email:  row.UserEmail,
+			Image:  row.UserImage,
+			Role:   row.UserRole,
+			Banned: row.UserBanned,
+		},
 	}
 
 	if su.User.Banned != nil && *su.User.Banned {
 		return nil, fmt.Errorf("user is banned")
 	}
 
-	if notificationsJSON != nil {
-		if err := json.Unmarshal(notificationsJSON, &su.User.Notifications); err != nil {
+	if row.UserNotifications != nil {
+		if err := json.Unmarshal(row.UserNotifications, &su.User.Notifications); err != nil {
 			slog.Error("failed to unmarshal user notifications", "error", err, "userID", su.User.ID)
 		}
 	}

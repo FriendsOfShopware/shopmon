@@ -177,7 +177,7 @@ func (h *AuthHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	su, err := ValidateSession(r.Context(), h.pool, token)
+	su, err := ValidateSession(r.Context(), h.queries, token)
 	if err != nil {
 		httputil.WriteError(w, http.StatusUnauthorized, "invalid session")
 		return
