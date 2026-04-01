@@ -1,5 +1,5 @@
 <template>
-  <header-container title="New Shop" />
+  <header-container :title="$t('shop.newShop')" />
   <main-container>
     <Panel>
       <vee-form
@@ -9,9 +9,9 @@
         :initial-values="shops"
         @submit="onSubmit"
       >
-        <form-group title="Shop information">
+        <form-group :title="$t('shop.shopInfo')">
           <div>
-            <label for="Name">Name</label>
+            <label for="Name">{{ $t('common.name') }}</label>
 
             <field
               id="name"
@@ -27,7 +27,7 @@
           </div>
 
           <div>
-            <label for="projectId">Project</label>
+            <label for="projectId">{{ $t('shop.project') }}</label>
 
             <field id="projectId" name="projectId">
               <select v-model="selectedProjectId" class="field" required>
@@ -43,7 +43,7 @@
           </div>
 
           <div>
-            <label for="shopUrl">URL</label>
+            <label for="shopUrl">{{ $t('common.url') }}</label>
 
             <field
               id="shopUrl"
@@ -60,11 +60,9 @@
           </div>
         </form-group>
 
-        <form-group title="Bypass Authentication Header">
+        <form-group :title="$t('shop.bypassAuthHeader')">
           <template #info>
-            If your website is protected by authentication, please configure the header
-            <code>shopmon-shop-token</code> with the value below to be excluded, so Shopmon can
-            function normally.
+            {{ $t('shop.bypassAuthHeaderDesc') }}
           </template>
 
           <div class="shop-token-display">
@@ -76,26 +74,26 @@
           </div>
         </form-group>
 
-        <form-group title="Integration">
+        <form-group :title="$t('shop.integration')">
           <template #info>
-            The easiest way to get started is to install the
-            <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank"
-              >Shopmon Plugin</a
-            >
-            or create an integration in your Shopware Administration with the following
+            <i18n-t keypath="shop.integrationDesc" tag="span">
+              <template #pluginLink>
+                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{ $t('shop.pluginName') }}</a>
+              </template>
+            </i18n-t>
             <a
               href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
             >
-              permissions
+              {{ $t('shop.permissions') }}
             </a>
           </template>
 
           <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            Connect using Shopmon Plugin
+            {{ $t('shop.connectPlugin') }}
           </button>
 
           <div>
-            <label for="clientId">Client-ID</label>
+            <label for="clientId">{{ $t('shop.clientId') }}</label>
 
             <field
               id="clientId"
@@ -111,7 +109,7 @@
           </div>
 
           <div>
-            <label for="clientSecret">Client-Secret</label>
+            <label for="clientSecret">{{ $t('shop.clientSecret') }}</label>
 
             <field
               id="clientSecret"
@@ -131,7 +129,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t('common.save') }}
           </button>
         </div>
       </vee-form>
@@ -154,10 +152,12 @@ import { useAlert } from "@/composables/useAlert";
 import { type RouterInput, type RouterOutput, trpcClient } from "@/helpers/trpc";
 import { Field, Form as VeeForm } from "vee-validate";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
@@ -173,7 +173,7 @@ const shopToken = generateShopToken();
 
 async function copyToken() {
   await navigator.clipboard.writeText(shopToken);
-  success("Token copied to clipboard");
+  success(t('shop.tokenCopied'));
 }
 
 const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
@@ -202,13 +202,13 @@ const isValidUrl = (url: string) => {
 };
 
 const schema = Yup.object().shape({
-  name: Yup.string().required("Shop name is required"),
+  name: Yup.string().required(t('validation.shopNameRequired')),
   shopUrl: Yup.string()
-    .required("Shop URL is required")
-    .test("is-url-valid", "Shop URL is not valid", (value) => isValidUrl(value)),
-  projectId: Yup.number().required("Project is required"),
-  clientId: Yup.string().required("Client ID is required"),
-  clientSecret: Yup.string().required("Client Secret is required"),
+    .required(t('validation.shopUrlRequired'))
+    .test("is-url-valid", t('validation.shopUrlInvalid'), (value) => isValidUrl(value)),
+  projectId: Yup.number().required(t('validation.projectRequired')),
+  clientId: Yup.string().required(t('validation.clientIdRequired')),
+  clientSecret: Yup.string().required(t('validation.clientSecretRequired')),
 });
 
 const shops = {
@@ -251,7 +251,7 @@ function processPluginData() {
     pluginError.value = "";
 
     if (!pluginBase64.value.trim()) {
-      pluginError.value = "Please enter a base64 string";
+      pluginError.value = t('shop.base64Error');
       return;
     }
 
@@ -259,7 +259,7 @@ function processPluginData() {
     const data = JSON.parse(decodedString);
 
     if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = "Invalid data: missing required fields (url, clientId, clientSecret)";
+      pluginError.value = t('shop.base64InvalidData');
       return;
     }
 
@@ -269,7 +269,7 @@ function processPluginData() {
 
     closePluginModal();
   } catch (_e) {
-    pluginError.value = "Invalid base64 string or JSON format";
+    pluginError.value = t('shop.base64InvalidFormat');
   }
 }
 </script>

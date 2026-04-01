@@ -3,12 +3,12 @@
     <div class="container">
       <div class="footer-links">
         <button v-if="session.data" type="button" class="footer-link" @click="open">
-          What's new
+          {{ $t('footer.whatsNew') }}
         </button>
         <span v-if="session.data" class="footer-separator">|</span>
-        <router-link :to="{ name: 'privacy' }" class="footer-link"> Privacy </router-link>
+        <router-link :to="{ name: 'privacy' }" class="footer-link"> {{ $t('footer.privacy') }} </router-link>
         <span class="footer-separator">|</span>
-        <router-link :to="{ name: 'imprint' }" class="footer-link"> Legal Notice </router-link>
+        <router-link :to="{ name: 'imprint' }" class="footer-link"> {{ $t('footer.legalNotice') }} </router-link>
       </div>
     </div>
 

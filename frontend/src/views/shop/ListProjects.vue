@@ -1,9 +1,9 @@
 <template>
-  <header-container title="My Projects">
+  <header-container :title="$t('project.listTitle')">
     <div class="header-actions">
       <router-link :to="{ name: 'account.projects.new' }" class="btn btn-primary">
         <icon-fa6-solid:folder-plus class="icon" aria-hidden="true" />
-        Add Project
+        {{ $t('project.addProject') }}
       </router-link>
     </div>
   </header-container>
@@ -11,11 +11,11 @@
   <main-container v-if="!loading">
     <Panel v-if="projects.length === 0">
       <element-empty
-        title="No Projects"
-        button="Add Project"
+        :title="$t('project.noProjects')"
+        :button="$t('project.addProject')"
         :route="{ name: 'account.projects.new' }"
       >
-        Get started by creating your first project and adding shops to it.
+        {{ $t('project.getStarted') }}
       </element-empty>
     </Panel>
 
@@ -34,14 +34,14 @@
             class="btn btn-secondary"
           >
             <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
-            Edit Project
+            {{ $t('nav.editProject') }}
           </router-link>
         </template>
 
         <p class="project-meta">
-          <span class="shop-count">{{ projectShops[project.id]?.length || 0 }} shops</span>
+          <span class="shop-count">{{ $t('project.nShops', { count: projectShops[project.id]?.length || 0 }) }}</span>
           <span class="separator">•</span>
-          <span class="created-date">Created {{ formatDate(project.createdAt) }}</span>
+          <span class="created-date">{{ $t('project.createdOn', { date: formatDate(project.createdAt) }) }}</span>
         </p>
 
         <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
@@ -77,7 +77,7 @@
             </router-link>
 
             <div class="item-actions">
-              <a :href="shop.url" target="_blank" class="" data-tooltip="Visit Shop">
+              <a :href="shop.url" target="_blank" class="" :data-tooltip="$t('project.visitShop')">
                 <icon-fa6-solid:arrow-up-right-from-square />
               </a>
             </div>
@@ -91,8 +91,8 @@
               <icon-fa6-solid:plus />
             </div>
             <div class="item-info">
-              <div class="item-name">Add Shop</div>
-              <div class="item-content">Add to this project</div>
+              <div class="item-name">{{ $t('shop.addShop') }}</div>
+              <div class="item-content">{{ $t('project.addToProject') }}</div>
             </div>
           </router-link>
         </div>
@@ -101,9 +101,9 @@
           v-else
           :route="{ name: 'account.shops.new', query: { projectId: project.id } }"
           title=""
-          button="Add Shop"
+          :button="$t('shop.addShop')"
         >
-          No shops in this project yet.
+          {{ $t('project.noShopsYet') }}
         </element-empty>
       </Panel>
     </div>

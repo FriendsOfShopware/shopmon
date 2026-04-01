@@ -1,6 +1,6 @@
 <template>
   <Panel variant="table">
-    <data-table v-if="shop" :columns="[{ key: 'message', name: 'Message' }]" :data="sortedChecks">
+    <data-table v-if="shop" :columns="[{ key: 'message', name: $t('shopDetail.message') }]" :data="sortedChecks">
       <template #cell-message="{ row }">
         <status-icon :status="row.level" />
 
@@ -16,7 +16,7 @@
       <template #cell-actions="{ row }">
         <button
           v-if="shop.ignores.includes(row.id)"
-          data-tooltip="check is ignored"
+          :data-tooltip="$t('shopDetail.checkIgnored')"
           class="tooltip-top-left"
           type="button"
           @click="removeIgnore(row.id)"
@@ -26,7 +26,7 @@
 
         <button
           v-else
-          data-tooltip="check used"
+          :data-tooltip="$t('shopDetail.checkUsed')"
           class="tooltip-top-left"
           type="button"
           @click="ignoreCheck(row.id)"
@@ -39,10 +39,13 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { trpcClient } from "@/helpers/trpc";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { computed } from "vue";
+
+const { t } = useI18n();
 
 const { shop } = useShopDetail();
 
@@ -95,6 +98,6 @@ async function removeIgnore(id: string) {
 }
 
 async function notificateIgnoreUpdate() {
-  info("Ignore state updated. Will effect after next shop update");
+  info(t("shopDetail.ignoreStateUpdated"));
 }
 </script>

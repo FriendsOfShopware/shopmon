@@ -14,15 +14,9 @@
       </div>
 
       <div v-else>
-        <p>
-          Are you sure you want to delete <strong>{{ entityName }}</strong
-          >?
-        </p>
+        <p v-html="$t('deleteModal.confirmText', { name: entityName })" />
 
-        <p>
-          All of your data will be permanently removed from our servers forever.
-          <strong>This action cannot be undone.</strong>
-        </p>
+        <p v-html="$t('deleteModal.consequence')" />
 
         <p v-if="customConsequence" class="text-muted">
           {{ customConsequence }}
@@ -31,7 +25,7 @@
 
       <!-- Password confirmation field -->
       <div v-if="requirePassword" class="section-password">
-        <label for="deletePassword">Current Password</label>
+        <label for="deletePassword">{{ $t('deleteModal.currentPassword') }}</label>
         <input
           id="deletePassword"
           v-model="passwordValue"
@@ -52,10 +46,10 @@
       >
         <icon-fa6-solid:trash v-if="!isLoading" class="icon" />
         <icon-line-md:loading-twotone-loop v-if="isLoading" class="icon" />
-        {{ confirmButtonText }}
+        {{ confirmButtonText || $t('common.delete') }}
       </button>
 
-      <button type="button" class="btn btn-cancel" @click="$emit('close')">Cancel</button>
+      <button type="button" class="btn btn-cancel" @click="$emit('close')">{{ $t('common.cancel') }}</button>
     </template>
   </modal>
 </template>
@@ -80,7 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
   customConsequence: "",
   requirePassword: false,
   isLoading: false,
-  confirmButtonText: "Delete",
+  confirmButtonText: "",
   reversedButtons: false,
 });
 

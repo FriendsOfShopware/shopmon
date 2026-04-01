@@ -1,8 +1,8 @@
 <template>
   <modal :show="show" close-x-mark @close="$emit('close')">
-    <template #title> Connect using Shopmon Plugin </template>
+    <template #title> {{ $t('pluginModal.title') }} </template>
     <template #content>
-      <p>Paste the base64 string from your Shopmon Plugin:</p>
+      <p>{{ $t('pluginModal.description') }}</p>
       <textarea
         v-model="pluginBase64Value"
         class="field"
@@ -15,8 +15,8 @@
       </div>
     </template>
     <template #footer>
-      <button type="button" class="btn btn-primary" @click="$emit('import')">Import Data</button>
-      <button type="button" class="btn btn-cancel" @click="$emit('close')">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="$emit('import')">{{ $t('pluginModal.importData') }}</button>
+      <button type="button" class="btn btn-cancel" @click="$emit('close')">{{ $t('common.cancel') }}</button>
     </template>
   </modal>
 </template>

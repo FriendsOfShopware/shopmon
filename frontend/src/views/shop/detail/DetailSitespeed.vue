@@ -1,7 +1,6 @@
 <template>
   <Alert v-if="shop && !shop.sitespeedEnabled" type="info">
-    Sitespeed monitoring is not enabled for this shop. Please enable it in the shop settings to view
-    performance metrics.
+    {{ $t('shop.sitespeedActivateDesc') }}
   </Alert>
   <div class="mb-1">
     <a
@@ -10,7 +9,7 @@
       :href="shop.sitespeedReportUrl"
       target="_blank"
     >
-      <i class="fa fa-chart-line" /> View Sitespeed Report
+      <i class="fa fa-chart-line" /> {{ $t('nav.sitespeed') }}
     </a>
   </div>
 
@@ -30,14 +29,14 @@
     <data-table
       v-if="shop"
       :columns="[
-        { key: 'createdAt', name: 'Checked At' },
-        { key: 'deployment', name: 'Deployment' },
-        { key: 'ttfb', name: 'TTFB' },
-        { key: 'fullyLoaded', name: 'Fully Loaded' },
-        { key: 'largestContentfulPaint', name: 'Largest Contentful Paint' },
-        { key: 'firstContentfulPaint', name: 'First Contentful Paint' },
-        { key: 'cumulativeLayoutShift', name: 'Cumulative Layout Shift' },
-        { key: 'transferSize', name: 'Transfer Size' },
+        { key: 'createdAt', name: $t('sitespeed.checkedAt') },
+        { key: 'deployment', name: $t('sitespeed.deployment') },
+        { key: 'ttfb', name: $t('sitespeed.ttfb') },
+        { key: 'fullyLoaded', name: $t('sitespeed.fullyLoaded') },
+        { key: 'largestContentfulPaint', name: $t('sitespeed.lcpFull') },
+        { key: 'firstContentfulPaint', name: $t('sitespeed.fcpFull') },
+        { key: 'cumulativeLayoutShift', name: $t('sitespeed.cls') },
+        { key: 'transferSize', name: $t('sitespeed.transferSize') },
       ]"
       :data="shop.sitespeed || []"
     >
@@ -89,7 +88,9 @@ import annotationPlugin from "chartjs-plugin-annotation";
 import "chartjs-adapter-date-fns";
 import { formatDateTime } from "@/helpers/formatter";
 import { useShopDetail } from "@/composables/useShopDetail";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const { shop } = useShopDetail();
 
 Chart.register(annotationPlugin);
@@ -145,10 +146,10 @@ const clsChartCanvas = ref<HTMLCanvasElement | null>(null);
 const clsChartInstance = ref<Chart | null>(null);
 
 const timeMetrics = [
-  { key: "ttfb", label: "TTFB" },
-  { key: "fullyLoaded", label: "Fully Loaded" },
-  { key: "largestContentfulPaint", label: "LCP" },
-  { key: "firstContentfulPaint", label: "FCP" },
+  { key: "ttfb", label: t("sitespeed.ttfb") },
+  { key: "fullyLoaded", label: t("sitespeed.fullyLoaded") },
+  { key: "largestContentfulPaint", label: t("sitespeed.lcp") },
+  { key: "firstContentfulPaint", label: t("sitespeed.fcp") },
 ];
 
 interface SitespeedDataItem {
@@ -184,8 +185,8 @@ const chartConfigs: ChartConfig[] = [
   {
     canvasRef: timeChartCanvas,
     chartInstance: timeChartInstance,
-    title: "Performance Metrics Over Time",
-    yAxisLabel: "Time (ms)",
+    title: t("sitespeed.performanceOverTime"),
+    yAxisLabel: t("sitespeed.timeMs"),
     datasets: timeMetrics.map((metric) => ({
       label: metric.label,
       dataKey: metric.key,
@@ -196,11 +197,11 @@ const chartConfigs: ChartConfig[] = [
   {
     canvasRef: transferSizeChartCanvas,
     chartInstance: transferSizeChartInstance,
-    title: "Transfer Size Over Time",
-    yAxisLabel: "Size (KB)",
+    title: t("sitespeed.transferSizeOverTime"),
+    yAxisLabel: t("sitespeed.sizeKb"),
     datasets: [
       {
-        label: "Transfer Size",
+        label: t("sitespeed.transferSize"),
         valueFormatter: (item) => (item.transferSize ? Math.round(item.transferSize / 1024) : 0),
         tooltipFormatter: (value) => `${value} KB`,
       },
@@ -209,11 +210,11 @@ const chartConfigs: ChartConfig[] = [
   {
     canvasRef: clsChartCanvas,
     chartInstance: clsChartInstance,
-    title: "Cumulative Layout Shift Over Time",
-    yAxisLabel: "CLS Score",
+    title: t("sitespeed.clsOverTime"),
+    yAxisLabel: t("sitespeed.clsScore"),
     datasets: [
       {
-        label: "Cumulative Layout Shift",
+        label: t("sitespeed.cls"),
         valueFormatter: (item) => item.cumulativeLayoutShift ?? 0,
         tooltipFormatter: (value) => `${value}`,
       },
@@ -339,7 +340,7 @@ const createChart = (config: ChartConfig) => {
           },
           title: {
             display: true,
-            text: "Date",
+            text: t("sitespeed.date"),
           },
         },
         y: {

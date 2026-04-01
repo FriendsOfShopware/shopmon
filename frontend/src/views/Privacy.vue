@@ -1,69 +1,61 @@
 <template>
   <div class="container">
-    <header-container title="Privacy Policy" />
+    <header-container :title="$t('privacy.title')" />
     <Panel>
       <section>
-        <h2>Data We Collect</h2>
-        <h3>Account Information</h3>
+        <h2>{{ $t('privacy.dataCollect') }}</h2>
+        <h3>{{ $t('privacy.accountInfo') }}</h3>
         <ul>
-          <li>Email address and name for account creation</li>
-          <li>GitHub User ID if GitHub has been used as Login Provider</li>
-          <li>Password (hashed using bcrypt)</li>
-          <li>User preferences and settings</li>
+          <li>{{ $t('privacy.accountEmail') }}</li>
+          <li>{{ $t('privacy.accountGithub') }}</li>
+          <li>{{ $t('privacy.accountPassword') }}</li>
+          <li>{{ $t('privacy.accountPreferences') }}</li>
         </ul>
 
-        <h3>Shop Monitoring Data</h3>
+        <h3>{{ $t('privacy.shopMonitoring') }}</h3>
         <ul>
-          <li>
-            Shopware instance URLs and API Credentials (encrypted outside the Database using
-            AES-GCM)
-          </li>
-          <li>Extension information and version details</li>
-          <li>Scheduled task information</li>
+          <li>{{ $t('privacy.shopUrls') }}</li>
+          <li>{{ $t('privacy.shopExtensions') }}</li>
+          <li>{{ $t('privacy.shopTasks') }}</li>
         </ul>
 
-        <h3>Technical Data</h3>
+        <h3>{{ $t('privacy.technicalData') }}</h3>
         <ul>
-          <li>Log files for debugging and security purposes</li>
-          <li>Session data for authentication</li>
-          <li>Error tracking data (via Sentry referecing user id)</li>
+          <li>{{ $t('privacy.techLogs') }}</li>
+          <li>{{ $t('privacy.techSessions') }}</li>
+          <li>{{ $t('privacy.techSentry') }}</li>
         </ul>
       </section>
 
       <section>
-        <h2>How We Use Your Data</h2>
+        <h2>{{ $t('privacy.howWeUse') }}</h2>
         <ul>
-          <li>To provide shop monitoring services</li>
-          <li>To send notifications about your shops' status</li>
-          <li>To improve our service and troubleshoot issues</li>
-          <li>To ensure security and prevent abuse</li>
+          <li>{{ $t('privacy.useMonitoring') }}</li>
+          <li>{{ $t('privacy.useNotifications') }}</li>
+          <li>{{ $t('privacy.useImprove') }}</li>
+          <li>{{ $t('privacy.useSecurity') }}</li>
         </ul>
       </section>
 
       <section>
-        <h2>Data Storage and Security</h2>
+        <h2>{{ $t('privacy.storage') }}</h2>
         <ul>
-          <li>The Server is hosted at Oracle Cloud at Frankfurt in Germany</li>
-          <li>Passwords are hashed, Shopware API Credentials are encrypted using AES-GCM</li>
-          <li>Backups are stored encrypted</li>
-          <li>
-            Staging and Production are seperated and fixtures are used for development/testing
-          </li>
-          <li>When user deletes his shop/account, the data will be directly deleted</li>
+          <li>{{ $t('privacy.storageServer') }}</li>
+          <li>{{ $t('privacy.storageEncryption') }}</li>
+          <li>{{ $t('privacy.storageBackups') }}</li>
+          <li>{{ $t('privacy.storageSeparation') }}</li>
+          <li>{{ $t('privacy.storageDeletion') }}</li>
         </ul>
       </section>
 
       <section>
-        <h2>Cookies and Tracking</h2>
-        <p>We do not include any external JavaScript library to the website.</p>
+        <h2>{{ $t('privacy.cookies') }}</h2>
+        <p>{{ $t('privacy.cookiesDesc') }}</p>
       </section>
 
       <section>
-        <h2>Contact</h2>
-        <p>
-          For any privacy-related questions or concerns, please reach out to us through our official
-          GitHub repository or per Mail to shopmon at fos.gg.
-        </p>
+        <h2>{{ $t('privacy.contact') }}</h2>
+        <p>{{ $t('privacy.contactDesc') }}</p>
       </section>
     </Panel>
   </div>

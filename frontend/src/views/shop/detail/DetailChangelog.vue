@@ -3,8 +3,8 @@
     <data-table
       v-if="shop"
       :columns="[
-        { key: 'date', name: 'Date', class: 'changelog-date', sortable: true },
-        { key: 'log', name: 'Log', sortable: false },
+        { key: 'date', name: $t('common.date'), class: 'changelog-date', sortable: true },
+        { key: 'log', name: $t('shopDetail.log'), sortable: false },
       ]"
       :data="shop.changelog"
     >

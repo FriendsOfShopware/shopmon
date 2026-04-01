@@ -1,6 +1,6 @@
 <template>
   <div class="login-header">
-    <h2>Change Password</h2>
+    <h2>{{ $t('auth.changePassword') }}</h2>
   </div>
 
   <vee-form
@@ -9,16 +9,16 @@
     :validation-schema="schema"
     @submit="onSubmit"
   >
-    <password-field name="password" placeholder="Password" :error="errors.password" />
+    <password-field name="password" :placeholder="$t('common.password')" :error="errors.password" />
 
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:key v-if="isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Change Password
+      {{ $t('auth.changePasswordButton') }}
     </button>
 
     <div>
-      <router-link :to="{ name: 'account.login' }"> Cancel </router-link>
+      <router-link :to="{ name: 'account.login' }"> {{ $t('common.cancel') }} </router-link>
     </div>
   </vee-form>
 </template>
@@ -27,17 +27,20 @@
 import { useRoute, useRouter } from "vue-router";
 
 import { Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
 import { authClient } from "@/helpers/auth-client";
 
+const { t } = useI18n();
+
 const schema = Yup.object().shape({
   password: Yup.string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters")
-    .matches(/^(?=.*[0-9])/, "Password must Contain One Number Character")
-    .matches(/^(?=.*[!@#$%^&*])/, "Password must Contain  One Special Case Character"),
+    .required(t('validation.passwordRequired'))
+    .min(8, t('validation.passwordMinLength'))
+    .matches(/^(?=.*[0-9])/, t('validation.passwordNumber'))
+    .matches(/^(?=.*[!@#$%^&*])/, t('validation.passwordSpecial')),
 });
 
 const route = useRoute();
@@ -53,11 +56,11 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   });
 
   if (resp.error) {
-    error(resp.error.message ?? "Failed to reset password");
+    error(resp.error.message ?? t('auth.failedResetPassword'));
     return;
   }
 
-  success("Password has been resetted. You will be redirected to login page in 2 seconds.");
+  success(t('auth.passwordResetSuccess'));
 
   setTimeout(() => {
     router.push({ name: "account.login" });

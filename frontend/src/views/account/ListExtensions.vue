@@ -1,16 +1,16 @@
 <template>
-  <header-container title="My Extensions" />
+  <header-container :title="$t('nav.myExtensions')" />
 
   <main-container v-if="extensions">
     <Panel v-if="extensions.length === 0">
-      <element-empty title="No Extensions" button="Add Shop" :route="{ name: 'account.shops.new' }">
-        Get started by adding your first Shop.
+      <element-empty :title="$t('shopDetail.extensions')" :button="$t('shop.addShop')" :route="{ name: 'account.shops.new' }">
+        {{ $t('common.getStartedElement') }}
       </element-empty>
     </Panel>
 
     <template v-else>
       <Panel>
-        <input v-model="term" class="field field-search" placeholder="Search ..." />
+        <input v-model="term" class="field field-search" :placeholder="$t('common.search')" />
       </Panel>
 
       <Panel variant="table">
@@ -18,16 +18,16 @@
           :columns="[
             {
               key: 'label',
-              name: 'Name',
+              name: $t('common.name'),
               class: 'extension-label',
               sortable: true,
               searchable: true,
             },
-            { key: 'shops', name: 'Shop' },
-            { key: 'version', name: 'Version' },
-            { key: 'latestVersion', name: 'Latest' },
-            { key: 'ratingAverage', name: 'Rating', sortable: true },
-            { key: 'installedAt', name: 'Installed At', sortable: true },
+            { key: 'shops', name: $t('dashboard.shop') },
+            { key: 'version', name: $t('common.version') },
+            { key: 'latestVersion', name: $t('shopDetail.latest') },
+            { key: 'ratingAverage', name: $t('shopDetail.rating'), sortable: true },
+            { key: 'installedAt', name: $t('shopDetail.installedAt'), sortable: true },
           ]"
           :data="extensions"
           :default-sort="{ key: 'label', desc: false }"
@@ -67,7 +67,7 @@
               }}</span>
               <span
                 v-if="row.latestVersion && shop.version < row.latestVersion"
-                data-tooltip="Update available - Click to view changelog"
+                :data-tooltip="$t('shopDetail.updateAvailableClick')"
                 class="extension-update-available"
                 @click="openExtensionChangelog(row)"
               >
@@ -107,6 +107,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 import { formatDateTime } from "@/helpers/formatter";
 import { type RouterOutput, trpcClient } from "@/helpers/trpc";
@@ -114,6 +115,7 @@ import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogM
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
 import { ref } from "vue";
 
+const { t } = useI18n();
 const term = ref("");
 const extensions = ref<RouterOutput["account"]["currentUserExtensions"]>([]);
 

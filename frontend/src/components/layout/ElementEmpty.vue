@@ -16,16 +16,16 @@
       />
     </svg>
 
-    <h3 v-if="title" class="element-empty-title">{{ title }}</h3>
+    <h3 class="element-empty-title">{{ title || $t('common.noElements') }}</h3>
 
     <p class="element-empty-description">
-      <slot> Get started by adding your first element. </slot>
+      <slot> {{ $t('common.getStartedElement') }} </slot>
     </p>
 
     <div class="element-empty-cta">
       <router-link :to="route" class="btn btn-primary">
         <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-        {{ button }}
+        {{ button || $t('common.addElement') }}
       </router-link>
     </div>
   </div>
@@ -41,8 +41,8 @@ withDefaults(
     route: RouteLocationRaw;
   }>(),
   {
-    title: "No elements",
-    button: "Add element",
+    title: undefined,
+    button: undefined,
   },
 );
 </script>

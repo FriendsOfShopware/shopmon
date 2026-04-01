@@ -1,16 +1,13 @@
 <template>
   <div class="container">
-    <header-container title="Legal notice" />
+    <header-container :title="$t('imprint.title')" />
 
     <Panel>
       <section>
-        <h2>Contact</h2>
+        <h2>{{ $t('imprint.contact') }}</h2>
         <div class="contact-info">
-          <p>
-            As a Non-Profit Website, it's not required to provide a legal representative. If you
-            have questions or concerns, please reach out to us.
-          </p>
-          <p>E-Mail: shopmon at fos.gg</p>
+          <p>{{ $t('imprint.description') }}</p>
+          <p>{{ $t('imprint.email') }}</p>
         </div>
       </section>
     </Panel>

@@ -22,9 +22,13 @@
           <icon-octicon:sun-16 v-else class="icon" />
         </button>
 
+        <button class="action action-locale" type="button" @click="toggleLocale">
+          {{ String(locale) === 'en' ? 'DE' : 'EN' }}
+        </button>
+
         <popover class="notifications">
           <popover-button class="action notifications" @click="markAllRead">
-            <span class="sr-only">View notifications</span>
+            <span class="sr-only">{{ $t('topBar.viewNotifications') }}</span>
 
             <icon-fa6-solid:bell class="icon" aria-hidden="true" />
 
@@ -43,7 +47,7 @@
           >
             <popover-panel class="notifications-panel">
               <div class="notifications-header">
-                Notifications ({{ notifications.length }})
+                {{ $t('topBar.notifications', { count: notifications.length }) }}
 
                 <button
                   v-if="notifications.length > 0"
@@ -82,7 +86,7 @@
                     <div class="notification-item-message">
                       {{ notification.message }}
                       <router-link v-if="notification.link" :to="notification.link" type="a">
-                        more ...
+                        {{ $t('topBar.more') }}
                       </router-link>
                     </div>
                   </div>
@@ -95,7 +99,7 @@
                 </li>
               </ul>
 
-              <div v-else class="notifications-empty">Not much going on here</div>
+              <div v-else class="notifications-empty">{{ $t('notifications.notMuchGoingOn') }}</div>
             </popover-panel>
           </transition>
         </popover>
@@ -103,7 +107,7 @@
         <!-- Profile dropdown -->
         <menu-container as="div" class="menu">
           <menu-button class="action action-user">
-            <span class="sr-only">Open user menu</span>
+            <span class="sr-only">{{ $t('topBar.openUserMenu') }}</span>
             <img class="user-avatar" :src="userAvatar" alt="" />
           </menu-button>
 
@@ -117,7 +121,7 @@
           >
             <menu-items class="menu-panel">
               <div class="menu-header">
-                <div class="menu-name">Hi {{ session.data.user.name }}</div>
+                <div class="menu-name">{{ $t('topBar.greeting', { name: session.data.user.name }) }}</div>
               </div>
 
               <menu-item v-for="item in userNavigation" :key="item.name">
@@ -136,7 +140,7 @@
 
         <!-- Mobile menu button -->
         <disclosure-button class="action action-mobile-nav-toggle">
-          <span class="sr-only">Open main menu</span>
+          <span class="sr-only">{{ $t('topBar.openMainMenu') }}</span>
           <icon-fa6-solid:bars-staggered v-if="!open" class="icon" aria-hidden="true" />
           <icon-fa6-solid:xmark v-else class="icon" aria-hidden="true" />
         </disclosure-button>
@@ -146,7 +150,7 @@
           <div class="top-bar-mobile-links">
             <disclosure-button
               v-for="item in navigation"
-              :key="item.name"
+              :key="item.route"
               as="a"
               class="top-bar-mobile-link"
               @click="$router.push({ name: item.route })"
@@ -156,7 +160,7 @@
                 v-if="$router.resolve({ name: item.route }).meta.icon"
                 class="icon"
               />
-              {{ $router.resolve({ name: item.route }).meta.title }}
+              {{ $t($router.resolve({ name: item.route }).meta.titleKey ?? '') }}
             </disclosure-button>
           </div>
 
@@ -198,7 +202,9 @@
 
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useLocale } from "@/composables/useLocale";
 import { useNotifications } from "@/composables/useNotifications";
+import { useI18n } from "vue-i18n";
 
 import {
   Disclosure,
@@ -213,7 +219,7 @@ import {
   PopoverPanel,
 } from "@headlessui/vue";
 
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import FaGear from "~icons/fa6-solid/gear";
 import FaPowerOff from "~icons/fa6-solid/power-off";
 
@@ -257,11 +263,13 @@ const {
   deleteNotification,
 } = useNotifications();
 const { darkMode, toggleDarkMode } = useDarkMode();
+const { locale, toggleLocale } = useLocale();
+const { t } = useI18n();
 
-const userNavigation = [
-  { name: "Settings", route: "account.settings", icon: FaGear },
-  { name: "Logout", route: "logout", icon: FaPowerOff },
-];
+const userNavigation = computed(() => [
+  { name: t("nav.settings"), route: "account.settings", icon: FaGear },
+  { name: t("nav.logout"), route: "logout", icon: FaPowerOff },
+]);
 
 async function logout() {
   await authClient.signOut();
@@ -315,6 +323,12 @@ async function logout() {
     .icon {
       height: 1.25rem;
       width: 1.25rem;
+    }
+
+    &.action-locale {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
     }
 
     &.action-text {

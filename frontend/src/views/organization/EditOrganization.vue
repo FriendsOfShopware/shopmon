@@ -1,11 +1,11 @@
 <template>
-  <header-container v-if="organization?.data" :title="'Edit ' + organization.data.name">
+  <header-container v-if="organization?.data" :title="$t('organization.editTitle', { name: organization.data.name })">
     <router-link
       :to="{ name: 'account.organizations.detail', params: { slug: organization.data.slug } }"
       type="button"
       class="btn"
     >
-      Cancel
+      {{ $t('common.cancel') }}
     </router-link>
   </header-container>
 
@@ -17,9 +17,9 @@
         :initial-values="organization.data"
         @submit="onSaveOrganization"
       >
-        <form-group title="Organization Information">
+        <form-group :title="$t('organization.orgInfo')">
           <div>
-            <label for="Name">Name</label>
+            <label for="Name">{{ $t('common.name') }}</label>
             <field
               id="name"
               type="text"
@@ -34,7 +34,7 @@
           </div>
 
           <div>
-            <label for="slug">Slug</label>
+            <label for="slug">{{ $t('common.slug') }}</label>
             <field
               id="slug"
               type="text"
@@ -53,24 +53,24 @@
           <button type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t('common.save') }}
           </button>
         </div>
       </vee-form>
     </Panel>
 
-    <Panel v-if="canDeleteOrganization" :title="'Deleting organization ' + organization.data.name">
-      <p>Once you delete your organization, you will lose all data associated with it.</p>
+    <Panel v-if="canDeleteOrganization" :title="$t('organization.deleteOrgTitle', { name: organization.data.name })">
+      <p>{{ $t('organization.deleteOrgWarning') }}</p>
 
       <button type="button" class="btn btn-danger" @click="showOrganizationDeletionModal = true">
         <icon-fa6-solid:trash class="icon" />
-        Delete organization
+        {{ $t('organization.deleteOrganization') }}
       </button>
     </Panel>
 
     <delete-confirmation-modal
       :show="showOrganizationDeletionModal"
-      title="Delete organization"
+      :title="$t('organization.deleteOrganization')"
       :entity-name="organization?.data?.name || 'this organization'"
       @close="showOrganizationDeletionModal = false"
       @confirm="deleteOrganization"
@@ -84,10 +84,12 @@ import { authClient } from "@/helpers/auth-client";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 
 import { Field, Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
@@ -116,12 +118,12 @@ authClient.organization
 const showOrganizationDeletionModal = ref(false);
 
 const schema = Yup.object().shape({
-  name: Yup.string().required("Name of organization is required"),
+  name: Yup.string().required(t('validation.orgNameRequired')),
   slug: Yup.string()
-    .required("Slug for organization is required")
+    .required(t('validation.orgSlugRequired'))
     .matches(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase and can only contain letters, numbers, and hyphens",
+      t('validation.slugFormat'),
     ),
 });
 
@@ -157,7 +159,7 @@ async function deleteOrganization() {
       });
 
       if (resp.error) {
-        error(resp.error.message ?? "Failed to delete organization");
+        error(resp.error.message ?? t('organization.failedDeleteOrg'));
         return;
       }
 

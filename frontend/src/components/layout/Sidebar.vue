@@ -12,14 +12,14 @@
             active: isActive(item, $route),
           }"
           :aria-current="isActive(item, $route) ? 'page' : undefined"
-          :data-tooltip="$router.resolve({ name: item.route }).meta.title"
+          :data-tooltip="$t($router.resolve({ name: item.route }).meta.titleKey ?? '')"
         >
           <component
             :is="$router.resolve({ name: item.route }).meta.icon"
             v-if="$router.resolve({ name: item.route }).meta.icon"
             class="nav-link-icon"
           />
-          <span class="nav-link-name">{{ $router.resolve({ name: item.route }).meta.title }}</span>
+          <span class="nav-link-name">{{ $t($router.resolve({ name: item.route }).meta.titleKey ?? '') }}</span>
         </router-link>
       </nav>
 
