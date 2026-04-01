@@ -1,17 +1,17 @@
 <template>
   <div class="login-header">
-    <h2>{{ $t('auth.confirmingAccount') }}</h2>
+    <h2>{{ $t("auth.confirmingAccount") }}</h2>
   </div>
 
-  <Alert v-if="isLoading" type="info"> {{ $t('common.loading') }} </Alert>
+  <Alert v-if="isLoading" type="info"> {{ $t("common.loading") }} </Alert>
 
   <template v-else>
     <Alert v-if="success" type="success">
-      {{ $t('auth.emailConfirmed') }}
-      <router-link :to="{ name: 'account.login' }"> {{ $t('nav.login') }} </router-link>
+      {{ $t("auth.emailConfirmed") }}
+      <router-link :to="{ name: 'account.login' }"> {{ $t("nav.login") }} </router-link>
     </Alert>
 
-    <Alert v-else type="error"> {{ $t('auth.tokenExpired') }} </Alert>
+    <Alert v-else type="error"> {{ $t("auth.tokenExpired") }} </Alert>
   </template>
 </template>
 
@@ -38,7 +38,7 @@ onMounted(async () => {
     success.value = false;
     isLoading.value = false;
 
-    alert.error(resp.error.message ?? t('auth.failedVerifyEmail'));
+    alert.error(resp.error.message ?? t("auth.failedVerifyEmail"));
 
     return;
   }

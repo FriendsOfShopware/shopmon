@@ -19,9 +19,9 @@
 
       <div class="filter-container">
         <select v-model="roleFilter" class="field" @change="loadUsers">
-          <option value="">{{ $t('admin.allRoles') }}</option>
-          <option value="admin">{{ $t('admin.roleAdmin') }}</option>
-          <option value="user">{{ $t('admin.roleUser') }}</option>
+          <option value="">{{ $t("admin.allRoles") }}</option>
+          <option value="admin">{{ $t("admin.roleAdmin") }}</option>
+          <option value="user">{{ $t("admin.roleUser") }}</option>
         </select>
       </div>
     </div>
@@ -34,11 +34,13 @@
       </template>
 
       <template #cell-status="{ row }">
-        <span v-if="row.banned" class="badge badge-danger"> {{ $t('admin.banned') }} </span>
+        <span v-if="row.banned" class="badge badge-danger"> {{ $t("admin.banned") }} </span>
 
-        <span v-else-if="!row.emailVerified" class="badge badge-warning"> {{ $t('admin.unverified') }} </span>
+        <span v-else-if="!row.emailVerified" class="badge badge-warning">
+          {{ $t("admin.unverified") }}
+        </span>
 
-        <span v-else class="badge badge-success"> {{ $t('admin.active') }} </span>
+        <span v-else class="badge badge-success"> {{ $t("admin.active") }} </span>
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -53,7 +55,7 @@
             @click="impersonateUser(row.id)"
           >
             <icon-fa6-solid:user-secret class="icon" />
-            {{ $t('admin.impersonate') }}
+            {{ $t("admin.impersonate") }}
           </button>
 
           <button
@@ -61,11 +63,11 @@
             class="btn btn-sm btn-danger"
             @click="banUser(row.id)"
           >
-            {{ $t('admin.ban') }}
+            {{ $t("admin.ban") }}
           </button>
 
           <button v-else-if="row.banned" class="btn btn-sm" @click="unbanUser(row.id)">
-            {{ $t('admin.unban') }}
+            {{ $t("admin.unban") }}
           </button>
         </div>
       </template>
@@ -73,20 +75,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t('admin.loadingUsers') }}
+      {{ $t("admin.loadingUsers") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        {{ $t('common.previous') }}
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">{{ $t('common.pageOf', { current: currentPage, total: totalPages }) }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        {{ $t('common.next') }}
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -119,11 +123,11 @@ const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 const { t } = useI18n();
 
 const tableColumns = computed(() => [
-  { key: "name", name: t('common.name'), sortable: true, searchable: true },
-  { key: "email", name: t('common.email'), sortable: true, searchable: true },
-  { key: "role", name: t('common.role'), sortable: true },
-  { key: "status", name: t('common.status') },
-  { key: "createdAt", name: t('admin.created'), sortable: true },
+  { key: "name", name: t("common.name"), sortable: true, searchable: true },
+  { key: "email", name: t("common.email"), sortable: true, searchable: true },
+  { key: "role", name: t("common.role"), sortable: true },
+  { key: "status", name: t("common.status") },
+  { key: "createdAt", name: t("admin.created"), sortable: true },
 ]);
 
 async function loadUsers() {

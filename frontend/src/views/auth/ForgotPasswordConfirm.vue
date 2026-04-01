@@ -1,6 +1,6 @@
 <template>
   <div class="login-header">
-    <h2>{{ $t('auth.changePassword') }}</h2>
+    <h2>{{ $t("auth.changePassword") }}</h2>
   </div>
 
   <vee-form
@@ -14,11 +14,11 @@
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:key v-if="isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      {{ $t('auth.changePasswordButton') }}
+      {{ $t("auth.changePasswordButton") }}
     </button>
 
     <div>
-      <router-link :to="{ name: 'account.login' }"> {{ $t('common.cancel') }} </router-link>
+      <router-link :to="{ name: 'account.login' }"> {{ $t("common.cancel") }} </router-link>
     </div>
   </vee-form>
 </template>
@@ -37,10 +37,10 @@ const { t } = useI18n();
 
 const schema = Yup.object().shape({
   password: Yup.string()
-    .required(t('validation.passwordRequired'))
-    .min(8, t('validation.passwordMinLength'))
-    .matches(/^(?=.*[0-9])/, t('validation.passwordNumber'))
-    .matches(/^(?=.*[!@#$%^&*])/, t('validation.passwordSpecial')),
+    .required(t("validation.passwordRequired"))
+    .min(8, t("validation.passwordMinLength"))
+    .matches(/^(?=.*[0-9])/, t("validation.passwordNumber"))
+    .matches(/^(?=.*[!@#$%^&*])/, t("validation.passwordSpecial")),
 });
 
 const route = useRoute();
@@ -56,11 +56,11 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   });
 
   if (resp.error) {
-    error(resp.error.message ?? t('auth.failedResetPassword'));
+    error(resp.error.message ?? t("auth.failedResetPassword"));
     return;
   }
 
-  success(t('auth.passwordResetSuccess'));
+  success(t("auth.passwordResetSuccess"));
 
   setTimeout(() => {
     router.push({ name: "account.login" });

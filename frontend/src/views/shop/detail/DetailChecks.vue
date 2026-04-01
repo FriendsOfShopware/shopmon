@@ -1,6 +1,10 @@
 <template>
   <Panel variant="table">
-    <data-table v-if="shop" :columns="[{ key: 'message', name: $t('shopDetail.message') }]" :data="sortedChecks">
+    <data-table
+      v-if="shop"
+      :columns="[{ key: 'message', name: $t('shopDetail.message') }]"
+      :data="sortedChecks"
+    >
       <template #cell-message="{ row }">
         <status-icon :status="row.level" />
 

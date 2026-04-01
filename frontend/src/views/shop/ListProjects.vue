@@ -3,7 +3,7 @@
     <div class="header-actions">
       <router-link :to="{ name: 'account.projects.new' }" class="btn btn-primary">
         <icon-fa6-solid:folder-plus class="icon" aria-hidden="true" />
-        {{ $t('project.addProject') }}
+        {{ $t("project.addProject") }}
       </router-link>
     </div>
   </header-container>
@@ -15,7 +15,7 @@
         :button="$t('project.addProject')"
         :route="{ name: 'account.projects.new' }"
       >
-        {{ $t('project.getStarted') }}
+        {{ $t("project.getStarted") }}
       </element-empty>
     </Panel>
 
@@ -34,14 +34,18 @@
             class="btn btn-secondary"
           >
             <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
-            {{ $t('nav.editProject') }}
+            {{ $t("nav.editProject") }}
           </router-link>
         </template>
 
         <p class="project-meta">
-          <span class="shop-count">{{ $t('project.nShops', { count: projectShops[project.id]?.length || 0 }) }}</span>
+          <span class="shop-count">{{
+            $t("project.nShops", { count: projectShops[project.id]?.length || 0 })
+          }}</span>
           <span class="separator">•</span>
-          <span class="created-date">{{ $t('project.createdOn', { date: formatDate(project.createdAt) }) }}</span>
+          <span class="created-date">{{
+            $t("project.createdOn", { date: formatDate(project.createdAt) })
+          }}</span>
         </p>
 
         <div v-if="projectShops[project.id]?.length > 0" class="item-grid">
@@ -91,8 +95,8 @@
               <icon-fa6-solid:plus />
             </div>
             <div class="item-info">
-              <div class="item-name">{{ $t('shop.addShop') }}</div>
-              <div class="item-content">{{ $t('project.addToProject') }}</div>
+              <div class="item-name">{{ $t("shop.addShop") }}</div>
+              <div class="item-content">{{ $t("project.addToProject") }}</div>
             </div>
           </router-link>
         </div>
@@ -103,7 +107,7 @@
           title=""
           :button="$t('shop.addShop')"
         >
-          {{ $t('project.noShopsYet') }}
+          {{ $t("project.noShopsYet") }}
         </element-empty>
       </Panel>
     </div>

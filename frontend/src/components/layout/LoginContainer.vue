@@ -7,7 +7,7 @@
       </button>
 
       <button class="locale-toggle" type="button" @click="toggleLocale">
-        {{ String(locale) === 'en' ? 'DE' : 'EN' }}
+        {{ String(locale) === "en" ? "DE" : "EN" }}
       </button>
     </div>
 

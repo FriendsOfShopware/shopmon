@@ -1,7 +1,7 @@
 <template>
   <div class="deployments-container">
     <Panel v-if="shop" class="setup-card">
-      <h3 class="setup-title">{{ $t('deployments.setupTitle') }}</h3>
+      <h3 class="setup-title">{{ $t("deployments.setupTitle") }}</h3>
       <p class="setup-description">
         Use the
         <a
@@ -29,7 +29,7 @@
                 hash: '#api-keys',
               }"
             >
-              {{ $t('deployments.manageApiKeys') }}
+              {{ $t("deployments.manageApiKeys") }}
             </router-link>
           </span>
         </div>
@@ -44,7 +44,10 @@
         your git repository. If that is not available, you can set
         <code>SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to specify it manually. The target git
         repository URL can be configured in the
-        <router-link :to="{ name: 'account.project.list' }">{{ $t('deployments.projectSettings') }}</router-link>.
+        <router-link :to="{ name: 'account.project.list' }">{{
+          $t("deployments.projectSettings")
+        }}</router-link
+        >.
       </p>
     </Panel>
 
@@ -54,8 +57,18 @@
         :columns="[
           { key: 'name', name: $t('common.name'), class: 'deployment-name', sortable: true },
           { key: 'createdAt', name: $t('common.date'), class: 'deployment-date', sortable: true },
-          { key: 'returnCode', name: $t('common.status'), class: 'deployment-status', sortable: true },
-          { key: 'executionTime', name: $t('deployments.duration'), class: 'deployment-duration', sortable: true },
+          {
+            key: 'returnCode',
+            name: $t('common.status'),
+            class: 'deployment-status',
+            sortable: true,
+          },
+          {
+            key: 'executionTime',
+            name: $t('deployments.duration'),
+            class: 'deployment-duration',
+            sortable: true,
+          },
         ]"
         :data="deployments"
       >
@@ -71,7 +84,11 @@
           <span :class="['status-badge', row.returnCode === 0 ? 'status-success' : 'status-error']">
             <icon-fa6-solid:check v-if="row.returnCode === 0" class="icon" />
             <icon-fa6-solid:xmark v-else class="icon" />
-            {{ row.returnCode === 0 ? $t('deployments.success') : $t('deployments.failed', { code: row.returnCode }) }}
+            {{
+              row.returnCode === 0
+                ? $t("deployments.success")
+                : $t("deployments.failed", { code: row.returnCode })
+            }}
           </span>
         </template>
 
@@ -103,7 +120,7 @@
               class="btn btn-sm"
             >
               <icon-fa6-solid:eye />
-              {{ $t('common.view') }}
+              {{ $t("common.view") }}
             </router-link>
             <button class="btn btn-danger" @click="confirmDeleteDeployment(row)">
               <icon-fa6-solid:trash />
@@ -113,7 +130,7 @@
       </data-table>
       <div v-else class="empty-state">
         <icon-fa6-solid:rocket class="empty-icon" />
-        <p>{{ $t('deployments.noDeployments') }}</p>
+        <p>{{ $t("deployments.noDeployments") }}</p>
       </div>
     </Panel>
 
@@ -127,10 +144,10 @@
         <icon-fa6-solid:triangle-exclamation class="icon icon-error" />
       </template>
 
-      <template #title> {{ $t('deployments.deleteDeployment') }} </template>
+      <template #title> {{ $t("deployments.deleteDeployment") }} </template>
 
       <template #content>
-        {{ $t('deployments.deleteDeploymentConfirm') }}
+        {{ $t("deployments.deleteDeploymentConfirm") }}
       </template>
 
       <template #footer>
@@ -140,10 +157,10 @@
           :disabled="isDeletingDeployment"
           @click="deleteDeployment"
         >
-          {{ $t('common.delete') }}
+          {{ $t("common.delete") }}
         </button>
         <button type="button" class="btn" @click="showDeleteDeploymentDialog = false">
-          {{ $t('common.cancel') }}
+          {{ $t("common.cancel") }}
         </button>
       </template>
     </modal>

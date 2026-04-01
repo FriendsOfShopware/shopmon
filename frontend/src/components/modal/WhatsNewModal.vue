@@ -6,43 +6,43 @@
       </div>
     </template>
 
-    <template #title>{{ $t('whatsNew.title') }}</template>
+    <template #title>{{ $t("whatsNew.title") }}</template>
 
     <template #content>
       <div class="whats-new-hero">
-        <span class="whats-new-badge">{{ $t('whatsNew.badge') }}</span>
-        <h4>{{ $t('whatsNew.heroTitle') }}</h4>
+        <span class="whats-new-badge">{{ $t("whatsNew.badge") }}</span>
+        <h4>{{ $t("whatsNew.heroTitle") }}</h4>
         <p>
-          {{ $t('whatsNew.heroDesc') }}
+          {{ $t("whatsNew.heroDesc") }}
         </p>
       </div>
 
       <ul class="whats-new-list">
         <li>
           <icon-fa6-solid:bolt class="icon" />
-          {{ $t('whatsNew.featureCdn') }}
+          {{ $t("whatsNew.featureCdn") }}
         </li>
         <li>
           <icon-fa6-solid:arrows-rotate class="icon" />
-          {{ $t('whatsNew.featureSync') }}
+          {{ $t("whatsNew.featureSync") }}
         </li>
         <li>
           <icon-fa6-solid:shield-halved class="icon" />
-          {{ $t('whatsNew.featureValidation') }}
+          {{ $t("whatsNew.featureValidation") }}
         </li>
       </ul>
 
       <div class="whats-new-setup">
-        <p class="whats-new-setup-title">{{ $t('whatsNew.quickSetup') }}</p>
+        <p class="whats-new-setup-title">{{ $t("whatsNew.quickSetup") }}</p>
         <p>
-          {{ $t('whatsNew.quickSetupDesc') }}
+          {{ $t("whatsNew.quickSetupDesc") }}
         </p>
       </div>
 
       <div v-if="sponsors.length" class="whats-new-sponsors">
-        <p class="whats-new-setup-title">{{ $t('whatsNew.sponsors') }}</p>
+        <p class="whats-new-setup-title">{{ $t("whatsNew.sponsors") }}</p>
         <p class="whats-new-sponsors-copy">
-          {{ $t('whatsNew.sponsorsDesc') }}
+          {{ $t("whatsNew.sponsorsDesc") }}
         </p>
 
         <sponsor-showcase :sponsors="sponsors" compact />
@@ -52,15 +52,17 @@
     <template #footer>
       <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
         <icon-fa6-solid:folder-open class="icon" />
-        {{ $t('whatsNew.openProjects') }}
+        {{ $t("whatsNew.openProjects") }}
       </router-link>
 
       <router-link :to="{ name: 'account.docs' }" class="btn" @click="$emit('close')">
         <icon-fa6-solid:book class="icon" />
-        {{ $t('nav.documentation') }}
+        {{ $t("nav.documentation") }}
       </router-link>
 
-      <button type="button" class="btn btn-primary" @click="$emit('close')">{{ $t('whatsNew.close') }}</button>
+      <button type="button" class="btn btn-primary" @click="$emit('close')">
+        {{ $t("whatsNew.close") }}
+      </button>
     </template>
   </modal>
 </template>

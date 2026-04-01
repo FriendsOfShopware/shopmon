@@ -7,17 +7,17 @@
     <Panel :title="$t('nav.deploymentDetails')" class="deployment-details-panel">
       <div class="details-grid">
         <div class="detail-row">
-          <span class="detail-label">{{ $t('deployments.duration') }}:</span>
+          <span class="detail-label">{{ $t("deployments.duration") }}:</span>
           <span class="detail-value">{{ formatDuration(deployment.executionTime) }}</span>
         </div>
 
         <div class="detail-row">
-          <span class="detail-label">{{ $t('deployments.command') }}:</span>
+          <span class="detail-label">{{ $t("deployments.command") }}:</span>
           <code class="detail-value detail-code">{{ deployment.command }}</code>
         </div>
 
         <div class="detail-row">
-          <span class="detail-label">{{ $t('deployments.exitCode') }}:</span>
+          <span class="detail-label">{{ $t("deployments.exitCode") }}:</span>
           <span
             class="detail-value"
             :class="deployment.returnCode === 0 ? 'detail-success' : 'detail-error'"
@@ -29,17 +29,17 @@
         </div>
 
         <div class="detail-row">
-          <span class="detail-label">{{ $t('deployments.started') }}:</span>
+          <span class="detail-label">{{ $t("deployments.started") }}:</span>
           <span class="detail-value">{{ formatDateTime(deployment.startDate) }}</span>
         </div>
 
         <div class="detail-row">
-          <span class="detail-label">{{ $t('deployments.completed') }}:</span>
+          <span class="detail-label">{{ $t("deployments.completed") }}:</span>
           <span class="detail-value">{{ formatDateTime(deployment.endDate) }}</span>
         </div>
 
         <div v-if="deployment.reference && deployment.gitUrl" class="detail-row">
-          <span class="detail-label">{{ $t('deployments.reference') }}:</span>
+          <span class="detail-label">{{ $t("deployments.reference") }}:</span>
           <a
             :href="`${deployment.gitUrl}/commit/${deployment.reference}`"
             target="_blank"
@@ -56,14 +56,14 @@
     <Panel v-if="deployment.composer && Object.keys(deployment.composer).length > 0">
       <template #title>
         <icon-fa6-solid:box class="icon" />
-        {{ $t('deployments.composerPackages') }}
+        {{ $t("deployments.composerPackages") }}
       </template>
       <div class="composer-table-container">
         <table class="composer-table">
           <thead>
             <tr>
-              <th>{{ $t('deployments.package') }}</th>
-              <th>{{ $t('common.version') }}</th>
+              <th>{{ $t("deployments.package") }}</th>
+              <th>{{ $t("common.version") }}</th>
             </tr>
           </thead>
           <tbody>
@@ -79,14 +79,14 @@
     <Panel>
       <template #title>
         <icon-fa6-solid:terminal class="icon" />
-        {{ $t('deployments.output') }}
+        {{ $t("deployments.output") }}
       </template>
       <div class="output-container">
         <pre class="output-content" v-html="formattedOutput"></pre>
       </div>
     </Panel>
   </div>
-  <div v-else class="loading">{{ $t('common.loading') }}</div>
+  <div v-else class="loading">{{ $t("common.loading") }}</div>
 </template>
 
 <script setup lang="ts">

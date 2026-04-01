@@ -2,13 +2,13 @@
   <Panel v-if="shop" class="shop-info">
     <template #title>
       <icon-fa6-solid:circle-info class="icon" />
-      {{ $t('shopDetail.shopInfo') }}
+      {{ $t("shopDetail.shopInfo") }}
     </template>
 
     <div class="shop-info-grid">
       <dl class="shop-info-list">
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.shopwareVersion') }}</dt>
+          <dt>{{ $t("shopDetail.shopwareVersion") }}</dt>
           <dd>
             <span>{{ shop.shopwareVersion }}</span>
             <template v-if="latestShopwareVersion && latestShopwareVersion != shop.shopwareVersion">
@@ -24,7 +24,7 @@
 
               <button class="badge badge-info" type="button" @click="openUpdateWizard">
                 <icon-fa6-solid:rotate />
-                {{ $t('shopDetail.compatibilityCheck') }}
+                {{ $t("shopDetail.compatibilityCheck") }}
               </button>
             </template>
           </dd>
@@ -32,11 +32,8 @@
 
         <div class="shop-info-item">
           <dt>
-            {{ $t('shopDetail.lastCheckedAt') }}
-            <span
-              :data-tooltip="$t('shopDetail.shopUpdateTooltip')"
-              class="tooltip-top-center"
-            >
+            {{ $t("shopDetail.lastCheckedAt") }}
+            <span :data-tooltip="$t('shopDetail.shopUpdateTooltip')" class="tooltip-top-center">
               <icon-fa6-solid:circle-info class="icon" />
             </span>
           </dt>
@@ -47,19 +44,19 @@
         </div>
 
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.lastShopUpdate') }}</dt>
+          <dt>{{ $t("shopDetail.lastShopUpdate") }}</dt>
 
           <dd>
             <template v-if="shop.lastChangelog && shop.lastChangelog.date">
               {{ formatDate(shop.lastChangelog.date) }}
             </template>
 
-            <template v-else> {{ $t('common.never') }} </template>
+            <template v-else> {{ $t("common.never") }} </template>
           </dd>
         </div>
 
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.lastDeployment') }}</dt>
+          <dt>{{ $t("shopDetail.lastDeployment") }}</dt>
 
           <dd v-if="shop.activeDeployment" class="deployment-info">
             <router-link
@@ -78,11 +75,11 @@
             <span>{{ formatDateTime(shop.activeDeployment.createdAt) }}</span>
           </dd>
 
-          <dd v-else>{{ $t('common.never') }}</dd>
+          <dd v-else>{{ $t("common.never") }}</dd>
         </div>
 
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.environment') }}</dt>
+          <dt>{{ $t("shopDetail.environment") }}</dt>
 
           <dd>
             {{ shop.cacheInfo?.environment }}
@@ -90,7 +87,7 @@
         </div>
 
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.cacheAdapter') }}</dt>
+          <dt>{{ $t("shopDetail.cacheAdapter") }}</dt>
 
           <dd>
             {{ shop.cacheInfo?.cacheAdapter }}
@@ -98,10 +95,10 @@
         </div>
 
         <div class="shop-info-item">
-          <dt>{{ $t('shopDetail.httpCache') }}</dt>
+          <dt>{{ $t("shopDetail.httpCache") }}</dt>
 
           <dd>
-            {{ shop.cacheInfo?.httpCache ? $t('common.enabled') : $t('common.disabled') }}
+            {{ shop.cacheInfo?.httpCache ? $t("common.enabled") : $t("common.disabled") }}
           </dd>
         </div>
 
@@ -152,11 +149,11 @@
   <Panel>
     <template #title>
       <icon-fa6-solid:circle-check class="icon" />
-      {{ $t('shopDetail.securityChecks') }}
+      {{ $t("shopDetail.securityChecks") }}
     </template>
 
     <Alert v-if="sortedCriticalChecks.length === 0" type="success">
-      {{ $t('shopDetail.allChecksPassed') }}
+      {{ $t("shopDetail.allChecksPassed") }}
     </Alert>
 
     <ul v-else class="issue-list">
@@ -167,7 +164,7 @@
           <span class="issue-message">{{ check.message }}</span>
 
           <a v-if="check.link" :href="check.link" target="_blank" class="issue-link">
-            {{ $t('shopDetail.learnMore') }}
+            {{ $t("shopDetail.learnMore") }}
             <icon-fa6-solid:arrow-up-right-from-square class="icon" />
           </a>
         </div>
@@ -186,7 +183,7 @@
         class="btn btn-sm"
       >
         <icon-fa6-solid:circle-check class="icon" />
-        {{ $t('shopDetail.viewAllChecks') }}
+        {{ $t("shopDetail.viewAllChecks") }}
       </router-link>
     </div>
   </Panel>
@@ -194,11 +191,11 @@
   <Panel>
     <template #title>
       <icon-fa6-solid:plug class="icon" />
-      {{ $t('shopDetail.extensions') }}
+      {{ $t("shopDetail.extensions") }}
     </template>
 
     <Alert v-if="outdatedExtensions.length === 0" type="success">
-      {{ $t('shopDetail.allExtensionsUpToDate') }}
+      {{ $t("shopDetail.allExtensionsUpToDate") }}
     </Alert>
 
     <ul v-else class="issue-list">
@@ -221,7 +218,7 @@
             target="_blank"
             class="issue-link"
           >
-            {{ $t('shopDetail.store') }}
+            {{ $t("shopDetail.store") }}
             <icon-fa6-solid:arrow-up-right-from-square class="icon" />
           </a>
         </div>
@@ -240,7 +237,7 @@
         class="btn btn-sm"
       >
         <icon-fa6-solid:plug class="icon" />
-        {{ $t('shopDetail.viewAllExtensions') }}
+        {{ $t("shopDetail.viewAllExtensions") }}
       </router-link>
     </div>
   </Panel>
@@ -248,10 +245,12 @@
   <Panel>
     <template #title>
       <icon-fa6-solid:list-check class="icon" />
-      {{ $t('shopDetail.scheduledTasks') }}
+      {{ $t("shopDetail.scheduledTasks") }}
     </template>
 
-    <Alert v-if="overdueTasks.length === 0" type="success"> {{ $t('shopDetail.noOverdueTasks') }} </Alert>
+    <Alert v-if="overdueTasks.length === 0" type="success">
+      {{ $t("shopDetail.noOverdueTasks") }}
+    </Alert>
 
     <ul v-else class="issue-list">
       <li v-for="task in overdueTasks" :key="task.id" class="issue-item">
@@ -280,7 +279,7 @@
         class="btn btn-sm"
       >
         <icon-fa6-solid:list-check class="icon" />
-        {{ $t('shopDetail.viewAllScheduledTasks') }}
+        {{ $t("shopDetail.viewAllScheduledTasks") }}
       </router-link>
     </div>
   </Panel>
@@ -288,10 +287,12 @@
   <Panel>
     <template #title>
       <icon-fa6-solid:clock-rotate-left class="icon" />
-      {{ $t('shopDetail.recentChanges') }}
+      {{ $t("shopDetail.recentChanges") }}
     </template>
 
-    <Alert v-if="recentChangelogs.length === 0" type="info"> {{ $t('shopDetail.noRecentChanges') }} </Alert>
+    <Alert v-if="recentChangelogs.length === 0" type="info">
+      {{ $t("shopDetail.noRecentChanges") }}
+    </Alert>
 
     <div v-else class="changes-list">
       <div v-for="changelog in recentChangelogs" :key="changelog.id" class="change-item">
@@ -323,7 +324,7 @@
         class="btn btn-sm"
       >
         <icon-fa6-solid:file-waveform class="icon" />
-        {{ $t('shopDetail.viewAllChanges') }}
+        {{ $t("shopDetail.viewAllChanges") }}
       </router-link>
     </div>
   </Panel>

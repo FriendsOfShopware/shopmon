@@ -5,7 +5,9 @@
         <icon-fa6-solid:user-secret class="impersonation-icon" />
         <span v-html="$t('impersonation.banner', { email: session?.data?.user?.email })" />
       </div>
-      <button class="btn btn-sm btn-stop" @click="stopImpersonating">{{ $t('impersonation.stop') }}</button>
+      <button class="btn btn-sm btn-stop" @click="stopImpersonating">
+        {{ $t("impersonation.stop") }}
+      </button>
     </div>
   </div>
 </template>
@@ -35,7 +37,9 @@ async function stopImpersonating() {
     window.location.reload();
   } catch (error) {
     alert.error(
-      t('impersonation.failedStop', { error: error instanceof Error ? error.message : "Unknown error" }),
+      t("impersonation.failedStop", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
     );
   }
 }

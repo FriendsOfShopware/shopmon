@@ -25,7 +25,7 @@
 
       <!-- Password confirmation field -->
       <div v-if="requirePassword" class="section-password">
-        <label for="deletePassword">{{ $t('deleteModal.currentPassword') }}</label>
+        <label for="deletePassword">{{ $t("deleteModal.currentPassword") }}</label>
         <input
           id="deletePassword"
           v-model="passwordValue"
@@ -46,10 +46,12 @@
       >
         <icon-fa6-solid:trash v-if="!isLoading" class="icon" />
         <icon-line-md:loading-twotone-loop v-if="isLoading" class="icon" />
-        {{ confirmButtonText || $t('common.delete') }}
+        {{ confirmButtonText || $t("common.delete") }}
       </button>
 
-      <button type="button" class="btn btn-cancel" @click="$emit('close')">{{ $t('common.cancel') }}</button>
+      <button type="button" class="btn btn-cancel" @click="$emit('close')">
+        {{ $t("common.cancel") }}
+      </button>
     </template>
   </modal>
 </template>

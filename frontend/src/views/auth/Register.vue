@@ -1,6 +1,6 @@
 <template>
   <div class="login-header">
-    <h2>{{ $t('auth.createAccountTitle') }}</h2>
+    <h2>{{ $t("auth.createAccountTitle") }}</h2>
   </div>
 
   <vee-form
@@ -37,17 +37,21 @@
         </div>
       </div>
 
-      <PasswordField name="password" :placeholder="$t('common.password')" :error="errors.password" />
+      <PasswordField
+        name="password"
+        :placeholder="$t('common.password')"
+        :error="errors.password"
+      />
     </div>
 
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:user-plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      {{ $t('auth.registerButton') }}
+      {{ $t("auth.registerButton") }}
     </button>
 
     <div>
-      <router-link :to="{ name: 'account.login' }"> {{ $t('common.cancel') }} </router-link>
+      <router-link :to="{ name: 'account.login' }"> {{ $t("common.cancel") }} </router-link>
     </div>
   </vee-form>
 </template>
@@ -66,13 +70,13 @@ const { t } = useI18n();
 const alert = useAlert();
 
 const schema = Yup.object().shape({
-  displayName: Yup.string().required(t('validation.displayNameRequired')),
-  email: Yup.string().required(t('validation.emailRequired')),
+  displayName: Yup.string().required(t("validation.displayNameRequired")),
+  email: Yup.string().required(t("validation.emailRequired")),
   password: Yup.string()
-    .required(t('validation.passwordRequired'))
-    .min(8, t('validation.passwordMinLength'))
-    .matches(/^(?=.*[0-9])/, t('validation.passwordNumber'))
-    .matches(/^(?=.*[!@#$%^&*])/, t('validation.passwordSpecial')),
+    .required(t("validation.passwordRequired"))
+    .min(8, t("validation.passwordMinLength"))
+    .matches(/^(?=.*[0-9])/, t("validation.passwordNumber"))
+    .matches(/^(?=.*[!@#$%^&*])/, t("validation.passwordSpecial")),
 });
 
 async function onSubmit(values: { email: string; password: string; displayName: string }) {
@@ -83,11 +87,11 @@ async function onSubmit(values: { email: string; password: string; displayName: 
   });
 
   if (resp.error) {
-    alert.error(resp.error.message ?? t('auth.failedRegister'));
+    alert.error(resp.error.message ?? t("auth.failedRegister"));
     return;
   }
 
   await router.push({ name: "account.login" });
-  alert.success(t('auth.registrationSuccess'));
+  alert.success(t("auth.registrationSuccess"));
 }
 </script>

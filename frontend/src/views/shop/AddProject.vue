@@ -10,7 +10,7 @@
       >
         <form-group :title="$t('project.projectInfo')">
           <div>
-            <label for="name">{{ $t('common.name') }}</label>
+            <label for="name">{{ $t("common.name") }}</label>
 
             <field
               id="name"
@@ -26,7 +26,7 @@
           </div>
 
           <div>
-            <label for="description">{{ $t('common.description') }}</label>
+            <label for="description">{{ $t("common.description") }}</label>
 
             <field id="description" v-slot="{ field }" name="description">
               <textarea
@@ -45,7 +45,7 @@
           </div>
 
           <div>
-            <label for="gitUrl">{{ $t('project.gitRepoUrl') }}</label>
+            <label for="gitUrl">{{ $t("project.gitRepoUrl") }}</label>
 
             <field
               id="gitUrl"
@@ -62,11 +62,11 @@
           </div>
 
           <div>
-            <label for="organizationId">{{ $t('settings.organization') }}</label>
+            <label for="organizationId">{{ $t("settings.organization") }}</label>
 
             <field id="organizationId" v-slot="{ field }" name="organizationId">
               <select v-bind="field" class="field" :class="{ 'has-error': errors.organizationId }">
-                <option value="">{{ $t('project.selectOrganization') }}</option>
+                <option value="">{{ $t("project.selectOrganization") }}</option>
                 <option
                   v-for="organization in organizations.data"
                   :key="organization.id"
@@ -87,7 +87,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('common.save') }}
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -112,10 +112,10 @@ const router = useRouter();
 const organizations = authClient.useListOrganizations();
 
 const schema = Yup.object().shape({
-  name: Yup.string().required(t('validation.projectNameRequired')),
+  name: Yup.string().required(t("validation.projectNameRequired")),
   description: Yup.string().optional(),
-  gitUrl: Yup.string().url(t('validation.urlInvalid')).optional(),
-  organizationId: Yup.string().required(t('validation.orgRequired')),
+  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
+  organizationId: Yup.string().required(t("validation.orgRequired")),
 });
 
 const initialValues = computed(() => {

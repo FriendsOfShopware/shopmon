@@ -4,7 +4,7 @@
     <Panel>
       <template #title>
         <icon-fa6-solid:shop />
-        {{ $t('dashboard.myShops') }}
+        {{ $t("dashboard.myShops") }}
       </template>
 
       <div class="item-grid">
@@ -20,7 +20,12 @@
             class="item-link item-wrapper"
           >
             <div class="item-logo">
-              <img v-if="shop.favicon" :src="shop.favicon" :alt="$t('dashboard.shopLogo')" class="item-logo-img" />
+              <img
+                v-if="shop.favicon"
+                :src="shop.favicon"
+                :alt="$t('dashboard.shopLogo')"
+                class="item-logo-img"
+              />
             </div>
 
             <div class="item-info">
@@ -45,7 +50,7 @@
     <Panel>
       <template #title>
         <icon-fa6-solid:building />
-        {{ $t('dashboard.myOrganizations') }}
+        {{ $t("dashboard.myOrganizations") }}
       </template>
 
       <div class="item-grid">
@@ -64,7 +69,8 @@
               </div>
 
               <div class="item-content">
-                {{ $t('dashboard.nMembers', { count: organization.memberCount }) }}, {{ $t('dashboard.nShops', { count: organization.shopCount }) }}
+                {{ $t("dashboard.nMembers", { count: organization.memberCount }) }},
+                {{ $t("dashboard.nShops", { count: organization.shopCount }) }}
               </div>
             </div>
           </router-link>
@@ -75,7 +81,7 @@
     <Panel v-if="changelogs.length > 0">
       <template #title>
         <icon-fa6-solid:file-waveform />
-        {{ $t('dashboard.lastChanges') }}
+        {{ $t("dashboard.lastChanges") }}
       </template>
 
       <data-table

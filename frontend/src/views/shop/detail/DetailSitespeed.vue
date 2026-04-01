@@ -1,6 +1,6 @@
 <template>
   <Alert v-if="shop && !shop.sitespeedEnabled" type="info">
-    {{ $t('shop.sitespeedActivateDesc') }}
+    {{ $t("shop.sitespeedActivateDesc") }}
   </Alert>
   <div class="mb-1">
     <a
@@ -9,7 +9,7 @@
       :href="shop.sitespeedReportUrl"
       target="_blank"
     >
-      <i class="fa fa-chart-line" /> {{ $t('nav.sitespeed') }}
+      <i class="fa fa-chart-line" /> {{ $t("nav.sitespeed") }}
     </a>
   </div>
 

@@ -16,7 +16,7 @@
           />
 
           <div>
-            <label for="name">{{ $t('common.name') }}</label>
+            <label for="name">{{ $t("common.name") }}</label>
             <field
               id="name"
               type="text"
@@ -31,7 +31,7 @@
           </div>
 
           <div>
-            <label for="email">{{ $t('common.emailAddress') }}</label>
+            <label for="email">{{ $t("common.emailAddress") }}</label>
             <field
               id="email"
               type="text"
@@ -45,9 +45,13 @@
             </div>
           </div>
 
-          <PasswordField name="newPassword" :label="$t('settings.newPassword')" :error="errors.newPassword" />
+          <PasswordField
+            name="newPassword"
+            :label="$t('settings.newPassword')"
+            :error="errors.newPassword"
+          />
 
-          <p>{{ $t('settings.githubLoginText') }}</p>
+          <p>{{ $t("settings.githubLoginText") }}</p>
 
           <button
             v-if="!connectedProviders.includes('github')"
@@ -56,12 +60,12 @@
             @click="linkSocial('github')"
           >
             <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            {{ $t('settings.linkGithub') }}
+            {{ $t("settings.linkGithub") }}
           </button>
 
           <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
             <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            {{ $t('settings.unlinkGithub') }}
+            {{ $t("settings.unlinkGithub") }}
           </button>
         </form-group>
 
@@ -69,7 +73,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('common.save') }}
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -101,7 +105,7 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="showPasskeyCreationModal = true">
           <icon-material-symbols:passkey class="icon icon-passkey" aria-hidden="true" />
-          {{ $t('settings.addDevice') }}
+          {{ $t("settings.addDevice") }}
         </button>
       </div>
     </Panel>
@@ -135,10 +139,10 @@
       <form-group :title="$t('settings.notifications')" class="form-group-table">
         <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
           <icon-fa6-regular:bell-slash class="empty-state-icon" />
-          <p class="empty-state-text">{{ $t('settings.notSubscribed') }}</p>
+          <p class="empty-state-text">{{ $t("settings.notSubscribed") }}</p>
 
           <p class="empty-state-subtext">
-            {{ $t('settings.notSubscribedHint') }}
+            {{ $t("settings.notSubscribedHint") }}
           </p>
         </div>
 
@@ -182,10 +186,10 @@
 
     <Panel :title="$t('settings.deleteAccountTitle')">
       <Alert v-if="!canDeleteAccount" type="error">
-        {{ $t('settings.deleteAccountOrgWarning') }}
+        {{ $t("settings.deleteAccountOrgWarning") }}
       </Alert>
 
-      <p>{{ $t('settings.deleteAccountWarning') }}</p>
+      <p>{{ $t("settings.deleteAccountWarning") }}</p>
 
       <button
         type="button"
@@ -194,7 +198,7 @@
         @click="showAccountDeletionModal = true"
       >
         <icon-fa6-solid:trash class="icon icon-trash" />
-        {{ $t('settings.deleteAccount') }}
+        {{ $t("settings.deleteAccount") }}
       </button>
     </Panel>
 
@@ -209,19 +213,21 @@
     />
 
     <Modal :show="showPasskeyCreationModal" @close="showPasskeyCreationModal = false">
-      <template #title> {{ $t('settings.addPasskeyTitle') }} </template>
+      <template #title> {{ $t("settings.addPasskeyTitle") }} </template>
 
       <template #icon>
         <icon-fa6-solid:key class="icon icon-info" aria-hidden="true" />
       </template>
 
       <template #content>
-        {{ $t('settings.addPasskeyDesc') }}
+        {{ $t("settings.addPasskeyDesc") }}
         <field v-model="passKeyName" type="text" name="name" autocomplete="off" class="field" />
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="createPasskey">{{ $t('common.create') }}</button>
+        <button type="button" class="btn btn-primary" @click="createPasskey">
+          {{ $t("common.create") }}
+        </button>
 
         <button
           ref="cancelButtonRef"
@@ -229,7 +235,7 @@
           class="btn btn-cancel"
           @click="showPasskeyCreationModal = false"
         >
-          {{ $t('common.cancel') }}
+          {{ $t("common.cancel") }}
         </button>
       </template>
     </Modal>
@@ -305,12 +311,12 @@ const showAccountDeletionModal = ref(false);
 const showPasskeyCreationModal = ref(false);
 
 const schema = Yup.object().shape({
-  currentPassword: Yup.string().required(t('settings.currentPasswordRequired')),
+  currentPassword: Yup.string().required(t("settings.currentPasswordRequired")),
   email: Yup.string().email().required(),
-  name: Yup.string().min(5, t('validation.nameMinLength')),
+  name: Yup.string().min(5, t("validation.nameMinLength")),
   newPassword: Yup.string()
     .transform((x) => (x === "" ? undefined : x))
-    .min(8, t('validation.passwordMinLength')),
+    .min(8, t("validation.passwordMinLength")),
 });
 
 async function onSubmit(values: Record<string, unknown>) {
@@ -335,7 +341,7 @@ async function onSubmit(values: Record<string, unknown>) {
 
 async function deleteUser() {
   if (deleteCurrentPassword.value === "") {
-    alert.error(t('settings.passwordRequiredForDelete'));
+    alert.error(t("settings.passwordRequiredForDelete"));
     return;
   }
 
@@ -344,11 +350,11 @@ async function deleteUser() {
   });
 
   if (resp.error) {
-    alert.error(resp.error.message ?? t('settings.errorDeleteAccount'));
+    alert.error(resp.error.message ?? t("settings.errorDeleteAccount"));
     return;
   }
 
-  alert.success(t('settings.accountDeleted'));
+  alert.success(t("settings.accountDeleted"));
   setTimeout(() => {
     window.location.reload();
   }, 2000);
@@ -357,7 +363,7 @@ async function deleteUser() {
 
 async function createPasskey() {
   if (!passKeyName.value) {
-    alert.error(t('settings.passkeyNameRequired'));
+    alert.error(t("settings.passkeyNameRequired"));
     return;
   }
 
@@ -397,7 +403,7 @@ async function unlinkSocial(providerId: string) {
   try {
     await authClient.unlinkAccount({ providerId });
     await loadLinkedAccounts();
-    alert.success(t('settings.unlinkedProvider', { providerId }));
+    alert.success(t("settings.unlinkedProvider", { providerId }));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
@@ -409,7 +415,7 @@ async function unsubscribeFromShop(shopId: number) {
       shopId,
     });
     await loadSubscribedShops();
-    alert.success(t('settings.unsubscribedShop'));
+    alert.success(t("settings.unsubscribedShop"));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }

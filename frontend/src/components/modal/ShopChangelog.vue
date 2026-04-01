@@ -1,16 +1,25 @@
 <template>
   <modal :show="show" close-x-mark @close="$emit('close')">
     <template #title>
-      {{ $t('changelogModal.title', { date: changelog?.date ? formatDateTime(changelog.date) : '' }) }}
+      {{
+        $t("changelogModal.title", { date: changelog?.date ? formatDateTime(changelog.date) : "" })
+      }}
     </template>
 
     <template #content>
       <template v-if="changelog?.oldShopwareVersion && changelog?.newShopwareVersion">
-        <span v-html="$t('changelogModal.shopwareUpdate', { oldVersion: changelog.oldShopwareVersion, newVersion: changelog.newShopwareVersion })" />
+        <span
+          v-html="
+            $t('changelogModal.shopwareUpdate', {
+              oldVersion: changelog.oldShopwareVersion,
+              newVersion: changelog.newShopwareVersion,
+            })
+          "
+        />
       </template>
 
       <div v-if="changelog?.extensions?.length">
-        <h2 class="modal-changelog-subtitle">{{ $t('changelogModal.pluginChangelog') }}</h2>
+        <h2 class="modal-changelog-subtitle">{{ $t("changelogModal.pluginChangelog") }}</h2>
 
         <ul class="modal-changelog-logs">
           <li v-for="extension in changelog?.extensions" :key="extension.name">
@@ -20,10 +29,15 @@
 
             {{ extension.state }}
             <template v-if="extension.state === 'installed' && extension.active">
-              {{ $t('changelogModal.andActivated') }}
+              {{ $t("changelogModal.andActivated") }}
             </template>
             <template v-if="extension.state === 'updated'">
-              {{ $t('changelogModal.fromTo', { oldVersion: extension.old_version, newVersion: extension.new_version }) }}
+              {{
+                $t("changelogModal.fromTo", {
+                  oldVersion: extension.old_version,
+                  newVersion: extension.new_version,
+                })
+              }}
             </template>
             <template v-else>
               {{ extension.new_version }}

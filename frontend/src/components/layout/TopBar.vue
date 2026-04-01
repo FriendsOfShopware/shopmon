@@ -23,12 +23,12 @@
         </button>
 
         <button class="action action-locale" type="button" @click="toggleLocale">
-          {{ String(locale) === 'en' ? 'DE' : 'EN' }}
+          {{ String(locale) === "en" ? "DE" : "EN" }}
         </button>
 
         <popover class="notifications">
           <popover-button class="action notifications" @click="markAllRead">
-            <span class="sr-only">{{ $t('topBar.viewNotifications') }}</span>
+            <span class="sr-only">{{ $t("topBar.viewNotifications") }}</span>
 
             <icon-fa6-solid:bell class="icon" aria-hidden="true" />
 
@@ -47,7 +47,7 @@
           >
             <popover-panel class="notifications-panel">
               <div class="notifications-header">
-                {{ $t('topBar.notifications', { count: notifications.length }) }}
+                {{ $t("topBar.notifications", { count: notifications.length }) }}
 
                 <button
                   v-if="notifications.length > 0"
@@ -86,7 +86,7 @@
                     <div class="notification-item-message">
                       {{ notification.message }}
                       <router-link v-if="notification.link" :to="notification.link" type="a">
-                        {{ $t('topBar.more') }}
+                        {{ $t("topBar.more") }}
                       </router-link>
                     </div>
                   </div>
@@ -99,7 +99,7 @@
                 </li>
               </ul>
 
-              <div v-else class="notifications-empty">{{ $t('notifications.notMuchGoingOn') }}</div>
+              <div v-else class="notifications-empty">{{ $t("notifications.notMuchGoingOn") }}</div>
             </popover-panel>
           </transition>
         </popover>
@@ -107,7 +107,7 @@
         <!-- Profile dropdown -->
         <menu-container as="div" class="menu">
           <menu-button class="action action-user">
-            <span class="sr-only">{{ $t('topBar.openUserMenu') }}</span>
+            <span class="sr-only">{{ $t("topBar.openUserMenu") }}</span>
             <img class="user-avatar" :src="userAvatar" alt="" />
           </menu-button>
 
@@ -121,7 +121,9 @@
           >
             <menu-items class="menu-panel">
               <div class="menu-header">
-                <div class="menu-name">{{ $t('topBar.greeting', { name: session.data.user.name }) }}</div>
+                <div class="menu-name">
+                  {{ $t("topBar.greeting", { name: session.data.user.name }) }}
+                </div>
               </div>
 
               <menu-item v-for="item in userNavigation" :key="item.name">
@@ -140,7 +142,7 @@
 
         <!-- Mobile menu button -->
         <disclosure-button class="action action-mobile-nav-toggle">
-          <span class="sr-only">{{ $t('topBar.openMainMenu') }}</span>
+          <span class="sr-only">{{ $t("topBar.openMainMenu") }}</span>
           <icon-fa6-solid:bars-staggered v-if="!open" class="icon" aria-hidden="true" />
           <icon-fa6-solid:xmark v-else class="icon" aria-hidden="true" />
         </disclosure-button>
@@ -160,7 +162,7 @@
                 v-if="$router.resolve({ name: item.route }).meta.icon"
                 class="icon"
               />
-              {{ $t($router.resolve({ name: item.route }).meta.titleKey ?? '') }}
+              {{ $t($router.resolve({ name: item.route }).meta.titleKey ?? "") }}
             </disclosure-button>
           </div>
 

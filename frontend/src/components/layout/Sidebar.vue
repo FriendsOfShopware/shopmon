@@ -19,7 +19,9 @@
             v-if="$router.resolve({ name: item.route }).meta.icon"
             class="nav-link-icon"
           />
-          <span class="nav-link-name">{{ $t($router.resolve({ name: item.route }).meta.titleKey ?? '') }}</span>
+          <span class="nav-link-name">{{
+            $t($router.resolve({ name: item.route }).meta.titleKey ?? "")
+          }}</span>
         </router-link>
       </nav>
 

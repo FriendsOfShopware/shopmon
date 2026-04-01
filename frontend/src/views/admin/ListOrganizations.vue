@@ -19,18 +19,18 @@
 
       <div class="filter-container">
         <select v-model="sortBy" class="field" @change="loadOrganizations">
-          <option value="createdAt">{{ $t('admin.sortByCreated') }}</option>
-          <option value="name">{{ $t('admin.sortByName') }}</option>
-          <option value="slug">{{ $t('admin.sortBySlug') }}</option>
-          <option value="shopCount">{{ $t('admin.sortByShops') }}</option>
-          <option value="memberCount">{{ $t('admin.sortByMembers') }}</option>
+          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
+          <option value="name">{{ $t("admin.sortByName") }}</option>
+          <option value="slug">{{ $t("admin.sortBySlug") }}</option>
+          <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
+          <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
         </select>
       </div>
 
       <div class="filter-container">
         <select v-model="sortDirection" class="field" @change="loadOrganizations">
-          <option value="desc">{{ $t('common.descending') }}</option>
-          <option value="asc">{{ $t('common.ascending') }}</option>
+          <option value="desc">{{ $t("common.descending") }}</option>
+          <option value="asc">{{ $t("common.ascending") }}</option>
         </select>
       </div>
     </div>
@@ -60,11 +60,13 @@
       </template>
 
       <template #cell-shopCount="{ row }">
-        <span class="badge badge-info"> {{ $t('admin.nShops', { count: row.shopCount }) }} </span>
+        <span class="badge badge-info"> {{ $t("admin.nShops", { count: row.shopCount }) }} </span>
       </template>
 
       <template #cell-memberCount="{ row }">
-        <span class="badge badge-secondary"> {{ $t('admin.nMembers', { count: row.memberCount }) }} </span>
+        <span class="badge badge-secondary">
+          {{ $t("admin.nMembers", { count: row.memberCount }) }}
+        </span>
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -74,20 +76,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t('admin.loadingOrgs') }}
+      {{ $t("admin.loadingOrgs") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        {{ $t('common.previous') }}
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">{{ $t('common.pageOf', { current: currentPage, total: totalPages }) }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        {{ $t('common.next') }}
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -121,12 +125,12 @@ const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.
 const { t } = useI18n();
 
 const tableColumns = computed(() => [
-  { key: "logo", name: t('admin.logo') },
-  { key: "name", name: t('common.name'), sortable: true, searchable: true },
-  { key: "slug", name: t('common.slug'), sortable: true, searchable: true },
-  { key: "shopCount", name: t('common.shops'), sortable: true },
-  { key: "memberCount", name: t('common.members'), sortable: true },
-  { key: "createdAt", name: t('admin.created'), sortable: true },
+  { key: "logo", name: t("admin.logo") },
+  { key: "name", name: t("common.name"), sortable: true, searchable: true },
+  { key: "slug", name: t("common.slug"), sortable: true, searchable: true },
+  { key: "shopCount", name: t("common.shops"), sortable: true },
+  { key: "memberCount", name: t("common.members"), sortable: true },
+  { key: "createdAt", name: t("admin.created"), sortable: true },
 ]);
 
 async function loadOrganizations() {

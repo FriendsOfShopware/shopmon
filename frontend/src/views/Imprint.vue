@@ -4,10 +4,10 @@
 
     <Panel>
       <section>
-        <h2>{{ $t('imprint.contact') }}</h2>
+        <h2>{{ $t("imprint.contact") }}</h2>
         <div class="contact-info">
-          <p>{{ $t('imprint.description') }}</p>
-          <p>{{ $t('imprint.email') }}</p>
+          <p>{{ $t("imprint.description") }}</p>
+          <p>{{ $t("imprint.email") }}</p>
         </div>
       </section>
     </Panel>

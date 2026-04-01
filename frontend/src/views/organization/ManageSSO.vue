@@ -6,7 +6,7 @@
       class="btn"
     >
       <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
-      {{ $t('sso.backToOrg') }}
+      {{ $t("sso.backToOrg") }}
     </router-link>
   </header-container>
 
@@ -20,27 +20,29 @@
           @click="openAddProviderModal"
         >
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-          {{ $t('sso.addProvider') }}
+          {{ $t("sso.addProvider") }}
         </button>
       </template>
 
       <Alert type="info">
-        <p><strong>{{ $t('sso.infoTitle') }}</strong></p>
         <p>
-          {{ $t('sso.infoDesc') }}
+          <strong>{{ $t("sso.infoTitle") }}</strong>
+        </p>
+        <p>
+          {{ $t("sso.infoDesc") }}
         </p>
       </Alert>
 
       <div v-if="isLoading" class="sso-loading">
         <icon-line-md:loading-twotone-loop class="icon" />
-        {{ $t('sso.loadingProviders') }}
+        {{ $t("sso.loadingProviders") }}
       </div>
 
       <div v-else-if="ssoProviders.length === 0" class="sso-empty">
         <icon-fa6-solid:key class="icon icon-large" aria-hidden="true" />
-        <p>{{ $t('sso.noProviders') }}</p>
+        <p>{{ $t("sso.noProviders") }}</p>
         <p class="text-muted">
-          {{ $t('sso.noProvidersHint') }}
+          {{ $t("sso.noProvidersHint") }}
         </p>
       </div>
 
@@ -64,7 +66,7 @@
               @click="openEditProviderModal(provider)"
             >
               <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-              {{ $t('common.edit') }}
+              {{ $t("common.edit") }}
             </button>
 
             <button
@@ -74,7 +76,7 @@
               @click="confirmDeleteProvider(provider)"
             >
               <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-              {{ $t('common.delete') }}
+              {{ $t("common.delete") }}
             </button>
           </div>
         </div>
@@ -84,7 +86,7 @@
     <!-- Add Provider Modal -->
     <modal :show="showAddProviderModal" close-x-mark @close="closeProviderModal">
       <template #title>
-        {{ isEditMode ? $t('sso.editProvider') : $t('sso.addProviderTitle') }}
+        {{ isEditMode ? $t("sso.editProvider") : $t("sso.addProviderTitle") }}
       </template>
 
       <template #content>
@@ -97,7 +99,7 @@
           @submit="onSubmitProvider"
         >
           <div class="form-group">
-            <label for="domain">{{ $t('organization.domain') }}</label>
+            <label for="domain">{{ $t("organization.domain") }}</label>
             <field
               id="domain"
               type="text"
@@ -108,12 +110,12 @@
             />
             <div class="field-error-message">{{ errors.domain }}</div>
             <p class="field-help">
-              {{ $t('sso.domainHelp') }}
+              {{ $t("sso.domainHelp") }}
             </p>
           </div>
 
           <div class="form-group">
-            <label for="issuer">{{ $t('sso.issuerUrl') }}</label>
+            <label for="issuer">{{ $t("sso.issuerUrl") }}</label>
             <div class="issuer-input-group">
               <field
                 id="issuer"
@@ -137,24 +139,20 @@
                   aria-hidden="true"
                 />
                 <icon-line-md:loading-twotone-loop v-else class="icon" />
-                {{ $t('sso.discover') }}
+                {{ $t("sso.discover") }}
               </button>
             </div>
             <div class="field-error-message">{{ errors.issuer }}</div>
             <p class="field-help">
-              {{
-                isEditMode
-                  ? $t('sso.issuerHelp')
-                  : $t('sso.issuerDiscoverHelp')
-              }}
+              {{ isEditMode ? $t("sso.issuerHelp") : $t("sso.issuerDiscoverHelp") }}
             </p>
           </div>
 
           <div class="oidc-fields">
-            <h4>{{ $t('sso.oidcConfig') }}</h4>
+            <h4>{{ $t("sso.oidcConfig") }}</h4>
 
             <div class="form-group">
-              <label for="callbackUrl">{{ $t('sso.callbackUrl') }}</label>
+              <label for="callbackUrl">{{ $t("sso.callbackUrl") }}</label>
               <input
                 id="callbackUrl"
                 type="text"
@@ -163,12 +161,12 @@
                 class="field field-readonly"
               />
               <p class="field-help">
-                {{ $t('sso.callbackHelp') }}
+                {{ $t("sso.callbackHelp") }}
               </p>
             </div>
 
             <div class="form-group">
-              <label for="clientId">{{ $t('sso.clientId') }}</label>
+              <label for="clientId">{{ $t("sso.clientId") }}</label>
               <field
                 id="clientId"
                 type="text"
@@ -180,7 +178,7 @@
             </div>
 
             <div class="form-group">
-              <label for="clientSecret">{{ $t('sso.clientSecret') }}</label>
+              <label for="clientSecret">{{ $t("sso.clientSecret") }}</label>
               <field
                 id="clientSecret"
                 type="password"
@@ -191,12 +189,12 @@
               />
               <div class="field-error-message">{{ errors.clientSecret }}</div>
               <p v-if="isEditMode" class="field-help">
-                {{ $t('sso.clientSecretKeep') }}
+                {{ $t("sso.clientSecretKeep") }}
               </p>
             </div>
 
             <div class="form-group">
-              <label for="authorizationEndpoint">{{ $t('sso.authEndpoint') }}</label>
+              <label for="authorizationEndpoint">{{ $t("sso.authEndpoint") }}</label>
               <field
                 id="authorizationEndpoint"
                 type="url"
@@ -206,11 +204,11 @@
                 :class="{ 'has-error': errors.authorizationEndpoint }"
               />
               <div class="field-error-message">{{ errors.authorizationEndpoint }}</div>
-              <p class="field-help">{{ $t('sso.authEndpointHelp') }}</p>
+              <p class="field-help">{{ $t("sso.authEndpointHelp") }}</p>
             </div>
 
             <div class="form-group">
-              <label for="tokenEndpoint">{{ $t('sso.tokenEndpoint') }}</label>
+              <label for="tokenEndpoint">{{ $t("sso.tokenEndpoint") }}</label>
               <field
                 id="tokenEndpoint"
                 type="url"
@@ -220,11 +218,11 @@
                 :class="{ 'has-error': errors.tokenEndpoint }"
               />
               <div class="field-error-message">{{ errors.tokenEndpoint }}</div>
-              <p class="field-help">{{ $t('sso.tokenEndpointHelp') }}</p>
+              <p class="field-help">{{ $t("sso.tokenEndpointHelp") }}</p>
             </div>
 
             <div class="form-group">
-              <label for="jwksEndpoint">{{ $t('sso.jwksEndpoint') }}</label>
+              <label for="jwksEndpoint">{{ $t("sso.jwksEndpoint") }}</label>
               <field
                 id="jwksEndpoint"
                 type="url"
@@ -234,18 +232,20 @@
                 :class="{ 'has-error': errors.jwksEndpoint }"
               />
               <div class="field-error-message">{{ errors.jwksEndpoint }}</div>
-              <p class="field-help">{{ $t('sso.jwksEndpointHelp') }}</p>
+              <p class="field-help">{{ $t("sso.jwksEndpointHelp") }}</p>
             </div>
           </div>
         </vee-form>
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="closeProviderModal">{{ $t('common.cancel') }}</button>
+        <button type="button" class="btn" @click="closeProviderModal">
+          {{ $t("common.cancel") }}
+        </button>
         <button type="submit" class="btn btn-primary" form="providerForm" :disabled="isSubmitting">
           <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          {{ isEditMode ? $t('sso.updateProvider') : $t('sso.addProvider') }}
+          {{ isEditMode ? $t("sso.updateProvider") : $t("sso.addProvider") }}
         </button>
       </template>
     </modal>
@@ -329,9 +329,7 @@ const providerSchema = Yup.object().shape({
       /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/,
       t("validation.domainInvalid"),
     ),
-  issuer: Yup.string()
-    .url(t("validation.urlRequired"))
-    .required(t("validation.issuerUrlRequired")),
+  issuer: Yup.string().url(t("validation.urlRequired")).required(t("validation.issuerUrlRequired")),
   clientId: Yup.string().required(t("validation.clientIdRequired")),
   clientSecret: Yup.string().test(
     "required-when-adding",
@@ -482,8 +480,7 @@ async function discoverOpenIdConfig() {
 
     alert.success(t("sso.discoveredSuccess"));
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : t("sso.failedDiscover");
+    const errorMessage = error instanceof Error ? error.message : t("sso.failedDiscover");
     alert.error(errorMessage);
   } finally {
     isDiscovering.value = false;

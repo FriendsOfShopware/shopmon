@@ -6,7 +6,7 @@
       class="btn btn-primary"
     >
       <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-      {{ $t('organization.editOrganization') }}
+      {{ $t("organization.editOrganization") }}
     </router-link>
   </header-container>
 
@@ -14,21 +14,21 @@
     <Panel :title="$t('organization.orgInfo')" class="organization-info">
       <dl class="organization-info-list">
         <div class="organization-info-item">
-          <dt>{{ $t('organization.orgName') }}</dt>
+          <dt>{{ $t("organization.orgName") }}</dt>
           <dd>
             {{ organization.data.name }}
           </dd>
         </div>
 
         <div class="organization-info-item">
-          <dt>{{ $t('common.members') }}</dt>
+          <dt>{{ $t("common.members") }}</dt>
           <dd>
             {{ organization.data.members.length }}
           </dd>
         </div>
 
         <div class="organization-info-item">
-          <dt>{{ $t('common.slug') }}</dt>
+          <dt>{{ $t("common.slug") }}</dt>
           <dd>
             {{ organization.data.slug }}
           </dd>
@@ -40,7 +40,7 @@
       <template #action>
         <button class="btn btn-sm btn-primary" type="button" @click="showAddMemberModal = true">
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-          {{ $t('common.add') }}
+          {{ $t("common.add") }}
         </button>
       </template>
 
@@ -118,14 +118,14 @@
           class="btn btn-sm btn-primary"
         >
           <icon-fa6-solid:key class="icon" aria-hidden="true" />
-          {{ $t('organization.manageSso') }}
+          {{ $t("organization.manageSso") }}
         </router-link>
       </template>
 
       <div v-if="ssoProviders.length === 0" class="sso-empty">
-        <p>{{ $t('organization.noSsoProviders') }}</p>
+        <p>{{ $t("organization.noSsoProviders") }}</p>
         <p class="text-muted">
-          {{ $t('organization.ssoConfigureHint') }}
+          {{ $t("organization.ssoConfigureHint") }}
         </p>
       </div>
 
@@ -141,16 +141,16 @@
 
     <Panel :title="$t('organization.leaveOrgTitle')">
       <p class="mb-1">
-        {{ $t('organization.leaveOrgWarning') }}
+        {{ $t("organization.leaveOrgWarning") }}
       </p>
 
       <button class="btn btn-danger mt-2" @click="leaveOrganization()">
-        {{ $t('organization.leaveOrganization') }}
+        {{ $t("organization.leaveOrganization") }}
       </button>
     </Panel>
 
     <modal :show="showAddMemberModal" close-x-mark @close="showAddMemberModal = false">
-      <template #title> {{ $t('organization.addMember') }} </template>
+      <template #title> {{ $t("organization.addMember") }} </template>
 
       <template #content>
         <vee-form
@@ -160,7 +160,7 @@
           :initial-values="{ email: '', role: 'member' }"
           @submit="onAddMember"
         >
-          <label for="email">{{ $t('common.email') }}</label>
+          <label for="email">{{ $t("common.email") }}</label>
 
           <field
             id="email"
@@ -174,10 +174,10 @@
             {{ errors.email }}
           </div>
 
-          <label for="role">{{ $t('common.role') }}</label>
+          <label for="role">{{ $t("common.role") }}</label>
           <field id="role" as="select" name="role" class="field">
-            <option value="member">{{ $t('organization.roleMember') }}</option>
-            <option value="admin">{{ $t('organization.roleAdmin') }}</option>
+            <option value="member">{{ $t("organization.roleMember") }}</option>
+            <option value="admin">{{ $t("organization.roleAdmin") }}</option>
           </field>
           <div class="field-error-message">
             {{ errors.role }}
@@ -187,19 +187,19 @@
 
       <template #footer>
         <button type="reset" class="btn" form="addMemberForm" @click="showAddMemberModal = false">
-          {{ $t('common.cancel') }}
+          {{ $t("common.cancel") }}
         </button>
 
         <button :disabled="isSubmitting" type="submit" class="btn btn-primary" form="addMemberForm">
           <icon-fa6-solid:plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          {{ $t('common.add') }}
+          {{ $t("common.add") }}
         </button>
       </template>
     </modal>
 
     <modal :show="showChangeRoleModal" close-x-mark @close="showChangeRoleModal = false">
-      <template #title> {{ $t('organization.changeMemberRole') }} </template>
+      <template #title> {{ $t("organization.changeMemberRole") }} </template>
 
       <template #content>
         <vee-form
@@ -209,7 +209,7 @@
           :initial-values="{ role: selectedMember?.role || 'member' }"
           @submit="onChangeRole"
         >
-          <label for="role">{{ $t('common.role') }}</label>
+          <label for="role">{{ $t("common.role") }}</label>
 
           <field
             id="role"
@@ -218,8 +218,8 @@
             class="field"
             :class="{ 'has-error': errors.role }"
           >
-            <option value="member">{{ $t('organization.roleMember') }}</option>
-            <option value="admin">{{ $t('organization.roleAdmin') }}</option>
+            <option value="member">{{ $t("organization.roleMember") }}</option>
+            <option value="admin">{{ $t("organization.roleAdmin") }}</option>
           </field>
 
           <div class="field-error-message">
@@ -230,7 +230,7 @@
 
       <template #footer>
         <button type="reset" class="btn" form="changeRoleForm" @click="showChangeRoleModal = false">
-          {{ $t('common.cancel') }}
+          {{ $t("common.cancel") }}
         </button>
 
         <button
@@ -241,7 +241,7 @@
         >
           <icon-fa6-solid:floppy-disk v-if="!isChangingRole" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          {{ $t('common.save') }}
+          {{ $t("common.save") }}
         </button>
       </template>
     </modal>
@@ -339,9 +339,7 @@ type OrganizationMember = {
 const selectedMember = ref<OrganizationMember | null>(null);
 
 const schemaMembers = Yup.object().shape({
-  email: Yup.string()
-    .email(t("validation.emailInvalid"))
-    .required(t("validation.emailRequired")),
+  email: Yup.string().email(t("validation.emailInvalid")).required(t("validation.emailRequired")),
   role: Yup.string()
     .oneOf(["member", "admin"], t("validation.roleInvalid"))
     .required(t("validation.roleRequired")),
@@ -420,11 +418,11 @@ async function onChangeRole(values: Record<string, unknown>) {
       });
 
       if (resp.error) {
-        alert.error(resp.error.message ?? t('organization.failedUpdateMemberRole'));
+        alert.error(resp.error.message ?? t("organization.failedUpdateMemberRole"));
         return;
       }
 
-      alert.success(t('organization.memberRoleUpdated'));
+      alert.success(t("organization.memberRoleUpdated"));
 
       showChangeRoleModal.value = false;
       await loadOrganization();

@@ -42,15 +42,16 @@
     <template v-if="sortedFilteredData?.length ?? 0 === 0">
       <span>
         <template v-if="searchTerm">
-          <icon-fa6-solid:circle-xmark /> {{ $t('dataTable.noSearchResult') }} <strong>{{ searchTerm }}</strong>
+          <icon-fa6-solid:circle-xmark /> {{ $t("dataTable.noSearchResult") }}
+          <strong>{{ searchTerm }}</strong>
         </template>
-        <template v-else> <icon-fa6-solid:circle-info /> {{ $t('dataTable.noData') }} </template>
+        <template v-else> <icon-fa6-solid:circle-info /> {{ $t("dataTable.noData") }} </template>
       </span>
     </template>
     <template v-else>
       <icon-fa6-solid:inbox class="empty-icon" />
-      <h2 class="empty-title">{{ $t('dataTable.noDataTitle') }}</h2>
-      {{ $t('dataTable.noDataDesc') }}
+      <h2 class="empty-title">{{ $t("dataTable.noDataTitle") }}</h2>
+      {{ $t("dataTable.noDataDesc") }}
     </template>
   </div>
 </template>

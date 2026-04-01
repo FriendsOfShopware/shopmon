@@ -2,7 +2,7 @@
   <header-container :title="$t('organization.title')">
     <router-link :to="{ name: 'account.organizations.new' }" type="button" class="btn btn-primary">
       <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-      {{ $t('organization.addOrganization') }}
+      {{ $t("organization.addOrganization") }}
     </router-link>
   </header-container>
 
@@ -13,7 +13,7 @@
         :route="{ name: 'account.organizations.new' }"
         :button="$t('organization.addOrganization')"
       >
-        {{ $t('organization.getStarted') }}
+        {{ $t("organization.getStarted") }}
       </element-empty>
     </Panel>
 

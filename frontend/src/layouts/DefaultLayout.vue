@@ -16,16 +16,16 @@
             class="btn btn-primary btn-sm"
           >
             <icon-ri:dashboard-fill class="icon" />
-            {{ $t('nav.dashboard') }}
+            {{ $t("nav.dashboard") }}
           </router-link>
           <template v-else>
             <router-link :to="{ name: 'account.login' }" class="btn btn-primary btn-sm">
               <icon-fa6-solid:right-to-bracket class="icon" />
-              {{ $t('nav.login') }}
+              {{ $t("nav.login") }}
             </router-link>
             <router-link :to="{ name: 'account.register' }" class="btn btn-primary btn-sm">
               <icon-fa6-solid:user-plus class="icon" />
-              {{ $t('nav.register') }}
+              {{ $t("nav.register") }}
             </router-link>
           </template>
 
@@ -36,7 +36,7 @@
           </button>
 
           <button class="action action-locale" type="button" @click="toggleLocale">
-            {{ String(locale) === 'en' ? 'DE' : 'EN' }}
+            {{ String(locale) === "en" ? "DE" : "EN" }}
           </button>
         </div>
       </div>

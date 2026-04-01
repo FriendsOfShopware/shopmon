@@ -8,44 +8,44 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t('admin.loadingStats') }}
+      {{ $t("admin.loadingStats") }}
     </div>
 
     <div v-if="!loading && stats" class="stats-grid">
       <!-- Users Stat -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t('admin.totalUsers') }}</h3>
+          <h3 class="stat-title">{{ $t("admin.totalUsers") }}</h3>
           <icon-fa6-solid:users class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalUsers }}</div>
-        <p class="stat-description">{{ $t('admin.totalUsersDesc') }}</p>
+        <p class="stat-description">{{ $t("admin.totalUsersDesc") }}</p>
       </div>
 
       <!-- Organizations Stat -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t('admin.totalOrgs') }}</h3>
+          <h3 class="stat-title">{{ $t("admin.totalOrgs") }}</h3>
           <icon-fa6-solid:building class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalOrganizations }}</div>
-        <p class="stat-description">{{ $t('admin.totalOrgsDesc') }}</p>
+        <p class="stat-description">{{ $t("admin.totalOrgsDesc") }}</p>
       </div>
 
       <!-- Total Shops Stat -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t('admin.totalShops') }}</h3>
+          <h3 class="stat-title">{{ $t("admin.totalShops") }}</h3>
           <icon-fa6-solid:store class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalShops }}</div>
-        <p class="stat-description">{{ $t('admin.totalShopsDesc') }}</p>
+        <p class="stat-description">{{ $t("admin.totalShopsDesc") }}</p>
       </div>
 
       <!-- Shop Status Breakdown -->
       <div class="stat-card status-breakdown">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t('admin.shopStatus') }}</h3>
+          <h3 class="stat-title">{{ $t("admin.shopStatus") }}</h3>
           <icon-fa6-solid:chart-bar class="stat-icon" />
         </div>
         <div class="status-list">
@@ -62,9 +62,11 @@
     <!-- Action Links -->
     <div v-if="!loading && stats" class="action-links">
       <router-link to="/admin/organizations" class="btn btn-primary">
-        {{ $t('admin.manageOrgs') }}
+        {{ $t("admin.manageOrgs") }}
       </router-link>
-      <router-link to="/admin/shops" class="btn btn-primary"> {{ $t('admin.manageShops') }} </router-link>
+      <router-link to="/admin/shops" class="btn btn-primary">
+        {{ $t("admin.manageShops") }}
+      </router-link>
     </div>
   </Panel>
 </template>

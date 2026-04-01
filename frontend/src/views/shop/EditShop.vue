@@ -11,7 +11,7 @@
       type="button"
       class="btn"
     >
-      {{ $t('common.cancel') }}
+      {{ $t("common.cancel") }}
     </router-link>
   </header-container>
 
@@ -26,7 +26,7 @@
       >
         <form-group :title="$t('shop.shopInfo')">
           <div>
-            <label for="Name">{{ $t('common.name') }}</label>
+            <label for="Name">{{ $t("common.name") }}</label>
 
             <field
               id="name"
@@ -44,7 +44,7 @@
           </div>
 
           <div>
-            <label for="projectId">{{ $t('shop.project') }}</label>
+            <label for="projectId">{{ $t("shop.project") }}</label>
 
             <field id="projectId" name="projectId">
               <select v-model="selectedProjectId" class="field">
@@ -60,7 +60,7 @@
           </div>
 
           <div>
-            <label for="shopUrl">{{ $t('common.url') }}</label>
+            <label for="shopUrl">{{ $t("common.url") }}</label>
 
             <field
               id="shopUrl"
@@ -82,22 +82,24 @@
           <template #info>
             <i18n-t keypath="shop.integrationDesc" tag="span">
               <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{ $t('shop.pluginName') }}</a>
+                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
+                  $t("shop.pluginName")
+                }}</a>
               </template>
             </i18n-t>
             <a
               href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
             >
-              {{ $t('shop.permissions') }}
+              {{ $t("shop.permissions") }}
             </a>
           </template>
 
           <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            {{ $t('shop.connectPlugin') }}
+            {{ $t("shop.connectPlugin") }}
           </button>
 
           <div>
-            <label for="clientId">{{ $t('shop.clientId') }}</label>
+            <label for="clientId">{{ $t("shop.clientId") }}</label>
 
             <field
               id="clientId"
@@ -113,7 +115,7 @@
           </div>
 
           <div>
-            <label for="clientSecret">{{ $t('shop.clientSecret') }}</label>
+            <label for="clientSecret">{{ $t("shop.clientSecret") }}</label>
 
             <field
               id="clientSecret"
@@ -133,7 +135,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('common.save') }}
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -141,23 +143,23 @@
 
     <Panel v-if="shop" :title="$t('shop.sitespeed')">
       <p>
-        {{ $t('shop.sitespeedDesc') }}
+        {{ $t("shop.sitespeedDesc") }}
       </p>
       <p>
-        {{ $t('shop.sitespeedActivateDesc') }}
+        {{ $t("shop.sitespeedActivateDesc") }}
       </p>
       <p>
-        {{ $t('shop.sitespeedScheduleDesc') }}
+        {{ $t("shop.sitespeedScheduleDesc") }}
       </p>
 
       <form @submit.prevent="onSitespeedSubmit">
         <div class="mb-1">
-          <label for="sitespeedEnabled">{{ $t('shop.sitespeedEnabled') }}</label>
+          <label for="sitespeedEnabled">{{ $t("shop.sitespeedEnabled") }}</label>
           <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="field" />
         </div>
 
         <div v-if="sitespeedEnabled">
-          <label for="sitespeedUrls">{{ $t('shop.sitespeedUrls') }}</label>
+          <label for="sitespeedUrls">{{ $t("shop.sitespeedUrls") }}</label>
 
           <div class="sitespeed-urls-container">
             <div v-for="(url, index) in sitespeedUrls" :key="index" class="sitespeed-url-row">
@@ -180,7 +182,7 @@
               @click="addSitespeedUrl"
             >
               <icon-fa6-solid:plus class="icon" />
-              {{ $t('shop.newUrl') }}
+              {{ $t("shop.newUrl") }}
             </button>
           </div>
         </div>
@@ -198,18 +200,18 @@
             />
 
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('shop.saveSitespeedSettings') }}
+            {{ $t("shop.saveSitespeedSettings") }}
           </button>
         </div>
       </form>
     </Panel>
 
     <Panel :title="$t('shop.deleteShopTitle', { name: shop.name })">
-      <p>{{ $t('shop.deleteShopWarning') }}</p>
+      <p>{{ $t("shop.deleteShopWarning") }}</p>
 
       <button type="button" class="btn btn-danger" @click="showShopDeletionModal = true">
         <icon-fa6-solid:trash class="icon icon-delete" />
-        {{ $t('shop.deleteShop') }}
+        {{ $t("shop.deleteShop") }}
       </button>
     </Panel>
 
@@ -301,18 +303,18 @@ const isSitespeedFormValid = computed(() => {
 });
 
 const schema = Yup.object().shape({
-  name: Yup.string().required(t('validation.shopNameRequired')),
-  url: Yup.string().required(t('validation.shopUrlRequired')).url(),
-  projectId: Yup.number().required(t('validation.projectRequired')),
+  name: Yup.string().required(t("validation.shopNameRequired")),
+  url: Yup.string().required(t("validation.shopUrlRequired")).url(),
+  projectId: Yup.number().required(t("validation.projectRequired")),
   clientId: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
     // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required(t('validation.urlChangeClientId')),
+    then: () => Yup.string().required(t("validation.urlChangeClientId")),
   }),
   clientSecret: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
     // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required(t('validation.urlChangeClientSecret')),
+    then: () => Yup.string().required(t("validation.urlChangeClientSecret")),
   }),
 });
 
@@ -372,7 +374,7 @@ async function onSitespeedSubmit() {
 
       // Validate that if enabled, at least one URL is provided
       if (sitespeedEnabled.value && sitespeedUrls.value.length === 0) {
-        error(t('shop.sitespeedUrlRequired'));
+        error(t("shop.sitespeedUrlRequired"));
         return;
       }
 
@@ -384,7 +386,7 @@ async function onSitespeedSubmit() {
 
       // Reload shop data to refresh the UI
       await loadShop();
-      success(t('shop.sitespeedSaved'));
+      success(t("shop.sitespeedSaved"));
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -410,7 +412,7 @@ function processPluginData() {
     pluginError.value = "";
 
     if (!pluginBase64.value.trim()) {
-      pluginError.value = t('shop.base64Error');
+      pluginError.value = t("shop.base64Error");
       return;
     }
 
@@ -418,7 +420,7 @@ function processPluginData() {
     const data = JSON.parse(decodedString);
 
     if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t('shop.base64InvalidData');
+      pluginError.value = t("shop.base64InvalidData");
       return;
     }
 
@@ -428,7 +430,7 @@ function processPluginData() {
 
     closePluginModal();
   } catch (_e) {
-    pluginError.value = t('shop.base64InvalidFormat');
+    pluginError.value = t("shop.base64InvalidFormat");
   }
 }
 </script>

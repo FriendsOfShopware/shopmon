@@ -16,16 +16,16 @@
       />
     </svg>
 
-    <h3 class="element-empty-title">{{ title || $t('common.noElements') }}</h3>
+    <h3 class="element-empty-title">{{ title || $t("common.noElements") }}</h3>
 
     <p class="element-empty-description">
-      <slot> {{ $t('common.getStartedElement') }} </slot>
+      <slot> {{ $t("common.getStartedElement") }} </slot>
     </p>
 
     <div class="element-empty-cta">
       <router-link :to="route" class="btn btn-primary">
         <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-        {{ button || $t('common.addElement') }}
+        {{ button || $t("common.addElement") }}
       </router-link>
     </div>
   </div>

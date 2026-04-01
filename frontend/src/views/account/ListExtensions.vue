@@ -3,8 +3,12 @@
 
   <main-container v-if="extensions">
     <Panel v-if="extensions.length === 0">
-      <element-empty :title="$t('shopDetail.extensions')" :button="$t('shop.addShop')" :route="{ name: 'account.shops.new' }">
-        {{ $t('common.getStartedElement') }}
+      <element-empty
+        :title="$t('shopDetail.extensions')"
+        :button="$t('shop.addShop')"
+        :route="{ name: 'account.shops.new' }"
+      >
+        {{ $t("common.getStartedElement") }}
       </element-empty>
     </Panel>
 

@@ -11,7 +11,7 @@
       >
         <form-group :title="$t('shop.shopInfo')">
           <div>
-            <label for="Name">{{ $t('common.name') }}</label>
+            <label for="Name">{{ $t("common.name") }}</label>
 
             <field
               id="name"
@@ -27,7 +27,7 @@
           </div>
 
           <div>
-            <label for="projectId">{{ $t('shop.project') }}</label>
+            <label for="projectId">{{ $t("shop.project") }}</label>
 
             <field id="projectId" name="projectId">
               <select v-model="selectedProjectId" class="field" required>
@@ -43,7 +43,7 @@
           </div>
 
           <div>
-            <label for="shopUrl">{{ $t('common.url') }}</label>
+            <label for="shopUrl">{{ $t("common.url") }}</label>
 
             <field
               id="shopUrl"
@@ -62,7 +62,7 @@
 
         <form-group :title="$t('shop.bypassAuthHeader')">
           <template #info>
-            {{ $t('shop.bypassAuthHeaderDesc') }}
+            {{ $t("shop.bypassAuthHeaderDesc") }}
           </template>
 
           <div class="shop-token-display">
@@ -78,22 +78,24 @@
           <template #info>
             <i18n-t keypath="shop.integrationDesc" tag="span">
               <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{ $t('shop.pluginName') }}</a>
+                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
+                  $t("shop.pluginName")
+                }}</a>
               </template>
             </i18n-t>
             <a
               href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
             >
-              {{ $t('shop.permissions') }}
+              {{ $t("shop.permissions") }}
             </a>
           </template>
 
           <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            {{ $t('shop.connectPlugin') }}
+            {{ $t("shop.connectPlugin") }}
           </button>
 
           <div>
-            <label for="clientId">{{ $t('shop.clientId') }}</label>
+            <label for="clientId">{{ $t("shop.clientId") }}</label>
 
             <field
               id="clientId"
@@ -109,7 +111,7 @@
           </div>
 
           <div>
-            <label for="clientSecret">{{ $t('shop.clientSecret') }}</label>
+            <label for="clientSecret">{{ $t("shop.clientSecret") }}</label>
 
             <field
               id="clientSecret"
@@ -129,7 +131,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('common.save') }}
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -173,7 +175,7 @@ const shopToken = generateShopToken();
 
 async function copyToken() {
   await navigator.clipboard.writeText(shopToken);
-  success(t('shop.tokenCopied'));
+  success(t("shop.tokenCopied"));
 }
 
 const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
@@ -202,13 +204,13 @@ const isValidUrl = (url: string) => {
 };
 
 const schema = Yup.object().shape({
-  name: Yup.string().required(t('validation.shopNameRequired')),
+  name: Yup.string().required(t("validation.shopNameRequired")),
   shopUrl: Yup.string()
-    .required(t('validation.shopUrlRequired'))
-    .test("is-url-valid", t('validation.shopUrlInvalid'), (value) => isValidUrl(value)),
-  projectId: Yup.number().required(t('validation.projectRequired')),
-  clientId: Yup.string().required(t('validation.clientIdRequired')),
-  clientSecret: Yup.string().required(t('validation.clientSecretRequired')),
+    .required(t("validation.shopUrlRequired"))
+    .test("is-url-valid", t("validation.shopUrlInvalid"), (value) => isValidUrl(value)),
+  projectId: Yup.number().required(t("validation.projectRequired")),
+  clientId: Yup.string().required(t("validation.clientIdRequired")),
+  clientSecret: Yup.string().required(t("validation.clientSecretRequired")),
 });
 
 const shops = {
@@ -251,7 +253,7 @@ function processPluginData() {
     pluginError.value = "";
 
     if (!pluginBase64.value.trim()) {
-      pluginError.value = t('shop.base64Error');
+      pluginError.value = t("shop.base64Error");
       return;
     }
 
@@ -259,7 +261,7 @@ function processPluginData() {
     const data = JSON.parse(decodedString);
 
     if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t('shop.base64InvalidData');
+      pluginError.value = t("shop.base64InvalidData");
       return;
     }
 
@@ -269,7 +271,7 @@ function processPluginData() {
 
     closePluginModal();
   } catch (_e) {
-    pluginError.value = t('shop.base64InvalidFormat');
+    pluginError.value = t("shop.base64InvalidFormat");
   }
 }
 </script>

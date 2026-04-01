@@ -9,7 +9,7 @@
       >
         <form-group :title="$t('organization.orgInfo')">
           <div>
-            <label for="Name">{{ $t('common.name') }}</label>
+            <label for="Name">{{ $t("common.name") }}</label>
             <field
               id="name"
               type="text"
@@ -25,7 +25,7 @@
           </div>
 
           <div>
-            <label for="slug">{{ $t('common.slug') }}</label>
+            <label for="slug">{{ $t("common.slug") }}</label>
             <field
               id="slug"
               type="text"
@@ -45,7 +45,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t('common.save') }}
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -73,13 +73,10 @@ const router = useRouter();
 const slugManuallyEdited = ref(false);
 
 const schema = Yup.object().shape({
-  name: Yup.string().required(t('validation.orgNameRequired')),
+  name: Yup.string().required(t("validation.orgNameRequired")),
   slug: Yup.string()
-    .required(t('validation.orgSlugRequired'))
-    .matches(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      t('validation.slugFormat'),
-    ),
+    .required(t("validation.orgSlugRequired"))
+    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t("validation.slugFormat")),
 });
 
 function generateSlug(str: string): string {
