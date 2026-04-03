@@ -199,8 +199,16 @@ function createVersionChart(canvas: HTMLCanvasElement, data: { version: string; 
   if (!ctx) return null;
 
   const colors = [
-    "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
+    "#6366f1",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#84cc16",
+    "#f97316",
+    "#14b8a6",
   ];
 
   return new Chart(ctx, {
