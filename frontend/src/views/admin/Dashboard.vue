@@ -54,7 +54,6 @@
         </div>
       </div>
     </div>
-  </Panel>
 
     <!-- Action Links -->
     <div v-if="!loading && stats" class="action-links">
