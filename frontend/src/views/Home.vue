@@ -1,52 +1,48 @@
 <template>
   <div class="header">
-    <h1>Shopmon - The Open-Source Dashboard for Shopware Developers</h1>
+    <h1>{{ $t("home.title") }}</h1>
   </div>
 
   <Panel class="panel-intro">
-    <h2>Everything at a glance</h2>
-    Monitor all your Shopware environments from one central dashboard. Shop status, performance
-    metrics, extension updates, and security alerts - all in real-time without switching between
-    tools.
+    <h2>{{ $t("home.subtitle") }}</h2>
+    {{ $t("home.description") }}
   </Panel>
 
   <div class="row">
     <Panel class="col-highlights">
-      <img src="/home/dashboard.svg" alt="Shopmon Dashboard" />
-      <h3>Dashboard overview</h3>
+      <img src="/home/dashboard.svg" :alt="$t('home.altDashboard')" />
+      <h3>{{ $t("home.dashboardOverview") }}</h3>
       <p>
-        Maintain a complete overview of all your shops with the most important information using the
-        Shopmon Dashboard
+        {{ $t("home.dashboardOverviewDesc") }}
       </p>
     </Panel>
 
     <Panel class="col-highlights">
-      <img src="/home/automatic-performancechecks.svg" alt="Automatic Performancechecks" />
+      <img src="/home/automatic-performancechecks.svg" :alt="$t('home.altAutoChecks')" />
 
-      <h3>Automatic performance checks</h3>
-      <p>Get notified when your shop status changes based on Frosh-Tools performance checks</p>
+      <h3>{{ $t("home.autoPerformanceChecks") }}</h3>
+      <p>{{ $t("home.autoPerformanceChecksDesc") }}</p>
     </Panel>
 
     <Panel class="col-highlights">
-      <img src="/home/speed.png" alt="Sitespeed.io logo" />
-      <h3>Performance monitoring</h3>
+      <img src="/home/speed.png" :alt="$t('home.altSitespeedLogo')" />
+      <h3>{{ $t("home.performanceMonitoring") }}</h3>
       <p>
-        Daily automated page speed checks with an overview of the most important metrics over time
+        {{ $t("home.performanceMonitoringDesc") }}
       </p>
     </Panel>
   </div>
 
   <div class="row row-center">
     <div class="col-text">
-      <h4>Shopware versions & environment state dashboard</h4>
+      <h4>{{ $t("home.environmentState") }}</h4>
       <p>
-        Stay in control with the Shopmon Dashboard. View all your environments with information like
-        Shopware version, environment status based on Frosh-Tools tests, and the latest changelogs.
+        {{ $t("home.environmentStateDesc") }}
       </p>
     </div>
 
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-dashboard.png')" alt="Shopmon dashboard" />
+      <img :src="getThemeImage('/home/shopmon-dashboard.png')" :alt="$t('home.altDashboard')" />
     </div>
   </div>
 
@@ -54,58 +50,49 @@
     <div class="col-img">
       <img
         :src="getThemeImage('/home/shopmon-performance-checks.png')"
-        alt="Shopmon performance checks"
+        :alt="$t('home.altPerformanceChecks')"
       />
     </div>
 
     <div class="col-text">
-      <h4>Frosh Tools performance checks</h4>
+      <h4>{{ $t("home.froshToolsTitle") }}</h4>
       <p>
-        Get valuable insights and warnings about your environment. When Frosh Tools is installed,
-        performance checks are automatically displayed and integrated into your environment status.
-        If a task gets stuck or a new security update is available, you'll be immediately notified
-        through your environment status. Additionally, you'll receive an email whenever your
-        environment status changes.
+        {{ $t("home.froshToolsDesc") }}
       </p>
     </div>
   </div>
 
   <div class="row row-center">
     <div class="col-text">
-      <h4>Extensions and updates</h4>
+      <h4>{{ $t("home.extensionsTitle") }}</h4>
       <p>
-        Keep track of all your installed extensions either in the project view or in the
-        comprehensive extension overview. Get all the important information such as available
-        updates, installed versions, and Shopware Store ratings. Connect with other Shopmon users to
-        share solutions and discuss known issues directly and without detours.
+        {{ $t("home.extensionsDesc") }}
       </p>
     </div>
 
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-extensions.png')" alt="Shopmon extensions" />
+      <img :src="getThemeImage('/home/shopmon-extensions.png')" :alt="$t('home.altExtensions')" />
     </div>
   </div>
 
   <div class="row row-center">
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-sitespeed.png')" alt="Shopmon sitespeed" />
+      <img :src="getThemeImage('/home/shopmon-sitespeed.png')" :alt="$t('home.altSitespeed')" />
     </div>
 
     <div class="col-text">
-      <h4>Automatic sitespeed.io checks</h4>
+      <h4>{{ $t("home.sitespeedTitle") }}</h4>
       <p>
-        If you want, we perform daily sitespeed checks on up to 5 URLs of your environment and show
-        you the most important information directly in an overview.
+        {{ $t("home.sitespeedDesc") }}
       </p>
     </div>
   </div>
 
   <div class="row">
     <div>
-      <h4>And much more ...</h4>
+      <h4>{{ $t("home.andMore") }}</h4>
       <p>
-        Passkey Login | GitHub Login | Remote Cache Clear | Scheduled Task Overview | Remote Task
-        Rescheduling | Queue Overview | Environment Changelogs | More Features in Development
+        {{ $t("home.featureList") }}
       </p>
     </div>
   </div>
@@ -122,15 +109,14 @@
   <div class="section-primary">
     <div class="row row-center row-primary">
       <div class="col" style="text-align: right">
-        <h4>Ready to monitor your Shopware?</h4>
+        <h4>{{ $t("home.readyTitle") }}</h4>
         <p>
-          Join Shopmon to monitor your environments. Start monitoring your first shop in under 2
-          minutes - no credit card required, no commitments, just pure monitoring.
+          {{ $t("home.readyDesc") }}
         </p>
       </div>
 
       <router-link :to="{ name: 'account.register' }" class="btn btn-primary-outline">
-        Start monitoring for free
+        {{ $t("home.startFree") }}
       </router-link>
     </div>
   </div>
@@ -138,30 +124,25 @@
   <div class="row">
     <Panel class="col-highlights">
       <icon-fluent:money-off-24-regular class="icon" aria-hidden="true" />
-      <h3>Forever Free</h3>
+      <h3>{{ $t("home.foreverFree") }}</h3>
       <p>
-        No hidden costs, subscription fees, or limitations. Shopmon is completely free to use for
-        everyone, forever.
+        {{ $t("home.foreverFreeDesc") }}
       </p>
     </Panel>
 
     <Panel class="col-highlights">
       <icon-fluent:people-community-12-filled class="icon" aria-hidden="true" />
-      <h3>Community Driven</h3>
+      <h3>{{ $t("home.communityDriven") }}</h3>
       <p>
-        Built by the Friends of Shopware community for the community.
-        <a href="https://github.com/FriendsOfShopware" target="_blank">Join</a> our growing network
-        of developers contributing daily.
+        {{ $t("home.communityDrivenDesc") }}
       </p>
     </Panel>
 
     <Panel class="col-highlights">
       <icon-mdi:github class="icon" aria-hidden="true" />
-      <h3>Open Source</h3>
+      <h3>{{ $t("home.openSource") }}</h3>
       <p>
-        Full transparency into how your data is handled. Inspect, modify, and contribute to the
-        codebase on
-        <a href="https://github.com/FriendsOfShopware/shopmon" target="_blank">GitHub</a>.
+        {{ $t("home.openSourceDesc") }}
       </p>
     </Panel>
   </div>

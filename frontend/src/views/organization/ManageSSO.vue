@@ -1,17 +1,17 @@
 <template>
-  <header-container title="SSO Configuration">
+  <header-container :title="$t('sso.title')">
     <router-link
       :to="{ name: 'account.organizations.detail', params: { slug: route.params.slug } }"
       type="button"
       class="btn"
     >
       <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
-      Back to Organization
+      {{ $t("sso.backToOrg") }}
     </router-link>
   </header-container>
 
   <main-container>
-    <Panel title="SSO Providers">
+    <Panel :title="$t('sso.providers')">
       <template #action>
         <button
           v-if="canManageOrganization"
@@ -20,28 +20,29 @@
           @click="openAddProviderModal"
         >
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-          Add Provider
+          {{ $t("sso.addProvider") }}
         </button>
       </template>
 
       <Alert type="info">
-        <p><strong>Single Sign-On Information</strong></p>
         <p>
-          Users who sign in through SSO will automatically become members of this organization.
-          Configure your identity provider to allow users from your domain to access Shopmon.
+          <strong>{{ $t("sso.infoTitle") }}</strong>
+        </p>
+        <p>
+          {{ $t("sso.infoDesc") }}
         </p>
       </Alert>
 
       <div v-if="isLoading" class="sso-loading">
         <icon-line-md:loading-twotone-loop class="icon" />
-        Loading providers...
+        {{ $t("sso.loadingProviders") }}
       </div>
 
       <div v-else-if="ssoProviders.length === 0" class="sso-empty">
         <icon-fa6-solid:key class="icon icon-large" aria-hidden="true" />
-        <p>No SSO providers configured yet.</p>
+        <p>{{ $t("sso.noProviders") }}</p>
         <p class="text-muted">
-          Add an SSO provider to enable single sign-on for your organization.
+          {{ $t("sso.noProvidersHint") }}
         </p>
       </div>
 
@@ -65,7 +66,7 @@
               @click="openEditProviderModal(provider)"
             >
               <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-              Edit
+              {{ $t("common.edit") }}
             </button>
 
             <button
@@ -75,7 +76,7 @@
               @click="confirmDeleteProvider(provider)"
             >
               <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-              Delete
+              {{ $t("common.delete") }}
             </button>
           </div>
         </div>
@@ -85,7 +86,7 @@
     <!-- Add Provider Modal -->
     <modal :show="showAddProviderModal" close-x-mark @close="closeProviderModal">
       <template #title>
-        {{ isEditMode ? "Edit SSO Provider" : "Add SSO Provider" }}
+        {{ isEditMode ? $t("sso.editProvider") : $t("sso.addProviderTitle") }}
       </template>
 
       <template #content>
@@ -98,7 +99,7 @@
           @submit="onSubmitProvider"
         >
           <div class="form-group">
-            <label for="domain">Domain</label>
+            <label for="domain">{{ $t("organization.domain") }}</label>
             <field
               id="domain"
               type="text"
@@ -109,12 +110,12 @@
             />
             <div class="field-error-message">{{ errors.domain }}</div>
             <p class="field-help">
-              Users with email addresses from this domain will use this SSO provider
+              {{ $t("sso.domainHelp") }}
             </p>
           </div>
 
           <div class="form-group">
-            <label for="issuer">Issuer URL</label>
+            <label for="issuer">{{ $t("sso.issuerUrl") }}</label>
             <div class="issuer-input-group">
               <field
                 id="issuer"
@@ -138,24 +139,20 @@
                   aria-hidden="true"
                 />
                 <icon-line-md:loading-twotone-loop v-else class="icon" />
-                Discover
+                {{ $t("sso.discover") }}
               </button>
             </div>
             <div class="field-error-message">{{ errors.issuer }}</div>
             <p class="field-help">
-              {{
-                isEditMode
-                  ? "The issuer URL from your identity provider"
-                  : 'Enter the issuer URL and click "Discover" to auto-fill endpoints'
-              }}
+              {{ isEditMode ? $t("sso.issuerHelp") : $t("sso.issuerDiscoverHelp") }}
             </p>
           </div>
 
           <div class="oidc-fields">
-            <h4>OIDC Configuration</h4>
+            <h4>{{ $t("sso.oidcConfig") }}</h4>
 
             <div class="form-group">
-              <label for="callbackUrl">Callback URL</label>
+              <label for="callbackUrl">{{ $t("sso.callbackUrl") }}</label>
               <input
                 id="callbackUrl"
                 type="text"
@@ -164,12 +161,12 @@
                 class="field field-readonly"
               />
               <p class="field-help">
-                Use this URL as the redirect/callback URL in your identity provider configuration
+                {{ $t("sso.callbackHelp") }}
               </p>
             </div>
 
             <div class="form-group">
-              <label for="clientId">Client ID</label>
+              <label for="clientId">{{ $t("sso.clientId") }}</label>
               <field
                 id="clientId"
                 type="text"
@@ -181,23 +178,23 @@
             </div>
 
             <div class="form-group">
-              <label for="clientSecret">Client Secret</label>
+              <label for="clientSecret">{{ $t("sso.clientSecret") }}</label>
               <field
                 id="clientSecret"
                 type="password"
                 name="clientSecret"
-                :placeholder="isEditMode ? 'Leave empty to keep existing secret' : ''"
+                :placeholder="isEditMode ? t('sso.clientSecretKeep') : ''"
                 class="field"
                 :class="{ 'has-error': errors.clientSecret }"
               />
               <div class="field-error-message">{{ errors.clientSecret }}</div>
               <p v-if="isEditMode" class="field-help">
-                Leave empty to keep the existing client secret
+                {{ $t("sso.clientSecretKeep") }}
               </p>
             </div>
 
             <div class="form-group">
-              <label for="authorizationEndpoint">Authorization Endpoint</label>
+              <label for="authorizationEndpoint">{{ $t("sso.authEndpoint") }}</label>
               <field
                 id="authorizationEndpoint"
                 type="url"
@@ -207,11 +204,11 @@
                 :class="{ 'has-error': errors.authorizationEndpoint }"
               />
               <div class="field-error-message">{{ errors.authorizationEndpoint }}</div>
-              <p class="field-help">OAuth2 authorization endpoint URL</p>
+              <p class="field-help">{{ $t("sso.authEndpointHelp") }}</p>
             </div>
 
             <div class="form-group">
-              <label for="tokenEndpoint">Token Endpoint</label>
+              <label for="tokenEndpoint">{{ $t("sso.tokenEndpoint") }}</label>
               <field
                 id="tokenEndpoint"
                 type="url"
@@ -221,11 +218,11 @@
                 :class="{ 'has-error': errors.tokenEndpoint }"
               />
               <div class="field-error-message">{{ errors.tokenEndpoint }}</div>
-              <p class="field-help">OAuth2 token endpoint URL</p>
+              <p class="field-help">{{ $t("sso.tokenEndpointHelp") }}</p>
             </div>
 
             <div class="form-group">
-              <label for="jwksEndpoint">JWKS Endpoint</label>
+              <label for="jwksEndpoint">{{ $t("sso.jwksEndpoint") }}</label>
               <field
                 id="jwksEndpoint"
                 type="url"
@@ -235,18 +232,20 @@
                 :class="{ 'has-error': errors.jwksEndpoint }"
               />
               <div class="field-error-message">{{ errors.jwksEndpoint }}</div>
-              <p class="field-help">JSON Web Key Set (JWKS) endpoint URL</p>
+              <p class="field-help">{{ $t("sso.jwksEndpointHelp") }}</p>
             </div>
           </div>
         </vee-form>
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="closeProviderModal">Cancel</button>
+        <button type="button" class="btn" @click="closeProviderModal">
+          {{ $t("common.cancel") }}
+        </button>
         <button type="submit" class="btn btn-primary" form="providerForm" :disabled="isSubmitting">
           <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          {{ isEditMode ? "Update Provider" : "Add Provider" }}
+          {{ isEditMode ? $t("sso.updateProvider") : $t("sso.addProvider") }}
         </button>
       </template>
     </modal>
@@ -254,12 +253,12 @@
     <!-- Delete Confirmation Modal -->
     <delete-confirmation-modal
       :show="showDeleteModal"
-      title="Delete SSO Provider?"
+      :title="$t('sso.deleteProviderTitle')"
       :entity-name="`the SSO provider for ${deletingProvider?.domain}`"
-      custom-consequence="Users from this domain will no longer be able to use SSO to sign in."
+      :custom-consequence="$t('sso.deleteProviderWarning')"
       :reversed-buttons="true"
       :is-loading="isDeleting"
-      confirm-button-text="Delete Provider"
+      :confirm-button-text="$t('sso.deleteProviderConfirm')"
       @close="showDeleteModal = false"
       @confirm="deleteProvider"
     />
@@ -273,10 +272,12 @@ import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.
 import { authClient } from "@/helpers/auth-client";
 import { trpcClient } from "@/helpers/trpc";
 import { Field, Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const route = useRoute();
 const alert = useAlert();
 
@@ -323,24 +324,32 @@ const canManageOrganization = usePermissions(
 
 const providerSchema = Yup.object().shape({
   domain: Yup.string()
-    .required("Domain is required")
+    .required(t("validation.domainRequired"))
     .matches(
       /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/,
-      "Please enter a valid domain",
+      t("validation.domainInvalid"),
     ),
-  issuer: Yup.string().url("Must be a valid URL").required("Issuer URL is required"),
-  clientId: Yup.string().required("Client ID is required"),
-  clientSecret: Yup.string().test("required-when-adding", "Client Secret is required", (value) => {
-    if (!isEditMode.value && !value) {
-      return false;
-    }
-    return true;
-  }),
+  issuer: Yup.string().url(t("validation.urlRequired")).required(t("validation.issuerUrlRequired")),
+  clientId: Yup.string().required(t("validation.clientIdRequired")),
+  clientSecret: Yup.string().test(
+    "required-when-adding",
+    t("validation.clientSecretRequired"),
+    (value) => {
+      if (!isEditMode.value && !value) {
+        return false;
+      }
+      return true;
+    },
+  ),
   authorizationEndpoint: Yup.string()
-    .url("Must be a valid URL")
-    .required("Authorization Endpoint is required"),
-  tokenEndpoint: Yup.string().url("Must be a valid URL").required("Token Endpoint is required"),
-  jwksEndpoint: Yup.string().url("Must be a valid URL").required("JWKS Endpoint is required"),
+    .url(t("validation.urlRequired"))
+    .required(t("validation.authEndpointRequired")),
+  tokenEndpoint: Yup.string()
+    .url(t("validation.urlRequired"))
+    .required(t("validation.tokenEndpointRequired")),
+  jwksEndpoint: Yup.string()
+    .url(t("validation.urlRequired"))
+    .required(t("validation.jwksEndpointRequired")),
 });
 
 const providerFormValues = computed(() => {
@@ -435,7 +444,7 @@ function closeProviderModal() {
 
 async function discoverOpenIdConfig() {
   if (!issuerUrl.value) {
-    alert.error("Please enter an issuer URL first");
+    alert.error(t("sso.issuerUrlFirst"));
     return;
   }
 
@@ -469,10 +478,9 @@ async function discoverOpenIdConfig() {
       }
     }
 
-    alert.success("OpenID configuration discovered and form fields updated");
+    alert.success(t("sso.discoveredSuccess"));
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to discover OpenID configuration";
+    const errorMessage = error instanceof Error ? error.message : t("sso.failedDiscover");
     alert.error(errorMessage);
   } finally {
     isDiscovering.value = false;
@@ -499,7 +507,7 @@ async function onSubmitProvider(values: Record<string, unknown>) {
         jwksEndpoint: typedValues.jwksEndpoint,
       });
 
-      alert.success("SSO provider updated successfully");
+      alert.success(t("sso.providerUpdated"));
     } else {
       // Create new provider
       const resp = await authClient.sso.register({
@@ -520,7 +528,7 @@ async function onSubmitProvider(values: Record<string, unknown>) {
         return;
       }
 
-      alert.success("SSO provider added successfully");
+      alert.success(t("sso.providerAdded"));
     }
 
     closeProviderModal();
@@ -547,7 +555,7 @@ async function deleteProvider() {
       orgId: organization.value.id,
       providerId: deletingProvider.value.providerId,
     });
-    alert.success("SSO provider deleted successfully");
+    alert.success(t("sso.providerDeleted"));
     showDeleteModal.value = false;
     await loadProviders();
   } catch (error: unknown) {

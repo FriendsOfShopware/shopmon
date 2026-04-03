@@ -2,6 +2,7 @@ import { type RouteLocationNormalized, createRouter, createWebHistory } from "vu
 
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { authClient } from "@/helpers/auth-client";
+import { i18n } from "@/i18n";
 import AppLayout from "@/layouts/AppLayout.vue";
 import LoginLayout from "@/layouts/LoginLayout.vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
@@ -88,7 +89,7 @@ export const router = createRouter({
           name: "account.dashboard",
           component: () => import("@/views/Dashboard.vue"),
           meta: {
-            title: "Dashboard",
+            titleKey: "nav.dashboard",
             icon: Dashboard,
           },
         },
@@ -97,7 +98,7 @@ export const router = createRouter({
           path: "settings",
           component: () => import("@/views/account/Settings.vue"),
           meta: {
-            title: "Settings",
+            titleKey: "nav.settings",
             icon: FaShop,
           },
         },
@@ -106,7 +107,7 @@ export const router = createRouter({
           path: "projects",
           component: () => import("@/views/shop/ListProjects.vue"),
           meta: {
-            title: "My Projects",
+            titleKey: "nav.myProjects",
             icon: FaFolder,
           },
         },
@@ -125,7 +126,7 @@ export const router = createRouter({
           path: "projects/:projectId(\\d+)/edit",
           component: () => import("@/views/shop/EditProject.vue"),
           meta: {
-            title: "Edit Project",
+            titleKey: "nav.editProject",
           },
         },
         {
@@ -142,7 +143,7 @@ export const router = createRouter({
               path: "",
               component: () => import("@/views/shop/detail/DetailShop.vue"),
               meta: {
-                title: "Shop informations",
+                titleKey: "nav.shopInformation",
                 icon: FaShop,
               },
             },
@@ -151,7 +152,7 @@ export const router = createRouter({
               path: "checks",
               component: () => import("@/views/shop/detail/DetailChecks.vue"),
               meta: {
-                title: "Checks",
+                titleKey: "nav.checks",
                 icon: FaCircleCheck,
               },
             },
@@ -160,7 +161,7 @@ export const router = createRouter({
               path: "extensions",
               component: () => import("@/views/shop/detail/DetailExtensions.vue"),
               meta: {
-                title: "Extensions",
+                titleKey: "nav.extensions",
                 icon: FaPlug,
               },
             },
@@ -169,7 +170,7 @@ export const router = createRouter({
               path: "tasks",
               component: () => import("@/views/shop/detail/DetailScheduledTasks.vue"),
               meta: {
-                title: "Scheduled tasks",
+                titleKey: "nav.scheduledTasks",
                 icon: FaListCheck,
               },
             },
@@ -178,7 +179,7 @@ export const router = createRouter({
               path: "queue",
               component: () => import("@/views/shop/detail/DetailQueue.vue"),
               meta: {
-                title: "Queue",
+                titleKey: "nav.queue",
                 icon: FaCircleCheck,
               },
             },
@@ -187,7 +188,7 @@ export const router = createRouter({
               path: "sitespeed",
               component: () => import("@/views/shop/detail/DetailSitespeed.vue"),
               meta: {
-                title: "Sitespeed",
+                titleKey: "nav.sitespeed",
                 icon: FaRocket,
               },
             },
@@ -196,7 +197,7 @@ export const router = createRouter({
               path: "changelog",
               component: () => import("@/views/shop/detail/DetailChangelog.vue"),
               meta: {
-                title: "Changelog",
+                titleKey: "nav.changelog",
                 icon: FaFileWaveform,
               },
             },
@@ -205,7 +206,7 @@ export const router = createRouter({
               path: "deployments",
               component: () => import("@/views/shop/detail/DetailDeployments.vue"),
               meta: {
-                title: "Deployments",
+                titleKey: "nav.deployments",
                 icon: FaCodeBranch,
               },
             },
@@ -214,7 +215,7 @@ export const router = createRouter({
               path: "deployments/:deploymentId(\\d+)",
               component: () => import("@/views/shop/detail/DetailDeployment.vue"),
               meta: {
-                title: "Deployment Details",
+                titleKey: "nav.deploymentDetails",
               },
             },
           ],
@@ -224,7 +225,7 @@ export const router = createRouter({
           path: "organizations",
           component: () => import("@/views/organization/ListOrganizations.vue"),
           meta: {
-            title: "My Organisations",
+            titleKey: "nav.myOrganizations",
             icon: FaBuilding,
           },
         },
@@ -253,7 +254,7 @@ export const router = createRouter({
           path: "extensions",
           component: () => import("@/views/account/ListExtensions.vue"),
           meta: {
-            title: "My Extensions",
+            titleKey: "nav.myExtensions",
             icon: FaPlug,
           },
         },
@@ -262,7 +263,7 @@ export const router = createRouter({
           path: "docs",
           component: () => import("@/views/Docs.vue"),
           meta: {
-            title: "Documentation",
+            titleKey: "nav.documentation",
             icon: FaBook,
           },
         },
@@ -340,9 +341,9 @@ const DEFAULT_TITLE = "Shopmon";
 router.afterEach(async (to) => {
   await nextTick();
 
-  const title = to.meta.title;
-  if (typeof title === "string") {
-    document.title = `${title} | ${DEFAULT_TITLE}`;
+  const titleKey = to.meta.titleKey;
+  if (typeof titleKey === "string") {
+    document.title = i18n.global.t(titleKey) + `| ${DEFAULT_TITLE}`;
     return;
   }
 

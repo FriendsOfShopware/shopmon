@@ -16,16 +16,16 @@
             class="btn btn-primary btn-sm"
           >
             <icon-ri:dashboard-fill class="icon" />
-            Dashboard
+            {{ $t("nav.dashboard") }}
           </router-link>
           <template v-else>
             <router-link :to="{ name: 'account.login' }" class="btn btn-primary btn-sm">
               <icon-fa6-solid:right-to-bracket class="icon" />
-              Login
+              {{ $t("nav.login") }}
             </router-link>
             <router-link :to="{ name: 'account.register' }" class="btn btn-primary btn-sm">
               <icon-fa6-solid:user-plus class="icon" />
-              Register
+              {{ $t("nav.register") }}
             </router-link>
           </template>
 
@@ -33,6 +33,10 @@
             <icon-fa6-regular:moon v-if="darkMode" class="icon" />
 
             <icon-octicon:sun-16 v-else class="icon" />
+          </button>
+
+          <button class="action action-locale" type="button" @click="toggleLocale">
+            {{ String(locale) === "en" ? "DE" : "EN" }}
           </button>
         </div>
       </div>
@@ -46,10 +50,12 @@
 
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useLocale } from "@/composables/useLocale";
 import { authClient } from "@/helpers/auth-client";
 
 const session = authClient.useSession();
 const { darkMode, toggleDarkMode } = useDarkMode();
+const { locale, toggleLocale } = useLocale();
 </script>
 
 <style scoped>
@@ -71,6 +77,18 @@ const { darkMode, toggleDarkMode } = useDarkMode();
 
   .icon {
     margin-left: 0.5rem;
+  }
+
+  .action-locale {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #bae6fd;
+    margin-left: 0.5rem;
+
+    &:hover {
+      color: #ffffff;
+    }
   }
 }
 </style>

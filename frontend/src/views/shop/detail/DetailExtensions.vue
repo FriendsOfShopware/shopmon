@@ -3,11 +3,11 @@
     <data-table
       v-if="shop"
       :columns="[
-        { key: 'label', name: 'Name', sortable: true },
-        { key: 'version', name: 'Version', class: 'extension-version-column' },
-        { key: 'latestVersion', name: 'Latest', class: 'extension-version-column' },
-        { key: 'ratingAverage', name: 'Rating', sortable: true },
-        { key: 'installedAt', name: 'Installed at', sortable: true },
+        { key: 'label', name: $t('common.name'), sortable: true },
+        { key: 'version', name: $t('common.version'), class: 'extension-version-column' },
+        { key: 'latestVersion', name: $t('shopDetail.latest'), class: 'extension-version-column' },
+        { key: 'ratingAverage', name: $t('shopDetail.rating'), sortable: true },
+        { key: 'installedAt', name: $t('shopDetail.installedAt'), sortable: true },
       ]"
       :data="shop?.extensions || []"
       :default-sort="{ key: 'label', desc: false }"
@@ -32,7 +32,7 @@
         }}</span>
         <span
           v-if="row.latestVersion && row.version < row.latestVersion"
-          data-tooltip="Update available"
+          :data-tooltip="$t('shopDetail.updateAvailable')"
           class="extension-update-available"
           @click="openExtensionChangelog(row)"
         >

@@ -6,47 +6,43 @@
       </div>
     </template>
 
-    <template #title>What's new: Packages Mirror</template>
+    <template #title>{{ $t("whatsNew.title") }}</template>
 
     <template #content>
       <div class="whats-new-hero">
-        <span class="whats-new-badge">New in March 2026</span>
-        <h4>75x faster Shopware store packages via Global CDN</h4>
+        <span class="whats-new-badge">{{ $t("whatsNew.badge") }}</span>
+        <h4>{{ $t("whatsNew.heroTitle") }}</h4>
         <p>
-          Add your Shopware store tokens to a project and serve packages through the Shopmon
-          packages mirror — ~80ms instead of ~6s from
-          <code>packages.shopware.com</code>.
+          {{ $t("whatsNew.heroDesc") }}
         </p>
       </div>
 
       <ul class="whats-new-list">
         <li>
           <icon-fa6-solid:bolt class="icon" />
-          Packages are cached on a Global CDN for near-instant Composer installs.
+          {{ $t("whatsNew.featureCdn") }}
         </li>
         <li>
           <icon-fa6-solid:arrows-rotate class="icon" />
-          Tokens sync automatically every hour — or trigger a manual sync any time.
+          {{ $t("whatsNew.featureSync") }}
         </li>
         <li>
           <icon-fa6-solid:shield-halved class="icon" />
-          Tokens are validated against the Shopware store before being saved.
+          {{ $t("whatsNew.featureValidation") }}
         </li>
       </ul>
 
       <div class="whats-new-setup">
-        <p class="whats-new-setup-title">Quick setup</p>
+        <p class="whats-new-setup-title">{{ $t("whatsNew.quickSetup") }}</p>
         <p>
-          Add a Shopware store token in your project settings, then replace
-          <code>packages.shopware.com</code> with the mirror URL in your <code>composer.json</code>.
-          The exact snippets are shown after adding a token.
+          {{ $t("whatsNew.quickSetupDesc") }}
         </p>
       </div>
 
       <div v-if="sponsors.length" class="whats-new-sponsors">
-        <p class="whats-new-setup-title">Sponsors</p>
+        <p class="whats-new-setup-title">{{ $t("whatsNew.sponsors") }}</p>
         <p class="whats-new-sponsors-copy">
-          The public start page highlights the companies supporting ongoing Shopmon development.
+          {{ $t("whatsNew.sponsorsDesc") }}
         </p>
 
         <sponsor-showcase :sponsors="sponsors" compact />
@@ -56,15 +52,17 @@
     <template #footer>
       <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
         <icon-fa6-solid:folder-open class="icon" />
-        Open Projects
+        {{ $t("whatsNew.openProjects") }}
       </router-link>
 
       <router-link :to="{ name: 'account.docs' }" class="btn" @click="$emit('close')">
         <icon-fa6-solid:book class="icon" />
-        Documentation
+        {{ $t("nav.documentation") }}
       </router-link>
 
-      <button type="button" class="btn btn-primary" @click="$emit('close')">Close</button>
+      <button type="button" class="btn btn-primary" @click="$emit('close')">
+        {{ $t("whatsNew.close") }}
+      </button>
     </template>
   </modal>
 </template>

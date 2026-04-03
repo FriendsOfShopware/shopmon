@@ -3,7 +3,10 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { authClient } from "@/helpers/auth-client";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   action: "accept" | "reject";
@@ -20,11 +23,11 @@ if (props.action === "accept") {
     })
     .then((resp) => {
       if (resp.error) {
-        error(resp.error.message ?? "Failed to accept invitation");
+        error(resp.error.message ?? t("organization.failedAcceptInvitation"));
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });
-        success("Invitation accepted successfully!");
+        success(t("organization.invitationAccepted"));
       }
     });
 } else {
@@ -34,11 +37,11 @@ if (props.action === "accept") {
     })
     .then((resp) => {
       if (resp.error) {
-        error(resp.error.message ?? "Failed to reject invitation");
+        error(resp.error.message ?? t("organization.failedRejectInvitation"));
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });
-        success("Invitation rejected successfully!");
+        success(t("organization.invitationRejected"));
       }
     });
 }

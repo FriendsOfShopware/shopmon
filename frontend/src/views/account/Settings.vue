@@ -1,5 +1,5 @@
 <template>
-  <header-container title="Settings" />
+  <header-container :title="$t('settings.title')" />
   <main-container>
     <Panel>
       <vee-form
@@ -8,15 +8,15 @@
         :initial-values="user"
         @submit="onSubmit"
       >
-        <form-group title="Account" sub-title="Manage Your Account">
+        <form-group :title="$t('settings.account')" :sub-title="$t('settings.manageAccount')">
           <PasswordField
             name="currentPassword"
-            label="Current Password"
+            :label="$t('settings.currentPassword')"
             :error="errors.currentPassword"
           />
 
           <div>
-            <label for="name">Name</label>
+            <label for="name">{{ $t("common.name") }}</label>
             <field
               id="name"
               type="text"
@@ -31,7 +31,7 @@
           </div>
 
           <div>
-            <label for="email">Email address</label>
+            <label for="email">{{ $t("common.emailAddress") }}</label>
             <field
               id="email"
               type="text"
@@ -45,9 +45,13 @@
             </div>
           </div>
 
-          <PasswordField name="newPassword" label="New Password" :error="errors.newPassword" />
+          <PasswordField
+            name="newPassword"
+            :label="$t('settings.newPassword')"
+            :error="errors.newPassword"
+          />
 
-          <p>Login using your GitHub account</p>
+          <p>{{ $t("settings.githubLoginText") }}</p>
 
           <button
             v-if="!connectedProviders.includes('github')"
@@ -56,12 +60,12 @@
             @click="linkSocial('github')"
           >
             <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            Link GitHub
+            {{ $t("settings.linkGithub") }}
           </button>
 
           <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
             <icon-fa6-brands:github class="icon" aria-hidden="true" />
-            Unlink from GitHub
+            {{ $t("settings.unlinkGithub") }}
           </button>
         </form-group>
 
@@ -69,19 +73,19 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
     </Panel>
 
     <Panel>
-      <form-group title="Passkey Devices" class="form-group-table">
+      <form-group :title="$t('settings.passkeyDevices')" class="form-group-table">
         <data-table
           v-if="passkeys"
           :columns="[
-            { key: 'name', name: 'Name', sortable: true },
-            { key: 'createdAt', name: 'Created At', sortable: true },
+            { key: 'name', name: $t('common.name'), sortable: true },
+            { key: 'createdAt', name: $t('common.createdAt'), sortable: true },
           ]"
           :data="passkeys"
         >
@@ -89,7 +93,7 @@
             <button
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Delete"
+              :data-tooltip="$t('common.delete')"
               @click="removePasskey(row.id)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -101,18 +105,18 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="showPasskeyCreationModal = true">
           <icon-material-symbols:passkey class="icon icon-passkey" aria-hidden="true" />
-          Add a new Device
+          {{ $t("settings.addDevice") }}
         </button>
       </div>
     </Panel>
 
     <Panel>
-      <form-group title="Sessions" class="form-group-table">
+      <form-group :title="$t('settings.sessions')" class="form-group-table">
         <data-table
           v-if="sessions && sessions.length"
           :columns="[
-            { key: 'userAgent', name: 'User Agent', sortable: true },
-            { key: 'createdAt', name: 'Created At', sortable: true },
+            { key: 'userAgent', name: $t('settings.userAgent'), sortable: true },
+            { key: 'createdAt', name: $t('common.createdAt'), sortable: true },
           ]"
           :data="sessions"
         >
@@ -121,7 +125,7 @@
               v-if="row.token !== session.data?.session.token"
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Delete"
+              :data-tooltip="$t('common.delete')"
               @click="removeSession(row)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -132,23 +136,22 @@
     </Panel>
 
     <Panel>
-      <form-group title="Notifications" class="form-group-table">
+      <form-group :title="$t('settings.notifications')" class="form-group-table">
         <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
           <icon-fa6-regular:bell-slash class="empty-state-icon" />
-          <p class="empty-state-text">You are not subscribed to any shop notifications.</p>
+          <p class="empty-state-text">{{ $t("settings.notSubscribed") }}</p>
 
           <p class="empty-state-subtext">
-            Visit a shop's detail page and click the watch button to receive notifications about
-            changes.
+            {{ $t("settings.notSubscribedHint") }}
           </p>
         </div>
 
         <data-table
           v-else
           :columns="[
-            { key: 'name', name: 'Shop Name', sortable: true },
-            { key: 'organizationName', name: 'Organization', sortable: true },
-            { key: 'shopwareVersion', name: 'Version', sortable: true },
+            { key: 'name', name: $t('settings.shopName'), sortable: true },
+            { key: 'organizationName', name: $t('settings.organization'), sortable: true },
+            { key: 'shopwareVersion', name: $t('common.version'), sortable: true },
           ]"
           :data="subscribedShops"
         >
@@ -171,7 +174,7 @@
             <button
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Unsubscribe"
+              :data-tooltip="$t('settings.unsubscribe')"
               @click="unsubscribeFromShop(row.id)"
             >
               <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
@@ -181,12 +184,12 @@
       </form-group>
     </Panel>
 
-    <Panel title="Deleting your Account">
+    <Panel :title="$t('settings.deleteAccountTitle')">
       <Alert v-if="!canDeleteAccount" type="error">
-        To delete your account, you must delete first all organizations or leave them.
+        {{ $t("settings.deleteAccountOrgWarning") }}
       </Alert>
 
-      <p>Once you delete your account, you will lose all data associated with it.</p>
+      <p>{{ $t("settings.deleteAccountWarning") }}</p>
 
       <button
         type="button"
@@ -195,13 +198,13 @@
         @click="showAccountDeletionModal = true"
       >
         <icon-fa6-solid:trash class="icon icon-trash" />
-        Delete account
+        {{ $t("settings.deleteAccount") }}
       </button>
     </Panel>
 
     <delete-confirmation-modal
       :show="showAccountDeletionModal"
-      title="Delete account"
+      :title="$t('settings.deleteAccount')"
       entity-name="your account"
       :require-password="true"
       @close="showAccountDeletionModal = false"
@@ -210,19 +213,21 @@
     />
 
     <Modal :show="showPasskeyCreationModal" @close="showPasskeyCreationModal = false">
-      <template #title> Add a Passkey Device </template>
+      <template #title> {{ $t("settings.addPasskeyTitle") }} </template>
 
       <template #icon>
         <icon-fa6-solid:key class="icon icon-info" aria-hidden="true" />
       </template>
 
       <template #content>
-        Please give a name to your new Passkey Device.
+        {{ $t("settings.addPasskeyDesc") }}
         <field v-model="passKeyName" type="text" name="name" autocomplete="off" class="field" />
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="createPasskey">Create</button>
+        <button type="button" class="btn btn-primary" @click="createPasskey">
+          {{ $t("common.create") }}
+        </button>
 
         <button
           ref="cancelButtonRef"
@@ -230,7 +235,7 @@
           class="btn btn-cancel"
           @click="showPasskeyCreationModal = false"
         >
-          Cancel
+          {{ $t("common.cancel") }}
         </button>
       </template>
     </Modal>
@@ -241,12 +246,15 @@
 import type { Passkey } from "better-auth/plugins/passkey";
 import { Field, Form as VeeForm } from "vee-validate";
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
 import { authClient } from "@/helpers/auth-client";
 import { type RouterOutput, trpcClient } from "@/helpers/trpc";
 import type { Session } from "better-auth/types";
+
+const { t } = useI18n();
 
 const session = authClient.useSession();
 const orgs = authClient.useListOrganizations();
@@ -303,12 +311,12 @@ const showAccountDeletionModal = ref(false);
 const showPasskeyCreationModal = ref(false);
 
 const schema = Yup.object().shape({
-  currentPassword: Yup.string().required("Current password is required"),
+  currentPassword: Yup.string().required(t("settings.currentPasswordRequired")),
   email: Yup.string().email().required(),
-  name: Yup.string().min(5, "Name must be at least 5 characters"),
+  name: Yup.string().min(5, t("validation.nameMinLength")),
   newPassword: Yup.string()
     .transform((x) => (x === "" ? undefined : x))
-    .min(8, "Password must be at least 8 characters"),
+    .min(8, t("validation.passwordMinLength")),
 });
 
 async function onSubmit(values: Record<string, unknown>) {
@@ -333,7 +341,7 @@ async function onSubmit(values: Record<string, unknown>) {
 
 async function deleteUser() {
   if (deleteCurrentPassword.value === "") {
-    alert.error("Please provide your current password to delete your account.");
+    alert.error(t("settings.passwordRequiredForDelete"));
     return;
   }
 
@@ -342,11 +350,11 @@ async function deleteUser() {
   });
 
   if (resp.error) {
-    alert.error(resp.error.message ?? "An error occurred while deleting your account.");
+    alert.error(resp.error.message ?? t("settings.errorDeleteAccount"));
     return;
   }
 
-  alert.success("Your account has been successfully deleted.");
+  alert.success(t("settings.accountDeleted"));
   setTimeout(() => {
     window.location.reload();
   }, 2000);
@@ -355,7 +363,7 @@ async function deleteUser() {
 
 async function createPasskey() {
   if (!passKeyName.value) {
-    alert.error("Please provide a name for the Passkey Device.");
+    alert.error(t("settings.passkeyNameRequired"));
     return;
   }
 
@@ -395,7 +403,7 @@ async function unlinkSocial(providerId: string) {
   try {
     await authClient.unlinkAccount({ providerId });
     await loadLinkedAccounts();
-    alert.success(`Successfully unlinked your account from ${providerId}`);
+    alert.success(t("settings.unlinkedProvider", { providerId }));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
@@ -407,7 +415,7 @@ async function unsubscribeFromShop(shopId: number) {
       shopId,
     });
     await loadSubscribedShops();
-    alert.success("Successfully unsubscribed from shop notifications");
+    alert.success(t("settings.unsubscribedShop"));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }

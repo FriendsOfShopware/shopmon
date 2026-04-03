@@ -1,7 +1,7 @@
 <template>
   <div class="deployments-container">
     <Panel v-if="shop" class="setup-card">
-      <h3 class="setup-title">How to Track Deployments</h3>
+      <h3 class="setup-title">{{ $t("deployments.setupTitle") }}</h3>
       <p class="setup-description">
         Use the
         <a
@@ -29,7 +29,7 @@
                 hash: '#api-keys',
               }"
             >
-              Manage API Keys
+              {{ $t("deployments.manageApiKeys") }}
             </router-link>
           </span>
         </div>
@@ -44,18 +44,31 @@
         your git repository. If that is not available, you can set
         <code>SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to specify it manually. The target git
         repository URL can be configured in the
-        <router-link :to="{ name: 'account.project.list' }">project settings</router-link>.
+        <router-link :to="{ name: 'account.project.list' }">{{
+          $t("deployments.projectSettings")
+        }}</router-link
+        >.
       </p>
     </Panel>
 
-    <Panel variant="table" title="Deployment History">
+    <Panel variant="table" :title="$t('deployments.history')">
       <data-table
         v-if="deployments && deployments.length > 0"
         :columns="[
-          { key: 'name', name: 'Name', class: 'deployment-name', sortable: true },
-          { key: 'createdAt', name: 'Date', class: 'deployment-date', sortable: true },
-          { key: 'returnCode', name: 'Status', class: 'deployment-status', sortable: true },
-          { key: 'executionTime', name: 'Duration', class: 'deployment-duration', sortable: true },
+          { key: 'name', name: $t('common.name'), class: 'deployment-name', sortable: true },
+          { key: 'createdAt', name: $t('common.date'), class: 'deployment-date', sortable: true },
+          {
+            key: 'returnCode',
+            name: $t('common.status'),
+            class: 'deployment-status',
+            sortable: true,
+          },
+          {
+            key: 'executionTime',
+            name: $t('deployments.duration'),
+            class: 'deployment-duration',
+            sortable: true,
+          },
         ]"
         :data="deployments"
       >
@@ -71,7 +84,11 @@
           <span :class="['status-badge', row.returnCode === 0 ? 'status-success' : 'status-error']">
             <icon-fa6-solid:check v-if="row.returnCode === 0" class="icon" />
             <icon-fa6-solid:xmark v-else class="icon" />
-            {{ row.returnCode === 0 ? "Success" : `Failed (${row.returnCode})` }}
+            {{
+              row.returnCode === 0
+                ? $t("deployments.success")
+                : $t("deployments.failed", { code: row.returnCode })
+            }}
           </span>
         </template>
 
@@ -87,7 +104,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="btn btn-secondary"
-              title="Open commit"
+              :title="$t('deployments.openCommit')"
             >
               <icon-fa6-solid:arrow-up-right-from-square />
             </a>
@@ -103,7 +120,7 @@
               class="btn btn-sm"
             >
               <icon-fa6-solid:eye />
-              View
+              {{ $t("common.view") }}
             </router-link>
             <button class="btn btn-danger" @click="confirmDeleteDeployment(row)">
               <icon-fa6-solid:trash />
@@ -113,7 +130,7 @@
       </data-table>
       <div v-else class="empty-state">
         <icon-fa6-solid:rocket class="empty-icon" />
-        <p>No deployments recorded yet.</p>
+        <p>{{ $t("deployments.noDeployments") }}</p>
       </div>
     </Panel>
 
@@ -127,10 +144,10 @@
         <icon-fa6-solid:triangle-exclamation class="icon icon-error" />
       </template>
 
-      <template #title> Delete Deployment </template>
+      <template #title> {{ $t("deployments.deleteDeployment") }} </template>
 
       <template #content>
-        Are you sure you want to delete this deployment? This action cannot be undone.
+        {{ $t("deployments.deleteDeploymentConfirm") }}
       </template>
 
       <template #footer>
@@ -140,10 +157,10 @@
           :disabled="isDeletingDeployment"
           @click="deleteDeployment"
         >
-          Delete
+          {{ $t("common.delete") }}
         </button>
         <button type="button" class="btn" @click="showDeleteDeploymentDialog = false">
-          Cancel
+          {{ $t("common.cancel") }}
         </button>
       </template>
     </modal>

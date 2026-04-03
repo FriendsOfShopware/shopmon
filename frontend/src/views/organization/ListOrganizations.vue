@@ -1,27 +1,27 @@
 <template>
-  <header-container title="My Organization">
+  <header-container :title="$t('organization.title')">
     <router-link :to="{ name: 'account.organizations.new' }" type="button" class="btn btn-primary">
       <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-      Add Organization
+      {{ $t("organization.addOrganization") }}
     </router-link>
   </header-container>
 
   <main-container>
     <Panel v-if="!organizations.data || organizations.data.length === 0">
       <element-empty
-        title="No Organization"
+        :title="$t('organization.noOrganization')"
         :route="{ name: 'account.organizations.new' }"
-        button="Add Organization"
+        :button="$t('organization.addOrganization')"
       >
-        Get started by adding your first organization.
+        {{ $t("organization.getStarted") }}
       </element-empty>
     </Panel>
 
     <Panel v-else variant="table">
       <data-table
         :columns="[
-          { key: 'name', name: 'Name', sortable: true },
-          { key: 'slug', name: 'Slug', sortable: true },
+          { key: 'name', name: $t('common.name'), sortable: true },
+          { key: 'slug', name: $t('common.slug'), sortable: true },
         ]"
         :data="organizations.data || []"
         class="bg-white dark:bg-neutral-800"

@@ -2,7 +2,7 @@
   <modal class="update-wizard" :show="show" close-x-mark @close="$emit('close')">
     <template #title>
       <icon-fa6-solid:rotate />
-      Shopware Extension Compatibility Check
+      {{ $t("updateWizard.title") }}
     </template>
 
     <template #content>
@@ -12,7 +12,7 @@
           (event: Event) => $emit('versionSelected', (event.target as HTMLSelectElement).value)
         "
       >
-        <option disabled selected>Select update Version</option>
+        <option disabled selected>{{ $t("updateWizard.selectVersion") }}</option>
 
         <option v-for="version in shopwareVersions" :key="version">
           {{ version }}
@@ -21,13 +21,15 @@
 
       <template v-if="loading">
         <div class="update-wizard-loader">
-          Loading
+          {{ $t("common.loading") }}
           <icon-fa6-solid:rotate class="animate-spin" />
         </div>
       </template>
 
       <div v-if="extensions" :class="{ 'update-wizard-refresh': loading }">
-        <h2 class="update-wizard-plugins-heading">Extension Compatibility</h2>
+        <h2 class="update-wizard-plugins-heading">
+          {{ $t("updateWizard.extensionCompatibility") }}
+        </h2>
 
         <ul>
           <li v-for="extension in extensions" :key="extension.name" class="update-wizard-plugin">
@@ -58,7 +60,7 @@
               <span class="update-wizard-plugin-technical-name"> ({{ extension.name }})</span>
 
               <div v-if="!extension.compatibility || !extension.storeLink">
-                This plugin is not available in the Store. Please contact the plugin manufacturer.
+                {{ $t("updateWizard.notInStore") }}
               </div>
               <div v-else>
                 {{ extension.compatibility.label }}

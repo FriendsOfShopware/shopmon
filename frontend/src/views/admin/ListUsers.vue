@@ -1,5 +1,5 @@
 <template>
-  <HeaderContainer title="User Management" />
+  <HeaderContainer :title="$t('admin.userManagement')" />
 
   <Panel>
     <Alert v-if="error" type="danger">
@@ -11,7 +11,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search users by email..."
+          :placeholder="$t('admin.searchUsers')"
           class="field search-input"
           @input="debouncedSearch"
         />
@@ -19,9 +19,9 @@
 
       <div class="filter-container">
         <select v-model="roleFilter" class="field" @change="loadUsers">
-          <option value="">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
+          <option value="">{{ $t("admin.allRoles") }}</option>
+          <option value="admin">{{ $t("admin.roleAdmin") }}</option>
+          <option value="user">{{ $t("admin.roleUser") }}</option>
         </select>
       </div>
     </div>
@@ -34,11 +34,13 @@
       </template>
 
       <template #cell-status="{ row }">
-        <span v-if="row.banned" class="badge badge-danger"> Banned </span>
+        <span v-if="row.banned" class="badge badge-danger"> {{ $t("admin.banned") }} </span>
 
-        <span v-else-if="!row.emailVerified" class="badge badge-warning"> Unverified </span>
+        <span v-else-if="!row.emailVerified" class="badge badge-warning">
+          {{ $t("admin.unverified") }}
+        </span>
 
-        <span v-else class="badge badge-success"> Active </span>
+        <span v-else class="badge badge-success"> {{ $t("admin.active") }} </span>
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -53,7 +55,7 @@
             @click="impersonateUser(row.id)"
           >
             <icon-fa6-solid:user-secret class="icon" />
-            Impersonate
+            {{ $t("admin.impersonate") }}
           </button>
 
           <button
@@ -61,11 +63,11 @@
             class="btn btn-sm btn-danger"
             @click="banUser(row.id)"
           >
-            Ban
+            {{ $t("admin.ban") }}
           </button>
 
           <button v-else-if="row.banned" class="btn btn-sm" @click="unbanUser(row.id)">
-            Unban
+            {{ $t("admin.unban") }}
           </button>
         </div>
       </template>
@@ -73,20 +75,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      Loading users...
+      {{ $t("admin.loadingUsers") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        Previous
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        Next
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -98,6 +102,7 @@ import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { authClient } from "@/helpers/auth-client";
 import { formatDate } from "@/helpers/formatter";
+import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
 type User = Awaited<ReturnType<typeof authClient.admin.listUsers>>["data"]["users"][number];
@@ -115,13 +120,15 @@ const session = authClient.useSession();
 
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 
-const tableColumns = [
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "email", name: "Email", sortable: true, searchable: true },
-  { key: "role", name: "Role", sortable: true },
-  { key: "status", name: "Status" },
-  { key: "createdAt", name: "Created", sortable: true },
-];
+const { t } = useI18n();
+
+const tableColumns = computed(() => [
+  { key: "name", name: t("common.name"), sortable: true, searchable: true },
+  { key: "email", name: t("common.email"), sortable: true, searchable: true },
+  { key: "role", name: t("common.role"), sortable: true },
+  { key: "status", name: t("common.status") },
+  { key: "createdAt", name: t("admin.created"), sortable: true },
+]);
 
 async function loadUsers() {
   loading.value = true;

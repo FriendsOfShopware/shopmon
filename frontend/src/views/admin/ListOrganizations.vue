@@ -1,5 +1,5 @@
 <template>
-  <HeaderContainer title="Organization Management" />
+  <HeaderContainer :title="$t('admin.orgManagement')" />
 
   <Panel>
     <Alert v-if="error" type="danger">
@@ -11,7 +11,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search organizations by name or slug..."
+          :placeholder="$t('admin.searchOrgs')"
           class="field search-input"
           @input="debouncedSearch"
         />
@@ -19,18 +19,18 @@
 
       <div class="filter-container">
         <select v-model="sortBy" class="field" @change="loadOrganizations">
-          <option value="createdAt">Sort by Created</option>
-          <option value="name">Sort by Name</option>
-          <option value="slug">Sort by Slug</option>
-          <option value="shopCount">Sort by Shops</option>
-          <option value="memberCount">Sort by Members</option>
+          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
+          <option value="name">{{ $t("admin.sortByName") }}</option>
+          <option value="slug">{{ $t("admin.sortBySlug") }}</option>
+          <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
+          <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
         </select>
       </div>
 
       <div class="filter-container">
         <select v-model="sortDirection" class="field" @change="loadOrganizations">
-          <option value="desc">Descending</option>
-          <option value="asc">Ascending</option>
+          <option value="desc">{{ $t("common.descending") }}</option>
+          <option value="asc">{{ $t("common.ascending") }}</option>
         </select>
       </div>
     </div>
@@ -60,11 +60,13 @@
       </template>
 
       <template #cell-shopCount="{ row }">
-        <span class="badge badge-info"> {{ row.shopCount }} shops </span>
+        <span class="badge badge-info"> {{ $t("admin.nShops", { count: row.shopCount }) }} </span>
       </template>
 
       <template #cell-memberCount="{ row }">
-        <span class="badge badge-secondary"> {{ row.memberCount }} members </span>
+        <span class="badge badge-secondary">
+          {{ $t("admin.nMembers", { count: row.memberCount }) }}
+        </span>
       </template>
 
       <template #cell-createdAt="{ row }">
@@ -74,20 +76,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      Loading organizations...
+      {{ $t("admin.loadingOrgs") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        Previous
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        Next
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -99,6 +103,7 @@ import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { trpcClient } from "@/helpers/trpc";
 import { formatDate } from "@/helpers/formatter";
+import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
 type Organization = Awaited<
@@ -117,14 +122,16 @@ const totalOrganizations = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
 
-const tableColumns = [
-  { key: "logo", name: "Logo" },
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "slug", name: "Slug", sortable: true, searchable: true },
-  { key: "shopCount", name: "Shops", sortable: true },
-  { key: "memberCount", name: "Members", sortable: true },
-  { key: "createdAt", name: "Created", sortable: true },
-];
+const { t } = useI18n();
+
+const tableColumns = computed(() => [
+  { key: "logo", name: t("admin.logo") },
+  { key: "name", name: t("common.name"), sortable: true, searchable: true },
+  { key: "slug", name: t("common.slug"), sortable: true, searchable: true },
+  { key: "shopCount", name: t("common.shops"), sortable: true },
+  { key: "memberCount", name: t("common.members"), sortable: true },
+  { key: "createdAt", name: t("admin.created"), sortable: true },
+]);
 
 async function loadOrganizations() {
   loading.value = true;

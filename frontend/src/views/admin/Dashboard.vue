@@ -1,5 +1,5 @@
 <template>
-  <HeaderContainer title="Admin Dashboard" />
+  <HeaderContainer :title="$t('admin.dashboard')" />
 
   <Panel>
     <Alert v-if="error" type="danger">
@@ -8,40 +8,40 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      Loading dashboard stats...
+      {{ $t("admin.loadingStats") }}
     </div>
 
     <div v-if="!loading && stats" class="stats-grid">
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">Total Users</h3>
+          <h3 class="stat-title">{{ $t("admin.totalUsers") }}</h3>
           <icon-fa6-solid:users class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalUsers }}</div>
-        <p class="stat-description">Active users in the system</p>
+        <p class="stat-description">{{ $t("admin.totalUsersDesc") }}</p>
       </div>
 
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">Total Organizations</h3>
+          <h3 class="stat-title">{{ $t("admin.totalOrgs") }}</h3>
           <icon-fa6-solid:building class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalOrganizations }}</div>
-        <p class="stat-description">Registered organizations</p>
+        <p class="stat-description">{{ $t("admin.totalOrgsDesc") }}</p>
       </div>
 
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">Total Shops</h3>
+          <h3 class="stat-title">{{ $t("admin.totalShops") }}</h3>
           <icon-fa6-solid:store class="stat-icon" />
         </div>
         <div class="stat-value">{{ stats.totalShops }}</div>
-        <p class="stat-description">Monitored shops</p>
+        <p class="stat-description">{{ $t("admin.totalShopsDesc") }}</p>
       </div>
 
       <div class="stat-card status-breakdown">
         <div class="stat-header">
-          <h3 class="stat-title">Shop Status</h3>
+          <h3 class="stat-title">{{ $t("admin.shopStatus") }}</h3>
           <icon-fa6-solid:chart-bar class="stat-icon" />
         </div>
         <div class="status-list">
@@ -53,6 +53,16 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Action Links -->
+    <div v-if="!loading && stats" class="action-links">
+      <router-link to="/admin/organizations" class="btn btn-primary">
+        {{ $t("admin.manageOrgs") }}
+      </router-link>
+      <router-link to="/admin/shops" class="btn btn-primary">
+        {{ $t("admin.manageShops") }}
+      </router-link>
     </div>
   </Panel>
 
@@ -189,8 +199,16 @@ function createVersionChart(canvas: HTMLCanvasElement, data: { version: string; 
   if (!ctx) return null;
 
   const colors = [
-    "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
+    "#6366f1",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#84cc16",
+    "#f97316",
+    "#14b8a6",
   ];
 
   return new Chart(ctx, {

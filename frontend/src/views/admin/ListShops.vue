@@ -1,5 +1,5 @@
 <template>
-  <HeaderContainer title="Shop Management" />
+  <HeaderContainer :title="$t('admin.shopManagement')" />
 
   <Panel>
     <Alert v-if="error" type="danger">
@@ -11,7 +11,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search shops by name or URL..."
+          :placeholder="$t('admin.searchShops')"
           class="field search-input"
           @input="debouncedSearch"
         />
@@ -19,21 +19,21 @@
 
       <div class="filter-container">
         <select v-model="sortBy" class="field" @change="loadShops">
-          <option value="createdAt">Sort by Created</option>
-          <option value="name">Sort by Name</option>
-          <option value="url">Sort by URL</option>
-          <option value="status">Sort by Status</option>
-          <option value="shopwareVersion">Sort by Shopware Version</option>
-          <option value="lastScrapedAt">Sort by Last Scraped</option>
-          <option value="organizationName">Sort by Organization</option>
-          <option value="organizationSlug">Sort by Organization Slug</option>
+          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
+          <option value="name">{{ $t("admin.sortByName") }}</option>
+          <option value="url">{{ $t("admin.sortByUrl") }}</option>
+          <option value="status">{{ $t("admin.sortByStatus") }}</option>
+          <option value="shopwareVersion">{{ $t("admin.sortByShopwareVersion") }}</option>
+          <option value="lastScrapedAt">{{ $t("admin.sortByLastScraped") }}</option>
+          <option value="organizationName">{{ $t("admin.sortByOrg") }}</option>
+          <option value="organizationSlug">{{ $t("admin.sortByOrgSlug") }}</option>
         </select>
       </div>
 
       <div class="filter-container">
         <select v-model="sortDirection" class="field" @change="loadShops">
-          <option value="desc">Descending</option>
-          <option value="asc">Ascending</option>
+          <option value="desc">{{ $t("common.descending") }}</option>
+          <option value="asc">{{ $t("common.ascending") }}</option>
         </select>
       </div>
     </div>
@@ -84,20 +84,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      Loading shops...
+      {{ $t("admin.loadingShops") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        Previous
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        Next
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -109,6 +111,7 @@ import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { trpcClient } from "@/helpers/trpc";
 import { formatDate } from "@/helpers/formatter";
+import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
 type Shop = Awaited<ReturnType<typeof trpcClient.admin.listShops.query>>["shops"][number];
@@ -134,16 +137,18 @@ const totalShops = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalShops.value / pageSize.value));
 
-const tableColumns = [
-  { key: "name", name: "Name", sortable: true, searchable: true },
-  { key: "url", name: "URL", sortable: true, searchable: true },
-  { key: "status", name: "Status", sortable: true },
-  { key: "shopwareVersion", name: "Shopware Version", sortable: true },
-  { key: "lastScrapedAt", name: "Last Scraped", sortable: true },
-  { key: "organizationName", name: "Organization", sortable: true },
-  { key: "organizationSlug", name: "Organization Slug", sortable: true },
-  { key: "createdAt", name: "Created", sortable: true },
-];
+const { t } = useI18n();
+
+const tableColumns = computed(() => [
+  { key: "name", name: t("common.name"), sortable: true, searchable: true },
+  { key: "url", name: t("common.url"), sortable: true, searchable: true },
+  { key: "status", name: t("common.status"), sortable: true },
+  { key: "shopwareVersion", name: t("admin.shopwareVersion"), sortable: true },
+  { key: "lastScrapedAt", name: t("admin.lastScraped"), sortable: true },
+  { key: "organizationName", name: t("settings.organization"), sortable: true },
+  { key: "organizationSlug", name: t("admin.orgSlug"), sortable: true },
+  { key: "createdAt", name: t("admin.created"), sortable: true },
+]);
 
 async function loadShops() {
   loading.value = true;
