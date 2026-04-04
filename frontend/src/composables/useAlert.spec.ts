@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock i18n before importing useAlert
-vi.mock("@/i18n", () => {
-  const { createI18n } = require("vue-i18n");
+vi.mock("@/i18n", async () => {
+  const { createI18n } = await import("vue-i18n");
   return {
     i18n: createI18n({
       legacy: false,
@@ -17,7 +17,7 @@ vi.mock("@/i18n", () => {
             warningTitle: "Additional information",
           },
         },
-      },
+      } as any,
     }),
   };
 });

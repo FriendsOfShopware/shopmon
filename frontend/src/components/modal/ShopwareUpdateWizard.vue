@@ -10,7 +10,7 @@
 
       <div>
         <Select
-          @update:model-value="(v: string) => $emit('versionSelected', v)"
+          @update:model-value="(v) => v && $emit('versionSelected', String(v))"
         >
           <SelectTrigger class="mb-3 w-full">
             <SelectValue :placeholder="$t('updateWizard.selectVersion')" />

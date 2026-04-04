@@ -1,16 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent } from "vue";
+import { defineComponent, h } from "vue";
 import EditEnvironment from "./EditEnvironment.vue";
 
 
 const MainContainerStub = defineComponent({
   name: "MainContainer",
   setup(_, { slots }) {
-    return () => {
-      const { h } = require("vue");
-      return h("main", {}, slots.default?.());
-    };
+    return () => h("main", {}, slots.default?.());
   },
 });
 

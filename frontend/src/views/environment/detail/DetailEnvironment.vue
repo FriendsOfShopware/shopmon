@@ -226,8 +226,7 @@
           <div v-for="item in infoItems" :key="item.label">
             <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
             <dd class="mt-0.5">
-              <component :is="item.component" v-if="item.component" v-bind="item.componentProps" />
-              <span v-else class="text-sm">{{ item.value }}</span>
+              <span class="text-sm">{{ item.value }}</span>
             </dd>
           </div>
 

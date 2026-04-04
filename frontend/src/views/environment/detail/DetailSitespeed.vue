@@ -373,7 +373,7 @@ function createChart(config: ChartConfig) {
         tooltip: {
           callbacks: {
             label: (ctx) => `${ctx.dataset.label}: ${config.datasets[ctx.datasetIndex].tooltipFormatter(ctx.parsed.y ?? 0)}`,
-            title: (items) => items.length ? new Date(items[0].parsed.x).toLocaleString() : "",
+            title: (items) => items.length && items[0].parsed.x != null ? new Date(items[0].parsed.x).toLocaleString() : "",
           },
         },
       },

@@ -20,6 +20,7 @@ import {
 } from "@/composables/useAccountEnvironments";
 import { api } from "@/helpers/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { AcceptableValue } from "reka-ui";
 
 const { activeOrganizationId } = useSession();
 
@@ -46,7 +47,8 @@ const currentOrgName = computed(() => {
   return org?.name ?? "...";
 });
 
-async function switchOrganization(orgId: string) {
+async function switchOrganization(orgId: AcceptableValue) {
+  if (typeof orgId !== "string") return;
   if (orgId === activeOrganizationId.value) return;
   await setActiveOrganization(orgId);
   resetAccountEnvironments();
