@@ -1,20 +1,33 @@
 <template>
   <SidebarProvider>
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <!-- Logo + brand -->
+      <SidebarHeader class="border-b">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton @click="$router.push({ name: 'account.dashboard' })">
-              <icon-fa6-solid:magnifying-glass />
-              <span>Quick search...</span>
+            <SidebarMenuButton as-child class="h-10 hover:bg-transparent active:bg-transparent">
+              <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2.5">
+                <Logo class="size-7 shrink-0" />
+                <span class="text-base font-bold tracking-tight">Shopmon</span>
+              </RouterLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
+        <!-- Org switcher -->
+        <SidebarGroup class="py-2">
+          <SidebarGroupContent>
+            <OrganizationSwitcher />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <!-- Main nav -->
         <SidebarGroup>
-          <SidebarGroupLabel>Overview</SidebarGroupLabel>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem v-for="item in navigation" :key="item.route">
@@ -34,6 +47,7 @@
 
         <SidebarSeparator />
 
+        <!-- Environments -->
         <SidebarGroup v-if="environments.length > 0">
           <SidebarGroupLabel>Environments</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -58,15 +72,54 @@
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <!-- User menu in sidebar footer -->
+      <SidebarFooter class="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton as-child>
-              <RouterLink :to="{ name: 'account.settings' }">
-                <icon-fa6-solid:gear />
-                <span>Manage account</span>
-              </RouterLink>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <SidebarMenuButton class="h-10">
+                  <img class="size-6 shrink-0 rounded-full bg-primary object-cover" :src="userAvatar" alt="" />
+                  <div class="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span class="truncate text-sm font-medium">{{ session?.user.name }}</span>
+                    <span class="truncate text-xs text-muted-foreground">{{ session?.user.email }}</span>
+                  </div>
+                  <icon-fa6-solid:ellipsis-vertical class="ml-auto size-3 text-muted-foreground" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" class="w-56">
+                <DropdownMenuLabel class="font-normal">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-sm font-medium">{{ session?.user.name }}</span>
+                    <span class="text-xs text-muted-foreground">{{ session?.user.email }}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="$router.push({ name: 'account.settings' })">
+                  <icon-fa6-solid:gear class="mr-2 size-3.5" />
+                  {{ $t("nav.settings") }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="toggleDarkMode">
+                  <icon-fa6-regular:moon v-if="darkMode" class="mr-2 size-3.5" />
+                  <icon-octicon:sun-16 v-else class="mr-2 size-3.5" />
+                  {{ darkMode ? 'Light mode' : 'Dark mode' }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="toggleLocale">
+                  <icon-fa6-solid:globe class="mr-2 size-3.5" />
+                  {{ String(locale) === "en" ? "Deutsch" : "English" }}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem as="a" href="https://github.com/FriendsOfShopware/shopmon/" target="_blank">
+                  <icon-fa-brands:github class="mr-2 size-3.5" />
+                  GitHub
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="text-destructive focus:text-destructive" @click="logout">
+                  <icon-fa6-solid:power-off class="mr-2 size-3.5" />
+                  {{ $t("nav.logout") }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
@@ -75,41 +128,18 @@
     </Sidebar>
 
     <SidebarInset>
-      <!-- Header -->
-      <header class="flex h-12 items-center justify-between border-b bg-card px-4 lg:h-13 lg:px-5">
+      <!-- Top bar — minimal: trigger + breadcrumb area + notifications -->
+      <header class="flex h-12 items-center justify-between border-b px-4">
         <div class="flex items-center gap-2">
           <SidebarTrigger class="-ml-1" />
-          <Separator orientation="vertical" class="mr-2 h-4" />
-          <RouterLink :to="{ name: 'home' }" class="flex items-center">
-            <Logo class="h-7 w-auto" />
-          </RouterLink>
-          <OrganizationSwitcher />
         </div>
 
         <div class="flex items-center gap-1">
-          <a
-            href="https://github.com/FriendsOfShopware/shopmon/"
-            target="_blank"
-            class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label="GitHub"
-          >
-            <icon-fa-brands:github class="size-[1.125rem]" />
-          </a>
-
-          <Button variant="ghost" size="icon" class="size-8" @click="toggleDarkMode" aria-label="Toggle dark mode">
-            <icon-fa6-regular:moon v-if="darkMode" class="size-[1.125rem]" />
-            <icon-octicon:sun-16 v-else class="size-[1.125rem]" />
-          </Button>
-
-          <Button variant="ghost" size="sm" class="h-8 px-2 text-xs font-semibold tracking-wide" @click="toggleLocale">
-            {{ String(locale) === "en" ? "DE" : "EN" }}
-          </Button>
-
           <!-- Notifications -->
           <Popover>
             <PopoverTrigger as-child>
               <Button variant="ghost" size="icon" class="relative size-8" @click="markAllRead" aria-label="Notifications">
-                <icon-fa6-solid:bell class="size-[1.125rem]" />
+                <icon-fa6-solid:bell class="size-4" />
                 <span v-if="unreadNotificationCount > 0" class="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
                   {{ unreadNotificationCount }}
                 </span>
@@ -151,27 +181,6 @@
               <div v-else class="px-4 py-6 text-center text-sm text-muted-foreground">{{ $t("notifications.notMuchGoingOn") }}</div>
             </PopoverContent>
           </Popover>
-
-          <!-- User menu -->
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="icon" class="hidden size-8 overflow-hidden rounded-full bg-primary lg:flex" aria-label="User menu">
-                <img class="size-full rounded-full object-cover" :src="userAvatar" alt="" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="w-44">
-              <DropdownMenuLabel>{{ $t("topBar.greeting", { name: session!.user.name }) }}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                v-for="item in userNavigation"
-                :key="item.name"
-                @click="item.route === 'logout' ? logout() : $router.push({ name: item.route })"
-              >
-                <component :is="item.icon" class="mr-2 size-4" />
-                {{ item.name }}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </header>
 
@@ -191,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
@@ -200,6 +209,7 @@ import Notification from "@/components/Notification.vue";
 import LayoutFooter from "@/components/layout/LayoutFooter.vue";
 import OrganizationSwitcher from "@/components/layout/OrganizationSwitcher.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
+import Logo from "@/components/Logo.vue";
 
 import { useDarkMode } from "@/composables/useDarkMode";
 import { useLocale } from "@/composables/useLocale";
@@ -207,11 +217,9 @@ import { useNotifications } from "@/composables/useNotifications";
 import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { api, setToken } from "@/helpers/api";
-import { useI18n } from "vue-i18n";
 import { formatDateTime } from "@/helpers/formatter";
 
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -240,9 +248,6 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-
-import FaGear from "~icons/fa6-solid/gear";
-import FaPowerOff from "~icons/fa6-solid/power-off";
 
 const router = useRouter();
 const { session } = useSession();
@@ -274,7 +279,6 @@ const {
 } = useNotifications();
 const { darkMode, toggleDarkMode } = useDarkMode();
 const { locale, toggleLocale } = useLocale();
-const { t } = useI18n();
 
 const navigation = [
   { route: "account.dashboard" },
@@ -292,11 +296,6 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
     $route.name.match(item.active)
   );
 }
-
-const userNavigation = computed(() => [
-  { name: t("nav.settings"), route: "account.settings", icon: FaGear },
-  { name: t("nav.logout"), route: "logout", icon: FaPowerOff },
-]);
 
 async function logout() {
   await api.POST("/auth/sign-out");

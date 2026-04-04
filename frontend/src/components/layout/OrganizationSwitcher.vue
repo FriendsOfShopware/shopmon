@@ -1,6 +1,6 @@
 <template>
   <Select :model-value="activeOrganizationId ?? undefined" @update:model-value="switchOrganization">
-    <SelectTrigger class="ml-4 h-8 w-auto max-w-[12rem] gap-1.5 text-sm font-medium">
+    <SelectTrigger class="h-8 gap-1.5 text-sm font-medium">
       <SelectValue :placeholder="currentOrgName" />
     </SelectTrigger>
     <SelectContent>
