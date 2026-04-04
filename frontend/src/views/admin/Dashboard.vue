@@ -1,209 +1,156 @@
 <template>
-  <div class="flex items-center justify-between mb-6">
+  <div class="space-y-6">
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.dashboard") }}</h1>
-  </div>
 
-  <Card>
-    <CardContent>
-      <Alert v-if="error" variant="destructive">
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
 
-      <div
-        v-if="loading"
-        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
-      >
-        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
-        {{ $t("admin.loadingStats") }}
-      </div>
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
+      {{ $t("admin.loadingStats") }}
+    </div>
 
-      <div
-        v-if="!loading && stats"
-        class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 mb-8"
-      >
-        <div
-          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {{ $t("admin.totalUsers") }}
-            </h3>
-            <icon-fa6-solid:users class="size-6 text-primary opacity-70" />
-          </div>
-          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalUsers }}</div>
-          <p class="text-sm text-muted-foreground">{{ $t("admin.totalUsersDesc") }}</p>
-        </div>
-
-        <div
-          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {{ $t("admin.totalOrgs") }}
-            </h3>
-            <icon-fa6-solid:building class="size-6 text-primary opacity-70" />
-          </div>
-          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalOrganizations }}</div>
-          <p class="text-sm text-muted-foreground">{{ $t("admin.totalOrgsDesc") }}</p>
-        </div>
-
-        <div
-          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {{ $t("admin.totalEnvironments") }}
-            </h3>
-            <icon-fa6-solid:store class="size-6 text-primary opacity-70" />
-          </div>
-          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalEnvironments }}</div>
-          <p class="text-sm text-muted-foreground">{{ $t("admin.totalEnvironmentsDesc") }}</p>
-        </div>
-
-        <div
-          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {{ $t("admin.environmentStatus") }}
-            </h3>
-            <icon-fa6-solid:chart-bar class="size-6 text-primary opacity-70" />
-          </div>
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="(count, status) in stats.environmentsByStatus"
-              :key="status"
-              class="flex items-center justify-between rounded-md bg-background p-3"
-            >
-              <div class="flex-1">
-                <Badge
-                  :class="{
-                    'bg-emerald-500 text-white border-transparent': status === 'green',
-                    'bg-amber-500 text-white border-transparent': status === 'yellow',
-                    'bg-red-500 text-white border-transparent': status === 'red',
-                  }"
-                >
-                  {{ status }}
-                </Badge>
-              </div>
-              <div class="text-xl font-bold">{{ count }}</div>
+    <template v-if="!loading && stats">
+      <!-- Stat cards -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card v-for="stat in statCards" :key="stat.label">
+          <CardContent class="flex items-center gap-3 p-4">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <component :is="stat.icon" class="size-4 text-primary" />
             </div>
-          </div>
+            <div>
+              <div class="text-2xl font-bold tabular-nums">{{ stat.value }}</div>
+              <div class="text-xs text-muted-foreground">{{ stat.label }}</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Status breakdown -->
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm text-muted-foreground">Environment health:</span>
+        <div v-for="(count, status) in stats.environmentsByStatus" :key="status" class="flex items-center gap-1.5">
+          <StatusIcon :status="String(status)" />
+          <span class="text-sm font-medium tabular-nums">{{ count }}</span>
         </div>
       </div>
 
-      <!-- Action Links -->
-      <div v-if="!loading && stats" class="flex flex-wrap gap-4">
-        <Button as-child>
-          <RouterLink to="/admin/organizations">
+      <!-- Charts row -->
+      <div v-if="growthData" class="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base">User Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="h-56">
+              <canvas ref="userChartCanvas" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader class="pb-2">
+            <CardTitle class="text-base">Environment Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="h-56">
+              <canvas ref="shopChartCanvas" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Version distribution + recent activity -->
+      <div class="grid gap-4 lg:grid-cols-3">
+        <!-- Version distribution -->
+        <Card v-if="versionData?.length">
+          <CardHeader class="pb-3">
+            <CardTitle class="text-base">Shopware Versions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-2">
+              <div v-for="v in versionData" :key="v.version" class="flex items-center gap-3">
+                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{ v.version }}</Badge>
+                <div class="flex-1">
+                  <div class="h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${(v.count / totalEnvCount) * 100}%` }" />
+                  </div>
+                </div>
+                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{ v.count }}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Recent signups -->
+        <Card>
+          <CardHeader class="pb-3">
+            <CardTitle class="text-base">Recent Signups</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="!activity?.recentUsers?.length" class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
+              <icon-fa6-solid:users class="size-6 opacity-30" />
+              <p class="text-sm">No recent signups</p>
+            </div>
+            <div v-else class="space-y-1.5">
+              <div v-for="user in activity.recentUsers" :key="user.id" class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <icon-fa6-solid:user class="size-3 text-primary" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-sm font-medium">{{ user.displayName }}</div>
+                  <div class="truncate text-xs text-muted-foreground">{{ user.email }}</div>
+                </div>
+                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatDate(user.createdAt) }}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Recent environments -->
+        <Card>
+          <CardHeader class="pb-3">
+            <CardTitle class="text-base">Recent Environments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="!activity?.recentEnvironments?.length" class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
+              <icon-fa6-solid:earth-americas class="size-6 opacity-30" />
+              <p class="text-sm">No recent environments</p>
+            </div>
+            <div v-else class="space-y-1.5">
+              <div v-for="env in activity.recentEnvironments" :key="env.id" class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted">
+                  <icon-fa6-solid:earth-americas class="size-3 text-muted-foreground" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-sm font-medium">{{ env.name }}</div>
+                  <div class="truncate text-xs text-muted-foreground">{{ env.organizationName }}</div>
+                </div>
+                <StatusIcon :status="env.status" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" as-child>
+          <RouterLink to="/admin/users">
+            <icon-fa6-solid:users class="mr-1.5 size-3" />
             {{ $t("admin.manageOrgs") }}
           </RouterLink>
         </Button>
-        <Button as-child>
+        <Button variant="outline" size="sm" as-child>
           <RouterLink to="/admin/environments">
+            <icon-fa6-solid:earth-americas class="mr-1.5 size-3" />
             {{ $t("admin.manageEnvironments") }}
           </RouterLink>
         </Button>
       </div>
-    </CardContent>
-  </Card>
-
-  <!-- Growth Charts -->
-  <div v-if="growthData" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>User Growth</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div class="relative h-[300px]">
-          <canvas ref="userChartCanvas" />
-        </div>
-      </CardContent>
-    </Card>
-
-    <Card>
-      <CardHeader>
-        <CardTitle>Shop Growth</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div class="relative h-[300px]">
-          <canvas ref="shopChartCanvas" />
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-
-  <!-- Shopware Version Distribution -->
-  <Card v-if="versionData && versionData.length > 0">
-    <CardHeader>
-      <CardTitle>Shopware Version Distribution</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div class="relative h-[300px]">
-        <canvas ref="versionChartCanvas" />
-      </div>
-    </CardContent>
-  </Card>
-
-  <!-- Recent Activity -->
-  <div v-if="activity" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Signups</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          v-if="activity.recentUsers.length === 0"
-          class="text-center py-8 text-muted-foreground"
-        >
-          No recent signups
-        </div>
-        <div v-else class="flex flex-col">
-          <div
-            v-for="user in activity.recentUsers"
-            :key="user.id"
-            class="flex items-center justify-between py-3 border-b last:border-b-0"
-          >
-            <div class="flex flex-col gap-0.5 min-w-0">
-              <span class="font-semibold truncate">{{ user.displayName }}</span>
-              <span class="text-xs text-muted-foreground truncate">{{ user.email }}</span>
-            </div>
-            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{
-              formatDateTime(user.createdAt)
-            }}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <Card>
-      <CardHeader>
-        <CardTitle>Recent Environments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          v-if="activity.recentEnvironments.length === 0"
-          class="text-center py-8 text-muted-foreground"
-        >
-          No recent environments
-        </div>
-        <div v-else class="flex flex-col">
-          <div
-            v-for="env in activity.recentEnvironments"
-            :key="env.id"
-            class="flex items-center justify-between py-3 border-b last:border-b-0"
-          >
-            <div class="flex flex-col gap-0.5 min-w-0">
-              <span class="font-semibold truncate">{{ env.name }}</span>
-              <span class="text-xs text-muted-foreground truncate">{{ env.organizationName }}</span>
-            </div>
-            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{
-              env.lastScrapedAt ? formatDateTime(env.lastScrapedAt) : ""
-            }}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    </template>
   </div>
 </template>
 
@@ -212,11 +159,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import StatusIcon from "@/components/StatusIcon.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { formatDateTime } from "@/helpers/formatter";
-import { onMounted, onUnmounted, ref, nextTick, watch } from "vue";
+import { formatDate } from "@/helpers/formatter";
+import { onMounted, onUnmounted, ref, nextTick, watch, computed } from "vue";
 import { Chart, registerables } from "chart.js";
+
+import FaUsers from "~icons/fa6-solid/users";
+import FaBuilding from "~icons/fa6-solid/building";
+import FaEarth from "~icons/fa6-solid/earth-americas";
 
 Chart.register(...registerables);
 
@@ -232,19 +184,23 @@ const versionData = ref<VersionData | null>(null);
 const loading = ref(true);
 const error = ref("");
 
+const statCards = computed(() => {
+  if (!stats.value) return [];
+  return [
+    { icon: FaUsers, value: stats.value.totalUsers, label: "Users" },
+    { icon: FaBuilding, value: stats.value.totalOrganizations, label: "Organizations" },
+    { icon: FaEarth, value: stats.value.totalEnvironments, label: "Environments" },
+  ];
+});
+
+const totalEnvCount = computed(() => stats.value?.totalEnvironments ?? 1);
+
 const userChartCanvas = ref<HTMLCanvasElement | null>(null);
 const shopChartCanvas = ref<HTMLCanvasElement | null>(null);
-const versionChartCanvas = ref<HTMLCanvasElement | null>(null);
 let userChartInstance: Chart | null = null;
 let shopChartInstance: Chart | null = null;
-let versionChartInstance: Chart | null = null;
 
-function createGrowthChart(
-  canvas: HTMLCanvasElement,
-  data: { month: string; count: number }[],
-  label: string,
-  color: string,
-) {
+function createGrowthChart(canvas: HTMLCanvasElement, data: { month: string; count: number }[], color: string) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
@@ -252,107 +208,39 @@ function createGrowthChart(
     type: "line",
     data: {
       labels: data.map((d) => d.month),
-      datasets: [
-        {
-          label,
-          data: data.map((d) => d.count),
-          borderColor: color,
-          backgroundColor: color + "20",
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-        },
-      ],
+      datasets: [{
+        data: data.map((d) => d.count),
+        borderColor: color,
+        backgroundColor: color + "20",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-      },
+      plugins: { legend: { display: false }, title: { display: false } },
       scales: {
-        x: {
-          title: { display: true, text: "Month" },
-        },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "Total Count" },
-          ticks: { precision: 0 },
-        },
-      },
-    },
-  });
-}
-
-function createVersionChart(canvas: HTMLCanvasElement, data: { version: string; count: number }[]) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  const colors = [
-    "#6366f1",
-    "#10b981",
-    "#f59e0b",
-    "#ef4444",
-    "#8b5cf6",
-    "#06b6d4",
-    "#ec4899",
-    "#84cc16",
-    "#f97316",
-    "#14b8a6",
-  ];
-
-  return new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: data.map((d) => d.version),
-      datasets: [
-        {
-          data: data.map((d) => d.count),
-          backgroundColor: data.map((_, i) => colors[i % colors.length] + "cc"),
-          borderColor: data.map((_, i) => colors[i % colors.length]),
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "right",
-        },
+        x: { title: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } },
       },
     },
   });
 }
 
 function renderCharts() {
-  if (userChartInstance) userChartInstance.destroy();
-  if (shopChartInstance) shopChartInstance.destroy();
-  if (versionChartInstance) versionChartInstance.destroy();
+  userChartInstance?.destroy();
+  shopChartInstance?.destroy();
 
   if (growthData.value) {
     if (userChartCanvas.value) {
-      userChartInstance = createGrowthChart(
-        userChartCanvas.value,
-        growthData.value.users,
-        "Users",
-        "#6366f1",
-      );
+      userChartInstance = createGrowthChart(userChartCanvas.value, growthData.value.users, "#6366f1");
     }
     if (shopChartCanvas.value) {
-      shopChartInstance = createGrowthChart(
-        shopChartCanvas.value,
-        growthData.value.environments,
-        "Environments",
-        "#10b981",
-      );
+      shopChartInstance = createGrowthChart(shopChartCanvas.value, growthData.value.environments, "#10b981");
     }
-  }
-
-  if (versionData.value && versionChartCanvas.value) {
-    versionChartInstance = createVersionChart(versionChartCanvas.value, versionData.value);
   }
 }
 
@@ -384,14 +272,13 @@ onMounted(async () => {
   renderCharts();
 });
 
-watch([growthData, versionData], async () => {
+watch(growthData, async () => {
   await nextTick();
   renderCharts();
 });
 
 onUnmounted(() => {
-  if (userChartInstance) userChartInstance.destroy();
-  if (shopChartInstance) shopChartInstance.destroy();
-  if (versionChartInstance) versionChartInstance.destroy();
+  userChartInstance?.destroy();
+  shopChartInstance?.destroy();
 });
 </script>

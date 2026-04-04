@@ -1,136 +1,100 @@
 <template>
-  <div class="flex items-center justify-between mb-6">
+  <div class="space-y-6">
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.orgManagement") }}</h1>
-  </div>
 
-  <Card>
-    <CardContent>
-      <Alert v-if="error" variant="destructive">
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
 
-      <div class="flex flex-wrap items-center gap-4 mb-8">
-        <div class="flex-1 min-w-[250px]">
-          <Input
-            v-model="searchQuery"
-            :placeholder="$t('admin.searchOrgs')"
-            @input="debouncedSearch"
-          />
-        </div>
-
-        <div>
-          <select
-            v-model="sortBy"
-            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            @change="loadOrganizations"
-          >
-            <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
-            <option value="name">{{ $t("admin.sortByName") }}</option>
-            <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
-            <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
-          </select>
-        </div>
-
-        <div>
-          <select
-            v-model="sortDirection"
-            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            @change="loadOrganizations"
-          >
-            <option value="desc">{{ $t("common.descending") }}</option>
-            <option value="asc">{{ $t("common.ascending") }}</option>
-          </select>
-        </div>
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
+      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          v-for="s in sortOptions"
+          :key="s.value"
+          :class="[
+            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+            sortBy === s.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          ]"
+          @click="sortBy = s.value; loadOrganizations()"
+        >
+          {{ s.label }}
+        </button>
       </div>
 
-      <DataTable
-        v-if="!loading && organizations.length > 0"
-        :columns="tableColumns"
-        :data="organizations"
+      <div class="relative">
+        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          v-model="searchQuery"
+          :placeholder="$t('admin.searchOrgs')"
+          class="h-8 w-full pl-8 text-sm sm:w-56"
+          @input="debouncedSearch"
+        />
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
+      {{ $t("admin.loadingOrgs") }}
+    </div>
+
+    <!-- Org list -->
+    <div v-else-if="organizations.length > 0" class="space-y-2">
+      <RouterLink
+        v-for="org in organizations"
+        :key="org.id"
+        :to="{ name: 'account.organizations.detail', params: { organizationId: org.id } }"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
-        <template #cell-logo="{ row }">
-          <div class="flex items-center justify-center size-10">
-            <img
-              v-if="row.logo"
-              :src="row.logo"
-              :alt="row.name"
-              class="size-8 rounded object-cover"
-            />
-            <div
-              v-else
-              class="flex items-center justify-center size-8 rounded bg-muted text-muted-foreground"
-            >
-              <icon-fa6-solid:building class="size-4" />
-            </div>
+        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
+          <img v-if="org.logo" :src="org.logo" :alt="org.name" class="size-7 rounded object-cover" />
+          <icon-fa6-solid:building v-else class="size-4 text-muted-foreground" />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="truncate font-medium transition-colors group-hover:text-primary">{{ org.name }}</div>
+          <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span class="flex items-center gap-1">
+              <icon-fa6-solid:earth-americas class="size-2.5" />
+              {{ org.environmentCount }}
+            </span>
+            <span class="flex items-center gap-1">
+              <icon-fa6-solid:users class="size-2.5" />
+              {{ org.memberCount }}
+            </span>
+            <span class="hidden tabular-nums sm:inline">{{ formatDate(org.createdAt) }}</span>
           </div>
-        </template>
+        </div>
 
-        <template #cell-name="{ row }">
-          <router-link
-            :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }"
-            class="text-primary hover:underline"
-          >
-            {{ row.name }}
-          </router-link>
-        </template>
+        <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      </RouterLink>
+    </div>
 
-        <template #cell-environmentCount="{ row }">
-          <Badge class="bg-sky-500 text-white border-transparent">
-            {{ $t("admin.nShops", { count: row.environmentCount }) }}
-          </Badge>
-        </template>
+    <!-- Empty -->
+    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+      <icon-fa6-solid:building class="size-10 text-muted-foreground" />
+      <h3 class="text-lg font-semibold">No organizations found</h3>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">No organizations match "{{ searchQuery }}"</p>
+    </div>
 
-        <template #cell-memberCount="{ row }">
-          <Badge variant="secondary">
-            {{ $t("admin.nMembers", { count: row.memberCount }) }}
-          </Badge>
-        </template>
-
-        <template #cell-createdAt="{ row }">
-          {{ formatDate(row.createdAt) }}
-        </template>
-      </DataTable>
-
-      <div
-        v-if="loading"
-        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
-      >
-        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
-        {{ $t("admin.loadingOrgs") }}
-      </div>
-
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === 1"
-          @click="changePage(currentPage - 1)"
-        >
-          {{ $t("common.previous") }}
-        </Button>
-        <span class="text-sm text-muted-foreground">{{
-          $t("common.pageOf", { current: currentPage, total: totalPages })
-        }}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === totalPages"
-          @click="changePage(currentPage + 1)"
-        >
-          {{ $t("common.next") }}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+        {{ $t("common.previous") }}
+      </Button>
+      <span class="text-sm tabular-nums text-muted-foreground">{{ $t("common.pageOf", { current: currentPage, total: totalPages }) }}</span>
+      <Button size="sm" variant="outline" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+        {{ $t("common.next") }}
+      </Button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import DataTable from "@/components/layout/DataTable.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
@@ -150,16 +114,13 @@ const pageSize = ref(20);
 const totalOrganizations = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
-
 const { t } = useI18n();
 
-const tableColumns = computed(() => [
-  { key: "logo" as const, name: t("admin.logo") },
-  { key: "name" as const, name: t("common.name"), sortable: true, searchable: true },
-  { key: "environmentCount" as const, name: t("common.environments"), sortable: true },
-  { key: "memberCount" as const, name: t("common.members"), sortable: true },
-  { key: "createdAt" as const, name: t("admin.created"), sortable: true },
-]);
+const sortOptions = [
+  { label: t("admin.sortByCreated"), value: "createdAt" as const },
+  { label: t("admin.sortByName"), value: "name" as const },
+  { label: t("admin.sortByMembers"), value: "memberCount" as const },
+];
 
 async function loadOrganizations() {
   loading.value = true;
@@ -187,9 +148,7 @@ async function loadOrganizations() {
       query.searchValue = searchQuery.value;
     }
 
-    const { data: response } = await api.GET("/admin/organizations", {
-      params: { query },
-    });
+    const { data: response } = await api.GET("/admin/organizations", { params: { query } });
 
     if (response) {
       organizations.value = response.organizations;
@@ -210,13 +169,8 @@ function changePage(page: number) {
 let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    loadOrganizations();
-  }, 300);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; loadOrganizations(); }, 300);
 }
 
-onMounted(() => {
-  loadOrganizations();
-});
+onMounted(() => { loadOrganizations(); });
 </script>

@@ -1,133 +1,131 @@
 <template>
-  <div class="flex items-center justify-between mb-6">
+  <div class="space-y-6">
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.userManagement") }}</h1>
-  </div>
 
-  <Card>
-    <CardContent>
-      <Alert v-if="error" variant="destructive">
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
 
-      <div class="flex flex-wrap items-center gap-4 mb-8">
-        <div class="flex-1 min-w-[250px]">
-          <Input
-            v-model="searchQuery"
-            :placeholder="$t('admin.searchUsers')"
-            @input="debouncedSearch"
-          />
-        </div>
-
-        <div>
-          <select
-            v-model="roleFilter"
-            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            @change="loadUsers"
-          >
-            <option value="">{{ $t("admin.allRoles") }}</option>
-            <option value="admin">{{ $t("admin.roleAdmin") }}</option>
-            <option value="user">{{ $t("admin.roleUser") }}</option>
-          </select>
-        </div>
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
+      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          v-for="f in roleFilters"
+          :key="f.value"
+          :class="[
+            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+            roleFilter === f.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          ]"
+          @click="roleFilter = f.value; loadUsers()"
+        >
+          {{ f.label }}
+        </button>
       </div>
 
-      <DataTable v-if="!loading && users.length > 0" :columns="tableColumns" :data="users">
-        <template #cell-role="{ row }">
-          <Badge
-            :class="{
-              'bg-violet-600 text-white border-transparent': row.role === 'admin',
-              'bg-gray-500 text-white border-transparent': row.role !== 'admin',
-            }"
-          >
-            {{ row.role || "user" }}
-          </Badge>
-        </template>
+      <div class="relative">
+        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          v-model="searchQuery"
+          :placeholder="$t('admin.searchUsers')"
+          class="h-8 w-full pl-8 text-sm sm:w-56"
+          @input="debouncedSearch"
+        />
+      </div>
+    </div>
 
-        <template #cell-status="{ row }">
-          <Badge v-if="row.banned" class="bg-red-500 text-white border-transparent">
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
+      {{ $t("admin.loadingUsers") }}
+    </div>
+
+    <!-- User list -->
+    <div v-else-if="users.length > 0" class="space-y-2">
+      <div v-for="user in users" :key="user.id" class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3">
+        <!-- Avatar -->
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <icon-fa6-solid:user class="size-3.5 text-primary" />
+        </div>
+
+        <!-- Info -->
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="truncate font-medium">{{ user.name }}</span>
+            <Badge v-if="user.role === 'admin'" class="bg-primary/10 text-primary border-primary/20 text-[10px]">admin</Badge>
+          </div>
+          <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span class="truncate">{{ user.email }}</span>
+            <span class="hidden shrink-0 tabular-nums sm:inline">{{ formatDate(user.createdAt) }}</span>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="hidden shrink-0 sm:block">
+          <Badge v-if="user.banned" class="bg-destructive/10 text-destructive border-destructive/20 text-xs">
             {{ $t("admin.banned") }}
           </Badge>
-
-          <Badge v-else-if="!row.emailVerified" class="bg-amber-500 text-white border-transparent">
+          <Badge v-else-if="!user.emailVerified" class="bg-warning/10 text-warning border-warning/20 text-xs">
             {{ $t("admin.unverified") }}
           </Badge>
-
-          <Badge v-else class="bg-emerald-500 text-white border-transparent">
+          <Badge v-else class="bg-success/10 text-success border-success/20 text-xs">
             {{ $t("admin.active") }}
           </Badge>
-        </template>
+        </div>
 
-        <template #cell-createdAt="{ row }">
-          {{ formatUserDate(row.createdAt) }}
-        </template>
-
-        <template #cell-actions="{ row }">
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <Button
-              v-if="row.id != sessionData?.user?.id"
-              size="sm"
-              @click="impersonateUser(row.id)"
-            >
-              <icon-fa6-solid:user-secret class="size-3.5" />
-              {{ $t("admin.impersonate") }}
-            </Button>
-
-            <Button
-              v-if="!row.banned && row.id != sessionData?.user?.id"
-              size="sm"
-              variant="destructive"
-              @click="banUser(row.id)"
-            >
-              {{ $t("admin.ban") }}
-            </Button>
-
-            <Button v-else-if="row.banned" size="sm" variant="outline" @click="unbanUser(row.id)">
-              {{ $t("admin.unban") }}
-            </Button>
-          </div>
-        </template>
-      </DataTable>
-
-      <div
-        v-if="loading"
-        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
-      >
-        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
-        {{ $t("admin.loadingUsers") }}
+        <!-- Actions -->
+        <div v-if="user.id !== sessionData?.user?.id" class="flex shrink-0 items-center gap-1">
+          <Button variant="ghost" size="icon" class="size-7" title="Impersonate" @click="impersonateUser(user.id)">
+            <icon-fa6-solid:user-secret class="size-3.5" />
+          </Button>
+          <Button
+            v-if="!user.banned"
+            variant="ghost"
+            size="icon"
+            class="size-7 text-muted-foreground hover:text-destructive"
+            title="Ban user"
+            @click="banUser(user.id)"
+          >
+            <icon-fa6-solid:ban class="size-3.5" />
+          </Button>
+          <Button
+            v-else
+            variant="ghost"
+            size="icon"
+            class="size-7"
+            title="Unban user"
+            @click="unbanUser(user.id)"
+          >
+            <icon-fa6-solid:rotate class="size-3.5" />
+          </Button>
+        </div>
       </div>
+    </div>
 
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === 1"
-          @click="changePage(currentPage - 1)"
-        >
-          {{ $t("common.previous") }}
-        </Button>
-        <span class="text-muted-foreground text-sm">{{
-          $t("common.pageOf", { current: currentPage, total: totalPages })
-        }}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === totalPages"
-          @click="changePage(currentPage + 1)"
-        >
-          {{ $t("common.next") }}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+    <!-- Empty state -->
+    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+      <icon-fa6-solid:users class="size-10 text-muted-foreground" />
+      <h3 class="text-lg font-semibold">No users found</h3>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">No users match "{{ searchQuery }}"</p>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+        {{ $t("common.previous") }}
+      </Button>
+      <span class="text-sm text-muted-foreground tabular-nums">{{ $t("common.pageOf", { current: currentPage, total: totalPages }) }}</span>
+      <Button size="sm" variant="outline" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+        {{ $t("common.next") }}
+      </Button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import DataTable from "@/components/layout/DataTable.vue";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
@@ -142,7 +140,6 @@ interface User {
   banned: boolean;
   emailVerified: boolean;
   createdAt: string;
-  status?: string;
 }
 
 const users = ref<User[]>([]);
@@ -155,18 +152,14 @@ const pageSize = ref(20);
 const totalUsers = ref(0);
 
 const { session: sessionData } = useSession();
-
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
-
 const { t } = useI18n();
 
-const tableColumns = computed(() => [
-  { key: "name" as const, name: t("common.name"), sortable: true, searchable: true },
-  { key: "email" as const, name: t("common.email"), sortable: true, searchable: true },
-  { key: "role" as const, name: t("common.role"), sortable: true },
-  { key: "status" as const, name: t("common.status") },
-  { key: "createdAt" as const, name: t("admin.created"), sortable: true },
-]);
+const roleFilters = [
+  { label: t("admin.allRoles"), value: "" },
+  { label: t("admin.roleAdmin"), value: "admin" },
+  { label: t("admin.roleUser"), value: "user" },
+];
 
 async function loadUsers() {
   loading.value = true;
@@ -176,13 +169,11 @@ async function loadUsers() {
     const { data, error: respError } = await api.GET("/auth/admin/users");
 
     if (!respError && data) {
-      // The admin endpoint may return data in various shapes depending on server impl
       const userData = data as unknown as { users?: User[]; total?: number };
       users.value = userData.users ?? (Array.isArray(data) ? (data as User[]) : []);
       totalUsers.value = userData.total ?? users.value.length;
     } else {
-      error.value =
-        (respError as unknown as { message?: string })?.message ?? "Failed to load users";
+      error.value = (respError as unknown as { message?: string })?.message ?? "Failed to load users";
     }
   } catch (err) {
     error.value = `Failed to load users: ${err instanceof Error ? err.message : String(err)}`;
@@ -193,19 +184,10 @@ async function loadUsers() {
 
 async function impersonateUser(userId: string) {
   try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
-      params: { path: { userId } },
-    });
-
-    if (!respError) {
-      // Reload the page to apply the new session
-      window.location.href = "/";
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to impersonate user";
-    }
-  } catch (err) {
-    error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
-  }
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", { params: { path: { userId } } });
+    if (!respError) { window.location.href = "/"; }
+    else { error.value = (respError as { message?: string }).message ?? "Failed to impersonate user"; }
+  } catch (err) { error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`; }
 }
 
 async function banUser(userId: string) {
@@ -213,35 +195,18 @@ async function banUser(userId: string) {
   if (!reason) return;
 
   try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
-      params: { path: { userId } },
-      body: { banReason: reason },
-    });
-
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to ban user";
-    }
-  } catch (err) {
-    error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
-  }
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", { params: { path: { userId } }, body: { banReason: reason } });
+    if (!respError) { await loadUsers(); }
+    else { error.value = (respError as { message?: string }).message ?? "Failed to ban user"; }
+  } catch (err) { error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`; }
 }
 
 async function unbanUser(userId: string) {
   try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
-      params: { path: { userId } },
-    });
-
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to unban user";
-    }
-  } catch (err) {
-    error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;
-  }
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", { params: { path: { userId } } });
+    if (!respError) { await loadUsers(); }
+    else { error.value = (respError as { message?: string }).message ?? "Failed to unban user"; }
+  } catch (err) { error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`; }
 }
 
 function changePage(page: number) {
@@ -249,20 +214,11 @@ function changePage(page: number) {
   loadUsers();
 }
 
-function formatUserDate(date: string | Date) {
-  return formatDate(date);
-}
-
 let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    loadUsers();
-  }, 300);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; loadUsers(); }, 300);
 }
 
-onMounted(() => {
-  loadUsers();
-});
+onMounted(() => { loadUsers(); });
 </script>

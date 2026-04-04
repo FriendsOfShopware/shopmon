@@ -1,143 +1,99 @@
 <template>
-  <div class="flex items-center justify-between mb-6">
+  <div class="space-y-6">
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.environmentManagement") }}</h1>
+
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
+    </Alert>
+
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
+      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          v-for="s in sortOptions"
+          :key="s.value"
+          :class="[
+            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+            sortBy === s.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          ]"
+          @click="sortBy = s.value; loadEnvironments()"
+        >
+          {{ s.label }}
+        </button>
+      </div>
+
+      <div class="relative">
+        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          v-model="searchQuery"
+          :placeholder="$t('admin.searchEnvironments')"
+          class="h-8 w-full pl-8 text-sm sm:w-56"
+          @input="debouncedSearch"
+        />
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
+      {{ $t("admin.loadingEnvironments") }}
+    </div>
+
+    <!-- Environment list -->
+    <div v-else-if="environments.length > 0" class="space-y-2">
+      <div v-for="env in environments" :key="env.id" class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3">
+        <StatusIcon :status="env.status" class="shrink-0" />
+
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <a :href="env.url" target="_blank" class="truncate font-medium hover:text-primary transition-colors">
+              {{ env.name }}
+            </a>
+            <Badge variant="secondary" class="font-mono text-[10px]">{{ env.shopwareVersion }}</Badge>
+          </div>
+          <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <RouterLink
+              :to="{ name: 'account.organizations.detail', params: { organizationId: env.organizationId } }"
+              class="hover:text-primary transition-colors"
+            >
+              {{ env.organizationName }}
+            </RouterLink>
+            <span v-if="env.lastScrapedAt" class="hidden tabular-nums sm:inline">{{ formatDate(env.lastScrapedAt) }}</span>
+          </div>
+        </div>
+
+        <a :href="env.url" target="_blank" class="shrink-0 text-muted-foreground hover:text-foreground">
+          <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+      <icon-fa6-solid:earth-americas class="size-10 text-muted-foreground" />
+      <h3 class="text-lg font-semibold">No environments found</h3>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">No environments match "{{ searchQuery }}"</p>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+        {{ $t("common.previous") }}
+      </Button>
+      <span class="text-sm tabular-nums text-muted-foreground">{{ $t("common.pageOf", { current: currentPage, total: totalPages }) }}</span>
+      <Button size="sm" variant="outline" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+        {{ $t("common.next") }}
+      </Button>
+    </div>
   </div>
-
-  <Card>
-    <CardContent>
-      <Alert v-if="error" variant="destructive">
-        <AlertDescription>{{ error }}</AlertDescription>
-      </Alert>
-
-      <div class="flex flex-wrap items-center gap-4 mb-8">
-        <div class="flex-1 min-w-[250px]">
-          <Input
-            v-model="searchQuery"
-            :placeholder="$t('admin.searchEnvironments')"
-            @input="debouncedSearch"
-          />
-        </div>
-
-        <div>
-          <select
-            v-model="sortBy"
-            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            @change="loadEnvironments"
-          >
-            <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
-            <option value="name">{{ $t("admin.sortByName") }}</option>
-            <option value="url">{{ $t("admin.sortByUrl") }}</option>
-            <option value="status">{{ $t("admin.sortByStatus") }}</option>
-            <option value="shopwareVersion">{{ $t("admin.sortByShopwareVersion") }}</option>
-            <option value="lastScrapedAt">{{ $t("admin.sortByLastScraped") }}</option>
-            <option value="organizationName">{{ $t("admin.sortByOrg") }}</option>
-          </select>
-        </div>
-
-        <div>
-          <select
-            v-model="sortDirection"
-            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            @change="loadEnvironments"
-          >
-            <option value="desc">{{ $t("common.descending") }}</option>
-            <option value="asc">{{ $t("common.ascending") }}</option>
-          </select>
-        </div>
-      </div>
-
-      <DataTable
-        v-if="!loading && environments.length > 0"
-        :columns="tableColumns"
-        :data="environments"
-      >
-        <template #cell-name="{ row }">
-          <a :href="row.url" target="_blank" class="hover:underline">
-            {{ row.name }}
-          </a>
-        </template>
-
-        <template #cell-url="{ row }">
-          <a :href="row.url" target="_blank" class="hover:underline">
-            {{ row.url }}
-          </a>
-        </template>
-
-        <template #cell-status="{ row }">
-          <Badge
-            :class="{
-              'bg-emerald-500 text-white border-transparent': row.status === 'green',
-              'bg-amber-500 text-white border-transparent': row.status === 'yellow',
-              'bg-red-500 text-white border-transparent': row.status === 'red',
-            }"
-          >
-            {{ row.status }}
-          </Badge>
-        </template>
-
-        <template #cell-shopwareVersion="{ row }">
-          <code class="rounded bg-muted px-1.5 py-0.5 text-sm font-mono">{{
-            row.shopwareVersion
-          }}</code>
-        </template>
-
-        <template #cell-lastScrapedAt="{ row }">
-          {{ row.lastScrapedAt ? formatDate(row.lastScrapedAt) : "-" }}
-        </template>
-
-        <template #cell-organizationName="{ row }">
-          <router-link
-            :to="{
-              name: 'account.organizations.detail',
-              params: { organizationId: row.organizationId },
-            }"
-            class="text-primary hover:underline"
-          >
-            {{ row.organizationName }}
-          </router-link>
-        </template>
-      </DataTable>
-
-      <div
-        v-if="loading"
-        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
-      >
-        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
-        {{ $t("admin.loadingEnvironments") }}
-      </div>
-
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === 1"
-          @click="changePage(currentPage - 1)"
-        >
-          {{ $t("common.previous") }}
-        </Button>
-        <span class="text-sm text-muted-foreground">{{
-          $t("common.pageOf", { current: currentPage, total: totalPages })
-        }}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          :disabled="currentPage === totalPages"
-          @click="changePage(currentPage + 1)"
-        >
-          {{ $t("common.next") }}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
 </template>
 
 <script setup lang="ts">
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import DataTable from "@/components/layout/DataTable.vue";
+import StatusIcon from "@/components/StatusIcon.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
@@ -150,26 +106,21 @@ const environments = ref<Environment[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const sortBy = ref<
-  "createdAt" | "name" | "url" | "status" | "shopwareVersion" | "lastScrapedAt" | "organizationName"
->("createdAt");
+const sortBy = ref<"createdAt" | "name" | "url" | "status" | "shopwareVersion" | "lastScrapedAt" | "organizationName">("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalEnvironments = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalEnvironments.value / pageSize.value));
-
 const { t } = useI18n();
 
-const tableColumns = computed(() => [
-  { key: "name" as const, name: t("common.name"), sortable: true, searchable: true },
-  { key: "url" as const, name: t("common.url"), sortable: true, searchable: true },
-  { key: "status" as const, name: t("common.status"), sortable: true },
-  { key: "shopwareVersion" as const, name: t("admin.shopwareVersion"), sortable: true },
-  { key: "lastScrapedAt" as const, name: t("admin.lastScraped"), sortable: true },
-  { key: "organizationName" as const, name: t("settings.organization"), sortable: true },
-]);
+const sortOptions = [
+  { label: t("admin.sortByCreated"), value: "createdAt" as const },
+  { label: t("admin.sortByName"), value: "name" as const },
+  { label: t("admin.sortByStatus"), value: "status" as const },
+  { label: t("admin.sortByOrg"), value: "organizationName" as const },
+];
 
 async function loadEnvironments() {
   loading.value = true;
@@ -179,14 +130,7 @@ async function loadEnvironments() {
     const query: {
       limit: number;
       offset: number;
-      sortBy:
-        | "createdAt"
-        | "name"
-        | "url"
-        | "status"
-        | "shopwareVersion"
-        | "lastScrapedAt"
-        | "organizationName";
+      sortBy: typeof sortBy.value;
       sortDirection: "asc" | "desc";
       searchField?: "name" | "url";
       searchOperator?: "contains";
@@ -199,16 +143,13 @@ async function loadEnvironments() {
     };
 
     if (searchQuery.value) {
-      // Search by name if it contains letters, otherwise by URL
       const isNameSearch = /[a-zA-Z]/.test(searchQuery.value);
       query.searchField = isNameSearch ? "name" : "url";
       query.searchOperator = "contains";
       query.searchValue = searchQuery.value;
     }
 
-    const { data: response } = await api.GET("/admin/environments", {
-      params: { query },
-    });
+    const { data: response } = await api.GET("/admin/environments", { params: { query } });
 
     if (response) {
       environments.value = response.environments;
@@ -229,13 +170,8 @@ function changePage(page: number) {
 let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1;
-    loadEnvironments();
-  }, 300);
+  searchTimeout = setTimeout(() => { currentPage.value = 1; loadEnvironments(); }, 300);
 }
 
-onMounted(() => {
-  loadEnvironments();
-});
+onMounted(() => { loadEnvironments(); });
 </script>
