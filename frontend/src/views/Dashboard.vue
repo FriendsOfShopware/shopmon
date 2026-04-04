@@ -1,9 +1,9 @@
 <template>
   <div v-if="environments">
     <!-- Page header with welcome + quick stats -->
-    <div class="mb-8 flex items-end justify-between">
+    <div class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">{{ $t("dashboard.title") }}</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ $t("dashboard.title") }}</h1>
         <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
       </div>
       <div v-if="environments.length > 0" class="hidden items-center gap-6 sm:flex">

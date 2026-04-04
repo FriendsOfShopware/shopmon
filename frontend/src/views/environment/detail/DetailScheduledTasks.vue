@@ -49,7 +49,7 @@
     </div>
 
     <!-- Filter + search -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
       <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
         <button
           v-for="f in filters"
@@ -70,7 +70,7 @@
           v-model="searchQuery"
           type="search"
           placeholder="Search tasks..."
-          class="h-8 w-56 pl-8 text-sm"
+          class="h-8 w-full sm:w-56 pl-8 text-sm"
         />
       </div>
     </div>

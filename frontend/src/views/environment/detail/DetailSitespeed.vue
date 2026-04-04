@@ -6,7 +6,7 @@
 
   <div v-else-if="environment && environment.sitespeedEnabled" class="space-y-6">
     <!-- Latest metrics summary -->
-    <div v-if="latest" class="grid grid-cols-2 gap-4 lg:grid-cols-6">
+    <div v-if="latest" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
       <Card v-for="metric in metricCards" :key="metric.label">
         <CardContent class="p-4">
           <div class="text-xs font-medium text-muted-foreground">{{ metric.label }}</div>

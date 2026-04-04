@@ -14,13 +14,13 @@
         {{ $t("admin.loadingStats") }}
       </div>
 
-      <div v-if="!loading && stats" class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-8 mb-8">
+      <div v-if="!loading && stats" class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 mb-8">
         <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalUsers") }}</h3>
             <icon-fa6-solid:users class="size-6 text-primary opacity-70" />
           </div>
-          <div class="text-4xl font-bold my-2">{{ stats.totalUsers }}</div>
+          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalUsers }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalUsersDesc") }}</p>
         </div>
 
@@ -29,7 +29,7 @@
             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalOrgs") }}</h3>
             <icon-fa6-solid:building class="size-6 text-primary opacity-70" />
           </div>
-          <div class="text-4xl font-bold my-2">{{ stats.totalOrganizations }}</div>
+          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalOrganizations }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalOrgsDesc") }}</p>
         </div>
 
@@ -38,7 +38,7 @@
             <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalEnvironments") }}</h3>
             <icon-fa6-solid:store class="size-6 text-primary opacity-70" />
           </div>
-          <div class="text-4xl font-bold my-2">{{ stats.totalEnvironments }}</div>
+          <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalEnvironments }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalEnvironmentsDesc") }}</p>
         </div>
 
@@ -87,7 +87,7 @@
   </Card>
 
   <!-- Growth Charts -->
-  <div v-if="growthData" class="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
+  <div v-if="growthData" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
     <Card>
       <CardHeader>
         <CardTitle>User Growth</CardTitle>
@@ -124,7 +124,7 @@
   </Card>
 
   <!-- Recent Activity -->
-  <div v-if="activity" class="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
+  <div v-if="activity" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8">
     <Card>
       <CardHeader>
         <CardTitle>Recent Signups</CardTitle>

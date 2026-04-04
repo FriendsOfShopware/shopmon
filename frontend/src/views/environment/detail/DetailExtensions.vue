@@ -49,7 +49,7 @@
     </div>
 
     <!-- Filter + search bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
       <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
         <button
           v-for="f in filters"
@@ -70,7 +70,7 @@
           v-model="searchQuery"
           type="search"
           placeholder="Search extensions..."
-          class="h-8 w-56 pl-8 text-sm"
+          class="h-8 w-full sm:w-56 pl-8 text-sm"
         />
       </div>
     </div>
@@ -106,7 +106,7 @@
         </div>
 
         <!-- Version info -->
-        <div class="hidden shrink-0 items-center gap-2 sm:flex">
+        <div class="flex shrink-0 items-center gap-2">
           <Badge variant="secondary" class="font-mono text-xs">{{ ext.version }}</Badge>
           <template v-if="hasUpdate(ext)">
             <icon-fa6-solid:arrow-right class="size-2.5 text-muted-foreground" />

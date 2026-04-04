@@ -12,7 +12,7 @@
     </div>
 
     <!-- Summary cards -->
-    <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
           <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
@@ -35,7 +35,7 @@
           </div>
         </CardContent>
       </Card>
-      <Card class="col-span-2 lg:col-span-1">
+      <Card>
         <CardContent class="flex items-center gap-3 p-4">
           <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
             <icon-fa6-solid:shield-halved class="size-4 text-primary" />

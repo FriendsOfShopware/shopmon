@@ -84,11 +84,11 @@
             >
               {{ dep.name }}
             </RouterLink>
-            <Badge v-if="dep.returnCode === 0" variant="secondary" class="hidden gap-1 text-[10px] sm:inline-flex">
+            <Badge v-if="dep.returnCode === 0" variant="secondary" class="inline-flex gap-1 text-[10px]">
               <icon-fa6-solid:check class="size-2" />
               success
             </Badge>
-            <Badge v-else variant="destructive" class="hidden gap-1 text-[10px] sm:inline-flex">
+            <Badge v-else variant="destructive" class="inline-flex gap-1 text-[10px]">
               <icon-fa6-solid:xmark class="size-2" />
               exit {{ dep.returnCode }}
             </Badge>

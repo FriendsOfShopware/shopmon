@@ -58,21 +58,21 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" as-child>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" class="max-sm:hidden" as-child>
           <a :href="environment.url" target="_blank" rel="noopener noreferrer">
             <icon-fa6-solid:store class="mr-1.5 size-3" />
             Storefront
           </a>
         </Button>
-        <Button variant="outline" size="sm" as-child>
+        <Button variant="outline" size="sm" class="max-sm:hidden" as-child>
           <a :href="(environment.url ?? '') + '/admin'" target="_blank" rel="noopener noreferrer">
             <icon-fa6-solid:user-gear class="mr-1.5 size-3" />
             Admin
           </a>
         </Button>
 
-        <Separator orientation="vertical" class="mx-1 h-6" />
+        <Separator orientation="vertical" class="mx-1 h-6 max-sm:hidden" />
 
         <Button
           variant="ghost"

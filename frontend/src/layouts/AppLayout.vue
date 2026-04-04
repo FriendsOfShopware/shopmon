@@ -145,7 +145,7 @@
                 </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" class="w-80 p-0">
+            <PopoverContent align="end" class="w-80 max-w-[calc(100vw-2rem)] p-0">
               <div class="flex items-center justify-between border-b px-4 py-3 text-sm font-medium">
                 {{ $t("topBar.notifications", { count: notifications.length }) }}
                 <Button v-if="notifications.length > 0" variant="ghost" size="icon" class="size-6" @click="deleteAllNotifications">

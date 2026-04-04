@@ -108,7 +108,7 @@
   <!-- ═══════ DETAILED SHOWCASES ═══════ -->
   <section class="border-y bg-muted/30 py-24">
     <div class="mx-auto max-w-6xl space-y-28 px-6">
-      <div v-for="(section, i) in showcaseSections" :key="i" :class="['flex items-center gap-16 max-md:flex-col', i % 2 !== 0 ? 'md:flex-row-reverse' : '']">
+      <div v-for="(section, i) in showcaseSections" :key="i" :class="['flex items-center gap-8 md:gap-16 max-md:flex-col', i % 2 !== 0 ? 'md:flex-row-reverse' : '']">
         <div class="flex-1 max-md:text-center">
           <span class="mb-3 inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
             <component :is="section.icon" class="size-3" />
@@ -152,7 +152,7 @@
   <!-- ═══════ CTA ═══════ -->
   <section class="relative overflow-hidden bg-gradient-to-br from-[#0c4a6e] via-primary to-primary/80">
     <div class="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-white/5 blur-3xl" />
-    <div class="relative mx-auto flex max-w-5xl items-center gap-12 px-6 py-24 max-md:flex-col max-md:text-center">
+    <div class="relative mx-auto flex max-w-5xl items-center gap-8 md:gap-12 px-6 py-16 md:py-24 max-md:flex-col max-md:text-center">
       <div class="flex-1 md:text-right">
         <h2 class="mb-4 text-3xl font-bold text-white md:text-4xl">{{ $t("home.readyTitle") }}</h2>
         <p class="text-lg leading-relaxed text-white/70">{{ $t("home.readyDesc") }}</p>

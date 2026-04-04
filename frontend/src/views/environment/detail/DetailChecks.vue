@@ -1,7 +1,7 @@
 <template>
   <div v-if="environment" class="space-y-6">
     <!-- Summary bar -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
           <div class="flex size-9 items-center justify-center rounded-lg bg-destructive/10">

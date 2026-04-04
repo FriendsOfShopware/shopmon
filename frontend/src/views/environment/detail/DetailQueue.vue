@@ -1,7 +1,7 @@
 <template>
   <div v-if="environment" class="space-y-6">
     <!-- Summary -->
-    <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
           <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
@@ -24,7 +24,7 @@
           </div>
         </CardContent>
       </Card>
-      <Card class="col-span-2 lg:col-span-1">
+      <Card>
         <CardContent class="flex items-center gap-3 p-4">
           <div class="flex size-9 items-center justify-center rounded-lg" :class="busyQueues > 0 ? 'bg-warning/10' : 'bg-success/10'">
             <icon-fa6-solid:gauge-high class="size-4" :class="busyQueues > 0 ? 'text-warning' : 'text-success'" />

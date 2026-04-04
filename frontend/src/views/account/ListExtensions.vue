@@ -26,7 +26,7 @@
         </div>
         <div class="relative">
           <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
-          <Input v-model="term" :placeholder="$t('common.search')" class="h-8 w-56 pl-8 text-sm" />
+          <Input v-model="term" :placeholder="$t('common.search')" class="h-8 w-full sm:w-56 pl-8 text-sm" />
         </div>
       </div>
 
