@@ -53,7 +53,7 @@
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <RouterLink
-              :to="{ name: 'account.organizations.detail', params: { organizationId: env.organizationId } }"
+              :to="{ name: 'account.organizations.detail' }"
               class="hover:text-primary transition-colors"
             >
               {{ env.organizationName }}

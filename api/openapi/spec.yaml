@@ -240,13 +240,11 @@ paths:
   # ──────────────────────────────────────────────
   # Environments
   # ──────────────────────────────────────────────
-  /organizations/{orgId}/environments:
+  /organization/environments:
     get:
       operationId: getOrganizationEnvironments
       tags: [Environments]
-      summary: Get all environments in an organization
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
+      summary: Get all environments in the active organization
       responses:
         "200":
           description: List of environments
@@ -478,13 +476,11 @@ paths:
   # ──────────────────────────────────────────────
   # Shops
   # ──────────────────────────────────────────────
-  /organizations/{orgId}/shops:
+  /organization/shops:
     get:
       operationId: getOrganizationShops
       tags: [Shops]
-      summary: Get all shops in an organization
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
+      summary: Get all shops in the active organization
       responses:
         "200":
           description: List of shops
@@ -501,9 +497,7 @@ paths:
     post:
       operationId: createShop
       tags: [Shops]
-      summary: Create a new shop
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
+      summary: Create a new shop in the active organization
       requestBody:
         required: true
         content:
@@ -520,13 +514,12 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/shops/{shopId}:
+  /organization/shops/{shopId}:
     patch:
       operationId: updateShop
       tags: [Shops]
       summary: Update a shop
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
@@ -550,7 +543,6 @@ paths:
       tags: [Shops]
       summary: Delete a shop
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       responses:
         "204":
@@ -581,13 +573,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/ApiKeyScope"
 
-  /organizations/{orgId}/shops/{shopId}/api-keys:
+  /organization/shops/{shopId}/api-keys:
     get:
       operationId: getApiKeys
       tags: [ApiKeys]
       summary: List API keys for a shop
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       responses:
         "200":
@@ -607,7 +598,6 @@ paths:
       tags: [ApiKeys]
       summary: Create a new API key
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
@@ -629,13 +619,12 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/shops/{shopId}/api-keys/{keyId}:
+  /organization/shops/{shopId}/api-keys/{keyId}:
     delete:
       operationId: deleteApiKey
       tags: [ApiKeys]
       summary: Delete an API key
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/KeyId"
       responses:
@@ -666,13 +655,12 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /organizations/{orgId}/shops/{shopId}/packages-tokens:
+  /organization/shops/{shopId}/packages-tokens:
     get:
       operationId: getPackagesTokens
       tags: [PackagesToken]
       summary: List packages tokens for a shop
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       responses:
         "200":
@@ -692,7 +680,6 @@ paths:
       tags: [PackagesToken]
       summary: Create a new packages token
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
@@ -710,13 +697,12 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}:
+  /organization/shops/{shopId}/packages-tokens/{tokenId}:
     delete:
       operationId: deletePackagesToken
       tags: [PackagesToken]
       summary: Delete a packages token
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/TokenId"
       responses:
@@ -729,13 +715,12 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync:
+  /organization/shops/{shopId}/packages-tokens/{tokenId}/sync:
     post:
       operationId: syncPackagesToken
       tags: [PackagesToken]
       summary: Sync a packages token
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/TokenId"
       responses:
@@ -854,13 +839,11 @@ paths:
   # ──────────────────────────────────────────────
   # SSO
   # ──────────────────────────────────────────────
-  /organizations/{orgId}/sso-providers:
+  /organization/sso-providers:
     get:
       operationId: getSsoProviders
       tags: [SSO]
-      summary: List SSO providers for an organization
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
+      summary: List SSO providers for the active organization
       responses:
         "200":
           description: List of SSO providers
@@ -899,13 +882,12 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/sso-providers/{providerId}:
+  /organization/sso-providers/{providerId}:
     put:
       operationId: updateSsoProvider
       tags: [SSO]
       summary: Update an SSO provider
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ProviderId"
       requestBody:
         required: true
@@ -929,7 +911,6 @@ paths:
       tags: [SSO]
       summary: Delete an SSO provider
       parameters:
-        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ProviderId"
       responses:
         "204":
@@ -1528,17 +1509,11 @@ paths:
                   name:
                     type: string
 
-  /auth/organizations/{organizationId}:
+  /auth/organization:
     patch:
       operationId: updateOrganization
       tags: [Organizations]
-      summary: Update an organization
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
+      summary: Update the active organization
       requestBody:
         content:
           application/json:
@@ -1555,30 +1530,18 @@ paths:
     delete:
       operationId: deleteOrganization
       tags: [Organizations]
-      summary: Delete an organization
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
+      summary: Delete the active organization
       responses:
         "200":
           description: Deleted
         "403":
           description: Only owners can delete
 
-  /auth/organizations/{organizationId}/members:
+  /auth/organization/members:
     get:
       operationId: listOrganizationMembers
       tags: [Organizations]
       summary: List organization members
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: List of members
@@ -1603,17 +1566,12 @@ paths:
                       type: string
                       nullable: true
 
-  /auth/organizations/{organizationId}/members/{userId}:
+  /auth/organization/members/{userId}:
     patch:
       operationId: setMemberRole
       tags: [Organizations]
       summary: Change a member's role
       parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
         - name: userId
           in: path
           required: true
@@ -1636,11 +1594,6 @@ paths:
       tags: [Organizations]
       summary: Remove a member from the organization
       parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
         - name: userId
           in: path
           required: true
@@ -1650,34 +1603,22 @@ paths:
         "200":
           description: Member removed
 
-  /auth/organizations/{organizationId}/leave:
+  /auth/organization/leave:
     post:
       operationId: leaveOrganization
       tags: [Organizations]
-      summary: Leave an organization
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
+      summary: Leave the active organization
       responses:
         "200":
           description: Left organization
         "400":
           description: Cannot leave as only owner
 
-  /auth/organizations/{organizationId}/invitations:
+  /auth/organization/invitations:
     get:
       operationId: listOrganizationInvitations
       tags: [Organizations]
       summary: List pending invitations
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         "200":
           description: List of pending invitations
@@ -1685,12 +1626,6 @@ paths:
       operationId: inviteMember
       tags: [Organizations]
       summary: Invite a user to the organization
-      parameters:
-        - name: organizationId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
@@ -1837,13 +1772,7 @@ paths:
     get:
       operationId: getFullOrganization
       tags: [Auth]
-      summary: Get full organization details by ID
-      parameters:
-        - name: organizationId
-          in: query
-          required: true
-          schema:
-            type: string
+      summary: Get full details of the active organization
       responses:
         "200":
           description: Full organization details
@@ -2302,14 +2231,6 @@ components:
   # Parameters
   # ──────────────────────────────────────────────
   parameters:
-    OrgId:
-      name: orgId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Organization ID
-
     EnvironmentId:
       name: environmentId
       in: path

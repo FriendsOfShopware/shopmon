@@ -40,7 +40,7 @@
                   @click="
                     $router.push({
                       name: currentTabRoute,
-                      params: { organizationId: env.organizationId, environmentId: env.id },
+                      params: { environmentId: env.id },
                     })
                   "
                 >
@@ -143,7 +143,6 @@
             :to="{
               name: 'account.environments.edit',
               params: {
-                organizationId: route.params.organizationId,
                 environmentId: environment.id,
               },
             }"
@@ -176,7 +175,6 @@
         :to="{
           name: tab.route,
           params: {
-            organizationId: route.params.organizationId,
             environmentId: route.params.environmentId,
           },
         }"
@@ -381,7 +379,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       label: environment.value.organizationName,
       to: {
         name: "account.organizations.detail",
-        params: { organizationId: environment.value.organizationId },
       },
     },
   ];
@@ -395,7 +392,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       : {
           name: "account.environments.detail",
           params: {
-            organizationId: route.params.organizationId,
             environmentId: route.params.environmentId,
           },
         },

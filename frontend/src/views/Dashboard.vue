@@ -86,7 +86,7 @@
               :key="env.id"
               :to="{
                 name: 'account.environments.detail',
-                params: { organizationId: env.organizationId, environmentId: env.id },
+                params: { environmentId: env.id },
               }"
               class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
             >
@@ -152,7 +152,7 @@
                 :key="log.id"
                 :to="{
                   name: 'account.environments.detail',
-                  params: { organizationId: log.environmentOrganizationId, environmentId: log.environmentId },
+                  params: { environmentId: log.environmentId },
                 }"
                 class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
               >

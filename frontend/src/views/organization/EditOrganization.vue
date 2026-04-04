@@ -9,7 +9,6 @@
         <RouterLink
           :to="{
             name: 'account.organizations.detail',
-            params: { organizationId: organization.id },
           }"
         >
           {{ $t("common.cancel") }}
@@ -117,9 +116,7 @@ watch(organization, (org) => {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
-    });
+    const { data } = await api.GET("/auth/get-full-organization");
     if (!data) return;
     organization.value = data as unknown as OrganizationData;
 
@@ -143,8 +140,7 @@ const showOrganizationDeletionModal = ref(false);
 const onSubmit = handleSubmit(async (values) => {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.PATCH("/auth/organizations/{organizationId}", {
-      params: { path: { organizationId: organization.value.id } },
+    const { error: respError } = await api.PATCH("/auth/organization", {
       body: { name: values.name },
     });
     if (respError) {
@@ -153,7 +149,6 @@ const onSubmit = handleSubmit(async (values) => {
     }
     await router.push({
       name: "account.organizations.detail",
-      params: { organizationId: organization.value.id },
     });
   } catch (err) {
     error(err instanceof Error ? err.message : String(err));
@@ -163,9 +158,7 @@ const onSubmit = handleSubmit(async (values) => {
 async function deleteOrganization() {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.DELETE("/auth/organizations/{organizationId}", {
-      params: { path: { organizationId: organization.value.id } },
-    });
+    const { error: respError } = await api.DELETE("/auth/organization");
     if (respError) {
       error((respError as { message?: string }).message ?? t("organization.failedDeleteOrg"));
       return;

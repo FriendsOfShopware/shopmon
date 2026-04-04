@@ -8,7 +8,6 @@
           <RouterLink
             :to="{
               name: 'account.organizations.detail',
-              params: { organizationId: route.params.organizationId },
             }"
           >
             <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
@@ -377,9 +376,7 @@ const callbackUrl = computed(() => {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
-    });
+    const { data } = await api.GET("/auth/get-full-organization");
     if (!data) {
       alert.error("Failed to load organization");
       return;
@@ -395,9 +392,7 @@ async function loadProviders() {
   if (!organization.value) return;
   isLoading.value = true;
   try {
-    const { data: providers } = await api.GET("/organizations/{orgId}/sso-providers", {
-      params: { path: { orgId: organization.value.id } },
-    });
+    const { data: providers } = await api.GET("/organization/sso-providers");
     ssoProviders.value = (providers ?? []) as unknown as SSOProvider[];
   } catch (error) {
     alert.error(
@@ -483,9 +478,9 @@ const onSubmitProvider = handleProviderSubmit(async (values) => {
   isSubmitting.value = true;
   try {
     if (isEditMode.value && editingProvider.value) {
-      await api.PUT("/organizations/{orgId}/sso-providers/{providerId}", {
+      await api.PUT("/organization/sso-providers/{providerId}", {
         params: {
-          path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
+          path: { providerId: editingProvider.value.providerId },
         },
         body: {
           domain: values.domain,
@@ -538,9 +533,9 @@ async function deleteProvider() {
   if (!deletingProvider.value) return;
   isDeleting.value = true;
   try {
-    await api.DELETE("/organizations/{orgId}/sso-providers/{providerId}", {
+    await api.DELETE("/organization/sso-providers/{providerId}", {
       params: {
-        path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
+        path: { providerId: deletingProvider.value.providerId },
       },
     });
     alert.success(t("sso.providerDeleted"));

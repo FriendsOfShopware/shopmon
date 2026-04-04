@@ -28,9 +28,13 @@ func (h *Handler) GetApiKeyScopes(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetApiKeys lists API keys for a shop.
-func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -76,9 +80,13 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 }
 
 // CreateApiKey creates a new API key for a shop.
-func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -138,9 +146,13 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 }
 
 // DeleteApiKey deletes an API key.
-func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, keyId api.KeyId) {
+func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, shopId api.ShopId, keyId api.KeyId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {

@@ -121,11 +121,6 @@ type ForgetPasswordJSONBody struct {
 	Email openapi_types.Email `json:"email"`
 }
 
-// GetFullOrganizationParams defines parameters for GetFullOrganization.
-type GetFullOrganizationParams struct {
-	OrganizationId string `form:"organizationId" json:"organizationId"`
-}
-
 // HasPermissionJSONBody defines parameters for HasPermission.
 type HasPermissionJSONBody struct {
 	OrganizationId string `json:"organizationId"`
@@ -364,7 +359,7 @@ type ServerInterface interface {
 	ForgetPassword(w http.ResponseWriter, r *http.Request)
 	// Get full organization details by ID
 	// (GET /auth/get-full-organization)
-	GetFullOrganization(w http.ResponseWriter, r *http.Request, params GetFullOrganizationParams)
+	GetFullOrganization(w http.ResponseWriter, r *http.Request)
 	// Check organization permission
 	// (POST /auth/has-permission)
 	HasPermission(w http.ResponseWriter, r *http.Request)
@@ -390,29 +385,29 @@ type ServerInterface interface {
 	// (POST /auth/organizations)
 	CreateOrganization(w http.ResponseWriter, r *http.Request)
 	// Delete an organization
-	// (DELETE /auth/organizations/{organizationId})
-	DeleteOrganization(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (DELETE /auth/organization)
+	DeleteOrganization(w http.ResponseWriter, r *http.Request)
 	// Update an organization
-	// (PATCH /auth/organizations/{organizationId})
-	UpdateOrganization(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (PATCH /auth/organization)
+	UpdateOrganization(w http.ResponseWriter, r *http.Request)
 	// List pending invitations
-	// (GET /auth/organizations/{organizationId}/invitations)
-	ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (GET /auth/organization/invitations)
+	ListOrganizationInvitations(w http.ResponseWriter, r *http.Request)
 	// Invite a user to the organization
-	// (POST /auth/organizations/{organizationId}/invitations)
-	InviteMember(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (POST /auth/organization/invitations)
+	InviteMember(w http.ResponseWriter, r *http.Request)
 	// Leave an organization
-	// (POST /auth/organizations/{organizationId}/leave)
-	LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (POST /auth/organization/leave)
+	LeaveOrganization(w http.ResponseWriter, r *http.Request)
 	// List organization members
-	// (GET /auth/organizations/{organizationId}/members)
-	ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organizationId string)
+	// (GET /auth/organization/members)
+	ListOrganizationMembers(w http.ResponseWriter, r *http.Request)
 	// Remove a member from the organization
-	// (DELETE /auth/organizations/{organizationId}/members/{userId})
-	RemoveMember(w http.ResponseWriter, r *http.Request, organizationId string, userId string)
+	// (DELETE /auth/organization/members/{userId})
+	RemoveMember(w http.ResponseWriter, r *http.Request, userId string)
 	// Change a member's role
-	// (PATCH /auth/organizations/{organizationId}/members/{userId})
-	SetMemberRole(w http.ResponseWriter, r *http.Request, organizationId string, userId string)
+	// (PATCH /auth/organization/members/{userId})
+	SetMemberRole(w http.ResponseWriter, r *http.Request, userId string)
 	// Delete a passkey
 	// (POST /auth/passkey/delete-passkey)
 	DeletePasskey(w http.ResponseWriter, r *http.Request)
@@ -550,7 +545,7 @@ func (_ Unimplemented) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 
 // Get full organization details by ID
 // (GET /auth/get-full-organization)
-func (_ Unimplemented) GetFullOrganization(w http.ResponseWriter, r *http.Request, params GetFullOrganizationParams) {
+func (_ Unimplemented) GetFullOrganization(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -603,50 +598,50 @@ func (_ Unimplemented) CreateOrganization(w http.ResponseWriter, r *http.Request
 }
 
 // Delete an organization
-// (DELETE /auth/organizations/{organizationId})
-func (_ Unimplemented) DeleteOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (DELETE /auth/organization)
+func (_ Unimplemented) DeleteOrganization(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update an organization
-// (PATCH /auth/organizations/{organizationId})
-func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (PATCH /auth/organization)
+func (_ Unimplemented) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // List pending invitations
-// (GET /auth/organizations/{organizationId}/invitations)
-func (_ Unimplemented) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (GET /auth/organization/invitations)
+func (_ Unimplemented) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Invite a user to the organization
-// (POST /auth/organizations/{organizationId}/invitations)
-func (_ Unimplemented) InviteMember(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (POST /auth/organization/invitations)
+func (_ Unimplemented) InviteMember(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Leave an organization
-// (POST /auth/organizations/{organizationId}/leave)
-func (_ Unimplemented) LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (POST /auth/organization/leave)
+func (_ Unimplemented) LeaveOrganization(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // List organization members
-// (GET /auth/organizations/{organizationId}/members)
-func (_ Unimplemented) ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organizationId string) {
+// (GET /auth/organization/members)
+func (_ Unimplemented) ListOrganizationMembers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Remove a member from the organization
-// (DELETE /auth/organizations/{organizationId}/members/{userId})
-func (_ Unimplemented) RemoveMember(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
+// (DELETE /auth/organization/members/{userId})
+func (_ Unimplemented) RemoveMember(w http.ResponseWriter, r *http.Request, userId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Change a member's role
-// (PATCH /auth/organizations/{organizationId}/members/{userId})
-func (_ Unimplemented) SetMemberRole(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
+// (PATCH /auth/organization/members/{userId})
+func (_ Unimplemented) SetMemberRole(w http.ResponseWriter, r *http.Request, userId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1048,34 +1043,14 @@ func (siw *ServerInterfaceWrapper) ForgetPassword(w http.ResponseWriter, r *http
 // GetFullOrganization operation middleware
 func (siw *ServerInterfaceWrapper) GetFullOrganization(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetFullOrganizationParams
-
-	// ------------- Required query parameter "organizationId" -------------
-
-	if paramValue := r.URL.Query().Get("organizationId"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "organizationId"})
-		return
-	}
-
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "organizationId", r.URL.Query(), &params.OrganizationId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetFullOrganization(w, r, params)
+		siw.Handler.GetFullOrganization(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1270,17 +1245,6 @@ func (siw *ServerInterfaceWrapper) CreateOrganization(w http.ResponseWriter, r *
 // DeleteOrganization operation middleware
 func (siw *ServerInterfaceWrapper) DeleteOrganization(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1288,7 +1252,7 @@ func (siw *ServerInterfaceWrapper) DeleteOrganization(w http.ResponseWriter, r *
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteOrganization(w, r, organizationId)
+		siw.Handler.DeleteOrganization(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1301,17 +1265,6 @@ func (siw *ServerInterfaceWrapper) DeleteOrganization(w http.ResponseWriter, r *
 // UpdateOrganization operation middleware
 func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1319,7 +1272,7 @@ func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateOrganization(w, r, organizationId)
+		siw.Handler.UpdateOrganization(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1332,17 +1285,6 @@ func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *
 // ListOrganizationInvitations operation middleware
 func (siw *ServerInterfaceWrapper) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1350,7 +1292,7 @@ func (siw *ServerInterfaceWrapper) ListOrganizationInvitations(w http.ResponseWr
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListOrganizationInvitations(w, r, organizationId)
+		siw.Handler.ListOrganizationInvitations(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1363,17 +1305,6 @@ func (siw *ServerInterfaceWrapper) ListOrganizationInvitations(w http.ResponseWr
 // InviteMember operation middleware
 func (siw *ServerInterfaceWrapper) InviteMember(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1381,7 +1312,7 @@ func (siw *ServerInterfaceWrapper) InviteMember(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.InviteMember(w, r, organizationId)
+		siw.Handler.InviteMember(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1394,17 +1325,6 @@ func (siw *ServerInterfaceWrapper) InviteMember(w http.ResponseWriter, r *http.R
 // LeaveOrganization operation middleware
 func (siw *ServerInterfaceWrapper) LeaveOrganization(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1412,7 +1332,7 @@ func (siw *ServerInterfaceWrapper) LeaveOrganization(w http.ResponseWriter, r *h
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.LeaveOrganization(w, r, organizationId)
+		siw.Handler.LeaveOrganization(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1425,17 +1345,6 @@ func (siw *ServerInterfaceWrapper) LeaveOrganization(w http.ResponseWriter, r *h
 // ListOrganizationMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListOrganizationMembers(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -1443,7 +1352,7 @@ func (siw *ServerInterfaceWrapper) ListOrganizationMembers(w http.ResponseWriter
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListOrganizationMembers(w, r, organizationId)
+		siw.Handler.ListOrganizationMembers(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1458,15 +1367,6 @@ func (siw *ServerInterfaceWrapper) RemoveMember(w http.ResponseWriter, r *http.R
 
 	var err error
 
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "userId" -------------
 	var userId string
 
@@ -1483,7 +1383,7 @@ func (siw *ServerInterfaceWrapper) RemoveMember(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveMember(w, r, organizationId, userId)
+		siw.Handler.RemoveMember(w, r, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1498,15 +1398,6 @@ func (siw *ServerInterfaceWrapper) SetMemberRole(w http.ResponseWriter, r *http.
 
 	var err error
 
-	// ------------- Path parameter "organizationId" -------------
-	var organizationId string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "organizationId", chi.URLParam(r, "organizationId"), &organizationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizationId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "userId" -------------
 	var userId string
 
@@ -1523,7 +1414,7 @@ func (siw *ServerInterfaceWrapper) SetMemberRole(w http.ResponseWriter, r *http.
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetMemberRole(w, r, organizationId, userId)
+		siw.Handler.SetMemberRole(w, r, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2062,28 +1953,28 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/organizations", wrapper.CreateOrganization)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/auth/organizations/{organizationId}", wrapper.DeleteOrganization)
+		r.Delete(options.BaseURL+"/auth/organization", wrapper.DeleteOrganization)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/auth/organizations/{organizationId}", wrapper.UpdateOrganization)
+		r.Patch(options.BaseURL+"/auth/organization", wrapper.UpdateOrganization)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/auth/organizations/{organizationId}/invitations", wrapper.ListOrganizationInvitations)
+		r.Get(options.BaseURL+"/auth/organization/invitations", wrapper.ListOrganizationInvitations)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/organizations/{organizationId}/invitations", wrapper.InviteMember)
+		r.Post(options.BaseURL+"/auth/organization/invitations", wrapper.InviteMember)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/organizations/{organizationId}/leave", wrapper.LeaveOrganization)
+		r.Post(options.BaseURL+"/auth/organization/leave", wrapper.LeaveOrganization)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/auth/organizations/{organizationId}/members", wrapper.ListOrganizationMembers)
+		r.Get(options.BaseURL+"/auth/organization/members", wrapper.ListOrganizationMembers)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/auth/organizations/{organizationId}/members/{userId}", wrapper.RemoveMember)
+		r.Delete(options.BaseURL+"/auth/organization/members/{userId}", wrapper.RemoveMember)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/auth/organizations/{organizationId}/members/{userId}", wrapper.SetMemberRole)
+		r.Patch(options.BaseURL+"/auth/organization/members/{userId}", wrapper.SetMemberRole)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/passkey/delete-passkey", wrapper.DeletePasskey)

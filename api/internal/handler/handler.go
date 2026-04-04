@@ -80,6 +80,17 @@ func (h *Handler) getActiveOrganizationID(r *http.Request) *string {
 	return sess.ActiveOrganizationID
 }
 
+// requireActiveOrganization extracts the active organization ID from the session.
+// Returns empty string and writes a 400 response if no active organization is set.
+func (h *Handler) requireActiveOrganization(w http.ResponseWriter, r *http.Request) string {
+	orgID := h.getActiveOrganizationID(r)
+	if orgID == nil || *orgID == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "no active organization")
+		return ""
+	}
+	return *orgID
+}
+
 // requireOrgMembership checks if the user is a member of the given organization.
 // Returns false and writes a 403 response if not a member.
 func (h *Handler) requireOrgMembership(w http.ResponseWriter, r *http.Request, user *auth.User, orgID string) bool {

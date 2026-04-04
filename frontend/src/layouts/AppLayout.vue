@@ -57,7 +57,7 @@
                   <RouterLink
                     :to="{
                       name: 'account.environments.detail',
-                      params: { organizationId: env.organizationId, environmentId: env.id },
+                      params: { environmentId: env.id },
                     }"
                   >
                     <img v-if="env.favicon" :src="env.favicon" alt="" class="size-4 rounded" />
@@ -330,7 +330,6 @@ const navigation = computed(() => [
     ? [{
         route: "account.organizations.detail",
         active: "organizations",
-        params: { organizationId: activeOrganizationId.value },
       }]
     : [{ route: "account.organizations.list", active: "organizations" }]),
 ]);

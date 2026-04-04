@@ -100,7 +100,6 @@
               :to="{
                 name: 'account.environments.detail.deployment',
                 params: {
-                  organizationId: $route.params.organizationId,
                   environmentId: $route.params.environmentId,
                   deploymentId: row.deployment.id,
                 },

@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold tracking-tight">{{ organization.name }}</h1>
       <Button size="sm" as-child>
         <RouterLink
-          :to="{ name: 'account.organizations.edit', params: { organizationId: organization.id } }"
+          :to="{ name: 'account.organizations.edit' }"
         >
           <icon-fa6-solid:pencil class="mr-1.5 size-3" />
           {{ $t("organization.editOrganization") }}
@@ -172,7 +172,6 @@
             <RouterLink
               :to="{
                 name: 'account.organizations.sso',
-                params: { organizationId: organization.id },
               }"
             >
               <icon-fa6-solid:gear class="mr-1.5 size-3" />
@@ -381,9 +380,7 @@ const allowedToManageMembers = ref(false);
 async function leaveOrganization() {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.POST("/auth/organizations/{organizationId}/leave", {
-      params: { path: { organizationId: organization.value.id } },
-    });
+    const { error: respError } = await api.POST("/auth/organization/leave");
     if (respError) {
       alert.error((respError as { message?: string }).message ?? t("organization.failedLeaveOrg"));
       return;
@@ -397,9 +394,7 @@ async function leaveOrganization() {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
-    });
+    const { data } = await api.GET("/auth/get-full-organization");
     if (!data) {
       alert.error("Failed to load organization");
       return;
@@ -420,9 +415,7 @@ async function loadOrganization() {
 
     if (organization.value?.id) {
       api
-        .GET("/organizations/{orgId}/sso-providers", {
-          params: { path: { orgId: organization.value.id } },
-        })
+        .GET("/organization/sso-providers")
         .then(({ data }) => {
           if (data) ssoProviders.value = data;
         })
@@ -468,9 +461,8 @@ const onAddMemberSubmit = handleAddMember(async (values) => {
   if (organization.value) {
     try {
       const { error: respError } = await api.POST(
-        "/auth/organizations/{organizationId}/invitations",
+        "/auth/organization/invitations",
         {
-          params: { path: { organizationId: organization.value.id } },
           body: { email: values.email, role: values.role },
         },
       );
@@ -490,8 +482,8 @@ const onAddMemberSubmit = handleAddMember(async (values) => {
 async function onRemoveMember(userId: string) {
   if (!organization.value) return;
   try {
-    await api.DELETE("/auth/organizations/{organizationId}/members/{userId}", {
-      params: { path: { organizationId: organization.value.id, userId } },
+    await api.DELETE("/auth/organization/members/{userId}", {
+      params: { path: { userId } },
     });
     await loadOrganization();
   } catch (err) {
@@ -520,10 +512,10 @@ const onChangeRoleSubmit = handleChangeRole(async (values) => {
   if (organization.value && selectedMember.value) {
     try {
       const { error: respError } = await api.PATCH(
-        "/auth/organizations/{organizationId}/members/{userId}",
+        "/auth/organization/members/{userId}",
         {
           params: {
-            path: { organizationId: organization.value.id, userId: selectedMember.value.userId },
+            path: { userId: selectedMember.value.userId },
           },
           body: { role: values.changeRole },
         },

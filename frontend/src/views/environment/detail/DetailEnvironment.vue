@@ -376,7 +376,6 @@ const { environment, shopwareVersions, latestShopwareVersion } = useEnvironmentD
 
 // Route helpers
 const routeParams = computed(() => ({
-  organizationId: route.params.organizationId,
   environmentId: route.params.environmentId,
 }));
 const checksRoute = computed(() => ({

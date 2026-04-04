@@ -10,7 +10,6 @@
           :to="{
             name: 'account.environments.detail',
             params: {
-              organizationId: route.params.organizationId as string,
               environmentId: environment.id,
             },
           }"
@@ -366,7 +365,6 @@ const onSubmit = handleSubmit(async (values) => {
       router.push({
         name: "account.environments.detail",
         params: {
-          organizationId: route.params.organizationId as string,
           environmentId: environment.value.id,
         },
       });

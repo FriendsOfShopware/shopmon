@@ -123,6 +123,16 @@ func (h *AuthHandler) requireOrgMembership(w http.ResponseWriter, r *http.Reques
 	return role != ""
 }
 
+// requireActiveOrganization extracts the active organization ID from the session user.
+// Returns empty string and writes a 400 response if no active organization is set.
+func (h *AuthHandler) requireActiveOrganization(w http.ResponseWriter, su *SessionUser) string {
+	if su.Session.ActiveOrganizationID == nil || *su.Session.ActiveOrganizationID == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "no active organization")
+		return ""
+	}
+	return *su.Session.ActiveOrganizationID
+}
+
 var errOrganizationNotFound = errors.New("organization not found")
 
 func (h *AuthHandler) requireOrganization(ctx context.Context, organizationID string) error {

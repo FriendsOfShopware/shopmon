@@ -39,9 +39,14 @@ func (h *AuthHandler) CreateOrganization(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -83,9 +88,14 @@ func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request,
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -105,9 +115,14 @@ func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request,
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -200,9 +215,14 @@ func (h *AuthHandler) RejectInvitation(w http.ResponseWriter, r *http.Request, i
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
+func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, userId string) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -235,9 +255,14 @@ func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organ
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -272,9 +297,14 @@ func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, organizationId string, userId string) {
+func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, userId string) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -311,9 +341,14 @@ func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, orga
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
-func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 
@@ -330,9 +365,14 @@ func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Req
 	httputil.WriteJSON(w, http.StatusOK, mapOrganizationMembers(members))
 }
 
-func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organizationId string) {
+func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
+		return
+	}
+
+	organizationId := h.requireActiveOrganization(w, su)
+	if organizationId == "" {
 		return
 	}
 

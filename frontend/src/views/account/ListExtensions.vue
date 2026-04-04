@@ -139,7 +139,6 @@
                 :to="{
                   name: 'account.environments.detail',
                   params: {
-                    organizationId: env.environmentOrganizationId,
                     environmentId: env.environmentId,
                   },
                 }"

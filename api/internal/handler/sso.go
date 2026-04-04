@@ -13,18 +13,21 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
-// GetSsoProviders lists SSO providers for an organization.
-func (h *Handler) GetSsoProviders(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
+// GetSsoProviders lists SSO providers for the active organization.
+func (h *Handler) GetSsoProviders(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
 
-	orgIDPtr := orgId
-	rows, err := h.queries.ListSSOProviders(r.Context(), &orgIDPtr)
+	rows, err := h.queries.ListSSOProviders(r.Context(), &orgId)
 	if err != nil {
 		slog.Error("failed to list SSO providers", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get SSO providers")
@@ -62,9 +65,13 @@ func (h *Handler) GetSsoProviders(w http.ResponseWriter, r *http.Request, orgId 
 }
 
 // UpdateSsoProvider updates an SSO provider.
-func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgId api.OrgId, providerId api.ProviderId) {
+func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, providerId api.ProviderId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -95,14 +102,13 @@ func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 	}
 
 	oidcConfigStr := string(oidcConfigJSON)
-	orgIDPtr := orgId
 
 	if err := h.queries.UpdateSSOProvider(r.Context(), queries.UpdateSSOProviderParams{
 		Issuer:         req.Issuer,
 		OidcConfig:     &oidcConfigStr,
 		Domain:         req.Domain,
 		ProviderID:     providerId,
-		OrganizationID: &orgIDPtr,
+		OrganizationID: &orgId,
 	}); err != nil {
 		slog.Error("failed to update SSO provider", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update SSO provider")
@@ -113,19 +119,22 @@ func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 }
 
 // DeleteSsoProvider deletes an SSO provider.
-func (h *Handler) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, orgId api.OrgId, providerId api.ProviderId) {
+func (h *Handler) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, providerId api.ProviderId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
 
-	orgIDPtr := orgId
 	if err := h.queries.DeleteSSOProvider(r.Context(), queries.DeleteSSOProviderParams{
 		ProviderID:     providerId,
-		OrganizationID: &orgIDPtr,
+		OrganizationID: &orgId,
 	}); err != nil {
 		slog.Error("failed to delete SSO provider", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete SSO provider")

@@ -9,10 +9,14 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
-// GetOrganizationShops returns all shops in an organization.
-func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
+// GetOrganizationShops returns all shops in the active organization.
+func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -40,10 +44,14 @@ func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, o
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// CreateShop creates a new shop in an organization.
-func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
+// CreateShop creates a new shop in the active organization.
+func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -83,9 +91,13 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 }
 
 // UpdateShop updates an existing shop.
-func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -138,9 +150,13 @@ func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 }
 
 // DeleteShop deletes a shop.
-func (h *Handler) DeleteShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) DeleteShop(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {

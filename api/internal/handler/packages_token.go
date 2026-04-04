@@ -28,9 +28,13 @@ func (h *Handler) GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.R
 }
 
 // GetPackagesTokens lists packages tokens for a shop.
-func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -64,9 +68,13 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 }
 
 // CreatePackagesToken creates a new packages token.
-func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
+func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -100,9 +108,13 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 }
 
 // DeletePackagesToken deletes a packages token.
-func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, tokenId api.TokenId) {
+func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, shopId api.ShopId, tokenId api.TokenId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {
@@ -140,9 +152,13 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 }
 
 // SyncPackagesToken syncs a packages token.
-func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, tokenId api.TokenId) {
+func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, shopId api.ShopId, tokenId api.TokenId) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {

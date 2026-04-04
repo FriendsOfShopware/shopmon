@@ -576,9 +576,6 @@ type KeyId = int
 // NotificationId defines model for NotificationId.
 type NotificationId = int
 
-// OrgId defines model for OrgId.
-type OrgId = string
-
 // ProviderId defines model for ProviderId.
 type ProviderId = string
 
@@ -801,50 +798,50 @@ type ServerInterface interface {
 	// (DELETE /notifications/{id})
 	DeleteNotification(w http.ResponseWriter, r *http.Request, id NotificationId)
 	// Get all environments in an organization
-	// (GET /organizations/{orgId}/environments)
-	GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// (GET /organization/environments)
+	GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request)
 	// Get all shops in an organization
-	// (GET /organizations/{orgId}/shops)
-	GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// (GET /organization/shops)
+	GetOrganizationShops(w http.ResponseWriter, r *http.Request)
 	// Create a new shop
-	// (POST /organizations/{orgId}/shops)
-	CreateShop(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// (POST /organization/shops)
+	CreateShop(w http.ResponseWriter, r *http.Request)
 	// Delete a shop
-	// (DELETE /organizations/{orgId}/shops/{shopId})
-	DeleteShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (DELETE /organization/shops/{shopId})
+	DeleteShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// Update a shop
-	// (PATCH /organizations/{orgId}/shops/{shopId})
-	UpdateShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (PATCH /organization/shops/{shopId})
+	UpdateShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// List API keys for a shop
-	// (GET /organizations/{orgId}/shops/{shopId}/api-keys)
-	GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (GET /organization/shops/{shopId}/api-keys)
+	GetApiKeys(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// Create a new API key
-	// (POST /organizations/{orgId}/shops/{shopId}/api-keys)
-	CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (POST /organization/shops/{shopId}/api-keys)
+	CreateApiKey(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// Delete an API key
-	// (DELETE /organizations/{orgId}/shops/{shopId}/api-keys/{keyId})
-	DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, keyId KeyId)
+	// (DELETE /organization/shops/{shopId}/api-keys/{keyId})
+	DeleteApiKey(w http.ResponseWriter, r *http.Request, shopId ShopId, keyId KeyId)
 	// List packages tokens for a shop
-	// (GET /organizations/{orgId}/shops/{shopId}/packages-tokens)
-	GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (GET /organization/shops/{shopId}/packages-tokens)
+	GetPackagesTokens(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// Create a new packages token
-	// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens)
-	CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// (POST /organization/shops/{shopId}/packages-tokens)
+	CreatePackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId)
 	// Delete a packages token
-	// (DELETE /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId})
-	DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId)
+	// (DELETE /organization/shops/{shopId}/packages-tokens/{tokenId})
+	DeletePackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId, tokenId TokenId)
 	// Sync a packages token
-	// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync)
-	SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId)
+	// (POST /organization/shops/{shopId}/packages-tokens/{tokenId}/sync)
+	SyncPackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId, tokenId TokenId)
 	// List SSO providers for an organization
-	// (GET /organizations/{orgId}/sso-providers)
-	GetSsoProviders(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// (GET /organization/sso-providers)
+	GetSsoProviders(w http.ResponseWriter, r *http.Request)
 	// Delete an SSO provider
-	// (DELETE /organizations/{orgId}/sso-providers/{providerId})
-	DeleteSsoProvider(w http.ResponseWriter, r *http.Request, orgId OrgId, providerId ProviderId)
+	// (DELETE /organization/sso-providers/{providerId})
+	DeleteSsoProvider(w http.ResponseWriter, r *http.Request, providerId ProviderId)
 	// Update an SSO provider
-	// (PUT /organizations/{orgId}/sso-providers/{providerId})
-	UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgId OrgId, providerId ProviderId)
+	// (PUT /organization/sso-providers/{providerId})
+	UpdateSsoProvider(w http.ResponseWriter, r *http.Request, providerId ProviderId)
 	// Get packages token configuration
 	// (GET /packages-token/configuration)
 	GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.Request)
@@ -1074,92 +1071,92 @@ func (_ Unimplemented) DeleteNotification(w http.ResponseWriter, r *http.Request
 }
 
 // Get all environments in an organization
-// (GET /organizations/{orgId}/environments)
-func (_ Unimplemented) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+// (GET /organization/environments)
+func (_ Unimplemented) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get all shops in an organization
-// (GET /organizations/{orgId}/shops)
-func (_ Unimplemented) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+// (GET /organization/shops)
+func (_ Unimplemented) GetOrganizationShops(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Create a new shop
-// (POST /organizations/{orgId}/shops)
-func (_ Unimplemented) CreateShop(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+// (POST /organization/shops)
+func (_ Unimplemented) CreateShop(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Delete a shop
-// (DELETE /organizations/{orgId}/shops/{shopId})
-func (_ Unimplemented) DeleteShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (DELETE /organization/shops/{shopId})
+func (_ Unimplemented) DeleteShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update a shop
-// (PATCH /organizations/{orgId}/shops/{shopId})
-func (_ Unimplemented) UpdateShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (PATCH /organization/shops/{shopId})
+func (_ Unimplemented) UpdateShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // List API keys for a shop
-// (GET /organizations/{orgId}/shops/{shopId}/api-keys)
-func (_ Unimplemented) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (GET /organization/shops/{shopId}/api-keys)
+func (_ Unimplemented) GetApiKeys(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Create a new API key
-// (POST /organizations/{orgId}/shops/{shopId}/api-keys)
-func (_ Unimplemented) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (POST /organization/shops/{shopId}/api-keys)
+func (_ Unimplemented) CreateApiKey(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Delete an API key
-// (DELETE /organizations/{orgId}/shops/{shopId}/api-keys/{keyId})
-func (_ Unimplemented) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, keyId KeyId) {
+// (DELETE /organization/shops/{shopId}/api-keys/{keyId})
+func (_ Unimplemented) DeleteApiKey(w http.ResponseWriter, r *http.Request, shopId ShopId, keyId KeyId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // List packages tokens for a shop
-// (GET /organizations/{orgId}/shops/{shopId}/packages-tokens)
-func (_ Unimplemented) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (GET /organization/shops/{shopId}/packages-tokens)
+func (_ Unimplemented) GetPackagesTokens(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Create a new packages token
-// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens)
-func (_ Unimplemented) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+// (POST /organization/shops/{shopId}/packages-tokens)
+func (_ Unimplemented) CreatePackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Delete a packages token
-// (DELETE /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId})
-func (_ Unimplemented) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId) {
+// (DELETE /organization/shops/{shopId}/packages-tokens/{tokenId})
+func (_ Unimplemented) DeletePackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId, tokenId TokenId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Sync a packages token
-// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync)
-func (_ Unimplemented) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId) {
+// (POST /organization/shops/{shopId}/packages-tokens/{tokenId}/sync)
+func (_ Unimplemented) SyncPackagesToken(w http.ResponseWriter, r *http.Request, shopId ShopId, tokenId TokenId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // List SSO providers for an organization
-// (GET /organizations/{orgId}/sso-providers)
-func (_ Unimplemented) GetSsoProviders(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+// (GET /organization/sso-providers)
+func (_ Unimplemented) GetSsoProviders(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Delete an SSO provider
-// (DELETE /organizations/{orgId}/sso-providers/{providerId})
-func (_ Unimplemented) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, orgId OrgId, providerId ProviderId) {
+// (DELETE /organization/sso-providers/{providerId})
+func (_ Unimplemented) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, providerId ProviderId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update an SSO provider
-// (PUT /organizations/{orgId}/sso-providers/{providerId})
-func (_ Unimplemented) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgId OrgId, providerId ProviderId) {
+// (PUT /organization/sso-providers/{providerId})
+func (_ Unimplemented) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, providerId ProviderId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2253,17 +2250,6 @@ func (siw *ServerInterfaceWrapper) DeleteNotification(w http.ResponseWriter, r *
 // GetOrganizationEnvironments operation middleware
 func (siw *ServerInterfaceWrapper) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -2271,7 +2257,7 @@ func (siw *ServerInterfaceWrapper) GetOrganizationEnvironments(w http.ResponseWr
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetOrganizationEnvironments(w, r, orgId)
+		siw.Handler.GetOrganizationEnvironments(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2284,17 +2270,6 @@ func (siw *ServerInterfaceWrapper) GetOrganizationEnvironments(w http.ResponseWr
 // GetOrganizationShops operation middleware
 func (siw *ServerInterfaceWrapper) GetOrganizationShops(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -2302,7 +2277,7 @@ func (siw *ServerInterfaceWrapper) GetOrganizationShops(w http.ResponseWriter, r
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetOrganizationShops(w, r, orgId)
+		siw.Handler.GetOrganizationShops(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2315,17 +2290,6 @@ func (siw *ServerInterfaceWrapper) GetOrganizationShops(w http.ResponseWriter, r
 // CreateShop operation middleware
 func (siw *ServerInterfaceWrapper) CreateShop(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -2333,7 +2297,7 @@ func (siw *ServerInterfaceWrapper) CreateShop(w http.ResponseWriter, r *http.Req
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateShop(w, r, orgId)
+		siw.Handler.CreateShop(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2348,15 +2312,6 @@ func (siw *ServerInterfaceWrapper) DeleteShop(w http.ResponseWriter, r *http.Req
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2373,7 +2328,7 @@ func (siw *ServerInterfaceWrapper) DeleteShop(w http.ResponseWriter, r *http.Req
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteShop(w, r, orgId, shopId)
+		siw.Handler.DeleteShop(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2388,15 +2343,6 @@ func (siw *ServerInterfaceWrapper) UpdateShop(w http.ResponseWriter, r *http.Req
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2413,7 +2359,7 @@ func (siw *ServerInterfaceWrapper) UpdateShop(w http.ResponseWriter, r *http.Req
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateShop(w, r, orgId, shopId)
+		siw.Handler.UpdateShop(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2428,15 +2374,6 @@ func (siw *ServerInterfaceWrapper) GetApiKeys(w http.ResponseWriter, r *http.Req
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2453,7 +2390,7 @@ func (siw *ServerInterfaceWrapper) GetApiKeys(w http.ResponseWriter, r *http.Req
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiKeys(w, r, orgId, shopId)
+		siw.Handler.GetApiKeys(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2468,15 +2405,6 @@ func (siw *ServerInterfaceWrapper) CreateApiKey(w http.ResponseWriter, r *http.R
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2493,7 +2421,7 @@ func (siw *ServerInterfaceWrapper) CreateApiKey(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateApiKey(w, r, orgId, shopId)
+		siw.Handler.CreateApiKey(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2507,15 +2435,6 @@ func (siw *ServerInterfaceWrapper) CreateApiKey(w http.ResponseWriter, r *http.R
 func (siw *ServerInterfaceWrapper) DeleteApiKey(w http.ResponseWriter, r *http.Request) {
 
 	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
 
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
@@ -2542,7 +2461,7 @@ func (siw *ServerInterfaceWrapper) DeleteApiKey(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteApiKey(w, r, orgId, shopId, keyId)
+		siw.Handler.DeleteApiKey(w, r, shopId, keyId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2557,15 +2476,6 @@ func (siw *ServerInterfaceWrapper) GetPackagesTokens(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2582,7 +2492,7 @@ func (siw *ServerInterfaceWrapper) GetPackagesTokens(w http.ResponseWriter, r *h
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPackagesTokens(w, r, orgId, shopId)
+		siw.Handler.GetPackagesTokens(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2597,15 +2507,6 @@ func (siw *ServerInterfaceWrapper) CreatePackagesToken(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2622,7 +2523,7 @@ func (siw *ServerInterfaceWrapper) CreatePackagesToken(w http.ResponseWriter, r 
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePackagesToken(w, r, orgId, shopId)
+		siw.Handler.CreatePackagesToken(w, r, shopId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2637,15 +2538,6 @@ func (siw *ServerInterfaceWrapper) DeletePackagesToken(w http.ResponseWriter, r 
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2671,7 +2563,7 @@ func (siw *ServerInterfaceWrapper) DeletePackagesToken(w http.ResponseWriter, r 
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePackagesToken(w, r, orgId, shopId, tokenId)
+		siw.Handler.DeletePackagesToken(w, r, shopId, tokenId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2686,15 +2578,6 @@ func (siw *ServerInterfaceWrapper) SyncPackagesToken(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "shopId" -------------
 	var shopId ShopId
 
@@ -2720,7 +2603,7 @@ func (siw *ServerInterfaceWrapper) SyncPackagesToken(w http.ResponseWriter, r *h
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SyncPackagesToken(w, r, orgId, shopId, tokenId)
+		siw.Handler.SyncPackagesToken(w, r, shopId, tokenId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2733,17 +2616,6 @@ func (siw *ServerInterfaceWrapper) SyncPackagesToken(w http.ResponseWriter, r *h
 // GetSsoProviders operation middleware
 func (siw *ServerInterfaceWrapper) GetSsoProviders(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -2751,7 +2623,7 @@ func (siw *ServerInterfaceWrapper) GetSsoProviders(w http.ResponseWriter, r *htt
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetSsoProviders(w, r, orgId)
+		siw.Handler.GetSsoProviders(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2766,15 +2638,6 @@ func (siw *ServerInterfaceWrapper) DeleteSsoProvider(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "providerId" -------------
 	var providerId ProviderId
 
@@ -2791,7 +2654,7 @@ func (siw *ServerInterfaceWrapper) DeleteSsoProvider(w http.ResponseWriter, r *h
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteSsoProvider(w, r, orgId, providerId)
+		siw.Handler.DeleteSsoProvider(w, r, providerId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2806,15 +2669,6 @@ func (siw *ServerInterfaceWrapper) UpdateSsoProvider(w http.ResponseWriter, r *h
 
 	var err error
 
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
 	// ------------- Path parameter "providerId" -------------
 	var providerId ProviderId
 
@@ -2831,7 +2685,7 @@ func (siw *ServerInterfaceWrapper) UpdateSsoProvider(w http.ResponseWriter, r *h
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateSsoProvider(w, r, orgId, providerId)
+		siw.Handler.UpdateSsoProvider(w, r, providerId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3123,49 +2977,49 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/notifications/{id}", wrapper.DeleteNotification)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/environments", wrapper.GetOrganizationEnvironments)
+		r.Get(options.BaseURL+"/organization/environments", wrapper.GetOrganizationEnvironments)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/shops", wrapper.GetOrganizationShops)
+		r.Get(options.BaseURL+"/organization/shops", wrapper.GetOrganizationShops)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/shops", wrapper.CreateShop)
+		r.Post(options.BaseURL+"/organization/shops", wrapper.CreateShop)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}", wrapper.DeleteShop)
+		r.Delete(options.BaseURL+"/organization/shops/{shopId}", wrapper.DeleteShop)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/organizations/{orgId}/shops/{shopId}", wrapper.UpdateShop)
+		r.Patch(options.BaseURL+"/organization/shops/{shopId}", wrapper.UpdateShop)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys", wrapper.GetApiKeys)
+		r.Get(options.BaseURL+"/organization/shops/{shopId}/api-keys", wrapper.GetApiKeys)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys", wrapper.CreateApiKey)
+		r.Post(options.BaseURL+"/organization/shops/{shopId}/api-keys", wrapper.CreateApiKey)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}", wrapper.DeleteApiKey)
+		r.Delete(options.BaseURL+"/organization/shops/{shopId}/api-keys/{keyId}", wrapper.DeleteApiKey)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens", wrapper.GetPackagesTokens)
+		r.Get(options.BaseURL+"/organization/shops/{shopId}/packages-tokens", wrapper.GetPackagesTokens)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens", wrapper.CreatePackagesToken)
+		r.Post(options.BaseURL+"/organization/shops/{shopId}/packages-tokens", wrapper.CreatePackagesToken)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}", wrapper.DeletePackagesToken)
+		r.Delete(options.BaseURL+"/organization/shops/{shopId}/packages-tokens/{tokenId}", wrapper.DeletePackagesToken)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync", wrapper.SyncPackagesToken)
+		r.Post(options.BaseURL+"/organization/shops/{shopId}/packages-tokens/{tokenId}/sync", wrapper.SyncPackagesToken)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/sso-providers", wrapper.GetSsoProviders)
+		r.Get(options.BaseURL+"/organization/sso-providers", wrapper.GetSsoProviders)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/sso-providers/{providerId}", wrapper.DeleteSsoProvider)
+		r.Delete(options.BaseURL+"/organization/sso-providers/{providerId}", wrapper.DeleteSsoProvider)
 	})
 	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/organizations/{orgId}/sso-providers/{providerId}", wrapper.UpdateSsoProvider)
+		r.Put(options.BaseURL+"/organization/sso-providers/{providerId}", wrapper.UpdateSsoProvider)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/packages-token/configuration", wrapper.GetPackagesTokenConfiguration)

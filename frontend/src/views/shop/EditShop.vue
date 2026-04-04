@@ -625,8 +625,8 @@ async function loadApiKeys() {
   if (!shop.value) return;
   isApiKeysLoading.value = true;
   try {
-    const { data } = await api.GET("/organizations/{orgId}/shops/{shopId}/api-keys", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { data } = await api.GET("/organization/shops/{shopId}/api-keys", {
+      params: { path: { shopId: shop.value.id } },
     });
     apiKeys.value = data ?? [];
   } catch (error) {
@@ -681,8 +681,8 @@ const onSubmitShop = handleShopSubmit(async (values) => {
   if (!shop.value) return;
   isSavingShop.value = true;
   try {
-    await api.PATCH("/organizations/{orgId}/shops/{shopId}", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    await api.PATCH("/organization/shops/{shopId}", {
+      params: { path: { shopId: shop.value.id } },
       body: {
         name: values.name,
         description: values.description ?? "",
@@ -724,8 +724,8 @@ const onSubmitApiKey = handleApiKeySubmit(async (values) => {
   }
   isCreatingApiKey.value = true;
   try {
-    const { data: result } = await api.POST("/organizations/{orgId}/shops/{shopId}/api-keys", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { data: result } = await api.POST("/organization/shops/{shopId}/api-keys", {
+      params: { path: { shopId: shop.value.id } },
       body: { name: values.apiKeyName, scopes: selectedScopes.value },
     });
     newToken.value = result?.token ?? "";
@@ -771,10 +771,9 @@ async function deleteApiKey() {
   if (!deletingApiKey.value || !shop.value) return;
   isDeletingApiKey.value = true;
   try {
-    await api.DELETE("/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}", {
+    await api.DELETE("/organization/shops/{shopId}/api-keys/{keyId}", {
       params: {
         path: {
-          orgId: shop.value.organizationId,
           shopId: shop.value.id,
           keyId: deletingApiKey.value.id,
         },
@@ -807,8 +806,8 @@ async function loadPackagesTokens() {
   if (!shop.value || !isPackagesConfigured.value) return;
   isPackagesTokensLoading.value = true;
   try {
-    const { data } = await api.GET("/organizations/{orgId}/shops/{shopId}/packages-tokens", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { data } = await api.GET("/organization/shops/{shopId}/packages-tokens", {
+      params: { path: { shopId: shop.value.id } },
     });
     packagesTokens.value = data ?? [];
   } catch (error) {
@@ -822,8 +821,8 @@ const onSubmitPackagesToken = handlePackagesTokenSubmit(async (values) => {
   if (!shop.value) return;
   isCreatingPackagesToken.value = true;
   try {
-    await api.POST("/organizations/{orgId}/shops/{shopId}/packages-tokens", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    await api.POST("/organization/shops/{shopId}/packages-tokens", {
+      params: { path: { shopId: shop.value.id } },
       body: { token: values.packagesToken },
     });
     showAddPackagesTokenModal.value = false;
@@ -845,10 +844,9 @@ async function deletePackagesToken() {
   if (!deletingPackagesToken.value || !shop.value) return;
   isDeletingPackagesToken.value = true;
   try {
-    await api.DELETE("/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}", {
+    await api.DELETE("/organization/shops/{shopId}/packages-tokens/{tokenId}", {
       params: {
         path: {
-          orgId: shop.value.organizationId,
           shopId: shop.value.id,
           tokenId: deletingPackagesToken.value.id,
         },
@@ -871,8 +869,8 @@ async function syncPackagesToken(pt: PackagesToken) {
   if (!shop.value) return;
   isSyncingPackagesToken.value = pt.id;
   try {
-    await api.POST("/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id, tokenId: pt.id } },
+    await api.POST("/organization/shops/{shopId}/packages-tokens/{tokenId}/sync", {
+      params: { path: { shopId: shop.value.id, tokenId: pt.id } },
     });
     await loadPackagesTokens();
     alert.success(t("packages.syncTriggered"));
@@ -887,8 +885,8 @@ async function deleteShop() {
   if (!shop.value) return;
   isDeletingShop.value = true;
   try {
-    await api.DELETE("/organizations/{orgId}/shops/{shopId}", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    await api.DELETE("/organization/shops/{shopId}", {
+      params: { path: { shopId: shop.value.id } },
     });
     alert.success(t("shop.shopDeleted"));
     router.push({ name: "account.shop.list" });

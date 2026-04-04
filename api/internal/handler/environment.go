@@ -11,13 +11,18 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
+
 	goqueue "github.com/shyim/go-queue"
 )
 
-// GetOrganizationEnvironments returns all environments in an organization.
-func (h *Handler) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
+// GetOrganizationEnvironments returns all environments in the active organization.
+func (h *Handler) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
+		return
+	}
+	orgId := h.requireActiveOrganization(w, r)
+	if orgId == "" {
 		return
 	}
 	if !h.requireOrgMembership(w, r, user, orgId) {

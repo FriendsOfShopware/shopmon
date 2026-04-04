@@ -86,7 +86,6 @@
               :to="{
                 name: 'account.environments.detail.deployment',
                 params: {
-                  organizationId: $route.params.organizationId,
                   environmentId: environment.id,
                   deploymentId: dep.id,
                 },
@@ -137,7 +136,6 @@
               :to="{
                 name: 'account.environments.detail.deployment',
                 params: {
-                  organizationId: $route.params.organizationId,
                   environmentId: environment.id,
                   deploymentId: dep.id,
                 },

@@ -7,22 +7,20 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// GetFullOrganization returns an organization with members and invitations.
-func (h *AuthHandler) GetFullOrganization(w http.ResponseWriter, r *http.Request, params authapi.GetFullOrganizationParams) {
+// GetFullOrganization returns the active organization with members and invitations.
+func (h *AuthHandler) GetFullOrganization(w http.ResponseWriter, r *http.Request) {
 	su := h.requireAuth(w, r)
 	if su == nil {
 		return
 	}
 
-	orgID := params.OrganizationId
+	orgID := h.requireActiveOrganization(w, su)
 	if orgID == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "organizationId is required")
 		return
 	}
 
