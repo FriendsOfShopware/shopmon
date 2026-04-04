@@ -1,58 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
 import Login from "./Login.vue";
-
-// Stubs
-const AlertStub = defineComponent({
-  name: "Banner",
-  props: ["type", "dismissible"],
-  template: '<div :class="`alert-${type}`"><slot /></div>',
-});
-
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: JSON.stringify(props.to) }, slots.default?.());
-  },
-});
-
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "placeholder", "class", "id"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        placeholder: props.placeholder,
-        class: props.class,
-        id: props.id,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
-
-const PasswordFieldStub = defineComponent({
-  name: "PasswordField",
-  props: ["name", "placeholder", "error"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        type: "password",
-        name: props.name,
-        placeholder: props.placeholder,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
 
 // Mock router
 const mockPush = vi.fn();
@@ -60,6 +8,11 @@ vi.mock("vue-router", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a :href="typeof to === \'string\' ? to : to?.name"><slot /></a>',
+  },
 }));
 
 // Mock api client
@@ -107,16 +60,7 @@ describe("Login", () => {
   });
 
   function mountComponent() {
-    return mount(Login, {
-      global: {
-        stubs: {
-          Banner: AlertStub,
-          RouterLink: RouterLinkStub,
-          Field: FieldStub,
-          PasswordField: PasswordFieldStub,
-        },
-      },
-    });
+    return mount(Login);
   }
 
   it("renders successfully", () => {
@@ -137,14 +81,14 @@ describe("Login", () => {
 
   it("has email input field", () => {
     const wrapper = mountComponent();
-    const emailInput = wrapper.find('input[name="email"]');
+    const emailInput = wrapper.find('input[type="email"]');
     expect(emailInput.exists()).toBe(true);
     expect(emailInput.attributes("placeholder")).toBe("Email address");
   });
 
   it("has password input field", () => {
     const wrapper = mountComponent();
-    const passwordInput = wrapper.find('input[name="password"]');
+    const passwordInput = wrapper.find('input[type="password"]');
     expect(passwordInput.exists()).toBe(true);
     expect(passwordInput.attributes("placeholder")).toBe("Password");
   });

@@ -1,50 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
+import { defineComponent } from "vue";
 import ListShops from "./ListShops.vue";
 
 // Stubs
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("header", {}, [props.title, slots.default?.()]);
-  },
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const ElementEmptyStub = defineComponent({
-  name: "ElementEmpty",
-  props: ["title", "button", "route"],
-  setup(props, { slots }) {
-    return () =>
-      h("div", { class: "element-empty" }, [
-        h("h3", {}, props.title),
-        slots.default?.(),
-        h("a", { href: JSON.stringify(props.route) }, props.button),
-      ]);
-  },
-});
-
 const StatusIconStub = defineComponent({
   name: "StatusIcon",
   props: ["status"],
   template: '<span :class="status">{{ status }}</span>',
 });
 
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: JSON.stringify(props.to) }, slots.default?.());
+// Mock vue-router
+vi.mock("vue-router", () => ({
+  useRoute: () => ({ params: {} }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a :href="JSON.stringify(to)"><slot /></a>',
   },
-});
+}));
 
 // Mock data
 const mockShops = [
@@ -65,6 +39,7 @@ const mockEnvironments = [
     status: "green",
     favicon: null,
     shopId: 1,
+    organizationId: "org-1",
   },
 ];
 
@@ -94,10 +69,11 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-// Mock route
-const mockRoute = { params: {} };
-vi.mock("vue-router", () => ({
-  useRoute: () => mockRoute,
+// Mock useAccountEnvironments
+vi.mock("@/composables/useAccountEnvironments", () => ({
+  useAccountEnvironments: () => ({
+    environments: { value: mockEnvironments },
+  }),
 }));
 
 import { api } from "@/helpers/api";
@@ -109,9 +85,6 @@ describe("ListShops", () => {
       if (path === "/account/shops") {
         return Promise.resolve({ data: mockShops, error: null, response: new Response() });
       }
-      if (path === "/account/environments") {
-        return Promise.resolve({ data: mockEnvironments, error: null, response: new Response() });
-      }
       return Promise.resolve({ data: null, error: null, response: new Response() });
     }) as any);
   });
@@ -120,11 +93,7 @@ describe("ListShops", () => {
     return mount(ListShops, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          ElementEmpty: ElementEmptyStub,
           StatusIcon: StatusIconStub,
-          RouterLink: RouterLinkStub,
         },
       },
     });
@@ -139,7 +108,7 @@ describe("ListShops", () => {
   it("displays page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("My Shops");
+    expect(wrapper.text()).toContain("My Shops");
   });
 
   it("displays Add Project button in header", async () => {
@@ -149,13 +118,10 @@ describe("ListShops", () => {
   });
 
   it("displays empty state when no projects exist", async () => {
-    // Override mock to return empty projects
+    // Override mock to return empty shops
     vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/environments") {
+      if (path === "/account/shops") {
         return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/account/environments") {
-        return Promise.resolve({ data: mockEnvironments, error: null, response: new Response() });
       }
       return Promise.resolve({ data: null, error: null, response: new Response() });
     }) as any);
@@ -163,7 +129,6 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.find(".element-empty").exists()).toBe(true);
     expect(wrapper.text()).toContain("No Shops");
   });
 
@@ -205,10 +170,7 @@ describe("ListShops", () => {
 
   it("shows empty state CTA when no projects", async () => {
     vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/environments") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/account/environments") {
+      if (path === "/account/shops") {
         return Promise.resolve({ data: [], error: null, response: new Response() });
       }
       return Promise.resolve({ data: null, error: null, response: new Response() });

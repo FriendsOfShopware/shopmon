@@ -1,133 +1,164 @@
 <template>
   <header-container :title="$t('environment.newEnvironment')" />
   <main-container>
-    <Panel v-if="shops.length === 0 && shopsLoaded">
-      <div class="empty-shop-state">
-        <div class="empty-shop-icon">
-          <icon-fa6-solid:folder-tree aria-hidden="true" />
-        </div>
-
-        <h3 class="empty-shop-title">Create a shop first</h3>
-
-        <p class="empty-shop-description">
-          Shops group related environments together. For example:
-        </p>
-
-        <div class="empty-shop-example">
-          <div class="example-shop">
-            <icon-fa6-solid:folder class="example-icon" aria-hidden="true" />
-            <span class="example-shop-name">Toy Shop X</span>
+    <Card v-if="shops.length === 0 && shopsLoaded">
+      <CardContent>
+        <div class="text-center pt-8 pb-4 px-4">
+          <div class="text-4xl text-primary opacity-70 mb-4">
+            <icon-fa6-solid:folder-tree aria-hidden="true" />
           </div>
-          <div class="example-environments">
-            <div class="example-environment">
-              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
-              Production
+
+          <h3 class="text-xl font-semibold mb-2">Create a shop first</h3>
+
+          <p class="text-muted-foreground mb-6">
+            Shops group related environments together. For example:
+          </p>
+
+          <div class="inline-flex flex-col gap-2 bg-muted border rounded-lg px-6 py-4 mb-8 text-left">
+            <div class="flex items-center gap-2 font-medium">
+              <icon-fa6-solid:folder class="text-xs text-primary opacity-80" aria-hidden="true" />
+              <span>Toy Shop X</span>
             </div>
-            <div class="example-environment">
-              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
-              Staging
+            <div class="flex flex-col gap-1.5 ml-6 pl-3 border-l-2">
+              <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <icon-fa6-solid:shop class="text-xs text-primary opacity-80" aria-hidden="true" />
+                Production
+              </div>
+              <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <icon-fa6-solid:shop class="text-xs text-primary opacity-80" aria-hidden="true" />
+                Staging
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="empty-shop-cta">
-          <UiButton
-            :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }"
-            variant="primary"
-          >
-            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            Create Shop
-          </UiButton>
-        </div>
-      </div>
-    </Panel>
-
-    <Panel v-else>
-      <vee-form
-        ref="formRef"
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="initialValues"
-        @submit="onSubmit"
-      >
-        <form-group :title="$t('environment.environmentInfo')">
-          <InputField name="name" :label="$t('common.name')" :error="errors.name" />
-
-          <BaseSelect
-            v-model="selectedShopId"
-            name="shopId"
-            :label="$t('environment.shop')"
-            required
-            :error="errors.shopId"
-          >
-            <option v-for="shop in shops" :key="shop.id" :value="shop.id">
-              {{ shop.organizationName + " / " + shop.name }}
-            </option>
-          </BaseSelect>
-
-          <InputField
-            name="shopUrl"
-            :label="$t('common.url')"
-            autocomplete="url"
-            :error="errors.shopUrl"
-          />
-        </form-group>
-
-        <form-group :title="$t('environment.bypassAuthHeader')">
-          <template #info>
-            {{ $t("environment.bypassAuthHeaderDesc") }}
-          </template>
-
-          <div class="environment-token-display">
-            <code>{{ shopToken }}</code>
-
-            <UiButton type="button" size="sm" icon-only @click="copyToken">
-              <icon-fa6-solid:copy />
-            </UiButton>
+          <div class="mt-8">
+            <Button as-child>
+              <RouterLink :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }">
+                <icon-fa6-solid:plus class="size-3.5" aria-hidden="true" />
+                Create Shop
+              </RouterLink>
+            </Button>
           </div>
-        </form-group>
-
-        <form-group :title="$t('environment.integration')">
-          <template #info>
-            <i18n-t keypath="environment.integrationDesc" tag="span">
-              <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
-                  $t("environment.pluginName")
-                }}</a>
-              </template>
-            </i18n-t>
-            <a
-              href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
-            >
-              {{ $t("environment.permissions") }}
-            </a>
-          </template>
-
-          <UiButton type="button" @click="openPluginModal">
-            {{ $t("environment.connectPlugin") }}
-          </UiButton>
-
-          <InputField
-            name="clientId"
-            :label="$t('environment.clientId')"
-            :error="errors.clientId"
-          />
-          <InputField
-            name="clientSecret"
-            :label="$t('environment.clientSecret')"
-            :error="errors.clientSecret"
-          />
-        </form-group>
-
-        <div class="form-submit">
-          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </UiButton>
         </div>
-      </vee-form>
-    </Panel>
+      </CardContent>
+    </Card>
+
+    <Card v-else>
+      <CardContent>
+        <form @submit="onSubmit">
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-semibold mb-4">{{ $t('environment.environmentInfo') }}</h3>
+              <div class="space-y-4">
+                <FormField v-slot="{ componentField }" name="name">
+                  <FormItem>
+                    <FormLabel>{{ $t('common.name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="shopId">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.shop') }}</FormLabel>
+                    <Select v-bind="componentField">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue :placeholder="$t('environment.shop')" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem v-for="shop in shops" :key="shop.id" :value="String(shop.id)">
+                          {{ shop.organizationName + " / " + shop.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="shopUrl">
+                  <FormItem>
+                    <FormLabel>{{ $t('common.url') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" autocomplete="url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-semibold mb-1">{{ $t('environment.bypassAuthHeader') }}</h3>
+              <p class="text-sm text-muted-foreground mb-4">{{ $t("environment.bypassAuthHeaderDesc") }}</p>
+
+              <div class="flex items-center gap-2">
+                <code class="text-xs break-all">{{ shopToken }}</code>
+                <Button type="button" size="icon-sm" variant="outline" @click="copyToken">
+                  <icon-fa6-solid:copy />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-semibold mb-1">{{ $t('environment.integration') }}</h3>
+              <p class="text-sm text-muted-foreground mb-4">
+                <i18n-t keypath="environment.integrationDesc" tag="span">
+                  <template #pluginLink>
+                    <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank" class="text-primary hover:underline">{{
+                      $t("environment.pluginName")
+                    }}</a>
+                  </template>
+                </i18n-t>
+                <a
+                  href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
+                  class="text-primary hover:underline ml-1"
+                >
+                  {{ $t("environment.permissions") }}
+                </a>
+              </p>
+
+              <div class="space-y-4">
+                <Button type="button" variant="outline" @click="openPluginModal">
+                  {{ $t("environment.connectPlugin") }}
+                </Button>
+
+                <FormField v-slot="{ componentField }" name="clientId">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.clientId') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="clientSecret">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.clientSecret') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-4">
+              <Button :disabled="isSubmitting" type="submit">
+                <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-3.5" aria-hidden="true" />
+                <icon-line-md:loading-twotone-loop v-else class="size-3.5" />
+                {{ $t("common.save") }}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
 
     <!-- Plugin Connection Modal -->
     <plugin-connection-modal
@@ -142,15 +173,32 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { Form as VeeForm } from "vee-validate";
+import { useForm } from "vee-validate";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink, useRoute, useRouter } from "vue-router";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
 
-import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const { t } = useI18n();
 const { error, success } = useAlert();
@@ -179,8 +227,6 @@ const showPluginModal = ref(false);
 const pluginBase64 = ref("");
 const pluginError = ref("");
 
-const formRef = ref();
-
 api.GET("/account/shops").then(({ data }) => {
   if (data) {
     shops.value = data;
@@ -200,30 +246,32 @@ const isValidUrl = (url: string) => {
   }
 };
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.environmentNameRequired")),
-  shopUrl: Yup.string()
-    .required(t("validation.environmentUrlRequired"))
-    .test("is-url-valid", t("validation.environmentUrlInvalid"), (value) => isValidUrl(value)),
-  shopId: Yup.number().required(t("validation.shopRequired")),
-  clientId: Yup.string().required(t("validation.clientIdRequired")),
-  clientSecret: Yup.string().required(t("validation.clientSecretRequired")),
+const schema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.environmentNameRequired")),
+    shopUrl: z.string().min(1, t("validation.environmentUrlRequired")).refine((val) => isValidUrl(val), t("validation.environmentUrlInvalid")),
+    shopId: z.string().min(1, t("validation.shopRequired")),
+    clientId: z.string().min(1, t("validation.clientIdRequired")),
+    clientSecret: z.string().min(1, t("validation.clientSecretRequired")),
+  })
+);
+
+const { handleSubmit, isSubmitting, setFieldValue } = useForm({
+  validationSchema: schema,
+  initialValues: {
+    shopId: selectedShopId.value ? String(selectedShopId.value) : "",
+  },
 });
 
-const initialValues = {
-  shopId: selectedShopId.value,
-};
-
-const onSubmit = async (values: Record<string, unknown>) => {
+const onSubmit = handleSubmit(async (values) => {
   try {
-    const typedValues = values as Yup.InferType<typeof schema>;
     const { error: apiError } = await api.POST("/environments", {
       body: {
-        name: typedValues.name,
-        shopUrl: typedValues.shopUrl.replace(/\/+$/, ""),
-        clientId: typedValues.clientId,
-        clientSecret: typedValues.clientSecret,
-        shopId: selectedShopId.value,
+        name: values.name,
+        shopUrl: values.shopUrl.replace(/\/+$/, ""),
+        clientId: values.clientId,
+        clientSecret: values.clientSecret,
+        shopId: Number(values.shopId),
         shopToken,
       },
     });
@@ -237,7 +285,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
-};
+});
 
 function openPluginModal() {
   showPluginModal.value = true;
@@ -268,9 +316,9 @@ function processPluginData() {
       return;
     }
 
-    formRef.value.setFieldValue("shopUrl", data.url);
-    formRef.value.setFieldValue("clientId", data.clientId);
-    formRef.value.setFieldValue("clientSecret", data.clientSecret);
+    setFieldValue("shopUrl", data.url);
+    setFieldValue("clientId", data.clientId);
+    setFieldValue("clientSecret", data.clientSecret);
 
     closePluginModal();
   } catch (_e) {
@@ -278,87 +326,3 @@ function processPluginData() {
   }
 }
 </script>
-
-<style scoped>
-.environment-token-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  code {
-    font-size: 0.8rem;
-    word-break: break-all;
-  }
-}
-
-.empty-shop-state {
-  text-align: center;
-  padding: 2rem 1rem 1rem;
-}
-
-.empty-shop-icon {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  opacity: 0.7;
-  margin-bottom: 1rem;
-}
-
-.empty-shop-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--item-title-color);
-  margin-bottom: 0.5rem;
-}
-
-.empty-shop-description {
-  color: var(--text-color-muted);
-  margin-bottom: 1.5rem;
-}
-
-.empty-shop-example {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background-color: var(--item-background);
-  border: 1px solid var(--panel-border-color);
-  border-radius: 0.5rem;
-  padding: 1rem 1.5rem;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.example-shop {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  color: var(--item-title-color);
-}
-
-.example-environments {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  margin-left: 1.5rem;
-  padding-left: 0.75rem;
-  border-left: 2px solid var(--panel-border-color);
-}
-
-.example-environment {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-}
-
-.example-icon {
-  font-size: 0.75rem;
-  color: var(--primary-color);
-  opacity: 0.8;
-}
-
-.empty-shop-cta {
-  margin-top: 2rem;
-}
-</style>

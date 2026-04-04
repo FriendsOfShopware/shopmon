@@ -1,16 +1,16 @@
 <template>
-  <footer class="app-footer">
-    <div class="container">
-      <div class="footer-links">
-        <button v-if="session" type="button" class="footer-link" @click="open">
+  <footer class="mt-auto border-t bg-card py-8">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+        <button v-if="session" type="button" class="hover:text-primary transition-colors bg-transparent border-0 p-0" @click="open">
           {{ $t("footer.whatsNew") }}
         </button>
-        <span v-if="session" class="footer-separator">|</span>
-        <router-link :to="{ name: 'privacy' }" class="footer-link">
+        <span v-if="session">|</span>
+        <router-link :to="{ name: 'privacy' }" class="hover:text-primary transition-colors">
           {{ $t("footer.privacy") }}
         </router-link>
-        <span class="footer-separator">|</span>
-        <router-link :to="{ name: 'imprint' }" class="footer-link">
+        <span>|</span>
+        <router-link :to="{ name: 'imprint' }" class="hover:text-primary transition-colors">
           {{ $t("footer.legalNotice") }}
         </router-link>
       </div>
@@ -33,39 +33,3 @@ const showWhatsNew = computed(() => {
   return !!session.value && isOpen.value;
 });
 </script>
-
-<style scoped>
-.app-footer {
-  margin-top: auto;
-  padding: 2rem 0;
-  border-top: 1px solid var(--panel-border-color);
-  background-color: var(--panel-background);
-}
-
-.footer-links {
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.footer-link {
-  color: var(--text-color-muted);
-  text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s ease;
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.footer-link:hover {
-  color: var(--primary-color);
-}
-
-.footer-separator {
-  color: var(--text-color-muted);
-  font-size: 0.875rem;
-}
-</style>

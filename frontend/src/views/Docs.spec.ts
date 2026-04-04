@@ -16,14 +16,6 @@ const MainContainerStub = defineComponent({
   },
 });
 
-const AlertStub = defineComponent({
-  name: "Banner",
-  props: ["type"],
-  setup(_, { slots }) {
-    return () => h("div", { class: "alert" }, slots.default?.());
-  },
-});
-
 describe("Docs", () => {
   function mountComponent() {
     return mount(Docs, {
@@ -31,7 +23,6 @@ describe("Docs", () => {
         stubs: {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
-          Banner: AlertStub,
         },
       },
     });
@@ -44,13 +35,14 @@ describe("Docs", () => {
 
   it("renders table of contents", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find(".docs-nav").exists()).toBe(true);
-    expect(wrapper.find(".docs-toc").exists()).toBe(true);
+    // TOC is now inside a Card component
+    const tocLinks = wrapper.findAll('a[href^="#"]');
+    expect(tocLinks.length).toBeGreaterThan(0);
   });
 
   it("has all TOC links", () => {
     const wrapper = mountComponent();
-    const links = wrapper.findAll(".docs-toc a");
+    const links = wrapper.findAll('a[href^="#"]');
     const hrefs = links.map((l) => l.attributes("href"));
     expect(hrefs).toContain("#getting-started");
     expect(hrefs).toContain("#connecting-shop");
@@ -70,10 +62,12 @@ describe("Docs", () => {
     expect(hrefs).toContain("#sso");
   });
 
-  it("renders all documentation sections", () => {
+  it("renders all documentation sections as Card components", () => {
     const wrapper = mountComponent();
-    const sections = wrapper.findAll(".docs-section");
-    expect(sections.length).toBeGreaterThanOrEqual(16);
+    // Each section is now a Card with data-slot="card"
+    const cards = wrapper.findAll('[data-slot="card"]');
+    // 1 TOC card + 16 section cards = 17
+    expect(cards.length).toBeGreaterThanOrEqual(17);
   });
 
   it("has Getting Started section", () => {

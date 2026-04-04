@@ -1,79 +1,87 @@
 <template>
-  <div class="deployments-container">
-    <Panel v-if="environment" class="setup-card">
-      <h3 class="setup-title">{{ $t("deployments.setupTitle") }}</h3>
-      <p class="setup-description">
-        Use the
-        <a
-          href="https://github.com/FriendsOfShopware/shopmon-cli"
-          target="_blank"
-          rel="noopener noreferrer"
-          >shopmon-cli</a
-        >
-        to report deployments. Set the following environment variables and wrap your deployment
-        command:
-      </p>
+  <div class="flex flex-col gap-4">
+    <Card v-if="environment">
+      <CardContent>
+        <h3 class="text-lg font-semibold mb-2">{{ $t("deployments.setupTitle") }}</h3>
+        <p class="text-sm text-muted-foreground mb-4 leading-relaxed">
+          Use the
+          <a
+            href="https://github.com/FriendsOfShopware/shopmon-cli"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary hover:underline"
+            >shopmon-cli</a
+          >
+          to report deployments. Set the following environment variables and wrap your deployment
+          command:
+        </p>
 
-      <div class="setup-env">
-        <div class="env-row">
-          <span class="env-key">SHOPMON_SHOP_ID</span>
-          <code class="env-value">{{ environment.id }}</code>
+        <div class="flex flex-col gap-2 mb-4">
+          <div class="flex items-center gap-3">
+            <span class="font-mono text-sm font-semibold min-w-[180px]">SHOPMON_SHOP_ID</span>
+            <code class="font-mono text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">{{ environment.id }}</code>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-mono text-sm font-semibold min-w-[180px]">SHOPMON_API_KEY</span>
+            <span class="font-mono text-sm">
+              <Button as-child variant="outline" size="sm">
+                <RouterLink
+                  :to="{
+                    name: 'account.shops.edit',
+                    params: { shopId: environment.shopId },
+                    hash: '#api-keys',
+                  }"
+                >
+                  {{ $t("deployments.manageApiKeys") }}
+                </RouterLink>
+              </Button>
+            </span>
+          </div>
         </div>
-        <div class="env-row">
-          <span class="env-key">SHOPMON_API_KEY</span>
-          <span class="env-value env-placeholder">
-            <UiButton
-              :to="{
-                name: 'account.shops.edit',
-                params: { shopId: environment.shopId },
-                hash: '#api-keys',
-              }"
-            >
-              {{ $t("deployments.manageApiKeys") }}
-            </UiButton>
-          </span>
+
+        <div class="bg-[#0d1117] px-4 py-3 rounded-md">
+          <code class="font-mono text-[0.8125rem] text-[#c9d1d9]">{{ cliCommand }}</code>
         </div>
-      </div>
 
-      <div class="setup-command">
-        <code>{{ cliCommand }}</code>
-      </div>
+        <p class="mt-3 text-xs text-muted-foreground leading-relaxed">
+          The CLI automatically uses the local <code class="bg-muted px-1.5 py-0.5 rounded text-xs">git HEAD</code> commit SHA to link deployments to
+          your git repository. If that is not available, you can set
+          <code class="bg-muted px-1.5 py-0.5 rounded text-xs">SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to specify it manually. The target git
+          repository URL can be configured in the
+          <router-link :to="{ name: 'account.shop.list' }" class="text-primary hover:underline">{{
+            $t("deployments.shopSettings")
+          }}</router-link
+          >.
+        </p>
+      </CardContent>
+    </Card>
 
-      <p class="setup-hint">
-        The CLI automatically uses the local <code>git HEAD</code> commit SHA to link deployments to
-        your git repository. If that is not available, you can set
-        <code>SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to specify it manually. The target git
-        repository URL can be configured in the
-        <router-link :to="{ name: 'account.shop.list' }">{{
-          $t("deployments.shopSettings")
-        }}</router-link
-        >.
-      </p>
-    </Panel>
-
-    <Panel variant="table" :title="$t('deployments.history')">
+    <Card class="p-0 overflow-hidden">
+      <CardHeader>
+        <CardTitle>{{ $t('deployments.history') }}</CardTitle>
+      </CardHeader>
       <data-table
         v-if="deployments && deployments.length > 0"
         :columns="[
-          { key: 'name', name: $t('common.name'), class: 'deployment-name', sortable: true },
-          { key: 'createdAt', name: $t('common.date'), class: 'deployment-date', sortable: true },
+          { key: 'name', name: $t('common.name'), class: 'w-[200px]', sortable: true },
+          { key: 'createdAt', name: $t('common.date'), class: 'w-[180px]', sortable: true },
           {
             key: 'returnCode',
             name: $t('common.status'),
-            class: 'deployment-status',
+            class: 'w-[150px]',
             sortable: true,
           },
           {
             key: 'executionTime',
             name: $t('deployments.duration'),
-            class: 'deployment-duration',
+            class: 'w-[100px]',
             sortable: true,
           },
         ]"
         :data="deployments"
       >
         <template #cell-name="{ row }">
-          <code class="deployment-name-display">{{ row.name }}</code>
+          <code class="font-mono text-sm bg-muted px-2 py-1 rounded">{{ row.name }}</code>
         </template>
 
         <template #cell-createdAt="{ row }">
@@ -81,15 +89,19 @@
         </template>
 
         <template #cell-returnCode="{ row }">
-          <span :class="['status-badge', row.returnCode === 0 ? 'status-success' : 'status-error']">
-            <icon-fa6-solid:check v-if="row.returnCode === 0" class="icon" />
-            <icon-fa6-solid:xmark v-else class="icon" />
+          <Badge
+            :variant="row.returnCode === 0 ? 'default' : 'destructive'"
+            class="gap-1"
+            :class="row.returnCode === 0 ? 'bg-green-600' : ''"
+          >
+            <icon-fa6-solid:check v-if="row.returnCode === 0" class="size-2.5" />
+            <icon-fa6-solid:xmark v-else class="size-2.5" />
             {{
               row.returnCode === 0
                 ? $t("deployments.success")
                 : $t("deployments.failed", { code: row.returnCode })
             }}
-          </span>
+          </Badge>
         </template>
 
         <template #cell-executionTime="{ row }">
@@ -97,41 +109,48 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <div class="action-buttons">
-            <UiButton
+          <div class="flex gap-2 items-center">
+            <Button
               v-if="row.reference && row.gitUrl"
-              :href="`${row.gitUrl}/commit/${row.reference}`"
-              target="_blank"
-              rel="noopener noreferrer"
-              :title="$t('deployments.openCommit')"
+              as-child
+              variant="outline"
+              size="icon-sm"
             >
-              <icon-fa6-solid:arrow-up-right-from-square />
-            </UiButton>
-            <UiButton
-              :to="{
-                name: 'account.environments.detail.deployment',
-                params: {
-                  organizationId: $route.params.organizationId,
-                  environmentId: environment?.id ?? 0,
-                  deploymentId: row.id,
-                },
-              }"
-              size="sm"
-            >
-              <icon-fa6-solid:eye />
-              {{ $t("common.view") }}
-            </UiButton>
-            <UiButton variant="destructive" @click="confirmDeleteDeployment(row)">
+              <a
+                :href="`${row.gitUrl}/commit/${row.reference}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                :title="$t('deployments.openCommit')"
+              >
+                <icon-fa6-solid:arrow-up-right-from-square />
+              </a>
+            </Button>
+            <Button as-child variant="outline" size="sm">
+              <RouterLink
+                :to="{
+                  name: 'account.environments.detail.deployment',
+                  params: {
+                    organizationId: $route.params.organizationId,
+                    environmentId: environment?.id ?? 0,
+                    deploymentId: row.id,
+                  },
+                }"
+              >
+                <icon-fa6-solid:eye />
+                {{ $t("common.view") }}
+              </RouterLink>
+            </Button>
+            <Button variant="destructive" size="sm" @click="confirmDeleteDeployment(row)">
               <icon-fa6-solid:trash />
-            </UiButton>
+            </Button>
           </div>
         </template>
       </data-table>
-      <div v-else class="empty-state">
-        <icon-fa6-solid:rocket class="empty-icon" />
+      <div v-else class="p-12 text-center text-muted-foreground">
+        <icon-fa6-solid:rocket class="size-12 opacity-30 mb-4" />
         <p>{{ $t("deployments.noDeployments") }}</p>
       </div>
-    </Panel>
+    </Card>
 
     <!-- Delete Deployment Confirmation Modal -->
     <modal
@@ -140,7 +159,7 @@
       @close="showDeleteDeploymentDialog = false"
     >
       <template #icon>
-        <icon-fa6-solid:triangle-exclamation class="icon icon-error" />
+        <icon-fa6-solid:triangle-exclamation class="size-6 text-destructive" />
       </template>
 
       <template #title> {{ $t("deployments.deleteDeployment") }} </template>
@@ -150,17 +169,17 @@
       </template>
 
       <template #footer>
-        <UiButton
+        <Button
           type="button"
           variant="destructive"
           :disabled="isDeletingDeployment"
           @click="deleteDeployment"
         >
           {{ $t("common.delete") }}
-        </UiButton>
-        <UiButton type="button" @click="showDeleteDeploymentDialog = false">
+        </Button>
+        <Button type="button" variant="outline" @click="showDeleteDeploymentDialog = false">
           {{ $t("common.cancel") }}
-        </UiButton>
+        </Button>
       </template>
     </modal>
   </div>
@@ -168,11 +187,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import Modal from "@/components/layout/Modal.vue";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const route = useRoute();
 const { environment } = useEnvironmentDetail();
@@ -257,182 +280,3 @@ onMounted(() => {
   }
 });
 </script>
-
-<style scoped>
-.deployments-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.deployment-name {
-  width: 200px;
-}
-
-.deployment-name-display {
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  background: var(--surface-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-}
-
-.deployment-date {
-  width: 180px;
-}
-
-.deployment-status {
-  width: 150px;
-}
-
-.deployment-duration {
-  width: 100px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.deployment-command {
-  background: var(--surface-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 0.875rem;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status-success {
-  background: var(--success-bg);
-  color: var(--success-color);
-}
-
-.status-error {
-  background: var(--error-bg);
-  color: var(--error-color);
-}
-
-.empty-state {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.3;
-  margin-bottom: 1rem;
-}
-
-.setup-card {
-  padding: 1.25rem;
-}
-
-.setup-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.setup-description {
-  margin: 0 0 1rem 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.setup-description a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.setup-description a:hover {
-  text-decoration: underline;
-}
-
-.setup-env {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.env-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.env-key {
-  font-family: monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  min-width: 180px;
-}
-
-.env-value {
-  font-family: monospace;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  background: var(--surface-color);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-}
-
-.env-placeholder a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.env-placeholder a:hover {
-  text-decoration: underline;
-}
-
-.setup-command {
-  background: #0d1117;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-}
-
-.setup-hint {
-  margin: 0.75rem 0 0 0;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.setup-hint a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.setup-hint a:hover {
-  text-decoration: underline;
-}
-
-.setup-hint code {
-  font-size: 0.8125rem;
-  background: var(--surface-color);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
-}
-
-.setup-command code {
-  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
-  font-size: 0.8125rem;
-  color: #c9d1d9;
-}
-</style>

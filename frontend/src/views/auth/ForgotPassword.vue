@@ -1,61 +1,75 @@
 <template>
-  <div class="login-header">
-    <h2>{{ $t("auth.forgotPasswordTitle") }}</h2>
-    <p>{{ $t("auth.forgotPasswordDesc") }}</p>
+  <div class="my-8 text-center">
+    <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.forgotPasswordTitle") }}</h2>
+    <p class="text-left text-muted-foreground">{{ $t("auth.forgotPasswordDesc") }}</p>
   </div>
 
-  <vee-form
-    v-slot="{ errors, isSubmitting }"
-    class="login-form-container"
-    :validation-schema="schema"
+  <form
+    class="flex w-full flex-col gap-6 text-center"
     @submit="onSubmit"
   >
-    <InputField name="email" :placeholder="$t('common.emailAddress')" :error="errors.email" />
+    <FormField v-slot="{ componentField }" name="email">
+      <FormItem>
+        <FormControl>
+          <Input
+            type="email"
+            :placeholder="$t('common.emailAddress')"
+            v-bind="componentField"
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    </FormField>
 
-    <UiButton variant="primary" block :disabled="isSubmitting" type="submit">
-      <icon-fa6-solid:envelope v-if="!isSubmitting" class="icon" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
+    <Button type="submit" class="w-full" :disabled="isSubmitting">
+      <icon-fa6-solid:envelope v-if="!isSubmitting" class="size-5" aria-hidden="true" />
+      <icon-line-md:loading-twotone-loop v-else class="size-5" />
       {{ $t("auth.sendEmail") }}
-    </UiButton>
+    </Button>
 
     <div>
-      <router-link to="login"> {{ $t("common.cancel") }} </router-link>
+      <RouterLink
+        to="login"
+        class="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
+        {{ $t("common.cancel") }}
+      </RouterLink>
     </div>
-  </vee-form>
+  </form>
 </template>
 
 <script setup lang="ts">
-import { Field, Form as VeeForm } from "vee-validate";
 import { useI18n } from "vue-i18n";
-import * as Yup from "yup";
+import { z } from "zod";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
 
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 
 const { t } = useI18n();
 
-const schema = Yup.object().shape({
-  email: Yup.string().required(t("validation.emailRequired")),
+const schema = z.object({
+  email: z.string().min(1, t("validation.emailRequired")),
 });
 
-async function onSubmit(values: Record<string, unknown>): Promise<void> {
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema: toTypedSchema(schema),
+});
+
+const onSubmit = handleSubmit(async (values) => {
   const { success, error } = useAlert();
 
   try {
     await api.POST("/auth/forget-password", {
-      body: { email: values.email as string },
+      body: { email: values.email },
     });
     success(t("auth.resetEmailSent"));
   } catch (e) {
     error(e instanceof Error ? e.message : t("auth.failedSendReset"));
   }
-}
+});
 </script>
-
-<style scoped>
-.login-header {
-  p {
-    text-align: left;
-  }
-}
-</style>

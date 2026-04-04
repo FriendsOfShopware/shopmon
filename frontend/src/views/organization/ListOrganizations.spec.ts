@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
 import ListOrganizations from "./ListOrganizations.vue";
 
 vi.mock("@/helpers/api", () => ({
@@ -21,37 +20,15 @@ vi.mock("@/composables/useSession", () => ({
   fetchSession: vi.fn(),
 }));
 
+vi.mock("vue-router", () => ({
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a :href="JSON.stringify(to)"><slot /></a>',
+  },
+}));
+
 import { api } from "@/helpers/api";
-
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("header", {}, [props.title, slots.default?.()]);
-  },
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const ElementEmptyStub = defineComponent({
-  name: "ElementEmpty",
-  props: ["title", "route", "button"],
-  template:
-    '<div class="element-empty"><h3>{{ title }}</h3><slot /><a :href="route?.name">{{ button }}</a></div>',
-});
-
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: JSON.stringify(props.to) }, slots.default?.());
-  },
-});
 
 const mockOrganizations = [
   { id: "1", name: "Test Organization", role: "owner", createdAt: "2024-01-01" },
@@ -74,17 +51,7 @@ describe("ListOrganizations", () => {
   });
 
   function mountComponent() {
-    return mount(ListOrganizations, {
-      global: {
-        stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          ElementEmpty: ElementEmptyStub,
-          RouterLink: RouterLinkStub,
-          Panel: { template: "<div><slot /><slot name='title' /></div>" },
-        },
-      },
-    });
+    return mount(ListOrganizations);
   }
 
   it("renders successfully", async () => {
@@ -125,7 +92,8 @@ describe("ListOrganizations", () => {
 
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find(".element-empty").exists()).toBe(true);
+    // The empty state now uses inline Card content with a "No Organizations" message
+    expect(wrapper.text()).toContain("No Organization");
   });
 
   it("shows add organization button in empty state", async () => {

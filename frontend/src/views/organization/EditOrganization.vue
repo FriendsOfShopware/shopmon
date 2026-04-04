@@ -1,58 +1,68 @@
 <template>
-  <header-container
-    v-if="organization"
-    :title="$t('organization.editTitle', { name: organization.name })"
-  >
-    <UiButton
-      :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
-      type="button"
-    >
-      {{ $t("common.cancel") }}
-    </UiButton>
-  </header-container>
+  <header v-if="organization" class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">
+        {{ $t('organization.editTitle', { name: organization.name }) }}
+      </h1>
+    </div>
+    <div class="flex gap-2 items-start">
+      <Button variant="outline" as-child>
+        <RouterLink
+          :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
+        >
+          {{ $t("common.cancel") }}
+        </RouterLink>
+      </Button>
+    </div>
+  </header>
 
-  <main-container v-if="organization">
-    <Panel>
-      <vee-form
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="organization"
-        @submit="onSaveOrganization"
-      >
-        <form-group :title="$t('organization.orgInfo')">
-          <InputField
-            name="name"
-            :label="$t('common.name')"
-            autocomplete="name"
-            :error="errors.name"
-          />
-        </form-group>
+  <div v-if="organization" class="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t('organization.orgInfo') }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form @submit="onSubmit">
+          <div class="space-y-4">
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" autocomplete="name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
 
-        <div class="form-submit">
-          <UiButton type="submit" variant="primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </UiButton>
-        </div>
-      </vee-form>
-    </Panel>
+          <div class="flex justify-end pt-6">
+            <Button type="submit" :disabled="isSubmitting">
+              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+              <icon-line-md:loading-twotone-loop v-else class="size-4" />
+              {{ $t("common.save") }}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
 
-    <Panel
-      v-if="canDeleteOrganization"
-      :title="$t('organization.deleteOrgTitle', { name: organization.name })"
-    >
-      <p>{{ $t("organization.deleteOrgWarning") }}</p>
+    <Card v-if="canDeleteOrganization">
+      <CardHeader>
+        <CardTitle>{{ $t('organization.deleteOrgTitle', { name: organization.name }) }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p class="text-sm text-muted-foreground mb-4">{{ $t("organization.deleteOrgWarning") }}</p>
 
-      <UiButton
-        type="button"
-        variant="destructive"
-        @click="showOrganizationDeletionModal = true"
-      >
-        <icon-fa6-solid:trash class="icon" />
-        {{ $t("organization.deleteOrganization") }}
-      </UiButton>
-    </Panel>
+        <Button
+          type="button"
+          variant="destructive"
+          @click="showOrganizationDeletionModal = true"
+        >
+          <icon-fa6-solid:trash class="size-4" />
+          {{ $t("organization.deleteOrganization") }}
+        </Button>
+      </CardContent>
+    </Card>
 
     <delete-confirmation-modal
       :show="showOrganizationDeletionModal"
@@ -61,19 +71,23 @@
       @close="showOrganizationDeletionModal = false"
       @confirm="deleteOrganization"
     />
-  </main-container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
-
-import { Form as VeeForm } from "vee-validate";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
 import { useI18n } from "vue-i18n";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
 const { error } = useAlert();
@@ -87,6 +101,22 @@ interface OrganizationData {
 
 const organization = ref<OrganizationData | null>(null);
 const canDeleteOrganization = ref<boolean>(false);
+
+const validationSchema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.orgNameRequired")),
+  }),
+);
+
+const { handleSubmit, isSubmitting, setValues } = useForm({
+  validationSchema,
+});
+
+watch(organization, (org) => {
+  if (org) {
+    setValues({ name: org.name });
+  }
+});
 
 async function loadOrganization() {
   try {
@@ -118,18 +148,13 @@ loadOrganization();
 
 const showOrganizationDeletionModal = ref(false);
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.orgNameRequired")),
-});
-
-async function onSaveOrganization(values: Record<string, unknown>) {
-  const typedValues = values as Yup.InferType<typeof schema>;
+const onSubmit = handleSubmit(async (values) => {
   if (organization.value) {
     try {
       const { error: respError } = await api.PATCH("/auth/organizations/{organizationId}", {
         params: { path: { organizationId: organization.value.id } },
         body: {
-          name: typedValues.name,
+          name: values.name,
         },
       });
 
@@ -148,7 +173,7 @@ async function onSaveOrganization(values: Record<string, unknown>) {
       error(err instanceof Error ? err.message : String(err));
     }
   }
-}
+});
 
 async function deleteOrganization() {
   if (organization.value) {

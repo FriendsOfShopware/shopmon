@@ -1,5 +1,5 @@
 <template>
-  <Panel variant="table">
+  <Card class="p-0 overflow-hidden">
     <data-table
       v-if="environment"
       :columns="[
@@ -21,49 +21,62 @@
       </template>
 
       <template #cell-status="{ row }">
-        <span v-if="row.status === 'scheduled' && !row.overdue" class="pill pill-success">
-          <icon-fa6-solid:check />
-          {{ row.status }}
-        </span>
-        <span
-          v-else-if="row.status === 'queued' || (row.status === 'running' && !row.overdue)"
-          class="pill pill-info"
+        <Badge
+          v-if="row.status === 'scheduled' && !row.overdue"
+          variant="default"
+          class="bg-green-600 text-white gap-1"
         >
-          <icon-fa6-solid:rotate />
+          <icon-fa6-solid:check class="size-2.5" />
           {{ row.status }}
-        </span>
-        <span
+        </Badge>
+        <Badge
+          v-else-if="row.status === 'queued' || (row.status === 'running' && !row.overdue)"
+          variant="default"
+          class="bg-blue-600 text-white gap-1"
+        >
+          <icon-fa6-solid:rotate class="size-2.5" />
+          {{ row.status }}
+        </Badge>
+        <Badge
           v-else-if="
             row.status === 'scheduled' ||
             row.status === 'queued' ||
             (row.status === 'running' && row.overdue)
           "
-          class="pill pill-warning"
+          variant="default"
+          class="bg-yellow-600 text-white gap-1"
         >
-          <icon-fa6-solid:info class="align-[-0.1em]" />
+          <icon-fa6-solid:info class="size-2.5 align-[-0.1em]" />
           {{ row.status }}
-        </span>
-        <span v-else-if="row.status === 'inactive'" class="pill">
-          <icon-fa6-solid:pause />
+        </Badge>
+        <Badge
+          v-else-if="row.status === 'inactive'"
+          variant="secondary"
+          class="gap-1"
+        >
+          <icon-fa6-solid:pause class="size-2.5" />
           {{ row.status }}
-        </span>
-        <span v-else class="pill pill-error">
-          <icon-fa6-solid:xmark />
+        </Badge>
+        <Badge
+          v-else
+          variant="destructive"
+          class="gap-1"
+        >
+          <icon-fa6-solid:xmark class="size-2.5" />
           {{ row.status }}
-        </span>
+        </Badge>
       </template>
 
       <template #cell-actions="{ row }">
         <button
-          class="tooltip-top-left"
-          :data-tooltip="$t('shopDetail.rescheduleTask')"
+          :title="$t('shopDetail.rescheduleTask')"
           @click="onReScheduleTask(row.id)"
         >
-          <icon-fa6-solid:arrow-rotate-right class="icon" />
+          <icon-fa6-solid:arrow-rotate-right class="size-4" />
         </button>
       </template>
     </data-table>
-  </Panel>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +85,9 @@ import { useAlert } from "@/composables/useAlert";
 import { formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { api } from "@/helpers/api";
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const { t } = useI18n();
 

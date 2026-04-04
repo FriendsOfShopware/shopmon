@@ -1,45 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
 import ForgotPassword from "./ForgotPassword.vue";
 
-// Stubs
-const AlertStub = defineComponent({
-  name: "Banner",
-  props: ["type", "dismissible"],
-  setup(props, { slots }) {
-    return () => h("div", { class: `alert alert-${props.type}` }, slots.default?.());
+// Mock vue-router for RouterLink
+vi.mock("vue-router", () => ({
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a :href="to"><slot /></a>',
   },
-});
-
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: props.to }, slots.default?.());
-  },
-});
-
-// Field stub that renders an actual input
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "placeholder", "class", "id", "autocomplete"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        placeholder: props.placeholder,
-        class: props.class,
-        id: props.id,
-        autocomplete: props.autocomplete,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
+}));
 
 // Mock api client
 vi.mock("@/helpers/api", () => ({
@@ -71,9 +41,7 @@ describe("ForgotPassword", () => {
     return mount(ForgotPassword, {
       global: {
         stubs: {
-          Banner: AlertStub,
-          RouterLink: RouterLinkStub,
-          Field: FieldStub,
+          RouterLink: { props: ["to"], template: '<a :href="typeof to === \'string\' ? to : to?.name"><slot /></a>' },
         },
       },
     });
@@ -96,7 +64,7 @@ describe("ForgotPassword", () => {
 
   it("has email input field", () => {
     const wrapper = mountComponent();
-    const emailInput = wrapper.find('input[name="email"]');
+    const emailInput = wrapper.find('input[type="email"]');
     expect(emailInput.exists()).toBe(true);
   });
 
@@ -122,7 +90,7 @@ describe("ForgotPassword", () => {
 
   it("has email input with correct attributes", () => {
     const wrapper = mountComponent();
-    const emailInput = wrapper.find('input[name="email"]');
+    const emailInput = wrapper.find('input[type="email"]');
     expect(emailInput.attributes("placeholder")).toBe("Email address");
   });
 });

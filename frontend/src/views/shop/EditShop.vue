@@ -1,218 +1,257 @@
 <template>
-  <header-container :title="shop ? $t('shop.editShop', { name: shop.name }) : $t('nav.editShop')">
-    <div class="header-actions">
-      <UiButton :to="{ name: 'account.shop.list' }" type="button">
-        <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
-        {{ $t("shop.backToShops") }}
-      </UiButton>
-
-      <UiButton
-        v-if="shop"
-        :to="{ name: 'account.environments.new', query: { shopId: shop.id } }"
-        type="button"
-      >
-        <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-        {{ $t("environment.addEnvironment") }}
-      </UiButton>
+  <header class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">
+        {{ shop ? $t('shop.editShop', { name: shop.name }) : $t('nav.editShop') }}
+      </h1>
     </div>
-  </header-container>
+    <div class="flex gap-2 items-start">
+      <Button variant="outline" as-child>
+        <RouterLink :to="{ name: 'account.shop.list' }">
+          <icon-fa6-solid:arrow-left class="size-4" aria-hidden="true" />
+          {{ $t("shop.backToShops") }}
+        </RouterLink>
+      </Button>
 
-  <main-container>
-    <Panel v-if="isPageLoading" class="state-panel">
-      <icon-line-md:loading-twotone-loop class="icon" />
-      {{ $t("shop.loadingShop") }}
-    </Panel>
+      <Button v-if="shop" variant="outline" as-child>
+        <RouterLink :to="{ name: 'account.environments.new', query: { shopId: shop.id } }">
+          <icon-fa6-solid:plus class="size-4" aria-hidden="true" />
+          {{ $t("environment.addEnvironment") }}
+        </RouterLink>
+      </Button>
+    </div>
+  </header>
 
-    <Panel v-else-if="!shop" class="state-panel">
-      <p>{{ $t("shop.shopNotFound") }}</p>
-    </Panel>
+  <div class="space-y-6">
+    <Card v-if="isPageLoading">
+      <CardContent class="flex items-center gap-2 py-6">
+        <icon-line-md:loading-twotone-loop class="size-5" />
+        {{ $t("shop.loadingShop") }}
+      </CardContent>
+    </Card>
+
+    <Card v-else-if="!shop">
+      <CardContent class="py-6">
+        <p>{{ $t("shop.shopNotFound") }}</p>
+      </CardContent>
+    </Card>
 
     <template v-else>
-      <Panel>
-        <vee-form
-          :key="`shop-${shop.id}`"
-          v-slot="{ errors, isSubmitting }"
-          :validation-schema="shopSchema"
-          :initial-values="shopFormInitialValues"
-          @submit="onSubmitShop"
-        >
-          <form-group :title="$t('shop.shopInfo')">
-            <InputField name="name" :label="$t('common.name')" :error="errors.name" />
+      <Card>
+        <CardHeader>
+          <CardTitle>{{ $t('shop.shopInfo') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form @submit="onSubmitShop">
+            <div class="space-y-4">
+              <FormField v-slot="{ componentField }" name="name">
+                <FormItem>
+                  <FormLabel>{{ $t('common.name') }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-            <TextareaField
-              name="description"
-              :label="$t('common.description')"
-              :placeholder="$t('shop.optionalDescription')"
-              :error="errors.description"
-            />
+              <FormField v-slot="{ componentField }" name="description">
+                <FormItem>
+                  <FormLabel>{{ $t('common.description') }}</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      v-bind="componentField"
+                      :placeholder="$t('shop.optionalDescription')"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-            <InputField
-              name="gitUrl"
-              :label="$t('shop.gitRepoUrl')"
-              type="url"
-              placeholder="https://github.com/org/repo"
-              :error="errors.gitUrl"
-            />
-          </form-group>
-
-          <div class="form-submit">
-            <UiButton
-              :disabled="isSubmitting || isSavingShop"
-              type="submit"
-              variant="primary"
-            >
-              <icon-fa6-solid:floppy-disk
-                v-if="!(isSubmitting || isSavingShop)"
-                class="icon"
-                aria-hidden="true"
-              />
-              <icon-line-md:loading-twotone-loop v-else class="icon" />
-              {{ $t("common.save") }}
-            </UiButton>
-          </div>
-        </vee-form>
-      </Panel>
-
-      <Panel id="api-keys" :title="$t('shop.apiKeys')">
-        <template #action>
-          <UiButton type="button" variant="primary" @click="openAddKeyModal">
-            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            {{ $t("shop.createApiKey") }}
-          </UiButton>
-        </template>
-
-        <Banner variant="default">
-          <p>
-            <strong>{{ $t("shop.apiKeys") }}</strong>
-          </p>
-          <p>
-            {{ $t("shop.apiKeyInfo") }}
-          </p>
-        </Banner>
-
-        <div v-if="isApiKeysLoading" class="api-keys-loading">
-          <icon-line-md:loading-twotone-loop class="icon" />
-          {{ $t("shop.loadingApiKeys") }}
-        </div>
-
-        <div v-else-if="apiKeys.length === 0" class="api-keys-empty">
-          <icon-fa6-solid:key class="icon icon-large" aria-hidden="true" />
-          <p>{{ $t("shop.noApiKeys") }}</p>
-          <p class="text-muted">
-            {{ $t("shop.noApiKeysHint") }}
-          </p>
-        </div>
-
-        <div v-else class="api-keys-list">
-          <div v-for="apiKey in apiKeys" :key="apiKey.id" class="api-key-item">
-            <div class="api-key-info">
-              <h4>{{ apiKey.name }}</h4>
-              <p class="text-muted">
-                {{ $t("shop.createdDate", { date: formatDate(apiKey.createdAt) }) }}
-              </p>
-              <p v-if="apiKey.lastUsedAt" class="text-muted">
-                {{ $t("shop.lastUsedDate", { date: formatDate(apiKey.lastUsedAt) }) }}
-              </p>
-              <div class="api-key-scopes">
-                <span v-for="scope in apiKey.scopes" :key="scope" class="badge badge-primary">
-                  {{ getScopeLabel(scope) }}
-                </span>
-              </div>
+              <FormField v-slot="{ componentField }" name="gitUrl">
+                <FormItem>
+                  <FormLabel>{{ $t('shop.gitRepoUrl') }}</FormLabel>
+                  <FormControl>
+                    <Input
+                      v-bind="componentField"
+                      type="url"
+                      placeholder="https://github.com/org/repo"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
             </div>
-            <div class="api-key-actions">
-              <UiButton
-                type="button"
-                variant="destructive"
-                @click="confirmDeleteKey(apiKey)"
+
+            <div class="flex justify-end pt-6">
+              <Button
+                :disabled="isShopSubmitting || isSavingShop"
+                type="submit"
               >
-                <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-                {{ $t("common.delete") }}
-              </UiButton>
+                <icon-fa6-solid:floppy-disk
+                  v-if="!(isShopSubmitting || isSavingShop)"
+                  class="size-4"
+                  aria-hidden="true"
+                />
+                <icon-line-md:loading-twotone-loop v-else class="size-4" />
+                {{ $t("common.save") }}
+              </Button>
             </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card id="api-keys">
+        <CardHeader>
+          <CardTitle>{{ $t('shop.apiKeys') }}</CardTitle>
+          <CardAction>
+            <Button type="button" @click="openAddKeyModal">
+              <icon-fa6-solid:plus class="size-4" aria-hidden="true" />
+              {{ $t("shop.createApiKey") }}
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <Alert class="mb-4">
+            <AlertTitle>{{ $t("shop.apiKeys") }}</AlertTitle>
+            <AlertDescription>
+              {{ $t("shop.apiKeyInfo") }}
+            </AlertDescription>
+          </Alert>
+
+          <div v-if="isApiKeysLoading" class="py-12 text-center text-muted-foreground">
+            <icon-line-md:loading-twotone-loop class="size-6 mx-auto mb-2" />
+            {{ $t("shop.loadingApiKeys") }}
           </div>
-        </div>
-      </Panel>
 
-      <Panel
-        v-if="isPackagesConfigured"
-        id="packages-tokens"
-        :title="$t('packages.title')"
-        :description="$t('packages.description')"
-      >
-        <template #action>
-          <UiButton
-            type="button"
-            variant="primary"
-            @click="showAddPackagesTokenModal = true"
-          >
-            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            {{ $t("packages.addToken") }}
-          </UiButton>
-        </template>
+          <div v-else-if="apiKeys.length === 0" class="py-16 text-center">
+            <icon-fa6-solid:key class="size-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+            <p>{{ $t("shop.noApiKeys") }}</p>
+            <p class="mt-2 text-muted-foreground text-sm">
+              {{ $t("shop.noApiKeysHint") }}
+            </p>
+          </div>
 
-        <div v-if="isPackagesTokensLoading" class="api-keys-loading">
-          <icon-line-md:loading-twotone-loop class="icon" />
-          {{ $t("packages.loading") }}
-        </div>
-
-        <div v-else-if="packagesTokens.length === 0" class="api-keys-empty">
-          <icon-fa6-solid:cube class="icon icon-large" aria-hidden="true" />
-          <p>{{ $t("packages.noTokens") }}</p>
-          <p class="text-muted">{{ $t("packages.noTokensHint") }}</p>
-        </div>
-
-        <template v-else>
-          <div class="api-keys-list">
-            <div v-for="pt in packagesTokens" :key="pt.id" class="api-key-item">
-              <div class="api-key-info">
-                <h4>Token #{{ pt.id }}</h4>
-                <p v-if="pt.lastSyncedAt" class="text-muted">
-                  {{
-                    $t("packages.lastSynced", {
-                      time: timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000),
-                    })
-                  }}
+          <div v-else class="space-y-4 pt-4">
+            <div
+              v-for="apiKey in apiKeys"
+              :key="apiKey.id"
+              class="flex justify-between items-center p-4 border rounded-lg"
+            >
+              <div>
+                <h4 class="text-lg font-medium mb-1">{{ apiKey.name }}</h4>
+                <p class="text-sm text-muted-foreground mb-1">
+                  {{ $t("shop.createdDate", { date: formatDate(apiKey.createdAt) }) }}
                 </p>
-                <p v-else class="text-muted">{{ $t("packages.notSyncedYet") }}</p>
+                <p v-if="apiKey.lastUsedAt" class="text-sm text-muted-foreground mb-1">
+                  {{ $t("shop.lastUsedDate", { date: formatDate(apiKey.lastUsedAt) }) }}
+                </p>
+                <div class="flex gap-2 mt-2">
+                  <Badge v-for="scope in apiKey.scopes" :key="scope">
+                    {{ getScopeLabel(scope) }}
+                  </Badge>
+                </div>
               </div>
-              <div class="api-key-actions">
-                <UiButton
-                  type="button"
-                  :disabled="isSyncingPackagesToken === pt.id"
-                  @click="syncPackagesToken(pt)"
-                >
-                  <icon-fa6-solid:arrows-rotate
-                    v-if="isSyncingPackagesToken !== pt.id"
-                    class="icon"
-                    aria-hidden="true"
-                  />
-                  <icon-line-md:loading-twotone-loop v-else class="icon" />
-                  {{ $t("packages.sync") }}
-                </UiButton>
-                <UiButton
+              <div class="flex gap-2">
+                <Button
                   type="button"
                   variant="destructive"
-                  @click="confirmDeletePackagesToken(pt)"
+                  @click="confirmDeleteKey(apiKey)"
                 >
-                  <icon-fa6-solid:trash class="icon" aria-hidden="true" />
+                  <icon-fa6-solid:trash class="size-4" aria-hidden="true" />
                   {{ $t("common.delete") }}
-                </UiButton>
+                </Button>
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div v-if="packagesComposerUrl" class="composer-setup">
-            <h4>{{ $t("packages.composerSetup") }}</h4>
-            <Banner variant="alert">
-              <p>
-                {{ $t("packages.composerWarning") }}
+      <Card
+        v-if="isPackagesConfigured"
+        id="packages-tokens"
+      >
+        <CardHeader>
+          <CardTitle>{{ $t('packages.title') }}</CardTitle>
+          <CardDescription>{{ $t('packages.description') }}</CardDescription>
+          <CardAction>
+            <Button
+              type="button"
+              @click="showAddPackagesTokenModal = true"
+            >
+              <icon-fa6-solid:plus class="size-4" aria-hidden="true" />
+              {{ $t("packages.addToken") }}
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div v-if="isPackagesTokensLoading" class="py-12 text-center text-muted-foreground">
+            <icon-line-md:loading-twotone-loop class="size-6 mx-auto mb-2" />
+            {{ $t("packages.loading") }}
+          </div>
+
+          <div v-else-if="packagesTokens.length === 0" class="py-16 text-center">
+            <icon-fa6-solid:cube class="size-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+            <p>{{ $t("packages.noTokens") }}</p>
+            <p class="mt-2 text-muted-foreground text-sm">{{ $t("packages.noTokensHint") }}</p>
+          </div>
+
+          <template v-else>
+            <div class="space-y-4">
+              <div
+                v-for="pt in packagesTokens"
+                :key="pt.id"
+                class="flex justify-between items-center p-4 border rounded-lg"
+              >
+                <div>
+                  <h4 class="text-lg font-medium mb-1">Token #{{ pt.id }}</h4>
+                  <p v-if="pt.lastSyncedAt" class="text-sm text-muted-foreground">
+                    {{
+                      $t("packages.lastSynced", {
+                        time: timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000),
+                      })
+                    }}
+                  </p>
+                  <p v-else class="text-sm text-muted-foreground">{{ $t("packages.notSyncedYet") }}</p>
+                </div>
+                <div class="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    :disabled="isSyncingPackagesToken === pt.id"
+                    @click="syncPackagesToken(pt)"
+                  >
+                    <icon-fa6-solid:arrows-rotate
+                      v-if="isSyncingPackagesToken !== pt.id"
+                      class="size-4"
+                      aria-hidden="true"
+                    />
+                    <icon-line-md:loading-twotone-loop v-else class="size-4" />
+                    {{ $t("packages.sync") }}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    @click="confirmDeletePackagesToken(pt)"
+                  >
+                    <icon-fa6-solid:trash class="size-4" aria-hidden="true" />
+                    {{ $t("common.delete") }}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="packagesComposerUrl" class="mt-6 pt-6 border-t">
+              <h4 class="text-base font-medium mb-2">{{ $t("packages.composerSetup") }}</h4>
+              <Alert variant="destructive" class="mb-4">
+                <AlertDescription>
+                  {{ $t("packages.composerWarning") }}
+                </AlertDescription>
+              </Alert>
+              <p class="text-sm text-muted-foreground mb-2">
+                {{ $t("packages.composerRepoHint") }}
               </p>
-            </Banner>
-            <p class="text-muted">
-              {{ $t("packages.composerRepoHint") }}
-            </p>
-            <div class="code-block">
-              <pre><code>{
+              <div class="relative my-2 bg-muted border rounded-lg overflow-hidden">
+                <pre class="p-4 overflow-x-auto"><code class="font-mono text-sm leading-relaxed">{
     "repositories": [
         {
             "type": "composer",
@@ -220,40 +259,48 @@
         }
     ]
 }</code></pre>
-              <UiButton
-                type="button"
-                size="sm"
-                @click="copyComposerRepository"
-              >
-                <icon-fa6-solid:copy class="icon" aria-hidden="true" />
-                {{ $t("common.copy") }}
-              </UiButton>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  class="absolute top-2 right-2"
+                  @click="copyComposerRepository"
+                >
+                  <icon-fa6-solid:copy class="size-3" aria-hidden="true" />
+                  {{ $t("common.copy") }}
+                </Button>
+              </div>
+              <p class="text-sm text-muted-foreground mb-2">{{ $t("packages.composerAuthHint") }}</p>
+              <div class="relative my-2 bg-muted border rounded-lg overflow-hidden">
+                <pre class="p-4 overflow-x-auto"><code class="font-mono text-sm leading-relaxed">composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
+              </div>
             </div>
-            <p class="text-muted">{{ $t("packages.composerAuthHint") }}</p>
-            <div class="code-block">
-              <pre><code>composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
-            </div>
-          </div>
-        </template>
-      </Panel>
+          </template>
+        </CardContent>
+      </Card>
 
-      <Panel :title="$t('shop.dangerZone')">
-        <p>{{ $t("shop.deleteShopWarning") }}</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>{{ $t('shop.dangerZone') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p class="text-sm text-muted-foreground mb-4">{{ $t("shop.deleteShopWarning") }}</p>
 
-        <p v-if="!canDeleteShop" class="delete-shop-warning">
-          {{ $t("shop.deleteShopEnvironmentsWarning", { count: environmentsInShopCount }) }}
-        </p>
+          <p v-if="!canDeleteShop" class="text-sm text-destructive mb-4">
+            {{ $t("shop.deleteShopEnvironmentsWarning", { count: environmentsInShopCount }) }}
+          </p>
 
-        <UiButton
-          type="button"
-          variant="destructive"
-          :disabled="!canDeleteShop || isDeletingShop"
-          @click="showDeleteShopModal = true"
-        >
-          <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-          {{ $t("shop.deleteShop") }}
-        </UiButton>
-      </Panel>
+          <Button
+            type="button"
+            variant="destructive"
+            :disabled="!canDeleteShop || isDeletingShop"
+            @click="showDeleteShopModal = true"
+          >
+            <icon-fa6-solid:trash class="size-4" aria-hidden="true" />
+            {{ $t("shop.deleteShop") }}
+          </Button>
+        </CardContent>
+      </Card>
     </template>
 
     <!-- Add API Key Modal -->
@@ -261,55 +308,63 @@
       <template #title> {{ $t("shop.createApiKeyTitle") }} </template>
 
       <template #content>
-        <vee-form
-          id="apiKeyForm"
-          v-slot="{ errors }"
-          :validation-schema="apiKeySchema"
-          :initial-values="{ name: '', scopes: [] }"
-          class="api-key-form"
-          @submit="onSubmitApiKey"
-        >
-          <div class="form-group">
-            <InputField
-              name="name"
-              :label="$t('common.name')"
-              :placeholder="$t('shop.apiKeyPlaceholder')"
-              :error="errors.name"
-            />
-            <p class="field-help">{{ $t("packages.apiKeyHelp") }}</p>
-          </div>
+        <form id="apiKeyForm" class="space-y-6" @submit="onSubmitApiKey">
+          <div class="space-y-4">
+            <FormField v-slot="{ componentField }" name="apiKeyName">
+              <FormItem>
+                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="$t('shop.apiKeyPlaceholder')"
+                  />
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">{{ $t("packages.apiKeyHelp") }}</p>
+              </FormItem>
+            </FormField>
 
-          <div class="form-group">
-            <label>{{ $t("shop.scopes") }}</label>
-            <p class="field-help">{{ $t("shop.scopesHelp") }}</p>
-            <div class="scopes-list">
-              <label v-for="scope in availableScopes" :key="scope.value" class="scope-checkbox">
-                <field type="checkbox" name="scopes" :value="scope.value" />
-                <div class="scope-info">
-                  <span class="scope-label">{{ scope.label }}</span>
-                  <span class="scope-description">{{ scope.description }}</span>
-                </div>
-              </label>
+            <div>
+              <label class="text-sm font-medium">{{ $t("shop.scopes") }}</label>
+              <p class="text-xs text-muted-foreground mb-2">{{ $t("shop.scopesHelp") }}</p>
+              <div class="flex flex-col gap-3 mt-2">
+                <label
+                  v-for="scope in availableScopes"
+                  :key="scope.value"
+                  class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    :value="scope.value"
+                    class="mt-1"
+                    @change="toggleScope(scope.value)"
+                    :checked="selectedScopes.includes(scope.value)"
+                  />
+                  <div class="flex flex-col gap-1">
+                    <span class="font-medium">{{ scope.label }}</span>
+                    <span class="text-sm text-muted-foreground">{{ scope.description }}</span>
+                  </div>
+                </label>
+              </div>
+              <p v-if="scopeError" class="text-sm text-destructive mt-1">{{ scopeError }}</p>
             </div>
-            <div class="field-error-message">{{ errors.scopes }}</div>
           </div>
-        </vee-form>
+        </form>
       </template>
 
       <template #footer>
-        <UiButton type="button" @click="closeAddKeyModal">
+        <Button variant="outline" type="button" @click="closeAddKeyModal">
           {{ $t("common.cancel") }}
-        </UiButton>
-        <UiButton
+        </Button>
+        <Button
           type="submit"
-          variant="primary"
           form="apiKeyForm"
           :disabled="isCreatingApiKey"
         >
-          <icon-fa6-solid:key v-if="!isCreatingApiKey" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
+          <icon-fa6-solid:key v-if="!isCreatingApiKey" class="size-4" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="size-4" />
           {{ $t("shop.createApiKey") }}
-        </UiButton>
+        </Button>
       </template>
     </modal>
 
@@ -318,28 +373,26 @@
       <template #title> {{ $t("shop.apiKeyCreatedTitle") }} </template>
 
       <template #content>
-        <Banner variant="alert">
-          <p>
-            <strong>{{ $t("shop.apiKeyCopyWarning") }}</strong>
-          </p>
-          <p>
+        <Alert variant="destructive" class="mb-4">
+          <AlertTitle>{{ $t("shop.apiKeyCopyWarning") }}</AlertTitle>
+          <AlertDescription>
             {{ $t("shop.apiKeyCopyDesc") }}
-          </p>
-        </Banner>
+          </AlertDescription>
+        </Alert>
 
-        <div class="token-display">
-          <code class="token-value">{{ newToken }}</code>
-          <UiButton type="button" @click="copyToken">
-            <icon-fa6-solid:copy class="icon" aria-hidden="true" />
+        <div class="flex gap-2 mt-4 p-4 bg-muted rounded-lg">
+          <code class="flex-1 p-3 bg-background border rounded text-sm font-mono break-all">{{ newToken }}</code>
+          <Button type="button" variant="outline" @click="copyToken">
+            <icon-fa6-solid:copy class="size-4" aria-hidden="true" />
             {{ $t("common.copy") }}
-          </UiButton>
+          </Button>
         </div>
       </template>
 
       <template #footer>
-        <UiButton type="button" variant="primary" @click="closeTokenModal">
+        <Button type="button" @click="closeTokenModal">
           {{ $t("common.done") }}
-        </UiButton>
+        </Button>
       </template>
     </modal>
 
@@ -374,42 +427,38 @@
       <template #title> {{ $t("packages.addTokenTitle") }} </template>
 
       <template #content>
-        <vee-form
-          id="packagesTokenForm"
-          v-slot="{ errors }"
-          :validation-schema="packagesTokenSchema"
-          :initial-values="{ token: '' }"
-          class="api-key-form"
-          @submit="onSubmitPackagesToken"
-        >
-          <div class="form-group">
-            <InputField
-              name="token"
-              :label="$t('packages.tokenLabel')"
-              :placeholder="$t('packages.tokenPlaceholder')"
-              :error="errors.token"
-            />
-            <p class="field-help">
-              {{ $t("packages.tokenHelp") }}
-            </p>
-          </div>
-        </vee-form>
+        <form id="packagesTokenForm" class="space-y-4" @submit="onSubmitPackagesToken">
+          <FormField v-slot="{ componentField }" name="packagesToken">
+            <FormItem>
+              <FormLabel>{{ $t('packages.tokenLabel') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  :placeholder="$t('packages.tokenPlaceholder')"
+                />
+              </FormControl>
+              <FormMessage />
+              <p class="text-xs text-muted-foreground">
+                {{ $t("packages.tokenHelp") }}
+              </p>
+            </FormItem>
+          </FormField>
+        </form>
       </template>
 
       <template #footer>
-        <UiButton type="button" @click="showAddPackagesTokenModal = false">
+        <Button variant="outline" type="button" @click="showAddPackagesTokenModal = false">
           {{ $t("common.cancel") }}
-        </UiButton>
-        <UiButton
+        </Button>
+        <Button
           type="submit"
-          variant="primary"
           form="packagesTokenForm"
           :disabled="isCreatingPackagesToken"
         >
-          <icon-fa6-solid:plus v-if="!isCreatingPackagesToken" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
+          <icon-fa6-solid:plus v-if="!isCreatingPackagesToken" class="size-4" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="size-4" />
           {{ $t("packages.addToken") }}
-        </UiButton>
+        </Button>
       </template>
     </modal>
 
@@ -425,7 +474,7 @@
       @close="showDeletePackagesTokenModal = false"
       @confirm="deletePackagesToken"
     />
-  </main-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -436,11 +485,19 @@ import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { formatDate, timeAgo } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { Field, Form as VeeForm } from "vee-validate";
-import { computed, nextTick, onMounted, ref } from "vue";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
 
 type Shop = components["schemas"]["AccountShop"];
 type ApiKey = components["schemas"]["ApiKey"];
@@ -474,6 +531,10 @@ const showDeleteShopModal = ref(false);
 const deletingApiKey = ref<ApiKey | null>(null);
 const newToken = ref("");
 
+// API Key form state
+const selectedScopes = ref<string[]>([]);
+const scopeError = ref("");
+
 // Packages tokens
 const isPackagesConfigured = ref(false);
 const packagesComposerUrl = ref<string | null>(null);
@@ -497,32 +558,71 @@ const packagesComposerHost = computed(() => {
   }
 });
 
-const shopFormInitialValues = computed(() => ({
-  name: shop.value?.name ?? "",
-  description: shop.value?.description ?? "",
-  gitUrl: shop.value?.gitUrl ?? "",
-}));
+// Shop edit form
+const shopValidationSchema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.shopNameRequired")),
+    description: z.string().optional(),
+    gitUrl: z.string().url(t("validation.urlInvalid")).optional().or(z.literal("")),
+  }),
+);
 
-const shopSchema = Yup.object().shape({
-  name: Yup.string().required(t("validation.shopNameRequired")),
-  description: Yup.string().optional(),
-  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
+const { handleSubmit: handleShopSubmit, isSubmitting: isShopSubmitting, setValues: setShopValues } = useForm({
+  validationSchema: shopValidationSchema,
+  initialValues: {
+    name: "",
+    description: "",
+    gitUrl: "",
+  },
 });
 
-const apiKeySchema = Yup.object().shape({
-  name: Yup.string()
-    .required(t("validation.nameRequired"))
-    .min(1, t("validation.nameRequired"))
-    .max(100, t("validation.nameMaxLength")),
-  scopes: Yup.array()
-    .of(Yup.string())
-    .min(1, t("validation.required", { field: "Scope" }))
-    .required(t("validation.required", { field: "Scope" })),
+watch(shop, (s) => {
+  if (s) {
+    setShopValues({
+      name: s.name ?? "",
+      description: s.description ?? "",
+      gitUrl: s.gitUrl ?? "",
+    });
+  }
 });
 
-const packagesTokenSchema = Yup.object().shape({
-  token: Yup.string().required(t("validation.tokenRequired")).min(1, t("validation.tokenRequired")),
+// API Key form
+const apiKeyValidationSchema = toTypedSchema(
+  z.object({
+    apiKeyName: z.string().min(1, t("validation.nameRequired")).max(100, t("validation.nameMaxLength")),
+  }),
+);
+
+const { handleSubmit: handleApiKeySubmit, resetForm: resetApiKeyForm } = useForm({
+  validationSchema: apiKeyValidationSchema,
+  initialValues: {
+    apiKeyName: "",
+  },
 });
+
+// Packages token form
+const packagesTokenValidationSchema = toTypedSchema(
+  z.object({
+    packagesToken: z.string().min(1, t("validation.tokenRequired")),
+  }),
+);
+
+const { handleSubmit: handlePackagesTokenSubmit, resetForm: resetPackagesTokenForm } = useForm({
+  validationSchema: packagesTokenValidationSchema,
+  initialValues: {
+    packagesToken: "",
+  },
+});
+
+function toggleScope(value: string) {
+  const idx = selectedScopes.value.indexOf(value);
+  if (idx >= 0) {
+    selectedScopes.value.splice(idx, 1);
+  } else {
+    selectedScopes.value.push(value);
+  }
+  scopeError.value = "";
+}
 
 async function loadShopSummary() {
   const [shopsRes, environmentsData] = await Promise.all([
@@ -597,19 +697,17 @@ function getScopeLabel(scope: string): string {
   return found?.label ?? scope;
 }
 
-async function onSubmitShop(values: Record<string, unknown>) {
+const onSubmitShop = handleShopSubmit(async (values) => {
   if (!shop.value) return;
-
-  const typedValues = values as Yup.InferType<typeof shopSchema>;
 
   isSavingShop.value = true;
   try {
     await api.PATCH("/organizations/{orgId}/shops/{shopId}", {
       params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
       body: {
-        name: typedValues.name,
-        description: typedValues.description ?? "",
-        gitUrl: typedValues.gitUrl || undefined,
+        name: values.name,
+        description: values.description ?? "",
+        gitUrl: values.gitUrl || undefined,
       },
     });
 
@@ -622,9 +720,12 @@ async function onSubmitShop(values: Record<string, unknown>) {
   } finally {
     isSavingShop.value = false;
   }
-}
+});
 
 function openAddKeyModal() {
+  selectedScopes.value = [];
+  scopeError.value = "";
+  resetApiKeyForm({ values: { apiKeyName: "" } });
   showAddKeyModal.value = true;
 }
 
@@ -637,18 +738,21 @@ function closeTokenModal() {
   newToken.value = "";
 }
 
-async function onSubmitApiKey(values: Record<string, unknown>) {
+const onSubmitApiKey = handleApiKeySubmit(async (values) => {
   if (!shop.value) return;
 
-  const typedValues = values as Yup.InferType<typeof apiKeySchema>;
+  if (selectedScopes.value.length === 0) {
+    scopeError.value = t("validation.required", { field: "Scope" });
+    return;
+  }
 
   isCreatingApiKey.value = true;
   try {
     const { data: result } = await api.POST("/organizations/{orgId}/shops/{shopId}/api-keys", {
       params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
       body: {
-        name: typedValues.name,
-        scopes: typedValues.scopes as string[],
+        name: values.apiKeyName,
+        scopes: selectedScopes.value,
       },
     });
 
@@ -665,7 +769,7 @@ async function onSubmitApiKey(values: Record<string, unknown>) {
   } finally {
     isCreatingApiKey.value = false;
   }
-}
+});
 
 function copyToken() {
   if (!navigator.clipboard) {
@@ -748,16 +852,14 @@ async function loadPackagesTokens() {
   }
 }
 
-async function onSubmitPackagesToken(values: Record<string, unknown>) {
+const onSubmitPackagesToken = handlePackagesTokenSubmit(async (values) => {
   if (!shop.value) return;
-
-  const typedValues = values as Yup.InferType<typeof packagesTokenSchema>;
 
   isCreatingPackagesToken.value = true;
   try {
     await api.POST("/organizations/{orgId}/shops/{shopId}/packages-tokens", {
       params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
-      body: { token: typedValues.token },
+      body: { token: values.packagesToken },
     });
 
     showAddPackagesTokenModal.value = false;
@@ -768,7 +870,7 @@ async function onSubmitPackagesToken(values: Record<string, unknown>) {
   } finally {
     isCreatingPackagesToken.value = false;
   }
-}
+});
 
 function confirmDeletePackagesToken(pt: PackagesToken) {
   deletingPackagesToken.value = pt;
@@ -854,220 +956,3 @@ onMounted(() => {
   loadPageData();
 });
 </script>
-
-<style scoped>
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.state-panel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.delete-shop-warning {
-  color: var(--color-danger);
-}
-
-.api-keys-loading {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-color-muted);
-}
-
-.api-keys-empty {
-  padding: 4rem 2rem;
-  text-align: center;
-
-  .icon-large {
-    font-size: 3rem;
-    color: var(--text-color-muted);
-    margin-bottom: 1rem;
-  }
-
-  p {
-    margin: 0;
-
-    &.text-muted {
-      margin-top: 0.5rem;
-      color: var(--text-color-muted);
-      font-size: 0.875rem;
-    }
-  }
-}
-
-.api-keys-list {
-  padding: 1rem 0 0;
-}
-
-.api-key-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border: 1px solid var(--panel-border-color);
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.api-key-info {
-  h4 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.125rem;
-    font-weight: 500;
-  }
-
-  p {
-    margin: 0 0 0.25rem 0;
-    font-size: 0.875rem;
-  }
-}
-
-.api-key-scopes {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.api-key-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.api-key-form {
-  .form-group {
-    margin-bottom: 1.5rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-.field-help {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--text-color-muted);
-}
-
-.scopes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.scope-checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid var(--panel-border-color);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: var(--panel-background-color);
-  }
-
-  input[type="checkbox"] {
-    margin-top: 0.25rem;
-  }
-}
-
-.scope-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.scope-label {
-  font-weight: 500;
-}
-
-.scope-description {
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-}
-
-.token-display {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: var(--panel-background-color);
-  border-radius: 0.5rem;
-}
-
-.token-value {
-  flex: 1;
-  padding: 0.75rem;
-  background-color: var(--input-background-color);
-  border: 1px solid var(--input-border-color);
-  border-radius: 0.25rem;
-  font-family: monospace;
-  font-size: 0.875rem;
-  word-break: break-all;
-}
-
-.composer-setup {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--panel-border-color);
-
-  h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-    font-weight: 500;
-  }
-
-  .text-muted {
-    font-size: 0.875rem;
-    color: var(--text-color-muted);
-    margin: 0.5rem 0;
-
-    code {
-      padding: 0.125rem 0.375rem;
-      background-color: var(--input-background-color);
-      border-radius: 0.25rem;
-      font-size: 0.8125rem;
-    }
-  }
-}
-
-.code-block {
-  position: relative;
-  margin: 0.5rem 0 1rem;
-  background-color: var(--input-background-color);
-  border: 1px solid var(--input-border-color);
-  border-radius: 0.5rem;
-  overflow: hidden;
-
-  pre {
-    margin: 0;
-    padding: 1rem;
-    overflow-x: auto;
-
-    code {
-      font-family: monospace;
-      font-size: 0.8125rem;
-      line-height: 1.5;
-    }
-  }
-
-  .ui-button--sm {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
-}
-</style>

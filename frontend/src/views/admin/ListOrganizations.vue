@@ -1,103 +1,120 @@
 <template>
-  <HeaderContainer :title="$t('admin.orgManagement')" />
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.orgManagement') }}</h1>
+  </div>
 
-  <Panel>
-    <Banner v-if="error" variant="error">
-      {{ error }}
-    </Banner>
+  <Card>
+    <CardContent>
+      <Alert v-if="error" variant="destructive">
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
 
-    <div class="organizations-filter">
-      <div class="search-container">
-        <BaseInput
-          v-model="searchQuery"
-          :placeholder="$t('admin.searchOrgs')"
-          @input="debouncedSearch"
-        />
-      </div>
-
-      <div class="filter-container">
-        <BaseSelect v-model="sortBy" @change="loadOrganizations">
-          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
-          <option value="name">{{ $t("admin.sortByName") }}</option>
-          <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
-          <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
-        </BaseSelect>
-      </div>
-
-      <div class="filter-container">
-        <BaseSelect v-model="sortDirection" @change="loadOrganizations">
-          <option value="desc">{{ $t("common.descending") }}</option>
-          <option value="asc">{{ $t("common.ascending") }}</option>
-        </BaseSelect>
-      </div>
-    </div>
-
-    <DataTable
-      v-if="!loading && organizations.length > 0"
-      :columns="tableColumns"
-      :data="organizations"
-    >
-      <template #cell-logo="{ row }">
-        <div class="logo-container">
-          <img v-if="row.logo" :src="row.logo" :alt="row.name" class="organization-logo" />
-          <div v-else class="logo-placeholder">
-            <icon-fa6-solid:building class="icon" />
-          </div>
+      <div class="flex flex-wrap items-center gap-4 mb-8">
+        <div class="flex-1 min-w-[250px]">
+          <Input
+            v-model="searchQuery"
+            :placeholder="$t('admin.searchOrgs')"
+            @input="debouncedSearch"
+          />
         </div>
-      </template>
 
-      <template #cell-name="{ row }">
-        <router-link
-          :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }"
-        >
-          {{ row.name }}
-        </router-link>
-      </template>
+        <div>
+          <select
+            v-model="sortBy"
+            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+            @change="loadOrganizations"
+          >
+            <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
+            <option value="name">{{ $t("admin.sortByName") }}</option>
+            <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
+            <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
+          </select>
+        </div>
 
-      <template #cell-environmentCount="{ row }">
-        <span class="badge badge-info">
-          {{ $t("admin.nShops", { count: row.environmentCount }) }}
-        </span>
-      </template>
+        <div>
+          <select
+            v-model="sortDirection"
+            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+            @change="loadOrganizations"
+          >
+            <option value="desc">{{ $t("common.descending") }}</option>
+            <option value="asc">{{ $t("common.ascending") }}</option>
+          </select>
+        </div>
+      </div>
 
-      <template #cell-memberCount="{ row }">
-        <span class="badge badge-secondary">
-          {{ $t("admin.nMembers", { count: row.memberCount }) }}
-        </span>
-      </template>
-
-      <template #cell-createdAt="{ row }">
-        {{ formatDate(row.createdAt) }}
-      </template>
-    </DataTable>
-
-    <div v-if="loading" class="loading-container">
-      <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t("admin.loadingOrgs") }}
-    </div>
-
-    <div v-if="totalPages > 1" class="pagination">
-      <UiButton size="sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        {{ $t("common.previous") }}
-      </UiButton>
-      <span class="page-info">{{
-        $t("common.pageOf", { current: currentPage, total: totalPages })
-      }}</span>
-      <UiButton
-        size="sm"
-        :disabled="currentPage === totalPages"
-        @click="changePage(currentPage + 1)"
+      <DataTable
+        v-if="!loading && organizations.length > 0"
+        :columns="tableColumns"
+        :data="organizations"
       >
-        {{ $t("common.next") }}
-      </UiButton>
-    </div>
-  </Panel>
+        <template #cell-logo="{ row }">
+          <div class="flex items-center justify-center size-10">
+            <img v-if="row.logo" :src="row.logo" :alt="row.name" class="size-8 rounded object-cover" />
+            <div v-else class="flex items-center justify-center size-8 rounded bg-muted text-muted-foreground">
+              <icon-fa6-solid:building class="size-4" />
+            </div>
+          </div>
+        </template>
+
+        <template #cell-name="{ row }">
+          <router-link
+            :to="{ name: 'account.organizations.detail', params: { organizationId: row.id } }"
+            class="text-primary hover:underline"
+          >
+            {{ row.name }}
+          </router-link>
+        </template>
+
+        <template #cell-environmentCount="{ row }">
+          <Badge class="bg-sky-500 text-white border-transparent">
+            {{ $t("admin.nShops", { count: row.environmentCount }) }}
+          </Badge>
+        </template>
+
+        <template #cell-memberCount="{ row }">
+          <Badge variant="secondary">
+            {{ $t("admin.nMembers", { count: row.memberCount }) }}
+          </Badge>
+        </template>
+
+        <template #cell-createdAt="{ row }">
+          {{ formatDate(row.createdAt) }}
+        </template>
+      </DataTable>
+
+      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
+        {{ $t("admin.loadingOrgs") }}
+      </div>
+
+      <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
+        <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+          {{ $t("common.previous") }}
+        </Button>
+        <span class="text-sm text-muted-foreground">{{
+          $t("common.pageOf", { current: currentPage, total: totalPages })
+        }}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+        >
+          {{ $t("common.next") }}
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import Banner from "@/components/layout/Banner.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import DataTable from "@/components/layout/DataTable.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
@@ -187,101 +204,3 @@ onMounted(() => {
   loadOrganizations();
 });
 </script>
-
-<style scoped>
-.organizations-filter {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-container {
-  flex: 1;
-  min-width: 250px;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 400px;
-}
-
-.filter-container select {
-  min-width: 150px;
-}
-
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-color-muted);
-  gap: 0.5rem;
-}
-
-.loading-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.actions-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-}
-
-.organization-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.logo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background-color: var(--bg-color-muted);
-  border-radius: 4px;
-  color: var(--text-color-muted);
-}
-
-.logo-placeholder .icon {
-  width: 16px;
-  height: 16px;
-}
-
-.badge-info {
-  background-color: #0ea5e9;
-  color: white;
-}
-
-.badge-secondary {
-  background-color: #6b7280;
-  color: white;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.page-info {
-  color: var(--text-color-muted);
-}
-</style>

@@ -1,8 +1,8 @@
 <template>
-  <div :class="['element-empty', `element-empty-${size}`]">
+  <div :class="['flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card text-center', sizeClasses]">
     <slot name="icon">
       <svg
-        class="element-empty-icon"
+        class="size-12 text-muted-foreground"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -18,16 +18,16 @@
       </svg>
     </slot>
 
-    <h2 v-if="resolvedTitle" class="element-empty-title">{{ resolvedTitle }}</h2>
+    <h2 v-if="resolvedTitle" class="text-2xl font-semibold">{{ resolvedTitle }}</h2>
 
-    <p v-if="$slots.default || descriptionText" class="element-empty-description">
+    <p v-if="$slots.default || descriptionText" class="max-w-sm text-muted-foreground">
       <slot>{{ descriptionText }}</slot>
     </p>
 
-    <div v-if="$slots.contents || route" class="element-empty-contents">
+    <div v-if="$slots.contents || route" class="flex w-full items-center justify-center gap-3">
       <slot name="contents">
         <UiButton v-if="route" :to="route" variant="primary">
-          <icon-fa6-solid:plus class="icon" aria-hidden="true" />
+          <icon-fa6-solid:plus class="mr-1 size-4" aria-hidden="true" />
           {{ resolvedButton }}
         </UiButton>
       </slot>
@@ -68,63 +68,15 @@ const resolvedButton = computed(() => {
 const descriptionText = computed(() => {
   return t("common.getStartedElement");
 });
+
+const sizeClasses = computed(() => {
+  switch (props.size) {
+    case "sm":
+      return "gap-4 px-6 py-8";
+    case "lg":
+      return "gap-8 px-12 py-20";
+    default:
+      return "gap-6 px-10 py-16";
+  }
+});
 </script>
-
-<style scoped>
-.element-empty {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  text-align: center;
-  border-radius: 0.75rem;
-  border: 1px solid var(--field-border-color);
-  background: var(--control-background);
-  color: var(--text-color);
-}
-
-.element-empty-sm {
-  padding: 2rem 1.5rem;
-  gap: 1rem;
-}
-
-.element-empty-base {
-  padding: 4rem 2.5rem;
-  gap: 1.5rem;
-}
-
-.element-empty-lg {
-  padding: 5rem 3rem;
-  gap: 2rem;
-}
-
-.element-empty-icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--text-color-muted);
-  flex-shrink: 0;
-}
-
-.element-empty-title {
-  margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.2;
-  font-weight: 600;
-}
-
-.element-empty-description {
-  margin: 0;
-  max-width: 34rem;
-  color: var(--text-color-muted);
-  line-height: 1.5;
-}
-
-.element-empty-contents {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  width: 100%;
-}
-</style>

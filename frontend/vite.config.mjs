@@ -1,5 +1,6 @@
 import { URL, fileURLToPath } from "node:url";
 
+import tailwindcss from "@tailwindcss/vite";
 import Vue from "@vitejs/plugin-vue";
 import IconsResolver from "unplugin-icons/resolver";
 import Icons from "unplugin-icons/vite";
@@ -14,6 +15,7 @@ if (process.env.HMR_PORT) {
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     Vue(),
     Components({
       resolvers: [

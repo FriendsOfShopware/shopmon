@@ -1,62 +1,75 @@
 <template>
-  <header-container :title="$t('onboarding.welcome')" />
-  <div class="onboarding">
-    <Panel>
-        <div class="onboarding-hero">
-          <icon-fa6-solid:building class="onboarding-icon" />
-          <h2 class="onboarding-title">{{ $t("onboarding.title") }}</h2>
-          <p class="onboarding-description">
+  <header class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t('onboarding.welcome') }}</h1>
+    </div>
+    <div class="flex gap-2 items-start" />
+  </header>
+
+  <div class="w-full">
+    <Card>
+      <CardContent class="pt-6">
+        <div class="text-center pb-8 mb-8 border-b">
+          <icon-fa6-solid:building class="size-12 text-primary mx-auto mb-4" />
+          <h2 class="text-2xl font-semibold mb-2">{{ $t("onboarding.title") }}</h2>
+          <p class="text-muted-foreground max-w-md mx-auto leading-relaxed">
             {{ $t("onboarding.description") }}
           </p>
         </div>
 
-        <div class="onboarding-options">
-          <div class="onboarding-option">
-            <div class="onboarding-option-icon">
-              <icon-fa6-solid:plus />
+        <div class="flex flex-col gap-6">
+          <div class="flex gap-4 items-start">
+            <div class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+              <icon-fa6-solid:plus class="size-4" />
             </div>
-            <div class="onboarding-option-content">
-              <h3>{{ $t("onboarding.createTitle") }}</h3>
-              <p>{{ $t("onboarding.createDescription") }}</p>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.createTitle") }}</h3>
+              <p class="text-muted-foreground text-sm leading-relaxed mb-0">{{ $t("onboarding.createDescription") }}</p>
 
-              <vee-form
-                v-slot="{ errors, isSubmitting }"
-                :validation-schema="schema"
-                class="onboarding-form"
-                @submit="onCreateOrganization"
-              >
-                <InputField
-                  name="name"
-                  :label="$t('common.name')"
-                  :placeholder="$t('onboarding.orgNamePlaceholder')"
-                  autocomplete="organization"
-                  :error="errors.name"
-                />
+              <form class="mt-4 flex gap-3 items-end" @submit="onSubmit">
+                <div class="flex-1">
+                  <FormField v-slot="{ componentField }" name="name">
+                    <FormItem>
+                      <FormLabel>{{ $t('common.name') }}</FormLabel>
+                      <FormControl>
+                        <Input
+                          v-bind="componentField"
+                          :placeholder="$t('onboarding.orgNamePlaceholder')"
+                          autocomplete="organization"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </div>
 
-                <UiButton :disabled="isSubmitting" type="submit" variant="primary">
-                  <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-                  <icon-line-md:loading-twotone-loop v-else class="icon" />
+                <Button :disabled="isSubmitting" type="submit" class="shrink-0">
+                  <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+                  <icon-line-md:loading-twotone-loop v-else class="size-4" />
                   {{ $t("onboarding.createButton") }}
-                </UiButton>
-              </vee-form>
+                </Button>
+              </form>
             </div>
           </div>
 
-          <div class="onboarding-divider">
+          <div class="flex items-center gap-4 text-muted-foreground text-sm uppercase tracking-wide">
+            <div class="flex-1 h-px bg-border" />
             <span>{{ $t("common.or") }}</span>
+            <div class="flex-1 h-px bg-border" />
           </div>
 
-          <div class="onboarding-option">
-            <div class="onboarding-option-icon">
-              <icon-fa6-solid:envelope />
+          <div class="flex gap-4 items-start">
+            <div class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+              <icon-fa6-solid:envelope class="size-4" />
             </div>
-            <div class="onboarding-option-content">
-              <h3>{{ $t("onboarding.inviteTitle") }}</h3>
-              <p>{{ $t("onboarding.inviteDescription") }}</p>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.inviteTitle") }}</h3>
+              <p class="text-muted-foreground text-sm leading-relaxed mb-0">{{ $t("onboarding.inviteDescription") }}</p>
             </div>
           </div>
         </div>
-    </Panel>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
@@ -64,26 +77,35 @@
 import { useAlert } from "@/composables/useAlert";
 import { fetchSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
-
-import { Form as VeeForm } from "vee-validate";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
 const { error } = useAlert();
 const router = useRouter();
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.orgNameRequired")),
+const validationSchema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.orgNameRequired")),
+  }),
+);
+
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema,
 });
 
-async function onCreateOrganization(values: Record<string, unknown>) {
-  const typedValues = values as Yup.InferType<typeof schema>;
+const onSubmit = handleSubmit(async (values) => {
   try {
     const { error: respError } = await api.POST("/auth/organizations", {
       body: {
-        name: typedValues.name,
+        name: values.name,
       },
     });
 
@@ -96,119 +118,5 @@ async function onCreateOrganization(values: Record<string, unknown>) {
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
-}
+});
 </script>
-
-<style scoped>
-.onboarding {
-  width: 100%;
-}
-
-.onboarding-hero {
-  text-align: center;
-  padding-bottom: 2rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--panel-border-color);
-}
-
-.onboarding-icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-}
-
-.onboarding-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.onboarding-description {
-  color: var(--text-color-muted);
-  max-width: 28rem;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-.onboarding-options {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.onboarding-option {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.onboarding-option-icon {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  background-color: var(--primary-color);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 1rem;
-    height: 1rem;
-  }
-}
-
-.onboarding-option-content {
-  flex: 1;
-
-  h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-
-  p {
-    color: var(--text-color-muted);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 0;
-  }
-}
-
-.onboarding-form {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-end;
-
-  .form-group {
-    flex: 1;
-    margin-bottom: 0;
-  }
-
-  .ui-button {
-    flex-shrink: 0;
-    height: fit-content;
-  }
-}
-
-.onboarding-divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: var(--text-color-muted);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-
-  &::before,
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background-color: var(--panel-border-color);
-  }
-}
-</style>

@@ -1,135 +1,177 @@
 <template>
-  <HeaderContainer :title="$t('admin.dashboard')" />
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.dashboard') }}</h1>
+  </div>
 
-  <Panel>
-    <Banner v-if="error" variant="error">
-      {{ error }}
-    </Banner>
+  <Card>
+    <CardContent>
+      <Alert v-if="error" variant="destructive">
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
 
-    <div v-if="loading" class="loading-container">
-      <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t("admin.loadingStats") }}
-    </div>
-
-    <div v-if="!loading && stats" class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.totalUsers") }}</h3>
-          <icon-fa6-solid:users class="stat-icon" />
-        </div>
-        <div class="stat-value">{{ stats.totalUsers }}</div>
-        <p class="stat-description">{{ $t("admin.totalUsersDesc") }}</p>
+      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
+        {{ $t("admin.loadingStats") }}
       </div>
 
-      <div class="stat-card">
-        <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.totalOrgs") }}</h3>
-          <icon-fa6-solid:building class="stat-icon" />
+      <div v-if="!loading && stats" class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-8 mb-8">
+        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalUsers") }}</h3>
+            <icon-fa6-solid:users class="size-6 text-primary opacity-70" />
+          </div>
+          <div class="text-4xl font-bold my-2">{{ stats.totalUsers }}</div>
+          <p class="text-sm text-muted-foreground">{{ $t("admin.totalUsersDesc") }}</p>
         </div>
-        <div class="stat-value">{{ stats.totalOrganizations }}</div>
-        <p class="stat-description">{{ $t("admin.totalOrgsDesc") }}</p>
-      </div>
 
-      <div class="stat-card">
-        <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.totalEnvironments") }}</h3>
-          <icon-fa6-solid:store class="stat-icon" />
+        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalOrgs") }}</h3>
+            <icon-fa6-solid:building class="size-6 text-primary opacity-70" />
+          </div>
+          <div class="text-4xl font-bold my-2">{{ stats.totalOrganizations }}</div>
+          <p class="text-sm text-muted-foreground">{{ $t("admin.totalOrgsDesc") }}</p>
         </div>
-        <div class="stat-value">{{ stats.totalEnvironments }}</div>
-        <p class="stat-description">{{ $t("admin.totalEnvironmentsDesc") }}</p>
-      </div>
 
-      <div class="stat-card status-breakdown">
-        <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.environmentStatus") }}</h3>
-          <icon-fa6-solid:chart-bar class="stat-icon" />
+        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalEnvironments") }}</h3>
+            <icon-fa6-solid:store class="size-6 text-primary opacity-70" />
+          </div>
+          <div class="text-4xl font-bold my-2">{{ stats.totalEnvironments }}</div>
+          <p class="text-sm text-muted-foreground">{{ $t("admin.totalEnvironmentsDesc") }}</p>
         </div>
-        <div class="status-list">
-          <div
-            v-for="(count, status) in stats.environmentsByStatus"
-            :key="status"
-            class="status-item"
-          >
-            <div class="status-label-wrapper">
-              <span class="badge" :class="`badge-${status}`">{{ status }}</span>
+
+        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.environmentStatus") }}</h3>
+            <icon-fa6-solid:chart-bar class="size-6 text-primary opacity-70" />
+          </div>
+          <div class="flex flex-col gap-3">
+            <div
+              v-for="(count, status) in stats.environmentsByStatus"
+              :key="status"
+              class="flex items-center justify-between rounded-md bg-background p-3"
+            >
+              <div class="flex-1">
+                <Badge
+                  :class="{
+                    'bg-emerald-500 text-white border-transparent': status === 'green',
+                    'bg-amber-500 text-white border-transparent': status === 'yellow',
+                    'bg-red-500 text-white border-transparent': status === 'red',
+                  }"
+                >
+                  {{ status }}
+                </Badge>
+              </div>
+              <div class="text-xl font-bold">{{ count }}</div>
             </div>
-            <div class="status-count">{{ count }}</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Action Links -->
-    <div v-if="!loading && stats" class="action-links">
-      <UiButton to="/admin/organizations" variant="primary">
-        {{ $t("admin.manageOrgs") }}
-      </UiButton>
-      <UiButton to="/admin/environments" variant="primary">
-        {{ $t("admin.manageEnvironments") }}
-      </UiButton>
-    </div>
-  </Panel>
+      <!-- Action Links -->
+      <div v-if="!loading && stats" class="flex flex-wrap gap-4">
+        <Button as-child>
+          <RouterLink to="/admin/organizations">
+            {{ $t("admin.manageOrgs") }}
+          </RouterLink>
+        </Button>
+        <Button as-child>
+          <RouterLink to="/admin/environments">
+            {{ $t("admin.manageEnvironments") }}
+          </RouterLink>
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
 
   <!-- Growth Charts -->
-  <div v-if="growthData" class="charts-grid">
-    <Panel title="User Growth">
-      <div class="chart-container">
-        <canvas ref="userChartCanvas" />
-      </div>
-    </Panel>
+  <div v-if="growthData" class="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
+    <Card>
+      <CardHeader>
+        <CardTitle>User Growth</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="relative h-[300px]">
+          <canvas ref="userChartCanvas" />
+        </div>
+      </CardContent>
+    </Card>
 
-    <Panel title="Shop Growth">
-      <div class="chart-container">
-        <canvas ref="shopChartCanvas" />
-      </div>
-    </Panel>
+    <Card>
+      <CardHeader>
+        <CardTitle>Shop Growth</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="relative h-[300px]">
+          <canvas ref="shopChartCanvas" />
+        </div>
+      </CardContent>
+    </Card>
   </div>
 
   <!-- Shopware Version Distribution -->
-  <Panel v-if="versionData && versionData.length > 0" title="Shopware Version Distribution">
-    <div class="chart-container">
-      <canvas ref="versionChartCanvas" />
-    </div>
-  </Panel>
+  <Card v-if="versionData && versionData.length > 0">
+    <CardHeader>
+      <CardTitle>Shopware Version Distribution</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div class="relative h-[300px]">
+        <canvas ref="versionChartCanvas" />
+      </div>
+    </CardContent>
+  </Card>
 
   <!-- Recent Activity -->
-  <div v-if="activity" class="charts-grid">
-    <Panel title="Recent Signups">
-      <div v-if="activity.recentUsers.length === 0" class="empty-state">No recent signups</div>
-      <div v-else class="activity-list">
-        <div v-for="user in activity.recentUsers" :key="user.id" class="activity-item">
-          <div class="activity-info">
-            <span class="activity-name">{{ user.displayName }}</span>
-            <span class="activity-detail">{{ user.email }}</span>
+  <div v-if="activity" class="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-8">
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Signups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div v-if="activity.recentUsers.length === 0" class="text-center py-8 text-muted-foreground">No recent signups</div>
+        <div v-else class="flex flex-col">
+          <div v-for="user in activity.recentUsers" :key="user.id" class="flex items-center justify-between py-3 border-b last:border-b-0">
+            <div class="flex flex-col gap-0.5 min-w-0">
+              <span class="font-semibold truncate">{{ user.displayName }}</span>
+              <span class="text-xs text-muted-foreground truncate">{{ user.email }}</span>
+            </div>
+            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{ formatDateTime(user.createdAt) }}</span>
           </div>
-          <span class="activity-time">{{ formatDateTime(user.createdAt) }}</span>
         </div>
-      </div>
-    </Panel>
+      </CardContent>
+    </Card>
 
-    <Panel title="Recent Environments">
-      <div v-if="activity.recentEnvironments.length === 0" class="empty-state">
-        No recent environments
-      </div>
-      <div v-else class="activity-list">
-        <div v-for="env in activity.recentEnvironments" :key="env.id" class="activity-item">
-          <div class="activity-info">
-            <span class="activity-name">{{ env.name }}</span>
-            <span class="activity-detail">{{ env.organizationName }}</span>
-          </div>
-          <span class="activity-time">{{
-            env.lastScrapedAt ? formatDateTime(env.lastScrapedAt) : ""
-          }}</span>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Environments</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div v-if="activity.recentEnvironments.length === 0" class="text-center py-8 text-muted-foreground">
+          No recent environments
         </div>
-      </div>
-    </Panel>
+        <div v-else class="flex flex-col">
+          <div v-for="env in activity.recentEnvironments" :key="env.id" class="flex items-center justify-between py-3 border-b last:border-b-0">
+            <div class="flex flex-col gap-0.5 min-w-0">
+              <span class="font-semibold truncate">{{ env.name }}</span>
+              <span class="text-xs text-muted-foreground truncate">{{ env.organizationName }}</span>
+            </div>
+            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{
+              env.lastScrapedAt ? formatDateTime(env.lastScrapedAt) : ""
+            }}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
-import Banner from "@/components/layout/Banner.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import Panel from "@/components/layout/Panel.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDateTime } from "@/helpers/formatter";
@@ -313,227 +355,3 @@ onUnmounted(() => {
   if (versionChartInstance) versionChartInstance.destroy();
 });
 </script>
-
-<style scoped>
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: var(--bg-color-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.stat-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-color-muted);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.stat-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--primary-color);
-  opacity: 0.7;
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--text-color-primary);
-  margin: 0.5rem 0;
-}
-
-.stat-description {
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-  margin: 0;
-}
-
-.status-breakdown {
-  grid-column: span 1;
-}
-
-.status-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.status-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: var(--bg-color-primary);
-  border-radius: 6px;
-}
-
-.status-label-wrapper {
-  flex: 1;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.badge-green {
-  background-color: #10b981;
-  color: white;
-}
-
-.badge-yellow {
-  background-color: #f59e0b;
-  color: white;
-}
-
-.badge-red {
-  background-color: #ef4444;
-  color: white;
-}
-
-.status-count {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-color-primary);
-}
-
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-color-muted);
-  gap: 0.5rem;
-}
-
-.loading-icon {
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.action-links {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.action-links .ui-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  font-weight: 600;
-  text-decoration: none;
-  display: inline-block;
-  transition: all 0.2s ease;
-}
-
-.action-links .ui-button--primary {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.action-links .ui-button--primary:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.chart-container {
-  height: 300px;
-  position: relative;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.activity-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-}
-
-.activity-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.activity-name {
-  font-weight: 600;
-  color: var(--text-color-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.activity-detail {
-  font-size: 0.8rem;
-  color: var(--text-color-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.activity-time {
-  font-size: 0.8rem;
-  color: var(--text-color-muted);
-  white-space: nowrap;
-  margin-left: 1rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text-color-muted);
-}
-</style>

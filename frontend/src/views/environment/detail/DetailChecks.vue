@@ -1,5 +1,5 @@
 <template>
-  <Panel variant="table">
+  <Card class="p-0 overflow-hidden">
     <data-table
       v-if="environment"
       :columns="[{ key: 'message', name: $t('shopDetail.message') }]"
@@ -13,33 +13,31 @@
           v-bind="row.link ? { href: row.link, target: '_blank' } : {}"
         >
           {{ row.message }}
-          <icon-fa6-solid:up-right-from-square v-if="row.link" class="icon icon-xs" />
+          <icon-fa6-solid:up-right-from-square v-if="row.link" class="inline size-3 ml-1" />
         </component>
       </template>
 
       <template #cell-actions="{ row }">
         <button
           v-if="environment.ignores?.includes(row.id)"
-          :data-tooltip="$t('shopDetail.checkIgnored')"
-          class="tooltip-top-left"
+          :title="$t('shopDetail.checkIgnored')"
           type="button"
           @click="removeIgnore(row.id)"
         >
-          <icon-fa6-solid:eye-slash class="icon icon-error" />
+          <icon-fa6-solid:eye-slash class="size-4 text-destructive" />
         </button>
 
         <button
           v-else
-          :data-tooltip="$t('shopDetail.checkUsed')"
-          class="tooltip-top-left"
+          :title="$t('shopDetail.checkUsed')"
           type="button"
           @click="ignoreCheck(row.id)"
         >
-          <icon-fa6-solid:eye class="icon" />
+          <icon-fa6-solid:eye class="size-4" />
         </button>
       </template>
     </data-table>
-  </Panel>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -48,6 +46,8 @@ import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { computed } from "vue";
+
+import { Card } from "@/components/ui/card";
 
 const { t } = useI18n();
 

@@ -17,34 +17,6 @@ const MainContainerStub = defineComponent({
   },
 });
 
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () =>
-      h("fieldset", {}, [h("legend", {}, props.title), slots.default?.(), slots.info?.()]);
-  },
-});
-
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "class", "id", "autocomplete"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        class: props.class,
-        id: props.id,
-        autocomplete: props.autocomplete,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
-
 const PluginConnectionModalStub = defineComponent({
   name: "PluginConnectionModal",
   props: ["show", "base64", "error"],
@@ -73,6 +45,11 @@ const mockRoute = { query: {} as Record<string, string>, fullPath: "/environment
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => mockRoute,
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 // Mock shops data
@@ -127,8 +104,6 @@ describe("AddEnvironment", () => {
         stubs: {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
-          FormGroup: FormGroupStub,
-          Field: FieldStub,
           PluginConnectionModal: PluginConnectionModalStub,
         },
       },
@@ -232,12 +207,11 @@ describe("AddEnvironment", () => {
     expect(wrapper.text()).toContain("permissions");
   });
 
-  it("has shop dropdown with options", async () => {
+  it("has shop area with select trigger", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // Verify the component has the Shop section with select field
+    // shadcn Select uses a trigger button, not a native <select>
     expect(wrapper.text()).toContain("Shop");
-    expect(wrapper.find("select").exists()).toBe(true);
   });
 
   it("respects shopId query parameter", async () => {

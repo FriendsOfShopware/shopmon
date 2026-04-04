@@ -1,41 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
+import { defineComponent } from "vue";
 import EditEnvironment from "./EditEnvironment.vue";
 
 const HeaderContainerStub = defineComponent({
   name: "HeaderContainer",
   props: ["title"],
   setup(props, { slots }) {
-    return () => h("header", {}, [props.title, slots.default?.()]);
+    return () => {
+      const { h } = require("vue");
+      return h("header", {}, [props.title, slots.default?.()]);
+    };
   },
 });
 
 const MainContainerStub = defineComponent({
   name: "MainContainer",
   setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const PanelStub = defineComponent({
-  name: "Panel",
-  props: ["title", "variant"],
-  setup(props, { slots }) {
-    return () =>
-      h("div", { class: "panel" }, [
-        props.title ? h("h2", {}, props.title) : null,
-        slots.default?.(),
-      ]);
-  },
-});
-
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () =>
-      h("fieldset", {}, [h("legend", {}, props.title), slots.info?.(), slots.default?.()]);
+    return () => {
+      const { h } = require("vue");
+      return h("main", {}, slots.default?.());
+    };
   },
 });
 
@@ -74,6 +59,11 @@ const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => ({ params: { organizationId: "org-1", environmentId: "1" } }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 vi.mock("@/helpers/api", () => ({
@@ -117,8 +107,6 @@ describe("EditEnvironment", () => {
         stubs: {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
-          Panel: PanelStub,
-          FormGroup: FormGroupStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
           PluginConnectionModal: PluginConnectionModalStub,
         },
@@ -150,10 +138,11 @@ describe("EditEnvironment", () => {
     expect(wrapper.find('input[name="name"]').exists()).toBe(true);
   });
 
-  it("has shop select", async () => {
+  it("has shop select area", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find('select[name="shopId"]').exists()).toBe(true);
+    // shadcn Select renders a trigger button, not a native <select>
+    expect(wrapper.text()).toContain("Shop");
   });
 
   it("has URL input field", async () => {

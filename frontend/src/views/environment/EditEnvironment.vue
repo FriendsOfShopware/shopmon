@@ -3,176 +3,210 @@
     v-if="environment"
     :title="$t('environment.editEnvironment', { name: environment.name })"
   >
-    <UiButton
-      :to="{
-        name: 'account.environments.detail',
-        params: {
-          organizationId: route.params.organizationId as string,
-          environmentId: environment.id,
-        },
-      }"
-      type="button"
-    >
-      {{ $t("common.cancel") }}
-    </UiButton>
+    <Button as-child variant="outline">
+      <RouterLink
+        :to="{
+          name: 'account.environments.detail',
+          params: {
+            organizationId: route.params.organizationId as string,
+            environmentId: environment.id,
+          },
+        }"
+      >
+        {{ $t("common.cancel") }}
+      </RouterLink>
+    </Button>
   </header-container>
 
   <main-container v-if="environment">
-    <Panel>
-      <vee-form
-        ref="formRef"
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="environment"
-        @submit="onSubmit"
-      >
-        <form-group :title="$t('environment.environmentInfo')">
-          <InputField
-            name="name"
-            :label="$t('common.name')"
-            autocomplete="name"
-            :error="errors.name"
-          />
+    <Card>
+      <CardContent>
+        <form @submit="onSubmit">
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-semibold mb-4">{{ $t('environment.environmentInfo') }}</h3>
+              <div class="space-y-4">
+                <FormField v-slot="{ componentField }" name="name">
+                  <FormItem>
+                    <FormLabel>{{ $t('common.name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" autocomplete="name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
 
-          <BaseSelect
-            v-model="selectedShopId"
-            name="shopId"
-            :label="$t('environment.shop')"
-            :error="errors.shopId"
-          >
-            <option v-for="shop in shops" :key="shop.id" :value="shop.id">
-              {{ shop.organizationName + " / " + shop.name }}
-            </option>
-          </BaseSelect>
+                <FormField v-slot="{ componentField }" name="shopId">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.shop') }}</FormLabel>
+                    <Select v-bind="componentField">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue :placeholder="$t('environment.shop')" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem v-for="shop in shops" :key="shop.id" :value="String(shop.id)">
+                          {{ shop.organizationName + " / " + shop.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
 
-          <InputField
-            name="shopUrl"
-            :label="$t('common.url')"
-            autocomplete="url"
-            :error="errors.shopUrl"
-          />
-        </form-group>
-
-        <form-group :title="$t('environment.integration')">
-          <template #info>
-            <i18n-t keypath="environment.integrationDesc" tag="span">
-              <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
-                  $t("environment.pluginName")
-                }}</a>
-              </template>
-            </i18n-t>
-            <a
-              href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
-            >
-              {{ $t("environment.permissions") }}
-            </a>
-          </template>
-
-          <UiButton type="button" @click="openPluginModal">
-            {{ $t("environment.connectPlugin") }}
-          </UiButton>
-
-          <InputField
-            name="clientId"
-            :label="$t('environment.clientId')"
-            :error="errors.clientId"
-          />
-          <InputField
-            name="clientSecret"
-            :label="$t('environment.clientSecret')"
-            :error="errors.clientSecret"
-          />
-        </form-group>
-
-        <div class="form-submit">
-          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </UiButton>
-        </div>
-      </vee-form>
-    </Panel>
-
-    <Panel v-if="environment" :title="$t('environment.sitespeed')">
-      <p>
-        {{ $t("environment.sitespeedDesc") }}
-      </p>
-      <p>
-        {{ $t("environment.sitespeedActivateDesc") }}
-      </p>
-      <p>
-        {{ $t("environment.sitespeedScheduleDesc") }}
-      </p>
-
-      <form @submit.prevent="onSitespeedSubmit">
-        <div class="mb-1">
-          <label for="sitespeedEnabled">{{ $t("environment.sitespeedEnabled") }}</label>
-          <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="field" />
-        </div>
-
-        <div v-if="sitespeedEnabled">
-          <label for="sitespeedUrls">{{ $t("environment.sitespeedUrls") }}</label>
-
-          <div class="sitespeed-urls-container">
-            <div v-for="(url, index) in sitespeedUrls" :key="index" class="sitespeed-url-row">
-              <BaseInput
-                :model-value="sitespeedUrls[index]"
-                type="url"
-                placeholder="https://example.com"
-                @update:model-value="sitespeedUrls[index] = $event"
-              >
-                <template #append>
-                  <UiButton type="button" icon-only @click="removeSitespeedUrl(index)">
-                    <icon-fa6-solid:xmark />
-                  </UiButton>
-                </template>
-              </BaseInput>
+                <FormField v-slot="{ componentField }" name="shopUrl">
+                  <FormItem>
+                    <FormLabel>{{ $t('common.url') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" autocomplete="url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </div>
             </div>
 
-            <UiButton
-              v-if="sitespeedUrls.length < 5"
-              type="button"
-              @click="addSitespeedUrl"
-            >
-              <icon-fa6-solid:plus class="icon" />
-              {{ $t("environment.newUrl") }}
-            </UiButton>
+            <div>
+              <h3 class="text-lg font-semibold mb-1">{{ $t('environment.integration') }}</h3>
+              <p class="text-sm text-muted-foreground mb-4">
+                <i18n-t keypath="environment.integrationDesc" tag="span">
+                  <template #pluginLink>
+                    <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank" class="text-primary hover:underline">{{
+                      $t("environment.pluginName")
+                    }}</a>
+                  </template>
+                </i18n-t>
+                <a
+                  href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
+                  class="text-primary hover:underline ml-1"
+                >
+                  {{ $t("environment.permissions") }}
+                </a>
+              </p>
+
+              <div class="space-y-4">
+                <Button type="button" variant="outline" @click="openPluginModal">
+                  {{ $t("environment.connectPlugin") }}
+                </Button>
+
+                <FormField v-slot="{ componentField }" name="clientId">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.clientId') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="clientSecret">
+                  <FormItem>
+                    <FormLabel>{{ $t('environment.clientSecret') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-4">
+              <Button :disabled="isSubmitting" type="submit">
+                <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-3.5" aria-hidden="true" />
+                <icon-line-md:loading-twotone-loop v-else class="size-3.5" />
+                {{ $t("common.save") }}
+              </Button>
+            </div>
           </div>
+        </form>
+      </CardContent>
+    </Card>
+
+    <Card v-if="environment">
+      <CardHeader>
+        <CardTitle>{{ $t('environment.sitespeed') }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="space-y-2 mb-4">
+          <p class="text-sm text-muted-foreground">{{ $t("environment.sitespeedDesc") }}</p>
+          <p class="text-sm text-muted-foreground">{{ $t("environment.sitespeedActivateDesc") }}</p>
+          <p class="text-sm text-muted-foreground">{{ $t("environment.sitespeedScheduleDesc") }}</p>
         </div>
 
-        <div class="form-submit">
-          <UiButton
-            :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
-            type="submit"
-            variant="primary"
-          >
-            <icon-fa6-solid:floppy-disk
-              v-if="!isSitespeedSubmitting"
-              class="icon"
-              aria-hidden="true"
-            />
+        <form @submit.prevent="onSitespeedSubmit">
+          <div class="mb-4">
+            <label for="sitespeedEnabled" class="flex items-center gap-2 text-sm font-medium">
+              <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="rounded" />
+              {{ $t("environment.sitespeedEnabled") }}
+            </label>
+          </div>
 
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("environment.saveSitespeedSettings") }}
-          </UiButton>
-        </div>
-      </form>
-    </Panel>
+          <div v-if="sitespeedEnabled" class="space-y-2">
+            <label class="text-sm font-medium">{{ $t("environment.sitespeedUrls") }}</label>
 
-    <Panel :title="$t('environment.deleteEnvironmentTitle', { name: environment.name })">
-      <p>{{ $t("environment.deleteEnvironmentWarning") }}</p>
+            <div class="space-y-2 mt-2">
+              <div v-for="(url, index) in sitespeedUrls" :key="index" class="flex items-center gap-2">
+                <Input
+                  :model-value="sitespeedUrls[index]"
+                  type="url"
+                  placeholder="https://example.com"
+                  class="flex-1"
+                  @update:model-value="sitespeedUrls[index] = ($event as string)"
+                />
+                <Button type="button" variant="outline" size="icon-sm" @click="removeSitespeedUrl(index)">
+                  <icon-fa6-solid:xmark />
+                </Button>
+              </div>
 
-      <UiButton
-        type="button"
-        variant="destructive"
-        @click="showEnvironmentDeletionModal = true"
-      >
-        <icon-fa6-solid:trash class="icon icon-delete" />
-        {{ $t("environment.deleteEnvironment") }}
-      </UiButton>
-    </Panel>
+              <Button
+                v-if="sitespeedUrls.length < 5"
+                type="button"
+                variant="outline"
+                @click="addSitespeedUrl"
+              >
+                <icon-fa6-solid:plus class="size-3.5" />
+                {{ $t("environment.newUrl") }}
+              </Button>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-4">
+            <Button
+              :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
+              type="submit"
+            >
+              <icon-fa6-solid:floppy-disk
+                v-if="!isSitespeedSubmitting"
+                class="size-3.5"
+                aria-hidden="true"
+              />
+              <icon-line-md:loading-twotone-loop v-else class="size-3.5" />
+              {{ $t("environment.saveSitespeedSettings") }}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t('environment.deleteEnvironmentTitle', { name: environment.name }) }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p class="text-sm text-muted-foreground mb-4">{{ $t("environment.deleteEnvironmentWarning") }}</p>
+
+        <Button
+          type="button"
+          variant="destructive"
+          @click="showEnvironmentDeletionModal = true"
+        >
+          <icon-fa6-solid:trash class="size-3.5" />
+          {{ $t("environment.deleteEnvironment") }}
+        </Button>
+      </CardContent>
+    </Card>
 
     <delete-confirmation-modal
       :show="showEnvironmentDeletionModal"
@@ -197,12 +231,30 @@
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-
-import { Form as VeeForm } from "vee-validate";
+import { useForm } from "vee-validate";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
+import { RouterLink, useRoute, useRouter } from "vue-router";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const { t } = useI18n();
 const { error, success } = useAlert();
@@ -239,6 +291,11 @@ async function loadEnvironment() {
     sitespeedUrls.value = environment.value.sitespeedUrls
       ? [...environment.value.sitespeedUrls]
       : [];
+
+    // Set form values once environment loads
+    setFieldValue("name", environment.value.name);
+    setFieldValue("shopUrl", environment.value.url);
+    setFieldValue("shopId", String(environment.value.shopId ?? ""));
   }
 
   isLoading.value = false;
@@ -255,48 +312,43 @@ const showPluginModal = ref(false);
 const pluginBase64 = ref("");
 const pluginError = ref("");
 
-const formRef = ref();
-
 const isSitespeedFormValid = computed(() => {
   if (!sitespeedEnabled.value) {
-    return true; // Always valid when disabled
+    return true;
   }
-  // Check if at least one non-empty URL exists
   const hasNonEmptyUrl = sitespeedUrls.value.some((url) => url.trim() !== "");
   return hasNonEmptyUrl;
 });
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.environmentNameRequired")),
-  url: Yup.string().required(t("validation.environmentUrlRequired")).url(),
-  shopId: Yup.number().required(t("validation.shopRequired")),
-  clientId: Yup.string().when("url", {
-    is: (url: string) => url !== environment.value?.url,
-    // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required(t("validation.urlChangeClientId")),
-  }),
-  clientSecret: Yup.string().when("url", {
-    is: (url: string) => url !== environment.value?.url,
-    // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required(t("validation.urlChangeClientSecret")),
-  }),
+const schema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.environmentNameRequired")),
+    shopUrl: z.string().min(1, t("validation.environmentUrlRequired")).url(t("validation.environmentUrlInvalid")),
+    shopId: z.string().min(1, t("validation.shopRequired")),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+  })
+);
+
+const { handleSubmit, isSubmitting, setFieldValue } = useForm({
+  validationSchema: schema,
 });
 
-async function onSubmit(values: Record<string, unknown>) {
-  const typedValues = values as Yup.InferType<typeof schema>;
+const onSubmit = handleSubmit(async (values) => {
   if (environment.value) {
     try {
-      if (typedValues.url) {
-        typedValues.url = typedValues.url.replace(/\/+$/, "");
+      let shopUrl = values.shopUrl;
+      if (shopUrl) {
+        shopUrl = shopUrl.replace(/\/+$/, "");
       }
       await api.PATCH("/environments/{environmentId}", {
         params: { path: { environmentId: environment.value.id } },
         body: {
-          name: typedValues.name,
-          shopUrl: typedValues.url,
-          clientId: typedValues.clientId,
-          clientSecret: typedValues.clientSecret,
-          shopId: selectedShopId.value,
+          name: values.name,
+          shopUrl,
+          clientId: values.clientId,
+          clientSecret: values.clientSecret,
+          shopId: Number(values.shopId),
         },
       });
 
@@ -311,7 +363,7 @@ async function onSubmit(values: Record<string, unknown>) {
       error(e instanceof Error ? e.message : String(e));
     }
   }
-}
+});
 
 async function deleteEnvironment() {
   if (environment.value) {
@@ -340,7 +392,6 @@ async function onSitespeedSubmit() {
     try {
       isSitespeedSubmitting.value = true;
 
-      // Validate that if enabled, at least one URL is provided
       if (sitespeedEnabled.value && sitespeedUrls.value.length === 0) {
         error(t("environment.sitespeedUrlRequired"));
         return;
@@ -354,7 +405,6 @@ async function onSitespeedSubmit() {
         },
       });
 
-      // Reload environment data to refresh the UI
       await loadEnvironment();
       success(t("environment.sitespeedSaved"));
     } catch (e) {
@@ -394,9 +444,9 @@ function processPluginData() {
       return;
     }
 
-    formRef.value.setFieldValue("url", data.url);
-    formRef.value.setFieldValue("clientId", data.clientId);
-    formRef.value.setFieldValue("clientSecret", data.clientSecret);
+    setFieldValue("shopUrl", data.url);
+    setFieldValue("clientId", data.clientId);
+    setFieldValue("clientSecret", data.clientSecret);
 
     closePluginModal();
   } catch (_e) {
@@ -404,25 +454,3 @@ function processPluginData() {
   }
 }
 </script>
-
-<style>
-.sitespeed-urls-container {
-  margin-top: 0.5rem;
-}
-
-.sitespeed-url-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  align-items: center;
-}
-
-.sitespeed-url-row input {
-  flex: 1;
-}
-
-.ui-button--icon-only {
-  padding: 0.5rem;
-  min-width: auto;
-}
-</style>

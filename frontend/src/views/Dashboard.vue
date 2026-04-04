@@ -1,144 +1,194 @@
 <template>
   <div v-if="environments">
-    <header-container :title="$t('dashboard.title')" />
-    <Panel>
-      <template #title>
-        <icon-fa6-solid:shop />
-        {{ $t("dashboard.myEnvironments") }}
-      </template>
+    <!-- Page header with welcome + quick stats -->
+    <div class="mb-8 flex items-end justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">{{ $t("dashboard.title") }}</h1>
+        <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
+      </div>
+      <div v-if="environments.length > 0" class="hidden items-center gap-6 sm:flex">
+        <div class="text-right">
+          <div class="text-2xl font-bold tabular-nums">{{ environments.length }}</div>
+          <div class="text-xs text-muted-foreground">Environments</div>
+        </div>
+        <Separator orientation="vertical" class="h-10" />
+        <div class="text-right">
+          <div class="text-2xl font-bold tabular-nums text-success">{{ greenCount }}</div>
+          <div class="text-xs text-muted-foreground">Healthy</div>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl font-bold tabular-nums" :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'">{{ warnCount }}</div>
+          <div class="text-xs text-muted-foreground">Warnings</div>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl font-bold tabular-nums" :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'">{{ errorCount }}</div>
+          <div class="text-xs text-muted-foreground">Errors</div>
+        </div>
+      </div>
+    </div>
 
-      <element-empty
+    <!-- Environments grid -->
+    <section class="mb-8">
+      <ElementEmpty
         v-if="environments.length === 0"
         :route="{ name: 'account.environments.new' }"
         title="No environments yet"
         button="Add Environment"
       >
         Add your first Shopware environment to start monitoring.
-      </element-empty>
+      </ElementEmpty>
 
-      <div v-else class="item-grid">
-        <div v-for="env in environments" :key="env.id" class="item">
-          <router-link
-            :to="{
-              name: 'account.environments.detail',
-              params: {
-                organizationId: env.organizationId,
-                environmentId: env.id,
-              },
-            }"
-            class="item-link item-wrapper"
-          >
-            <div class="item-logo">
-              <img
-                v-if="env.favicon"
-                :src="env.favicon"
-                :alt="$t('dashboard.environmentLogo')"
-                class="item-logo-img"
-              />
+      <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <RouterLink
+          v-for="env in environments"
+          :key="env.id"
+          :to="{
+            name: 'account.environments.detail',
+            params: {
+              organizationId: env.organizationId,
+              environmentId: env.id,
+            },
+          }"
+          class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+        >
+          <!-- Favicon -->
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
+            <img
+              v-if="env.favicon"
+              :src="env.favicon"
+              :alt="$t('dashboard.environmentLogo')"
+              class="size-5 rounded"
+            />
+            <icon-fa6-solid:earth-americas v-else class="size-4 text-muted-foreground/50" />
+          </div>
+
+          <!-- Info -->
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="truncate font-semibold leading-tight group-hover:text-primary transition-colors">{{ env.name }}</span>
+              <StatusIcon :status="env.status" />
             </div>
-
-            <div class="item-info">
-              <div class="item-name">
-                {{ env.name }}
-              </div>
-
-              <div class="item-content">
-                {{ env.shopName }}<br />
+            <div class="mt-0.5 truncate text-sm text-muted-foreground">{{ env.organizationName }}</div>
+            <div class="mt-1.5 flex items-center gap-2">
+              <Badge variant="secondary" class="font-mono text-xs">
                 {{ env.shopwareVersion }}
-              </div>
-
-              <div class="item-state">
-                <status-icon :status="env.status" />
-              </div>
+              </Badge>
             </div>
-          </router-link>
-        </div>
+          </div>
+        </RouterLink>
       </div>
-    </Panel>
+    </section>
 
-    <Panel>
-      <template #title>
-        <icon-fa6-solid:building />
+    <!-- Organizations -->
+    <section v-if="organizations?.length" class="mb-8">
+      <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <icon-fa6-solid:building class="size-4 text-muted-foreground" />
         {{ $t("dashboard.myOrganizations") }}
-      </template>
+      </h2>
 
-      <div class="item-grid">
-        <div v-for="organization in organizations" :key="organization.id" class="item">
-          <router-link
-            :to="{
-              name: 'account.organizations.detail',
-              params: { organizationId: organization.id },
-            }"
-            class="item-link item-wrapper"
-          >
-            <div class="item-logo">
-              <icon-fa6-solid:building class="item-logo-icon" />
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <RouterLink
+          v-for="organization in organizations"
+          :key="organization.id"
+          :to="{
+            name: 'account.organizations.detail',
+            params: { organizationId: organization.id },
+          }"
+          class="group flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+        >
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
+            <icon-fa6-solid:building class="size-4 text-muted-foreground" />
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="truncate font-semibold leading-tight group-hover:text-primary transition-colors">{{ organization.name }}</div>
+            <div class="mt-0.5 flex items-center gap-3 text-sm text-muted-foreground">
+              <span class="flex items-center gap-1">
+                <icon-fa6-solid:users class="size-3" />
+                {{ organization.memberCount }}
+              </span>
+              <span class="flex items-center gap-1">
+                <icon-fa6-solid:earth-americas class="size-3" />
+                {{ organization.environmentCount }}
+              </span>
             </div>
-
-            <div class="item-info">
-              <div class="item-name">
-                {{ organization.name }}
-              </div>
-
-              <div class="item-content">
-                {{ $t("dashboard.nMembers", { count: organization.memberCount }) }},
-                {{ $t("dashboard.nEnvironments", { count: organization.environmentCount }) }}
-              </div>
-            </div>
-          </router-link>
-        </div>
+          </div>
+        </RouterLink>
       </div>
-    </Panel>
+    </section>
 
-    <Panel v-if="changelogs.length > 0">
-      <template #title>
-        <icon-fa6-solid:file-waveform />
+    <!-- Changelog table -->
+    <section v-if="changelogs.length > 0">
+      <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
+        <icon-fa6-solid:file-waveform class="size-4 text-muted-foreground" />
         {{ $t("dashboard.lastChanges") }}
-      </template>
+      </h2>
 
-      <data-table
-        :columns="[
-          { key: 'environmentName', name: $t('dashboard.environment'), sortable: true },
-          { key: 'extensions', name: $t('dashboard.changes'), sortable: true },
-          { key: 'date', name: $t('common.date'), sortable: true, sortPath: 'date' },
-        ]"
-        :data="changelogs"
-      >
-        <template #cell-environmentName="{ row }">
-          <router-link
-            :to="{
-              name: 'account.environments.detail',
-              params: {
-                organizationId: row.environmentOrganizationId,
-                environmentId: row.environmentId,
-              },
-            }"
-          >
-            {{ row.environmentName }}
-          </router-link>
-        </template>
+      <Card class="overflow-hidden p-0">
+        <DataTable
+          :columns="[
+            { key: 'environmentName', name: $t('dashboard.environment'), sortable: true },
+            { key: 'extensions', name: $t('dashboard.changes'), sortable: true },
+            { key: 'date', name: $t('common.date'), sortable: true, sortPath: 'date' },
+          ]"
+          :data="changelogs"
+        >
+          <template #cell-environmentName="{ row }">
+            <RouterLink
+              :to="{
+                name: 'account.environments.detail',
+                params: {
+                  organizationId: row.environmentOrganizationId,
+                  environmentId: row.environmentId,
+                },
+              }"
+              class="font-medium text-primary hover:underline"
+            >
+              {{ row.environmentName }}
+            </RouterLink>
+          </template>
 
-        <template #cell-extensions="{ row }">
-          {{ sumChanges(row) }}
-        </template>
+          <template #cell-extensions="{ row }">
+            {{ sumChanges(row) }}
+          </template>
 
-        <template #cell-date="{ row }">
-          {{ formatDateTime(row.date) }}
-        </template>
-      </data-table>
-    </Panel>
+          <template #cell-date="{ row }">
+            <span class="tabular-nums text-muted-foreground">{{ formatDateTime(row.date) }}</span>
+          </template>
+        </DataTable>
+      </Card>
+    </section>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div v-else class="space-y-8">
+    <div>
+      <Skeleton class="mb-2 h-9 w-48" />
+      <Skeleton class="h-5 w-64" />
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <Skeleton v-for="i in 4" :key="i" class="h-24 rounded-xl" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { ref, watch } from "vue";
 import { useAccountEnvironments, fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { useSession } from "@/composables/useSession";
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import DataTable from "@/components/layout/DataTable.vue";
+import ElementEmpty from "@/components/layout/ElementEmpty.vue";
+import StatusIcon from "@/components/StatusIcon.vue";
 
 const { t } = useI18n();
 const { activeOrganizationId } = useSession();
@@ -163,6 +213,8 @@ watch(activeOrganizationId, () => {
   fetchAccountEnvironments();
   loadDashboardData();
 });
-</script>
 
-<style scoped></style>
+const greenCount = computed(() => environments.value?.filter((e) => e.status === "green").length ?? 0);
+const warnCount = computed(() => environments.value?.filter((e) => e.status === "yellow").length ?? 0);
+const errorCount = computed(() => environments.value?.filter((e) => e.status === "red").length ?? 0);
+</script>

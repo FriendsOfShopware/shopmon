@@ -1,128 +1,62 @@
 <template>
-  <div class="admin-layout">
-    <div class="background-mask" />
+  <div class="min-h-screen bg-background">
+    <nav class="border-b bg-primary text-primary-foreground">
+      <div class="container mx-auto flex items-center justify-between px-4 py-2">
+        <div class="flex items-center">
+          <Button as-child variant="ghost" class="text-primary-foreground hover:bg-white/10 hover:text-white">
+            <RouterLink to="/">
+              <Logo class="h-7 w-auto brightness-0 invert" />
+            </RouterLink>
+          </Button>
 
-    <nav class="top-bar">
-      <div class="top-bar-container container">
-        <div class="top-bar-nav">
-          <UiButton to="/" class="top-bar-logo">
-            <Logo />
-          </UiButton>
-
-          <div class="top-bar-nav-links">
+          <div class="ml-6 hidden items-center gap-1 sm:flex">
             <RouterLink
-              to="/admin/dashboard"
-              class="nav-link"
-              :class="{
-                active: $route.name?.toString().startsWith('admin.dashboard'),
-              }"
+              v-for="link in navLinks"
+              :key="link.to"
+              :to="link.to"
+              :class="[
+                'inline-flex items-center rounded px-3 py-1.5 text-sm font-medium transition-colors',
+                isLinkActive(link.match) ? 'bg-white/30 text-white' : 'text-white/80 hover:bg-white/20 hover:text-white',
+              ]"
             >
-              Dashboard
+              {{ link.label }}
             </RouterLink>
-            <RouterLink
-              to="/admin/users"
-              class="nav-link"
-              :class="{
-                active: $route.name?.toString().startsWith('admin.users'),
-              }"
-            >
-              Users
-            </RouterLink>
-            <RouterLink
-              to="/admin/organizations"
-              class="nav-link"
-              :class="{
-                active: $route.name?.toString().startsWith('admin.organizations'),
-              }"
-            >
-              Organizations
-            </RouterLink>
-            <RouterLink
-              to="/admin/environments"
-              class="nav-link"
-              :class="{
-                active: $route.name?.toString().startsWith('admin.environments'),
-              }"
-            >
-              Environments
-            </RouterLink>
-            <a href="/admin/queues" class="nav-link" target="_blank"> Queues </a>
           </div>
         </div>
 
-        <div class="top-bar-actions">
-          <UiButton to="/" variant="primary">
-            <icon-fa6-solid:house class="icon" />
+        <Button as-child variant="secondary" size="sm">
+          <RouterLink to="/">
+            <icon-fa6-solid:house class="mr-1 size-4" />
             Back to Dashboard
-          </UiButton>
-        </div>
+          </RouterLink>
+        </Button>
       </div>
     </nav>
 
     <ImpersonationBanner />
 
-    <div class="main-container container">
+    <div class="container mx-auto px-4 py-6">
       <RouterView />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRoute } from "vue-router";
 import ImpersonationBanner from "@/components/ImpersonationBanner.vue";
 import Logo from "@/components/Logo.vue";
-import { RouterLink, RouterView } from "vue-router";
+import { Button } from "@/components/ui/button";
+
+const route = useRoute();
+
+const navLinks = [
+  { to: "/admin/dashboard", label: "Dashboard", match: "admin.dashboard" },
+  { to: "/admin/users", label: "Users", match: "admin.users" },
+  { to: "/admin/organizations", label: "Organizations", match: "admin.organizations" },
+  { to: "/admin/environments", label: "Environments", match: "admin.environments" },
+];
+
+function isLinkActive(match: string) {
+  return route.name?.toString().startsWith(match) ?? false;
+}
 </script>
-
-<style scoped>
-.top-bar-nav {
-  display: flex;
-  align-items: center;
-}
-
-.top-bar-nav-links {
-  display: none;
-  margin-left: 1.5rem;
-  gap: 1rem;
-
-  @media (min-width: 640px) {
-    display: flex;
-  }
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #e2e8f0;
-  transition: all 0.2s;
-
-  &.active {
-    background-color: #0284c780;
-    color: #ffffff;
-  }
-  &:hover {
-    background-color: #0284c7;
-    color: #ffffff;
-  }
-}
-
-.top-bar-actions {
-  display: flex;
-  align-items: center;
-
-  .ui-button {
-    background-color: #0284c780;
-
-    &:hover {
-      background-color: #0284c7;
-    }
-  }
-}
-
-.main-container {
-  margin: 1.5rem auto;
-}
-</style>

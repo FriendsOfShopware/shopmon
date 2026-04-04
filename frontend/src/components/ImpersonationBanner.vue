@@ -1,13 +1,13 @@
 <template>
-  <div v-if="isImpersonating" class="impersonation-banner">
-    <div class="impersonation-content">
-      <div class="impersonation-text">
-        <icon-fa6-solid:user-secret class="impersonation-icon" />
+  <div v-if="isImpersonating" class="sticky top-0 z-10 bg-amber-500 text-white shadow">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 max-sm:flex-col max-sm:text-center">
+      <div class="flex items-center gap-2 text-sm">
+        <icon-fa6-solid:user-secret class="size-4" />
         <span v-html="$t('impersonation.banner', { email: session?.user?.email })" />
       </div>
-      <UiButton size="sm" variant="warning" @click="stopImpersonating">
+      <Button size="sm" variant="outline" class="border-white/30 bg-white/20 text-white hover:bg-white/30" @click="stopImpersonating">
         {{ $t("impersonation.stop") }}
-      </UiButton>
+      </Button>
     </div>
   </div>
 </template>
@@ -18,6 +18,7 @@ import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { computed } from "vue";
+import { Button } from "@/components/ui/button";
 
 const { t } = useI18n();
 const { session } = useSession();
@@ -36,7 +37,6 @@ async function stopImpersonating() {
       throw new Error("Failed to stop impersonating");
     }
 
-    // Force a complete page reload to ensure clean session state
     window.location.reload();
   } catch (error) {
     alert.error(
@@ -47,57 +47,3 @@ async function stopImpersonating() {
   }
 }
 </script>
-
-<style scoped>
-.impersonation-banner {
-  background-color: #f59e0b;
-  color: #ffffff;
-  padding: 0.75rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.impersonation-content {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.impersonation-text {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.impersonation-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.ui-button--warning {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
-}
-
-.ui-button--warning:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-@media (max-width: 640px) {
-  .impersonation-content {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-</style>

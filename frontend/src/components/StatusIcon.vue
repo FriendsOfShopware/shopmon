@@ -1,8 +1,8 @@
 <template>
-  <span v-if="tooltip" :data-tooltip="status" class="has-tooltip">
+  <span v-if="tooltip" :title="status" class="capitalize">
     <component
       :is="getIconComponent(status)"
-      class="icon icon-status"
+      class="size-4"
       :class="getIconClasses(status)"
     />
   </span>
@@ -10,7 +10,7 @@
   <template v-else>
     <component
       :is="getIconComponent(status)"
-      class="icon icon-status"
+      class="size-4"
       :class="getIconClasses(status)"
     />
   </template>
@@ -51,29 +51,14 @@ function getIconComponent(status) {
 function getIconClasses(status) {
   switch (status) {
     case "red":
-      return "icon-error";
+      return "text-destructive";
     case "yellow":
-      return "icon-warning";
+      return "text-warning";
     case "inactive":
     case "not installed":
-      return "icon-muted";
+      return "text-muted-foreground";
     default:
-      return "icon-success";
+      return "text-success";
   }
 }
 </script>
-
-<style scoped>
-.has-tooltip {
-  &:before {
-    bottom: calc(100% + 6px);
-    left: -0.25rem;
-    text-transform: capitalize;
-  }
-
-  &:after {
-    margin-bottom: -4px;
-    left: 0.5rem;
-  }
-}
-</style>

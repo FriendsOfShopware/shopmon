@@ -1,67 +1,108 @@
 <template>
-  <header-container :title="$t('shop.newShop')" />
-  <main-container>
-    <Panel v-if="!isLoadingOrgs">
-      <vee-form
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="initialValues"
-        @submit="onSubmit"
-      >
-        <form-group :title="$t('shop.shopInfo')">
-          <InputField name="name" :label="$t('common.name')" :error="errors.name" />
+  <header class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t('shop.newShop') }}</h1>
+    </div>
+    <div class="flex gap-2 items-start" />
+  </header>
 
-          <TextareaField
-            name="description"
-            :label="$t('common.description')"
-            :placeholder="$t('shop.optionalDescription')"
-            :error="errors.description"
-          />
+  <div v-if="!isLoadingOrgs">
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t('shop.shopInfo') }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form @submit="onSubmit">
+          <div class="space-y-4">
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-          <InputField
-            name="gitUrl"
-            :label="$t('shop.gitRepoUrl')"
-            type="url"
-            placeholder="https://github.com/org/repo"
-            :error="errors.gitUrl"
-          />
+            <FormField v-slot="{ componentField }" name="description">
+              <FormItem>
+                <FormLabel>{{ $t('common.description') }}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    v-bind="componentField"
+                    :placeholder="$t('shop.optionalDescription')"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-          <SelectField
-            name="organizationId"
-            :label="$t('settings.organization')"
-            :error="errors.organizationId"
-          >
-            <option value="">{{ $t("shop.selectOrganization") }}</option>
-            <option
-              v-for="organization in organizations"
-              :key="organization.id"
-              :value="organization.id"
-            >
-              {{ organization.name }}
-            </option>
-          </SelectField>
-        </form-group>
+            <FormField v-slot="{ componentField }" name="gitUrl">
+              <FormItem>
+                <FormLabel>{{ $t('shop.gitRepoUrl') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://github.com/org/repo"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-        <div class="form-submit">
-          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </UiButton>
-        </div>
-      </vee-form>
-    </Panel>
-  </main-container>
+            <FormField v-slot="{ componentField }" name="organizationId">
+              <FormItem>
+                <FormLabel>{{ $t('settings.organization') }}</FormLabel>
+                <FormControl>
+                  <Select v-bind="componentField">
+                    <SelectTrigger>
+                      <SelectValue :placeholder="$t('shop.selectOrganization')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="org in organizations"
+                        :key="org.id"
+                        :value="org.id"
+                      >
+                        {{ org.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+
+          <div class="flex justify-end pt-6">
+            <Button :disabled="isSubmitting" type="submit">
+              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+              <icon-line-md:loading-twotone-loop v-else class="size-4" />
+              {{ $t("common.save") }}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
-import { Form as VeeForm } from "vee-validate";
-import { computed, onMounted, ref } from "vue";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
+import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
 const { error } = useAlert();
@@ -90,32 +131,40 @@ async function loadOrganizations() {
   }
 }
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.shopNameRequired")),
-  description: Yup.string().optional(),
-  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
-  organizationId: Yup.string().required(t("validation.orgRequired")),
-});
+const validationSchema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.shopNameRequired")),
+    description: z.string().optional(),
+    gitUrl: z.string().url(t("validation.urlInvalid")).optional().or(z.literal("")),
+    organizationId: z.string().min(1, t("validation.orgRequired")),
+  }),
+);
 
-const initialValues = computed(() => {
-  const firstOrgId = organizations.value[0]?.id ?? "";
-  return {
+const { handleSubmit, isSubmitting, setFieldValue } = useForm({
+  validationSchema,
+  initialValues: {
     name: "",
     description: "",
     gitUrl: "",
-    organizationId: firstOrgId,
-  };
+    organizationId: "",
+  },
 });
 
-const onSubmit = async (values: Record<string, unknown>) => {
+// Set default org when organizations load
+watch(organizations, (orgs) => {
+  if (orgs.length > 0) {
+    setFieldValue("organizationId", orgs[0].id);
+  }
+});
+
+const onSubmit = handleSubmit(async (values) => {
   try {
-    const typedValues = values as Yup.InferType<typeof schema>;
     const { error: apiError } = await api.POST("/organizations/{orgId}/shops", {
-      params: { path: { orgId: typedValues.organizationId } },
+      params: { path: { orgId: values.organizationId } },
       body: {
-        name: typedValues.name,
-        description: typedValues.description ?? undefined,
-        gitUrl: typedValues.gitUrl || undefined,
+        name: values.name,
+        description: values.description ?? undefined,
+        gitUrl: values.gitUrl || undefined,
       },
     });
 
@@ -132,7 +181,7 @@ const onSubmit = async (values: Record<string, unknown>) => {
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
-};
+});
 
 onMounted(() => {
   loadOrganizations();

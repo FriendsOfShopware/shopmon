@@ -1,5 +1,5 @@
 <template>
-  <Panel variant="table">
+  <Card class="p-0 overflow-hidden">
     <data-table
       v-if="environment"
       :columns="[
@@ -8,11 +8,13 @@
       ]"
       :data="environment.queues || []"
     />
-  </Panel>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
+
+import { Card } from "@/components/ui/card";
 
 const { environment } = useEnvironmentDetail();
 </script>

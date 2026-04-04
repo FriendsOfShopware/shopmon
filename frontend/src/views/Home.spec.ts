@@ -53,8 +53,8 @@ describe("Home", () => {
 
   it("displays feature highlights", () => {
     const wrapper = mount(Home);
-    expect(wrapper.text()).toContain("Dashboard overview");
     expect(wrapper.text()).toContain("Automatic performance checks");
+    expect(wrapper.text()).toContain("Extensions and updates");
     expect(wrapper.text()).toContain("Performance monitoring");
   });
 
@@ -104,31 +104,31 @@ describe("Home", () => {
 
   it("uses theme-aware images", () => {
     mount(Home);
-    // Verify that getThemeImage was called for theme-aware images
     expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-dashboard.png");
     expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-performance-checks.png");
     expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-extensions.png");
     expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-sitespeed.png");
   });
 
-  it("has header section", () => {
+  it("has main heading in h1", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".header").exists()).toBe(true);
+    expect(wrapper.find("h1").exists()).toBe(true);
   });
 
-  it("has panel-intro section", () => {
+  it("has Card components for bento features", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".panel-intro").exists()).toBe(true);
+    expect(wrapper.findAll('[data-slot="card"]').length).toBeGreaterThan(0);
   });
 
-  it("has multiple row sections", () => {
+  it("has feature images", () => {
     const wrapper = mount(Home);
-    const rows = wrapper.findAll(".row");
-    expect(rows.length).toBeGreaterThan(0);
+    const images = wrapper.findAll("img");
+    expect(images.length).toBeGreaterThan(0);
   });
 
-  it("has primary CTA section", () => {
+  it("has primary CTA section with gradient background", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".section-primary").exists()).toBe(true);
+    // CTA section uses a gradient with primary color
+    expect(wrapper.find(".bg-gradient-to-br").exists()).toBe(true);
   });
 });

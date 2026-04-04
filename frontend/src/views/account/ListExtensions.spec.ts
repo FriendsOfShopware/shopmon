@@ -3,32 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h } from "vue";
 import ListExtensions from "./ListExtensions.vue";
 
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const PanelStub = defineComponent({
-  name: "Panel",
-  props: ["variant", "title"],
-  setup(props, { slots }) {
-    return () =>
-      h(
-        "div",
-        { class: `panel ${props.variant === "table" ? "panel-table" : ""}` },
-        slots.default?.(),
-      );
-  },
-});
-
 const ElementEmptyStub = defineComponent({
   name: "ElementEmpty",
   props: ["title", "button", "route"],
@@ -114,9 +88,6 @@ describe("ListExtensions", () => {
     return mount(ListExtensions, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          Panel: PanelStub,
           ElementEmpty: ElementEmptyStub,
           DataTable: DataTableStub,
           ExtensionChangelog: ExtensionChangelogStub,
@@ -128,7 +99,7 @@ describe("ListExtensions", () => {
   it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toBe("My Extensions");
+    expect(wrapper.find("h1").text()).toBe("My Extensions");
   });
 
   it("shows empty state when no extensions", async () => {
@@ -141,9 +112,6 @@ describe("ListExtensions", () => {
     const wrapper = mount(ListExtensions, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          Panel: PanelStub,
           ElementEmpty: ElementEmptyStub,
           DataTable: DataTableStub,
           ExtensionChangelog: ExtensionChangelogStub,
@@ -162,10 +130,12 @@ describe("ListExtensions", () => {
     expect(wrapper.find("table").exists()).toBe(true);
   });
 
-  it("shows table in panel-table variant", async () => {
+  it("shows table in Card with overflow-hidden", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find(".panel-table").exists()).toBe(true);
+    const cards = wrapper.findAll('[data-slot="card"]');
+    const tableCard = cards.find((c) => c.classes().includes("overflow-hidden"));
+    expect(tableCard).toBeTruthy();
   });
 
   it("renders extension changelog modal", async () => {

@@ -1,9 +1,9 @@
 <template>
-  <Panel variant="table">
+  <Card class="p-0 overflow-hidden">
     <data-table
       v-if="environment"
       :columns="[
-        { key: 'date', name: $t('common.date'), class: 'changelog-date', sortable: true },
+        { key: 'date', name: $t('common.date'), class: 'w-[200px]', sortable: true },
         { key: 'extensions', name: $t('shopDetail.log'), sortable: false },
       ]"
       :data="environment.changelogs"
@@ -14,14 +14,14 @@
 
       <template #cell-extensions="{ row }">
         <span
-          class="modal-open-changelog"
+          class="cursor-pointer text-primary hover:underline"
           @click="openEnvironmentChangelog(row as AccountChangelog)"
         >
           {{ sumChanges(row as AccountChangelog) }}
         </span>
       </template>
     </data-table>
-  </Panel>
+  </Card>
 
   <!-- Changelog Modal -->
   <environment-changelog
@@ -39,6 +39,8 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import EnvironmentChangelog from "@/components/modal/ShopChangelog.vue";
 
+import { Card } from "@/components/ui/card";
+
 type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 const { environment } = useEnvironmentDetail();
@@ -49,15 +51,3 @@ const {
   closeEnvironmentChangelog,
 } = useEnvironmentChangelogModal();
 </script>
-
-<style>
-.changelog-date {
-  width: 200px;
-}
-</style>
-
-<style scoped>
-.modal-open-changelog {
-  cursor: pointer;
-}
-</style>

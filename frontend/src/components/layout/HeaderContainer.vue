@@ -1,11 +1,11 @@
 <template>
-  <header>
-    <div :class="['header-title', { 'mobile-hide': titleMobileHide }]">
-      <Breadcrumbs v-if="breadcrumb?.length" class="header-breadcrumb" :items="breadcrumb" />
-      <h1>{{ title }}</h1>
+  <header class="mb-6 flex items-start justify-between">
+    <div :class="{ 'hidden md:block': titleMobileHide }">
+      <Breadcrumbs v-if="breadcrumb?.length" class="-mb-0.5" :items="breadcrumb" />
+      <h1 class="text-3xl font-bold tracking-tight">{{ title }}</h1>
     </div>
 
-    <div class="header-actions">
+    <div class="flex items-start gap-2" :class="{ 'ml-auto': titleMobileHide }">
       <slot />
     </div>
   </header>
@@ -21,55 +21,3 @@ defineProps<{
   titleMobileHide?: boolean;
 }>();
 </script>
-
-<style>
-header {
-  margin: 0 auto 1rem;
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  grid-area: header;
-}
-
-.header-title {
-  h1 {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-    font-weight: 700;
-    color: var(--text-color);
-  }
-
-  &.mobile-hide {
-    display: none;
-
-    + .header-actions {
-      margin-left: auto;
-    }
-
-    @media all and (min-width: 768px) {
-      display: block;
-    }
-  }
-}
-
-.header-breadcrumb {
-  margin-bottom: -0.125rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-
-  .ui-button {
-    background: var(--primary-color);
-    border-color: transparent;
-    color: #ffffff;
-    transition: background 0.4s;
-
-    &:hover {
-      background: color-mix(in srgb, var(--primary-color) 70%, white);
-    }
-  }
-}
-</style>

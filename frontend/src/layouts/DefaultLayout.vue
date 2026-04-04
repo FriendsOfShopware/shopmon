@@ -1,51 +1,53 @@
 <template>
-  <div class="app-layout">
-    <div class="background-mask" />
-    <div class="top-bar">
-      <div class="top-bar-container container">
-        <div class="top-bar-logo">
-          <UiButton :to="{ name: 'home' }">
-            <logo class="nav-logo-img" />
-          </UiButton>
-        </div>
+  <div class="flex min-h-screen flex-col bg-background">
+    <nav class="border-b bg-primary text-primary-foreground">
+      <div class="container mx-auto flex items-center justify-between px-4 py-2">
+        <RouterLink :to="{ name: 'home' }" class="flex items-center">
+          <Logo class="h-8 w-auto brightness-0 invert" />
+        </RouterLink>
 
-        <div class="top-bar-actions">
-          <UiButton
+        <div class="flex items-center gap-1">
+          <Button
             v-if="session"
-            :to="{ name: 'account.dashboard' }"
-            variant="primary"
+            as-child
+            variant="secondary"
             size="sm"
           >
-            <icon-ri:dashboard-fill class="icon" />
-            {{ $t("nav.dashboard") }}
-          </UiButton>
+            <RouterLink :to="{ name: 'account.dashboard' }">
+              <icon-ri:dashboard-fill class="mr-1 size-4" />
+              {{ $t("nav.dashboard") }}
+            </RouterLink>
+          </Button>
           <template v-else>
-            <UiButton :to="{ name: 'account.login' }" variant="primary" size="sm">
-              <icon-fa6-solid:right-to-bracket class="icon" />
-              {{ $t("nav.login") }}
-            </UiButton>
-            <UiButton :to="{ name: 'account.register' }" variant="primary" size="sm">
-              <icon-fa6-solid:user-plus class="icon" />
-              {{ $t("nav.register") }}
-            </UiButton>
+            <Button as-child variant="secondary" size="sm">
+              <RouterLink :to="{ name: 'account.login' }">
+                <icon-fa6-solid:right-to-bracket class="mr-1 size-4" />
+                {{ $t("nav.login") }}
+              </RouterLink>
+            </Button>
+            <Button as-child variant="secondary" size="sm">
+              <RouterLink :to="{ name: 'account.register' }">
+                <icon-fa6-solid:user-plus class="mr-1 size-4" />
+                {{ $t("nav.register") }}
+              </RouterLink>
+            </Button>
           </template>
 
-          <button class="action action-dark-mode" type="button" @click="toggleDarkMode">
-            <icon-fa6-regular:moon v-if="darkMode" class="icon" />
+          <Button variant="ghost" size="icon" class="size-8 text-primary-foreground hover:bg-white/10 hover:text-white" @click="toggleDarkMode">
+            <icon-fa6-regular:moon v-if="darkMode" class="size-4" />
+            <icon-octicon:sun-16 v-else class="size-4" />
+          </Button>
 
-            <icon-octicon:sun-16 v-else class="icon" />
-          </button>
-
-          <button class="action action-locale" type="button" @click="toggleLocale">
+          <button class="ml-1 text-xs font-bold tracking-wide text-primary-foreground/70 hover:text-white" type="button" @click="toggleLocale">
             {{ String(locale) === "en" ? "DE" : "EN" }}
           </button>
         </div>
       </div>
-    </div>
+    </nav>
 
-    <router-view />
+    <RouterView />
 
-    <layout-footer />
+    <LayoutFooter />
   </div>
 </template>
 
@@ -53,43 +55,11 @@
 import { useDarkMode } from "@/composables/useDarkMode";
 import { useSession } from "@/composables/useSession";
 import { useLocale } from "@/composables/useLocale";
+import { Button } from "@/components/ui/button";
+import LayoutFooter from "@/components/layout/LayoutFooter.vue";
+import Logo from "@/components/Logo.vue";
 
 const { session } = useSession();
 const { darkMode, toggleDarkMode } = useDarkMode();
 const { locale, toggleLocale } = useLocale();
 </script>
-
-<style scoped>
-.app-layout {
-  min-height: calc(100vh + 1px);
-  display: flex;
-  flex-direction: column;
-}
-
-.background-mask {
-  &:after {
-    height: 500px;
-  }
-}
-
-.top-bar-actions {
-  margin-left: auto;
-  gap: 0;
-
-  .icon {
-    margin-left: 0.5rem;
-  }
-
-  .action-locale {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: #bae6fd;
-    margin-left: 0.5rem;
-
-    &:hover {
-      color: #ffffff;
-    }
-  }
-}
-</style>

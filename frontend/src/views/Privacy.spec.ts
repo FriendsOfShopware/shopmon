@@ -11,13 +11,6 @@ vi.mock("@/components/layout/HeaderContainer.vue", () => ({
   },
 }));
 
-vi.mock("@/components/layout/Panel.vue", () => ({
-  default: {
-    name: "Panel",
-    template: "<div class='panel'><slot /></div>",
-  },
-}));
-
 describe("Privacy", () => {
   it("renders successfully", () => {
     const wrapper = mount(Privacy);
@@ -75,8 +68,8 @@ describe("Privacy", () => {
     expect(wrapper.text()).toContain("shopmon at fos.gg");
   });
 
-  it("uses Panel component", () => {
+  it("uses Card component", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.find(".panel").exists()).toBe(true);
+    expect(wrapper.find('[data-slot="card"]').exists()).toBe(true);
   });
 });

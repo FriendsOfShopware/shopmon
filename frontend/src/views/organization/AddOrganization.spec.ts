@@ -1,49 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
+import { ref } from "vue";
 import AddOrganization from "./AddOrganization.vue";
-
-// Stubs
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
-  },
-});
-
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "class", "id", "autocomplete"],
-  emits: ["update:modelValue", "input"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        class: props.class,
-        id: props.id,
-        autocomplete: props.autocomplete,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-          emit("input", e);
-        },
-      });
-  },
-});
 
 // Mock user and session
 const mockUser = { id: "1", email: "test@example.com", name: "Test User" };
@@ -78,6 +36,11 @@ vi.mock("@/helpers/api", () => ({
 const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 // Mock useAlert
@@ -103,16 +66,7 @@ describe("AddOrganization", () => {
   });
 
   function mountComponent() {
-    return mount(AddOrganization, {
-      global: {
-        stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          FormGroup: FormGroupStub,
-          Field: FieldStub,
-        },
-      },
-    });
+    return mount(AddOrganization);
   }
 
   it("renders successfully", async () => {
@@ -124,7 +78,7 @@ describe("AddOrganization", () => {
   it("displays page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toBe("New Organization");
+    expect(wrapper.find("h1").text()).toBe("New Organization");
   });
 
   it("displays form only when user is logged in", async () => {

@@ -1,361 +1,274 @@
 <template>
-  <Panel v-if="environment" class="shop-info">
-    <template #title>
-      <icon-fa6-solid:circle-info class="icon" />
-      {{ $t("shopDetail.shopInfo") }}
-    </template>
+  <div v-if="environment" class="space-y-6">
 
-    <div class="shop-info-grid">
-      <dl class="shop-info-list">
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.shopwareVersion") }}</dt>
-          <dd>
-            <span>{{ environment.shopwareVersion }}</span>
-            <template
-              v-if="latestShopwareVersion && latestShopwareVersion != environment.shopwareVersion"
-            >
+    <!-- ═══════ TOP: Status bar + key metrics ═══════ -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Card class="relative overflow-hidden">
+        <CardContent class="flex items-center gap-3 p-4">
+          <div :class="['flex size-10 shrink-0 items-center justify-center rounded-xl', statusBg]">
+            <StatusIcon :status="environment.status" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-medium text-muted-foreground">Status</div>
+            <div class="truncate font-semibold capitalize">{{ environment.status === 'green' ? 'Healthy' : environment.status === 'yellow' ? 'Warning' : 'Error' }}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent class="flex items-center gap-3 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <icon-fa6-solid:code-branch class="size-4 text-primary" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.shopwareVersion") }}</div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-semibold">{{ environment.shopwareVersion }}</span>
               <a
-                class="badge badge-warning"
-                :href="
-                  'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion
-                "
+                v-if="latestShopwareVersion && latestShopwareVersion !== environment.shopwareVersion"
+                :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion"
                 target="_blank"
               >
-                {{ latestShopwareVersion }}
+                <Badge variant="secondary" class="font-mono text-[10px]">{{ latestShopwareVersion }}</Badge>
               </a>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-              <UiButton class="badge badge-info" type="button" @click="openUpdateWizard">
-                <icon-fa6-solid:rotate />
-                {{ $t("shopDetail.compatibilityCheck") }}
-              </UiButton>
-            </template>
-          </dd>
-        </div>
+      <Card>
+        <CardContent class="flex items-center gap-3 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <icon-fa6-solid:puzzle-piece class="size-4 text-primary" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.extensions") }}</div>
+            <div class="font-semibold tabular-nums">
+              {{ environment.extensions?.length ?? 0 }}
+              <span v-if="outdatedExtensions.length > 0" class="text-sm font-normal text-warning">({{ outdatedExtensions.length }} outdated)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div class="shop-info-item">
-          <dt>
-            {{ $t("shopDetail.lastCheckedAt") }}
-            <span :data-tooltip="$t('shopDetail.shopUpdateTooltip')" class="tooltip-top-center">
-              <icon-fa6-solid:circle-info class="icon" />
-            </span>
-          </dt>
+      <Card>
+        <CardContent class="flex items-center gap-3 p-4">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <icon-fa6-solid:clock class="size-4 text-primary" />
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.lastCheckedAt") }}</div>
+            <div class="truncate text-sm font-semibold tabular-nums">{{ formatDateTime(environment.lastScrapedAt) }}</div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
 
-          <dd>
-            {{ formatDateTime(environment.lastScrapedAt) }}
-          </dd>
-        </div>
+    <!-- ═══════ MIDDLE: Bento grid — checks + extensions + tasks ═══════ -->
+    <div class="grid gap-4 lg:grid-cols-2">
 
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.lastShopUpdate") }}</dt>
+      <!-- Security checks -->
+      <Card>
+        <CardHeader class="flex-row items-center justify-between pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:shield-halved class="size-4 text-muted-foreground" />
+            {{ $t("shopDetail.securityChecks") }}
+          </CardTitle>
+          <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
+            <RouterLink :to="checksRoute">
+              {{ $t("shopDetail.viewAllChecks") }}
+              <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
+            </RouterLink>
+          </Button>
+        </CardHeader>
+        <CardContent class="pt-0">
+          <div v-if="sortedCriticalChecks.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+            {{ $t("shopDetail.allChecksPassed") }}
+          </div>
+          <div v-else class="space-y-1.5">
+            <div v-for="check in sortedCriticalChecks" :key="check.id" class="flex items-start gap-2.5 rounded-lg border px-3 py-2">
+              <StatusIcon :status="check.level" class="mt-0.5 shrink-0" />
+              <div class="min-w-0 flex-1 text-sm">
+                <span>{{ check.message }}</span>
+                <a v-if="check.link" :href="check.link" target="_blank" class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline">
+                  <icon-fa6-solid:arrow-up-right-from-square class="size-2.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <dd>
-            <template v-if="environment.lastChangelog && environment.lastChangelog.date">
-              {{ formatDate(environment.lastChangelog.date) }}
-            </template>
+      <!-- Outdated extensions -->
+      <Card>
+        <CardHeader class="flex-row items-center justify-between pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:plug class="size-4 text-muted-foreground" />
+            {{ $t("shopDetail.extensions") }}
+          </CardTitle>
+          <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
+            <RouterLink :to="extensionsRoute">
+              {{ $t("shopDetail.viewAllExtensions") }}
+              <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
+            </RouterLink>
+          </Button>
+        </CardHeader>
+        <CardContent class="pt-0">
+          <div v-if="outdatedExtensions.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+            {{ $t("shopDetail.allExtensionsUpToDate") }}
+          </div>
+          <div v-else class="space-y-1.5">
+            <div v-for="ext in outdatedExtensions" :key="ext.name" class="flex items-center gap-2.5 rounded-lg border px-3 py-2">
+              <icon-fa6-solid:arrow-up class="size-3.5 shrink-0 text-info" />
+              <div class="min-w-0 flex-1 text-sm">
+                <span class="font-medium">{{ ext.label }}</span>
+                <button class="ml-1 text-primary hover:underline" @click="openExtensionChangelog(ext)">
+                  {{ ext.version }} → {{ ext.latestVersion }}
+                </button>
+              </div>
+              <a v-if="ext.storeLink" :href="ext.storeLink" target="_blank" class="shrink-0 text-muted-foreground hover:text-foreground">
+                <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
+              </a>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            <template v-else> {{ $t("common.never") }} </template>
-          </dd>
-        </div>
+      <!-- Overdue tasks -->
+      <Card>
+        <CardHeader class="flex-row items-center justify-between pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:list-check class="size-4 text-muted-foreground" />
+            {{ $t("shopDetail.scheduledTasks") }}
+          </CardTitle>
+          <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
+            <RouterLink :to="tasksRoute">
+              {{ $t("shopDetail.viewAllScheduledTasks") }}
+              <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
+            </RouterLink>
+          </Button>
+        </CardHeader>
+        <CardContent class="pt-0">
+          <div v-if="overdueTasks.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+            {{ $t("shopDetail.noOverdueTasks") }}
+          </div>
+          <div v-else class="space-y-1.5">
+            <div v-for="task in overdueTasks" :key="task.id" class="flex items-start gap-2.5 rounded-lg border px-3 py-2">
+              <icon-fa6-solid:clock class="mt-0.5 size-3.5 shrink-0 text-warning" />
+              <div class="min-w-0 text-sm">
+                <div class="font-medium">{{ task.name }}</div>
+                <div class="text-xs text-muted-foreground">{{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.lastDeployment") }}</dt>
-
-          <dd v-if="environment.deploymentsCount > 0">
-            <router-link
-              :to="{
-                name: 'account.environments.detail.deployments',
-                params: {
-                  organizationId: $route.params.organizationId,
-                  shopId: $route.params.environmentId,
-                },
-              }"
+      <!-- Recent changes -->
+      <Card>
+        <CardHeader class="flex-row items-center justify-between pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:clock-rotate-left class="size-4 text-muted-foreground" />
+            {{ $t("shopDetail.recentChanges") }}
+          </CardTitle>
+          <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
+            <RouterLink :to="changelogRoute">
+              {{ $t("shopDetail.viewAllChanges") }}
+              <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
+            </RouterLink>
+          </Button>
+        </CardHeader>
+        <CardContent class="pt-0">
+          <div v-if="recentChangelogs.length === 0" class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+            <icon-fa6-solid:circle-info class="size-4 shrink-0" />
+            {{ $t("shopDetail.noRecentChanges") }}
+          </div>
+          <div v-else class="space-y-1.5">
+            <div
+              v-for="changelog in recentChangelogs"
+              :key="changelog.id"
+              class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors hover:bg-accent"
+              @click="openEnvironmentChangelog(changelog)"
             >
-              {{ environment.deploymentsCount }} deployment{{
-                environment.deploymentsCount !== 1 ? "s" : ""
-              }}
-            </router-link>
-          </dd>
-
-          <dd v-else>{{ $t("common.never") }}</dd>
-        </div>
-
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.environment") }}</dt>
-
-          <dd>
-            {{ environment.cache?.environment }}
-          </dd>
-        </div>
-
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.cacheAdapter") }}</dt>
-
-          <dd>
-            {{ environment.cache?.cacheAdapter }}
-          </dd>
-        </div>
-
-        <div class="shop-info-item">
-          <dt>{{ $t("shopDetail.httpCache") }}</dt>
-
-          <dd>
-            {{ environment.cache?.httpCache ? $t("common.enabled") : $t("common.disabled") }}
-          </dd>
-        </div>
-
-        <div class="shop-info-item">
-          <dt>Organization</dt>
-
-          <dd>
-            {{ environment.organizationName }}
-          </dd>
-        </div>
-
-        <div class="shop-info-item">
-          <dt>Project</dt>
-
-          <dd>
-            {{ environment.shopName }}
-          </dd>
-        </div>
-
-        <div class="shop-info-item shop-token-item">
-          <dt>
-            Bypass Authentication Header
-            <span
-              data-tooltip="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
-              class="tooltip-top-center"
-            >
-              <icon-fa6-solid:circle-info class="icon" />
-            </span>
-          </dt>
-
-          <dd class="shop-token-value">
-            <code>{{ environment.environmentToken }}</code>
-
-            <UiButton
-              type="button"
-              class="tooltip-top-center"
-              size="sm"
-              icon-only
-              data-tooltip="Copy token"
-              @click="copyToken"
-            >
-              <icon-fa6-solid:copy />
-            </UiButton>
-          </dd>
-        </div>
-      </dl>
-    </div>
-  </Panel>
-
-  <Panel>
-    <template #title>
-      <icon-fa6-solid:circle-check class="icon" />
-      {{ $t("shopDetail.securityChecks") }}
-    </template>
-
-    <Banner v-if="sortedCriticalChecks.length === 0" variant="success">
-      {{ $t("shopDetail.allChecksPassed") }}
-    </Banner>
-
-    <ul v-else class="issue-list">
-      <li v-for="check in sortedCriticalChecks" :key="check.id" class="issue-item">
-        <status-icon :status="check.level" />
-
-        <div class="issue-content">
-          <span class="issue-message">{{ check.message }}</span>
-
-          <a v-if="check.link" :href="check.link" target="_blank" class="issue-link">
-            {{ $t("shopDetail.learnMore") }}
-            <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-          </a>
-        </div>
-      </li>
-    </ul>
-
-    <div class="issue-more">
-      <UiButton
-        :to="{
-          name: 'account.environments.detail.checks',
-          params: {
-            organizationId: $route.params.organizationId,
-            shopId: $route.params.environmentId,
-          },
-        }"
-        size="sm"
-      >
-        <icon-fa6-solid:circle-check class="icon" />
-        {{ $t("shopDetail.viewAllChecks") }}
-      </UiButton>
-    </div>
-  </Panel>
-
-  <Panel>
-    <template #title>
-      <icon-fa6-solid:plug class="icon" />
-      {{ $t("shopDetail.extensions") }}
-    </template>
-
-    <Banner v-if="outdatedExtensions.length === 0" variant="success">
-      {{ $t("shopDetail.allExtensionsUpToDate") }}
-    </Banner>
-
-    <ul v-else class="issue-list">
-      <li v-for="extension in outdatedExtensions" :key="extension.name" class="issue-item">
-        <icon-fa6-solid:arrow-up class="icon icon-info" />
-
-        <div class="issue-content">
-          <span class="issue-message">
-            {{ extension.label }}
-            <span class="link" @click="openExtensionChangelog(extension)"
-              >({{ extension.version }} → {{ extension.latestVersion }})</span
-            >
-          </span>
-
-          <span class="issue-source">{{ extension.name }}</span>
-
-          <a
-            v-if="extension.storeLink"
-            :href="extension.storeLink"
-            target="_blank"
-            class="issue-link"
-          >
-            {{ $t("shopDetail.store") }}
-            <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-          </a>
-        </div>
-      </li>
-    </ul>
-
-    <div class="issue-more">
-      <UiButton
-        :to="{
-          name: 'account.environments.detail.extensions',
-          params: {
-            organizationId: $route.params.organizationId,
-            shopId: $route.params.environmentId,
-          },
-        }"
-        size="sm"
-      >
-        <icon-fa6-solid:plug class="icon" />
-        {{ $t("shopDetail.viewAllExtensions") }}
-      </UiButton>
-    </div>
-  </Panel>
-
-  <Panel>
-    <template #title>
-      <icon-fa6-solid:list-check class="icon" />
-      {{ $t("shopDetail.scheduledTasks") }}
-    </template>
-
-    <Banner v-if="overdueTasks.length === 0" variant="success">
-      {{ $t("shopDetail.noOverdueTasks") }}
-    </Banner>
-
-    <ul v-else class="issue-list">
-      <li v-for="task in overdueTasks" :key="task.id" class="issue-item">
-        <icon-fa6-solid:clock class="icon icon-warning" />
-        <div class="issue-content">
-          <span class="issue-message">{{ task.name }}</span>
-          <span class="issue-source">
-            Last run:
-            {{ task.lastExecutionTime ? formatDateTime(task.lastExecutionTime) : "-" }} ({{
-              getOverdueTime(task.nextExecutionTime ?? "")
-            }}
-            overdue)
-          </span>
-        </div>
-      </li>
-    </ul>
-
-    <div class="issue-more">
-      <UiButton
-        :to="{
-          name: 'account.environments.detail.tasks',
-          params: {
-            organizationId: $route.params.organizationId,
-            shopId: $route.params.environmentId,
-          },
-        }"
-        size="sm"
-      >
-        <icon-fa6-solid:list-check class="icon" />
-        {{ $t("shopDetail.viewAllScheduledTasks") }}
-      </UiButton>
-    </div>
-  </Panel>
-
-  <Panel>
-    <template #title>
-      <icon-fa6-solid:clock-rotate-left class="icon" />
-      {{ $t("shopDetail.recentChanges") }}
-    </template>
-
-    <Banner v-if="recentChangelogs.length === 0" variant="default">
-      {{ $t("shopDetail.noRecentChanges") }}
-    </Banner>
-
-    <div v-else class="changes-list">
-      <div v-for="changelog in recentChangelogs" :key="changelog.id" class="change-item">
-        <div class="change-date">
-          {{ formatDate(changelog.date) }}
-        </div>
-
-        <div class="change-summary">
-          {{ sumChanges(changelog) }}
-          <span
-            class="link tooltip-top-left"
-            :data-tooltip="$t('shopDetail.openDetails')"
-            @click="openEnvironmentChangelog(changelog)"
-            ><icon-fa6-solid:circle-info class="icon"
-          /></span>
-        </div>
-      </div>
+              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatDate(changelog.date) }}</span>
+              <Separator orientation="vertical" class="h-4" />
+              <span class="min-w-0 flex-1 truncate text-sm">{{ sumChanges(changelog) }}</span>
+              <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
-    <div class="issue-more">
-      <UiButton
-        :to="{
-          name: 'account.environments.detail.changelog',
-          params: {
-            organizationId: $route.params.organizationId,
-            shopId: $route.params.environmentId,
-          },
-        }"
-        size="sm"
-      >
-        <icon-fa6-solid:file-waveform class="icon" />
-        {{ $t("shopDetail.viewAllChanges") }}
-      </UiButton>
-    </div>
-  </Panel>
+    <!-- ═══════ BOTTOM: Environment info ═══════ -->
+    <Card>
+      <CardHeader class="flex-row items-center justify-between pb-3">
+        <CardTitle class="flex items-center gap-2 text-base">
+          <icon-fa6-solid:circle-info class="size-4 text-muted-foreground" />
+          {{ $t("shopDetail.shopInfo") }}
+        </CardTitle>
+        <Button
+          v-if="latestShopwareVersion && latestShopwareVersion !== environment.shopwareVersion"
+          variant="outline"
+          size="sm"
+          class="h-7 text-xs"
+          @click="openUpdateWizard"
+        >
+          <icon-fa6-solid:rotate class="mr-1 size-2.5" />
+          {{ $t("shopDetail.compatibilityCheck") }}
+        </Button>
+      </CardHeader>
+      <CardContent class="pt-0">
+        <div class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-for="item in infoItems" :key="item.label">
+            <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
+            <dd class="mt-0.5">
+              <component :is="item.component" v-if="item.component" v-bind="item.componentProps" />
+              <span v-else class="text-sm">{{ item.value }}</span>
+            </dd>
+          </div>
 
-  <!-- Shop Changelog Modal -->
-  <environment-changelog
-    :show="viewEnvironmentChangelogDialog"
-    :changelog="dialogEnvironmentChangelog"
-    @close="closeEnvironmentChangelog"
-  />
+          <div class="sm:col-span-2 lg:col-span-3">
+            <dt class="text-xs font-medium text-muted-foreground">
+              Bypass Authentication Header
+              <span title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded">
+                <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
+              </span>
+            </dt>
+            <dd class="mt-1 flex items-center gap-2">
+              <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{ environment.environmentToken }}</code>
+              <Button type="button" variant="ghost" size="icon" class="size-7 shrink-0" title="Copy token" @click="copyToken">
+                <icon-fa6-solid:copy class="size-3" />
+              </Button>
+            </dd>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
-  <!-- Extension Changelog Modal -->
-  <extension-changelog
-    :show="viewExtensionChangelogDialog"
-    :extension="dialogExtension"
-    @close="closeExtensionChangelog"
-  />
-
-  <!-- Update Wizard Modal -->
-  <shopware-update-wizard
-    :show="viewUpdateWizardDialog"
-    :shopware-versions="shopwareVersions"
-    :loading="loadingUpdateWizard"
-    :extensions="dialogUpdateWizard"
-    @close="viewUpdateWizardDialog = false"
-    @version-selected="loadUpdateWizard"
-  />
+    <!-- Modals -->
+    <EnvironmentChangelog
+      :show="viewEnvironmentChangelogDialog"
+      :changelog="dialogEnvironmentChangelog"
+      @close="closeEnvironmentChangelog"
+    />
+    <ExtensionChangelog
+      :show="viewExtensionChangelogDialog"
+      :extension="dialogExtension"
+      @close="closeExtensionChangelog"
+    />
+    <ShopwareUpdateWizard
+      :show="viewUpdateWizardDialog"
+      :shopware-versions="shopwareVersions"
+      :loading="loadingUpdateWizard"
+      :extensions="dialogUpdateWizard"
+      @close="viewUpdateWizardDialog = false"
+      @version-selected="loadUpdateWizard"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -363,24 +276,78 @@ import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
-import { ref, computed } from "vue";
+import { ref, computed, h } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
+import { useI18n } from "vue-i18n";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import StatusIcon from "@/components/StatusIcon.vue";
 
 type Extension = components["schemas"]["EnvironmentExtension"];
-
 type ExtensionWithCompatibility = Extension & {
-  compatibility?: {
-    name: string;
-    label: string;
-    type: string;
-  };
+  compatibility?: { name: string; label: string; type: string };
 };
 
+const route = useRoute();
+const { t } = useI18n();
 const { error, success } = useAlert();
 const { environment, shopwareVersions, latestShopwareVersion } = useEnvironmentDetail();
+
+// Route helpers
+const routeParams = computed(() => ({
+  organizationId: route.params.organizationId,
+  shopId: route.params.environmentId,
+}));
+const checksRoute = computed(() => ({ name: "account.environments.detail.checks", params: routeParams.value }));
+const extensionsRoute = computed(() => ({ name: "account.environments.detail.extensions", params: routeParams.value }));
+const tasksRoute = computed(() => ({ name: "account.environments.detail.tasks", params: routeParams.value }));
+const changelogRoute = computed(() => ({ name: "account.environments.detail.changelog", params: routeParams.value }));
+
+// Status styling
+const statusBg = computed(() => {
+  switch (environment.value?.status) {
+    case "green": return "bg-success/15";
+    case "yellow": return "bg-warning/15";
+    case "red": return "bg-destructive/15";
+    default: return "bg-muted";
+  }
+});
+
+// Info grid items
+const infoItems = computed(() => {
+  if (!environment.value) return [];
+  return [
+    { label: t("shopDetail.shopwareVersion"), value: environment.value.shopwareVersion },
+    { label: t("shopDetail.lastCheckedAt"), value: formatDateTime(environment.value.lastScrapedAt) },
+    {
+      label: t("shopDetail.lastShopUpdate"),
+      value: environment.value.lastChangelog?.date
+        ? formatDate(environment.value.lastChangelog.date)
+        : t("common.never"),
+    },
+    {
+      label: t("shopDetail.lastDeployment"),
+      value: environment.value.deploymentsCount > 0
+        ? `${environment.value.deploymentsCount} deployment${environment.value.deploymentsCount !== 1 ? "s" : ""}`
+        : t("common.never"),
+    },
+    { label: t("shopDetail.environment"), value: environment.value.cache?.environment ?? "-" },
+    { label: t("shopDetail.cacheAdapter"), value: environment.value.cache?.cacheAdapter ?? "-" },
+    {
+      label: t("shopDetail.httpCache"),
+      value: environment.value.cache?.httpCache ? t("common.enabled") : t("common.disabled"),
+    },
+    { label: "Organization", value: environment.value.organizationName },
+    { label: "Project", value: environment.value.shopName ?? "-" },
+  ];
+});
 
 async function copyToken() {
   if (environment.value?.environmentToken) {
@@ -389,38 +356,21 @@ async function copyToken() {
   }
 }
 
-const {
-  viewExtensionChangelogDialog,
-  dialogExtension,
-  openExtensionChangelog,
-  closeExtensionChangelog,
-} = useExtensionChangelogModal();
+// Changelogs
+const { viewExtensionChangelogDialog, dialogExtension, openExtensionChangelog, closeExtensionChangelog } = useExtensionChangelogModal();
+const { viewEnvironmentChangelogDialog, dialogEnvironmentChangelog, openEnvironmentChangelog, closeEnvironmentChangelog } = useEnvironmentChangelogModal();
 
-const {
-  viewEnvironmentChangelogDialog,
-  dialogEnvironmentChangelog,
-  openEnvironmentChangelog,
-  closeEnvironmentChangelog,
-} = useEnvironmentChangelogModal();
-
-// Computed properties for the overview panels
-const allCriticalChecks = computed(() => {
-  if (!environment.value?.checks) return [];
-  return environment.value.checks.filter(
-    (check) => check.level !== "green" && !environment.value?.ignores?.includes(check.id),
-  );
-});
-
+// Computed data
 const sortedCriticalChecks = computed(() => {
-  return [...allCriticalChecks.value]
+  if (!environment.value?.checks) return [];
+  return environment.value.checks
+    .filter((c) => c.level !== "green" && !environment.value?.ignores?.includes(c.id))
     .sort((a, b) => {
       if (a.level === "red" && b.level !== "red") return -1;
       if (a.level !== "red" && b.level === "red") return 1;
-      if (a.level === "yellow" && b.level === "green") return -1;
-      if (a.level === "green" && b.level === "yellow") return 1;
       return 0;
     })
-    .slice(0, 5); // Limit to first 10
+    .slice(0, 5);
 });
 
 const outdatedExtensions = computed(() => {
@@ -433,14 +383,10 @@ const outdatedExtensions = computed(() => {
 const overdueTasks = computed(() => {
   if (!environment.value?.scheduledTasks) return [];
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-
   return environment.value.scheduledTasks
     .filter(
       (task) =>
-        task.overdue &&
-        task.status !== "inactive" &&
-        task.nextExecutionTime &&
-        new Date(task.nextExecutionTime) < fifteenMinutesAgo,
+        task.overdue && task.status !== "inactive" && task.nextExecutionTime && new Date(task.nextExecutionTime) < fifteenMinutesAgo,
     )
     .slice(0, 5);
 });
@@ -451,25 +397,15 @@ const recentChangelogs = computed(() => {
 });
 
 function getOverdueTime(nextExecutionTime: string): string {
-  const now = new Date();
-  const scheduledTime = new Date(nextExecutionTime);
-  const diffMs = now.getTime() - scheduledTime.getTime();
+  const diffMs = Date.now() - new Date(nextExecutionTime).getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes} minutes`;
-  }
-
+  if (diffMinutes < 60) return `${diffMinutes}m`;
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) {
-    return `${diffHours} hours`;
-  }
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} days`;
+  if (diffHours < 24) return `${diffHours}h`;
+  return `${Math.floor(diffHours / 24)}d`;
 }
 
-// For update wizard
+// Update wizard
 const viewUpdateWizardDialog = ref(false);
 const loadingUpdateWizard = ref(false);
 const dialogUpdateWizard = ref<ExtensionWithCompatibility[] | null>(null);
@@ -480,49 +416,28 @@ function openUpdateWizard() {
 }
 
 async function loadUpdateWizard(version: string) {
-  if (!environment.value?.extensions) {
-    return;
-  }
-
+  if (!environment.value?.extensions) return;
   loadingUpdateWizard.value = true;
-
-  const body = {
-    currentVersion: environment.value?.shopwareVersion,
-    futureVersion: version,
-    extensions: environment.value.extensions.map((extension) => {
-      return {
-        name: extension.name,
-        version: extension.version,
-      };
-    }),
-  };
 
   try {
     const { data: pluginCompatibility } = await api.POST("/info/extension-compatibility", {
-      body,
+      body: {
+        currentVersion: environment.value.shopwareVersion,
+        futureVersion: version,
+        extensions: environment.value.extensions.map((e) => ({ name: e.name, version: e.version })),
+      },
     });
 
     if (!pluginCompatibility) return;
 
-    const extensions = JSON.parse(
-      JSON.stringify(environment.value?.extensions),
-    ) as ExtensionWithCompatibility[];
-
-    for (const extension of extensions) {
-      const compatibility = pluginCompatibility.find((plugin) => plugin.name === extension.name);
-      extension.compatibility = undefined;
-      if (compatibility) {
-        extension.compatibility =
-          compatibility.status as ExtensionWithCompatibility["compatibility"];
-      }
+    const extensions = JSON.parse(JSON.stringify(environment.value.extensions)) as ExtensionWithCompatibility[];
+    for (const ext of extensions) {
+      const compat = pluginCompatibility.find((p) => p.name === ext.name);
+      ext.compatibility = compat ? (compat.status as ExtensionWithCompatibility["compatibility"]) : undefined;
     }
 
     dialogUpdateWizard.value = extensions.sort((a, b) => {
-      // Sort by active status (active first)
-      if (a.active !== b.active) {
-        return a.active ? -1 : 1;
-      }
-      // Then sort by label
+      if (a.active !== b.active) return a.active ? -1 : 1;
       return a.label.localeCompare(b.label);
     });
   } catch (e) {
@@ -532,153 +447,3 @@ async function loadUpdateWizard(version: string) {
   }
 }
 </script>
-
-<style scoped>
-.shop-info-heading {
-  padding: 1.25rem 0;
-  font-size: 1.125rem;
-  font-weight: 500;
-
-  .icon {
-    margin-right: 0.25rem;
-  }
-}
-
-.shop-info-grid {
-  padding: 1.25rem 0;
-}
-
-.shop-info-list {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  grid-auto-rows: min-content;
-  gap: 1rem 1.5rem;
-
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (min-width: 960px) {
-    grid-column: 1 / span 2;
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.shop-info-item {
-  dt {
-    font-weight: 500;
-
-    .icon {
-      color: var(--info-color);
-      font-size: 0.875rem;
-      margin-left: 0.25rem;
-    }
-  }
-
-  dd {
-    color: var(--text-color-muted);
-  }
-}
-
-.shop-token-item {
-  grid-column: 1 / -1;
-}
-
-.shop-token-value {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  code {
-    font-size: 0.8rem;
-    word-break: break-all;
-  }
-}
-
-.deployment-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.auto-update-info {
-  margin-top: 0.375rem;
-  font-size: 0.75rem;
-  color: var(--text-color-muted);
-  opacity: 0.8;
-  font-style: italic;
-}
-
-.issue-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.issue-item {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-
-  @media all and (min-width: 640px) {
-    align-items: center;
-  }
-
-  > .icon {
-    margin-top: 0.25rem;
-    flex-shrink: 0;
-
-    @media all and (min-width: 640px) {
-      margin-top: unset;
-    }
-  }
-}
-
-.issue-content {
-  display: flex;
-  gap: 0.5rem;
-  flex-direction: column;
-
-  @media all and (min-width: 640px) {
-    align-items: center;
-    flex-direction: unset;
-  }
-}
-
-.issue-source {
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-}
-
-.issue-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-
-  .icon {
-    font-size: 0.7rem;
-  }
-}
-
-.issue-more {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.change-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 0.5rem 0;
-  gap: 1rem;
-
-  .icon {
-    font-size: 0.75rem;
-  }
-}
-
-.change-date {
-  padding-top: 0.175em;
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-}
-</style>

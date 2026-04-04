@@ -1,17 +1,37 @@
 <template>
-  <component
-    :is="componentTag"
-    v-bind="componentAttrs"
-    :class="buttonClasses"
-    @click="handleClick"
+  <Button
+    v-if="!to && !href"
+    :variant="mappedVariant"
+    :size="mappedSize"
+    :class="[block ? 'w-full' : '', $attrs.class]"
+    :disabled="disabled"
+    :type="type"
+    @click="emit('click', $event)"
   >
     <slot />
-  </component>
+  </Button>
+
+  <Button
+    v-else
+    :variant="mappedVariant"
+    :size="mappedSize"
+    :class="[block ? 'w-full' : '', $attrs.class]"
+    :disabled="disabled"
+    as-child
+  >
+    <RouterLink v-if="to" :to="to" @click="handleClick">
+      <slot />
+    </RouterLink>
+    <a v-else :href="href" @click="handleClick">
+      <slot />
+    </a>
+  </Button>
 </template>
 
 <script setup lang="ts">
-import { computed, useAttrs } from "vue";
+import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
+import { Button } from "@/components/ui/button";
 
 defineOptions({ inheritAttrs: false });
 
@@ -25,14 +45,12 @@ type ButtonVariant =
   | "github"
   | "warning";
 
-type ButtonSize = "base" | "sm";
-
 const props = withDefaults(
   defineProps<{
     to?: RouteLocationRaw;
     href?: string;
     variant?: ButtonVariant;
-    size?: ButtonSize;
+    size?: "base" | "sm";
     block?: boolean;
     iconOnly?: boolean;
     disabled?: boolean;
@@ -54,83 +72,37 @@ const emit = defineEmits<{
   click: [event: MouseEvent];
 }>();
 
-const attrs = useAttrs();
-
-const resolvedVariant = computed<ButtonVariant>(() => {
-  return props.variant ?? "secondary";
-});
-
-const resolvedSize = computed<ButtonSize>(() => {
-  return props.size ?? "base";
-});
-
-const isBlock = computed(() => props.block);
-
-const isIconOnly = computed(() => props.iconOnly);
-
-const componentTag = computed(() => {
-  if (props.to !== undefined) {
-    return "RouterLink";
+const mappedVariant = computed(() => {
+  switch (props.variant) {
+    case "primary":
+      return "default";
+    case "outline-primary":
+      return "outline";
+    case "destructive":
+    case "secondary-destructive":
+      return "destructive";
+    case "ghost":
+      return "ghost";
+    case "github":
+      return "secondary";
+    case "warning":
+      return "outline";
+    default:
+      return "secondary";
   }
-
-  if (props.href) {
-    return "a";
-  }
-
-  return "button";
 });
 
-const forwardedAttrs = computed(() => {
-  const values = { ...attrs };
-  delete values.class;
-  return values;
+const mappedSize = computed(() => {
+  if (props.iconOnly) return "icon";
+  return props.size === "sm" ? "sm" : "default";
 });
-
-const componentAttrs = computed(() => {
-  if (props.to !== undefined) {
-    return {
-      ...forwardedAttrs.value,
-      to: props.to,
-      "aria-disabled": props.disabled || undefined,
-      tabindex: props.disabled ? -1 : forwardedAttrs.value.tabindex,
-    };
-  }
-
-  if (props.href) {
-    return {
-      ...forwardedAttrs.value,
-      href: props.href,
-      "aria-disabled": props.disabled || undefined,
-      tabindex: props.disabled ? -1 : forwardedAttrs.value.tabindex,
-    };
-  }
-
-  return {
-    ...forwardedAttrs.value,
-    type: props.type,
-    disabled: props.disabled || undefined,
-  };
-});
-
-const buttonClasses = computed(() => [
-  "ui-button",
-  `ui-button--${resolvedVariant.value}`,
-  `ui-button--${resolvedSize.value}`,
-  {
-    "ui-button--block": isBlock.value,
-    "ui-button--icon-only": isIconOnly.value,
-    "ui-button--disabled": props.disabled,
-  },
-  attrs.class,
-]);
 
 function handleClick(event: MouseEvent) {
-  if (props.disabled && componentTag.value !== "button") {
+  if (props.disabled) {
     event.preventDefault();
     event.stopPropagation();
     return;
   }
-
   emit("click", event);
 }
 </script>

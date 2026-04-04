@@ -9,7 +9,7 @@ describe("RatingStars", () => {
         rating: null,
       },
     });
-    expect(wrapper.find(".rating-stars").exists()).toBe(false);
+    expect(wrapper.find(".inline-flex").exists()).toBe(false);
   });
 
   it("renders stars when rating is provided", () => {
@@ -18,7 +18,7 @@ describe("RatingStars", () => {
         rating: 8,
       },
     });
-    expect(wrapper.find(".rating-stars").exists()).toBe(true);
+    expect(wrapper.find(".inline-flex").exists()).toBe(true);
   });
 
   it("displays correct tooltip text", () => {
@@ -27,7 +27,7 @@ describe("RatingStars", () => {
         rating: 8,
       },
     });
-    expect(wrapper.find('[data-tooltip="4 from 5"]').exists()).toBe(true);
+    expect(wrapper.find('[title="4 from 5"]').exists()).toBe(true);
   });
 
   it("renders 5 star elements", () => {
@@ -36,7 +36,7 @@ describe("RatingStars", () => {
         rating: 8,
       },
     });
-    const stars = wrapper.findAll(".rating-stars > *");
+    const stars = wrapper.findAll(".inline-flex > *");
     expect(stars.length).toBe(5);
   });
 
@@ -46,7 +46,7 @@ describe("RatingStars", () => {
         rating: 0,
       },
     });
-    expect(wrapper.find(".rating-stars").exists()).toBe(true);
+    expect(wrapper.find(".inline-flex").exists()).toBe(true);
   });
 
   it("renders all full stars for rating of 10", () => {
@@ -55,7 +55,7 @@ describe("RatingStars", () => {
         rating: 10,
       },
     });
-    expect(wrapper.find(".rating-stars").exists()).toBe(true);
+    expect(wrapper.find(".inline-flex").exists()).toBe(true);
   });
 
   it("handles odd ratings with half stars", () => {
@@ -64,6 +64,6 @@ describe("RatingStars", () => {
         rating: 7,
       },
     });
-    expect(wrapper.find(".rating-stars").exists()).toBe(true);
+    expect(wrapper.find(".inline-flex").exists()).toBe(true);
   });
 });

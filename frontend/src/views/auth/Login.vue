@@ -1,118 +1,145 @@
 <template>
-  <div class="login-header">
-    <h2>{{ $t("auth.signIn") }}</h2>
-    <p>
+  <div class="my-8 text-center">
+    <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.signIn") }}</h2>
+    <p class="text-muted-foreground">
       {{ $t("auth.newToShopmon") }}
       {{ " " }}
-      <UiButton :to="{ name: 'account.register' }"> {{ $t("auth.createAccount") }} </UiButton>
+      <Button variant="link" as-child class="p-0">
+        <RouterLink :to="{ name: 'account.register' }">{{ $t("auth.createAccount") }}</RouterLink>
+      </Button>
     </p>
   </div>
 
-  <vee-form
-    v-slot="{ errors, isSubmitting }"
-    class="login-form-container"
-    :validation-schema="schema"
+  <form
+    class="flex w-full flex-col gap-6 text-center"
     @submit="onSubmit"
   >
-    <div class="login-form-group">
-      <InputField
-        name="email"
-        type="email"
-        autocomplete="email"
-        :placeholder="$t('common.emailAddress')"
-        required
-        :error="errors.email"
-      />
+    <div class="flex flex-col gap-2">
+      <FormField v-slot="{ componentField }" name="email">
+        <FormItem>
+          <FormControl>
+            <Input
+              type="email"
+              autocomplete="email"
+              :placeholder="$t('common.emailAddress')"
+              v-bind="componentField"
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </FormField>
 
-      <PasswordField
-        name="password"
-        :placeholder="$t('common.password')"
-        :error="errors.password"
-      />
+      <FormField v-slot="{ componentField }" name="password">
+        <FormItem>
+          <FormControl>
+            <div class="relative">
+              <Input
+                :type="passwordType"
+                :placeholder="$t('common.password')"
+                v-bind="componentField"
+              />
+              <div
+                class="absolute inset-y-0 right-0 z-10 flex cursor-pointer items-center pr-3 opacity-40 transition-opacity hover:opacity-100"
+                @click="passwordType = passwordType === 'password' ? 'text' : 'password'"
+              >
+                <icon-fa6-solid:eye v-if="passwordType === 'password'" class="size-4" />
+                <icon-fa6-solid:eye-slash v-else class="size-4" />
+              </div>
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </FormField>
     </div>
 
-    <UiButton type="submit" variant="primary" block :disabled="isSubmitting">
-      <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="icon" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
+    <Button type="submit" class="w-full" :disabled="isSubmitting">
+      <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="size-5" aria-hidden="true" />
+      <icon-line-md:loading-twotone-loop v-else class="size-5" />
       {{ $t("auth.signInButton") }}
-    </UiButton>
+    </Button>
 
     <div>
-      <router-link :to="{ name: 'account.forgot.password' }">
+      <RouterLink
+        :to="{ name: 'account.forgot.password' }"
+        class="text-sm text-muted-foreground underline-offset-4 hover:underline"
+      >
         {{ $t("auth.forgotPassword") }}
-      </router-link>
+      </RouterLink>
     </div>
-  </vee-form>
+  </form>
 
-  <div class="passkey-container">
-    <div class="text-divider">{{ $t("common.or") }}</div>
+  <div class="mt-8 flex flex-col gap-6">
+    <div class="text-center text-sm text-muted-foreground">{{ $t("common.or") }}</div>
 
-    <UiButton
+    <Button
       type="button"
-      variant="primary"
-      block
+      class="w-full"
       :disabled="isAuthenticated"
       @click="webauthnLogin"
     >
       <icon-material-symbols:passkey
         v-if="!isAuthenticated"
-        class="icon icon-passkey"
+        class="size-5"
         aria-hidden="true"
       />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
+      <icon-line-md:loading-twotone-loop v-else class="size-5" />
       {{ $t("auth.loginPasskey") }}
-    </UiButton>
+    </Button>
 
-    <UiButton
+    <Button
       type="button"
-      variant="github"
-      block
+      variant="outline"
+      class="w-full"
       :disabled="isGithubLoading"
       @click="githubLogin"
     >
-      <icon-mdi:github v-if="!isGithubLoading" class="icon" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
+      <icon-mdi:github v-if="!isGithubLoading" class="size-5" aria-hidden="true" />
+      <icon-line-md:loading-twotone-loop v-else class="size-5" />
       {{ $t("auth.continueGithub") }}
-    </UiButton>
+    </Button>
 
-    <div class="sso-section">
-      <div class="text-divider">{{ $t("auth.enterpriseSSO") }}</div>
+    <div class="mt-4">
+      <div class="mb-4 text-center text-sm text-muted-foreground">{{ $t("auth.enterpriseSSO") }}</div>
 
-      <BaseInput
-        v-model="ssoEmail"
-        type="email"
-        :placeholder="$t('auth.enterWorkEmail')"
-        @keyup.enter="ssoLogin"
-      >
-        <template #append>
-          <UiButton
-            type="button"
-            icon-only
-            :disabled="isSSOLoading || !ssoEmail"
-            @click="ssoLogin"
-          >
-            <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-          </UiButton>
-        </template>
-      </BaseInput>
-      <p class="sso-help">{{ $t("auth.ssoHelp") }}</p>
+      <div class="flex gap-2">
+        <Input
+          v-model="ssoEmail"
+          type="email"
+          class="flex-1"
+          :placeholder="$t('auth.enterWorkEmail')"
+          @keyup.enter="ssoLogin"
+        />
+        <Button
+          type="button"
+          size="icon"
+          :disabled="isSSOLoading || !ssoEmail"
+          @click="ssoLogin"
+        >
+          <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="size-4" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="size-4" />
+        </Button>
+      </div>
+      <p class="mt-2 text-center text-sm text-muted-foreground">{{ $t("auth.ssoHelp") }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Field, Form as VeeForm, configure } from "vee-validate";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import * as Yup from "yup";
+import { useRouter } from "vue-router";
+import { z } from "zod";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 import { useAlert } from "@/composables/useAlert";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
 import { api, setToken } from "@/helpers/api";
-import { useRouter } from "vue-router";
-import { startAuthentication } from "@simplewebauthn/browser";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -122,15 +149,16 @@ const isAuthenticated = ref(false);
 const isGithubLoading = ref(false);
 const isSSOLoading = ref(false);
 const ssoEmail = ref("");
+const passwordType = ref("password");
 const alert = useAlert();
 
-configure({
-  validateOnBlur: false,
+const schema = z.object({
+  email: z.string().min(1, t("validation.emailRequired")).email(),
+  password: z.string().min(1, t("validation.passwordRequired")),
 });
 
-const schema = Yup.object().shape({
-  email: Yup.string().required(t("validation.emailRequired")).email(),
-  password: Yup.string().required(t("validation.passwordRequired")),
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema: toTypedSchema(schema),
 });
 
 async function goToDashboard() {
@@ -140,11 +168,9 @@ async function goToDashboard() {
   await router.push(redirectUrl);
 }
 
-async function onSubmit(values: Record<string, unknown>) {
-  const email = values.email as string;
-  const password = values.password as string;
+const onSubmit = handleSubmit(async (values) => {
   const { data, error } = await api.POST("/auth/sign-in/email", {
-    body: { email, password },
+    body: { email: values.email, password: values.password },
   });
 
   if (error) {
@@ -157,7 +183,7 @@ async function onSubmit(values: Record<string, unknown>) {
   }
 
   await goToDashboard();
-}
+});
 
 async function webauthnLogin() {
   isAuthenticated.value = true;
@@ -262,46 +288,3 @@ async function ssoLogin() {
   }
 }
 </script>
-
-<style scoped>
-.passkey-container {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-
-  .text-divider {
-    color: #6b7280;
-  }
-}
-
-.alert {
-  margin-bottom: 1.5rem;
-}
-
-.sso-section {
-  margin-top: 1rem;
-}
-
-.sso-input-group {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-
-  input {
-    flex: 1;
-  }
-
-  button {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-.sso-help {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-  text-align: center;
-}
-</style>

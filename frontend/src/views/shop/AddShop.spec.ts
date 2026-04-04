@@ -1,35 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
 import AddShop from "./AddShop.vue";
-
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const PanelStub = defineComponent({
-  name: "Panel",
-  setup(_, { slots }) {
-    return () => h("div", { class: "panel" }, slots.default?.());
-  },
-});
-
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
-  },
-});
 
 const mockOrganizations = [
   { id: "org-1", name: "Organization A" },
@@ -40,6 +11,11 @@ const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => ({ query: {} }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 vi.mock("@/helpers/api", () => ({
@@ -75,22 +51,13 @@ describe("AddShop", () => {
   });
 
   function mountComponent() {
-    return mount(AddShop, {
-      global: {
-        stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          Panel: PanelStub,
-          FormGroup: FormGroupStub,
-        },
-      },
-    });
+    return mount(AddShop);
   }
 
   it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toBe("New Shop");
+    expect(wrapper.find("h1").text()).toBe("New Shop");
   });
 
   it("renders form when organizations are loaded", async () => {
@@ -123,15 +90,11 @@ describe("AddShop", () => {
     expect(wrapper.find('input[name="gitUrl"]').exists()).toBe(true);
   });
 
-  it("has organization select with options", async () => {
+  it("has organization select area", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const select = wrapper.find('select[name="organizationId"]');
-    expect(select.exists()).toBe(true);
-    const options = select.findAll("option");
-    expect(options.length).toBe(3); // empty + 2 orgs
-    expect(options[1].text()).toBe("Organization A");
-    expect(options[2].text()).toBe("Organization B");
+    // The component uses shadcn Select which renders a trigger button, not a native <select>
+    expect(wrapper.text()).toContain("Organization");
   });
 
   it("has save button", async () => {

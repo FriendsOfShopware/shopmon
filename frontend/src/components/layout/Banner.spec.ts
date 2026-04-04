@@ -13,7 +13,7 @@ describe("Banner", () => {
       },
     });
     expect(wrapper.exists()).toBe(true);
-    expect(wrapper.find(".banner-error").exists()).toBe(true);
+    expect(wrapper.find(".text-destructive").exists()).toBe(true);
   });
 
   it("renders successfully with success variant", () => {
@@ -25,7 +25,7 @@ describe("Banner", () => {
         default: "Success message",
       },
     });
-    expect(wrapper.find(".banner-success").exists()).toBe(true);
+    expect(wrapper.find(".text-success").exists()).toBe(true);
   });
 
   it("renders successfully with default variant", () => {
@@ -37,7 +37,7 @@ describe("Banner", () => {
         default: "Info message",
       },
     });
-    expect(wrapper.find(".banner-default").exists()).toBe(true);
+    expect(wrapper.find(".text-info").exists()).toBe(true);
   });
 
   it("renders successfully with alert variant", () => {
@@ -49,7 +49,7 @@ describe("Banner", () => {
         default: "Warning message",
       },
     });
-    expect(wrapper.find(".banner-alert").exists()).toBe(true);
+    expect(wrapper.find(".text-warning").exists()).toBe(true);
   });
 
   it("displays slot content correctly", () => {
@@ -62,10 +62,10 @@ describe("Banner", () => {
         default: message,
       },
     });
-    expect(wrapper.find(".banner-content").text()).toBe(message);
+    expect(wrapper.text()).toContain(message);
   });
 
-  it("applies correct icon class for error variant", () => {
+  it("renders correct icon for error variant", () => {
     const wrapper = mount(Banner, {
       props: {
         variant: "error",
@@ -74,10 +74,11 @@ describe("Banner", () => {
         default: "Error",
       },
     });
-    expect(wrapper.find(".icon-error").exists()).toBe(true);
+    // Error variant uses text-destructive color class on the Alert wrapper
+    expect(wrapper.find('[data-slot="alert"]').classes()).toContain("text-destructive");
   });
 
-  it("applies correct icon class for success variant", () => {
+  it("renders correct icon for success variant", () => {
     const wrapper = mount(Banner, {
       props: {
         variant: "success",
@@ -86,10 +87,10 @@ describe("Banner", () => {
         default: "Success",
       },
     });
-    expect(wrapper.find(".icon-success").exists()).toBe(true);
+    expect(wrapper.find('[data-slot="alert"]').classes()).toContain("text-success");
   });
 
-  it("applies correct icon class for default variant", () => {
+  it("renders correct classes for default variant", () => {
     const wrapper = mount(Banner, {
       props: {
         variant: "default",
@@ -98,10 +99,10 @@ describe("Banner", () => {
         default: "Info",
       },
     });
-    expect(wrapper.find(".icon-default").exists()).toBe(true);
+    expect(wrapper.find('[data-slot="alert"]').classes()).toContain("text-info");
   });
 
-  it("applies correct icon class for alert variant", () => {
+  it("renders correct classes for alert variant", () => {
     const wrapper = mount(Banner, {
       props: {
         variant: "alert",
@@ -110,6 +111,6 @@ describe("Banner", () => {
         default: "Warning",
       },
     });
-    expect(wrapper.find(".icon-alert").exists()).toBe(true);
+    expect(wrapper.find('[data-slot="alert"]').classes()).toContain("text-warning");
   });
 });

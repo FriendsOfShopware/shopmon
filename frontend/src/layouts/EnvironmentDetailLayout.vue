@@ -1,104 +1,141 @@
 <template>
-  <div class="detail-wrapper">
-    <sidebar-detail :environment="environment" />
+  <div v-if="environment" class="space-y-4">
+    <!-- Breadcrumb -->
+    <Breadcrumbs :items="breadcrumbItems" />
 
-    <header-container
-      v-if="environment"
-      :breadcrumb="breadcrumbItems"
-      :title="environment.name"
-      :titleMobileHide="true"
-    >
-      <slot name="header-actions">
-        <UiButton
-          icon-only
-          :data-tooltip="isSubscribed ? 'Unwatch environment' : 'Watch environment'"
+    <!-- Environment header strip -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted">
+          <img
+            v-if="environment.environmentImage"
+            :src="environment.environmentImage"
+            class="size-full object-cover"
+            alt=""
+          />
+          <icon-fa6-solid:image v-else class="size-4 text-muted-foreground" />
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="truncate text-xl font-bold">{{ environment.name }}</h1>
+            <StatusIcon :status="environment.status" />
+          </div>
+          <div class="flex items-center gap-2 text-sm text-muted-foreground">
+            <span class="truncate">{{ environment.organizationName }}</span>
+            <template v-if="environmentHost">
+              <span class="text-border">/</span>
+              <a :href="environment.url" target="_blank" rel="noopener noreferrer" class="truncate hover:text-primary">{{ environmentHost }}</a>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <Button variant="outline" size="sm" as-child>
+          <a :href="environment.url" target="_blank" rel="noopener noreferrer">
+            <icon-fa6-solid:store class="mr-1.5 size-3" />
+            Storefront
+          </a>
+        </Button>
+        <Button variant="outline" size="sm" as-child>
+          <a :href="(environment.url ?? '') + '/admin'" target="_blank" rel="noopener noreferrer">
+            <icon-fa6-solid:user-gear class="mr-1.5 size-3" />
+            Admin
+          </a>
+        </Button>
+
+        <Separator orientation="vertical" class="mx-1 h-6" />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-8"
+          :title="isSubscribed ? 'Unwatch environment' : 'Watch environment'"
           :disabled="isSubscribing"
-          type="button"
           @click="toggleNotificationSubscription"
         >
-          <icon-fa6-solid:bell
-            v-if="isSubscribed"
-            :class="{ 'animate-pulse': isSubscribing }"
-            class="icon"
-          />
-          <icon-fa6-regular:bell v-else :class="{ 'animate-pulse': isSubscribing }" class="icon" />
-        </UiButton>
+          <icon-fa6-solid:bell v-if="isSubscribed" :class="['size-3.5', { 'animate-pulse': isSubscribing }]" />
+          <icon-fa6-regular:bell v-else :class="['size-3.5', { 'animate-pulse': isSubscribing }]" />
+        </Button>
 
-        <UiButton
-          icon-only
-          data-tooltip="Clear environment cache"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-8"
+          title="Clear environment cache"
           :disabled="isCacheClearing"
-          type="button"
           @click="onCacheClear"
         >
-          <icon-ic:baseline-cleaning-services
-            :class="{ 'animate-pulse': isCacheClearing }"
-            class="icon"
-          />
-        </UiButton>
+          <icon-ic:baseline-cleaning-services :class="['size-3.5', { 'animate-pulse': isCacheClearing }]" />
+        </Button>
 
-        <UiButton
-          icon-only
-          data-tooltip="Refresh environment data"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-8"
+          title="Refresh environment data"
           :disabled="isRefreshing"
-          type="button"
           @click="showEnvironmentRefreshModal = true"
         >
-          <icon-fa6-solid:rotate :class="{ icon: true, 'animate-spin': isRefreshing }" />
-        </UiButton>
+          <icon-fa6-solid:rotate :class="['size-3.5', { 'animate-spin': isRefreshing }]" />
+        </Button>
 
-        <UiButton
-          :to="{
-            name: 'account.environments.edit',
-            params: {
-              organizationId: route.params.organizationId,
-              environmentId: environment.id,
-            },
-          }"
-          type="button"
-          variant="primary"
-        >
-          <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-          Edit Environment
-        </UiButton>
-      </slot>
-    </header-container>
+        <Button as-child size="sm">
+          <RouterLink :to="{ name: 'account.environments.edit', params: { organizationId: route.params.organizationId, environmentId: environment.id } }">
+            <icon-fa6-solid:pencil class="mr-1.5 size-3" />
+            Edit
+          </RouterLink>
+        </Button>
+      </div>
+    </div>
 
-    <main-container v-if="environment && environment.lastScrapedAt">
-      <Banner v-if="environment.lastScrapedError" class="environment-scrape-error" variant="error">
-        This environment will be not automatically updated anymore. Please update the API
-        credentials or URL to fix this issue.
-      </Banner>
+    <!-- Error banner -->
+    <Banner v-if="environment.lastScrapedError" variant="error">
+      This environment will be not automatically updated anymore. Please update the API credentials or URL to fix this issue.
+    </Banner>
 
-      <router-view />
-
-      <modal
-        :show="showEnvironmentRefreshModal"
-        close-x-mark
-        @close="showEnvironmentRefreshModal = false"
+    <!-- Tab navigation -->
+    <nav class="flex gap-1 overflow-x-auto border-b" v-if="environment.lastScrapedAt">
+      <RouterLink
+        v-for="tab in tabs"
+        :key="tab.route"
+        :to="{ name: tab.route, params: { organizationId: route.params.organizationId, environmentId: route.params.environmentId } }"
+        :class="[
+          'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
+          isTabActive(tab.route)
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+        ]"
+        active-class=""
+        exact-active-class=""
       >
-        <template #icon>
-          <FaRotate class="icon icon-info" aria-hidden="true" />
-        </template>
+        <component :is="tab.icon" class="size-3.5" />
+        {{ tab.label }}
+        <Badge v-if="tab.count" variant="secondary" class="ml-0.5 h-5 min-w-5 px-1 text-[10px]">{{ tab.count }}</Badge>
+      </RouterLink>
+    </nav>
 
-        <template #title> Refresh {{ environment.name }} </template>
+    <!-- Page content -->
+    <div v-if="environment.lastScrapedAt">
+      <RouterView />
+    </div>
 
-        <template #content> Do you also want to have a new pagespeed test? </template>
-
-        <template #footer>
-          <UiButton type="button" variant="primary" @click="onRefresh(true)">Yes</UiButton>
-
-          <UiButton
-            ref="cancelButtonRef"
-            type="button"
-            variant="destructive"
-            @click="onRefresh(false)"
-          >
-            No
-          </UiButton>
-        </template>
-      </modal>
-    </main-container>
+    <!-- Refresh modal -->
+    <Dialog :open="showEnvironmentRefreshModal" @update:open="(v: boolean) => !v && (showEnvironmentRefreshModal = false)">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <div class="flex items-start gap-3">
+            <FaRotate class="mt-0.5 size-5 shrink-0 text-info" aria-hidden="true" />
+            <DialogTitle>Refresh {{ environment.name }}</DialogTitle>
+          </div>
+        </DialogHeader>
+        <p>Do you also want to have a new pagespeed test?</p>
+        <DialogFooter>
+          <Button variant="destructive" @click="onRefresh(false)">No</Button>
+          <Button @click="onRefresh(true)">Yes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -107,21 +144,26 @@ import { useRoute } from "vue-router";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
-import SidebarDetail from "@/components/layout/SidebarDetail.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import MainContainer from "@/components/layout/MainContainer.vue";
+import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
 import Banner from "@/components/layout/Banner.vue";
-import Modal from "@/components/layout/Modal.vue";
+import StatusIcon from "@/components/StatusIcon.vue";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import FaRotate from "~icons/fa6-solid/rotate";
+
+import FaShop from "~icons/fa6-solid/shop";
+import FaCircleCheck from "~icons/fa6-solid/circle-check";
+import FaPlug from "~icons/fa6-solid/plug";
+import FaListCheck from "~icons/fa6-solid/list-check";
+import FaRocket from "~icons/fa6-solid/rocket";
+import FaFileWaveform from "~icons/fa6-solid/file-waveform";
+import FaCodeBranch from "~icons/fa6-solid/code-branch";
 
 const route = useRoute();
 const { t } = useI18n();
-
-const currentRouteTitle = computed(() => {
-  const titleKey = route.meta.titleKey;
-  return typeof titleKey === "string" ? t(titleKey) : "";
-});
 
 const {
   environment,
@@ -135,63 +177,62 @@ const {
   toggleNotificationSubscription,
 } = useEnvironmentDetail();
 
-const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
-  if (!environment.value) {
-    return [];
+const environmentHost = computed(() => {
+  if (!environment.value?.url) return "";
+  try {
+    return new URL(environment.value.url).host;
+  } catch {
+    return environment.value.url;
   }
+});
+
+const tabs = computed(() => [
+  { route: "account.environments.detail", label: t("nav.environmentInformation"), icon: FaShop, count: 0 },
+  { route: "account.environments.detail.checks", label: t("nav.checks"), icon: FaCircleCheck, count: environment.value?.checks?.length ?? 0 },
+  { route: "account.environments.detail.extensions", label: t("nav.extensions"), icon: FaPlug, count: environment.value?.extensions?.length ?? 0 },
+  { route: "account.environments.detail.tasks", label: t("nav.scheduledTasks"), icon: FaListCheck, count: environment.value?.scheduledTasks?.length ?? 0 },
+  { route: "account.environments.detail.queue", label: t("nav.queue"), icon: FaCircleCheck, count: environment.value?.queues?.length ?? 0 },
+  { route: "account.environments.detail.sitespeed", label: t("nav.sitespeed"), icon: FaRocket, count: environment.value?.sitespeeds?.length ?? 0 },
+  { route: "account.environments.detail.changelog", label: t("nav.changelog"), icon: FaFileWaveform, count: environment.value?.changelogs?.length ?? 0 },
+  { route: "account.environments.detail.deployments", label: t("nav.deployments"), icon: FaCodeBranch, count: environment.value?.deploymentsCount ?? 0 },
+]);
+
+function isTabActive(tabRoute: string): boolean {
+  if (route.name === tabRoute) return true;
+  // Deployment detail page highlights the deployments tab
+  if (tabRoute === "account.environments.detail.deployments" && route.name === "account.environments.detail.deployment") return true;
+  return false;
+}
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+  if (!environment.value) return [];
+
+  const currentRouteTitle = (() => {
+    const titleKey = route.meta.titleKey;
+    return typeof titleKey === "string" ? t(titleKey) : "";
+  })();
 
   const items: BreadcrumbItem[] = [
     {
       label: environment.value.organizationName,
-      to: {
-        name: "account.organizations.detail",
-        params: { organizationId: environment.value.organizationId },
-      },
+      to: { name: "account.organizations.detail", params: { organizationId: environment.value.organizationId } },
     },
   ];
 
-  const isEnvironmentOverview = route.name === "account.environments.detail";
+  const isOverview = route.name === "account.environments.detail";
 
   items.push({
     label: environment.value.name,
-    to: isEnvironmentOverview
-      ? undefined
-      : {
-          name: "account.environments.detail",
-          params: {
-            organizationId: route.params.organizationId,
-            environmentId: route.params.environmentId,
-          },
-        },
+    to: isOverview ? undefined : {
+      name: "account.environments.detail",
+      params: { organizationId: route.params.organizationId, environmentId: route.params.environmentId },
+    },
   });
 
-  if (!isEnvironmentOverview && currentRouteTitle.value) {
-    items.push({
-      label: currentRouteTitle.value,
-    });
+  if (!isOverview && currentRouteTitle) {
+    items.push({ label: currentRouteTitle });
   }
 
   return items;
 });
 </script>
-
-<style scoped>
-.detail-wrapper {
-  @media all and (min-width: 768px) {
-    display: grid;
-    column-gap: 1rem;
-    grid-template-areas:
-      "sidebar header"
-      "sidebar content";
-    grid-template-columns: 16rem 1fr;
-  }
-}
-
-.environment-scrape-error {
-  margin-bottom: 1rem;
-}
-
-.main-container {
-  min-height: 80vh;
-}
-</style>

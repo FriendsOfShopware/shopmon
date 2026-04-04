@@ -1,40 +1,31 @@
 <template>
   <header-container title="Documentation" />
   <main-container>
-    <div class="docs">
+    <div class="max-w-[800px]">
       <!-- Table of Contents -->
-      <nav class="docs-nav">
-        <h3 class="docs-title">
-          <icon-fa6-solid:list class="icon" />
-          Contents
-        </h3>
-        <ul class="docs-toc">
-          <li><a href="#getting-started">Getting Started</a></li>
-          <li><a href="#connecting-shop">Connecting a Shop</a></li>
-          <li><a href="#organizations">Organizations</a></li>
-          <li><a href="#projects">Projects</a></li>
-          <li><a href="#dashboard-overview">Dashboard Overview</a></li>
-          <li><a href="#health-checks">Health Checks</a></li>
-          <li><a href="#extensions">Extensions</a></li>
-          <li><a href="#scheduled-tasks">Scheduled Tasks</a></li>
-          <li><a href="#queue">Queue Monitoring</a></li>
-          <li><a href="#sitespeed">Performance Monitoring</a></li>
-          <li><a href="#deployments">Deployments</a></li>
-          <li><a href="#changelog">Changelog</a></li>
-          <li><a href="#notifications">Notifications</a></li>
-          <li><a href="#shop-token">Bypass Authentication</a></li>
-          <li><a href="#packages-mirror">Packages Mirror</a></li>
-          <li><a href="#sso">Single Sign-On (SSO)</a></li>
-        </ul>
-      </nav>
+      <Card class="mb-8">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:list class="mr-1 inline" />
+            Contents
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex flex-col gap-1">
+            <a v-for="item in tocItems" :key="item.href" :href="item.href" class="block px-3 py-1.5 rounded text-[15px] hover:bg-accent transition-colors">{{ item.label }}</a>
+          </div>
+        </CardContent>
+      </Card>
 
       <!-- Getting Started -->
-      <section id="getting-started" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:rocket class="icon" />
-          Getting Started
-        </h2>
-        <div class="docs-content">
+      <Card id="getting-started" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:rocket class="mr-1 inline" />
+            Getting Started
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Shopmon is an open-source monitoring dashboard for Shopware 6 shops. It lets you monitor
             all your Shopware environments from one central place — shop status, performance
@@ -48,16 +39,18 @@
             <li>Create a <a href="#projects">Project</a> within that organization</li>
             <li><a href="#connecting-shop">Connect a Shop</a> by providing API credentials</li>
           </ol>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Connecting a Shop -->
-      <section id="connecting-shop" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:plug class="icon" />
-          Connecting a Shop
-        </h2>
-        <div class="docs-content">
+      <Card id="connecting-shop" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:plug class="mr-1 inline" />
+            Connecting a Shop
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>There are two ways to connect your Shopware shop to Shopmon:</p>
 
           <h4>Option 1: Using the Shopmon Plugin (Recommended)</h4>
@@ -111,20 +104,24 @@
             <router-link :to="{ name: 'account.environments.new' }">adding a new shop</router-link>.
           </p>
 
-          <Banner variant="default">
-            Your Client-Secret is encrypted before being stored. Shopmon uses it exclusively to
-            authenticate with your Shopware API.
-          </Banner>
-        </div>
-      </section>
+          <Alert>
+            <AlertDescription>
+              Your Client-Secret is encrypted before being stored. Shopmon uses it exclusively to
+              authenticate with your Shopware API.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       <!-- Organizations -->
-      <section id="organizations" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:building class="icon" />
-          Organizations
-        </h2>
-        <div class="docs-content">
+      <Card id="organizations" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:building class="mr-1 inline" />
+            Organizations
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Organizations are the top-level grouping entity. Every shop belongs to an organization,
             and organizations can have multiple members.
@@ -142,16 +139,18 @@
             <router-link :to="{ name: 'account.organizations.list' }">My Organisations</router-link>
             and click "New Organization". Give it a name to get started.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Projects -->
-      <section id="projects" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:folder class="icon" />
-          Projects
-        </h2>
-        <div class="docs-content">
+      <Card id="projects" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:folder class="mr-1 inline" />
+            Projects
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Projects sit within an organization and group related shops together — for example, a
             client project with staging and production environments.
@@ -170,16 +169,18 @@
               Shopware store packages through a fast CDN
             </li>
           </ul>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Dashboard -->
-      <section id="dashboard-overview" class="docs-section">
-        <h2 class="docs-title">
-          <icon-ri:dashboard-fill class="icon" />
-          Dashboard Overview
-        </h2>
-        <div class="docs-content">
+      <Card id="dashboard-overview" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-ri:dashboard-fill class="mr-1 inline" />
+            Dashboard Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             The <router-link :to="{ name: 'account.dashboard' }">Dashboard</router-link> gives you a
             quick overview of all your shops and organizations. Each shop card shows:
@@ -196,81 +197,87 @@
             The dashboard also shows recent changes across all your shops, so you can see what has
             been updated at a glance.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Health Checks -->
-      <section id="health-checks" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:circle-check class="icon" />
-          Health Checks
-        </h2>
-        <div class="docs-content">
+      <Card id="health-checks" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:circle-check class="mr-1 inline" />
+            Health Checks
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             After each scrape, Shopmon runs automated health checks and assigns a status (green,
             yellow, or red) to your shop. The overall shop status reflects the worst check result.
           </p>
 
           <h4>Built-in Checks</h4>
-          <dl class="docs-check-list">
-            <div class="docs-check-item">
-              <dt>Security</dt>
-              <dd>
+          <div class="flex flex-col gap-4 mb-4">
+            <div class="p-3 bg-muted rounded-md">
+              <dt class="font-semibold mb-1">Security</dt>
+              <dd class="text-muted-foreground">
                 Cross-references your Shopware version against known CVE advisories. Warns if the
                 SwagPlatformSecurity plugin is missing or outdated.
               </dd>
             </div>
 
-            <div class="docs-check-item">
-              <dt>Environment</dt>
-              <dd>
+            <div class="p-3 bg-muted rounded-md">
+              <dt class="font-semibold mb-1">Environment</dt>
+              <dd class="text-muted-foreground">
                 Verifies that your Shopware environment is set to <code>production</code> or
                 <code>staging</code> (not <code>dev</code>).
               </dd>
             </div>
 
-            <div class="docs-check-item">
-              <dt>Scheduled Tasks</dt>
-              <dd>
+            <div class="p-3 bg-muted rounded-md">
+              <dt class="font-semibold mb-1">Scheduled Tasks</dt>
+              <dd class="text-muted-foreground">
                 Flags any scheduled task that is overdue by more than its configured interval.
               </dd>
             </div>
 
-            <div class="docs-check-item">
-              <dt>Admin Worker</dt>
-              <dd>
+            <div class="p-3 bg-muted rounded-md">
+              <dt class="font-semibold mb-1">Admin Worker</dt>
+              <dd class="text-muted-foreground">
                 Warns if the Admin Worker is still enabled — it should be disabled in favour of a
                 proper message queue worker in production.
               </dd>
             </div>
 
-            <div class="docs-check-item">
-              <dt>Frosh Tools Integration</dt>
-              <dd>
+            <div class="p-3 bg-muted rounded-md">
+              <dt class="font-semibold mb-1">Frosh Tools Integration</dt>
+              <dd class="text-muted-foreground">
                 If
-                <a href="https://github.com/FriendsOfShopware/FroshTools" target="_blank"
+                <a href="https://github.com/FriendsOfShopware/FroshTools" target="_blank" class="underline underline-offset-2 decoration-primary"
                   >FroshTools</a
                 >
                 is installed, additional checks are displayed including PHP version, MySQL version,
                 opcache status, memory limits, queue storage type, and mail configuration.
               </dd>
             </div>
-          </dl>
+          </div>
 
-          <Banner variant="default">
-            You can suppress individual checks per shop using the ignore feature if they are known
-            false positives for your environment.
-          </Banner>
-        </div>
-      </section>
+          <Alert>
+            <AlertDescription>
+              You can suppress individual checks per shop using the ignore feature if they are known
+              false positives for your environment.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       <!-- Extensions -->
-      <section id="extensions" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:plug class="icon" />
-          Extensions
-        </h2>
-        <div class="docs-content">
+      <Card id="extensions" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:plug class="mr-1 inline" />
+            Extensions
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>Shopmon tracks all installed plugins and apps in your Shopware shop:</p>
           <ul>
             <li>View installed versions and available updates</li>
@@ -294,16 +301,18 @@
             to verify whether your installed extensions are compatible with the target version
             before upgrading.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Scheduled Tasks -->
-      <section id="scheduled-tasks" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:list-check class="icon" />
-          Scheduled Tasks
-        </h2>
-        <div class="docs-content">
+      <Card id="scheduled-tasks" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:list-check class="mr-1 inline" />
+            Scheduled Tasks
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Monitor all registered scheduled tasks in your Shopware shop. The overview shows each
             task's name, status, interval, and next/last execution time.
@@ -315,30 +324,34 @@
               the task status back to "scheduled" so it will be picked up again
             </li>
           </ul>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Queue -->
-      <section id="queue" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:bars-staggered class="icon" />
-          Queue Monitoring
-        </h2>
-        <div class="docs-content">
+      <Card id="queue" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:bars-staggered class="mr-1 inline" />
+            Queue Monitoring
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0">
           <p>
             View the message queue sizes of your Shopware shop. This helps you identify if messages
             are piling up and workers aren't keeping up.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Sitespeed -->
-      <section id="sitespeed" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:rocket class="icon" />
-          Performance Monitoring (Sitespeed)
-        </h2>
-        <div class="docs-content">
+      <Card id="sitespeed" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:rocket class="mr-1 inline" />
+            Performance Monitoring (Sitespeed)
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Shopmon can perform daily automated page speed checks using
             <a href="https://www.sitespeed.io" target="_blank">sitespeed.io</a> and display the
@@ -362,16 +375,18 @@
             <a href="#deployments">Deployments</a>, performance changes can be correlated with
             specific releases.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Deployments -->
-      <section id="deployments" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:code-branch class="icon" />
-          Deployments
-        </h2>
-        <div class="docs-content">
+      <Card id="deployments" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:code-branch class="mr-1 inline" />
+            Deployments
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Track deployment history for your shops. Deployments can be created automatically from
             your CI/CD pipeline using a project API key.
@@ -409,20 +424,24 @@
             <li>Full deployment log output</li>
           </ul>
 
-          <Banner variant="default">
-            Sitespeed measurements are automatically tagged with the latest deployment, allowing you
-            to correlate performance changes with specific releases.
-          </Banner>
-        </div>
-      </section>
+          <Alert>
+            <AlertDescription>
+              Sitespeed measurements are automatically tagged with the latest deployment, allowing you
+              to correlate performance changes with specific releases.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       <!-- Changelog -->
-      <section id="changelog" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:file-waveform class="icon" />
-          Changelog
-        </h2>
-        <div class="docs-content">
+      <Card id="changelog" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:file-waveform class="mr-1 inline" />
+            Changelog
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5">
           <p>
             Shopmon automatically detects and records changes to your shop environment on each
             scrape:
@@ -436,16 +455,18 @@
             The changelog provides a complete audit trail of what changed in your environment and
             when.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Notifications -->
-      <section id="notifications" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:bell class="icon" />
-          Notifications
-        </h2>
-        <div class="docs-content">
+      <Card id="notifications" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:bell class="mr-1 inline" />
+            Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0">
           <p>Shopmon notifies you when something changes in your shop environment:</p>
 
           <h4>In-App Notifications</h4>
@@ -460,16 +481,18 @@
             whenever the shop's status changes. Duplicate alerts are prevented — you won't be
             spammed for the same issue.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Shop Token -->
-      <section id="shop-token" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:key class="icon" />
-          Bypass Authentication
-        </h2>
-        <div class="docs-content">
+      <Card id="shop-token" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:key class="mr-1 inline" />
+            Bypass Authentication
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm">
           <p>
             If your Shopware shop is protected by HTTP authentication (e.g. Basic Auth on a staging
             environment), Shopmon won't be able to reach it by default.
@@ -483,16 +506,18 @@
             The token is displayed on the shop information page and during shop creation. You can
             copy it to your clipboard with the copy button.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Packages Mirror -->
-      <section id="packages-mirror" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:cube class="icon" />
-          Packages Mirror
-        </h2>
-        <div class="docs-content">
+      <Card id="packages-mirror" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:cube class="mr-1 inline" />
+            Packages Mirror
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ol]:mb-4 [&_ol]:pl-6 [&_ol]:list-decimal [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Shopmon can act as a proxy for Shopware store packages through a Global CDN, delivering
             packages with ~80ms response times compared to ~6s from
@@ -526,21 +551,25 @@
             </li>
           </ol>
 
-          <Banner variant="default">
-            Tokens are validated against <code>packages.shopware.com</code> before being saved.
-            Syncing happens automatically every hour, but you can also trigger a manual sync from
-            the project settings.
-          </Banner>
-        </div>
-      </section>
+          <Alert>
+            <AlertDescription>
+              Tokens are validated against <code class="bg-muted px-1.5 py-0.5 rounded text-sm">packages.shopware.com</code> before being saved.
+              Syncing happens automatically every hour, but you can also trigger a manual sync from
+              the project settings.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
 
       <!-- SSO -->
-      <section id="sso" class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:right-to-bracket class="icon" />
-          Single Sign-On (SSO)
-        </h2>
-        <div class="docs-content">
+      <Card id="sso" class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:right-to-bracket class="mr-1 inline" />
+            Single Sign-On (SSO)
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Organizations can configure OpenID Connect (OIDC) based Single Sign-On for their
             members.
@@ -562,16 +591,18 @@
           <p>
             SSO configuration requires the <strong>update</strong> permission on the organization.
           </p>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
       <!-- Scraping Info -->
-      <section class="docs-section">
-        <h2 class="docs-title">
-          <icon-fa6-solid:rotate class="icon" />
-          How Scraping Works
-        </h2>
-        <div class="docs-content">
+      <Card class="mb-8 scroll-mt-4">
+        <CardHeader>
+          <CardTitle>
+            <icon-fa6-solid:rotate class="mr-1 inline" />
+            How Scraping Works
+          </CardTitle>
+        </CardHeader>
+        <CardContent class="leading-7 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mt-6 [&_h4]:mb-3 [&_h4:first-child]:mt-0 [&_ul]:mb-4 [&_ul]:pl-6 [&_ul]:list-disc [&_li]:mb-1.5 [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary">
           <p>
             Shopmon automatically scrapes your shop once per hour. During each scrape, it collects:
           </p>
@@ -607,143 +638,29 @@
               status
             </li>
           </ul>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </div>
   </main-container>
 </template>
 
-<script setup lang="ts"></script>
-
-<style scoped>
-.docs {
-  max-width: 800px;
-}
-
-.docs-nav,
-.docs-section {
-  background-color: var(--panel-background);
-  padding: 1.25rem;
-  border-radius: 0.375rem;
-  box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  margin-bottom: 2rem;
-}
-
-.dark .docs-nav,
-.dark .docs-section {
-  box-shadow: none;
-}
-
-.docs-title {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  font-weight: 500;
-  padding-bottom: 0.25rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--panel-border-color);
-
-  .icon {
-    margin-right: 0.25rem;
-  }
-}
-
-.docs-toc {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  li a {
-    display: block;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.25rem;
-    font-size: 0.9375rem;
-    transition: background-color 0.15s;
-
-    &:hover {
-      background-color: var(--item-hover-background);
-    }
-  }
-}
-
-.docs-section {
-  scroll-margin-top: 1rem;
-}
-
-.docs-content {
-  line-height: 1.75;
-
-  p {
-    margin-bottom: 1rem;
-  }
-
-  p:last-child {
-    margin-bottom: 0;
-  }
-
-  h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-
-    &:first-child {
-      margin-top: 0;
-    }
-  }
-
-  ol,
-  ul {
-    margin-bottom: 1rem;
-    padding-left: 1.5rem;
-  }
-
-  ol {
-    list-style: decimal;
-  }
-
-  ul {
-    list-style: disc;
-  }
-
-  li {
-    margin-bottom: 0.375rem;
-  }
-
-  code {
-    background-color: var(--item-background);
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-  }
-
-  a {
-    text-decoration: underline;
-    text-decoration-color: var(--link-color);
-    text-underline-offset: 2px;
-  }
-}
-
-.docs-check-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.docs-check-item {
-  padding: 0.75rem;
-  background-color: var(--item-background);
-  border-radius: 0.375rem;
-
-  dt {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-
-  dd {
-    color: var(--text-color-muted);
-  }
-}
-</style>
+<script setup lang="ts">
+const tocItems = [
+  { href: "#getting-started", label: "Getting Started" },
+  { href: "#connecting-shop", label: "Connecting a Shop" },
+  { href: "#organizations", label: "Organizations" },
+  { href: "#projects", label: "Projects" },
+  { href: "#dashboard-overview", label: "Dashboard Overview" },
+  { href: "#health-checks", label: "Health Checks" },
+  { href: "#extensions", label: "Extensions" },
+  { href: "#scheduled-tasks", label: "Scheduled Tasks" },
+  { href: "#queue", label: "Queue Monitoring" },
+  { href: "#sitespeed", label: "Performance Monitoring" },
+  { href: "#deployments", label: "Deployments" },
+  { href: "#changelog", label: "Changelog" },
+  { href: "#notifications", label: "Notifications" },
+  { href: "#shop-token", label: "Bypass Authentication" },
+  { href: "#packages-mirror", label: "Packages Mirror" },
+  { href: "#sso", label: "Single Sign-On (SSO)" },
+];
+</script>

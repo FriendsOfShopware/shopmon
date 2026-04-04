@@ -1,63 +1,59 @@
 <template>
-  <modal :show="show" close-x-mark class="modal-confirm" @close="$emit('close')">
-    <template #icon>
-      <icon-fa6-solid:triangle-exclamation class="icon icon-error" aria-hidden="true" />
-    </template>
+  <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
+    <DialogContent class="max-w-lg">
+      <DialogHeader>
+        <div class="flex items-start gap-3">
+          <icon-fa6-solid:triangle-exclamation class="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
+          <DialogTitle>{{ title }}</DialogTitle>
+        </div>
+      </DialogHeader>
 
-    <template #title>
-      {{ title }}
-    </template>
-
-    <template #content>
       <div v-if="customMessage">
         {{ customMessage }}
       </div>
 
       <div v-else>
         <p v-html="$t('deleteModal.confirmText', { name: entityName })" />
-
         <p v-html="$t('deleteModal.consequence')" />
-
-        <p v-if="customConsequence" class="text-muted">
+        <p v-if="customConsequence" class="text-muted-foreground">
           {{ customConsequence }}
         </p>
       </div>
 
-      <!-- Password confirmation field -->
-      <div v-if="requirePassword" class="section-password">
-        <label for="deletePassword">{{ $t("deleteModal.currentPassword") }}</label>
-        <input
+      <div v-if="requirePassword" class="mt-4">
+        <label for="deletePassword" class="mb-1 block font-medium">{{ $t("deleteModal.currentPassword") }}</label>
+        <Input
           id="deletePassword"
           v-model="passwordValue"
           type="password"
-          class="field"
           autocomplete="off"
           @input="$emit('password-change', passwordValue)"
         />
       </div>
-    </template>
 
-    <template #footer>
-      <UiButton
-        type="button"
-        variant="destructive"
-        :disabled="isLoading || (requirePassword && !passwordValue)"
-        @click="$emit('confirm')"
-      >
-        <icon-fa6-solid:trash v-if="!isLoading" class="icon" />
-        <icon-line-md:loading-twotone-loop v-if="isLoading" class="icon" />
-        {{ confirmButtonText || $t("common.delete") }}
-      </UiButton>
-
-      <UiButton type="button" variant="ghost" @click="$emit('close')">
-        {{ $t("common.cancel") }}
-      </UiButton>
-    </template>
-  </modal>
+      <DialogFooter>
+        <Button variant="ghost" @click="$emit('close')">
+          {{ $t("common.cancel") }}
+        </Button>
+        <Button
+          variant="destructive"
+          :disabled="isLoading || (requirePassword && !passwordValue)"
+          @click="$emit('confirm')"
+        >
+          <icon-fa6-solid:trash v-if="!isLoading" class="mr-1 size-4" />
+          <icon-line-md:loading-twotone-loop v-if="isLoading" class="mr-1 size-4" />
+          {{ confirmButtonText || $t("common.delete") }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   show: boolean;
@@ -88,7 +84,6 @@ defineEmits<{
 
 const passwordValue = ref("");
 
-// Reset password when modal is closed
 watch(
   () => props.show,
   (newShow) => {
@@ -98,33 +93,3 @@ watch(
   },
 );
 </script>
-
-<style>
-.modal-confirm {
-  .modal-panel {
-    max-width: 32rem;
-  }
-}
-</style>
-
-<style scoped>
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.text-muted {
-  color: var(--text-color-muted);
-}
-
-.modal-footer-reversed {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: 0.5rem;
-}
-
-.section-password {
-  margin-top: 1rem;
-}
-</style>

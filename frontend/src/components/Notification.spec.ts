@@ -27,7 +27,8 @@ describe("Notification", () => {
 
   it("renders nothing when alert is null", () => {
     const wrapper = mount(Notification);
-    expect(wrapper.find(".notification").exists()).toBe(false);
+    // When alert is null, the v-if hides the inner notification div
+    expect(wrapper.find(".text-destructive").exists()).toBe(false);
   });
 
   it("renders error notification when alert type is error", async () => {
@@ -38,8 +39,8 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    expect(wrapper.find(".notification-error").exists()).toBe(true);
-    expect(wrapper.find(".notification-title").text()).toBe("Error Title");
+    expect(wrapper.find(".text-destructive").exists()).toBe(true);
+    expect(wrapper.find(".font-semibold").text()).toBe("Error Title");
   });
 
   it("renders success notification when alert type is success", async () => {
@@ -50,7 +51,7 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    expect(wrapper.find(".notification-success").exists()).toBe(true);
+    expect(wrapper.find(".text-success").exists()).toBe(true);
   });
 
   it("renders info notification when alert type is info", async () => {
@@ -61,7 +62,7 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    expect(wrapper.find(".notification-info").exists()).toBe(true);
+    expect(wrapper.find(".text-info").exists()).toBe(true);
   });
 
   it("renders warning notification when alert type is warning", async () => {
@@ -72,7 +73,7 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    expect(wrapper.find(".notification-warning").exists()).toBe(true);
+    expect(wrapper.find(".text-warning").exists()).toBe(true);
   });
 
   it("calls clear when close button is clicked", async () => {
@@ -92,7 +93,7 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    const closeButton = wrapper.find(".notification-close");
+    const closeButton = wrapper.find("button");
     await closeButton.trigger("click");
     expect(mockClear).toHaveBeenCalled();
   });
@@ -105,7 +106,7 @@ describe("Notification", () => {
     };
     const wrapper = mount(Notification);
     await nextTick();
-    expect(wrapper.find(".notification-title").text()).toBe("My Title");
+    expect(wrapper.find(".font-semibold").text()).toBe("My Title");
     expect(wrapper.text()).toContain("My detailed message");
   });
 });

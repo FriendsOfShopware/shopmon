@@ -1,44 +1,44 @@
 <template>
-  <modal :show="show" close-x-mark @close="$emit('close')">
-    <template #title>
-      {{ $t("extensionChangelog.title") }} -
-      <span class="extension-changelog-name">{{ extension?.name }}</span>
-    </template>
+  <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
+    <DialogContent class="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>
+          {{ $t("extensionChangelog.title") }} -
+          <span class="font-normal text-muted-foreground">{{ extension?.name }}</span>
+        </DialogTitle>
+      </DialogHeader>
 
-    <template #content>
-      <ul v-if="changelogEntries.length > 0" class="extension-changelog">
-        <li
-          v-for="changeLog in changelogEntries"
-          :key="changeLog.version"
-          class="extension-changelog-item"
-        >
-          <div class="extension-changelog-title">
+      <ul v-if="changelogEntries.length > 0" class="list-none space-y-6 p-0">
+        <li v-for="changeLog in changelogEntries" :key="changeLog.version">
+          <div class="mb-2 flex items-center gap-2 font-semibold">
             <span
               v-if="!changeLog.isCompatible"
-              :data-tooltip="$t('extensionChangelog.notCompatible')"
+              :title="$t('extensionChangelog.notCompatible')"
             >
-              <icon-fa6-solid:circle-info class="icon icon-warning" />
+              <icon-fa6-solid:circle-info class="size-4 text-warning" />
             </span>
 
             {{ changeLog.version }} -
-            <span class="extension-changelog-date">
+            <span class="font-normal text-muted-foreground">
               {{ formatDate(changeLog.creationDate) }}
             </span>
           </div>
 
           <!-- eslint-disable vue/no-v-html -->
-          <div class="extension-changelog-content" v-html="changeLog.text" />
+          <div class="prose prose-sm dark:prose-invert max-w-none" v-html="changeLog.text" />
           <!-- eslint-enable vue/no-v-html -->
         </li>
       </ul>
 
       <Banner v-else variant="error"> {{ $t("extensionChangelog.noData") }} </Banner>
-    </template>
-  </modal>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import Banner from "@/components/layout/Banner.vue";
 import { formatDate } from "@/helpers/formatter";
 import type { ExtensionWithChangelog } from "@/composables/useExtensionChangelogModal";
 
@@ -60,58 +60,3 @@ const changelogEntries = computed(() => {
   return [];
 });
 </script>
-
-<style scoped>
-.extension-changelog {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.extension-changelog-name {
-  font-weight: normal;
-  color: var(--text-color-muted);
-}
-
-.extension-changelog-item {
-  margin-bottom: 1.5rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.extension-changelog-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.extension-changelog-date {
-  font-weight: normal;
-  color: var(--text-color-muted);
-}
-
-.extension-changelog-content {
-  line-height: 1.6;
-
-  :deep(ul) {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
-  }
-
-  :deep(li) {
-    margin: 0.25rem 0;
-  }
-
-  :deep(p) {
-    margin: 0.5rem 0;
-  }
-
-  :deep(strong) {
-    font-weight: 600;
-  }
-}
-</style>

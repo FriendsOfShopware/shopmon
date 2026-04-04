@@ -1,25 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { h, defineComponent } from "vue";
 import AccountConfirm from "./AccountConfirm.vue";
-
-// Create a stub for Banner component
-const BannerStub = defineComponent({
-  name: "Banner",
-  props: ["variant"],
-  setup(props, { slots }) {
-    return () => h("div", { class: `banner banner-${props.variant}` }, slots.default?.());
-  },
-});
-
-// Create a stub for router-link
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: JSON.stringify(props.to) }, slots.default?.());
-  },
-});
 
 // Mock vue-router
 const mockRoute = {
@@ -30,6 +11,11 @@ const mockRoute = {
 
 vi.mock("vue-router", () => ({
   useRoute: () => mockRoute,
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 // Track mock calls
@@ -72,17 +58,11 @@ describe("AccountConfirm", () => {
     // Override the mock to return a pending promise
     vi.mocked(api.GET).mockImplementationOnce(() => new Promise(() => {}));
 
-    const wrapper = mount(AccountConfirm, {
-      global: {
-        stubs: {
-          Banner: BannerStub,
-          RouterLink: RouterLinkStub,
-        },
-      },
-    });
+    const wrapper = mount(AccountConfirm);
 
     expect(wrapper.text()).toContain("Confirming your Account Registration");
-    expect(wrapper.find(".banner-default").exists()).toBe(true);
+    // The loading state uses Alert (data-slot="alert") with an info icon
+    expect(wrapper.find('[data-slot="alert"]').exists()).toBe(true);
     expect(wrapper.text()).toContain("Loading...");
   });
 
@@ -96,15 +76,17 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          Banner: BannerStub,
-          RouterLink: RouterLinkStub,
+          RouterLink: { props: ["to"], template: '<a><slot /></a>' },
         },
       },
     });
 
     await flushPromises();
 
-    expect(wrapper.find(".banner-success").exists()).toBe(true);
+    // Success state uses Alert with green border class
+    const alerts = wrapper.findAll('[data-slot="alert"]');
+    const successAlert = alerts.find((a) => a.classes().some((c) => c.includes("green")));
+    expect(successAlert).toBeTruthy();
     expect(wrapper.text()).toContain("Your email address has been confirmed");
     expect(wrapper.find("a").exists()).toBe(true);
     expect(wrapper.find("a").text()).toBe("Login");
@@ -117,18 +99,13 @@ describe("AccountConfirm", () => {
       response: new Response(),
     } as any);
 
-    const wrapper = mount(AccountConfirm, {
-      global: {
-        stubs: {
-          Banner: BannerStub,
-          RouterLink: RouterLinkStub,
-        },
-      },
-    });
+    const wrapper = mount(AccountConfirm);
 
     await flushPromises();
 
-    expect(wrapper.find(".banner-error").exists()).toBe(true);
+    // Error state uses Alert with variant="destructive"
+    const alert = wrapper.find('[data-slot="alert"]');
+    expect(alert.exists()).toBe(true);
     expect(wrapper.text()).toContain("The given token has been expired");
     expect(mockCalls.error).toContain("Token expired");
   });
@@ -140,18 +117,12 @@ describe("AccountConfirm", () => {
       response: new Response(),
     } as any);
 
-    const wrapper = mount(AccountConfirm, {
-      global: {
-        stubs: {
-          Banner: BannerStub,
-          RouterLink: RouterLinkStub,
-        },
-      },
-    });
+    const wrapper = mount(AccountConfirm);
 
     await flushPromises();
 
-    expect(wrapper.find(".banner-error").exists()).toBe(true);
+    const alert = wrapper.find('[data-slot="alert"]');
+    expect(alert.exists()).toBe(true);
     expect(wrapper.text()).toContain("The given token has been expired");
     expect(mockCalls.error).toContain("Failed to verify email");
   });
@@ -163,14 +134,7 @@ describe("AccountConfirm", () => {
       response: new Response(),
     } as any);
 
-    mount(AccountConfirm, {
-      global: {
-        stubs: {
-          Banner: BannerStub,
-          RouterLink: RouterLinkStub,
-        },
-      },
-    });
+    mount(AccountConfirm);
 
     await flushPromises();
 

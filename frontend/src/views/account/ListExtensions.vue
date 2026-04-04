@@ -1,29 +1,34 @@
 <template>
-  <header-container :title="$t('nav.myExtensions')" />
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('nav.myExtensions') }}</h1>
+  </div>
 
-  <main-container v-if="extensions">
-    <Panel v-if="extensions.length === 0">
-      <element-empty
-        :title="$t('shopDetail.extensions')"
-        :button="$t('environment.addEnvironment')"
-        :route="{ name: 'account.environments.new' }"
-      >
-        {{ $t("common.getStartedElement") }}
-      </element-empty>
-    </Panel>
+  <div v-if="extensions" class="space-y-6">
+    <Card v-if="extensions.length === 0">
+      <CardContent>
+        <element-empty
+          :title="$t('shopDetail.extensions')"
+          :button="$t('environment.addEnvironment')"
+          :route="{ name: 'account.environments.new' }"
+        >
+          {{ $t("common.getStartedElement") }}
+        </element-empty>
+      </CardContent>
+    </Card>
 
     <template v-else>
-      <Panel>
-        <BaseInput v-model="term" :placeholder="$t('common.search')" />
-      </Panel>
+      <Card>
+        <CardContent>
+          <Input v-model="term" :placeholder="$t('common.search')" />
+        </CardContent>
+      </Card>
 
-      <Panel variant="table">
+      <Card class="p-0 overflow-hidden">
         <data-table
           :columns="[
             {
               key: 'label',
               name: $t('common.name'),
-              class: 'extension-label',
               sortable: true,
               searchable: true,
             },
@@ -42,8 +47,8 @@
               :is="row.storeLink ? 'a' : 'span'"
               v-bind="row.storeLink ? { href: row.storeLink, target: '_blank' } : {}"
             >
-              <div class="extension-name">{{ row.label }}</div>
-              <span class="extension-technical-name">{{ row.name }}</span>
+              <div class="font-bold whitespace-normal">{{ row.label }}</div>
+              <span class="font-normal opacity-60">{{ row.name }}</span>
             </component>
           </template>
 
@@ -51,7 +56,7 @@
             <div
               v-for="(env, rowIndex) in row.environments"
               :key="rowIndex"
-              class="environments-row"
+              class="whitespace-nowrap leading-tight [&:not(:last-child)]:mb-1"
             >
               <router-link
                 :to="{
@@ -72,18 +77,18 @@
             <div
               v-for="(env, rowIndex) in row.environments"
               :key="rowIndex"
-              class="environments-row"
+              class="whitespace-nowrap leading-tight [&:not(:last-child)]:mb-1"
             >
-              <span :data-tooltip="env.version.length > 6 ? env.version : ''">{{
+              <span :title="env.version.length > 6 ? env.version : ''">{{
                 env.version.replace(/(.{6})..+/, "$1&hellip;")
               }}</span>
               <span
                 v-if="row.latestVersion && env.version < row.latestVersion"
-                :data-tooltip="$t('shopDetail.updateAvailableClick')"
-                class="extension-update-available"
+                :title="$t('shopDetail.updateAvailableClick')"
+                class="cursor-pointer"
                 @click="openExtensionChangelog(row)"
               >
-                <icon-fa6-solid:rotate class="icon icon-warning icon-update" />
+                <icon-fa6-solid:rotate class="inline-block size-3 text-amber-500 align-[-0.1em] ml-1" />
               </span>
             </div>
           </template>
@@ -91,7 +96,7 @@
           <template #cell-latestVersion="{ row }">
             <span
               v-if="row.latestVersion"
-              :data-tooltip="row.latestVersion.length > 6 ? row.latestVersion : ''"
+              :title="row.latestVersion.length > 6 ? row.latestVersion : ''"
               >{{ row.latestVersion.replace(/(.{6})..+/, "$1&hellip;") }}</span
             >
           </template>
@@ -106,9 +111,9 @@
             </template>
           </template>
         </data-table>
-      </Panel>
+      </Card>
     </template>
-  </main-container>
+  </div>
 
   <!-- Extension Changelog Modal -->
   <extension-changelog
@@ -120,6 +125,8 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
@@ -154,43 +161,3 @@ function getExtensionState(extension: components["schemas"]["AccountExtension"])
   return "inactive";
 }
 </script>
-
-<style scoped>
-.extension-label {
-  .extension-name {
-    font-weight: bold;
-    white-space: normal;
-  }
-
-  .extension-technical-name {
-    font-weight: normal;
-    opacity: 0.6;
-  }
-}
-
-.extension-update-available {
-  cursor: pointer;
-}
-
-.shops-row {
-  white-space: nowrap;
-  line-height: 1.2rem;
-
-  &:not(:last-child) {
-    margin-bottom: 0.35rem;
-  }
-
-  .icon-update {
-    vertical-align: -0.1em;
-    margin-left: 0.3rem;
-  }
-}
-</style>
-
-<style>
-.shops-row {
-  .icon-status {
-    vertical-align: -0.2em;
-  }
-}
-</style>

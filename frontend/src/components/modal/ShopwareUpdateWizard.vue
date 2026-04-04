@@ -1,79 +1,81 @@
 <template>
-  <modal class="update-wizard" :show="show" close-x-mark @close="$emit('close')">
-    <template #title>
-      <icon-fa6-solid:rotate />
-      {{ $t("updateWizard.title") }}
-    </template>
+  <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
+    <DialogContent class="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle class="flex items-center gap-2">
+          <icon-fa6-solid:rotate />
+          {{ $t("updateWizard.title") }}
+        </DialogTitle>
+      </DialogHeader>
 
-    <template #content>
-      <select
-        class="field"
-        @change="
-          (event: Event) => $emit('versionSelected', (event.target as HTMLSelectElement).value)
-        "
-      >
-        <option disabled selected>{{ $t("updateWizard.selectVersion") }}</option>
+      <div>
+        <Select
+          @update:model-value="(v: string) => $emit('versionSelected', v)"
+        >
+          <SelectTrigger class="mb-3 w-full">
+            <SelectValue :placeholder="$t('updateWizard.selectVersion')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="version in shopwareVersions" :key="version" :value="version">
+              {{ version }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-        <option v-for="version in shopwareVersions" :key="version">
-          {{ version }}
-        </option>
-      </select>
+        <template v-if="loading">
+          <div class="py-4 text-center">
+            {{ $t("common.loading") }}
+            <icon-fa6-solid:rotate class="ml-1 inline animate-spin" />
+          </div>
+        </template>
 
-      <template v-if="loading">
-        <div class="update-wizard-loader">
-          {{ $t("common.loading") }}
-          <icon-fa6-solid:rotate class="animate-spin" />
+        <div v-if="extensions" :class="{ 'opacity-20': loading }">
+          <h2 class="mb-2 text-lg font-medium">
+            {{ $t("updateWizard.extensionCompatibility") }}
+          </h2>
+
+          <ul class="list-none p-0">
+            <li
+              v-for="extension in extensions"
+              :key="extension.name"
+              class="flex gap-2 p-2 odd:bg-accent/50 hover:bg-accent"
+            >
+              <div class="mt-0.5 shrink-0">
+                <icon-fa6-regular:circle v-if="!extension.active" class="size-4 text-muted-foreground" />
+                <icon-fa6-solid:circle-info v-else-if="!extension.compatibility" class="size-4 text-warning" />
+                <icon-fa6-solid:circle-xmark v-else-if="extension.compatibility.type == 'red'" class="size-4 text-destructive" />
+                <icon-fa6-solid:rotate v-else-if="extension.compatibility.label === 'Available now'" class="size-4 text-info" />
+                <icon-fa6-solid:circle-check v-else class="size-4 text-success" />
+              </div>
+
+              <div>
+                <component
+                  :is="extension.storeLink ? 'a' : 'span'"
+                  v-bind="extension.storeLink ? { href: extension.storeLink, target: '_blank' } : {}"
+                >
+                  <strong>{{ extension.label }}</strong>
+                </component>
+                <span class="opacity-60"> ({{ extension.name }})</span>
+
+                <div v-if="!extension.compatibility || !extension.storeLink" class="text-muted-foreground">
+                  {{ $t("updateWizard.notInStore") }}
+                </div>
+                <div v-else>
+                  {{ extension.compatibility.label }}
+                </div>
+              </div>
+            </li>
+          </ul>
         </div>
-      </template>
-
-      <div v-if="extensions" :class="{ 'update-wizard-refresh': loading }">
-        <h2 class="update-wizard-plugins-heading">
-          {{ $t("updateWizard.extensionCompatibility") }}
-        </h2>
-
-        <ul>
-          <li v-for="extension in extensions" :key="extension.name" class="update-wizard-plugin">
-            <div class="update-wizard-plugin-icon">
-              <icon-fa6-regular:circle v-if="!extension.active" class="icon icon-muted" />
-              <icon-fa6-solid:circle-info
-                v-else-if="!extension.compatibility"
-                class="icon icon-warning"
-              />
-              <icon-fa6-solid:circle-xmark
-                v-else-if="extension.compatibility.type == 'red'"
-                class="icon icon-error"
-              />
-              <icon-fa6-solid:rotate
-                v-else-if="extension.compatibility.label === 'Available now'"
-                class="icon icon-info"
-              />
-              <icon-fa6-solid:circle-check v-else class="icon icon-success" />
-            </div>
-
-            <div>
-              <component
-                :is="extension.storeLink ? 'a' : 'span'"
-                v-bind="extension.storeLink ? { href: extension.storeLink, target: '_blank' } : {}"
-              >
-                <strong>{{ extension.label }}</strong>
-              </component>
-              <span class="update-wizard-plugin-technical-name"> ({{ extension.name }})</span>
-
-              <div v-if="!extension.compatibility || !extension.storeLink">
-                {{ $t("updateWizard.notInStore") }}
-              </div>
-              <div v-else>
-                {{ extension.compatibility.label }}
-              </div>
-            </div>
-          </li>
-        </ul>
       </div>
-    </template>
-  </modal>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 interface ExtensionCompatibility {
   type: string;
   label: string;
@@ -100,47 +102,3 @@ defineEmits<{
   versionSelected: [version: string];
 }>();
 </script>
-
-<style scoped>
-.update-wizard {
-  .field {
-    margin-bottom: 0.75rem;
-  }
-}
-
-.update-wizard-loader {
-  text-align: center;
-}
-
-.update-wizard-refresh {
-  opacity: 0.2;
-}
-
-.update-wizard-plugins-heading {
-  font-size: 1.125rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.update-wizard-plugin {
-  background-color: var(--item-background);
-  padding: 0.5rem;
-  display: flex;
-
-  &:nth-child(odd) {
-    background-color: var(--item-odd-background);
-  }
-
-  &:hover {
-    background-color: var(--item-hover-background);
-  }
-}
-
-.update-wizard-plugin-icon {
-  margin-right: 0.5rem;
-}
-
-.update-wizard-plugin-technical-name {
-  opacity: 0.6;
-}
-</style>

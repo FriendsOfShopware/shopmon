@@ -1,105 +1,134 @@
 <template>
-  <HeaderContainer :title="$t('admin.userManagement')" />
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.userManagement') }}</h1>
+  </div>
 
-  <Panel>
-    <Banner v-if="error" variant="error">
-      {{ error }}
-    </Banner>
+  <Card>
+    <CardContent>
+      <Alert v-if="error" variant="destructive">
+        <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
 
-    <div class="users-filter">
-      <div class="search-container">
-        <BaseInput
-          v-model="searchQuery"
-          :placeholder="$t('admin.searchUsers')"
-          @input="debouncedSearch"
-        />
-      </div>
-
-      <div class="filter-container">
-        <BaseSelect v-model="roleFilter" @change="loadUsers">
-          <option value="">{{ $t("admin.allRoles") }}</option>
-          <option value="admin">{{ $t("admin.roleAdmin") }}</option>
-          <option value="user">{{ $t("admin.roleUser") }}</option>
-        </BaseSelect>
-      </div>
-    </div>
-
-    <DataTable v-if="!loading && users.length > 0" :columns="tableColumns" :data="users">
-      <template #cell-role="{ row }">
-        <span class="badge" :class="`badge-${row.role || 'user'}`">
-          {{ row.role || "user" }}
-        </span>
-      </template>
-
-      <template #cell-status="{ row }">
-        <span v-if="row.banned" class="badge badge-danger"> {{ $t("admin.banned") }} </span>
-
-        <span v-else-if="!row.emailVerified" class="badge badge-warning">
-          {{ $t("admin.unverified") }}
-        </span>
-
-        <span v-else class="badge badge-success"> {{ $t("admin.active") }} </span>
-      </template>
-
-      <template #cell-createdAt="{ row }">
-        {{ formatUserDate(row.createdAt) }}
-      </template>
-
-      <template #cell-actions="{ row }">
-        <div class="actions-group">
-          <UiButton
-            v-if="row.id != sessionData?.user?.id"
-            size="sm"
-            variant="primary"
-            @click="impersonateUser(row.id)"
-          >
-            <icon-fa6-solid:user-secret class="icon" />
-            {{ $t("admin.impersonate") }}
-          </UiButton>
-
-          <UiButton
-            v-if="!row.banned && row.id != sessionData?.user?.id"
-            size="sm"
-            variant="destructive"
-            @click="banUser(row.id)"
-          >
-            {{ $t("admin.ban") }}
-          </UiButton>
-
-          <UiButton v-else-if="row.banned" size="sm" @click="unbanUser(row.id)">
-            {{ $t("admin.unban") }}
-          </UiButton>
+      <div class="flex flex-wrap items-center gap-4 mb-8">
+        <div class="flex-1 min-w-[250px]">
+          <Input
+            v-model="searchQuery"
+            :placeholder="$t('admin.searchUsers')"
+            @input="debouncedSearch"
+          />
         </div>
-      </template>
-    </DataTable>
 
-    <div v-if="loading" class="loading-container">
-      <icon-line-md:loading-twotone-loop class="loading-icon" />
-      {{ $t("admin.loadingUsers") }}
-    </div>
+        <div>
+          <select
+            v-model="roleFilter"
+            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+            @change="loadUsers"
+          >
+            <option value="">{{ $t("admin.allRoles") }}</option>
+            <option value="admin">{{ $t("admin.roleAdmin") }}</option>
+            <option value="user">{{ $t("admin.roleUser") }}</option>
+          </select>
+        </div>
+      </div>
 
-    <div v-if="totalPages > 1" class="pagination">
-      <UiButton size="sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        {{ $t("common.previous") }}
-      </UiButton>
-      <span class="page-info">{{
-        $t("common.pageOf", { current: currentPage, total: totalPages })
-      }}</span>
-      <UiButton
-        size="sm"
-        :disabled="currentPage === totalPages"
-        @click="changePage(currentPage + 1)"
-      >
-        {{ $t("common.next") }}
-      </UiButton>
-    </div>
-  </Panel>
+      <DataTable v-if="!loading && users.length > 0" :columns="tableColumns" :data="users">
+        <template #cell-role="{ row }">
+          <Badge
+            :class="{
+              'bg-violet-600 text-white border-transparent': row.role === 'admin',
+              'bg-gray-500 text-white border-transparent': row.role !== 'admin',
+            }"
+          >
+            {{ row.role || "user" }}
+          </Badge>
+        </template>
+
+        <template #cell-status="{ row }">
+          <Badge
+            v-if="row.banned"
+            class="bg-red-500 text-white border-transparent"
+          >
+            {{ $t("admin.banned") }}
+          </Badge>
+
+          <Badge
+            v-else-if="!row.emailVerified"
+            class="bg-amber-500 text-white border-transparent"
+          >
+            {{ $t("admin.unverified") }}
+          </Badge>
+
+          <Badge
+            v-else
+            class="bg-emerald-500 text-white border-transparent"
+          >
+            {{ $t("admin.active") }}
+          </Badge>
+        </template>
+
+        <template #cell-createdAt="{ row }">
+          {{ formatUserDate(row.createdAt) }}
+        </template>
+
+        <template #cell-actions="{ row }">
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              v-if="row.id != sessionData?.user?.id"
+              size="sm"
+              @click="impersonateUser(row.id)"
+            >
+              <icon-fa6-solid:user-secret class="size-3.5" />
+              {{ $t("admin.impersonate") }}
+            </Button>
+
+            <Button
+              v-if="!row.banned && row.id != sessionData?.user?.id"
+              size="sm"
+              variant="destructive"
+              @click="banUser(row.id)"
+            >
+              {{ $t("admin.ban") }}
+            </Button>
+
+            <Button v-else-if="row.banned" size="sm" variant="outline" @click="unbanUser(row.id)">
+              {{ $t("admin.unban") }}
+            </Button>
+          </div>
+        </template>
+      </DataTable>
+
+      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+        <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
+        {{ $t("admin.loadingUsers") }}
+      </div>
+
+      <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
+        <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+          {{ $t("common.previous") }}
+        </Button>
+        <span class="text-muted-foreground text-sm">{{
+          $t("common.pageOf", { current: currentPage, total: totalPages })
+        }}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+        >
+          {{ $t("common.next") }}
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import Banner from "@/components/layout/Banner.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import DataTable from "@/components/layout/DataTable.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
@@ -238,68 +267,3 @@ onMounted(() => {
   loadUsers();
 });
 </script>
-
-<style scoped>
-.users-filter {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-}
-
-.search-container {
-  flex: 1;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 400px;
-}
-
-.filter-container select {
-  min-width: 150px;
-}
-
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-color-muted);
-  gap: 0.5rem;
-}
-
-.loading-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.actions-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.badge-admin {
-  background-color: #7c3aed;
-  color: white;
-}
-
-.badge-user {
-  background-color: #6b7280;
-  color: white;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.page-info {
-  color: var(--text-color-muted);
-}
-</style>

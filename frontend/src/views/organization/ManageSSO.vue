@@ -1,88 +1,98 @@
 <template>
-  <header-container :title="$t('sso.title')">
-    <UiButton
-      :to="{
-        name: 'account.organizations.detail',
-        params: { organizationId: route.params.organizationId },
-      }"
-      type="button"
-    >
-      <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
-      {{ $t("sso.backToOrg") }}
-    </UiButton>
-  </header-container>
-
-  <main-container>
-    <Panel :title="$t('sso.providers')">
-      <template #action>
-        <UiButton
-          v-if="canManageOrganization"
-          type="button"
-          variant="primary"
-          @click="openAddProviderModal"
+  <header class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t('sso.title') }}</h1>
+    </div>
+    <div class="flex gap-2 items-start">
+      <Button variant="outline" as-child>
+        <RouterLink
+          :to="{
+            name: 'account.organizations.detail',
+            params: { organizationId: route.params.organizationId },
+          }"
         >
-          <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-          {{ $t("sso.addProvider") }}
-        </UiButton>
-      </template>
+          <icon-fa6-solid:arrow-left class="size-4" aria-hidden="true" />
+          {{ $t("sso.backToOrg") }}
+        </RouterLink>
+      </Button>
+    </div>
+  </header>
 
-      <Banner variant="default">
-        <p>
-          <strong>{{ $t("sso.infoTitle") }}</strong>
-        </p>
-        <p>
-          {{ $t("sso.infoDesc") }}
-        </p>
-      </Banner>
+  <div class="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t('sso.providers') }}</CardTitle>
+        <CardAction>
+          <Button
+            v-if="canManageOrganization"
+            type="button"
+            @click="openAddProviderModal"
+          >
+            <icon-fa6-solid:plus class="size-4" aria-hidden="true" />
+            {{ $t("sso.addProvider") }}
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <Alert class="mb-4">
+          <AlertTitle>{{ $t("sso.infoTitle") }}</AlertTitle>
+          <AlertDescription>
+            {{ $t("sso.infoDesc") }}
+          </AlertDescription>
+        </Alert>
 
-      <div v-if="isLoading" class="sso-loading">
-        <icon-line-md:loading-twotone-loop class="icon" />
-        {{ $t("sso.loadingProviders") }}
-      </div>
+        <div v-if="isLoading" class="py-12 text-center text-muted-foreground">
+          <icon-line-md:loading-twotone-loop class="size-6 mx-auto mb-2" />
+          {{ $t("sso.loadingProviders") }}
+        </div>
 
-      <div v-else-if="ssoProviders.length === 0" class="sso-empty">
-        <icon-fa6-solid:key class="icon icon-large" aria-hidden="true" />
-        <p>{{ $t("sso.noProviders") }}</p>
-        <p class="text-muted">
-          {{ $t("sso.noProvidersHint") }}
-        </p>
-      </div>
+        <div v-else-if="ssoProviders.length === 0" class="py-16 text-center">
+          <icon-fa6-solid:key class="size-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
+          <p>{{ $t("sso.noProviders") }}</p>
+          <p class="mt-2 text-muted-foreground text-sm">
+            {{ $t("sso.noProvidersHint") }}
+          </p>
+        </div>
 
-      <div v-else class="sso-providers">
-        <div v-for="provider in ssoProviders" :key="provider.id" class="sso-provider">
-          <div class="sso-provider-info">
-            <h4>{{ provider.domain }}</h4>
+        <div v-else class="space-y-4 pt-4">
+          <div
+            v-for="provider in ssoProviders"
+            :key="provider.id"
+            class="flex justify-between items-center p-4 border rounded-lg"
+          >
+            <div>
+              <h4 class="text-lg font-medium mb-1">{{ provider.domain }}</h4>
+              <p class="text-sm text-muted-foreground mb-2">{{ provider.issuer }}</p>
+              <div class="flex gap-2 mt-2">
+                <Badge>{{ provider.oidcConfig ? "OIDC" : "SAML" }}</Badge>
+              </div>
+            </div>
 
-            <p class="text-muted">{{ provider.issuer }}</p>
+            <div class="flex gap-2">
+              <Button
+                v-if="canManageOrganization"
+                type="button"
+                variant="outline"
+                @click="openEditProviderModal(provider)"
+              >
+                <icon-fa6-solid:pencil class="size-4" aria-hidden="true" />
+                {{ $t("common.edit") }}
+              </Button>
 
-            <div class="sso-provider-type">
-              <span class="badge badge-primary">{{ provider.oidcConfig ? "OIDC" : "SAML" }}</span>
+              <Button
+                v-if="canManageOrganization"
+                type="button"
+                variant="destructive"
+                @click="confirmDeleteProvider(provider)"
+              >
+                <icon-fa6-solid:trash class="size-4" aria-hidden="true" />
+                {{ $t("common.delete") }}
+              </Button>
             </div>
           </div>
-
-          <div class="sso-provider-actions">
-            <UiButton
-              v-if="canManageOrganization"
-              type="button"
-              @click="openEditProviderModal(provider)"
-            >
-              <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-              {{ $t("common.edit") }}
-            </UiButton>
-
-            <UiButton
-              v-if="canManageOrganization"
-              type="button"
-              variant="destructive"
-              @click="confirmDeleteProvider(provider)"
-            >
-              <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-              {{ $t("common.delete") }}
-            </UiButton>
-          </div>
         </div>
-      </div>
-    </Panel>
+      </CardContent>
+    </Card>
 
     <!-- Add Provider Modal -->
     <modal :show="showAddProviderModal" close-x-mark @close="closeProviderModal">
@@ -91,138 +101,157 @@
       </template>
 
       <template #content>
-        <vee-form
-          id="providerForm"
-          v-slot="{ errors }"
-          :validation-schema="providerSchema"
-          :initial-values="currentFormValues"
-          class="sso-form"
-          @submit="onSubmitProvider"
-        >
-          <div class="form-group">
-            <InputField
-              name="domain"
-              :label="$t('organization.domain')"
-              placeholder="example.com"
-              :error="errors.domain"
-            />
-            <p class="field-help">
-              {{ $t("sso.domainHelp") }}
-            </p>
+        <form id="providerForm" class="space-y-6" @submit="onSubmitProvider">
+          <div class="space-y-4">
+            <FormField v-slot="{ componentField }" name="domain">
+              <FormItem>
+                <FormLabel>{{ $t('organization.domain') }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" placeholder="example.com" />
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">{{ $t("sso.domainHelp") }}</p>
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="issuer">
+              <FormItem>
+                <FormLabel>{{ $t('sso.issuerUrl') }}</FormLabel>
+                <FormControl>
+                  <div class="flex gap-2">
+                    <Input
+                      v-bind="componentField"
+                      type="url"
+                      placeholder="https://auth.example.com"
+                      class="flex-1"
+                      @update:model-value="issuerUrl = $event as string"
+                    />
+                    <Button
+                      v-if="!isEditMode"
+                      type="button"
+                      variant="outline"
+                      :disabled="isDiscovering || !issuerUrl"
+                      @click="discoverOpenIdConfig"
+                    >
+                      <icon-fa6-solid:magnifying-glass
+                        v-if="!isDiscovering"
+                        class="size-4"
+                        aria-hidden="true"
+                      />
+                      <icon-line-md:loading-twotone-loop v-else class="size-4" />
+                      {{ $t("sso.discover") }}
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">
+                  {{ isEditMode ? $t("sso.issuerHelp") : $t("sso.issuerDiscoverHelp") }}
+                </p>
+              </FormItem>
+            </FormField>
           </div>
 
-          <div class="form-group">
-            <InputField
-              name="issuer"
-              :label="$t('sso.issuerUrl')"
-              type="url"
-              placeholder="https://auth.example.com"
-              :error="errors.issuer"
-              @update:model-value="issuerUrl = $event"
-            >
-              <template v-if="!isEditMode" #append>
-                <UiButton
-                  type="button"
-                  :disabled="isDiscovering || !issuerUrl"
-                  @click="discoverOpenIdConfig"
-                >
-                  <icon-fa6-solid:magnifying-glass
-                    v-if="!isDiscovering"
-                    class="icon"
-                    aria-hidden="true"
-                  />
-                  <icon-line-md:loading-twotone-loop v-else class="icon" />
-                  {{ $t("sso.discover") }}
-                </UiButton>
-              </template>
-            </InputField>
-            <p class="field-help">
-              {{ isEditMode ? $t("sso.issuerHelp") : $t("sso.issuerDiscoverHelp") }}
-            </p>
-          </div>
+          <div class="pt-6 border-t space-y-4">
+            <h4 class="text-base font-medium">{{ $t("sso.oidcConfig") }}</h4>
 
-          <div class="oidc-fields">
-            <h4>{{ $t("sso.oidcConfig") }}</h4>
-
-            <div class="form-group">
-              <BaseInput
-                name="callbackUrl"
-                :label="$t('sso.callbackUrl')"
+            <div>
+              <label class="text-sm font-medium">{{ $t('sso.callbackUrl') }}</label>
+              <Input
                 :model-value="callbackUrl"
                 readonly
+                class="mt-2"
               />
-              <p class="field-help">
-                {{ $t("sso.callbackHelp") }}
-              </p>
+              <p class="text-xs text-muted-foreground mt-1">{{ $t("sso.callbackHelp") }}</p>
             </div>
 
-            <div class="form-group">
-              <InputField name="clientId" :label="$t('sso.clientId')" :error="errors.clientId" />
-            </div>
+            <FormField v-slot="{ componentField }" name="clientId">
+              <FormItem>
+                <FormLabel>{{ $t('sso.clientId') }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
 
-            <div class="form-group">
-              <InputField
-                name="clientSecret"
-                :label="$t('sso.clientSecret')"
-                type="password"
-                :placeholder="isEditMode ? t('sso.clientSecretKeep') : ''"
-                :error="errors.clientSecret"
-              />
-              <p v-if="isEditMode" class="field-help">
-                {{ $t("sso.clientSecretKeep") }}
-              </p>
-            </div>
+            <FormField v-slot="{ componentField }" name="clientSecret">
+              <FormItem>
+                <FormLabel>{{ $t('sso.clientSecret') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="password"
+                    :placeholder="isEditMode ? t('sso.clientSecretKeep') : ''"
+                  />
+                </FormControl>
+                <FormMessage />
+                <p v-if="isEditMode" class="text-xs text-muted-foreground">
+                  {{ $t("sso.clientSecretKeep") }}
+                </p>
+              </FormItem>
+            </FormField>
 
-            <div class="form-group">
-              <InputField
-                name="authorizationEndpoint"
-                :label="$t('sso.authEndpoint')"
-                type="url"
-                placeholder="https://auth.example.com/oauth2/authorize"
-                :error="errors.authorizationEndpoint"
-              />
-              <p class="field-help">{{ $t("sso.authEndpointHelp") }}</p>
-            </div>
+            <FormField v-slot="{ componentField }" name="authorizationEndpoint">
+              <FormItem>
+                <FormLabel>{{ $t('sso.authEndpoint') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://auth.example.com/oauth2/authorize"
+                  />
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">{{ $t("sso.authEndpointHelp") }}</p>
+              </FormItem>
+            </FormField>
 
-            <div class="form-group">
-              <InputField
-                name="tokenEndpoint"
-                :label="$t('sso.tokenEndpoint')"
-                type="url"
-                placeholder="https://auth.example.com/oauth2/token"
-                :error="errors.tokenEndpoint"
-              />
-              <p class="field-help">{{ $t("sso.tokenEndpointHelp") }}</p>
-            </div>
+            <FormField v-slot="{ componentField }" name="tokenEndpoint">
+              <FormItem>
+                <FormLabel>{{ $t('sso.tokenEndpoint') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://auth.example.com/oauth2/token"
+                  />
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">{{ $t("sso.tokenEndpointHelp") }}</p>
+              </FormItem>
+            </FormField>
 
-            <div class="form-group">
-              <InputField
-                name="jwksEndpoint"
-                :label="$t('sso.jwksEndpoint')"
-                type="url"
-                placeholder="https://auth.example.com/.well-known/jwks.json"
-                :error="errors.jwksEndpoint"
-              />
-              <p class="field-help">{{ $t("sso.jwksEndpointHelp") }}</p>
-            </div>
+            <FormField v-slot="{ componentField }" name="jwksEndpoint">
+              <FormItem>
+                <FormLabel>{{ $t('sso.jwksEndpoint') }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://auth.example.com/.well-known/jwks.json"
+                  />
+                </FormControl>
+                <FormMessage />
+                <p class="text-xs text-muted-foreground">{{ $t("sso.jwksEndpointHelp") }}</p>
+              </FormItem>
+            </FormField>
           </div>
-        </vee-form>
+        </form>
       </template>
 
       <template #footer>
-        <UiButton type="button" @click="closeProviderModal">
+        <Button variant="outline" type="button" @click="closeProviderModal">
           {{ $t("common.cancel") }}
-        </UiButton>
-        <UiButton
+        </Button>
+        <Button
           type="submit"
-          variant="primary"
           form="providerForm"
           :disabled="isSubmitting"
         >
-          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="icon" />
+          <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="size-4" />
           {{ isEditMode ? $t("sso.updateProvider") : $t("sso.addProvider") }}
-        </UiButton>
+        </Button>
       </template>
     </modal>
 
@@ -238,7 +267,7 @@
       @close="showDeleteModal = false"
       @confirm="deleteProvider"
     />
-  </main-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -247,11 +276,18 @@ import { usePermissions } from "@/composables/usePermissions";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { Field, Form as VeeForm } from "vee-validate";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
 import { useI18n } from "vue-i18n";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -301,38 +337,44 @@ const canManageOrganization = usePermissions(
   })),
 );
 
-const providerSchema = Yup.object().shape({
-  domain: Yup.string()
-    .required(t("validation.domainRequired"))
-    .matches(
-      /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/,
-      t("validation.domainInvalid"),
+const providerValidationSchema = toTypedSchema(
+  z.object({
+    domain: z
+      .string()
+      .min(1, t("validation.domainRequired"))
+      .regex(
+        /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/,
+        t("validation.domainInvalid"),
+      ),
+    issuer: z.string().url(t("validation.urlRequired")).min(1, t("validation.issuerUrlRequired")),
+    clientId: z.string().min(1, t("validation.clientIdRequired")),
+    clientSecret: z.string().optional().refine(
+      (value) => {
+        if (!isEditMode.value && !value) {
+          return false;
+        }
+        return true;
+      },
+      { message: t("validation.clientSecretRequired") },
     ),
-  issuer: Yup.string().url(t("validation.urlRequired")).required(t("validation.issuerUrlRequired")),
-  clientId: Yup.string().required(t("validation.clientIdRequired")),
-  clientSecret: Yup.string().test(
-    "required-when-adding",
-    t("validation.clientSecretRequired"),
-    (value) => {
-      if (!isEditMode.value && !value) {
-        return false;
-      }
-      return true;
-    },
-  ),
-  authorizationEndpoint: Yup.string()
-    .url(t("validation.urlRequired"))
-    .required(t("validation.authEndpointRequired")),
-  tokenEndpoint: Yup.string()
-    .url(t("validation.urlRequired"))
-    .required(t("validation.tokenEndpointRequired")),
-  jwksEndpoint: Yup.string()
-    .url(t("validation.urlRequired"))
-    .required(t("validation.jwksEndpointRequired")),
-});
+    authorizationEndpoint: z
+      .string()
+      .url(t("validation.urlRequired"))
+      .min(1, t("validation.authEndpointRequired")),
+    tokenEndpoint: z
+      .string()
+      .url(t("validation.urlRequired"))
+      .min(1, t("validation.tokenEndpointRequired")),
+    jwksEndpoint: z
+      .string()
+      .url(t("validation.urlRequired"))
+      .min(1, t("validation.jwksEndpointRequired")),
+  }),
+);
 
-const providerFormValues = computed(() => {
-  return {
+const { handleSubmit: handleProviderSubmit, setValues: setProviderValues, resetForm: resetProviderForm } = useForm({
+  validationSchema: providerValidationSchema,
+  initialValues: {
     domain: "",
     issuer: "",
     clientId: "",
@@ -340,24 +382,7 @@ const providerFormValues = computed(() => {
     authorizationEndpoint: "",
     tokenEndpoint: "",
     jwksEndpoint: "",
-  };
-});
-
-const currentFormValues = computed(() => {
-  if (isEditMode.value && editingProvider.value) {
-    const oidcConfig = editingProvider.value.oidcConfig ?? {};
-
-    return {
-      domain: editingProvider.value.domain,
-      issuer: editingProvider.value.issuer,
-      clientId: oidcConfig.clientId ?? "",
-      clientSecret: "", // Always empty in edit mode since we don't expose the secret
-      authorizationEndpoint: oidcConfig.authorizationEndpoint ?? "",
-      tokenEndpoint: oidcConfig.tokenEndpoint ?? "",
-      jwksEndpoint: oidcConfig.jwksEndpoint ?? "",
-    };
-  }
-  return providerFormValues.value;
+  },
 });
 
 const callbackUrl = computed(() => {
@@ -408,6 +433,17 @@ function openAddProviderModal() {
   currentProviderId.value = crypto.randomUUID();
   isEditMode.value = false;
   editingProvider.value = null;
+  resetProviderForm({
+    values: {
+      domain: "",
+      issuer: "",
+      clientId: "",
+      clientSecret: "",
+      authorizationEndpoint: "",
+      tokenEndpoint: "",
+      jwksEndpoint: "",
+    },
+  });
   showAddProviderModal.value = true;
 }
 
@@ -415,6 +451,16 @@ function openEditProviderModal(provider: SSOProvider) {
   editingProvider.value = provider;
   isEditMode.value = true;
   issuerUrl.value = provider.issuer;
+  const oidcConfig = provider.oidcConfig ?? {};
+  setProviderValues({
+    domain: provider.domain,
+    issuer: provider.issuer,
+    clientId: oidcConfig.clientId ?? "",
+    clientSecret: "",
+    authorizationEndpoint: oidcConfig.authorizationEndpoint ?? "",
+    tokenEndpoint: oidcConfig.tokenEndpoint ?? "",
+    jwksEndpoint: oidcConfig.jwksEndpoint ?? "",
+  });
   showAddProviderModal.value = true;
 }
 
@@ -444,29 +490,12 @@ async function discoverOpenIdConfig() {
       return;
     }
 
-    // Update form fields with discovered values
-    const form = document.getElementById("providerForm") as HTMLFormElement;
-    if (form) {
-      // Get form elements and update their values
-      const issuerField = form.querySelector('[name="issuer"]') as HTMLInputElement;
-      const authEndpointField = form.querySelector(
-        '[name="authorizationEndpoint"]',
-      ) as HTMLInputElement;
-      const tokenEndpointField = form.querySelector('[name="tokenEndpoint"]') as HTMLInputElement;
-      const jwksEndpointField = form.querySelector('[name="jwksEndpoint"]') as HTMLInputElement;
-
-      if (issuerField) issuerField.value = config.issuer;
-      if (authEndpointField) authEndpointField.value = config.authorizationEndpoint;
-      if (tokenEndpointField) tokenEndpointField.value = config.tokenEndpoint;
-      if (jwksEndpointField) jwksEndpointField.value = config.jwksEndpoint;
-
-      // Trigger input events to update vee-validate
-      for (const field of [issuerField, authEndpointField, tokenEndpointField, jwksEndpointField]) {
-        if (field) {
-          field.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-      }
-    }
+    setProviderValues({
+      issuer: config.issuer,
+      authorizationEndpoint: config.authorizationEndpoint,
+      tokenEndpoint: config.tokenEndpoint,
+      jwksEndpoint: config.jwksEndpoint,
+    });
 
     alert.success(t("sso.discoveredSuccess"));
   } catch (error: unknown) {
@@ -477,9 +506,7 @@ async function discoverOpenIdConfig() {
   }
 }
 
-async function onSubmitProvider(values: Record<string, unknown>) {
-  const typedValues = values as Yup.InferType<typeof providerSchema>;
-
+const onSubmitProvider = handleProviderSubmit(async (values) => {
   isSubmitting.value = true;
 
   try {
@@ -490,13 +517,13 @@ async function onSubmitProvider(values: Record<string, unknown>) {
           path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
         },
         body: {
-          domain: typedValues.domain,
-          issuer: typedValues.issuer,
-          clientId: typedValues.clientId,
-          clientSecret: typedValues.clientSecret ?? undefined,
-          authorizationEndpoint: typedValues.authorizationEndpoint,
-          tokenEndpoint: typedValues.tokenEndpoint,
-          jwksEndpoint: typedValues.jwksEndpoint,
+          domain: values.domain,
+          issuer: values.issuer,
+          clientId: values.clientId,
+          clientSecret: values.clientSecret ?? undefined,
+          authorizationEndpoint: values.authorizationEndpoint,
+          tokenEndpoint: values.tokenEndpoint,
+          jwksEndpoint: values.jwksEndpoint,
         },
       });
 
@@ -505,14 +532,14 @@ async function onSubmitProvider(values: Record<string, unknown>) {
       // Create new provider
       const { error: ssoError } = await api.POST("/auth/sso/register", {
         body: {
-          domain: typedValues.domain,
-          issuer: typedValues.issuer,
+          domain: values.domain,
+          issuer: values.issuer,
           organizationId: organization.value!.id,
-          clientId: typedValues.clientId,
-          clientSecret: typedValues.clientSecret ?? "",
-          authorizationEndpoint: typedValues.authorizationEndpoint,
-          tokenEndpoint: typedValues.tokenEndpoint,
-          jwksEndpoint: typedValues.jwksEndpoint,
+          clientId: values.clientId,
+          clientSecret: values.clientSecret ?? "",
+          authorizationEndpoint: values.authorizationEndpoint,
+          tokenEndpoint: values.tokenEndpoint,
+          jwksEndpoint: values.jwksEndpoint,
         },
       });
 
@@ -535,7 +562,7 @@ async function onSubmitProvider(values: Record<string, unknown>) {
   } finally {
     isSubmitting.value = false;
   }
-}
+});
 
 function confirmDeleteProvider(provider: SSOProvider) {
   deletingProvider.value = provider;
@@ -567,96 +594,3 @@ onMounted(() => {
   loadOrganization();
 });
 </script>
-
-<style scoped>
-.sso-loading {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-color-muted);
-}
-
-.sso-empty {
-  padding: 4rem 2rem;
-  text-align: center;
-
-  .icon-large {
-    font-size: 3rem;
-    color: var(--text-color-muted);
-    margin-bottom: 1rem;
-  }
-
-  p {
-    margin: 0;
-
-    &.text-muted {
-      margin-top: 0.5rem;
-      color: var(--text-color-muted);
-      font-size: 0.875rem;
-    }
-  }
-}
-
-.sso-providers {
-  padding: 1rem;
-}
-
-.sso-provider {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border: 1px solid var(--panel-border-color);
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.sso-provider-info {
-  h4 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.125rem;
-    font-weight: 500;
-  }
-
-  p {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.875rem;
-  }
-}
-
-.sso-provider-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.oidc-fields {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--panel-border-color);
-
-  h4 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    font-weight: 500;
-  }
-}
-
-.field-help {
-  margin-top: 0.25rem;
-  font-size: 0.75rem;
-  color: var(--text-color-muted);
-}
-
-.sso-form {
-  .form-group {
-    margin-bottom: 1.5rem;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-</style>

@@ -1,100 +1,113 @@
 <template>
-  <div v-if="deployment" class="deployment-detail">
-    <div class="deployment-header">
-      <h2 class="deployment-name">{{ deployment.name }}</h2>
-    </div>
+  <div v-if="deployment" class="max-w-[1200px] space-y-6">
+    <h2 class="text-2xl font-semibold">{{ deployment.name }}</h2>
 
-    <Panel :title="$t('nav.deploymentDetails')" class="deployment-details-panel">
-      <div class="details-grid">
-        <div class="detail-row">
-          <span class="detail-label">{{ $t("deployments.duration") }}:</span>
-          <span class="detail-value">{{ formatDuration(deployment.executionTime) }}</span>
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t('nav.deploymentDetails') }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="flex flex-col">
+          <div class="flex justify-between items-center py-2 border-b">
+            <span class="text-muted-foreground">{{ $t("deployments.duration") }}:</span>
+            <span class="font-medium text-right">{{ formatDuration(deployment.executionTime) }}</span>
+          </div>
+
+          <div class="flex justify-between items-center py-2 border-b">
+            <span class="text-muted-foreground">{{ $t("deployments.command") }}:</span>
+            <code class="font-medium text-right font-mono bg-muted px-2 py-1 rounded text-sm max-w-[60%] overflow-hidden text-ellipsis whitespace-nowrap">{{ deployment.command }}</code>
+          </div>
+
+          <div class="flex justify-between items-center py-2 border-b">
+            <span class="text-muted-foreground">{{ $t("deployments.exitCode") }}:</span>
+            <span
+              class="inline-flex items-center gap-1.5 font-medium"
+              :class="deployment.returnCode === 0 ? 'text-green-500' : 'text-destructive'"
+            >
+              <icon-fa6-solid:check v-if="deployment.returnCode === 0" class="size-4" />
+              <icon-fa6-solid:xmark v-else class="size-4" />
+              {{ deployment.returnCode }}
+            </span>
+          </div>
+
+          <div class="flex justify-between items-center py-2 border-b">
+            <span class="text-muted-foreground">{{ $t("deployments.started") }}:</span>
+            <span class="font-medium text-right">{{ formatDateTime(deployment.startDate) }}</span>
+          </div>
+
+          <div class="flex justify-between items-center py-2 border-b last:border-b-0">
+            <span class="text-muted-foreground">{{ $t("deployments.completed") }}:</span>
+            <span class="font-medium text-right">{{ formatDateTime(deployment.endDate) }}</span>
+          </div>
+
+          <div v-if="deployment.reference && deployment.gitUrl" class="flex justify-between items-center py-2">
+            <span class="text-muted-foreground">{{ $t("deployments.reference") }}:</span>
+            <a
+              :href="`${deployment.gitUrl}/commit/${deployment.reference}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+            >
+              <icon-fa6-solid:arrow-up-right-from-square class="size-4" />
+              {{ deployment.reference.substring(0, 8) }}
+            </a>
+          </div>
         </div>
+      </CardContent>
+    </Card>
 
-        <div class="detail-row">
-          <span class="detail-label">{{ $t("deployments.command") }}:</span>
-          <code class="detail-value detail-code">{{ deployment.command }}</code>
+    <Card v-if="deployment.composer && Object.keys(deployment.composer).length > 0">
+      <CardHeader>
+        <CardTitle class="flex items-center gap-1.5">
+          <icon-fa6-solid:box class="size-4" />
+          {{ $t("deployments.composerPackages") }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-muted border-b-2">
+                <th class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide">{{ $t("deployments.package") }}</th>
+                <th class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide">{{ $t("common.version") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="[packageName, version] in sortedComposer" :key="packageName" class="hover:bg-muted/50 border-b last:border-b-0">
+                <td class="px-4 py-2 font-mono text-sm">{{ packageName }}</td>
+                <td class="px-4 py-2 font-mono text-sm text-muted-foreground font-semibold">{{ version }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </CardContent>
+    </Card>
 
-        <div class="detail-row">
-          <span class="detail-label">{{ $t("deployments.exitCode") }}:</span>
-          <span
-            class="detail-value"
-            :class="deployment.returnCode === 0 ? 'detail-success' : 'detail-error'"
-          >
-            <icon-fa6-solid:check v-if="deployment.returnCode === 0" class="icon" />
-            <icon-fa6-solid:xmark v-else class="icon" />
-            {{ deployment.returnCode }}
-          </span>
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-1.5">
+          <icon-fa6-solid:terminal class="size-4" />
+          {{ $t("deployments.output") }}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="bg-[#0d1117] overflow-hidden p-4 rounded-md">
+          <pre class="m-0 p-0 overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-[#c9d1d9] whitespace-pre break-normal" style="tab-size: 4" v-html="formattedOutput"></pre>
         </div>
-
-        <div class="detail-row">
-          <span class="detail-label">{{ $t("deployments.started") }}:</span>
-          <span class="detail-value">{{ formatDateTime(deployment.startDate) }}</span>
-        </div>
-
-        <div class="detail-row">
-          <span class="detail-label">{{ $t("deployments.completed") }}:</span>
-          <span class="detail-value">{{ formatDateTime(deployment.endDate) }}</span>
-        </div>
-
-        <div v-if="deployment.reference && deployment.gitUrl" class="detail-row">
-          <span class="detail-label">{{ $t("deployments.reference") }}:</span>
-          <a
-            :href="`${deployment.gitUrl}/commit/${deployment.reference}`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="detail-value detail-link"
-          >
-            <icon-fa6-solid:arrow-up-right-from-square class="icon" />
-            {{ deployment.reference.substring(0, 8) }}
-          </a>
-        </div>
-      </div>
-    </Panel>
-
-    <Panel v-if="deployment.composer && Object.keys(deployment.composer).length > 0">
-      <template #title>
-        <icon-fa6-solid:box class="icon" />
-        {{ $t("deployments.composerPackages") }}
-      </template>
-      <div class="composer-table-container">
-        <table class="composer-table">
-          <thead>
-            <tr>
-              <th>{{ $t("deployments.package") }}</th>
-              <th>{{ $t("common.version") }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="[packageName, version] in sortedComposer" :key="packageName">
-              <td class="package-name">{{ packageName }}</td>
-              <td class="package-version">{{ version }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </Panel>
-
-    <Panel>
-      <template #title>
-        <icon-fa6-solid:terminal class="icon" />
-        {{ $t("deployments.output") }}
-      </template>
-      <div class="output-container">
-        <pre class="output-content" v-html="formattedOutput"></pre>
-      </div>
-    </Panel>
+      </CardContent>
+    </Card>
   </div>
-  <div v-else class="loading">{{ $t("common.loading") }}</div>
+  <div v-else class="p-12 text-center text-muted-foreground">{{ $t("common.loading") }}</div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const route = useRoute();
 const { environment } = useEnvironmentDetail();
@@ -217,216 +230,4 @@ watch(
   },
   { immediate: true },
 );
-
-onMounted(() => {
-  if (environment.value) {
-    loadDeployment();
-  }
-});
 </script>
-
-<style scoped>
-.deployment-detail {
-  max-width: 1200px;
-}
-
-.deployment-header {
-  margin-bottom: 1.5rem;
-}
-
-.deployment-name {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-  color: #fff;
-}
-
-.deployment-details-panel {
-  padding: 1.5rem;
-}
-
-.details-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  font-size: 1rem;
-  color: var(--text-muted);
-  font-weight: 400;
-}
-
-.detail-value {
-  font-size: 1rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  text-align: right;
-}
-
-.detail-code {
-  font-family: monospace;
-  background: var(--surface-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.detail-success {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--success-color);
-}
-
-.detail-success .icon {
-  font-size: 1rem;
-}
-
-.detail-error {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--error-color);
-}
-
-.detail-error .icon {
-  font-size: 1rem;
-}
-
-.detail-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.detail-link:hover {
-  text-decoration: underline;
-}
-
-.detail-link .icon {
-  font-size: 1rem;
-}
-
-.composer-table-container {
-  overflow-x: auto;
-}
-
-.composer-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.composer-table thead {
-  background: var(--surface-color);
-  border-bottom: 2px solid var(--border-color);
-}
-
-.composer-table th {
-  padding: 0.5rem 1rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.composer-table td {
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.composer-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.composer-table tbody tr:hover {
-  background: var(--surface-color);
-}
-
-.composer-table .package-name {
-  font-family: monospace;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.composer-table .package-version {
-  font-family: monospace;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.output-container {
-  background: #0d1117;
-  overflow: hidden;
-  padding: 1rem;
-  border-radius: 6px;
-}
-
-.output-content {
-  margin: 0;
-  padding: 0;
-  overflow-x: auto;
-  font-family:
-    "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New",
-    monospace;
-  font-size: 0.8125rem;
-  line-height: 1.6;
-  color: #c9d1d9;
-  white-space: pre;
-  word-wrap: normal;
-  tab-size: 4;
-  -moz-tab-size: 4;
-}
-
-.output-content::before {
-  content: "";
-  display: block;
-  height: 0;
-}
-
-.output-container::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.output-container::-webkit-scrollbar-track {
-  background: #161b22;
-  border-radius: 6px;
-}
-
-.output-container::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 6px;
-}
-
-.output-container::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
-}
-
-.loading {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-</style>

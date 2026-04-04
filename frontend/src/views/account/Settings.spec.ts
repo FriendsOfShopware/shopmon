@@ -155,7 +155,7 @@ describe("Settings", () => {
   it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toBe("Settings");
+    expect(wrapper.find("h1").text()).toBe("Settings");
   });
 
   it("displays account section", async () => {

@@ -1,44 +1,44 @@
 <template>
-  <div v-if="sortedFilteredData?.length ?? 0 > 0" class="data-table-wrapper">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th
+  <div v-if="sortedFilteredData?.length ?? 0 > 0" class="overflow-x-auto">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead
             v-for="column in columns"
             :key="column.key"
-            :class="[column.class, { sortable: column.sortable }]"
+            :class="[column.class, { 'cursor-pointer select-none': column.sortable }]"
             @click="column.sortable ? setSort(column.key) : false"
           >
             {{ column.name }}
             <template v-if="column.key === sorting.sortBy">
-              <icon-fa6-solid:chevron-up v-if="sorting.sortDesc" />
-              <icon-fa6-solid:chevron-down v-else />
+              <icon-fa6-solid:chevron-up v-if="sorting.sortDesc" class="ml-1 inline size-3" />
+              <icon-fa6-solid:chevron-down v-else class="ml-1 inline size-3" />
             </template>
-          </th>
+          </TableHead>
 
-          <th v-if="slots['cell-actions']" class="actions">
+          <TableHead v-if="slots['cell-actions']" class="text-right">
             <slot name="cell-actions-header" />
-          </th>
-        </tr>
-      </thead>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
 
-      <tbody>
-        <tr v-for="(row, rowIndex) in sortedFilteredData" :key="rowIndex">
-          <td v-for="column in columns" :key="column.key" :class="[column.class]">
+      <TableBody>
+        <TableRow v-for="(row, rowIndex) in sortedFilteredData" :key="rowIndex">
+          <TableCell v-for="column in columns" :key="column.key" :class="[column.class]">
             <slot :name="`cell-${column.key}`" :row="row" :row-index="rowIndex">
               {{ row[column.key] }}
             </slot>
-          </td>
+          </TableCell>
 
-          <td v-if="slots['cell-actions']" class="actions">
+          <TableCell v-if="slots['cell-actions']" class="text-right">
             <slot name="cell-actions" :row="row" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   </div>
 
-  <div v-else class="data-table-empty">
+  <div v-else class="flex flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center text-muted-foreground">
     <template v-if="sortedFilteredData?.length ?? 0 === 0">
       <span>
         <template v-if="searchTerm">
@@ -49,8 +49,8 @@
       </span>
     </template>
     <template v-else>
-      <icon-fa6-solid:inbox class="empty-icon" />
-      <h2 class="empty-title">{{ $t("dataTable.noDataTitle") }}</h2>
+      <icon-fa6-solid:inbox class="size-36 text-border" />
+      <h2 class="text-2xl font-bold text-muted-foreground">{{ $t("dataTable.noDataTitle") }}</h2>
       {{ $t("dataTable.noDataDesc") }}
     </template>
   </div>
@@ -64,6 +64,7 @@
 import { createNewSortInstance } from "fast-sort";
 import Fuse from "fuse.js";
 import { computed, useSlots, reactive } from "vue";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const slots = useSlots();
 
@@ -97,7 +98,6 @@ const sorting = reactive({
 
 const naturalSort = createNewSortInstance({
   comparer: (a, b, order) => {
-    // Always sort null values at last
     if (a === null || a === undefined) {
       return order;
     }
@@ -167,93 +167,3 @@ const sortedFilteredData = computed(() => {
   return data;
 });
 </script>
-
-<style>
-.data-table-wrapper {
-  overflow-x: auto;
-}
-
-.data-table {
-  isolation: isolate;
-  width: 100%;
-  border-spacing: 0;
-  text-indent: 0;
-  border-color: inherit;
-  border-collapse: collapse;
-  background-color: var(--data-table-background);
-  text-align: left;
-  color: var(--text-color);
-
-  thead {
-    background-color: var(--data-table-head-background);
-  }
-
-  th {
-    padding: 0.75rem;
-    text-align: left;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--data-table-head-color);
-    border-bottom: 1px solid var(--data-table-border-color);
-
-    &.sortable {
-      cursor: pointer;
-    }
-
-    .icon {
-      margin-left: 0.5rem;
-      font-size: 0.875rem;
-      vertical-align: middle;
-    }
-  }
-
-  tbody {
-    td {
-      padding: 0.75rem;
-      background-color: var(--data-table-row-background);
-      border-bottom: 1px solid var(--data-table-border-color);
-    }
-
-    tr:last-child td {
-      border-bottom: 0;
-    }
-  }
-
-  th,
-  td {
-    &.actions {
-      text-align: right;
-
-      button {
-        line-height: 1.4;
-      }
-    }
-
-    .icon-status {
-      font-size: 1rem;
-      margin-right: 0.5rem;
-    }
-  }
-}
-
-.data-table-empty {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--text-color-muted);
-  border: 1px solid var(--data-table-empty-border-color);
-  border-radius: 0.875rem;
-  background-color: var(--data-table-empty-background);
-
-  .empty-icon {
-    font-size: 9rem;
-    color: var(--data-table-empty-icon-color);
-    margin-bottom: 1rem;
-  }
-
-  .empty-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-color-muted);
-  }
-}
-</style>

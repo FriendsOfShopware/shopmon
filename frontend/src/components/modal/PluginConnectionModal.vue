@@ -1,32 +1,40 @@
 <template>
-  <modal :show="show" close-x-mark @close="$emit('close')">
-    <template #title> {{ $t("pluginModal.title") }} </template>
-    <template #content>
-      <p>{{ $t("pluginModal.description") }}</p>
-      <textarea
-        v-model="pluginBase64Value"
-        class="field"
-        rows="4"
-        placeholder="eyJ1cmwiOiJodHRwczpcL1wvZGVtby5mb3MuZ2ciLCJjbGllbnRJZCI6..."
-        @input="$emit('update:base64', pluginBase64Value)"
-      />
-      <div v-if="error" class="field-error-message">
-        {{ error }}
+  <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
+    <DialogContent class="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{{ $t("pluginModal.title") }}</DialogTitle>
+      </DialogHeader>
+
+      <div>
+        <p class="mb-3 text-muted-foreground">{{ $t("pluginModal.description") }}</p>
+        <Textarea
+          v-model="pluginBase64Value"
+          rows="4"
+          placeholder="eyJ1cmwiOiJodHRwczpcL1wvZGVtby5mb3MuZ2ciLCJjbGllbnRJZCI6..."
+          @input="$emit('update:base64', pluginBase64Value)"
+        />
+        <p v-if="error" class="mt-1 text-sm text-destructive">
+          {{ error }}
+        </p>
       </div>
-    </template>
-    <template #footer>
-      <UiButton type="button" variant="primary" @click="$emit('import')">
-        {{ $t("pluginModal.importData") }}
-      </UiButton>
-      <UiButton type="button" variant="ghost" @click="$emit('close')">
-        {{ $t("common.cancel") }}
-      </UiButton>
-    </template>
-  </modal>
+
+      <DialogFooter>
+        <Button variant="ghost" @click="$emit('close')">
+          {{ $t("common.cancel") }}
+        </Button>
+        <Button @click="$emit('import')">
+          {{ $t("pluginModal.importData") }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Props {
   show: boolean;
@@ -46,7 +54,6 @@ defineEmits<{
 
 const pluginBase64Value = ref(props.base64);
 
-// Watch for external base64 changes
 watch(
   () => props.base64,
   (newValue) => {
@@ -54,7 +61,6 @@ watch(
   },
 );
 
-// Reset when modal is closed
 watch(
   () => props.show,
   (newShow) => {

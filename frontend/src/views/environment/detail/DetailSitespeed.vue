@@ -1,31 +1,39 @@
 <template>
-  <Banner v-if="environment && !environment.sitespeedEnabled" variant="default">
-    {{ $t("environment.sitespeedActivateDesc") }}
-  </Banner>
-  <div class="mb-1">
-    <UiButton
+  <Alert v-if="environment && !environment.sitespeedEnabled" variant="default">
+    <AlertDescription>{{ $t("environment.sitespeedActivateDesc") }}</AlertDescription>
+  </Alert>
+
+  <div class="mb-4">
+    <Button
       v-if="showSitespeedData"
-      variant="outline-primary"
-      :href="environment?.sitespeedDetailUrl ?? undefined"
-      target="_blank"
+      variant="outline"
+      as-child
     >
-      <i class="fa fa-chart-line" /> {{ $t("nav.sitespeed") }}
-    </UiButton>
+      <a :href="environment?.sitespeedDetailUrl ?? undefined" target="_blank">
+        <i class="fa fa-chart-line" /> {{ $t("nav.sitespeed") }}
+      </a>
+    </Button>
   </div>
 
-  <Panel v-if="showSitespeedData" class="chart-panel">
-    <canvas ref="timeChartCanvas" width="800" height="400" />
-  </Panel>
+  <Card v-if="showSitespeedData">
+    <CardContent>
+      <canvas ref="timeChartCanvas" width="800" height="400" />
+    </CardContent>
+  </Card>
 
-  <Panel v-if="showSitespeedData" class="chart-panel">
-    <canvas ref="transferSizeChartCanvas" width="800" height="400" />
-  </Panel>
+  <Card v-if="showSitespeedData">
+    <CardContent>
+      <canvas ref="transferSizeChartCanvas" width="800" height="400" />
+    </CardContent>
+  </Card>
 
-  <Panel v-if="showSitespeedData" class="chart-panel">
-    <canvas ref="clsChartCanvas" width="800" height="400" />
-  </Panel>
+  <Card v-if="showSitespeedData">
+    <CardContent>
+      <canvas ref="clsChartCanvas" width="800" height="400" />
+    </CardContent>
+  </Card>
 
-  <Panel v-if="environment && environment.sitespeedEnabled" variant="table">
+  <Card v-if="environment && environment.sitespeedEnabled" class="p-0 overflow-hidden">
     <data-table
       v-if="environment"
       :columns="[
@@ -72,13 +80,14 @@
               deploymentId: row.deployment.id,
             },
           }"
+          class="text-primary hover:underline"
         >
           {{ row.deployment.name || `Deployment #${row.deployment.id}` }}
         </router-link>
         <span v-else>-</span>
       </template>
     </data-table>
-  </Panel>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -89,6 +98,10 @@ import "chartjs-adapter-date-fns";
 import { formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useI18n } from "vue-i18n";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const { t } = useI18n();
 const { environment } = useEnvironmentDetail();
