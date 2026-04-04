@@ -207,6 +207,8 @@
     "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein",
     "changePasswordFailed": "Passwort konnte nicht geändert werden",
     "passwordChanged": "Passwort erfolgreich geändert",
+    "linked": "Verbunden",
+    "notLinked": "Nicht verbunden",
     "linkGithub": "GitHub verknüpfen",
     "unlinkGithub": "GitHub-Verknüpfung aufheben",
     "connectedAccounts": "Verknüpfte Konten",

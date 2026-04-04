@@ -17,8 +17,36 @@
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <h1 class="truncate text-xl font-bold">{{ environment.name }}</h1>
-            <StatusIcon :status="environment.status" />
+            <!-- Environment switcher -->
+            <DropdownMenu v-if="siblingEnvironments.length > 1">
+              <DropdownMenuTrigger class="group flex items-center gap-1.5 rounded-md px-1 -ml-1 hover:bg-accent transition-colors">
+                <h1 class="truncate text-xl font-bold">{{ environment.name }}</h1>
+                <StatusIcon :status="environment.status" />
+                <icon-fa6-solid:chevron-down class="size-2.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" class="w-64">
+                <DropdownMenuLabel>Switch environment</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  v-for="env in siblingEnvironments"
+                  :key="env.id"
+                  :class="{ 'bg-accent': env.id === environment.id }"
+                  @click="$router.push({ name: currentTabRoute, params: { organizationId: env.organizationId, environmentId: env.id } })"
+                >
+                  <div class="flex items-center gap-2.5 w-full">
+                    <img v-if="env.favicon" :src="env.favicon" alt="" class="size-4 shrink-0 rounded" />
+                    <icon-fa6-solid:earth-americas v-else class="size-3.5 shrink-0 text-muted-foreground/50" />
+                    <span class="flex-1 truncate">{{ env.name }}</span>
+                    <StatusIcon :status="env.status" />
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <!-- No switcher if only 1 environment -->
+            <template v-else>
+              <h1 class="truncate text-xl font-bold">{{ environment.name }}</h1>
+              <StatusIcon :status="environment.status" />
+            </template>
           </div>
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
             <span class="truncate">{{ environment.organizationName }}</span>
@@ -144,11 +172,20 @@ import { useRoute } from "vue-router";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
+import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
 import Banner from "@/components/layout/Banner.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -176,6 +213,24 @@ const {
   onCacheClear,
   toggleNotificationSubscription,
 } = useEnvironmentDetail();
+
+const { environments: allEnvironments } = useAccountEnvironments();
+
+// Environments in the same project (same shopId)
+const siblingEnvironments = computed(() => {
+  if (!environment.value?.shopId) return [];
+  return allEnvironments.value.filter((e) => e.shopId === environment.value!.shopId);
+});
+
+// Keep the user on the same tab when switching environments
+const currentTabRoute = computed(() => {
+  const name = route.name as string;
+  // If on a sub-detail page (e.g. deployment/:id), go to the parent list
+  if (name === "account.environments.detail.deployment") return "account.environments.detail.deployments";
+  // If it's a known tab route, keep it
+  if (name.startsWith("account.environments.detail")) return name;
+  return "account.environments.detail";
+});
 
 const environmentHost = computed(() => {
   if (!environment.value?.url) return "";

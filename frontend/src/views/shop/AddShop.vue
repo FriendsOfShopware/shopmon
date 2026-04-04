@@ -1,18 +1,16 @@
 <template>
-  <header class="flex items-start justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-bold tracking-tight">{{ $t('shop.newShop') }}</h1>
-    </div>
-    <div class="flex gap-2 items-start" />
-  </header>
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('shop.newShop') }}</h1>
 
-  <div v-if="!isLoadingOrgs">
-    <Card>
-      <CardHeader>
-        <CardTitle>{{ $t('shop.shopInfo') }}</CardTitle>
+    <Card v-if="!isLoadingOrgs">
+      <CardHeader class="pb-3">
+        <CardTitle class="flex items-center gap-2 text-base">
+          <icon-fa6-solid:folder class="size-4 text-muted-foreground" />
+          {{ $t('shop.shopInfo') }}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <form @submit="onSubmit">
+        <form @submit="onSubmit" class="space-y-6">
           <div class="space-y-4">
             <FormField v-slot="{ componentField }" name="name">
               <FormItem>
@@ -24,14 +22,30 @@
               </FormItem>
             </FormField>
 
+            <FormField v-slot="{ componentField }" name="organizationId">
+              <FormItem>
+                <FormLabel>{{ $t('settings.organization') }}</FormLabel>
+                <Select v-bind="componentField">
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue :placeholder="$t('shop.selectOrganization')" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem v-for="org in organizations" :key="org.id" :value="org.id">
+                      {{ org.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
             <FormField v-slot="{ componentField }" name="description">
               <FormItem>
                 <FormLabel>{{ $t('common.description') }}</FormLabel>
                 <FormControl>
-                  <Textarea
-                    v-bind="componentField"
-                    :placeholder="$t('shop.optionalDescription')"
-                  />
+                  <Textarea v-bind="componentField" :placeholder="$t('shop.optionalDescription')" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -41,44 +55,17 @@
               <FormItem>
                 <FormLabel>{{ $t('shop.gitRepoUrl') }}</FormLabel>
                 <FormControl>
-                  <Input
-                    v-bind="componentField"
-                    type="url"
-                    placeholder="https://github.com/org/repo"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-
-            <FormField v-slot="{ componentField }" name="organizationId">
-              <FormItem>
-                <FormLabel>{{ $t('settings.organization') }}</FormLabel>
-                <FormControl>
-                  <Select v-bind="componentField">
-                    <SelectTrigger>
-                      <SelectValue :placeholder="$t('shop.selectOrganization')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        v-for="org in organizations"
-                        :key="org.id"
-                        :value="org.id"
-                      >
-                        {{ org.name }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input v-bind="componentField" type="url" placeholder="https://github.com/org/repo" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             </FormField>
           </div>
 
-          <div class="flex justify-end pt-6">
+          <div class="flex justify-end">
             <Button :disabled="isSubmitting" type="submit">
-              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
-              <icon-line-md:loading-twotone-loop v-else class="size-4" />
+              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="mr-1.5 size-3.5" aria-hidden="true" />
+              <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
               {{ $t("common.save") }}
             </Button>
           </div>
@@ -150,7 +137,6 @@ const { handleSubmit, isSubmitting, setFieldValue } = useForm({
   },
 });
 
-// Set default org when organizations load
 watch(organizations, (orgs) => {
   if (orgs.length > 0) {
     setFieldValue("organizationId", orgs[0].id);

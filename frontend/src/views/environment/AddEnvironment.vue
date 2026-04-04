@@ -1,131 +1,137 @@
 <template>
-  <header-container :title="$t('environment.newEnvironment')" />
-  <main-container>
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t('environment.newEnvironment') }}</h1>
+
+    <!-- No shops yet — onboarding -->
     <Card v-if="shops.length === 0 && shopsLoaded">
-      <CardContent>
-        <div class="text-center pt-8 pb-4 px-4">
-          <div class="text-4xl text-primary opacity-70 mb-4">
-            <icon-fa6-solid:folder-tree aria-hidden="true" />
+      <CardContent class="flex flex-col items-center px-6 py-12 text-center">
+        <div class="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10">
+          <icon-fa6-solid:folder-tree class="size-6 text-primary" />
+        </div>
+
+        <h3 class="mb-2 text-xl font-semibold">Create a shop first</h3>
+        <p class="mb-6 max-w-sm text-muted-foreground">
+          Shops group related environments together. For example:
+        </p>
+
+        <div class="mb-8 inline-flex flex-col gap-2 rounded-lg border bg-muted/50 px-6 py-4 text-left">
+          <div class="flex items-center gap-2 font-medium">
+            <icon-fa6-solid:folder class="size-3 text-primary" />
+            <span>Toy Shop X</span>
           </div>
-
-          <h3 class="text-xl font-semibold mb-2">Create a shop first</h3>
-
-          <p class="text-muted-foreground mb-6">
-            Shops group related environments together. For example:
-          </p>
-
-          <div class="inline-flex flex-col gap-2 bg-muted border rounded-lg px-6 py-4 mb-8 text-left">
-            <div class="flex items-center gap-2 font-medium">
-              <icon-fa6-solid:folder class="text-xs text-primary opacity-80" aria-hidden="true" />
-              <span>Toy Shop X</span>
+          <div class="ml-6 flex flex-col gap-1.5 border-l-2 pl-3">
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+              <icon-fa6-solid:shop class="size-3 text-primary/60" />
+              Production
             </div>
-            <div class="flex flex-col gap-1.5 ml-6 pl-3 border-l-2">
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <icon-fa6-solid:shop class="text-xs text-primary opacity-80" aria-hidden="true" />
-                Production
-              </div>
-              <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <icon-fa6-solid:shop class="text-xs text-primary opacity-80" aria-hidden="true" />
-                Staging
-              </div>
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+              <icon-fa6-solid:shop class="size-3 text-primary/60" />
+              Staging
             </div>
-          </div>
-
-          <div class="mt-8">
-            <Button as-child>
-              <RouterLink :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }">
-                <icon-fa6-solid:plus class="size-3.5" aria-hidden="true" />
-                Create Shop
-              </RouterLink>
-            </Button>
           </div>
         </div>
+
+        <Button as-child>
+          <RouterLink :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }">
+            <icon-fa6-solid:plus class="mr-1.5 size-3.5" />
+            Create Shop
+          </RouterLink>
+        </Button>
       </CardContent>
     </Card>
 
-    <Card v-else>
-      <CardContent>
-        <form @submit="onSubmit">
-          <div class="space-y-6">
-            <div>
-              <h3 class="text-lg font-semibold mb-4">{{ $t('environment.environmentInfo') }}</h3>
-              <div class="space-y-4">
-                <FormField v-slot="{ componentField }" name="name">
-                  <FormItem>
-                    <FormLabel>{{ $t('common.name') }}</FormLabel>
-                    <FormControl>
-                      <Input v-bind="componentField" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
+    <!-- Add environment form -->
+    <template v-else-if="shopsLoaded">
+      <Card>
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:gear class="size-4 text-muted-foreground" />
+            {{ $t('environment.environmentInfo') }}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form @submit="onSubmit" class="space-y-6">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <FormField v-slot="{ componentField }" name="name">
+                <FormItem>
+                  <FormLabel>{{ $t('common.name') }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-                <FormField v-slot="{ componentField }" name="shopId">
-                  <FormItem>
-                    <FormLabel>{{ $t('environment.shop') }}</FormLabel>
-                    <Select v-bind="componentField">
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue :placeholder="$t('environment.shop')" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem v-for="shop in shops" :key="shop.id" :value="String(shop.id)">
-                          {{ shop.organizationName + " / " + shop.name }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-
-                <FormField v-slot="{ componentField }" name="shopUrl">
-                  <FormItem>
-                    <FormLabel>{{ $t('common.url') }}</FormLabel>
+              <FormField v-slot="{ componentField }" name="shopId">
+                <FormItem>
+                  <FormLabel>{{ $t('environment.shop') }}</FormLabel>
+                  <Select v-bind="componentField">
                     <FormControl>
-                      <Input v-bind="componentField" autocomplete="url" />
+                      <SelectTrigger>
+                        <SelectValue :placeholder="$t('environment.shop')" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </div>
+                    <SelectContent>
+                      <SelectItem v-for="shop in shops" :key="shop.id" :value="String(shop.id)">
+                        {{ shop.organizationName + " / " + shop.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="shopUrl" class="sm:col-span-2">
+                <FormItem>
+                  <FormLabel>{{ $t('common.url') }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" autocomplete="url" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
             </div>
 
-            <div>
-              <h3 class="text-lg font-semibold mb-1">{{ $t('environment.bypassAuthHeader') }}</h3>
-              <p class="text-sm text-muted-foreground mb-4">{{ $t("environment.bypassAuthHeaderDesc") }}</p>
+            <Separator />
 
-              <div class="flex items-center gap-2">
-                <code class="text-xs break-all">{{ shopToken }}</code>
-                <Button type="button" size="icon-sm" variant="outline" @click="copyToken">
-                  <icon-fa6-solid:copy />
+            <!-- Bypass auth header -->
+            <div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold">{{ $t('environment.bypassAuthHeader') }}</h3>
+                  <p class="mt-0.5 text-xs text-muted-foreground">{{ $t("environment.bypassAuthHeaderDesc") }}</p>
+                </div>
+                <Button type="button" variant="ghost" size="icon" class="size-7 shrink-0" title="Copy token" @click="copyToken">
+                  <icon-fa6-solid:copy class="size-3" />
                 </Button>
               </div>
+              <code class="mt-2 block rounded bg-muted px-3 py-2 font-mono text-xs break-all">{{ shopToken }}</code>
             </div>
 
-            <div>
-              <h3 class="text-lg font-semibold mb-1">{{ $t('environment.integration') }}</h3>
-              <p class="text-sm text-muted-foreground mb-4">
-                <i18n-t keypath="environment.integrationDesc" tag="span">
-                  <template #pluginLink>
-                    <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank" class="text-primary hover:underline">{{
-                      $t("environment.pluginName")
-                    }}</a>
-                  </template>
-                </i18n-t>
-                <a
-                  href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
-                  class="text-primary hover:underline ml-1"
-                >
-                  {{ $t("environment.permissions") }}
-                </a>
-              </p>
+            <Separator />
 
-              <div class="space-y-4">
-                <Button type="button" variant="outline" @click="openPluginModal">
+            <!-- Integration -->
+            <div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold">{{ $t('environment.integration') }}</h3>
+                  <p class="mt-0.5 text-xs text-muted-foreground">
+                    <i18n-t keypath="environment.integrationDesc" tag="span">
+                      <template #pluginLink>
+                        <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank" class="text-primary hover:underline">{{
+                          $t("environment.pluginName")
+                        }}</a>
+                      </template>
+                    </i18n-t>
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" @click="openPluginModal">
+                  <icon-fa6-solid:plug class="mr-1.5 size-3" />
                   {{ $t("environment.connectPlugin") }}
                 </Button>
+              </div>
 
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <FormField v-slot="{ componentField }" name="clientId">
                   <FormItem>
                     <FormLabel>{{ $t('environment.clientId') }}</FormLabel>
@@ -148,27 +154,27 @@
               </div>
             </div>
 
-            <div class="flex justify-end pt-4">
+            <div class="flex justify-end">
               <Button :disabled="isSubmitting" type="submit">
-                <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-3.5" aria-hidden="true" />
-                <icon-line-md:loading-twotone-loop v-else class="size-3.5" />
+                <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="mr-1.5 size-3.5" aria-hidden="true" />
+                <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
                 {{ $t("common.save") }}
               </Button>
             </div>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
 
-    <!-- Plugin Connection Modal -->
-    <plugin-connection-modal
-      v-model:base64="pluginBase64"
-      :show="showPluginModal"
-      :error="pluginError"
-      @close="closePluginModal"
-      @import="processPluginData"
-    />
-  </main-container>
+      <!-- Plugin Connection Modal -->
+      <PluginConnectionModal
+        v-model:base64="pluginBase64"
+        :show="showPluginModal"
+        :error="pluginError"
+        @close="closePluginModal"
+        @import="processPluginData"
+      />
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -183,8 +189,9 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   FormControl,
   FormField,
@@ -199,6 +206,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import PluginConnectionModal from "@/components/modal/PluginConnectionModal.vue";
 
 const { t } = useI18n();
 const { error, success } = useAlert();
@@ -239,9 +247,8 @@ api.GET("/account/shops").then(({ data }) => {
 
 const isValidUrl = (url: string) => {
   try {
-    const parsedUrl = new URL(url);
-    return !!parsedUrl;
-  } catch (_e) {
+    return !!new URL(url);
+  } catch {
     return false;
   }
 };

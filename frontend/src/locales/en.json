@@ -207,6 +207,8 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "changePasswordFailed": "Failed to change password",
     "passwordChanged": "Password changed successfully",
+    "linked": "Connected",
+    "notLinked": "Not connected",
     "linkGithub": "Link GitHub",
     "unlinkGithub": "Unlink from GitHub",
     "connectedAccounts": "Connected Accounts",
