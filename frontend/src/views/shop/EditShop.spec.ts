@@ -1,59 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
+import { defineComponent } from "vue";
 import EditShop from "./EditShop.vue";
-
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("header", {}, [props.title, slots.default?.()]);
-  },
-});
-
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const PanelStub = defineComponent({
-  name: "Panel",
-  props: ["title", "id", "variant", "description", "class"],
-  setup(props, { slots }) {
-    return () =>
-      h("div", { class: "panel", id: props.id }, [
-        props.title ? h("h2", {}, props.title) : null,
-        slots.action?.(),
-        slots.default?.(),
-      ]);
-  },
-});
-
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
-  },
-});
-
-const ModalStub = defineComponent({
-  name: "Modal",
-  props: ["show", "closeXMark"],
-  setup(props, { slots }) {
-    return () =>
-      props.show
-        ? h("div", { class: "modal" }, [
-            slots.title?.(),
-            slots.content?.(),
-            slots.footer?.(),
-            slots.icon?.(),
-          ])
-        : null;
-  },
-});
 
 const DeleteConfirmationModalStub = defineComponent({
   name: "DeleteConfirmationModal",
@@ -69,14 +17,6 @@ const DeleteConfirmationModalStub = defineComponent({
   template: '<div v-if="show" class="delete-modal" />',
 });
 
-const AlertStub = defineComponent({
-  name: "Banner",
-  props: ["type"],
-  setup(_, { slots }) {
-    return () => h("div", { class: "alert" }, slots.default?.());
-  },
-});
-
 const mockShop = {
   id: 1,
   name: "Test Shop",
@@ -89,6 +29,11 @@ const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => ({ params: { shopId: "1" }, hash: "" }),
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a><slot /></a>',
+  },
 }));
 
 vi.mock("@/helpers/api", () => ({
@@ -150,13 +95,7 @@ describe("EditShop", () => {
     return mount(EditShop, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
-          MainContainer: MainContainerStub,
-          Panel: PanelStub,
-          FormGroup: FormGroupStub,
-          Modal: ModalStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
-          Banner: AlertStub,
         },
       },
     });
@@ -165,7 +104,7 @@ describe("EditShop", () => {
   it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("Edit");
+    expect(wrapper.find("h1").text()).toContain("Edit");
   });
 
   it("shows loading state initially", () => {

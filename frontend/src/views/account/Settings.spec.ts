@@ -3,28 +3,10 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h, ref } from "vue";
 import Settings from "./Settings.vue";
 
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
 const MainContainerStub = defineComponent({
   name: "MainContainer",
   setup(_, { slots }) {
     return () => h("main", {}, slots.default?.());
-  },
-});
-
-const PanelStub = defineComponent({
-  name: "Panel",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () =>
-      h("div", { class: "panel" }, [
-        props.title ? h("h2", {}, props.title) : null,
-        slots.default?.(),
-      ]);
   },
 });
 
@@ -42,29 +24,10 @@ const DataTableStub = defineComponent({
   template: "<table><slot /></table>",
 });
 
-const ModalStub = defineComponent({
-  name: "Modal",
-  props: ["show"],
-  setup(props, { slots }) {
-    return () =>
-      props.show
-        ? h("div", { class: "modal" }, [slots.title?.(), slots.content?.(), slots.footer?.()])
-        : null;
-  },
-});
-
 const DeleteConfirmationModalStub = defineComponent({
   name: "DeleteConfirmationModal",
   props: ["show", "title", "entityName", "requirePassword"],
   template: '<div v-if="show" class="delete-modal" />',
-});
-
-const AlertStub = defineComponent({
-  name: "Banner",
-  props: ["type"],
-  setup(_, { slots }) {
-    return () => h("div", { class: "alert" }, slots.default?.());
-  },
 });
 
 const mockSessionData = {
@@ -139,14 +102,10 @@ describe("Settings", () => {
     return mount(Settings, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
-          Panel: PanelStub,
           FormGroup: FormGroupStub,
           DataTable: DataTableStub,
-          Modal: ModalStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
-          Banner: AlertStub,
         },
       },
     });

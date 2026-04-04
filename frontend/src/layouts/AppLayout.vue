@@ -129,7 +129,7 @@
 
     <SidebarInset>
       <!-- Top bar — minimal: trigger + breadcrumb area + notifications -->
-      <header class="flex h-12 items-center justify-between border-b px-4">
+      <header class="sticky top-0 z-10 flex h-12 items-center justify-between border-b bg-background px-4">
         <div class="flex items-center gap-2">
           <SidebarTrigger class="-ml-1" />
         </div>
@@ -185,7 +185,7 @@
       </header>
 
       <!-- Main content -->
-      <main class="flex flex-1 flex-col overflow-y-auto bg-background">
+      <main class="flex flex-1 flex-col bg-background">
         <ImpersonationBanner />
         <Notification />
 

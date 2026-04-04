@@ -29,14 +29,17 @@
 
     <!-- Environments grid -->
     <section class="mb-8">
-      <ElementEmpty
-        v-if="environments.length === 0"
-        :route="{ name: 'account.environments.new' }"
-        title="No environments yet"
-        button="Add Environment"
-      >
-        Add your first Shopware environment to start monitoring.
-      </ElementEmpty>
+      <div v-if="environments.length === 0" class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center">
+        <FolderPlus class="size-12 text-muted-foreground" />
+        <h2 class="text-2xl font-semibold">No environments yet</h2>
+        <p class="max-w-sm text-muted-foreground">Add your first Shopware environment to start monitoring.</p>
+        <Button as-child>
+          <RouterLink :to="{ name: 'account.environments.new' }">
+            <Plus class="mr-1 size-4" />
+            Add Environment
+          </RouterLink>
+        </Button>
+      </div>
 
       <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <RouterLink
@@ -187,8 +190,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import DataTable from "@/components/layout/DataTable.vue";
-import ElementEmpty from "@/components/layout/ElementEmpty.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
+import { Button } from "@/components/ui/button";
+import { FolderPlus, Plus } from "lucide-vue-next";
 
 const { t } = useI18n();
 const { activeOrganizationId } = useSession();

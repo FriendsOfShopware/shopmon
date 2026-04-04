@@ -118,9 +118,12 @@
     </div>
 
     <!-- Error banner -->
-    <Banner v-if="environment.lastScrapedError" variant="error">
-      This environment will be not automatically updated anymore. Please update the API credentials or URL to fix this issue.
-    </Banner>
+    <Alert v-if="environment.lastScrapedError" variant="destructive" class="border-destructive/30 bg-destructive/10">
+      <CircleX class="size-4" />
+      <AlertDescription>
+        This environment will be not automatically updated anymore. Please update the API credentials or URL to fix this issue.
+      </AlertDescription>
+    </Alert>
 
     <!-- Tab navigation -->
     <nav class="flex gap-1 overflow-x-auto border-b" v-if="environment.lastScrapedAt">
@@ -174,8 +177,9 @@ import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
-import Banner from "@/components/layout/Banner.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CircleX } from "lucide-vue-next";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {

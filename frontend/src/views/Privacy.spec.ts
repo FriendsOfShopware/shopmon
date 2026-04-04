@@ -2,15 +2,6 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import Privacy from "./Privacy.vue";
 
-// Mock components
-vi.mock("@/components/layout/HeaderContainer.vue", () => ({
-  default: {
-    name: "HeaderContainer",
-    props: ["title"],
-    template: "<header>{{ title }}</header>",
-  },
-}));
-
 describe("Privacy", () => {
   it("renders successfully", () => {
     const wrapper = mount(Privacy);
@@ -19,7 +10,7 @@ describe("Privacy", () => {
 
   it("displays the correct page title", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.find("header").text()).toBe("Privacy Policy");
+    expect(wrapper.find("h1").text()).toBe("Privacy Policy");
   });
 
   it("contains Data We Collect section", () => {

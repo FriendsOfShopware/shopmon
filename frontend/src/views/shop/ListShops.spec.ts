@@ -150,7 +150,9 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("1 environments");
+    // The component displays each environment as a card with its name and version
+    expect(wrapper.text()).toContain("Test Environment");
+    expect(wrapper.text()).toContain("6.5.0");
   });
 
   it("displays shops for each project", async () => {
@@ -193,7 +195,7 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Add to this shop");
+    expect(wrapper.text()).toContain("Add Environment");
   });
 
   it("displays shop favicon or fallback icon", async () => {

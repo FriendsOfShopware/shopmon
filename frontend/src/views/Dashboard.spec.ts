@@ -4,12 +4,6 @@ import { defineComponent, h, ref } from "vue";
 import Dashboard from "./Dashboard.vue";
 
 // Stubs
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
 const StatusIconStub = defineComponent({
   name: "StatusIcon",
   props: ["status"],
@@ -141,8 +135,6 @@ describe("Dashboard", () => {
     return mount(Dashboard, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
-          "header-container": HeaderContainerStub,
           StatusIcon: StatusIconStub,
           DataTable: DataTableStub,
           RouterLink: RouterLinkStub,

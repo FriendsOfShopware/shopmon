@@ -4,12 +4,6 @@ import { defineComponent, h } from "vue";
 import AddEnvironment from "./AddEnvironment.vue";
 
 // Stubs
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  template: "<header>{{ title }}</header>",
-});
-
 const MainContainerStub = defineComponent({
   name: "MainContainer",
   setup(_, { slots }) {
@@ -102,7 +96,6 @@ describe("AddEnvironment", () => {
     return mount(AddEnvironment, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
           PluginConnectionModal: PluginConnectionModalStub,
         },
@@ -119,7 +112,7 @@ describe("AddEnvironment", () => {
   it("displays page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toBe("New Environment");
+    expect(wrapper.find("h1").text()).toBe("New Environment");
   });
 
   it("has form element", async () => {

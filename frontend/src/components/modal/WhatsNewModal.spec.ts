@@ -75,7 +75,7 @@ describe("WhatsNewModal", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("What's new: Packages Mirror");
+    expect(wrapper.text()).toContain("New in March 2026");
     expect(wrapper.text()).toContain("75x faster Shopware store packages via Global CDN");
     expect(wrapper.text()).toContain("Acme Commerce");
   });

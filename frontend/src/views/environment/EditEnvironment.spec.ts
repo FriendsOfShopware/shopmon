@@ -3,16 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import EditEnvironment from "./EditEnvironment.vue";
 
-const HeaderContainerStub = defineComponent({
-  name: "HeaderContainer",
-  props: ["title"],
-  setup(props, { slots }) {
-    return () => {
-      const { h } = require("vue");
-      return h("header", {}, [props.title, slots.default?.()]);
-    };
-  },
-});
 
 const MainContainerStub = defineComponent({
   name: "MainContainer",
@@ -105,7 +95,6 @@ describe("EditEnvironment", () => {
     return mount(EditEnvironment, {
       global: {
         stubs: {
-          HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
           PluginConnectionModal: PluginConnectionModalStub,
@@ -117,13 +106,14 @@ describe("EditEnvironment", () => {
   it("renders page title with environment name", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("Edit Test Environment");
+    expect(wrapper.find("h1").text()).toContain("Edit Test Environment");
   });
 
   it("has cancel link", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("Cancel");
+    const cancelLink = wrapper.findAll("a").find((a) => a.text().includes("Cancel"));
+    expect(cancelLink).toBeTruthy();
   });
 
   it("displays environment information section", async () => {

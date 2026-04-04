@@ -3,20 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h } from "vue";
 import ListExtensions from "./ListExtensions.vue";
 
-const ElementEmptyStub = defineComponent({
-  name: "ElementEmpty",
-  props: ["title", "button", "route"],
-  setup(props, { slots }) {
-    return () => h("div", { class: "empty" }, [h("h3", {}, props.title), slots.default?.()]);
-  },
-});
-
-const DataTableStub = defineComponent({
-  name: "DataTable",
-  props: ["columns", "data", "defaultSort", "searchTerm"],
-  template: "<table><slot /></table>",
-});
-
 const ExtensionChangelogStub = defineComponent({
   name: "ExtensionChangelog",
   props: ["show", "extension"],
@@ -88,9 +74,12 @@ describe("ListExtensions", () => {
     return mount(ListExtensions, {
       global: {
         stubs: {
-          ElementEmpty: ElementEmptyStub,
-          DataTable: DataTableStub,
+          RouterLink: defineComponent({
+            template: '<a><slot /></a>',
+          }),
           ExtensionChangelog: ExtensionChangelogStub,
+          StatusIcon: defineComponent({ template: '<span />' }),
+          RatingStars: defineComponent({ template: '<span />' }),
         },
       },
     });
@@ -112,30 +101,34 @@ describe("ListExtensions", () => {
     const wrapper = mount(ListExtensions, {
       global: {
         stubs: {
-          ElementEmpty: ElementEmptyStub,
-          DataTable: DataTableStub,
+          RouterLink: defineComponent({
+            template: '<a><slot /></a>',
+          }),
           ExtensionChangelog: ExtensionChangelogStub,
+          StatusIcon: defineComponent({ template: '<span />' }),
+          RatingStars: defineComponent({ template: '<span />' }),
         },
       },
     });
     await flushPromises();
-    expect(wrapper.find(".empty").exists()).toBe(true);
+    expect(wrapper.find(".border-dashed").exists()).toBe(true);
     expect(wrapper.text()).toContain("Extensions");
   });
 
-  it("shows search input and data table when extensions exist", async () => {
+  it("shows search input and extension list when extensions exist", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find("input").exists()).toBe(true);
-    expect(wrapper.find("table").exists()).toBe(true);
+    // Component renders extensions as bordered div cards, not a table
+    const extensionCards = wrapper.findAll(".rounded-xl.border");
+    expect(extensionCards.length).toBeGreaterThan(0);
   });
 
-  it("shows table in Card with overflow-hidden", async () => {
+  it("renders extension items with name and label", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const cards = wrapper.findAll('[data-slot="card"]');
-    const tableCard = cards.find((c) => c.classes().includes("overflow-hidden"));
-    expect(tableCard).toBeTruthy();
+    expect(wrapper.text()).toContain("Frosh Tools");
+    expect(wrapper.text()).toContain("FroshTools");
   });
 
   it("renders extension changelog modal", async () => {

@@ -2,15 +2,6 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import Imprint from "./Imprint.vue";
 
-// Mock components
-vi.mock("@/components/layout/HeaderContainer.vue", () => ({
-  default: {
-    name: "HeaderContainer",
-    props: ["title"],
-    template: "<header>{{ title }}</header>",
-  },
-}));
-
 describe("Imprint", () => {
   it("renders successfully", () => {
     const wrapper = mount(Imprint);
@@ -19,7 +10,7 @@ describe("Imprint", () => {
 
   it("displays the correct page title", () => {
     const wrapper = mount(Imprint);
-    expect(wrapper.find("header").text()).toBe("Legal notice");
+    expect(wrapper.find("h1").text()).toBe("Legal notice");
   });
 
   it("contains Contact section", () => {

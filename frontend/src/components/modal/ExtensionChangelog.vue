@@ -30,7 +30,10 @@
         </li>
       </ul>
 
-      <Banner v-else variant="error"> {{ $t("extensionChangelog.noData") }} </Banner>
+      <Alert v-else variant="destructive" class="border-destructive/30 bg-destructive/10">
+        <CircleX class="size-4" />
+        <AlertDescription>{{ $t("extensionChangelog.noData") }}</AlertDescription>
+      </Alert>
     </DialogContent>
   </Dialog>
 </template>
@@ -38,7 +41,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import Banner from "@/components/layout/Banner.vue";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CircleX } from "lucide-vue-next";
 import { formatDate } from "@/helpers/formatter";
 import type { ExtensionWithChangelog } from "@/composables/useExtensionChangelogModal";
 
