@@ -15,8 +15,14 @@
       </Card>
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg" :class="totalSize > 0 ? 'bg-warning/10' : 'bg-success/10'">
-            <icon-fa6-solid:envelope class="size-4" :class="totalSize > 0 ? 'text-warning' : 'text-success'" />
+          <div
+            class="flex size-9 items-center justify-center rounded-lg"
+            :class="totalSize > 0 ? 'bg-warning/10' : 'bg-success/10'"
+          >
+            <icon-fa6-solid:envelope
+              class="size-4"
+              :class="totalSize > 0 ? 'text-warning' : 'text-success'"
+            />
           </div>
           <div>
             <div class="text-2xl font-bold tabular-nums">{{ totalSize.toLocaleString() }}</div>
@@ -26,8 +32,14 @@
       </Card>
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg" :class="busyQueues > 0 ? 'bg-warning/10' : 'bg-success/10'">
-            <icon-fa6-solid:gauge-high class="size-4" :class="busyQueues > 0 ? 'text-warning' : 'text-success'" />
+          <div
+            class="flex size-9 items-center justify-center rounded-lg"
+            :class="busyQueues > 0 ? 'bg-warning/10' : 'bg-success/10'"
+          >
+            <icon-fa6-solid:gauge-high
+              class="size-4"
+              :class="busyQueues > 0 ? 'text-warning' : 'text-success'"
+            />
           </div>
           <div>
             <div class="text-2xl font-bold tabular-nums">{{ busyQueues }}</div>
@@ -48,8 +60,14 @@
         ]"
       >
         <!-- Indicator -->
-        <div class="flex size-8 shrink-0 items-center justify-center rounded-lg" :class="queue.size > 0 ? 'bg-warning/10' : 'bg-success/10'">
-          <icon-fa6-solid:circle class="size-2" :class="queue.size > 0 ? 'text-warning' : 'text-success'" />
+        <div
+          class="flex size-8 shrink-0 items-center justify-center rounded-lg"
+          :class="queue.size > 0 ? 'bg-warning/10' : 'bg-success/10'"
+        >
+          <icon-fa6-solid:circle
+            class="size-2"
+            :class="queue.size > 0 ? 'text-warning' : 'text-success'"
+          />
         </div>
 
         <!-- Queue name -->
@@ -59,7 +77,10 @@
 
         <!-- Size -->
         <div class="shrink-0 text-right">
-          <span class="font-mono text-sm font-semibold tabular-nums" :class="queue.size > 0 ? 'text-warning' : 'text-muted-foreground'">
+          <span
+            class="font-mono text-sm font-semibold tabular-nums"
+            :class="queue.size > 0 ? 'text-warning' : 'text-muted-foreground'"
+          >
             {{ queue.size.toLocaleString() }}
           </span>
           <span class="ml-1 text-xs text-muted-foreground">messages</span>
@@ -68,7 +89,10 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:layer-group class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No queues</h3>
       <p class="text-sm text-muted-foreground">This environment has no message queues.</p>

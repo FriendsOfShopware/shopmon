@@ -9,7 +9,10 @@
   </Alert>
 
   <template v-else>
-    <Alert v-if="confirmSuccess" class="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400">
+    <Alert
+      v-if="confirmSuccess"
+      class="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+    >
       <icon-fa6-solid:circle-check class="size-4" />
       <AlertDescription>
         {{ $t("auth.emailConfirmed") }}

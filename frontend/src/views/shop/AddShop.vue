@@ -1,12 +1,12 @@
 <template>
   <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t('shop.newShop') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("shop.newShop") }}</h1>
 
     <Card v-if="!isLoadingOrgs">
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:folder class="size-4 text-muted-foreground" />
-          {{ $t('shop.shopInfo') }}
+          {{ $t("shop.shopInfo") }}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -14,7 +14,7 @@
           <div class="space-y-4">
             <FormField v-slot="{ componentField }" name="name">
               <FormItem>
-                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormLabel>{{ $t("common.name") }}</FormLabel>
                 <FormControl>
                   <Input v-bind="componentField" />
                 </FormControl>
@@ -24,7 +24,7 @@
 
             <FormField v-slot="{ componentField }" name="organizationId">
               <FormItem>
-                <FormLabel>{{ $t('settings.organization') }}</FormLabel>
+                <FormLabel>{{ $t("settings.organization") }}</FormLabel>
                 <Select v-bind="componentField">
                   <FormControl>
                     <SelectTrigger>
@@ -43,7 +43,7 @@
 
             <FormField v-slot="{ componentField }" name="description">
               <FormItem>
-                <FormLabel>{{ $t('common.description') }}</FormLabel>
+                <FormLabel>{{ $t("common.description") }}</FormLabel>
                 <FormControl>
                   <Textarea v-bind="componentField" :placeholder="$t('shop.optionalDescription')" />
                 </FormControl>
@@ -53,9 +53,13 @@
 
             <FormField v-slot="{ componentField }" name="gitUrl">
               <FormItem>
-                <FormLabel>{{ $t('shop.gitRepoUrl') }}</FormLabel>
+                <FormLabel>{{ $t("shop.gitRepoUrl") }}</FormLabel>
                 <FormControl>
-                  <Input v-bind="componentField" type="url" placeholder="https://github.com/org/repo" />
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://github.com/org/repo"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -64,7 +68,11 @@
 
           <div class="flex justify-end">
             <Button :disabled="isSubmitting" type="submit">
-              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="mr-1.5 size-3.5" aria-hidden="true" />
+              <icon-fa6-solid:floppy-disk
+                v-if="!isSubmitting"
+                class="mr-1.5 size-3.5"
+                aria-hidden="true"
+              />
               <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
               {{ $t("common.save") }}
             </Button>
@@ -83,7 +91,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";

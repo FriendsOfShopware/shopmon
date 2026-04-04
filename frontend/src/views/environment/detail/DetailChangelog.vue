@@ -1,7 +1,10 @@
 <template>
   <div v-if="environment" class="space-y-6">
     <!-- Empty state -->
-    <div v-if="!environment.changelogs?.length" class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-if="!environment.changelogs?.length"
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:clock-rotate-left class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No changes recorded</h3>
       <p class="text-sm text-muted-foreground">Changes to this environment will appear here.</p>
@@ -27,20 +30,43 @@
           <!-- Summary -->
           <div class="min-w-0 flex-1">
             <!-- Shopware version change -->
-            <div v-if="entry.oldShopwareVersion && entry.newShopwareVersion" class="flex items-center gap-2">
+            <div
+              v-if="entry.oldShopwareVersion && entry.newShopwareVersion"
+              class="flex items-center gap-2"
+            >
               <Badge class="bg-primary/10 text-primary border-primary/20 font-mono text-xs">
                 {{ entry.oldShopwareVersion }} → {{ entry.newShopwareVersion }}
               </Badge>
             </div>
 
             <!-- Extension change summary -->
-            <div class="flex flex-wrap items-center gap-2" :class="{ 'mt-1': entry.oldShopwareVersion }">
-              <Badge v-for="(count, state) in groupedStates(entry)" :key="state" variant="secondary" class="gap-1 text-xs capitalize">
+            <div
+              class="flex flex-wrap items-center gap-2"
+              :class="{ 'mt-1': entry.oldShopwareVersion }"
+            >
+              <Badge
+                v-for="(count, state) in groupedStates(entry)"
+                :key="state"
+                variant="secondary"
+                class="gap-1 text-xs capitalize"
+              >
                 <icon-fa6-solid:arrow-up v-if="state === 'updated'" class="size-2.5 text-info" />
-                <icon-fa6-solid:plus v-else-if="state === 'installed'" class="size-2.5 text-success" />
-                <icon-fa6-solid:trash v-else-if="state === 'removed'" class="size-2.5 text-destructive" />
-                <icon-fa6-solid:toggle-on v-else-if="state === 'activated'" class="size-2.5 text-success" />
-                <icon-fa6-solid:toggle-off v-else-if="state === 'deactivated'" class="size-2.5 text-warning" />
+                <icon-fa6-solid:plus
+                  v-else-if="state === 'installed'"
+                  class="size-2.5 text-success"
+                />
+                <icon-fa6-solid:trash
+                  v-else-if="state === 'removed'"
+                  class="size-2.5 text-destructive"
+                />
+                <icon-fa6-solid:toggle-on
+                  v-else-if="state === 'activated'"
+                  class="size-2.5 text-success"
+                />
+                <icon-fa6-solid:toggle-off
+                  v-else-if="state === 'deactivated'"
+                  class="size-2.5 text-warning"
+                />
                 <icon-fa6-solid:circle v-else class="size-2 text-muted-foreground" />
                 {{ count }} {{ state }}
               </Badge>
@@ -48,7 +74,12 @@
           </div>
 
           <!-- Expand chevron -->
-          <icon-fa6-solid:chevron-down :class="['size-3 shrink-0 text-muted-foreground transition-transform', expanded.has(entry.id) ? 'rotate-180' : '']" />
+          <icon-fa6-solid:chevron-down
+            :class="[
+              'size-3 shrink-0 text-muted-foreground transition-transform',
+              expanded.has(entry.id) ? 'rotate-180' : '',
+            ]"
+          />
         </button>
 
         <!-- Expanded detail -->
@@ -61,11 +92,26 @@
             >
               <!-- State icon -->
               <div class="shrink-0">
-                <icon-fa6-solid:arrow-up v-if="ext.state === 'updated'" class="size-3.5 text-info" />
-                <icon-fa6-solid:plus v-else-if="ext.state === 'installed'" class="size-3.5 text-success" />
-                <icon-fa6-solid:trash v-else-if="ext.state === 'removed'" class="size-3.5 text-destructive" />
-                <icon-fa6-solid:toggle-on v-else-if="ext.state === 'activated'" class="size-3.5 text-success" />
-                <icon-fa6-solid:toggle-off v-else-if="ext.state === 'deactivated'" class="size-3.5 text-warning" />
+                <icon-fa6-solid:arrow-up
+                  v-if="ext.state === 'updated'"
+                  class="size-3.5 text-info"
+                />
+                <icon-fa6-solid:plus
+                  v-else-if="ext.state === 'installed'"
+                  class="size-3.5 text-success"
+                />
+                <icon-fa6-solid:trash
+                  v-else-if="ext.state === 'removed'"
+                  class="size-3.5 text-destructive"
+                />
+                <icon-fa6-solid:toggle-on
+                  v-else-if="ext.state === 'activated'"
+                  class="size-3.5 text-success"
+                />
+                <icon-fa6-solid:toggle-off
+                  v-else-if="ext.state === 'deactivated'"
+                  class="size-3.5 text-warning"
+                />
                 <icon-fa6-solid:circle v-else class="size-2.5 text-muted-foreground" />
               </div>
 
@@ -76,7 +122,10 @@
               </div>
 
               <!-- Version change -->
-              <div v-if="ext.state === 'updated' && ext.oldVersion && ext.newVersion" class="shrink-0">
+              <div
+                v-if="ext.state === 'updated' && ext.oldVersion && ext.newVersion"
+                class="shrink-0"
+              >
                 <Badge variant="secondary" class="font-mono text-xs">
                   {{ ext.oldVersion }} → {{ ext.newVersion }}
                 </Badge>

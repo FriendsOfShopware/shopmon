@@ -10,10 +10,7 @@
     </p>
   </div>
 
-  <form
-    class="flex w-full flex-col gap-6 text-center"
-    @submit="onSubmit"
-  >
+  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
     <div class="flex flex-col gap-2">
       <FormField v-slot="{ componentField }" name="email">
         <FormItem>
@@ -71,17 +68,8 @@
   <div class="mt-8 flex flex-col gap-6">
     <div class="text-center text-sm text-muted-foreground">{{ $t("common.or") }}</div>
 
-    <Button
-      type="button"
-      class="w-full"
-      :disabled="isAuthenticated"
-      @click="webauthnLogin"
-    >
-      <icon-material-symbols:passkey
-        v-if="!isAuthenticated"
-        class="size-5"
-        aria-hidden="true"
-      />
+    <Button type="button" class="w-full" :disabled="isAuthenticated" @click="webauthnLogin">
+      <icon-material-symbols:passkey v-if="!isAuthenticated" class="size-5" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="size-5" />
       {{ $t("auth.loginPasskey") }}
     </Button>
@@ -99,7 +87,9 @@
     </Button>
 
     <div class="mt-4">
-      <div class="mb-4 text-center text-sm text-muted-foreground">{{ $t("auth.enterpriseSSO") }}</div>
+      <div class="mb-4 text-center text-sm text-muted-foreground">
+        {{ $t("auth.enterpriseSSO") }}
+      </div>
 
       <div class="flex gap-2">
         <Input
@@ -109,12 +99,7 @@
           :placeholder="$t('auth.enterWorkEmail')"
           @keyup.enter="ssoLogin"
         />
-        <Button
-          type="button"
-          size="icon"
-          :disabled="isSSOLoading || !ssoEmail"
-          @click="ssoLogin"
-        >
+        <Button type="button" size="icon" :disabled="isSSOLoading || !ssoEmail" @click="ssoLogin">
           <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="size-4" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="size-4" />
         </Button>

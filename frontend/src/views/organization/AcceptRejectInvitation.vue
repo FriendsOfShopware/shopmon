@@ -2,7 +2,13 @@
   <div class="flex items-center justify-center min-h-[50vh]">
     <div class="text-center text-muted-foreground">
       <icon-line-md:loading-twotone-loop class="size-8 mx-auto mb-2" />
-      <p>{{ action === 'accept' ? $t('organization.acceptingInvitation') : $t('organization.rejectingInvitation') }}</p>
+      <p>
+        {{
+          action === "accept"
+            ? $t("organization.acceptingInvitation")
+            : $t("organization.rejectingInvitation")
+        }}
+      </p>
     </div>
   </div>
 </template>

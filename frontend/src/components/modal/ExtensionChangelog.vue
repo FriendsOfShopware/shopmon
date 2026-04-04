@@ -11,10 +11,7 @@
       <ul v-if="changelogEntries.length > 0" class="list-none space-y-6 p-0">
         <li v-for="changeLog in changelogEntries" :key="changeLog.version">
           <div class="mb-2 flex items-center gap-2 font-semibold">
-            <span
-              v-if="!changeLog.isCompatible"
-              :title="$t('extensionChangelog.notCompatible')"
-            >
+            <span v-if="!changeLog.isCompatible" :title="$t('extensionChangelog.notCompatible')">
               <icon-fa6-solid:circle-info class="size-4 text-warning" />
             </span>
 

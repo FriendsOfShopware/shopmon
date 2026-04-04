@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.environmentManagement') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.environmentManagement") }}</h1>
   </div>
 
   <Card>
@@ -76,7 +76,9 @@
         </template>
 
         <template #cell-shopwareVersion="{ row }">
-          <code class="rounded bg-muted px-1.5 py-0.5 text-sm font-mono">{{ row.shopwareVersion }}</code>
+          <code class="rounded bg-muted px-1.5 py-0.5 text-sm font-mono">{{
+            row.shopwareVersion
+          }}</code>
         </template>
 
         <template #cell-lastScrapedAt="{ row }">
@@ -96,13 +98,21 @@
         </template>
       </DataTable>
 
-      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <div
+        v-if="loading"
+        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
+      >
         <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
         {{ $t("admin.loadingEnvironments") }}
       </div>
 
       <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
-        <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+        <Button
+          size="sm"
+          variant="outline"
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+        >
           {{ $t("common.previous") }}
         </Button>
         <span class="text-sm text-muted-foreground">{{

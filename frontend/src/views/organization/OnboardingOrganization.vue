@@ -1,7 +1,7 @@
 <template>
   <header class="flex items-start justify-between mb-6">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight">{{ $t('onboarding.welcome') }}</h1>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t("onboarding.welcome") }}</h1>
     </div>
     <div class="flex gap-2 items-start" />
   </header>
@@ -19,18 +19,22 @@
 
         <div class="flex flex-col gap-6">
           <div class="flex gap-4 items-start">
-            <div class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+            <div
+              class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"
+            >
               <icon-fa6-solid:plus class="size-4" />
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.createTitle") }}</h3>
-              <p class="text-muted-foreground text-sm leading-relaxed mb-0">{{ $t("onboarding.createDescription") }}</p>
+              <p class="text-muted-foreground text-sm leading-relaxed mb-0">
+                {{ $t("onboarding.createDescription") }}
+              </p>
 
               <form class="mt-4 flex gap-3 items-end" @submit="onSubmit">
                 <div class="flex-1">
                   <FormField v-slot="{ componentField }" name="name">
                     <FormItem>
-                      <FormLabel>{{ $t('common.name') }}</FormLabel>
+                      <FormLabel>{{ $t("common.name") }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -44,7 +48,11 @@
                 </div>
 
                 <Button :disabled="isSubmitting" type="submit" class="shrink-0">
-                  <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+                  <icon-fa6-solid:floppy-disk
+                    v-if="!isSubmitting"
+                    class="size-4"
+                    aria-hidden="true"
+                  />
                   <icon-line-md:loading-twotone-loop v-else class="size-4" />
                   {{ $t("onboarding.createButton") }}
                 </Button>
@@ -52,19 +60,25 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-4 text-muted-foreground text-sm uppercase tracking-wide">
+          <div
+            class="flex items-center gap-4 text-muted-foreground text-sm uppercase tracking-wide"
+          >
             <div class="flex-1 h-px bg-border" />
             <span>{{ $t("common.or") }}</span>
             <div class="flex-1 h-px bg-border" />
           </div>
 
           <div class="flex gap-4 items-start">
-            <div class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+            <div
+              class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"
+            >
               <icon-fa6-solid:envelope class="size-4" />
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.inviteTitle") }}</h3>
-              <p class="text-muted-foreground text-sm leading-relaxed mb-0">{{ $t("onboarding.inviteDescription") }}</p>
+              <p class="text-muted-foreground text-sm leading-relaxed mb-0">
+                {{ $t("onboarding.inviteDescription") }}
+              </p>
             </div>
           </div>
         </div>

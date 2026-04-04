@@ -3,7 +3,11 @@
     <nav class="border-b bg-primary text-primary-foreground">
       <div class="container mx-auto flex items-center justify-between px-4 py-2">
         <div class="flex items-center">
-          <Button as-child variant="ghost" class="text-primary-foreground hover:bg-white/10 hover:text-white">
+          <Button
+            as-child
+            variant="ghost"
+            class="text-primary-foreground hover:bg-white/10 hover:text-white"
+          >
             <RouterLink to="/">
               <Logo class="h-7 w-auto brightness-0 invert" />
             </RouterLink>
@@ -16,7 +20,9 @@
               :to="link.to"
               :class="[
                 'inline-flex items-center rounded px-3 py-1.5 text-sm font-medium transition-colors',
-                isLinkActive(link.match) ? 'bg-white/30 text-white' : 'text-white/80 hover:bg-white/20 hover:text-white',
+                isLinkActive(link.match)
+                  ? 'bg-white/30 text-white'
+                  : 'text-white/80 hover:bg-white/20 hover:text-white',
               ]"
             >
               {{ link.label }}

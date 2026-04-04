@@ -14,7 +14,7 @@ vi.mock("vue-router", () => ({
   RouterLink: {
     name: "RouterLink",
     props: ["to"],
-    template: '<a :href="typeof to === \'string\' ? to : to?.name"><slot /></a>',
+    template: "<a :href=\"typeof to === 'string' ? to : to?.name\"><slot /></a>",
   },
 }));
 
@@ -98,9 +98,7 @@ describe("Register", () => {
   it("has display name input with correct placeholder", () => {
     const wrapper = mountComponent();
     const inputs = wrapper.findAll("input");
-    const displayNameInput = inputs.find(
-      (i) => i.attributes("placeholder") === "Display Name",
-    );
+    const displayNameInput = inputs.find((i) => i.attributes("placeholder") === "Display Name");
     expect(displayNameInput).toBeTruthy();
   });
 

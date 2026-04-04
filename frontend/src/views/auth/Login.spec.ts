@@ -11,7 +11,7 @@ vi.mock("vue-router", () => ({
   RouterLink: {
     name: "RouterLink",
     props: ["to"],
-    template: '<a :href="typeof to === \'string\' ? to : to?.name"><slot /></a>',
+    template: "<a :href=\"typeof to === 'string' ? to : to?.name\"><slot /></a>",
   },
 }));
 

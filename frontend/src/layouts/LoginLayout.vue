@@ -6,7 +6,11 @@
           <icon-fa6-regular:moon v-if="darkMode" class="size-4" />
           <icon-octicon:sun-16 v-else class="size-4" />
         </Button>
-        <button class="text-xs font-bold tracking-wide text-muted-foreground hover:text-foreground" type="button" @click="toggleLocale">
+        <button
+          class="text-xs font-bold tracking-wide text-muted-foreground hover:text-foreground"
+          type="button"
+          @click="toggleLocale"
+        >
           {{ String(locale) === "en" ? "DE" : "EN" }}
         </button>
       </div>

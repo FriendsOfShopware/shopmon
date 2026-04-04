@@ -1,7 +1,7 @@
 <template>
   <header class="flex items-start justify-between mb-6">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight">{{ $t('organization.newOrganization') }}</h1>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t("organization.newOrganization") }}</h1>
     </div>
     <div class="flex gap-2 items-start" />
   </header>
@@ -9,14 +9,14 @@
   <div v-if="session?.user">
     <Card>
       <CardHeader>
-        <CardTitle>{{ $t('organization.orgInfo') }}</CardTitle>
+        <CardTitle>{{ $t("organization.orgInfo") }}</CardTitle>
       </CardHeader>
       <CardContent>
         <form @submit="onSubmit">
           <div class="space-y-4">
             <FormField v-slot="{ componentField }" name="name">
               <FormItem>
-                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormLabel>{{ $t("common.name") }}</FormLabel>
                 <FormControl>
                   <Input v-bind="componentField" autocomplete="name" />
                 </FormControl>

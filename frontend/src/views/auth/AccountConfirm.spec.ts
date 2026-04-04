@@ -14,7 +14,7 @@ vi.mock("vue-router", () => ({
   RouterLink: {
     name: "RouterLink",
     props: ["to"],
-    template: '<a><slot /></a>',
+    template: "<a><slot /></a>",
   },
 }));
 
@@ -76,7 +76,7 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          RouterLink: { props: ["to"], template: '<a><slot /></a>' },
+          RouterLink: { props: ["to"], template: "<a><slot /></a>" },
         },
       },
     });

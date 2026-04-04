@@ -1,11 +1,18 @@
 <template>
   <div v-if="isImpersonating" class="sticky top-0 z-10 bg-amber-500 text-white shadow">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 max-sm:flex-col max-sm:text-center">
+    <div
+      class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 max-sm:flex-col max-sm:text-center"
+    >
       <div class="flex items-center gap-2 text-sm">
         <icon-fa6-solid:user-secret class="size-4" />
         <span v-html="$t('impersonation.banner', { email: session?.user?.email })" />
       </div>
-      <Button size="sm" variant="outline" class="border-white/30 bg-white/20 text-white hover:bg-white/30" @click="stopImpersonating">
+      <Button
+        size="sm"
+        variant="outline"
+        class="border-white/30 bg-white/20 text-white hover:bg-white/30"
+        @click="stopImpersonating"
+      >
         {{ $t("impersonation.stop") }}
       </Button>
     </div>

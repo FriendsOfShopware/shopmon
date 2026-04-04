@@ -26,8 +26,14 @@
       </Card>
       <Card>
         <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg" :class="counts.failed > 0 ? 'bg-destructive/10' : 'bg-muted'">
-            <icon-fa6-solid:circle-xmark class="size-4" :class="counts.failed > 0 ? 'text-destructive' : 'text-muted-foreground'" />
+          <div
+            class="flex size-9 items-center justify-center rounded-lg"
+            :class="counts.failed > 0 ? 'bg-destructive/10' : 'bg-muted'"
+          >
+            <icon-fa6-solid:circle-xmark
+              class="size-4"
+              :class="counts.failed > 0 ? 'text-destructive' : 'text-muted-foreground'"
+            />
           </div>
           <div>
             <div class="text-2xl font-bold tabular-nums">{{ counts.failed }}</div>
@@ -41,7 +47,9 @@
             <icon-fa6-solid:clock class="size-4 text-primary" />
           </div>
           <div>
-            <div class="truncate text-sm font-bold tabular-nums">{{ formatDateTime(latestDeployment.createdAt) }}</div>
+            <div class="truncate text-sm font-bold tabular-nums">
+              {{ formatDateTime(latestDeployment.createdAt) }}
+            </div>
             <div class="text-xs text-muted-foreground">Last deploy</div>
           </div>
         </CardContent>
@@ -60,7 +68,10 @@
       >
         <!-- Status -->
         <div class="shrink-0">
-          <div v-if="dep.returnCode === 0" class="flex size-8 items-center justify-center rounded-lg bg-success/10">
+          <div
+            v-if="dep.returnCode === 0"
+            class="flex size-8 items-center justify-center rounded-lg bg-success/10"
+          >
             <icon-fa6-solid:check class="size-3.5 text-success" />
           </div>
           <div v-else class="flex size-8 items-center justify-center rounded-lg bg-destructive/10">
@@ -84,7 +95,11 @@
             >
               {{ dep.name }}
             </RouterLink>
-            <Badge v-if="dep.returnCode === 0" variant="secondary" class="inline-flex gap-1 text-[10px]">
+            <Badge
+              v-if="dep.returnCode === 0"
+              variant="secondary"
+              class="inline-flex gap-1 text-[10px]"
+            >
               <icon-fa6-solid:check class="size-2" />
               success
             </Badge>
@@ -109,17 +124,15 @@
             class="size-7"
             :title="$t('deployments.openCommit')"
           >
-            <a :href="`${dep.gitUrl}/commit/${dep.reference}`" target="_blank" rel="noopener noreferrer">
+            <a
+              :href="`${dep.gitUrl}/commit/${dep.reference}`"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <icon-fa6-solid:code-branch class="size-3.5" />
             </a>
           </Button>
-          <Button
-            as-child
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            title="View details"
-          >
+          <Button as-child variant="ghost" size="icon" class="size-7" title="View details">
             <RouterLink
               :to="{
                 name: 'account.environments.detail.deployment',
@@ -147,26 +160,45 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:rocket class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">{{ $t("deployments.noDeployments") }}</h3>
-      <p class="max-w-md text-sm text-muted-foreground">Set up the CLI to start tracking deployments.</p>
+      <p class="max-w-md text-sm text-muted-foreground">
+        Set up the CLI to start tracking deployments.
+      </p>
     </div>
 
     <!-- Setup instructions (collapsible) -->
     <Card>
-      <button class="flex w-full items-center justify-between px-6 py-4 text-left" @click="showSetup = !showSetup">
+      <button
+        class="flex w-full items-center justify-between px-6 py-4 text-left"
+        @click="showSetup = !showSetup"
+      >
         <div class="flex items-center gap-2">
           <icon-fa6-solid:terminal class="size-4 text-muted-foreground" />
           <span class="font-semibold">{{ $t("deployments.setupTitle") }}</span>
         </div>
-        <icon-fa6-solid:chevron-down :class="['size-3 text-muted-foreground transition-transform', showSetup ? 'rotate-180' : '']" />
+        <icon-fa6-solid:chevron-down
+          :class="[
+            'size-3 text-muted-foreground transition-transform',
+            showSetup ? 'rotate-180' : '',
+          ]"
+        />
       </button>
 
       <div v-if="showSetup" class="border-t px-6 pb-5 pt-4 space-y-4">
         <p class="text-sm text-muted-foreground leading-relaxed">
           Use the
-          <a href="https://github.com/FriendsOfShopware/shopmon-cli" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">shopmon-cli</a>
+          <a
+            href="https://github.com/FriendsOfShopware/shopmon-cli"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary hover:underline"
+            >shopmon-cli</a
+          >
           to report deployments.
         </p>
 
@@ -178,7 +210,13 @@
           <div class="flex items-center gap-3">
             <code class="font-mono text-xs font-semibold min-w-[180px]">SHOPMON_API_KEY</code>
             <Button as-child variant="outline" size="sm" class="h-6 text-xs">
-              <RouterLink :to="{ name: 'account.shops.edit', params: { shopId: environment.shopId }, hash: '#api-keys' }">
+              <RouterLink
+                :to="{
+                  name: 'account.shops.edit',
+                  params: { shopId: environment.shopId },
+                  hash: '#api-keys',
+                }"
+              >
                 {{ $t("deployments.manageApiKeys") }}
               </RouterLink>
             </Button>
@@ -186,20 +224,31 @@
         </div>
 
         <div class="overflow-x-auto rounded-md bg-[#0d1117] px-4 py-3">
-          <code class="font-mono text-[0.8125rem] whitespace-pre text-[#c9d1d9]">{{ cliCommand }}</code>
+          <code class="font-mono text-[0.8125rem] whitespace-pre text-[#c9d1d9]">{{
+            cliCommand
+          }}</code>
         </div>
 
         <p class="text-xs text-muted-foreground leading-relaxed">
-          The CLI uses the local <code class="rounded bg-muted px-1.5 py-0.5 text-xs">git HEAD</code> commit SHA.
-          Set <code class="rounded bg-muted px-1.5 py-0.5 text-xs">SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code> to override.
-          Configure the git URL in
-          <RouterLink :to="{ name: 'account.shop.list' }" class="text-primary hover:underline">{{ $t("deployments.shopSettings") }}</RouterLink>.
+          The CLI uses the local
+          <code class="rounded bg-muted px-1.5 py-0.5 text-xs">git HEAD</code> commit SHA. Set
+          <code class="rounded bg-muted px-1.5 py-0.5 text-xs"
+            >SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code
+          >
+          to override. Configure the git URL in
+          <RouterLink :to="{ name: 'account.shop.list' }" class="text-primary hover:underline">{{
+            $t("deployments.shopSettings")
+          }}</RouterLink
+          >.
         </p>
       </div>
     </Card>
 
     <!-- Delete confirmation -->
-    <Dialog :open="showDeleteDeploymentDialog" @update:open="(v: boolean) => !v && (showDeleteDeploymentDialog = false)">
+    <Dialog
+      :open="showDeleteDeploymentDialog"
+      @update:open="(v: boolean) => !v && (showDeleteDeploymentDialog = false)"
+    >
       <DialogContent class="max-w-md">
         <DialogHeader>
           <div class="flex items-start gap-3">
@@ -209,7 +258,9 @@
         </DialogHeader>
         <p>{{ $t("deployments.deleteDeploymentConfirm") }}</p>
         <DialogFooter>
-          <Button variant="outline" @click="showDeleteDeploymentDialog = false">{{ $t("common.cancel") }}</Button>
+          <Button variant="outline" @click="showDeleteDeploymentDialog = false">{{
+            $t("common.cancel")
+          }}</Button>
           <Button variant="destructive" :disabled="isDeletingDeployment" @click="deleteDeployment">
             {{ $t("common.delete") }}
           </Button>
@@ -229,7 +280,13 @@ import { api } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const route = useRoute();
 const { environment } = useEnvironmentDetail();
@@ -281,7 +338,9 @@ const deleteDeployment = async () => {
   isDeletingDeployment.value = true;
   try {
     await api.DELETE("/environments/{environmentId}/deployments/{deploymentId}", {
-      params: { path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id } },
+      params: {
+        path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id },
+      },
     });
     await loadDeployments();
     showDeleteDeploymentDialog.value = false;
@@ -298,5 +357,11 @@ const formatDuration = (seconds: string) => {
   return `${Math.floor(num / 60)}m ${Math.round(num % 60)}s`;
 };
 
-watch(environment, (v) => { if (v) loadDeployments(); }, { immediate: true });
+watch(
+  environment,
+  (v) => {
+    if (v) loadDeployments();
+  },
+  { immediate: true },
+);
 </script>

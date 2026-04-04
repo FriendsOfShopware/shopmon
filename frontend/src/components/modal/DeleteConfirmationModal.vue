@@ -3,7 +3,10 @@
     <DialogContent class="max-w-lg">
       <DialogHeader>
         <div class="flex items-start gap-3">
-          <icon-fa6-solid:triangle-exclamation class="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
+          <icon-fa6-solid:triangle-exclamation
+            class="mt-0.5 size-5 shrink-0 text-destructive"
+            aria-hidden="true"
+          />
           <DialogTitle>{{ title }}</DialogTitle>
         </div>
       </DialogHeader>
@@ -21,7 +24,9 @@
       </div>
 
       <div v-if="requirePassword" class="mt-4">
-        <label for="deletePassword" class="mb-1 block font-medium">{{ $t("deleteModal.currentPassword") }}</label>
+        <label for="deletePassword" class="mb-1 block font-medium">{{
+          $t("deleteModal.currentPassword")
+        }}</label>
         <Input
           id="deletePassword"
           v-model="passwordValue"
@@ -51,7 +56,13 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

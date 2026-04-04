@@ -2,7 +2,9 @@
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
     <DialogContent class="max-w-lg gap-0 p-0">
       <!-- Header with gradient -->
-      <div class="rounded-t-lg bg-gradient-to-br from-primary to-primary/80 px-6 pb-6 pt-8 text-white">
+      <div
+        class="rounded-t-lg bg-gradient-to-br from-primary to-primary/80 px-6 pb-6 pt-8 text-white"
+      >
         <div class="mb-3 flex items-center gap-2">
           <div class="flex size-8 items-center justify-center rounded-full bg-white/15">
             <icon-fa6-solid:rocket class="size-3.5" />
@@ -19,8 +21,14 @@
       <div class="space-y-4 px-6 py-5">
         <!-- Feature list -->
         <div class="space-y-2">
-          <div v-for="feature in features" :key="feature.text" class="flex items-start gap-3 rounded-lg border px-3 py-2.5">
-            <div class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
+          <div
+            v-for="feature in features"
+            :key="feature.text"
+            class="flex items-start gap-3 rounded-lg border px-3 py-2.5"
+          >
+            <div
+              class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10"
+            >
               <component :is="feature.icon" class="size-3 text-primary" />
             </div>
             <span class="text-sm">{{ feature.text }}</span>
@@ -30,7 +38,9 @@
         <!-- Quick setup -->
         <div class="rounded-lg bg-muted/50 p-4">
           <h4 class="mb-1 text-sm font-semibold">{{ $t("whatsNew.quickSetup") }}</h4>
-          <p class="text-xs leading-relaxed text-muted-foreground">{{ $t("whatsNew.quickSetupDesc") }}</p>
+          <p class="text-xs leading-relaxed text-muted-foreground">
+            {{ $t("whatsNew.quickSetupDesc") }}
+          </p>
         </div>
 
         <!-- Sponsors -->

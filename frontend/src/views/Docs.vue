@@ -5,20 +5,20 @@
     <div class="flex gap-10">
       <!-- Sticky sidebar TOC -->
       <aside class="hidden w-52 shrink-0 self-start lg:sticky lg:top-16 lg:block">
-          <div class="mb-3 text-sm font-bold tracking-tight">Documentation</div>
-          <a
-            v-for="item in tocItems"
-            :key="item.href"
-            :href="item.href"
-            :class="[
-              'block rounded-md px-3 py-1.5 text-[13px] transition-colors',
-              activeSection === item.href.slice(1)
-                ? 'bg-primary/10 font-medium text-primary'
-                : 'text-muted-foreground hover:text-foreground',
-            ]"
-          >
-            {{ item.label }}
-          </a>
+        <div class="mb-3 text-sm font-bold tracking-tight">Documentation</div>
+        <a
+          v-for="item in tocItems"
+          :key="item.href"
+          :href="item.href"
+          :class="[
+            'block rounded-md px-3 py-1.5 text-[13px] transition-colors',
+            activeSection === item.href.slice(1)
+              ? 'bg-primary/10 font-medium text-primary'
+              : 'text-muted-foreground hover:text-foreground',
+          ]"
+        >
+          {{ item.label }}
+        </a>
       </aside>
 
       <!-- Content -->
@@ -26,19 +26,38 @@
         <!-- Mobile TOC -->
         <Card class="lg:hidden">
           <CardContent class="p-4">
-            <button class="flex w-full items-center justify-between text-sm font-medium" @click="mobileTocOpen = !mobileTocOpen">
+            <button
+              class="flex w-full items-center justify-between text-sm font-medium"
+              @click="mobileTocOpen = !mobileTocOpen"
+            >
               On this page
-              <icon-fa6-solid:chevron-down :class="['size-3 text-muted-foreground transition-transform', mobileTocOpen ? 'rotate-180' : '']" />
+              <icon-fa6-solid:chevron-down
+                :class="[
+                  'size-3 text-muted-foreground transition-transform',
+                  mobileTocOpen ? 'rotate-180' : '',
+                ]"
+              />
             </button>
             <nav v-if="mobileTocOpen" class="mt-3 flex flex-col gap-0.5 border-t pt-3">
-              <a v-for="item in tocItems" :key="item.href" :href="item.href" class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground" @click="mobileTocOpen = false">
+              <a
+                v-for="item in tocItems"
+                :key="item.href"
+                :href="item.href"
+                class="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+                @click="mobileTocOpen = false"
+              >
                 {{ item.label }}
               </a>
             </nav>
           </CardContent>
         </Card>
 
-        <section v-for="section in sections" :key="section.id" :id="section.id" class="scroll-mt-16">
+        <section
+          v-for="section in sections"
+          :key="section.id"
+          :id="section.id"
+          class="scroll-mt-16"
+        >
           <div class="mb-4 flex items-center gap-2.5">
             <div class="flex size-8 items-center justify-center rounded-lg bg-primary/10">
               <component :is="section.icon" class="size-4 text-primary" />
@@ -47,7 +66,10 @@
           </div>
 
           <!-- eslint-disable vue/no-v-html -->
-          <div class="docs-prose text-[0.9375rem] leading-7 text-muted-foreground" v-html="section.content" />
+          <div
+            class="docs-prose text-[0.9375rem] leading-7 text-muted-foreground"
+            v-html="section.content"
+          />
           <!-- eslint-enable vue/no-v-html -->
         </section>
       </div>

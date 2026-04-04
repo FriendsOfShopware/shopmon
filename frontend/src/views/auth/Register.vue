@@ -3,18 +3,12 @@
     <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.createAccountTitle") }}</h2>
   </div>
 
-  <form
-    class="flex w-full flex-col gap-6 text-center"
-    @submit="onSubmit"
-  >
+  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
     <div class="flex flex-col gap-2">
       <FormField v-slot="{ componentField }" name="displayName">
         <FormItem>
           <FormControl>
-            <Input
-              :placeholder="$t('auth.displayName')"
-              v-bind="componentField"
-            />
+            <Input :placeholder="$t('auth.displayName')" v-bind="componentField" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -23,11 +17,7 @@
       <FormField v-slot="{ componentField }" name="email">
         <FormItem>
           <FormControl>
-            <Input
-              type="email"
-              :placeholder="$t('common.emailAddress')"
-              v-bind="componentField"
-            />
+            <Input type="email" :placeholder="$t('common.emailAddress')" v-bind="componentField" />
           </FormControl>
           <FormMessage />
         </FormItem>

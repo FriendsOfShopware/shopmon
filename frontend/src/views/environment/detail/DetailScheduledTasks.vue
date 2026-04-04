@@ -56,7 +56,9 @@
           :key="f.value"
           :class="[
             'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            activeFilter === f.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            activeFilter === f.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
           ]"
           @click="activeFilter = f.value"
         >
@@ -65,7 +67,9 @@
       </div>
 
       <div class="relative">
-        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           v-model="searchQuery"
           type="search"
@@ -89,7 +93,7 @@
         <!-- Status badge -->
         <Badge :class="statusClass(task)" class="shrink-0 gap-1 capitalize">
           <component :is="statusIcon(task)" class="size-2.5" />
-          {{ task.overdue && task.status !== 'inactive' ? 'overdue' : task.status }}
+          {{ task.overdue && task.status !== "inactive" ? "overdue" : task.status }}
         </Badge>
 
         <!-- Task name -->
@@ -98,7 +102,10 @@
         </div>
 
         <!-- Interval -->
-        <div class="hidden shrink-0 text-xs text-muted-foreground sm:block" :title="`Runs every ${task.runInterval} seconds`">
+        <div
+          class="hidden shrink-0 text-xs text-muted-foreground sm:block"
+          :title="`Runs every ${task.runInterval} seconds`"
+        >
           every {{ formatInterval(task.runInterval) }}
         </div>
 
@@ -107,7 +114,13 @@
           <div class="text-muted-foreground">
             last: {{ task.lastExecutionTime ? formatDateTime(task.lastExecutionTime) : "—" }}
           </div>
-          <div :class="task.overdue && task.status !== 'inactive' ? 'text-warning font-medium' : 'text-muted-foreground'">
+          <div
+            :class="
+              task.overdue && task.status !== 'inactive'
+                ? 'text-warning font-medium'
+                : 'text-muted-foreground'
+            "
+          >
             next: {{ task.nextExecutionTime ? formatDateTime(task.nextExecutionTime) : "—" }}
           </div>
         </div>
@@ -126,7 +139,10 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:list-check class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No tasks found</h3>
       <p class="text-sm text-muted-foreground">
@@ -184,7 +200,8 @@ const counts = computed(() => ({
 function statusClass(task: ScheduledTask): string {
   if (task.status === "inactive") return "bg-muted text-muted-foreground";
   if (task.overdue) return "bg-warning/10 text-warning border-warning/30";
-  if (task.status === "queued" || task.status === "running") return "bg-info/10 text-info border-info/30";
+  if (task.status === "queued" || task.status === "running")
+    return "bg-info/10 text-info border-info/30";
   return "bg-success/10 text-success border-success/30";
 }
 

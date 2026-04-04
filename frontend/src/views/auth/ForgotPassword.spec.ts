@@ -41,7 +41,10 @@ describe("ForgotPassword", () => {
     return mount(ForgotPassword, {
       global: {
         stubs: {
-          RouterLink: { props: ["to"], template: '<a :href="typeof to === \'string\' ? to : to?.name"><slot /></a>' },
+          RouterLink: {
+            props: ["to"],
+            template: "<a :href=\"typeof to === 'string' ? to : to?.name\"><slot /></a>",
+          },
         },
       },
     });

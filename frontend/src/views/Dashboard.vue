@@ -1,7 +1,9 @@
 <template>
   <div v-if="environments">
     <!-- Page header with welcome + quick stats -->
-    <div class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
+    <div
+      class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4"
+    >
       <div>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">{{ $t("dashboard.title") }}</h1>
         <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
@@ -17,11 +19,21 @@
           <div class="text-xs text-muted-foreground">Healthy</div>
         </div>
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums" :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'">{{ warnCount }}</div>
+          <div
+            class="text-2xl font-bold tabular-nums"
+            :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'"
+          >
+            {{ warnCount }}
+          </div>
           <div class="text-xs text-muted-foreground">Warnings</div>
         </div>
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums" :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'">{{ errorCount }}</div>
+          <div
+            class="text-2xl font-bold tabular-nums"
+            :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'"
+          >
+            {{ errorCount }}
+          </div>
           <div class="text-xs text-muted-foreground">Errors</div>
         </div>
       </div>
@@ -29,10 +41,15 @@
 
     <!-- Environments grid -->
     <section class="mb-8">
-      <div v-if="environments.length === 0" class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center">
+      <div
+        v-if="environments.length === 0"
+        class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center"
+      >
         <FolderPlus class="size-12 text-muted-foreground" />
         <h2 class="text-2xl font-semibold">No environments yet</h2>
-        <p class="max-w-sm text-muted-foreground">Add your first Shopware environment to start monitoring.</p>
+        <p class="max-w-sm text-muted-foreground">
+          Add your first Shopware environment to start monitoring.
+        </p>
         <Button as-child>
           <RouterLink :to="{ name: 'account.environments.new' }">
             <Plus class="mr-1 size-4" />
@@ -68,10 +85,15 @@
           <!-- Info -->
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
-              <span class="truncate font-semibold leading-tight group-hover:text-primary transition-colors">{{ env.name }}</span>
+              <span
+                class="truncate font-semibold leading-tight group-hover:text-primary transition-colors"
+                >{{ env.name }}</span
+              >
               <StatusIcon :status="env.status" />
             </div>
-            <div class="mt-0.5 truncate text-sm text-muted-foreground">{{ env.organizationName }}</div>
+            <div class="mt-0.5 truncate text-sm text-muted-foreground">
+              {{ env.organizationName }}
+            </div>
             <div class="mt-1.5 flex items-center gap-2">
               <Badge variant="secondary" class="font-mono text-xs">
                 {{ env.shopwareVersion }}
@@ -104,7 +126,11 @@
           </div>
 
           <div class="min-w-0 flex-1">
-            <div class="truncate font-semibold leading-tight group-hover:text-primary transition-colors">{{ organization.name }}</div>
+            <div
+              class="truncate font-semibold leading-tight group-hover:text-primary transition-colors"
+            >
+              {{ organization.name }}
+            </div>
             <div class="mt-0.5 flex items-center gap-3 text-sm text-muted-foreground">
               <span class="flex items-center gap-1">
                 <icon-fa6-solid:users class="size-3" />
@@ -182,7 +208,10 @@ import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { useAccountEnvironments, fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import {
+  useAccountEnvironments,
+  fetchAccountEnvironments,
+} from "@/composables/useAccountEnvironments";
 import { useSession } from "@/composables/useSession";
 
 import { Card } from "@/components/ui/card";
@@ -218,7 +247,13 @@ watch(activeOrganizationId, () => {
   loadDashboardData();
 });
 
-const greenCount = computed(() => environments.value?.filter((e) => e.status === "green").length ?? 0);
-const warnCount = computed(() => environments.value?.filter((e) => e.status === "yellow").length ?? 0);
-const errorCount = computed(() => environments.value?.filter((e) => e.status === "red").length ?? 0);
+const greenCount = computed(
+  () => environments.value?.filter((e) => e.status === "green").length ?? 0,
+);
+const warnCount = computed(
+  () => environments.value?.filter((e) => e.status === "yellow").length ?? 0,
+);
+const errorCount = computed(
+  () => environments.value?.filter((e) => e.status === "red").length ?? 0,
+);
 </script>

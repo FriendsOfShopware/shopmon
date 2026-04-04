@@ -56,7 +56,9 @@
           :key="f.value"
           :class="[
             'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            activeFilter === f.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            activeFilter === f.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
           ]"
           @click="activeFilter = f.value"
         >
@@ -65,7 +67,9 @@
       </div>
 
       <div class="relative">
-        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           v-model="searchQuery"
           type="search"
@@ -95,11 +99,22 @@
           <div class="flex items-center gap-2">
             <component
               :is="ext.storeLink ? 'a' : 'span'"
-              v-bind="ext.storeLink ? { href: ext.storeLink, target: '_blank', class: 'hover:text-primary transition-colors' } : {}"
+              v-bind="
+                ext.storeLink
+                  ? {
+                      href: ext.storeLink,
+                      target: '_blank',
+                      class: 'hover:text-primary transition-colors',
+                    }
+                  : {}
+              "
               class="font-medium truncate"
             >
               {{ ext.label }}
-              <icon-fa6-solid:arrow-up-right-from-square v-if="ext.storeLink" class="ml-1 inline size-2.5 text-muted-foreground" />
+              <icon-fa6-solid:arrow-up-right-from-square
+                v-if="ext.storeLink"
+                class="ml-1 inline size-2.5 text-muted-foreground"
+              />
             </component>
           </div>
           <div class="text-xs text-muted-foreground">{{ ext.name }}</div>
@@ -125,14 +140,20 @@
         </div>
 
         <!-- Installed date -->
-        <div v-if="ext.installedAt" class="hidden shrink-0 text-xs tabular-nums text-muted-foreground xl:block">
+        <div
+          v-if="ext.installedAt"
+          class="hidden shrink-0 text-xs tabular-nums text-muted-foreground xl:block"
+        >
           {{ formatDate(ext.installedAt) }}
         </div>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:puzzle-piece class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No extensions found</h3>
       <p class="text-sm text-muted-foreground">
@@ -227,7 +248,9 @@ const filteredExtensions = computed(() => {
 
   if (searchQuery.value.length >= 2) {
     const q = searchQuery.value.toLowerCase();
-    list = list.filter((e) => e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q));
+    list = list.filter(
+      (e) => e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q),
+    );
   }
 
   return list;

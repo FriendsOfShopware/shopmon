@@ -19,7 +19,13 @@ import {
   fetchAccountEnvironments,
 } from "@/composables/useAccountEnvironments";
 import { api } from "@/helpers/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { AcceptableValue } from "reka-ui";
 
 const { activeOrganizationId } = useSession();

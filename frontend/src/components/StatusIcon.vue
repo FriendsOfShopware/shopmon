@@ -1,18 +1,10 @@
 <template>
   <span v-if="tooltip" :title="status" class="capitalize">
-    <component
-      :is="getIconComponent(status)"
-      class="size-4"
-      :class="getIconClasses(status)"
-    />
+    <component :is="getIconComponent(status)" class="size-4" :class="getIconClasses(status)" />
   </span>
 
   <template v-else>
-    <component
-      :is="getIconComponent(status)"
-      class="size-4"
-      :class="getIconClasses(status)"
-    />
+    <component :is="getIconComponent(status)" class="size-4" :class="getIconClasses(status)" />
   </template>
 </template>
 

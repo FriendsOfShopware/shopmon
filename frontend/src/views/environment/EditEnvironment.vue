@@ -2,7 +2,9 @@
   <div v-if="environment" class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">{{ $t('environment.editEnvironment', { name: environment.name }) }}</h1>
+      <h1 class="text-2xl font-bold tracking-tight">
+        {{ $t("environment.editEnvironment", { name: environment.name }) }}
+      </h1>
       <Button as-child variant="outline">
         <RouterLink
           :to="{
@@ -23,7 +25,7 @@
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:gear class="size-4 text-muted-foreground" />
-          {{ $t('environment.environmentInfo') }}
+          {{ $t("environment.environmentInfo") }}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -31,7 +33,7 @@
           <div class="grid gap-4 sm:grid-cols-2">
             <FormField v-slot="{ componentField }" name="name">
               <FormItem>
-                <FormLabel>{{ $t('common.name') }}</FormLabel>
+                <FormLabel>{{ $t("common.name") }}</FormLabel>
                 <FormControl>
                   <Input v-bind="componentField" autocomplete="name" />
                 </FormControl>
@@ -41,7 +43,7 @@
 
             <FormField v-slot="{ componentField }" name="shopId">
               <FormItem>
-                <FormLabel>{{ $t('environment.shop') }}</FormLabel>
+                <FormLabel>{{ $t("environment.shop") }}</FormLabel>
                 <Select v-bind="componentField">
                   <FormControl>
                     <SelectTrigger>
@@ -60,7 +62,7 @@
 
             <FormField v-slot="{ componentField }" name="shopUrl" class="sm:col-span-2">
               <FormItem>
-                <FormLabel>{{ $t('common.url') }}</FormLabel>
+                <FormLabel>{{ $t("common.url") }}</FormLabel>
                 <FormControl>
                   <Input v-bind="componentField" autocomplete="url" />
                 </FormControl>
@@ -75,13 +77,16 @@
           <div>
             <div class="flex items-center justify-between">
               <div>
-                <h3 class="text-sm font-semibold">{{ $t('environment.integration') }}</h3>
+                <h3 class="text-sm font-semibold">{{ $t("environment.integration") }}</h3>
                 <p class="mt-0.5 text-xs text-muted-foreground">
                   <i18n-t keypath="environment.integrationDesc" tag="span">
                     <template #pluginLink>
-                      <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank" class="text-primary hover:underline">{{
-                        $t("environment.pluginName")
-                      }}</a>
+                      <a
+                        href="https://github.com/FriendsOfShopware/FroshShopmon"
+                        target="_blank"
+                        class="text-primary hover:underline"
+                        >{{ $t("environment.pluginName") }}</a
+                      >
                     </template>
                   </i18n-t>
                 </p>
@@ -95,7 +100,7 @@
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
               <FormField v-slot="{ componentField }" name="clientId">
                 <FormItem>
-                  <FormLabel>{{ $t('environment.clientId') }}</FormLabel>
+                  <FormLabel>{{ $t("environment.clientId") }}</FormLabel>
                   <FormControl>
                     <Input v-bind="componentField" />
                   </FormControl>
@@ -105,7 +110,7 @@
 
               <FormField v-slot="{ componentField }" name="clientSecret">
                 <FormItem>
-                  <FormLabel>{{ $t('environment.clientSecret') }}</FormLabel>
+                  <FormLabel>{{ $t("environment.clientSecret") }}</FormLabel>
                   <FormControl>
                     <Input v-bind="componentField" />
                   </FormControl>
@@ -117,7 +122,11 @@
 
           <div class="flex justify-end">
             <Button :disabled="isSubmitting" type="submit">
-              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="mr-1.5 size-3.5" aria-hidden="true" />
+              <icon-fa6-solid:floppy-disk
+                v-if="!isSubmitting"
+                class="mr-1.5 size-3.5"
+                aria-hidden="true"
+              />
               <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
               {{ $t("common.save") }}
             </Button>
@@ -131,7 +140,7 @@
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:rocket class="size-4 text-muted-foreground" />
-          {{ $t('environment.sitespeed') }}
+          {{ $t("environment.sitespeed") }}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -152,9 +161,15 @@
                 type="url"
                 placeholder="https://example.com"
                 class="flex-1"
-                @update:model-value="sitespeedUrls[index] = ($event as string)"
+                @update:model-value="sitespeedUrls[index] = $event as string"
               />
-              <Button type="button" variant="ghost" size="icon" class="size-8 shrink-0 text-muted-foreground hover:text-destructive" @click="removeSitespeedUrl(index)">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                @click="removeSitespeedUrl(index)"
+              >
                 <icon-fa6-solid:xmark class="size-3.5" />
               </Button>
             </div>
@@ -170,15 +185,18 @@
               {{ $t("environment.newUrl") }}
             </Button>
 
-            <p class="text-xs text-muted-foreground">{{ $t("environment.sitespeedScheduleDesc") }}</p>
+            <p class="text-xs text-muted-foreground">
+              {{ $t("environment.sitespeedScheduleDesc") }}
+            </p>
           </div>
 
           <div class="flex justify-end">
-            <Button
-              :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
-              type="submit"
-            >
-              <icon-fa6-solid:floppy-disk v-if="!isSitespeedSubmitting" class="mr-1.5 size-3.5" aria-hidden="true" />
+            <Button :disabled="isSitespeedSubmitting || !isSitespeedFormValid" type="submit">
+              <icon-fa6-solid:floppy-disk
+                v-if="!isSitespeedSubmitting"
+                class="mr-1.5 size-3.5"
+                aria-hidden="true"
+              />
               <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
               {{ $t("environment.saveSitespeedSettings") }}
             </Button>
@@ -192,16 +210,14 @@
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base text-destructive">
           <icon-fa6-solid:triangle-exclamation class="size-4" />
-          {{ $t('environment.deleteEnvironmentTitle', { name: environment.name }) }}
+          {{ $t("environment.deleteEnvironmentTitle", { name: environment.name }) }}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p class="mb-4 text-sm text-muted-foreground">{{ $t("environment.deleteEnvironmentWarning") }}</p>
-        <Button
-          type="button"
-          variant="destructive"
-          @click="showEnvironmentDeletionModal = true"
-        >
+        <p class="mb-4 text-sm text-muted-foreground">
+          {{ $t("environment.deleteEnvironmentWarning") }}
+        </p>
+        <Button type="button" variant="destructive" @click="showEnvironmentDeletionModal = true">
           <icon-fa6-solid:trash class="mr-1.5 size-3.5" />
           {{ $t("environment.deleteEnvironment") }}
         </Button>
@@ -243,13 +259,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -321,11 +331,14 @@ const isSitespeedFormValid = computed(() => {
 const schema = toTypedSchema(
   z.object({
     name: z.string().min(1, t("validation.environmentNameRequired")),
-    shopUrl: z.string().min(1, t("validation.environmentUrlRequired")).url(t("validation.environmentUrlInvalid")),
+    shopUrl: z
+      .string()
+      .min(1, t("validation.environmentUrlRequired"))
+      .url(t("validation.environmentUrlInvalid")),
     shopId: z.string().min(1, t("validation.shopRequired")),
     clientId: z.string().optional(),
     clientSecret: z.string().optional(),
-  })
+  }),
 );
 
 const { handleSubmit, isSubmitting, setFieldValue } = useForm({

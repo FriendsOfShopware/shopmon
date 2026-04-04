@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.userManagement') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.userManagement") }}</h1>
   </div>
 
   <Card>
@@ -44,24 +44,15 @@
         </template>
 
         <template #cell-status="{ row }">
-          <Badge
-            v-if="row.banned"
-            class="bg-red-500 text-white border-transparent"
-          >
+          <Badge v-if="row.banned" class="bg-red-500 text-white border-transparent">
             {{ $t("admin.banned") }}
           </Badge>
 
-          <Badge
-            v-else-if="!row.emailVerified"
-            class="bg-amber-500 text-white border-transparent"
-          >
+          <Badge v-else-if="!row.emailVerified" class="bg-amber-500 text-white border-transparent">
             {{ $t("admin.unverified") }}
           </Badge>
 
-          <Badge
-            v-else
-            class="bg-emerald-500 text-white border-transparent"
-          >
+          <Badge v-else class="bg-emerald-500 text-white border-transparent">
             {{ $t("admin.active") }}
           </Badge>
         </template>
@@ -97,13 +88,21 @@
         </template>
       </DataTable>
 
-      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <div
+        v-if="loading"
+        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
+      >
         <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
         {{ $t("admin.loadingUsers") }}
       </div>
 
       <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
-        <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+        <Button
+          size="sm"
+          variant="outline"
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+        >
           {{ $t("common.previous") }}
         </Button>
         <span class="text-muted-foreground text-sm">{{

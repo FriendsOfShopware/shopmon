@@ -75,11 +75,11 @@ describe("ListExtensions", () => {
       global: {
         stubs: {
           RouterLink: defineComponent({
-            template: '<a><slot /></a>',
+            template: "<a><slot /></a>",
           }),
           ExtensionChangelog: ExtensionChangelogStub,
-          StatusIcon: defineComponent({ template: '<span />' }),
-          RatingStars: defineComponent({ template: '<span />' }),
+          StatusIcon: defineComponent({ template: "<span />" }),
+          RatingStars: defineComponent({ template: "<span />" }),
         },
       },
     });
@@ -102,11 +102,11 @@ describe("ListExtensions", () => {
       global: {
         stubs: {
           RouterLink: defineComponent({
-            template: '<a><slot /></a>',
+            template: "<a><slot /></a>",
           }),
           ExtensionChangelog: ExtensionChangelogStub,
-          StatusIcon: defineComponent({ template: '<span />' }),
-          RatingStars: defineComponent({ template: '<span />' }),
+          StatusIcon: defineComponent({ template: "<span />" }),
+          RatingStars: defineComponent({ template: "<span />" }),
         },
       },
     });

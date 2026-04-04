@@ -45,7 +45,9 @@
           :key="f.value"
           :class="[
             'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            activeFilter === f.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            activeFilter === f.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
           ]"
           @click="activeFilter = f.value"
         >
@@ -105,7 +107,10 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:circle-check class="size-10 text-success" />
       <h3 class="text-lg font-semibold">All clear</h3>
       <p class="text-sm text-muted-foreground">No checks match the current filter.</p>

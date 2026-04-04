@@ -4,18 +4,11 @@
     <p class="text-left text-muted-foreground">{{ $t("auth.forgotPasswordDesc") }}</p>
   </div>
 
-  <form
-    class="flex w-full flex-col gap-6 text-center"
-    @submit="onSubmit"
-  >
+  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
     <FormField v-slot="{ componentField }" name="email">
       <FormItem>
         <FormControl>
-          <Input
-            type="email"
-            :placeholder="$t('common.emailAddress')"
-            v-bind="componentField"
-          />
+          <Input type="email" :placeholder="$t('common.emailAddress')" v-bind="componentField" />
         </FormControl>
         <FormMessage />
       </FormItem>

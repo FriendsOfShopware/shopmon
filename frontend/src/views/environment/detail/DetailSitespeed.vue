@@ -10,7 +10,9 @@
       <Card v-for="metric in metricCards" :key="metric.label">
         <CardContent class="p-4">
           <div class="text-xs font-medium text-muted-foreground">{{ metric.label }}</div>
-          <div class="mt-1 text-xl font-bold tabular-nums" :class="metric.color">{{ metric.value }}</div>
+          <div class="mt-1 text-xl font-bold tabular-nums" :class="metric.color">
+            {{ metric.value }}
+          </div>
           <div v-if="metric.delta" class="mt-0.5 text-xs tabular-nums" :class="metric.deltaColor">
             {{ metric.delta }}
           </div>
@@ -88,7 +90,9 @@
           :data="environment.sitespeeds"
         >
           <template #cell-createdAt="{ row }">
-            <span class="tabular-nums text-muted-foreground">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="tabular-nums text-muted-foreground">{{
+              formatDateTime(row.createdAt)
+            }}</span>
           </template>
           <template #cell-deployment="{ row }">
             <RouterLink
@@ -108,22 +112,34 @@
             <span v-else class="text-muted-foreground">—</span>
           </template>
           <template #cell-ttfb="{ row }">
-            <span :class="msColor(row.ttfb, 800, 1800)" class="tabular-nums">{{ row.ttfb ? `${row.ttfb}ms` : "—" }}</span>
+            <span :class="msColor(row.ttfb, 800, 1800)" class="tabular-nums">{{
+              row.ttfb ? `${row.ttfb}ms` : "—"
+            }}</span>
           </template>
           <template #cell-fullyLoaded="{ row }">
-            <span :class="msColor(row.fullyLoaded, 3000, 6000)" class="tabular-nums">{{ row.fullyLoaded ? `${row.fullyLoaded}ms` : "—" }}</span>
+            <span :class="msColor(row.fullyLoaded, 3000, 6000)" class="tabular-nums">{{
+              row.fullyLoaded ? `${row.fullyLoaded}ms` : "—"
+            }}</span>
           </template>
           <template #cell-largestContentfulPaint="{ row }">
-            <span :class="msColor(row.largestContentfulPaint, 2500, 4000)" class="tabular-nums">{{ row.largestContentfulPaint ? `${row.largestContentfulPaint}ms` : "—" }}</span>
+            <span :class="msColor(row.largestContentfulPaint, 2500, 4000)" class="tabular-nums">{{
+              row.largestContentfulPaint ? `${row.largestContentfulPaint}ms` : "—"
+            }}</span>
           </template>
           <template #cell-firstContentfulPaint="{ row }">
-            <span :class="msColor(row.firstContentfulPaint, 1800, 3000)" class="tabular-nums">{{ row.firstContentfulPaint ? `${row.firstContentfulPaint}ms` : "—" }}</span>
+            <span :class="msColor(row.firstContentfulPaint, 1800, 3000)" class="tabular-nums">{{
+              row.firstContentfulPaint ? `${row.firstContentfulPaint}ms` : "—"
+            }}</span>
           </template>
           <template #cell-cumulativeLayoutShift="{ row }">
-            <span :class="clsColor(row.cumulativeLayoutShift)" class="tabular-nums">{{ row.cumulativeLayoutShift ?? "—" }}</span>
+            <span :class="clsColor(row.cumulativeLayoutShift)" class="tabular-nums">{{
+              row.cumulativeLayoutShift ?? "—"
+            }}</span>
           </template>
           <template #cell-transferSize="{ row }">
-            <span class="tabular-nums">{{ row.transferSize ? formatBytes(row.transferSize) : "—" }}</span>
+            <span class="tabular-nums">{{
+              row.transferSize ? formatBytes(row.transferSize) : "—"
+            }}</span>
           </template>
         </DataTable>
       </CardContent>
@@ -151,8 +167,8 @@ const { environment } = useEnvironmentDetail();
 
 Chart.register(...registerables, annotationPlugin);
 
-const showSitespeedData = computed(() =>
-  environment.value?.sitespeedEnabled && (environment.value?.sitespeeds?.length ?? 0) > 0,
+const showSitespeedData = computed(
+  () => environment.value?.sitespeedEnabled && (environment.value?.sitespeeds?.length ?? 0) > 0,
 );
 
 // Latest entry
@@ -182,7 +198,10 @@ function formatBytes(bytes: number, decimals = 1): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
 }
 
-function delta(current: number | null | undefined, prev: number | null | undefined): { text: string; good: boolean } | null {
+function delta(
+  current: number | null | undefined,
+  prev: number | null | undefined,
+): { text: string; good: boolean } | null {
   if (current == null || prev == null || prev === 0) return null;
   const diff = current - prev;
   const pct = Math.round((diff / prev) * 100);
@@ -214,36 +233,54 @@ const metricCards = computed(() => {
       label: "TTFB",
       value: formatMs(latest.value.ttfb),
       color: msColor(latest.value.ttfb, 800, 1800),
-      ...(() => { const d = delta(latest.value!.ttfb, prev?.ttfb); return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {}; })(),
+      ...(() => {
+        const d = delta(latest.value!.ttfb, prev?.ttfb);
+        return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {};
+      })(),
     },
     {
       label: "Fully Loaded",
       value: formatMs(latest.value.fullyLoaded),
       color: msColor(latest.value.fullyLoaded, 3000, 6000),
-      ...(() => { const d = delta(latest.value!.fullyLoaded, prev?.fullyLoaded); return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {}; })(),
+      ...(() => {
+        const d = delta(latest.value!.fullyLoaded, prev?.fullyLoaded);
+        return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {};
+      })(),
     },
     {
       label: "LCP",
       value: formatMs(latest.value.largestContentfulPaint),
       color: msColor(latest.value.largestContentfulPaint, 2500, 4000),
-      ...(() => { const d = delta(latest.value!.largestContentfulPaint, prev?.largestContentfulPaint); return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {}; })(),
+      ...(() => {
+        const d = delta(latest.value!.largestContentfulPaint, prev?.largestContentfulPaint);
+        return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {};
+      })(),
     },
     {
       label: "FCP",
       value: formatMs(latest.value.firstContentfulPaint),
       color: msColor(latest.value.firstContentfulPaint, 1800, 3000),
-      ...(() => { const d = delta(latest.value!.firstContentfulPaint, prev?.firstContentfulPaint); return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {}; })(),
+      ...(() => {
+        const d = delta(latest.value!.firstContentfulPaint, prev?.firstContentfulPaint);
+        return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {};
+      })(),
     },
     {
       label: "CLS",
-      value: latest.value.cumulativeLayoutShift != null ? String(latest.value.cumulativeLayoutShift) : "—",
+      value:
+        latest.value.cumulativeLayoutShift != null
+          ? String(latest.value.cumulativeLayoutShift)
+          : "—",
       color: clsColor(latest.value.cumulativeLayoutShift),
     },
     {
       label: "Transfer Size",
       value: latest.value.transferSize ? formatBytes(latest.value.transferSize) : "—",
       color: "",
-      ...(() => { const d = delta(latest.value!.transferSize, prev?.transferSize); return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {}; })(),
+      ...(() => {
+        const d = delta(latest.value!.transferSize, prev?.transferSize);
+        return d ? { delta: d.text, deltaColor: d.good ? "text-success" : "text-destructive" } : {};
+      })(),
     },
   ];
   return cards;
@@ -303,10 +340,26 @@ const chartConfigs: ChartConfig[] = [
     title: t("sitespeed.performanceOverTime"),
     yAxisLabel: t("sitespeed.timeMs"),
     datasets: [
-      { label: t("sitespeed.ttfb"), valueFormatter: (i) => i.ttfb ?? 0, tooltipFormatter: (v) => `${v}ms` },
-      { label: t("sitespeed.fullyLoaded"), valueFormatter: (i) => i.fullyLoaded ?? 0, tooltipFormatter: (v) => `${v}ms` },
-      { label: t("sitespeed.lcp"), valueFormatter: (i) => i.largestContentfulPaint ?? 0, tooltipFormatter: (v) => `${v}ms` },
-      { label: t("sitespeed.fcp"), valueFormatter: (i) => i.firstContentfulPaint ?? 0, tooltipFormatter: (v) => `${v}ms` },
+      {
+        label: t("sitespeed.ttfb"),
+        valueFormatter: (i) => i.ttfb ?? 0,
+        tooltipFormatter: (v) => `${v}ms`,
+      },
+      {
+        label: t("sitespeed.fullyLoaded"),
+        valueFormatter: (i) => i.fullyLoaded ?? 0,
+        tooltipFormatter: (v) => `${v}ms`,
+      },
+      {
+        label: t("sitespeed.lcp"),
+        valueFormatter: (i) => i.largestContentfulPaint ?? 0,
+        tooltipFormatter: (v) => `${v}ms`,
+      },
+      {
+        label: t("sitespeed.fcp"),
+        valueFormatter: (i) => i.firstContentfulPaint ?? 0,
+        tooltipFormatter: (v) => `${v}ms`,
+      },
     ],
   },
   {
@@ -315,7 +368,11 @@ const chartConfigs: ChartConfig[] = [
     title: t("sitespeed.transferSizeOverTime"),
     yAxisLabel: t("sitespeed.sizeKb"),
     datasets: [
-      { label: t("sitespeed.transferSize"), valueFormatter: (i) => i.transferSize ? Math.round(i.transferSize / 1024) : 0, tooltipFormatter: (v) => `${v} KB` },
+      {
+        label: t("sitespeed.transferSize"),
+        valueFormatter: (i) => (i.transferSize ? Math.round(i.transferSize / 1024) : 0),
+        tooltipFormatter: (v) => `${v} KB`,
+      },
     ],
   },
   {
@@ -324,7 +381,11 @@ const chartConfigs: ChartConfig[] = [
     title: t("sitespeed.clsOverTime"),
     yAxisLabel: t("sitespeed.clsScore"),
     datasets: [
-      { label: t("sitespeed.cls"), valueFormatter: (i) => i.cumulativeLayoutShift ?? 0, tooltipFormatter: (v) => `${v}` },
+      {
+        label: t("sitespeed.cls"),
+        valueFormatter: (i) => i.cumulativeLayoutShift ?? 0,
+        tooltipFormatter: (v) => `${v}`,
+      },
     ],
   },
 ];
@@ -350,7 +411,16 @@ function createChart(config: ChartConfig) {
       borderColor: "rgba(99, 102, 241, 0.8)",
       borderWidth: 2,
       borderDash: [5, 5],
-      label: { display: true, content: d.name, position: "start", backgroundColor: "rgba(99, 102, 241, 0.8)", color: "white", font: { size: 10 }, rotation: 0, yAdjust: -10 },
+      label: {
+        display: true,
+        content: d.name,
+        position: "start",
+        backgroundColor: "rgba(99, 102, 241, 0.8)",
+        color: "white",
+        font: { size: 10 },
+        rotation: 0,
+        yAdjust: -10,
+      },
     };
   });
 
@@ -359,7 +429,10 @@ function createChart(config: ChartConfig) {
     data: {
       datasets: config.datasets.map((ds) => ({
         label: ds.label,
-        data: sorted.map((item) => ({ x: new Date(item.createdAt).getTime(), y: ds.valueFormatter(item) })),
+        data: sorted.map((item) => ({
+          x: new Date(item.createdAt).getTime(),
+          y: ds.valueFormatter(item),
+        })),
       })),
     },
     options: {
@@ -372,13 +445,21 @@ function createChart(config: ChartConfig) {
         legend: { display: true, position: "top" },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${config.datasets[ctx.datasetIndex].tooltipFormatter(ctx.parsed.y ?? 0)}`,
-            title: (items) => items.length && items[0].parsed.x != null ? new Date(items[0].parsed.x).toLocaleString() : "",
+            label: (ctx) =>
+              `${ctx.dataset.label}: ${config.datasets[ctx.datasetIndex].tooltipFormatter(ctx.parsed.y ?? 0)}`,
+            title: (items) =>
+              items.length && items[0].parsed.x != null
+                ? new Date(items[0].parsed.x).toLocaleString()
+                : "",
           },
         },
       },
       scales: {
-        x: { type: "time", time: { unit: "day", displayFormats: { day: "MMM dd" } }, title: { display: false } },
+        x: {
+          type: "time",
+          time: { unit: "day", displayFormats: { day: "MMM dd" } },
+          title: { display: false },
+        },
         y: { beginAtZero: true, title: { display: true, text: config.yAxisLabel } },
       },
     },
@@ -398,8 +479,12 @@ onUnmounted(() => {
   chartConfigs.forEach((c) => c.chartInstance.value?.destroy());
 });
 
-watch(() => environment.value?.sitespeeds, async () => {
-  await nextTick();
-  createAllCharts();
-}, { deep: true });
+watch(
+  () => environment.value?.sitespeeds,
+  async () => {
+    await nextTick();
+    createAllCharts();
+  },
+  { deep: true },
+);
 </script>

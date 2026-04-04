@@ -1,6 +1,5 @@
 <template>
   <div v-if="environment" class="space-y-6">
-
     <!-- ═══════ TOP: Status bar + key metrics ═══════ -->
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Card class="relative overflow-hidden">
@@ -10,7 +9,15 @@
           </div>
           <div class="min-w-0">
             <div class="text-xs font-medium text-muted-foreground">Status</div>
-            <div class="truncate font-semibold capitalize">{{ environment.status === 'green' ? 'Healthy' : environment.status === 'yellow' ? 'Warning' : 'Error' }}</div>
+            <div class="truncate font-semibold capitalize">
+              {{
+                environment.status === "green"
+                  ? "Healthy"
+                  : environment.status === "yellow"
+                    ? "Warning"
+                    : "Error"
+              }}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -21,15 +28,23 @@
             <icon-fa6-solid:code-branch class="size-4 text-primary" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.shopwareVersion") }}</div>
+            <div class="text-xs font-medium text-muted-foreground">
+              {{ $t("shopDetail.shopwareVersion") }}
+            </div>
             <div class="flex items-center gap-2">
               <span class="font-mono font-semibold">{{ environment.shopwareVersion }}</span>
               <a
-                v-if="latestShopwareVersion && latestShopwareVersion !== environment.shopwareVersion"
-                :href="'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion"
+                v-if="
+                  latestShopwareVersion && latestShopwareVersion !== environment.shopwareVersion
+                "
+                :href="
+                  'https://github.com/shopware/platform/releases/tag/v' + latestShopwareVersion
+                "
                 target="_blank"
               >
-                <Badge variant="secondary" class="font-mono text-[10px]">{{ latestShopwareVersion }}</Badge>
+                <Badge variant="secondary" class="font-mono text-[10px]">{{
+                  latestShopwareVersion
+                }}</Badge>
               </a>
             </div>
           </div>
@@ -42,10 +57,14 @@
             <icon-fa6-solid:puzzle-piece class="size-4 text-primary" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.extensions") }}</div>
+            <div class="text-xs font-medium text-muted-foreground">
+              {{ $t("shopDetail.extensions") }}
+            </div>
             <div class="font-semibold tabular-nums">
               {{ environment.extensions?.length ?? 0 }}
-              <span v-if="outdatedExtensions.length > 0" class="text-sm font-normal text-warning">({{ outdatedExtensions.length }} outdated)</span>
+              <span v-if="outdatedExtensions.length > 0" class="text-sm font-normal text-warning"
+                >({{ outdatedExtensions.length }} outdated)</span
+              >
             </div>
           </div>
         </CardContent>
@@ -57,8 +76,12 @@
             <icon-fa6-solid:clock class="size-4 text-primary" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-medium text-muted-foreground">{{ $t("shopDetail.lastCheckedAt") }}</div>
-            <div class="truncate text-sm font-semibold tabular-nums">{{ formatDateTime(environment.lastScrapedAt) }}</div>
+            <div class="text-xs font-medium text-muted-foreground">
+              {{ $t("shopDetail.lastCheckedAt") }}
+            </div>
+            <div class="truncate text-sm font-semibold tabular-nums">
+              {{ formatDateTime(environment.lastScrapedAt) }}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -66,7 +89,6 @@
 
     <!-- ═══════ MIDDLE: Bento grid — checks + extensions + tasks ═══════ -->
     <div class="grid gap-4 lg:grid-cols-2">
-
       <!-- Security checks -->
       <Card>
         <CardHeader class="flex-row items-center justify-between pb-3">
@@ -82,16 +104,28 @@
           </Button>
         </CardHeader>
         <CardContent class="pt-0">
-          <div v-if="sortedCriticalChecks.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+          <div
+            v-if="sortedCriticalChecks.length === 0"
+            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+          >
             <icon-fa6-solid:circle-check class="size-4 shrink-0" />
             {{ $t("shopDetail.allChecksPassed") }}
           </div>
           <div v-else class="space-y-1.5">
-            <div v-for="check in sortedCriticalChecks" :key="check.id" class="flex items-start gap-2.5 rounded-lg border px-3 py-2">
+            <div
+              v-for="check in sortedCriticalChecks"
+              :key="check.id"
+              class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
+            >
               <StatusIcon :status="check.level" class="mt-0.5 shrink-0" />
               <div class="min-w-0 flex-1 text-sm">
                 <span>{{ check.message }}</span>
-                <a v-if="check.link" :href="check.link" target="_blank" class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline">
+                <a
+                  v-if="check.link"
+                  :href="check.link"
+                  target="_blank"
+                  class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline"
+                >
                   <icon-fa6-solid:arrow-up-right-from-square class="size-2.5" />
                 </a>
               </div>
@@ -115,20 +149,35 @@
           </Button>
         </CardHeader>
         <CardContent class="pt-0">
-          <div v-if="outdatedExtensions.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+          <div
+            v-if="outdatedExtensions.length === 0"
+            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+          >
             <icon-fa6-solid:circle-check class="size-4 shrink-0" />
             {{ $t("shopDetail.allExtensionsUpToDate") }}
           </div>
           <div v-else class="space-y-1.5">
-            <div v-for="ext in outdatedExtensions" :key="ext.name" class="flex items-center gap-2.5 rounded-lg border px-3 py-2">
+            <div
+              v-for="ext in outdatedExtensions"
+              :key="ext.name"
+              class="flex items-center gap-2.5 rounded-lg border px-3 py-2"
+            >
               <icon-fa6-solid:arrow-up class="size-3.5 shrink-0 text-info" />
               <div class="min-w-0 flex-1 text-sm">
                 <span class="font-medium">{{ ext.label }}</span>
-                <button class="ml-1 text-primary hover:underline" @click="openExtensionChangelog(ext)">
+                <button
+                  class="ml-1 text-primary hover:underline"
+                  @click="openExtensionChangelog(ext)"
+                >
                   {{ ext.version }} → {{ ext.latestVersion }}
                 </button>
               </div>
-              <a v-if="ext.storeLink" :href="ext.storeLink" target="_blank" class="shrink-0 text-muted-foreground hover:text-foreground">
+              <a
+                v-if="ext.storeLink"
+                :href="ext.storeLink"
+                target="_blank"
+                class="shrink-0 text-muted-foreground hover:text-foreground"
+              >
                 <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
               </a>
             </div>
@@ -151,16 +200,25 @@
           </Button>
         </CardHeader>
         <CardContent class="pt-0">
-          <div v-if="overdueTasks.length === 0" class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+          <div
+            v-if="overdueTasks.length === 0"
+            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+          >
             <icon-fa6-solid:circle-check class="size-4 shrink-0" />
             {{ $t("shopDetail.noOverdueTasks") }}
           </div>
           <div v-else class="space-y-1.5">
-            <div v-for="task in overdueTasks" :key="task.id" class="flex items-start gap-2.5 rounded-lg border px-3 py-2">
+            <div
+              v-for="task in overdueTasks"
+              :key="task.id"
+              class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
+            >
               <icon-fa6-solid:clock class="mt-0.5 size-3.5 shrink-0 text-warning" />
               <div class="min-w-0 text-sm">
                 <div class="font-medium">{{ task.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue</div>
+                <div class="text-xs text-muted-foreground">
+                  {{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue
+                </div>
               </div>
             </div>
           </div>
@@ -182,7 +240,10 @@
           </Button>
         </CardHeader>
         <CardContent class="pt-0">
-          <div v-if="recentChangelogs.length === 0" class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+          <div
+            v-if="recentChangelogs.length === 0"
+            class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground"
+          >
             <icon-fa6-solid:circle-info class="size-4 shrink-0" />
             {{ $t("shopDetail.noRecentChanges") }}
           </div>
@@ -193,7 +254,9 @@
               class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors hover:bg-accent"
               @click="openEnvironmentChangelog(changelog)"
             >
-              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatDate(changelog.date) }}</span>
+              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+                formatDate(changelog.date)
+              }}</span>
               <Separator orientation="vertical" class="h-4" />
               <span class="min-w-0 flex-1 truncate text-sm">{{ sumChanges(changelog) }}</span>
               <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
@@ -233,13 +296,24 @@
           <div class="sm:col-span-2 lg:col-span-3">
             <dt class="text-xs font-medium text-muted-foreground">
               Bypass Authentication Header
-              <span title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded">
+              <span
+                title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
+              >
                 <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
               </span>
             </dt>
             <dd class="mt-1 flex items-center gap-2">
-              <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{ environment.environmentToken }}</code>
-              <Button type="button" variant="ghost" size="icon" class="size-7 shrink-0" title="Copy token" @click="copyToken">
+              <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
+                environment.environmentToken
+              }}</code>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-7 shrink-0"
+                title="Copy token"
+                @click="copyToken"
+              >
                 <icon-fa6-solid:copy class="size-3" />
               </Button>
             </dd>
@@ -305,18 +379,34 @@ const routeParams = computed(() => ({
   organizationId: route.params.organizationId,
   environmentId: route.params.environmentId,
 }));
-const checksRoute = computed(() => ({ name: "account.environments.detail.checks", params: routeParams.value }));
-const extensionsRoute = computed(() => ({ name: "account.environments.detail.extensions", params: routeParams.value }));
-const tasksRoute = computed(() => ({ name: "account.environments.detail.tasks", params: routeParams.value }));
-const changelogRoute = computed(() => ({ name: "account.environments.detail.changelog", params: routeParams.value }));
+const checksRoute = computed(() => ({
+  name: "account.environments.detail.checks",
+  params: routeParams.value,
+}));
+const extensionsRoute = computed(() => ({
+  name: "account.environments.detail.extensions",
+  params: routeParams.value,
+}));
+const tasksRoute = computed(() => ({
+  name: "account.environments.detail.tasks",
+  params: routeParams.value,
+}));
+const changelogRoute = computed(() => ({
+  name: "account.environments.detail.changelog",
+  params: routeParams.value,
+}));
 
 // Status styling
 const statusBg = computed(() => {
   switch (environment.value?.status) {
-    case "green": return "bg-success/15";
-    case "yellow": return "bg-warning/15";
-    case "red": return "bg-destructive/15";
-    default: return "bg-muted";
+    case "green":
+      return "bg-success/15";
+    case "yellow":
+      return "bg-warning/15";
+    case "red":
+      return "bg-destructive/15";
+    default:
+      return "bg-muted";
   }
 });
 
@@ -325,7 +415,10 @@ const infoItems = computed(() => {
   if (!environment.value) return [];
   return [
     { label: t("shopDetail.shopwareVersion"), value: environment.value.shopwareVersion },
-    { label: t("shopDetail.lastCheckedAt"), value: formatDateTime(environment.value.lastScrapedAt) },
+    {
+      label: t("shopDetail.lastCheckedAt"),
+      value: formatDateTime(environment.value.lastScrapedAt),
+    },
     {
       label: t("shopDetail.lastShopUpdate"),
       value: environment.value.lastChangelog?.date
@@ -334,9 +427,10 @@ const infoItems = computed(() => {
     },
     {
       label: t("shopDetail.lastDeployment"),
-      value: environment.value.deploymentsCount > 0
-        ? `${environment.value.deploymentsCount} deployment${environment.value.deploymentsCount !== 1 ? "s" : ""}`
-        : t("common.never"),
+      value:
+        environment.value.deploymentsCount > 0
+          ? `${environment.value.deploymentsCount} deployment${environment.value.deploymentsCount !== 1 ? "s" : ""}`
+          : t("common.never"),
     },
     { label: t("shopDetail.environment"), value: environment.value.cache?.environment ?? "-" },
     { label: t("shopDetail.cacheAdapter"), value: environment.value.cache?.cacheAdapter ?? "-" },
@@ -357,8 +451,18 @@ async function copyToken() {
 }
 
 // Changelogs
-const { viewExtensionChangelogDialog, dialogExtension, openExtensionChangelog, closeExtensionChangelog } = useExtensionChangelogModal();
-const { viewEnvironmentChangelogDialog, dialogEnvironmentChangelog, openEnvironmentChangelog, closeEnvironmentChangelog } = useEnvironmentChangelogModal();
+const {
+  viewExtensionChangelogDialog,
+  dialogExtension,
+  openExtensionChangelog,
+  closeExtensionChangelog,
+} = useExtensionChangelogModal();
+const {
+  viewEnvironmentChangelogDialog,
+  dialogEnvironmentChangelog,
+  openEnvironmentChangelog,
+  closeEnvironmentChangelog,
+} = useEnvironmentChangelogModal();
 
 // Computed data
 const sortedCriticalChecks = computed(() => {
@@ -386,7 +490,10 @@ const overdueTasks = computed(() => {
   return environment.value.scheduledTasks
     .filter(
       (task) =>
-        task.overdue && task.status !== "inactive" && task.nextExecutionTime && new Date(task.nextExecutionTime) < fifteenMinutesAgo,
+        task.overdue &&
+        task.status !== "inactive" &&
+        task.nextExecutionTime &&
+        new Date(task.nextExecutionTime) < fifteenMinutesAgo,
     )
     .slice(0, 5);
 });
@@ -430,10 +537,14 @@ async function loadUpdateWizard(version: string) {
 
     if (!pluginCompatibility) return;
 
-    const extensions = JSON.parse(JSON.stringify(environment.value.extensions)) as ExtensionWithCompatibility[];
+    const extensions = JSON.parse(
+      JSON.stringify(environment.value.extensions),
+    ) as ExtensionWithCompatibility[];
     for (const ext of extensions) {
       const compat = pluginCompatibility.find((p) => p.name === ext.name);
-      ext.compatibility = compat ? (compat.status as ExtensionWithCompatibility["compatibility"]) : undefined;
+      ext.compatibility = compat
+        ? (compat.status as ExtensionWithCompatibility["compatibility"])
+        : undefined;
     }
 
     dialogUpdateWizard.value = extensions.sort((a, b) => {

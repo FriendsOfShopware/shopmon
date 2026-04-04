@@ -3,10 +3,15 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold tracking-tight">
-        {{ $t('organization.editTitle', { name: organization.name }) }}
+        {{ $t("organization.editTitle", { name: organization.name }) }}
       </h1>
       <Button variant="outline" size="sm" as-child>
-        <RouterLink :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }">
+        <RouterLink
+          :to="{
+            name: 'account.organizations.detail',
+            params: { organizationId: organization.id },
+          }"
+        >
           {{ $t("common.cancel") }}
         </RouterLink>
       </Button>
@@ -17,14 +22,14 @@
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:building class="size-4 text-muted-foreground" />
-          {{ $t('organization.orgInfo') }}
+          {{ $t("organization.orgInfo") }}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form @submit="onSubmit" class="space-y-4">
           <FormField v-slot="{ componentField }" name="name">
             <FormItem>
-              <FormLabel>{{ $t('common.name') }}</FormLabel>
+              <FormLabel>{{ $t("common.name") }}</FormLabel>
               <FormControl>
                 <Input v-bind="componentField" autocomplete="name" />
               </FormControl>
@@ -48,7 +53,7 @@
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base text-destructive">
           <icon-fa6-solid:triangle-exclamation class="size-4" />
-          {{ $t('organization.deleteOrgTitle', { name: organization.name }) }}
+          {{ $t("organization.deleteOrgTitle", { name: organization.name }) }}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -146,7 +151,10 @@ const onSubmit = handleSubmit(async (values) => {
       error((respError as { message?: string }).message ?? "Failed to update organization");
       return;
     }
-    await router.push({ name: "account.organizations.detail", params: { organizationId: organization.value.id } });
+    await router.push({
+      name: "account.organizations.detail",
+      params: { organizationId: organization.value.id },
+    });
   } catch (err) {
     error(err instanceof Error ? err.message : String(err));
   }

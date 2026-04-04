@@ -6,7 +6,9 @@
     <!-- Environment header strip -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
-        <div class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted">
+        <div
+          class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted"
+        >
           <img
             v-if="environment.environmentImage"
             :src="environment.environmentImage"
@@ -19,10 +21,14 @@
           <div class="flex items-center gap-2">
             <!-- Environment switcher -->
             <DropdownMenu v-if="siblingEnvironments.length > 1">
-              <DropdownMenuTrigger class="group flex items-center gap-1.5 rounded-md px-1 -ml-1 hover:bg-accent transition-colors">
+              <DropdownMenuTrigger
+                class="group flex items-center gap-1.5 rounded-md px-1 -ml-1 hover:bg-accent transition-colors"
+              >
                 <h1 class="truncate text-xl font-bold">{{ environment.name }}</h1>
                 <StatusIcon :status="environment.status" />
-                <icon-fa6-solid:chevron-down class="size-2.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                <icon-fa6-solid:chevron-down
+                  class="size-2.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+                />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-64">
                 <DropdownMenuLabel>Switch environment</DropdownMenuLabel>
@@ -31,11 +37,24 @@
                   v-for="env in siblingEnvironments"
                   :key="env.id"
                   :class="{ 'bg-accent': env.id === environment.id }"
-                  @click="$router.push({ name: currentTabRoute, params: { organizationId: env.organizationId, environmentId: env.id } })"
+                  @click="
+                    $router.push({
+                      name: currentTabRoute,
+                      params: { organizationId: env.organizationId, environmentId: env.id },
+                    })
+                  "
                 >
                   <div class="flex items-center gap-2.5 w-full">
-                    <img v-if="env.favicon" :src="env.favicon" alt="" class="size-4 shrink-0 rounded" />
-                    <icon-fa6-solid:earth-americas v-else class="size-3.5 shrink-0 text-muted-foreground/50" />
+                    <img
+                      v-if="env.favicon"
+                      :src="env.favicon"
+                      alt=""
+                      class="size-4 shrink-0 rounded"
+                    />
+                    <icon-fa6-solid:earth-americas
+                      v-else
+                      class="size-3.5 shrink-0 text-muted-foreground/50"
+                    />
                     <span class="flex-1 truncate">{{ env.name }}</span>
                     <StatusIcon :status="env.status" />
                   </div>
@@ -52,7 +71,13 @@
             <span class="truncate">{{ environment.organizationName }}</span>
             <template v-if="environmentHost">
               <span class="text-border">/</span>
-              <a :href="environment.url" target="_blank" rel="noopener noreferrer" class="truncate hover:text-primary">{{ environmentHost }}</a>
+              <a
+                :href="environment.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="truncate hover:text-primary"
+                >{{ environmentHost }}</a
+              >
             </template>
           </div>
         </div>
@@ -82,7 +107,10 @@
           :disabled="isSubscribing"
           @click="toggleNotificationSubscription"
         >
-          <icon-fa6-solid:bell v-if="isSubscribed" :class="['size-3.5', { 'animate-pulse': isSubscribing }]" />
+          <icon-fa6-solid:bell
+            v-if="isSubscribed"
+            :class="['size-3.5', { 'animate-pulse': isSubscribing }]"
+          />
           <icon-fa6-regular:bell v-else :class="['size-3.5', { 'animate-pulse': isSubscribing }]" />
         </Button>
 
@@ -94,7 +122,9 @@
           :disabled="isCacheClearing"
           @click="onCacheClear"
         >
-          <icon-ic:baseline-cleaning-services :class="['size-3.5', { 'animate-pulse': isCacheClearing }]" />
+          <icon-ic:baseline-cleaning-services
+            :class="['size-3.5', { 'animate-pulse': isCacheClearing }]"
+          />
         </Button>
 
         <Button
@@ -109,7 +139,15 @@
         </Button>
 
         <Button as-child size="sm">
-          <RouterLink :to="{ name: 'account.environments.edit', params: { organizationId: route.params.organizationId, environmentId: environment.id } }">
+          <RouterLink
+            :to="{
+              name: 'account.environments.edit',
+              params: {
+                organizationId: route.params.organizationId,
+                environmentId: environment.id,
+              },
+            }"
+          >
             <icon-fa6-solid:pencil class="mr-1.5 size-3" />
             Edit
           </RouterLink>
@@ -118,10 +156,15 @@
     </div>
 
     <!-- Error banner -->
-    <Alert v-if="environment.lastScrapedError" variant="destructive" class="border-destructive/30 bg-destructive/10">
+    <Alert
+      v-if="environment.lastScrapedError"
+      variant="destructive"
+      class="border-destructive/30 bg-destructive/10"
+    >
       <CircleX class="size-4" />
       <AlertDescription>
-        This environment will be not automatically updated anymore. Please update the API credentials or URL to fix this issue.
+        This environment will be not automatically updated anymore. Please update the API
+        credentials or URL to fix this issue.
       </AlertDescription>
     </Alert>
 
@@ -130,7 +173,13 @@
       <RouterLink
         v-for="tab in tabs"
         :key="tab.route"
-        :to="{ name: tab.route, params: { organizationId: route.params.organizationId, environmentId: route.params.environmentId } }"
+        :to="{
+          name: tab.route,
+          params: {
+            organizationId: route.params.organizationId,
+            environmentId: route.params.environmentId,
+          },
+        }"
         :class="[
           'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
           isTabActive(tab.route)
@@ -142,7 +191,9 @@
       >
         <component :is="tab.icon" class="size-3.5" />
         {{ tab.label }}
-        <Badge v-if="tab.count" variant="secondary" class="ml-0.5 h-5 min-w-5 px-1 text-[10px]">{{ tab.count }}</Badge>
+        <Badge v-if="tab.count" variant="secondary" class="ml-0.5 h-5 min-w-5 px-1 text-[10px]">{{
+          tab.count
+        }}</Badge>
       </RouterLink>
     </nav>
 
@@ -152,7 +203,10 @@
     </div>
 
     <!-- Refresh modal -->
-    <Dialog :open="showEnvironmentRefreshModal" @update:open="(v: boolean) => !v && (showEnvironmentRefreshModal = false)">
+    <Dialog
+      :open="showEnvironmentRefreshModal"
+      @update:open="(v: boolean) => !v && (showEnvironmentRefreshModal = false)"
+    >
       <DialogContent class="max-w-md">
         <DialogHeader>
           <div class="flex items-start gap-3">
@@ -181,7 +235,13 @@ import StatusIcon from "@/components/StatusIcon.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CircleX } from "lucide-vue-next";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -230,7 +290,8 @@ const siblingEnvironments = computed(() => {
 const currentTabRoute = computed(() => {
   const name = route.name as string;
   // If on a sub-detail page (e.g. deployment/:id), go to the parent list
-  if (name === "account.environments.detail.deployment") return "account.environments.detail.deployments";
+  if (name === "account.environments.detail.deployment")
+    return "account.environments.detail.deployments";
   // If it's a known tab route, keep it
   if (name.startsWith("account.environments.detail")) return name;
   return "account.environments.detail";
@@ -246,20 +307,64 @@ const environmentHost = computed(() => {
 });
 
 const tabs = computed(() => [
-  { route: "account.environments.detail", label: t("nav.environmentInformation"), icon: FaShop, count: 0 },
-  { route: "account.environments.detail.checks", label: t("nav.checks"), icon: FaCircleCheck, count: environment.value?.checks?.length ?? 0 },
-  { route: "account.environments.detail.extensions", label: t("nav.extensions"), icon: FaPlug, count: environment.value?.extensions?.length ?? 0 },
-  { route: "account.environments.detail.tasks", label: t("nav.scheduledTasks"), icon: FaListCheck, count: environment.value?.scheduledTasks?.length ?? 0 },
-  { route: "account.environments.detail.queue", label: t("nav.queue"), icon: FaCircleCheck, count: environment.value?.queues?.length ?? 0 },
-  { route: "account.environments.detail.sitespeed", label: t("nav.sitespeed"), icon: FaRocket, count: environment.value?.sitespeeds?.length ?? 0 },
-  { route: "account.environments.detail.changelog", label: t("nav.changelog"), icon: FaFileWaveform, count: environment.value?.changelogs?.length ?? 0 },
-  { route: "account.environments.detail.deployments", label: t("nav.deployments"), icon: FaCodeBranch, count: environment.value?.deploymentsCount ?? 0 },
+  {
+    route: "account.environments.detail",
+    label: t("nav.environmentInformation"),
+    icon: FaShop,
+    count: 0,
+  },
+  {
+    route: "account.environments.detail.checks",
+    label: t("nav.checks"),
+    icon: FaCircleCheck,
+    count: environment.value?.checks?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.extensions",
+    label: t("nav.extensions"),
+    icon: FaPlug,
+    count: environment.value?.extensions?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.tasks",
+    label: t("nav.scheduledTasks"),
+    icon: FaListCheck,
+    count: environment.value?.scheduledTasks?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.queue",
+    label: t("nav.queue"),
+    icon: FaCircleCheck,
+    count: environment.value?.queues?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.sitespeed",
+    label: t("nav.sitespeed"),
+    icon: FaRocket,
+    count: environment.value?.sitespeeds?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.changelog",
+    label: t("nav.changelog"),
+    icon: FaFileWaveform,
+    count: environment.value?.changelogs?.length ?? 0,
+  },
+  {
+    route: "account.environments.detail.deployments",
+    label: t("nav.deployments"),
+    icon: FaCodeBranch,
+    count: environment.value?.deploymentsCount ?? 0,
+  },
 ]);
 
 function isTabActive(tabRoute: string): boolean {
   if (route.name === tabRoute) return true;
   // Deployment detail page highlights the deployments tab
-  if (tabRoute === "account.environments.detail.deployments" && route.name === "account.environments.detail.deployment") return true;
+  if (
+    tabRoute === "account.environments.detail.deployments" &&
+    route.name === "account.environments.detail.deployment"
+  )
+    return true;
   return false;
 }
 
@@ -274,7 +379,10 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
   const items: BreadcrumbItem[] = [
     {
       label: environment.value.organizationName,
-      to: { name: "account.organizations.detail", params: { organizationId: environment.value.organizationId } },
+      to: {
+        name: "account.organizations.detail",
+        params: { organizationId: environment.value.organizationId },
+      },
     },
   ];
 
@@ -282,10 +390,15 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 
   items.push({
     label: environment.value.name,
-    to: isOverview ? undefined : {
-      name: "account.environments.detail",
-      params: { organizationId: route.params.organizationId, environmentId: route.params.environmentId },
-    },
+    to: isOverview
+      ? undefined
+      : {
+          name: "account.environments.detail",
+          params: {
+            organizationId: route.params.organizationId,
+            environmentId: route.params.environmentId,
+          },
+        },
   });
 
   if (!isOverview && currentRouteTitle) {

@@ -2,14 +2,16 @@
   <!-- Page header -->
   <div class="bg-gradient-to-b from-[#0a3d5c] via-primary to-primary/30 pb-12 pt-28 sm:pt-32">
     <div class="mx-auto max-w-3xl px-6 text-center">
-      <h1 class="text-3xl font-bold text-white">{{ $t('privacy.title') }}</h1>
+      <h1 class="text-3xl font-bold text-white">{{ $t("privacy.title") }}</h1>
     </div>
   </div>
 
   <!-- Content -->
   <div class="mx-auto -mt-6 max-w-3xl px-6 pb-16">
     <Card>
-      <CardContent class="prose prose-sm dark:prose-invert max-w-none py-8 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-primary [&_h2:first-child]:mt-0 [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:text-base [&_h3]:font-medium [&_ul]:mb-4 [&_ul]:space-y-1.5 [&_li]:text-muted-foreground [&_p]:text-muted-foreground">
+      <CardContent
+        class="prose prose-sm dark:prose-invert max-w-none py-8 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-primary [&_h2:first-child]:mt-0 [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:text-base [&_h3]:font-medium [&_ul]:mb-4 [&_ul]:space-y-1.5 [&_li]:text-muted-foreground [&_p]:text-muted-foreground"
+      >
         <h2>{{ $t("privacy.dataCollect") }}</h2>
 
         <h3>{{ $t("privacy.accountInfo") }}</h3>

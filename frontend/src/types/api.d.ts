@@ -4,4578 +4,4578 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health check */
-        get: operations["getHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get current user profile */
-        get: operations["getAccountMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/extensions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get aggregated extensions across all environments */
-        get: operations["getAccountExtensions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/organizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get organizations the user belongs to */
-        get: operations["getAccountOrganizations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/environments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all environments accessible to the user */
-        get: operations["getAccountEnvironments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/shops": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all shops accessible to the user */
-        get: operations["getAccountShops"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/changelogs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get changelogs across all environments */
-        get: operations["getAccountChangelogs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/account/subscribed-environments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get environments the user is subscribed to for notifications */
-        get: operations["getAccountSubscribedEnvironments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all notifications for the current user */
-        get: operations["getNotifications"];
-        put?: never;
-        post?: never;
-        /** Delete all notifications */
-        delete: operations["deleteAllNotifications"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a single notification */
-        delete: operations["deleteNotification"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/mark-read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark all notifications as read */
-        post: operations["markNotificationsRead"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/environments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all environments in an organization */
-        get: operations["getOrganizationEnvironments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a new environment */
-        post: operations["createEnvironment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get full environment details */
-        get: operations["getEnvironment"];
-        put?: never;
-        post?: never;
-        /** Delete an environment */
-        delete: operations["deleteEnvironment"];
-        options?: never;
-        head?: never;
-        /** Update an environment */
-        patch: operations["updateEnvironment"];
-        trace?: never;
-    };
-    "/environments/{environmentId}/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Refresh environment data from Shopware API */
-        post: operations["refreshEnvironment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/clear-cache": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Clear Shopware cache for the environment */
-        post: operations["clearEnvironmentCache"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/tasks/{taskId}/reschedule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reschedule a scheduled task */
-        post: operations["rescheduleTask"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/subscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Check notification subscription status */
-        get: operations["getEnvironmentSubscription"];
-        put?: never;
-        /** Subscribe to environment notifications */
-        post: operations["subscribeToEnvironment"];
-        /** Unsubscribe from environment notifications */
-        delete: operations["unsubscribeFromEnvironment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/sitespeed-settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update sitespeed settings for an environment */
-        put: operations["updateSitespeedSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all shops in an organization */
-        get: operations["getOrganizationShops"];
-        put?: never;
-        /** Create a new shop */
-        post: operations["createShop"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a shop */
-        delete: operations["deleteShop"];
-        options?: never;
-        head?: never;
-        /** Update a shop */
-        patch: operations["updateShop"];
-        trace?: never;
-    };
-    "/api-key-scopes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get available API key scopes */
-        get: operations["getApiKeyScopes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}/api-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List API keys for a shop */
-        get: operations["getApiKeys"];
-        put?: never;
-        /** Create a new API key */
-        post: operations["createApiKey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an API key */
-        delete: operations["deleteApiKey"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/packages-token/configuration": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get packages token configuration */
-        get: operations["getPackagesTokenConfiguration"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}/packages-tokens": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List packages tokens for a shop */
-        get: operations["getPackagesTokens"];
-        put?: never;
-        /** Create a new packages token */
-        post: operations["createPackagesToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a packages token */
-        delete: operations["deletePackagesToken"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sync a packages token */
-        post: operations["syncPackagesToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/deployments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List deployments for an environment */
-        get: operations["getDeployments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/environments/{environmentId}/deployments/{deploymentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get deployment details with output */
-        get: operations["getDeployment"];
-        put?: never;
-        post?: never;
-        /** Delete a deployment */
-        delete: operations["deleteDeployment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/cli/deployments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create a deployment via CLI */
-        post: operations["createCliDeployment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/sso-providers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List SSO providers for an organization */
-        get: operations["getSsoProviders"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sso/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Discover OIDC configuration from an issuer URL */
-        get: operations["discoverSso"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/organizations/{orgId}/sso-providers/{providerId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update an SSO provider */
-        put: operations["updateSsoProvider"];
-        post?: never;
-        /** Delete an SSO provider */
-        delete: operations["deleteSsoProvider"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/organizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all organizations (admin only) */
-        get: operations["adminGetOrganizations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/environments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all environments (admin only) */
-        get: operations["adminGetEnvironments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get admin dashboard statistics */
-        get: operations["adminGetStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/growth": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get growth data over time */
-        get: operations["adminGetGrowth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/recent-activity": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get recent user and environment activity */
-        get: operations["adminGetRecentActivity"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/shopware-versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Shopware version distribution across environments */
-        get: operations["adminGetShopwareVersions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/info/extension-compatibility": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Check extension compatibility between Shopware versions */
-        post: operations["checkExtensionCompatibility"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/info/shopware-versions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get latest Shopware version information */
-        get: operations["getShopwareVersions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sign-up/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register with email and password */
-        post: operations["signUpEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sign-in/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sign in with email and password */
-        post: operations["signInEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sign-out": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sign out */
-        post: operations["signOut"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get current session */
-        get: operations["getSession"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/set-active-organization": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Set the active organization for the current session */
-        post: operations["setActiveOrganization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/verify-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verify email address */
-        get: operations["verifyEmail"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/forget-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Request password reset email */
-        post: operations["forgetPassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset password with token */
-        post: operations["resetPassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sign-in/social": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Initiate OAuth sign-in (GitHub) */
-        post: operations["signInSocial"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sign-in/sso": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Initiate SSO sign-in */
-        post: operations["signInSSO"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/register-options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Begin passkey registration */
-        post: operations["passkeyRegisterOptions"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Complete passkey registration */
-        post: operations["passkeyRegister"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/login-options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Begin passkey login */
-        post: operations["passkeyLoginOptions"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Complete passkey login */
-        post: operations["passkeyLogin"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/organizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create an organization */
-        post: operations["createOrganization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/organizations/{organizationId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an organization */
-        delete: operations["deleteOrganization"];
-        options?: never;
-        head?: never;
-        /** Update an organization */
-        patch: operations["updateOrganization"];
-        trace?: never;
-    };
-    "/auth/organizations/{organizationId}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List organization members */
-        get: operations["listOrganizationMembers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/organizations/{organizationId}/members/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove a member from the organization */
-        delete: operations["removeMember"];
-        options?: never;
-        head?: never;
-        /** Change a member's role */
-        patch: operations["setMemberRole"];
-        trace?: never;
-    };
-    "/auth/organizations/{organizationId}/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Leave an organization */
-        post: operations["leaveOrganization"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/organizations/{organizationId}/invitations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List pending invitations */
-        get: operations["listOrganizationInvitations"];
-        put?: never;
-        /** Invite a user to the organization */
-        post: operations["inviteMember"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/invitations/{invitationId}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Accept an invitation */
-        post: operations["acceptInvitation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/invitations/{invitationId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject an invitation */
-        post: operations["rejectInvitation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/admin/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all users (admin only) */
-        get: operations["adminListUsers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/admin/users/{userId}/role": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Set a user's role */
-        patch: operations["adminSetUserRole"];
-        trace?: never;
-    };
-    "/auth/admin/users/{userId}/ban": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Ban a user */
-        post: operations["adminBanUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/admin/users/{userId}/unban": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Unban a user */
-        post: operations["adminUnbanUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/admin/users/{userId}/impersonate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Impersonate a user */
-        post: operations["adminImpersonate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/get-full-organization": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get full organization details by ID */
-        get: operations["getFullOrganization"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/list-sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List active sessions */
-        get: operations["listSessions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/revoke-session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Revoke a session */
-        post: operations["revokeSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/list-accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List linked auth providers */
-        get: operations["listAccounts"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/unlink-account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Unlink an auth provider */
-        post: operations["unlinkAccount"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/change-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Change email address */
-        post: operations["changeEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/update-user": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Update user profile */
-        post: operations["updateUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/change-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Change password */
-        post: operations["changePassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/delete-user": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Delete user account */
-        post: operations["deleteUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/link-social": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link a social provider */
-        post: operations["linkSocial"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/list-organizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List user's organizations */
-        get: operations["listUserOrganizations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/has-permission": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Check organization permission */
-        post: operations["hasPermission"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/cancel-invitation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel a pending invitation */
-        post: operations["cancelInvitation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/list-user-passkeys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List user's passkeys */
-        get: operations["listUserPasskeys"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/passkey/delete-passkey": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Delete a passkey */
-        post: operations["deletePasskey"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/sso/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register an SSO provider */
-        post: operations["registerSSOProvider"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/admin/stop-impersonating": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Stop impersonating a user */
-        post: operations["adminStopImpersonating"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/exchange-code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Exchange one-time authorization code for session token */
-        post: operations["exchangeCode"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Health check */
+    get: operations["getHealth"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get current user profile */
+    get: operations["getAccountMe"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/extensions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get aggregated extensions across all environments */
+    get: operations["getAccountExtensions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/organizations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get organizations the user belongs to */
+    get: operations["getAccountOrganizations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/environments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all environments accessible to the user */
+    get: operations["getAccountEnvironments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/shops": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all shops accessible to the user */
+    get: operations["getAccountShops"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/changelogs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get changelogs across all environments */
+    get: operations["getAccountChangelogs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/account/subscribed-environments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get environments the user is subscribed to for notifications */
+    get: operations["getAccountSubscribedEnvironments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all notifications for the current user */
+    get: operations["getNotifications"];
+    put?: never;
+    post?: never;
+    /** Delete all notifications */
+    delete: operations["deleteAllNotifications"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a single notification */
+    delete: operations["deleteNotification"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/mark-read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark all notifications as read */
+    post: operations["markNotificationsRead"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/environments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all environments in an organization */
+    get: operations["getOrganizationEnvironments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new environment */
+    post: operations["createEnvironment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get full environment details */
+    get: operations["getEnvironment"];
+    put?: never;
+    post?: never;
+    /** Delete an environment */
+    delete: operations["deleteEnvironment"];
+    options?: never;
+    head?: never;
+    /** Update an environment */
+    patch: operations["updateEnvironment"];
+    trace?: never;
+  };
+  "/environments/{environmentId}/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Refresh environment data from Shopware API */
+    post: operations["refreshEnvironment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/clear-cache": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Clear Shopware cache for the environment */
+    post: operations["clearEnvironmentCache"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/tasks/{taskId}/reschedule": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reschedule a scheduled task */
+    post: operations["rescheduleTask"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/subscribe": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Check notification subscription status */
+    get: operations["getEnvironmentSubscription"];
+    put?: never;
+    /** Subscribe to environment notifications */
+    post: operations["subscribeToEnvironment"];
+    /** Unsubscribe from environment notifications */
+    delete: operations["unsubscribeFromEnvironment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/sitespeed-settings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update sitespeed settings for an environment */
+    put: operations["updateSitespeedSettings"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all shops in an organization */
+    get: operations["getOrganizationShops"];
+    put?: never;
+    /** Create a new shop */
+    post: operations["createShop"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a shop */
+    delete: operations["deleteShop"];
+    options?: never;
+    head?: never;
+    /** Update a shop */
+    patch: operations["updateShop"];
+    trace?: never;
+  };
+  "/api-key-scopes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get available API key scopes */
+    get: operations["getApiKeyScopes"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}/api-keys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List API keys for a shop */
+    get: operations["getApiKeys"];
+    put?: never;
+    /** Create a new API key */
+    post: operations["createApiKey"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an API key */
+    delete: operations["deleteApiKey"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/packages-token/configuration": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get packages token configuration */
+    get: operations["getPackagesTokenConfiguration"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}/packages-tokens": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List packages tokens for a shop */
+    get: operations["getPackagesTokens"];
+    put?: never;
+    /** Create a new packages token */
+    post: operations["createPackagesToken"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a packages token */
+    delete: operations["deletePackagesToken"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sync a packages token */
+    post: operations["syncPackagesToken"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/deployments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List deployments for an environment */
+    get: operations["getDeployments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/deployments/{deploymentId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get deployment details with output */
+    get: operations["getDeployment"];
+    put?: never;
+    post?: never;
+    /** Delete a deployment */
+    delete: operations["deleteDeployment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/cli/deployments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a deployment via CLI */
+    post: operations["createCliDeployment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/sso-providers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List SSO providers for an organization */
+    get: operations["getSsoProviders"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/sso/discover": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Discover OIDC configuration from an issuer URL */
+    get: operations["discoverSso"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{orgId}/sso-providers/{providerId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update an SSO provider */
+    put: operations["updateSsoProvider"];
+    post?: never;
+    /** Delete an SSO provider */
+    delete: operations["deleteSsoProvider"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/organizations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all organizations (admin only) */
+    get: operations["adminGetOrganizations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/environments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all environments (admin only) */
+    get: operations["adminGetEnvironments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get admin dashboard statistics */
+    get: operations["adminGetStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/growth": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get growth data over time */
+    get: operations["adminGetGrowth"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/recent-activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get recent user and environment activity */
+    get: operations["adminGetRecentActivity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/shopware-versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Shopware version distribution across environments */
+    get: operations["adminGetShopwareVersions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/info/extension-compatibility": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Check extension compatibility between Shopware versions */
+    post: operations["checkExtensionCompatibility"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/info/shopware-versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get latest Shopware version information */
+    get: operations["getShopwareVersions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sign-up/email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Register with email and password */
+    post: operations["signUpEmail"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sign-in/email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sign in with email and password */
+    post: operations["signInEmail"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sign-out": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sign out */
+    post: operations["signOut"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get current session */
+    get: operations["getSession"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/set-active-organization": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Set the active organization for the current session */
+    post: operations["setActiveOrganization"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/verify-email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Verify email address */
+    get: operations["verifyEmail"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/forget-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Request password reset email */
+    post: operations["forgetPassword"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/reset-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reset password with token */
+    post: operations["resetPassword"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sign-in/social": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Initiate OAuth sign-in (GitHub) */
+    post: operations["signInSocial"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sign-in/sso": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Initiate SSO sign-in */
+    post: operations["signInSSO"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/register-options": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Begin passkey registration */
+    post: operations["passkeyRegisterOptions"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Complete passkey registration */
+    post: operations["passkeyRegister"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/login-options": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Begin passkey login */
+    post: operations["passkeyLoginOptions"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Complete passkey login */
+    post: operations["passkeyLogin"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/organizations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create an organization */
+    post: operations["createOrganization"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/organizations/{organizationId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete an organization */
+    delete: operations["deleteOrganization"];
+    options?: never;
+    head?: never;
+    /** Update an organization */
+    patch: operations["updateOrganization"];
+    trace?: never;
+  };
+  "/auth/organizations/{organizationId}/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List organization members */
+    get: operations["listOrganizationMembers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/organizations/{organizationId}/members/{userId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a member from the organization */
+    delete: operations["removeMember"];
+    options?: never;
+    head?: never;
+    /** Change a member's role */
+    patch: operations["setMemberRole"];
+    trace?: never;
+  };
+  "/auth/organizations/{organizationId}/leave": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Leave an organization */
+    post: operations["leaveOrganization"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/organizations/{organizationId}/invitations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List pending invitations */
+    get: operations["listOrganizationInvitations"];
+    put?: never;
+    /** Invite a user to the organization */
+    post: operations["inviteMember"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/invitations/{invitationId}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Accept an invitation */
+    post: operations["acceptInvitation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/invitations/{invitationId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject an invitation */
+    post: operations["rejectInvitation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all users (admin only) */
+    get: operations["adminListUsers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/users/{userId}/role": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Set a user's role */
+    patch: operations["adminSetUserRole"];
+    trace?: never;
+  };
+  "/auth/admin/users/{userId}/ban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ban a user */
+    post: operations["adminBanUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/users/{userId}/unban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Unban a user */
+    post: operations["adminUnbanUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/users/{userId}/impersonate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Impersonate a user */
+    post: operations["adminImpersonate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/get-full-organization": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get full organization details by ID */
+    get: operations["getFullOrganization"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/list-sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active sessions */
+    get: operations["listSessions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/revoke-session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke a session */
+    post: operations["revokeSession"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/list-accounts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List linked auth providers */
+    get: operations["listAccounts"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/unlink-account": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Unlink an auth provider */
+    post: operations["unlinkAccount"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/change-email": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Change email address */
+    post: operations["changeEmail"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/update-user": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Update user profile */
+    post: operations["updateUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/change-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Change password */
+    post: operations["changePassword"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/delete-user": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Delete user account */
+    post: operations["deleteUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/link-social": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Link a social provider */
+    post: operations["linkSocial"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/list-organizations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List user's organizations */
+    get: operations["listUserOrganizations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/has-permission": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Check organization permission */
+    post: operations["hasPermission"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/cancel-invitation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel a pending invitation */
+    post: operations["cancelInvitation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/list-user-passkeys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List user's passkeys */
+    get: operations["listUserPasskeys"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/passkey/delete-passkey": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Delete a passkey */
+    post: operations["deletePasskey"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/sso/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Register an SSO provider */
+    post: operations["registerSSOProvider"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/stop-impersonating": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Stop impersonating a user */
+    post: operations["adminStopImpersonating"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/exchange-code": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Exchange one-time authorization code for session token */
+    post: operations["exchangeCode"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        ErrorResponse: {
-            message: string;
-        };
-        UserProfile: {
-            id: string;
-            displayName: string;
-            /** Format: email */
-            email: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        AccountExtension: {
-            name: string;
-            label: string;
-            version: string;
-            latestVersion: string;
-            active: boolean;
-            installed: boolean;
-            storeLink: string | null;
-            ratingAverage: number | null;
-            /** Format: date-time */
-            installedAt: string | null;
-            changelog: string | null;
-            environments: components["schemas"]["AccountExtensionEnvironment"][];
-        };
-        AccountExtensionEnvironment: {
-            environmentId: number;
-            environmentName: string;
-            environmentOrganizationName: string;
-            environmentOrganizationId: string;
-            environmentUrl: string;
-            active: boolean;
-            version: string;
-            latestVersion: string;
-            installed: boolean;
-        };
-        AccountOrganization: {
-            id: string;
-            name: string;
-            logo: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            environmentCount: number;
-            memberCount: number;
-        };
-        AccountEnvironment: {
-            id: number;
-            name: string;
-            url: string;
-            favicon: string | null;
-            status: string;
-            shopwareVersion: string;
-            /** Format: date-time */
-            lastScrapedAt: string | null;
-            lastScrapedError: string | null;
-            organizationId: string;
-            organizationName: string;
-            shopId: number | null;
-            shopName: string | null;
-        };
-        AccountShop: {
-            id: number;
-            name: string;
-            description: string | null;
-            gitUrl: string | null;
-            organizationId: string;
-            organizationName: string;
-        };
-        AccountChangelog: {
-            id: number;
-            environmentId: number;
-            /** @description JSON data describing extension changes */
-            extensions: components["schemas"]["ExtensionDiff"][];
-            oldShopwareVersion: string | null;
-            newShopwareVersion: string | null;
-            /** Format: date-time */
-            date: string;
-            environmentName: string;
-            environmentOrganizationName: string;
-            environmentOrganizationId: string;
-        };
-        ExtensionDiff: {
-            name: string;
-            label: string;
-            state: string;
-            oldVersion?: string | null;
-            newVersion?: string | null;
-            changelog?: components["schemas"]["ExtensionChangelogEntry"][] | null;
-            active: boolean;
-        };
-        ExtensionChangelogEntry: {
-            version: string;
-            text: string;
-            /** Format: date-time */
-            creationDate: string;
-            isCompatible: boolean;
-        };
-        SubscribedEnvironment: {
-            id: number;
-            name: string;
-        };
-        Notification: {
-            id: number;
-            userId: string;
-            key: string;
-            level: string;
-            title: string;
-            message: string;
-            link: components["schemas"]["NotificationLink"] | null;
-            read: boolean;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        NotificationLink: {
-            url: string;
-            label: string;
-        };
-        CreateEnvironmentRequest: {
-            name: string;
-            shopUrl: string;
-            clientId: string;
-            clientSecret: string;
-            shopId: number;
-            environmentToken?: string | null;
-        };
-        UpdateEnvironmentRequest: {
-            name?: string;
-            shopUrl?: string;
-            clientId?: string;
-            clientSecret?: string;
-            ignores?: string[];
-            shopId: number;
-        };
-        EnvironmentDetail: {
-            id: number;
-            organizationId: string;
-            organizationName: string;
-            shopId: number | null;
-            shopName: string | null;
-            shopDescription: string | null;
-            name: string;
-            status: string;
-            url: string;
-            favicon: string | null;
-            shopwareVersion: string;
-            /** Format: date-time */
-            lastScrapedAt: string | null;
-            lastScrapedError: string | null;
-            ignores: string[] | null;
-            environmentImage: string | null;
-            environmentToken: string;
-            lastChangelog: components["schemas"]["AccountChangelog"] | null;
-            sitespeedEnabled: boolean;
-            sitespeedUrls: string[] | null;
-            sitespeedDetailUrl: string | null;
-            /** Format: date-time */
-            createdAt: string;
-            extensions: components["schemas"]["EnvironmentExtension"][];
-            scheduledTasks: components["schemas"]["ScheduledTask"][];
-            queues: components["schemas"]["Queue"][];
-            cache: components["schemas"]["CacheInfo"] | null;
-            checks: components["schemas"]["EnvironmentCheck"][];
-            sitespeeds: components["schemas"]["Sitespeed"][];
-            changelogs: components["schemas"]["AccountChangelog"][];
-            deploymentsCount: number;
-        };
-        EnvironmentExtension: {
-            name: string;
-            label: string;
-            version: string;
-            latestVersion: string;
-            active: boolean;
-            installed: boolean;
-            storeLink?: string | null;
-            ratingAverage?: number | null;
-            /** Format: date-time */
-            installedAt?: string | null;
-            changelog?: string | null;
-        };
-        ScheduledTask: {
-            id: string;
-            name: string;
-            runInterval: number;
-            status: string;
-            /** Format: date-time */
-            lastExecutionTime?: string | null;
-            /** Format: date-time */
-            nextExecutionTime?: string | null;
-            overdue: boolean;
-        };
-        Queue: {
-            name: string;
-            size: number;
-        };
-        CacheInfo: {
-            id?: number;
-            environment?: string;
-            httpCache?: boolean;
-            cacheAdapter?: string;
-        };
-        EnvironmentCheck: {
-            id: string;
-            level: string;
-            message: string;
-            link?: string | null;
-        };
-        Sitespeed: {
-            ttfb?: number | null;
-            fullyLoaded?: number | null;
-            largestContentfulPaint?: number | null;
-            firstContentfulPaint?: number | null;
-            cumulativeLayoutShift?: number | null;
-            transferSize?: number | null;
-            /** Format: date-time */
-            createdAt: string;
-            deployment?: components["schemas"]["SitespeedDeployment"] | null;
-        };
-        SitespeedDeployment: {
-            id: number;
-            name: string;
-        };
-        SitespeedSettingsRequest: {
-            enabled: boolean;
-            urls?: string[];
-        };
-        Shop: {
-            id: number;
-            name: string;
-            description: string | null;
-            gitUrl: string | null;
-            organizationId: string;
-        };
-        CreateShopRequest: {
-            name: string;
-            description?: string;
-            gitUrl?: string;
-        };
-        UpdateShopRequest: {
-            name?: string;
-            description?: string;
-            gitUrl?: string;
-        };
-        ApiKeyScope: {
-            value: string;
-            label: string;
-            description: string;
-        };
-        ApiKey: {
-            id: number;
-            name: string;
-            scopes: string[];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            lastUsedAt: string | null;
-        };
-        CreateApiKeyRequest: {
-            name: string;
-            scopes: string[];
-        };
-        CreateApiKeyResponse: {
-            id: number;
-            token: string;
-            name: string;
-            scopes: string[];
-        };
-        PackagesTokenConfiguration: {
-            configured: boolean;
-            composerUrl: string | null;
-        };
-        PackagesToken: {
-            id: number;
-            source: string;
-            /** Format: date-time */
-            lastSyncedAt: string | null;
-        };
-        CreatePackagesTokenRequest: {
-            token: string;
-        };
-        Deployment: {
-            id: number;
-            name: string | null;
-            command: string;
-            returnCode: number;
-            /** Format: date-time */
-            startDate: string;
-            /** Format: date-time */
-            endDate: string;
-            /** @description Execution time in seconds */
-            executionTime: number;
-            reference: string | null;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        DeploymentDetail: components["schemas"]["Deployment"] & {
-            output?: string | null;
-        };
-        CreateCliDeploymentRequest: {
-            environment_id: number;
-            command: string;
-            return_code: number;
-            /** Format: date-time */
-            start_date: string;
-            /** Format: date-time */
-            end_date: string;
-            execution_time: number;
-            composer?: string | null;
-            reference?: string | null;
-            name?: string | null;
-        };
-        CreateCliDeploymentResponse: {
-            success: boolean;
-            name: string;
-            deployment_id: number;
-            url: string;
-            upload_url: string;
-        };
-        SsoProvider: {
-            id: string;
-            domain: string;
-            issuer: string;
-            clientId: string;
-            authorizationEndpoint: string;
-            tokenEndpoint: string;
-            jwksEndpoint: string;
-        };
-        SsoDiscovery: {
-            issuer: string;
-            authorizationEndpoint: string;
-            tokenEndpoint: string;
-            jwksEndpoint: string;
-            userInfoEndpoint: string;
-            scopes: string[];
-        };
-        UpdateSsoProviderRequest: {
-            domain: string;
-            issuer: string;
-            clientId: string;
-            clientSecret?: string;
-            authorizationEndpoint: string;
-            tokenEndpoint: string;
-            jwksEndpoint: string;
-        };
-        AdminOrganizationsResponse: {
-            organizations: components["schemas"]["AccountOrganization"][];
-            total: number;
-        };
-        AdminEnvironmentsResponse: {
-            environments: components["schemas"]["AccountEnvironment"][];
-            total: number;
-        };
-        AdminStats: {
-            totalUsers: number;
-            totalOrganizations: number;
-            totalEnvironments: number;
-            environmentsByStatus: {
-                green: number;
-                yellow: number;
-                red: number;
-            };
-        };
-        AdminGrowth: {
-            users: components["schemas"]["GrowthDataPoint"][];
-            environments: components["schemas"]["GrowthDataPoint"][];
-        };
-        GrowthDataPoint: {
-            month: string;
-            count: number;
-        };
-        AdminRecentActivity: {
-            recentUsers: components["schemas"]["UserProfile"][];
-            recentEnvironments: components["schemas"]["AccountEnvironment"][];
-        };
-        ShopwareVersionCount: {
-            version: string;
-            count: number;
-        };
-        ExtensionCompatibilityRequest: {
-            currentVersion: string;
-            futureVersion: string;
-            extensions: {
-                name: string;
-                version: string;
-            }[];
-        };
-        ExtensionCompatibilityResult: {
-            name: string;
-            label: string;
-            iconPath: string | null;
-            status: {
-                name: string;
-                label: string;
-                type: string;
-            };
-        };
-        AuthUser: {
-            id?: string;
-            name?: string;
-            /** Format: email */
-            email?: string;
-            emailVerified?: boolean;
-            image?: string | null;
-            role?: string;
-            notifications?: string[];
-        };
-        SessionInfo: {
-            id?: string;
-            userId?: string;
-            /** Format: date-time */
-            expiresAt?: string;
-            activeOrganizationId?: string | null;
-        };
+  schemas: {
+    ErrorResponse: {
+      message: string;
     };
-    responses: {
-        /** @description Authentication required */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Insufficient permissions */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Resource not found */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Validation error */
-        ValidationError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
+    UserProfile: {
+      id: string;
+      displayName: string;
+      /** Format: email */
+      email: string;
+      /** Format: date-time */
+      createdAt: string;
     };
-    parameters: {
-        /** @description Organization ID */
-        OrgId: string;
-        /** @description Environment ID */
-        EnvironmentId: number;
-        /** @description Shop ID */
-        ShopId: number;
-        /** @description Deployment ID */
-        DeploymentId: number;
-        /** @description API key ID */
-        KeyId: number;
-        /** @description Packages token ID */
-        TokenId: number;
-        /** @description Scheduled task ID */
-        TaskId: string;
-        /** @description SSO provider ID */
-        ProviderId: string;
-        /** @description Notification ID */
-        NotificationId: number;
+    AccountExtension: {
+      name: string;
+      label: string;
+      version: string;
+      latestVersion: string;
+      active: boolean;
+      installed: boolean;
+      storeLink: string | null;
+      ratingAverage: number | null;
+      /** Format: date-time */
+      installedAt: string | null;
+      changelog: string | null;
+      environments: components["schemas"]["AccountExtensionEnvironment"][];
     };
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    AccountExtensionEnvironment: {
+      environmentId: number;
+      environmentName: string;
+      environmentOrganizationName: string;
+      environmentOrganizationId: string;
+      environmentUrl: string;
+      active: boolean;
+      version: string;
+      latestVersion: string;
+      installed: boolean;
+    };
+    AccountOrganization: {
+      id: string;
+      name: string;
+      logo: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      environmentCount: number;
+      memberCount: number;
+    };
+    AccountEnvironment: {
+      id: number;
+      name: string;
+      url: string;
+      favicon: string | null;
+      status: string;
+      shopwareVersion: string;
+      /** Format: date-time */
+      lastScrapedAt: string | null;
+      lastScrapedError: string | null;
+      organizationId: string;
+      organizationName: string;
+      shopId: number | null;
+      shopName: string | null;
+    };
+    AccountShop: {
+      id: number;
+      name: string;
+      description: string | null;
+      gitUrl: string | null;
+      organizationId: string;
+      organizationName: string;
+    };
+    AccountChangelog: {
+      id: number;
+      environmentId: number;
+      /** @description JSON data describing extension changes */
+      extensions: components["schemas"]["ExtensionDiff"][];
+      oldShopwareVersion: string | null;
+      newShopwareVersion: string | null;
+      /** Format: date-time */
+      date: string;
+      environmentName: string;
+      environmentOrganizationName: string;
+      environmentOrganizationId: string;
+    };
+    ExtensionDiff: {
+      name: string;
+      label: string;
+      state: string;
+      oldVersion?: string | null;
+      newVersion?: string | null;
+      changelog?: components["schemas"]["ExtensionChangelogEntry"][] | null;
+      active: boolean;
+    };
+    ExtensionChangelogEntry: {
+      version: string;
+      text: string;
+      /** Format: date-time */
+      creationDate: string;
+      isCompatible: boolean;
+    };
+    SubscribedEnvironment: {
+      id: number;
+      name: string;
+    };
+    Notification: {
+      id: number;
+      userId: string;
+      key: string;
+      level: string;
+      title: string;
+      message: string;
+      link: components["schemas"]["NotificationLink"] | null;
+      read: boolean;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    NotificationLink: {
+      url: string;
+      label: string;
+    };
+    CreateEnvironmentRequest: {
+      name: string;
+      shopUrl: string;
+      clientId: string;
+      clientSecret: string;
+      shopId: number;
+      environmentToken?: string | null;
+    };
+    UpdateEnvironmentRequest: {
+      name?: string;
+      shopUrl?: string;
+      clientId?: string;
+      clientSecret?: string;
+      ignores?: string[];
+      shopId: number;
+    };
+    EnvironmentDetail: {
+      id: number;
+      organizationId: string;
+      organizationName: string;
+      shopId: number | null;
+      shopName: string | null;
+      shopDescription: string | null;
+      name: string;
+      status: string;
+      url: string;
+      favicon: string | null;
+      shopwareVersion: string;
+      /** Format: date-time */
+      lastScrapedAt: string | null;
+      lastScrapedError: string | null;
+      ignores: string[] | null;
+      environmentImage: string | null;
+      environmentToken: string;
+      lastChangelog: components["schemas"]["AccountChangelog"] | null;
+      sitespeedEnabled: boolean;
+      sitespeedUrls: string[] | null;
+      sitespeedDetailUrl: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      extensions: components["schemas"]["EnvironmentExtension"][];
+      scheduledTasks: components["schemas"]["ScheduledTask"][];
+      queues: components["schemas"]["Queue"][];
+      cache: components["schemas"]["CacheInfo"] | null;
+      checks: components["schemas"]["EnvironmentCheck"][];
+      sitespeeds: components["schemas"]["Sitespeed"][];
+      changelogs: components["schemas"]["AccountChangelog"][];
+      deploymentsCount: number;
+    };
+    EnvironmentExtension: {
+      name: string;
+      label: string;
+      version: string;
+      latestVersion: string;
+      active: boolean;
+      installed: boolean;
+      storeLink?: string | null;
+      ratingAverage?: number | null;
+      /** Format: date-time */
+      installedAt?: string | null;
+      changelog?: string | null;
+    };
+    ScheduledTask: {
+      id: string;
+      name: string;
+      runInterval: number;
+      status: string;
+      /** Format: date-time */
+      lastExecutionTime?: string | null;
+      /** Format: date-time */
+      nextExecutionTime?: string | null;
+      overdue: boolean;
+    };
+    Queue: {
+      name: string;
+      size: number;
+    };
+    CacheInfo: {
+      id?: number;
+      environment?: string;
+      httpCache?: boolean;
+      cacheAdapter?: string;
+    };
+    EnvironmentCheck: {
+      id: string;
+      level: string;
+      message: string;
+      link?: string | null;
+    };
+    Sitespeed: {
+      ttfb?: number | null;
+      fullyLoaded?: number | null;
+      largestContentfulPaint?: number | null;
+      firstContentfulPaint?: number | null;
+      cumulativeLayoutShift?: number | null;
+      transferSize?: number | null;
+      /** Format: date-time */
+      createdAt: string;
+      deployment?: components["schemas"]["SitespeedDeployment"] | null;
+    };
+    SitespeedDeployment: {
+      id: number;
+      name: string;
+    };
+    SitespeedSettingsRequest: {
+      enabled: boolean;
+      urls?: string[];
+    };
+    Shop: {
+      id: number;
+      name: string;
+      description: string | null;
+      gitUrl: string | null;
+      organizationId: string;
+    };
+    CreateShopRequest: {
+      name: string;
+      description?: string;
+      gitUrl?: string;
+    };
+    UpdateShopRequest: {
+      name?: string;
+      description?: string;
+      gitUrl?: string;
+    };
+    ApiKeyScope: {
+      value: string;
+      label: string;
+      description: string;
+    };
+    ApiKey: {
+      id: number;
+      name: string;
+      scopes: string[];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastUsedAt: string | null;
+    };
+    CreateApiKeyRequest: {
+      name: string;
+      scopes: string[];
+    };
+    CreateApiKeyResponse: {
+      id: number;
+      token: string;
+      name: string;
+      scopes: string[];
+    };
+    PackagesTokenConfiguration: {
+      configured: boolean;
+      composerUrl: string | null;
+    };
+    PackagesToken: {
+      id: number;
+      source: string;
+      /** Format: date-time */
+      lastSyncedAt: string | null;
+    };
+    CreatePackagesTokenRequest: {
+      token: string;
+    };
+    Deployment: {
+      id: number;
+      name: string | null;
+      command: string;
+      returnCode: number;
+      /** Format: date-time */
+      startDate: string;
+      /** Format: date-time */
+      endDate: string;
+      /** @description Execution time in seconds */
+      executionTime: number;
+      reference: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    DeploymentDetail: components["schemas"]["Deployment"] & {
+      output?: string | null;
+    };
+    CreateCliDeploymentRequest: {
+      environment_id: number;
+      command: string;
+      return_code: number;
+      /** Format: date-time */
+      start_date: string;
+      /** Format: date-time */
+      end_date: string;
+      execution_time: number;
+      composer?: string | null;
+      reference?: string | null;
+      name?: string | null;
+    };
+    CreateCliDeploymentResponse: {
+      success: boolean;
+      name: string;
+      deployment_id: number;
+      url: string;
+      upload_url: string;
+    };
+    SsoProvider: {
+      id: string;
+      domain: string;
+      issuer: string;
+      clientId: string;
+      authorizationEndpoint: string;
+      tokenEndpoint: string;
+      jwksEndpoint: string;
+    };
+    SsoDiscovery: {
+      issuer: string;
+      authorizationEndpoint: string;
+      tokenEndpoint: string;
+      jwksEndpoint: string;
+      userInfoEndpoint: string;
+      scopes: string[];
+    };
+    UpdateSsoProviderRequest: {
+      domain: string;
+      issuer: string;
+      clientId: string;
+      clientSecret?: string;
+      authorizationEndpoint: string;
+      tokenEndpoint: string;
+      jwksEndpoint: string;
+    };
+    AdminOrganizationsResponse: {
+      organizations: components["schemas"]["AccountOrganization"][];
+      total: number;
+    };
+    AdminEnvironmentsResponse: {
+      environments: components["schemas"]["AccountEnvironment"][];
+      total: number;
+    };
+    AdminStats: {
+      totalUsers: number;
+      totalOrganizations: number;
+      totalEnvironments: number;
+      environmentsByStatus: {
+        green: number;
+        yellow: number;
+        red: number;
+      };
+    };
+    AdminGrowth: {
+      users: components["schemas"]["GrowthDataPoint"][];
+      environments: components["schemas"]["GrowthDataPoint"][];
+    };
+    GrowthDataPoint: {
+      month: string;
+      count: number;
+    };
+    AdminRecentActivity: {
+      recentUsers: components["schemas"]["UserProfile"][];
+      recentEnvironments: components["schemas"]["AccountEnvironment"][];
+    };
+    ShopwareVersionCount: {
+      version: string;
+      count: number;
+    };
+    ExtensionCompatibilityRequest: {
+      currentVersion: string;
+      futureVersion: string;
+      extensions: {
+        name: string;
+        version: string;
+      }[];
+    };
+    ExtensionCompatibilityResult: {
+      name: string;
+      label: string;
+      iconPath: string | null;
+      status: {
+        name: string;
+        label: string;
+        type: string;
+      };
+    };
+    AuthUser: {
+      id?: string;
+      name?: string;
+      /** Format: email */
+      email?: string;
+      emailVerified?: boolean;
+      image?: string | null;
+      role?: string;
+      notifications?: string[];
+    };
+    SessionInfo: {
+      id?: string;
+      userId?: string;
+      /** Format: date-time */
+      expiresAt?: string;
+      activeOrganizationId?: string | null;
+    };
+  };
+  responses: {
+    /** @description Authentication required */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Insufficient permissions */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Resource not found */
+    NotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Validation error */
+    ValidationError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+  };
+  parameters: {
+    /** @description Organization ID */
+    OrgId: string;
+    /** @description Environment ID */
+    EnvironmentId: number;
+    /** @description Shop ID */
+    ShopId: number;
+    /** @description Deployment ID */
+    DeploymentId: number;
+    /** @description API key ID */
+    KeyId: number;
+    /** @description Packages token ID */
+    TokenId: number;
+    /** @description Scheduled task ID */
+    TaskId: string;
+    /** @description SSO provider ID */
+    ProviderId: string;
+    /** @description Notification ID */
+    NotificationId: number;
+  };
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Service is healthy */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": "ok";
-                };
-            };
-        };
-    };
-    getAccountMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current user profile */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfile"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountExtensions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of extensions */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountExtension"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountOrganizations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of organizations */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountOrganization"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountEnvironments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of environments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountEnvironment"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountShops: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of shops */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountShop"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountChangelogs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of changelogs */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountChangelog"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getAccountSubscribedEnvironments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of subscribed environments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubscribedEnvironment"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getNotifications: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of notifications */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Notification"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    deleteAllNotifications: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All notifications deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    deleteNotification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Notification ID */
-                id: components["parameters"]["NotificationId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Notification deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    markNotificationsRead: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All notifications marked as read */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getOrganizationEnvironments: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of environments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountEnvironment"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    createEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateEnvironmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Environment created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    getEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Environment details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EnvironmentDetail"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    deleteEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Environment deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    updateEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateEnvironmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Environment updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    refreshEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    /** @description Also run sitespeed check */
-                    sitespeed?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Environment refresh triggered */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    clearEnvironmentCache: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cache cleared */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    rescheduleTask: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-                /** @description Scheduled task ID */
-                taskId: components["parameters"]["TaskId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Task rescheduled */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    getEnvironmentSubscription: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Subscription status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        subscribed: boolean;
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    subscribeToEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Subscribed */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    unsubscribeFromEnvironment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Unsubscribed */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    updateSitespeedSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SitespeedSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description Sitespeed settings updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    getOrganizationShops: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of shops */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shop"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    createShop: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateShopRequest"];
-            };
-        };
-        responses: {
-            /** @description Shop created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    deleteShop: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Shop deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    updateShop: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateShopRequest"];
-            };
-        };
-        responses: {
-            /** @description Shop updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    getApiKeyScopes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of available scopes */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiKeyScope"][];
-                };
-            };
-        };
-    };
-    getApiKeys: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of API keys */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiKey"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    createApiKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateApiKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description API key created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateApiKeyResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    deleteApiKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-                /** @description API key ID */
-                keyId: components["parameters"]["KeyId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description API key deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    getPackagesTokenConfiguration: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Packages token configuration */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PackagesTokenConfiguration"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    getPackagesTokens: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of packages tokens */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PackagesToken"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    createPackagesToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePackagesTokenRequest"];
-            };
-        };
-        responses: {
-            /** @description Packages token created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    deletePackagesToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-                /** @description Packages token ID */
-                tokenId: components["parameters"]["TokenId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Packages token deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    syncPackagesToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description Shop ID */
-                shopId: components["parameters"]["ShopId"];
-                /** @description Packages token ID */
-                tokenId: components["parameters"]["TokenId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sync triggered */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    getDeployments: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of deployments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Deployment"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    getDeployment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-                /** @description Deployment ID */
-                deploymentId: components["parameters"]["DeploymentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deployment details with output */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeploymentDetail"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    deleteDeployment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Environment ID */
-                environmentId: components["parameters"]["EnvironmentId"];
-                /** @description Deployment ID */
-                deploymentId: components["parameters"]["DeploymentId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deployment deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    createCliDeployment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCliDeploymentRequest"];
-            };
-        };
-        responses: {
-            /** @description Deployment created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateCliDeploymentResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    getSsoProviders: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of SSO providers */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SsoProvider"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    discoverSso: {
-        parameters: {
-            query: {
-                issuer: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Discovered OIDC configuration */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SsoDiscovery"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    updateSsoProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description SSO provider ID */
-                providerId: components["parameters"]["ProviderId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSsoProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description SSO provider updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    deleteSsoProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Organization ID */
-                orgId: components["parameters"]["OrgId"];
-                /** @description SSO provider ID */
-                providerId: components["parameters"]["ProviderId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSO provider deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    adminGetOrganizations: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                sortBy?: "name" | "createdAt" | "shopCount" | "memberCount";
-                sortDirection?: "asc" | "desc";
-                searchField?: string;
-                searchOperator?: string;
-                searchValue?: string;
-                filterField?: string;
-                filterOperator?: string;
-                filterValue?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated list of organizations */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminOrganizationsResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetEnvironments: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                sortBy?: string;
-                sortDirection?: "asc" | "desc";
-                searchField?: string;
-                searchOperator?: string;
-                searchValue?: string;
-                filterField?: string;
-                filterOperator?: string;
-                filterValue?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated list of environments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminEnvironmentsResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetStats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Admin statistics */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminStats"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetGrowth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Growth data */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminGrowth"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetRecentActivity: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recent activity */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminRecentActivity"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    adminGetShopwareVersions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Version distribution */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShopwareVersionCount"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-        };
-    };
-    checkExtensionCompatibility: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExtensionCompatibilityRequest"];
-            };
-        };
-        responses: {
-            /** @description Compatibility results */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtensionCompatibilityResult"][];
-                };
-            };
-            422: components["responses"]["ValidationError"];
-        };
-    };
-    getShopwareVersions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Shopware version information */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    signUpEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    email: string;
-                    password: string;
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            /** @description User created successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        user?: components["schemas"]["AuthUser"];
-                    };
-                };
-            };
-            400: components["responses"]["ValidationError"];
-            /** @description Email already exists */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    signInEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    email: string;
-                    password: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Signed in successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        user?: components["schemas"]["AuthUser"];
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            /** @description Account is banned */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    signOut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Signed out */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current session */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        user?: components["schemas"]["AuthUser"];
-                        session?: components["schemas"]["SessionInfo"];
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    setActiveOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    organizationId: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Active organization updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Not a member of the specified organization */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    verifyEmail: {
-        parameters: {
-            query: {
-                token: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Email verified */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid or expired token */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    forgetPassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    email: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Reset email sent (always returns success) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    resetPassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    token: string;
-                    newPassword: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Password reset */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid token or weak password */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    signInSocial: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    provider: "github";
-                    callbackURL?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Authorization URL */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        url?: string;
-                    };
-                };
-            };
-        };
-    };
-    signInSSO: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    email: string;
-                    callbackURL?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Authorization URL */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        url?: string;
-                    };
-                };
-            };
-            /** @description No SSO provider for this domain */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    passkeyRegisterOptions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Registration options and challenge key */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        options?: Record<string, never>;
-                        challengeKey?: string;
-                    };
-                };
-            };
-        };
-    };
-    passkeyRegister: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    challengeKey: string;
-                    name?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Passkey registered */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid or expired challenge */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    passkeyLoginOptions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Login options and challenge key */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    passkeyLogin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    challengeKey: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Logged in */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Authentication failed */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    createOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Organization created */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id?: string;
-                        name?: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Only owners can delete */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    updateOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    name?: string;
-                    logo?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    listOrganizationMembers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of members */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id?: string;
-                        userId?: string;
-                        role?: string;
-                        name?: string;
-                        email?: string;
-                        image?: string | null;
-                    }[];
-                };
-            };
-        };
-    };
-    removeMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Member removed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    setMemberRole: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    role: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Role updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    leaveOrganization: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Left organization */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Cannot leave as only owner */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    listOrganizationInvitations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of pending invitations */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    inviteMember: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                organizationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    email: string;
-                    /** @default member */
-                    role?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Invitation sent */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    acceptInvitation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                invitationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Invitation accepted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    rejectInvitation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                invitationId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Invitation rejected */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminListUsers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of users */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminSetUserRole: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @enum {string} */
-                    role: "user" | "admin";
-                };
-            };
-        };
-        responses: {
-            /** @description Role updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminBanUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    banReason?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description User banned */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminUnbanUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description User unbanned */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminImpersonate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Impersonation session created */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getFullOrganization: {
-        parameters: {
-            query: {
-                organizationId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Full organization details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id?: string;
-                        name?: string;
-                        members?: {
-                            id?: string;
-                            userId?: string;
-                            role?: string;
-                            name?: string;
-                            email?: string;
-                        }[];
-                        invitations?: {
-                            id?: string;
-                            email?: string;
-                            role?: string;
-                            status?: string;
-                        }[];
-                    };
-                };
-            };
-        };
-    };
-    listSessions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of sessions */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        /** Format: date-time */
-                        expiresAt: string;
-                        /** Format: date-time */
-                        createdAt: string;
-                        ipAddress?: string | null;
-                        userAgent?: string | null;
-                        impersonatedBy?: string | null;
-                    }[];
-                };
-            };
-        };
-    };
-    revokeSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    sessionId: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Session revoked */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    listAccounts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of linked accounts */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        provider: string;
-                        accountId: string;
-                        /** Format: date-time */
-                        createdAt: string;
-                    }[];
-                };
-            };
-        };
-    };
-    unlinkAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    providerId: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Account unlinked */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    changeEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: email */
-                    newEmail: string;
-                    currentPassword: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Email changed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    updateUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    name?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description User updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    changePassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    currentPassword: string;
-                    newPassword: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Password changed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Current password incorrect */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    deleteUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description User deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    linkSocial: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    provider: string;
-                    callbackURL?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Authorization URL */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        url?: string;
-                    };
-                };
-            };
-        };
-    };
-    listUserOrganizations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of organizations */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string;
-                        logo?: string | null;
-                        /** Format: date-time */
-                        createdAt?: string;
-                        role?: string;
-                    }[];
-                };
-            };
-        };
-    };
-    hasPermission: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    organizationId: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Permission check result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        success?: boolean;
-                    };
-                };
-            };
-        };
-    };
-    cancelInvitation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    invitationId: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Invitation cancelled */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    listUserPasskeys: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of passkeys */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        name: string | null;
-                        deviceType?: string;
-                        backedUp?: boolean;
-                        /** Format: date-time */
-                        createdAt: string;
-                    }[];
-                };
-            };
-        };
-    };
-    deletePasskey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    id: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Passkey deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    registerSSOProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    organizationId: string;
-                    domain: string;
-                    issuer: string;
-                    clientId: string;
-                    clientSecret: string;
-                    authorizationEndpoint: string;
-                    tokenEndpoint: string;
-                    jwksEndpoint: string;
-                };
-            };
-        };
-        responses: {
-            /** @description SSO provider registered */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    adminStopImpersonating: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Impersonation ended */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    exchangeCode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    code: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Session token */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        token?: string;
-                    };
-                };
-            };
-            /** @description Invalid or expired code */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
+  getHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Service is healthy */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/plain": "ok";
+        };
+      };
+    };
+  };
+  getAccountMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current user profile */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserProfile"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountExtensions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of extensions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountExtension"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of organizations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountOrganization"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountEnvironments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of environments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountEnvironment"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountShops: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shops */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountShop"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountChangelogs: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of changelogs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountChangelog"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountSubscribedEnvironments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of subscribed environments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SubscribedEnvironment"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Notification"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  deleteAllNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All notifications deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  deleteNotification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Notification ID */
+        id: components["parameters"]["NotificationId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notification deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  markNotificationsRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All notifications marked as read */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getOrganizationEnvironments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of environments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountEnvironment"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  createEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateEnvironmentRequest"];
+      };
+    };
+    responses: {
+      /** @description Environment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  getEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Environment details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnvironmentDetail"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  deleteEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Environment deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  updateEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateEnvironmentRequest"];
+      };
+    };
+    responses: {
+      /** @description Environment updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  refreshEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @description Also run sitespeed check */
+          sitespeed?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Environment refresh triggered */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  clearEnvironmentCache: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cache cleared */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  rescheduleTask: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+        /** @description Scheduled task ID */
+        taskId: components["parameters"]["TaskId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Task rescheduled */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  getEnvironmentSubscription: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Subscription status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            subscribed: boolean;
+          };
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  subscribeToEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Subscribed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  unsubscribeFromEnvironment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unsubscribed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  updateSitespeedSettings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SitespeedSettingsRequest"];
+      };
+    };
+    responses: {
+      /** @description Sitespeed settings updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  getOrganizationShops: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shops */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Shop"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  createShop: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateShopRequest"];
+      };
+    };
+    responses: {
+      /** @description Shop created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  deleteShop: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shop deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  updateShop: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateShopRequest"];
+      };
+    };
+    responses: {
+      /** @description Shop updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  getApiKeyScopes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of available scopes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiKeyScope"][];
+        };
+      };
+    };
+  };
+  getApiKeys: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of API keys */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiKey"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  createApiKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateApiKeyRequest"];
+      };
+    };
+    responses: {
+      /** @description API key created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateApiKeyResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  deleteApiKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+        /** @description API key ID */
+        keyId: components["parameters"]["KeyId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description API key deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  getPackagesTokenConfiguration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Packages token configuration */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PackagesTokenConfiguration"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getPackagesTokens: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of packages tokens */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PackagesToken"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  createPackagesToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePackagesTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Packages token created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  deletePackagesToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+        /** @description Packages token ID */
+        tokenId: components["parameters"]["TokenId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Packages token deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  syncPackagesToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description Shop ID */
+        shopId: components["parameters"]["ShopId"];
+        /** @description Packages token ID */
+        tokenId: components["parameters"]["TokenId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync triggered */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  getDeployments: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of deployments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Deployment"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getDeployment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+        /** @description Deployment ID */
+        deploymentId: components["parameters"]["DeploymentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deployment details with output */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DeploymentDetail"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  deleteDeployment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+        /** @description Deployment ID */
+        deploymentId: components["parameters"]["DeploymentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deployment deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  createCliDeployment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCliDeploymentRequest"];
+      };
+    };
+    responses: {
+      /** @description Deployment created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateCliDeploymentResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  getSsoProviders: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of SSO providers */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SsoProvider"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  discoverSso: {
+    parameters: {
+      query: {
+        issuer: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Discovered OIDC configuration */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SsoDiscovery"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  updateSsoProvider: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description SSO provider ID */
+        providerId: components["parameters"]["ProviderId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSsoProviderRequest"];
+      };
+    };
+    responses: {
+      /** @description SSO provider updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  deleteSsoProvider: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization ID */
+        orgId: components["parameters"]["OrgId"];
+        /** @description SSO provider ID */
+        providerId: components["parameters"]["ProviderId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSO provider deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  adminGetOrganizations: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+        sortBy?: "name" | "createdAt" | "shopCount" | "memberCount";
+        sortDirection?: "asc" | "desc";
+        searchField?: string;
+        searchOperator?: string;
+        searchValue?: string;
+        filterField?: string;
+        filterOperator?: string;
+        filterValue?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of organizations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminOrganizationsResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetEnvironments: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+        sortBy?: string;
+        sortDirection?: "asc" | "desc";
+        searchField?: string;
+        searchOperator?: string;
+        searchValue?: string;
+        filterField?: string;
+        filterOperator?: string;
+        filterValue?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of environments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminEnvironmentsResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Admin statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminStats"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetGrowth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Growth data */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminGrowth"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetRecentActivity: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent activity */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminRecentActivity"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetShopwareVersions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Version distribution */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ShopwareVersionCount"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  checkExtensionCompatibility: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExtensionCompatibilityRequest"];
+      };
+    };
+    responses: {
+      /** @description Compatibility results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ExtensionCompatibilityResult"][];
+        };
+      };
+      422: components["responses"]["ValidationError"];
+    };
+  };
+  getShopwareVersions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shopware version information */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  signUpEmail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+          password: string;
+          name: string;
+        };
+      };
+    };
+    responses: {
+      /** @description User created successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            user?: components["schemas"]["AuthUser"];
+          };
+        };
+      };
+      400: components["responses"]["ValidationError"];
+      /** @description Email already exists */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  signInEmail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+          password: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Signed in successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            user?: components["schemas"]["AuthUser"];
+          };
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      /** @description Account is banned */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  signOut: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Signed out */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current session */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            user?: components["schemas"]["AuthUser"];
+            session?: components["schemas"]["SessionInfo"];
+          };
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  setActiveOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          organizationId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Active organization updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not a member of the specified organization */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  verifyEmail: {
+    parameters: {
+      query: {
+        token: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Email verified */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid or expired token */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  forgetPassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Reset email sent (always returns success) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  resetPassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          token: string;
+          newPassword: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Password reset */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid token or weak password */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  signInSocial: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          provider: "github";
+          callbackURL?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Authorization URL */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            url?: string;
+          };
+        };
+      };
+    };
+  };
+  signInSSO: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+          callbackURL?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Authorization URL */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            url?: string;
+          };
+        };
+      };
+      /** @description No SSO provider for this domain */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  passkeyRegisterOptions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Registration options and challenge key */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            options?: Record<string, never>;
+            challengeKey?: string;
+          };
+        };
+      };
+    };
+  };
+  passkeyRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          challengeKey: string;
+          name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Passkey registered */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid or expired challenge */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  passkeyLoginOptions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Login options and challenge key */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  passkeyLogin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          challengeKey: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Logged in */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Authentication failed */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          name: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Organization created */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id?: string;
+            name?: string;
+          };
+        };
+      };
+    };
+  };
+  deleteOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Only owners can delete */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          name?: string;
+          logo?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOrganizationMembers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of members */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id?: string;
+            userId?: string;
+            role?: string;
+            name?: string;
+            email?: string;
+            image?: string | null;
+          }[];
+        };
+      };
+    };
+  };
+  removeMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Member removed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setMemberRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          role: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Role updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  leaveOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Left organization */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot leave as only owner */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOrganizationInvitations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of pending invitations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  inviteMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organizationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string;
+          /** @default member */
+          role?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Invitation sent */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  acceptInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invitationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Invitation accepted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  rejectInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invitationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Invitation rejected */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminListUsers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminSetUserRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          role: "user" | "admin";
+        };
+      };
+    };
+    responses: {
+      /** @description Role updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminBanUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          banReason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description User banned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminUnbanUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User unbanned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminImpersonate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Impersonation session created */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getFullOrganization: {
+    parameters: {
+      query: {
+        organizationId: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Full organization details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id?: string;
+            name?: string;
+            members?: {
+              id?: string;
+              userId?: string;
+              role?: string;
+              name?: string;
+              email?: string;
+            }[];
+            invitations?: {
+              id?: string;
+              email?: string;
+              role?: string;
+              status?: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  listSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of sessions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            createdAt: string;
+            ipAddress?: string | null;
+            userAgent?: string | null;
+            impersonatedBy?: string | null;
+          }[];
+        };
+      };
+    };
+  };
+  revokeSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          sessionId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Session revoked */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAccounts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of linked accounts */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id: string;
+            provider: string;
+            accountId: string;
+            /** Format: date-time */
+            createdAt: string;
+          }[];
+        };
+      };
+    };
+  };
+  unlinkAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          providerId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Account unlinked */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  changeEmail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          newEmail: string;
+          currentPassword: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Email changed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description User updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  changePassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          currentPassword: string;
+          newPassword: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Password changed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Current password incorrect */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  linkSocial: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          provider: string;
+          callbackURL?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Authorization URL */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            url?: string;
+          };
+        };
+      };
+    };
+  };
+  listUserOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of organizations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id: string;
+            name: string;
+            logo?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            role?: string;
+          }[];
+        };
+      };
+    };
+  };
+  hasPermission: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          organizationId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Permission check result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            success?: boolean;
+          };
+        };
+      };
+    };
+  };
+  cancelInvitation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          invitationId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Invitation cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listUserPasskeys: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of passkeys */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            id: string;
+            name: string | null;
+            deviceType?: string;
+            backedUp?: boolean;
+            /** Format: date-time */
+            createdAt: string;
+          }[];
+        };
+      };
+    };
+  };
+  deletePasskey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          id: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Passkey deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  registerSSOProvider: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          organizationId: string;
+          domain: string;
+          issuer: string;
+          clientId: string;
+          clientSecret: string;
+          authorizationEndpoint: string;
+          tokenEndpoint: string;
+          jwksEndpoint: string;
+        };
+      };
+    };
+    responses: {
+      /** @description SSO provider registered */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  adminStopImpersonating: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Impersonation ended */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  exchangeCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          code: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Session token */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            token?: string;
+          };
+        };
+      };
+      /** @description Invalid or expired code */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }

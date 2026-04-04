@@ -38,7 +38,10 @@
     </Table>
   </div>
 
-  <div v-else class="flex flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center text-muted-foreground">
+  <div
+    v-else
+    class="flex flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center text-muted-foreground"
+  >
     <template v-if="sortedFilteredData?.length ?? 0 === 0">
       <span>
         <template v-if="searchTerm">
@@ -64,7 +67,14 @@
 import { createNewSortInstance } from "fast-sort";
 import Fuse from "fuse.js";
 import { computed, useSlots, reactive } from "vue";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const slots = useSlots();
 

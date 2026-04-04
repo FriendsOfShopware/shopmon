@@ -3,7 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h } from "vue";
 import EditEnvironment from "./EditEnvironment.vue";
 
-
 const MainContainerStub = defineComponent({
   name: "MainContainer",
   setup(_, { slots }) {
@@ -49,7 +48,7 @@ vi.mock("vue-router", () => ({
   RouterLink: {
     name: "RouterLink",
     props: ["to"],
-    template: '<a><slot /></a>',
+    template: "<a><slot /></a>",
   },
 }));
 

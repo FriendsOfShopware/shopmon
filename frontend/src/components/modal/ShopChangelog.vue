@@ -3,7 +3,11 @@
     <DialogContent class="max-w-2xl">
       <DialogHeader>
         <DialogTitle>
-          {{ $t("changelogModal.title", { date: changelog?.date ? formatDateTime(changelog.date) : "" }) }}
+          {{
+            $t("changelogModal.title", {
+              date: changelog?.date ? formatDateTime(changelog.date) : "",
+            })
+          }}
         </DialogTitle>
       </DialogHeader>
 
@@ -25,7 +29,8 @@
           <ul class="list-disc">
             <li v-for="extension in changelog?.extensions" :key="extension.name" class="ml-4 mb-2">
               <div class="font-medium">
-                {{ extension.label }} <span class="font-normal text-muted-foreground">({{ extension.name }})</span>
+                {{ extension.label }}
+                <span class="font-normal text-muted-foreground">({{ extension.name }})</span>
               </div>
 
               {{ extension.state }}
@@ -47,11 +52,16 @@
                 </template>
               </template>
 
-              <ul v-if="extension.state === 'updated' && extension.changelog?.length" class="mt-2 list-none space-y-4 p-0">
+              <ul
+                v-if="extension.state === 'updated' && extension.changelog?.length"
+                class="mt-2 list-none space-y-4 p-0"
+              >
                 <li v-for="entry in extension.changelog" :key="entry.version">
                   <div class="mb-1 flex items-center gap-2 font-semibold">
                     {{ entry.version }} -
-                    <span class="font-normal text-muted-foreground">{{ formatDateTime(entry.creationDate) }}</span>
+                    <span class="font-normal text-muted-foreground">{{
+                      formatDateTime(entry.creationDate)
+                    }}</span>
                   </div>
                   <!-- eslint-disable vue/no-v-html -->
                   <div class="prose prose-sm dark:prose-invert max-w-none" v-html="entry.text" />

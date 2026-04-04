@@ -69,7 +69,8 @@ describe("WhatsNewModal", () => {
           UiButton: {
             props: ["to", "variant", "type"],
             emits: ["click"],
-            template: '<button :data-variant="variant" @click="$emit(\'click\', $event)"><slot /></button>',
+            template:
+              '<button :data-variant="variant" @click="$emit(\'click\', $event)"><slot /></button>',
           },
         },
       },
@@ -96,7 +97,8 @@ describe("WhatsNewModal", () => {
           UiButton: {
             props: ["to", "variant", "type"],
             emits: ["click"],
-            template: '<button :data-variant="variant" @click="$emit(\'click\', $event)"><slot /></button>',
+            template:
+              '<button :data-variant="variant" @click="$emit(\'click\', $event)"><slot /></button>',
           },
         },
       },

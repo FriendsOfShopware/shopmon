@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t('admin.dashboard') }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.dashboard") }}</h1>
   </div>
 
   <Card>
@@ -9,42 +9,64 @@
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <div
+        v-if="loading"
+        class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
+      >
         <icon-line-md:loading-twotone-loop class="size-6 animate-spin" />
         {{ $t("admin.loadingStats") }}
       </div>
 
-      <div v-if="!loading && stats" class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 mb-8">
-        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+      <div
+        v-if="!loading && stats"
+        class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 mb-8"
+      >
+        <div
+          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
+        >
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalUsers") }}</h3>
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {{ $t("admin.totalUsers") }}
+            </h3>
             <icon-fa6-solid:users class="size-6 text-primary opacity-70" />
           </div>
           <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalUsers }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalUsersDesc") }}</p>
         </div>
 
-        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+        <div
+          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
+        >
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalOrgs") }}</h3>
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {{ $t("admin.totalOrgs") }}
+            </h3>
             <icon-fa6-solid:building class="size-6 text-primary opacity-70" />
           </div>
           <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalOrganizations }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalOrgsDesc") }}</p>
         </div>
 
-        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+        <div
+          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
+        >
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.totalEnvironments") }}</h3>
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {{ $t("admin.totalEnvironments") }}
+            </h3>
             <icon-fa6-solid:store class="size-6 text-primary opacity-70" />
           </div>
           <div class="text-2xl sm:text-4xl font-bold my-2">{{ stats.totalEnvironments }}</div>
           <p class="text-sm text-muted-foreground">{{ $t("admin.totalEnvironmentsDesc") }}</p>
         </div>
 
-        <div class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md">
+        <div
+          class="flex flex-col rounded-lg border bg-card p-6 transition-all hover:border-primary hover:shadow-md"
+        >
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{{ $t("admin.environmentStatus") }}</h3>
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {{ $t("admin.environmentStatus") }}
+            </h3>
             <icon-fa6-solid:chart-bar class="size-6 text-primary opacity-70" />
           </div>
           <div class="flex flex-col gap-3">
@@ -130,14 +152,25 @@
         <CardTitle>Recent Signups</CardTitle>
       </CardHeader>
       <CardContent>
-        <div v-if="activity.recentUsers.length === 0" class="text-center py-8 text-muted-foreground">No recent signups</div>
+        <div
+          v-if="activity.recentUsers.length === 0"
+          class="text-center py-8 text-muted-foreground"
+        >
+          No recent signups
+        </div>
         <div v-else class="flex flex-col">
-          <div v-for="user in activity.recentUsers" :key="user.id" class="flex items-center justify-between py-3 border-b last:border-b-0">
+          <div
+            v-for="user in activity.recentUsers"
+            :key="user.id"
+            class="flex items-center justify-between py-3 border-b last:border-b-0"
+          >
             <div class="flex flex-col gap-0.5 min-w-0">
               <span class="font-semibold truncate">{{ user.displayName }}</span>
               <span class="text-xs text-muted-foreground truncate">{{ user.email }}</span>
             </div>
-            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{ formatDateTime(user.createdAt) }}</span>
+            <span class="text-xs text-muted-foreground whitespace-nowrap ml-4">{{
+              formatDateTime(user.createdAt)
+            }}</span>
           </div>
         </div>
       </CardContent>
@@ -148,11 +181,18 @@
         <CardTitle>Recent Environments</CardTitle>
       </CardHeader>
       <CardContent>
-        <div v-if="activity.recentEnvironments.length === 0" class="text-center py-8 text-muted-foreground">
+        <div
+          v-if="activity.recentEnvironments.length === 0"
+          class="text-center py-8 text-muted-foreground"
+        >
           No recent environments
         </div>
         <div v-else class="flex flex-col">
-          <div v-for="env in activity.recentEnvironments" :key="env.id" class="flex items-center justify-between py-3 border-b last:border-b-0">
+          <div
+            v-for="env in activity.recentEnvironments"
+            :key="env.id"
+            class="flex items-center justify-between py-3 border-b last:border-b-0"
+          >
             <div class="flex flex-col gap-0.5 min-w-0">
               <span class="font-semibold truncate">{{ env.name }}</span>
               <span class="text-xs text-muted-foreground truncate">{{ env.organizationName }}</span>

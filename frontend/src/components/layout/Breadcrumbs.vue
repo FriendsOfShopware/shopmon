@@ -13,7 +13,9 @@
               {{ normalizedItems[normalizedItems.length - 2].label }}
             </RouterLink>
           </BreadcrumbLink>
-          <BreadcrumbPage v-else>{{ normalizedItems[normalizedItems.length - 2].label }}</BreadcrumbPage>
+          <BreadcrumbPage v-else>{{
+            normalizedItems[normalizedItems.length - 2].label
+          }}</BreadcrumbPage>
         </BreadcrumbItem>
         <BreadcrumbSeparator class="sm:hidden" />
         <BreadcrumbItem class="sm:hidden">
@@ -30,7 +32,11 @@
               {{ item.label }}
             </RouterLink>
           </BreadcrumbLink>
-          <BreadcrumbLink v-else-if="index < normalizedItems.length - 1 && item.href" :href="item.href" target="_blank">
+          <BreadcrumbLink
+            v-else-if="index < normalizedItems.length - 1 && item.href"
+            :href="item.href"
+            target="_blank"
+          >
             <component :is="item.icon" v-if="item.icon" class="mr-1 inline size-4" />
             {{ item.label }}
           </BreadcrumbLink>
@@ -39,7 +45,10 @@
             {{ item.label }}
           </BreadcrumbPage>
         </BreadcrumbItem>
-        <BreadcrumbSeparator v-if="index < normalizedItems.length - 1" :class="normalizedItems.length > 2 ? 'hidden sm:inline-flex' : ''" />
+        <BreadcrumbSeparator
+          v-if="index < normalizedItems.length - 1"
+          :class="normalizedItems.length > 2 ? 'hidden sm:inline-flex' : ''"
+        />
       </template>
     </BreadcrumbList>
   </Breadcrumb>

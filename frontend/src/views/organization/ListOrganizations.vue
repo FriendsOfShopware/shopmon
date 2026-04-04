@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">{{ $t('organization.title') }}</h1>
+      <h1 class="text-2xl font-bold tracking-tight">{{ $t("organization.title") }}</h1>
       <Button size="sm" as-child>
         <RouterLink :to="{ name: 'account.organizations.new' }">
           <icon-fa6-solid:plus class="mr-1.5 size-3" />
@@ -11,11 +11,14 @@
     </div>
 
     <!-- Empty state -->
-    <div v-if="loaded && organizations.length === 0" class="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center">
+    <div
+      v-if="loaded && organizations.length === 0"
+      class="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center"
+    >
       <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
         <icon-fa6-solid:building class="size-6 text-primary" />
       </div>
-      <h2 class="text-xl font-semibold">{{ $t('organization.noOrganization') }}</h2>
+      <h2 class="text-xl font-semibold">{{ $t("organization.noOrganization") }}</h2>
       <p class="max-w-md text-muted-foreground">{{ $t("organization.getStarted") }}</p>
       <Button as-child>
         <RouterLink :to="{ name: 'account.organizations.new' }">
@@ -39,7 +42,9 @@
         <div class="min-w-0 flex-1">
           <span class="font-medium group-hover:text-primary transition-colors">{{ org.name }}</span>
         </div>
-        <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <icon-fa6-solid:chevron-right
+          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+        />
       </RouterLink>
     </div>
   </div>

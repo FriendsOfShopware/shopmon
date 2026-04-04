@@ -8,8 +8,18 @@
       leave-from-class="translate-x-0"
       leave-to-class="translate-x-full"
     >
-      <div v-if="alert" :class="['relative mr-3 mb-4 flex w-screen gap-3 rounded-xl border bg-card p-4 shadow-lg', variantBorder]">
-        <button class="absolute right-2 top-2 flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground" type="button" @click="clear()">
+      <div
+        v-if="alert"
+        :class="[
+          'relative mr-3 mb-4 flex w-screen gap-3 rounded-xl border bg-card p-4 shadow-lg',
+          variantBorder,
+        ]"
+      >
+        <button
+          class="absolute right-2 top-2 flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          type="button"
+          @click="clear()"
+        >
           <icon-fa6-solid:xmark aria-hidden="true" />
         </button>
         <div class="mt-0.5 shrink-0" :class="variantColor">

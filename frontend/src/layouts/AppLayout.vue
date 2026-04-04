@@ -79,10 +79,16 @@
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <SidebarMenuButton class="h-10">
-                  <img class="size-6 shrink-0 rounded-full bg-primary object-cover" :src="userAvatar" alt="" />
+                  <img
+                    class="size-6 shrink-0 rounded-full bg-primary object-cover"
+                    :src="userAvatar"
+                    alt=""
+                  />
                   <div class="flex min-w-0 flex-1 flex-col leading-tight">
                     <span class="truncate text-sm font-medium">{{ session?.user.name }}</span>
-                    <span class="truncate text-xs text-muted-foreground">{{ session?.user.email }}</span>
+                    <span class="truncate text-xs text-muted-foreground">{{
+                      session?.user.email
+                    }}</span>
                   </div>
                   <icon-fa6-solid:ellipsis-vertical class="ml-auto size-3 text-muted-foreground" />
                 </SidebarMenuButton>
@@ -102,14 +108,18 @@
                 <DropdownMenuItem @click="toggleDarkMode">
                   <icon-fa6-regular:moon v-if="darkMode" class="mr-2 size-3.5" />
                   <icon-octicon:sun-16 v-else class="mr-2 size-3.5" />
-                  {{ darkMode ? 'Light mode' : 'Dark mode' }}
+                  {{ darkMode ? "Light mode" : "Dark mode" }}
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="toggleLocale">
                   <icon-fa6-solid:globe class="mr-2 size-3.5" />
                   {{ String(locale) === "en" ? "Deutsch" : "English" }}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem as="a" href="https://github.com/FriendsOfShopware/shopmon/" target="_blank">
+                <DropdownMenuItem
+                  as="a"
+                  href="https://github.com/FriendsOfShopware/shopmon/"
+                  target="_blank"
+                >
                   <icon-fa-brands:github class="mr-2 size-3.5" />
                   GitHub
                 </DropdownMenuItem>
@@ -129,7 +139,9 @@
 
     <SidebarInset>
       <!-- Top bar — minimal: trigger + breadcrumb area + notifications -->
-      <header class="sticky top-0 z-10 flex h-12 items-center justify-between border-b bg-background px-4">
+      <header
+        class="sticky top-0 z-10 flex h-12 items-center justify-between border-b bg-background px-4"
+      >
         <div class="flex items-center gap-2">
           <SidebarTrigger class="-ml-1" />
         </div>
@@ -138,9 +150,18 @@
           <!-- Notifications -->
           <Popover>
             <PopoverTrigger as-child>
-              <Button variant="ghost" size="icon" class="relative size-8" @click="markAllRead" aria-label="Notifications">
+              <Button
+                variant="ghost"
+                size="icon"
+                class="relative size-8"
+                @click="markAllRead"
+                aria-label="Notifications"
+              >
                 <icon-fa6-solid:bell class="size-4" />
-                <span v-if="unreadNotificationCount > 0" class="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                <span
+                  v-if="unreadNotificationCount > 0"
+                  class="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white"
+                >
                   {{ unreadNotificationCount }}
                 </span>
               </Button>
@@ -148,7 +169,13 @@
             <PopoverContent align="end" class="w-80 max-w-[calc(100vw-2rem)] p-0">
               <div class="flex items-center justify-between border-b px-4 py-3 text-sm font-medium">
                 {{ $t("topBar.notifications", { count: notifications.length }) }}
-                <Button v-if="notifications.length > 0" variant="ghost" size="icon" class="size-6" @click="deleteAllNotifications">
+                <Button
+                  v-if="notifications.length > 0"
+                  variant="ghost"
+                  size="icon"
+                  class="size-6"
+                  @click="deleteAllNotifications"
+                >
                   <icon-fa6-solid:trash class="size-3" />
                 </Button>
               </div>
@@ -160,25 +187,40 @@
                   class="group flex gap-2 border-b px-4 py-2.5 last:border-0 hover:bg-accent"
                 >
                   <div class="mt-0.5 shrink-0">
-                    <icon-fa6-solid:circle-xmark v-if="notification.level === 'error'" class="size-4 text-destructive" />
+                    <icon-fa6-solid:circle-xmark
+                      v-if="notification.level === 'error'"
+                      class="size-4 text-destructive"
+                    />
                     <icon-fa6-solid:circle-info v-else class="size-4 text-info" />
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="text-sm font-medium">{{ notification.title }}</div>
-                    <div class="text-xs text-muted-foreground">{{ formatDateTime(notification.createdAt) }}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ formatDateTime(notification.createdAt) }}
+                    </div>
                     <div class="text-[0.8125rem] leading-snug text-muted-foreground">
                       {{ notification.message }}
-                      <a v-if="notification.link" :href="notification.link.url" class="text-primary">
+                      <a
+                        v-if="notification.link"
+                        :href="notification.link.url"
+                        class="text-primary"
+                      >
                         {{ notification.link.label || $t("topBar.more") }}
                       </a>
                     </div>
                   </div>
-                  <button type="button" class="invisible shrink-0 rounded p-0.5 text-muted-foreground opacity-50 hover:opacity-100 group-hover:visible" @click="deleteNotification(notification.id)">
+                  <button
+                    type="button"
+                    class="invisible shrink-0 rounded p-0.5 text-muted-foreground opacity-50 hover:opacity-100 group-hover:visible"
+                    @click="deleteNotification(notification.id)"
+                  >
                     <icon-fa6-solid:xmark class="size-3" />
                   </button>
                 </div>
               </ScrollArea>
-              <div v-else class="px-4 py-6 text-center text-sm text-muted-foreground">{{ $t("notifications.notMuchGoingOn") }}</div>
+              <div v-else class="px-4 py-6 text-center text-sm text-muted-foreground">
+                {{ $t("notifications.notMuchGoingOn") }}
+              </div>
             </PopoverContent>
           </Popover>
         </div>

@@ -2,7 +2,7 @@
   <!-- Page header -->
   <div class="bg-gradient-to-b from-[#0a3d5c] via-primary to-primary/30 pb-12 pt-28 sm:pt-32">
     <div class="mx-auto max-w-3xl px-6 text-center">
-      <h1 class="text-3xl font-bold text-white">{{ $t('imprint.title') }}</h1>
+      <h1 class="text-3xl font-bold text-white">{{ $t("imprint.title") }}</h1>
     </div>
   </div>
 

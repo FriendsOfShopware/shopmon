@@ -41,12 +41,8 @@ describe("Home", () => {
 
   it("displays main heading", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find("h1").text()).toContain(
-      "The monitoring dashboard",
-    );
-    expect(wrapper.find("h1").text()).toContain(
-      "your Shopware shops deserve",
-    );
+    expect(wrapper.find("h1").text()).toContain("The monitoring dashboard");
+    expect(wrapper.find("h1").text()).toContain("your Shopware shops deserve");
   });
 
   it("displays subheading about dashboard overview", () => {

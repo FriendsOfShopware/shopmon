@@ -3,10 +3,7 @@
     <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.changePassword") }}</h2>
   </div>
 
-  <form
-    class="flex w-full flex-col gap-6 text-center"
-    @submit="onSubmit"
-  >
+  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
     <FormField v-slot="{ componentField }" name="password">
       <FormItem>
         <FormControl>

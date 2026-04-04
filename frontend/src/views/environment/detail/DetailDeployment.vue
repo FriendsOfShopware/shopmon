@@ -4,18 +4,23 @@
 
     <Card>
       <CardHeader>
-        <CardTitle>{{ $t('nav.deploymentDetails') }}</CardTitle>
+        <CardTitle>{{ $t("nav.deploymentDetails") }}</CardTitle>
       </CardHeader>
       <CardContent>
         <div class="flex flex-col">
           <div class="flex justify-between items-center py-2 border-b">
             <span class="text-muted-foreground">{{ $t("deployments.duration") }}:</span>
-            <span class="font-medium text-right">{{ formatDuration(deployment.executionTime) }}</span>
+            <span class="font-medium text-right">{{
+              formatDuration(deployment.executionTime)
+            }}</span>
           </div>
 
           <div class="flex justify-between items-center py-2 border-b">
             <span class="text-muted-foreground">{{ $t("deployments.command") }}:</span>
-            <code class="font-medium text-right font-mono bg-muted px-2 py-1 rounded text-sm max-w-[60%] overflow-hidden text-ellipsis whitespace-nowrap">{{ deployment.command }}</code>
+            <code
+              class="font-medium text-right font-mono bg-muted px-2 py-1 rounded text-sm max-w-[60%] overflow-hidden text-ellipsis whitespace-nowrap"
+              >{{ deployment.command }}</code
+            >
           </div>
 
           <div class="flex justify-between items-center py-2 border-b">
@@ -40,7 +45,10 @@
             <span class="font-medium text-right">{{ formatDateTime(deployment.endDate) }}</span>
           </div>
 
-          <div v-if="deployment.reference && deployment.gitUrl" class="flex justify-between items-center py-2">
+          <div
+            v-if="deployment.reference && deployment.gitUrl"
+            class="flex justify-between items-center py-2"
+          >
             <span class="text-muted-foreground">{{ $t("deployments.reference") }}:</span>
             <a
               :href="`${deployment.gitUrl}/commit/${deployment.reference}`"
@@ -68,14 +76,28 @@
           <table class="w-full border-collapse">
             <thead>
               <tr class="bg-muted border-b-2">
-                <th class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide">{{ $t("deployments.package") }}</th>
-                <th class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide">{{ $t("common.version") }}</th>
+                <th
+                  class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide"
+                >
+                  {{ $t("deployments.package") }}
+                </th>
+                <th
+                  class="px-4 py-2 text-left font-semibold text-sm text-muted-foreground uppercase tracking-wide"
+                >
+                  {{ $t("common.version") }}
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="[packageName, version] in sortedComposer" :key="packageName" class="hover:bg-muted/50 border-b last:border-b-0">
+              <tr
+                v-for="[packageName, version] in sortedComposer"
+                :key="packageName"
+                class="hover:bg-muted/50 border-b last:border-b-0"
+              >
                 <td class="px-4 py-2 font-mono text-sm">{{ packageName }}</td>
-                <td class="px-4 py-2 font-mono text-sm text-muted-foreground font-semibold">{{ version }}</td>
+                <td class="px-4 py-2 font-mono text-sm text-muted-foreground font-semibold">
+                  {{ version }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -92,7 +114,11 @@
       </CardHeader>
       <CardContent>
         <div class="bg-[#0d1117] overflow-hidden p-4 rounded-md">
-          <pre class="m-0 p-0 overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-[#c9d1d9] whitespace-pre break-normal" style="tab-size: 4" v-html="formattedOutput"></pre>
+          <pre
+            class="m-0 p-0 overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-[#c9d1d9] whitespace-pre break-normal"
+            style="tab-size: 4"
+            v-html="formattedOutput"
+          ></pre>
         </div>
       </CardContent>
     </Card>
