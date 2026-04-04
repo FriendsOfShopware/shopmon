@@ -97,7 +97,7 @@
                 name: 'account.environments.detail.deployment',
                 params: {
                   organizationId: $route.params.organizationId,
-                  shopId: $route.params.environmentId,
+                  environmentId: $route.params.environmentId,
                   deploymentId: row.deployment.id,
                 },
               }"

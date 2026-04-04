@@ -276,7 +276,8 @@ import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
-import { ref, computed, h } from "vue";
+import EnvironmentChangelog from "@/components/modal/ShopChangelog.vue";
+import { ref, computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
@@ -303,7 +304,7 @@ const { environment, shopwareVersions, latestShopwareVersion } = useEnvironmentD
 // Route helpers
 const routeParams = computed(() => ({
   organizationId: route.params.organizationId,
-  shopId: route.params.environmentId,
+  environmentId: route.params.environmentId,
 }));
 const checksRoute = computed(() => ({ name: "account.environments.detail.checks", params: routeParams.value }));
 const extensionsRoute = computed(() => ({ name: "account.environments.detail.extensions", params: routeParams.value }));
