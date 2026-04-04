@@ -1,10 +1,10 @@
 <template>
   <div class="login-header">
-    <h2>Sign in to your account</h2>
+    <h2>{{ $t("auth.signIn") }}</h2>
     <p>
-      New to Shopmon?
+      {{ $t("auth.newToShopmon") }}
       {{ " " }}
-      <router-link :to="{ name: 'account.register' }"> Create an account </router-link>
+      <router-link :to="{ name: 'account.register' }"> {{ $t("auth.createAccount") }} </router-link>
     </p>
   </div>
 
@@ -19,27 +19,33 @@
         name="email"
         type="email"
         autocomplete="email"
-        placeholder="Email address"
+        :placeholder="$t('common.emailAddress')"
         required
         :error="errors.email"
       />
 
-      <PasswordField name="password" placeholder="Password" :error="errors.password" />
+      <PasswordField
+        name="password"
+        :placeholder="$t('common.password')"
+        :error="errors.password"
+      />
     </div>
 
     <button type="submit" class="btn btn-primary btn-block" :disabled="isSubmitting">
       <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Sign in
+      {{ $t("auth.signInButton") }}
     </button>
 
     <div>
-      <router-link :to="{ name: 'account.forgot.password' }"> Forgot your password? </router-link>
+      <router-link :to="{ name: 'account.forgot.password' }">
+        {{ $t("auth.forgotPassword") }}
+      </router-link>
     </div>
   </vee-form>
 
   <div class="passkey-container">
-    <div class="text-divider">Or</div>
+    <div class="text-divider">{{ $t("common.or") }}</div>
 
     <button
       type="button"
@@ -53,7 +59,7 @@
         aria-hidden="true"
       />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Login using Passkey
+      {{ $t("auth.loginPasskey") }}
     </button>
 
     <button
@@ -64,16 +70,16 @@
     >
       <icon-mdi:github v-if="!isGithubLoading" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Continue with GitHub
+      {{ $t("auth.continueGithub") }}
     </button>
 
     <div class="sso-section">
-      <div class="text-divider">Enterprise SSO</div>
+      <div class="text-divider">{{ $t("auth.enterpriseSSO") }}</div>
 
       <BaseInput
         v-model="ssoEmail"
         type="email"
-        placeholder="Enter your work email"
+        :placeholder="$t('auth.enterWorkEmail')"
         @keyup.enter="ssoLogin"
       >
         <template #append>
@@ -88,7 +94,7 @@
           </button>
         </template>
       </BaseInput>
-      <p class="sso-help">Use your company email to sign in with SSO</p>
+      <p class="sso-help">{{ $t("auth.ssoHelp") }}</p>
     </div>
   </div>
 </template>
@@ -96,6 +102,7 @@
 <script setup lang="ts">
 import { Field, Form as VeeForm, configure } from "vee-validate";
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
@@ -105,6 +112,7 @@ import { api, setToken } from "@/helpers/api";
 import { useRouter } from "vue-router";
 import { startAuthentication } from "@simplewebauthn/browser";
 
+const { t } = useI18n();
 const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
 
@@ -119,8 +127,8 @@ configure({
 });
 
 const schema = Yup.object().shape({
-  email: Yup.string().required("Email is required").email(),
-  password: Yup.string().required("Password is required"),
+  email: Yup.string().required(t("validation.emailRequired")).email(),
+  password: Yup.string().required(t("validation.passwordRequired")),
 });
 
 async function goToDashboard() {
@@ -138,7 +146,7 @@ async function onSubmit(values: Record<string, unknown>) {
   });
 
   if (error) {
-    alert.error((error as { message?: string }).message ?? "Failed to sign in");
+    alert.error((error as { message?: string }).message ?? t("auth.failedSignIn"));
     return;
   }
 
@@ -159,7 +167,7 @@ async function webauthnLogin() {
     );
 
     if (optionsError || !optionsData) {
-      alert.error("Failed to get passkey login options");
+      alert.error(t("auth.failedSignInPasskey"));
       isAuthenticated.value = false;
       return;
     }
@@ -204,7 +212,7 @@ async function githubLogin() {
     });
 
     if (error || !data?.url) {
-      alert.error("Failed to sign in with GitHub");
+      alert.error(t("auth.failedSignInGithub"));
       isGithubLoading.value = false;
       return;
     }
@@ -219,7 +227,7 @@ async function githubLogin() {
 
 async function ssoLogin() {
   if (!ssoEmail.value) {
-    alert.error("Please enter your work email");
+    alert.error(t("auth.pleaseEnterWorkEmail"));
     return;
   }
 
@@ -236,15 +244,15 @@ async function ssoLogin() {
 
     if (error || !data?.url) {
       if (error && (error as unknown as { status?: number }).status === 404) {
-        alert.error("No SSO provider found for this email domain");
+        alert.error(t("auth.noSSOProvider"));
       } else {
-        alert.error((error as unknown as { message?: string })?.message ?? "SSO login failed");
+        alert.error((error as unknown as { message?: string })?.message ?? t("auth.ssoLoginFailed"));
       }
     } else {
       window.location.href = data.url;
     }
   } catch (e: unknown) {
-    alert.error(e instanceof Error ? e.message : "SSO login failed");
+    alert.error(e instanceof Error ? e.message : t("auth.ssoLoginFailed"));
   } finally {
     isSSOLoading.value = false;
   }

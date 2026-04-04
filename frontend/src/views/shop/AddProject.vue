@@ -1,5 +1,5 @@
 <template>
-  <header-container title="New Project" />
+  <header-container :title="$t('project.newProject')" />
   <main-container>
     <Panel v-if="!isLoadingOrgs">
       <vee-form
@@ -8,26 +8,26 @@
         :initial-values="initialValues"
         @submit="onSubmit"
       >
-        <form-group title="Project information">
-          <InputField name="name" label="Name" :error="errors.name" />
+        <form-group :title="$t('project.projectInfo')">
+          <InputField name="name" :label="$t('common.name')" :error="errors.name" />
 
           <TextareaField
             name="description"
-            label="Description"
-            placeholder="Optional project description..."
+            :label="$t('common.description')"
+            :placeholder="$t('project.optionalDescription')"
             :error="errors.description"
           />
 
           <InputField
             name="gitUrl"
-            label="Git Repository URL"
+            :label="$t('project.gitRepoUrl')"
             type="url"
             placeholder="https://github.com/org/repo"
             :error="errors.gitUrl"
           />
 
-          <SelectField name="organizationId" label="Organization" :error="errors.organizationId">
-            <option value="">Select an organization</option>
+          <SelectField name="organizationId" :label="$t('settings.organization')" :error="errors.organizationId">
+            <option value="">{{ $t("project.selectOrganization") }}</option>
             <option
               v-for="organization in organizations"
               :key="organization.id"
@@ -42,7 +42,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -55,9 +55,11 @@ import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 import { Form as VeeForm } from "vee-validate";
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
@@ -85,10 +87,10 @@ async function loadOrganizations() {
 }
 
 const schema = Yup.object().shape({
-  name: Yup.string().required("Project name is required"),
+  name: Yup.string().required(t("validation.projectNameRequired")),
   description: Yup.string().optional(),
-  gitUrl: Yup.string().url("Must be a valid URL").optional(),
-  organizationId: Yup.string().required("Organization is required"),
+  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
+  organizationId: Yup.string().required(t("validation.orgRequired")),
 });
 
 const initialValues = computed(() => {

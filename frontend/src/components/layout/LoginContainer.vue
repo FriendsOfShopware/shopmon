@@ -1,9 +1,15 @@
 <template>
   <div class="login-container">
-    <button class="dark-mode-toggle" type="button" @click="toggleDarkMode">
-      <icon-fa6-regular:moon v-if="darkMode" class="icon" />
-      <icon-octicon:sun-16 v-else class="icon" />
-    </button>
+    <div class="login-toggles">
+      <button class="dark-mode-toggle" type="button" @click="toggleDarkMode">
+        <icon-fa6-regular:moon v-if="darkMode" class="icon" />
+        <icon-octicon:sun-16 v-else class="icon" />
+      </button>
+
+      <button class="locale-toggle" type="button" @click="toggleLocale">
+        {{ String(locale) === "en" ? "DE" : "EN" }}
+      </button>
+    </div>
 
     <div class="login-content">
       <router-link :to="{ name: 'home' }">
@@ -16,9 +22,10 @@
 
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useLocale } from "@/composables/useLocale";
 
-const darkModeComposable = useDarkMode();
-const { darkMode, toggleDarkMode } = darkModeComposable;
+const { darkMode, toggleDarkMode } = useDarkMode();
+const { locale, toggleLocale } = useLocale();
 </script>
 
 <style>
@@ -38,10 +45,17 @@ const { darkMode, toggleDarkMode } = darkModeComposable;
   }
 }
 
-.dark-mode-toggle {
+.login-toggles {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dark-mode-toggle,
+.locale-toggle {
   height: 2rem;
   width: 2rem;
   opacity: 0.8;
@@ -59,6 +73,12 @@ const { darkMode, toggleDarkMode } = darkModeComposable;
     width: 1.25rem;
     height: 1.25rem;
   }
+}
+
+.locale-toggle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .login-content {

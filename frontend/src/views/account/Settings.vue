@@ -1,10 +1,10 @@
 <template>
-  <header-container title="Settings" />
+  <header-container :title="$t('settings.title')" />
   <main-container>
     <Panel>
-      <form-group title="Profile" sub-title="Your display name">
+      <form-group :title="$t('settings.profile')" :sub-title="$t('settings.displayName')">
         <div>
-          <label for="name">Name</label>
+          <label for="name">{{ $t("common.name") }}</label>
           <BaseInput
             id="name"
             v-model="profileName"
@@ -17,15 +17,15 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="saveProfile">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
-          Save
+          {{ $t("common.save") }}
         </button>
       </div>
     </Panel>
 
     <Panel>
-      <form-group title="Email" sub-title="Change your email address">
+      <form-group :title="$t('settings.email')" :sub-title="$t('settings.changeEmail')">
         <div>
-          <label for="email">Email address</label>
+          <label for="email">{{ $t("common.emailAddress") }}</label>
           <input
             id="email"
             v-model="emailAddress"
@@ -36,7 +36,7 @@
         </div>
 
         <div>
-          <label for="emailCurrentPassword">Current Password</label>
+          <label for="emailCurrentPassword">{{ $t("settings.currentPassword") }}</label>
           <input
             id="emailCurrentPassword"
             v-model="emailCurrentPassword"
@@ -50,15 +50,15 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="saveEmail">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
-          Save
+          {{ $t("common.save") }}
         </button>
       </div>
     </Panel>
 
     <Panel>
-      <form-group title="Password" sub-title="Change your password">
+      <form-group :title="$t('settings.password')" :sub-title="$t('settings.changePassword')">
         <div>
-          <label for="currentPassword">Current Password</label>
+          <label for="currentPassword">{{ $t("settings.currentPassword") }}</label>
           <input
             id="currentPassword"
             v-model="currentPassword"
@@ -69,7 +69,7 @@
         </div>
 
         <div>
-          <label for="newPassword">New Password</label>
+          <label for="newPassword">{{ $t("settings.newPassword") }}</label>
           <div class="password-wrapper">
             <input
               id="newPassword"
@@ -86,7 +86,7 @@
         </div>
 
         <div>
-          <label for="confirmPassword">Confirm New Password</label>
+          <label for="confirmPassword">{{ $t("settings.confirmNewPassword") }}</label>
           <div class="password-wrapper">
             <input
               id="confirmPassword"
@@ -106,14 +106,14 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="savePassword">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
-          Save
+          {{ $t("common.save") }}
         </button>
       </div>
     </Panel>
 
     <Panel>
-      <form-group title="Connected Accounts" sub-title="Link or unlink external login providers">
-        <p>Login using your GitHub account</p>
+      <form-group :title="$t('settings.connectedAccounts')" :sub-title="$t('settings.connectedAccountsDesc')">
+        <p>{{ $t("settings.githubLoginText") }}</p>
 
         <button
           v-if="!connectedProviders.includes('github')"
@@ -122,23 +122,23 @@
           @click="linkSocial('github')"
         >
           <icon-fa6-brands:github class="icon" aria-hidden="true" />
-          Link GitHub
+          {{ $t("settings.linkGithub") }}
         </button>
 
         <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
           <icon-fa6-brands:github class="icon" aria-hidden="true" />
-          Unlink from GitHub
+          {{ $t("settings.unlinkGithub") }}
         </button>
       </form-group>
     </Panel>
 
     <Panel>
-      <form-group title="Passkey Devices" class="form-group-table">
+      <form-group :title="$t('settings.passkeyDevices')" class="form-group-table">
         <data-table
           v-if="passkeys"
           :columns="[
-            { key: 'name', name: 'Name', sortable: true },
-            { key: 'createdAt', name: 'Created At', sortable: true },
+            { key: 'name', name: $t('common.name'), sortable: true },
+            { key: 'createdAt', name: $t('common.createdAt'), sortable: true },
           ]"
           :data="passkeys"
         >
@@ -146,7 +146,7 @@
             <button
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Delete"
+              :data-tooltip="$t('common.delete')"
               @click="removePasskey(row.id)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -158,18 +158,18 @@
       <div class="form-submit">
         <button type="button" class="btn btn-primary" @click="showPasskeyCreationModal = true">
           <icon-material-symbols:passkey class="icon icon-passkey" aria-hidden="true" />
-          Add a new Device
+          {{ $t("settings.addDevice") }}
         </button>
       </div>
     </Panel>
 
     <Panel>
-      <form-group title="Sessions" class="form-group-table">
+      <form-group :title="$t('settings.sessions')" class="form-group-table">
         <data-table
           v-if="sessions && sessions.length"
           :columns="[
-            { key: 'userAgent', name: 'User Agent', sortable: true },
-            { key: 'createdAt', name: 'Created At', sortable: true },
+            { key: 'userAgent', name: $t('settings.userAgent'), sortable: true },
+            { key: 'createdAt', name: $t('common.createdAt'), sortable: true },
           ]"
           :data="sessions"
         >
@@ -178,7 +178,7 @@
               v-if="row.id !== sessionData?.session?.id"
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Delete"
+              :data-tooltip="$t('common.delete')"
               @click="removeSession(row)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -189,27 +189,30 @@
     </Panel>
 
     <Panel>
-      <form-group title="Notifications" class="form-group-table">
+      <form-group :title="$t('settings.notifications')" class="form-group-table">
         <div v-if="!subscribedShops || subscribedShops.length === 0" class="empty-state">
           <icon-fa6-regular:bell-slash class="empty-state-icon" />
-          <p class="empty-state-text">You are not subscribed to any shop notifications.</p>
+          <p class="empty-state-text">{{ $t("settings.notSubscribed") }}</p>
 
           <p class="empty-state-subtext">
-            Visit a shop's detail page and click the watch button to receive notifications about
-            changes.
+            {{ $t("settings.notSubscribedHint") }}
           </p>
         </div>
 
         <data-table
           v-else
-          :columns="[{ key: 'name', name: 'Shop Name', sortable: true }]"
+          :columns="[
+            { key: 'name', name: $t('settings.shopName'), sortable: true },
+            { key: 'organizationName', name: $t('settings.organization'), sortable: true },
+            { key: 'shopwareVersion', name: $t('common.version'), sortable: true },
+          ]"
           :data="subscribedShops"
         >
           <template #cell-actions="{ row }">
             <button
               type="button"
               class="tooltip-top-left"
-              data-tooltip="Unsubscribe"
+              :data-tooltip="$t('settings.unsubscribe')"
               @click="unsubscribeFromShop(row.id)"
             >
               <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
@@ -219,12 +222,12 @@
       </form-group>
     </Panel>
 
-    <Panel title="Deleting your Account">
+    <Panel :title="$t('settings.deleteAccountTitle')">
       <Alert v-if="!canDeleteAccount" type="error">
-        To delete your account, you must delete first all organizations or leave them.
+        {{ $t("settings.deleteAccountOrgWarning") }}
       </Alert>
 
-      <p>Once you delete your account, you will lose all data associated with it.</p>
+      <p>{{ $t("settings.deleteAccountWarning") }}</p>
 
       <button
         type="button"
@@ -233,13 +236,13 @@
         @click="showAccountDeletionModal = true"
       >
         <icon-fa6-solid:trash class="icon icon-trash" />
-        Delete account
+        {{ $t("settings.deleteAccount") }}
       </button>
     </Panel>
 
     <delete-confirmation-modal
       :show="showAccountDeletionModal"
-      title="Delete account"
+      :title="$t('settings.deleteAccount')"
       entity-name="your account"
       :require-password="true"
       @close="showAccountDeletionModal = false"
@@ -248,19 +251,21 @@
     />
 
     <Modal :show="showPasskeyCreationModal" @close="showPasskeyCreationModal = false">
-      <template #title> Add a Passkey Device </template>
+      <template #title> {{ $t("settings.addPasskeyTitle") }} </template>
 
       <template #icon>
         <icon-fa6-solid:key class="icon icon-info" aria-hidden="true" />
       </template>
 
       <template #content>
-        Please give a name to your new Passkey Device.
+        {{ $t("settings.addPasskeyDesc") }}
         <BaseInput v-model="passKeyName" name="name" autocomplete="off" />
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="createPasskey">Create</button>
+        <button type="button" class="btn btn-primary" @click="createPasskey">
+          {{ $t("common.create") }}
+        </button>
 
         <button
           ref="cancelButtonRef"
@@ -268,7 +273,7 @@
           class="btn btn-cancel"
           @click="showPasskeyCreationModal = false"
         >
-          Cancel
+          {{ $t("common.cancel") }}
         </button>
       </template>
     </Modal>
@@ -278,12 +283,15 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { startRegistration } from "@simplewebauthn/browser";
+
+const { t } = useI18n();
 
 const { session: sessionData } = useSession();
 
@@ -469,7 +477,7 @@ const showPasskeyCreationModal = ref(false);
 
 async function deleteUser() {
   if (deleteCurrentPassword.value === "") {
-    alert.error("Please provide your current password to delete your account.");
+    alert.error(t("settings.passwordRequiredForDelete"));
     return;
   }
 
@@ -477,23 +485,23 @@ async function deleteUser() {
     const { error } = await api.POST("/auth/delete-user");
 
     if (error) {
-      alert.error("An error occurred while deleting your account.");
+      alert.error(t("settings.errorDeleteAccount"));
       return;
     }
 
-    alert.success("Your account has been successfully deleted.");
+    alert.success(t("settings.accountDeleted"));
     setTimeout(() => {
       window.location.reload();
     }, 2000);
     showAccountDeletionModal.value = false;
   } catch {
-    alert.error("An error occurred while deleting your account.");
+    alert.error(t("settings.errorDeleteAccount"));
   }
 }
 
 async function createPasskey() {
   if (!passKeyName.value) {
-    alert.error("Please provide a name for the Passkey Device.");
+    alert.error(t("settings.passkeyNameRequired"));
     return;
   }
 
@@ -584,9 +592,9 @@ async function unlinkSocial(providerId: string) {
 
     if (!error) {
       await loadLinkedAccounts();
-      alert.success(`Successfully unlinked your account from ${providerId}`);
+      alert.success(t("settings.unlinkedProvider", { providerId }));
     } else {
-      alert.error("Failed to unlink account");
+      alert.error(t("settings.errorUnlinkAccount"));
     }
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -599,7 +607,7 @@ async function unsubscribeFromShop(shopId: number) {
       params: { path: { shopId } },
     });
     await loadSubscribedShops();
-    alert.success("Successfully unsubscribed from shop notifications");
+    alert.success(t("settings.unsubscribedShop"));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }

@@ -1,7 +1,8 @@
 <template>
   <modal :show="show" close-x-mark @close="$emit('close')">
     <template #title>
-      Changelog - <span class="extension-changelog-name">{{ extension?.name }}</span>
+      {{ $t("extensionChangelog.title") }} -
+      <span class="extension-changelog-name">{{ extension?.name }}</span>
     </template>
 
     <template #content>
@@ -12,7 +13,10 @@
           class="extension-changelog-item"
         >
           <div class="extension-changelog-title">
-            <span v-if="!changeLog.isCompatible" data-tooltip="not compatible with your version">
+            <span
+              v-if="!changeLog.isCompatible"
+              :data-tooltip="$t('extensionChangelog.notCompatible')"
+            >
               <icon-fa6-solid:circle-info class="icon icon-warning" />
             </span>
 
@@ -28,7 +32,7 @@
         </li>
       </ul>
 
-      <alert v-else type="error"> No Changelog data provided </alert>
+      <alert v-else type="error"> {{ $t("extensionChangelog.noData") }} </alert>
     </template>
   </modal>
 </template>

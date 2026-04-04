@@ -3,21 +3,23 @@
     <div class="impersonation-content">
       <div class="impersonation-text">
         <icon-fa6-solid:user-secret class="impersonation-icon" />
-        <span
-          >You are currently impersonating <strong>{{ session?.user?.email }}</strong></span
-        >
+        <span v-html="$t('impersonation.banner', { email: session?.user?.email })" />
       </div>
-      <button class="btn btn-sm btn-stop" @click="stopImpersonating">Stop Impersonating</button>
+      <button class="btn btn-sm btn-stop" @click="stopImpersonating">
+        {{ $t("impersonation.stop") }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { computed } from "vue";
 
+const { t } = useI18n();
 const { session } = useSession();
 const alert = useAlert();
 
@@ -38,7 +40,9 @@ async function stopImpersonating() {
     window.location.reload();
   } catch (error) {
     alert.error(
-      `Failed to stop impersonating.  Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      t("impersonation.failedStop", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
     );
   }
 }

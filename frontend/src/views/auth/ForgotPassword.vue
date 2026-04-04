@@ -1,7 +1,7 @@
 <template>
   <div class="login-header">
-    <h2>Forgot password</h2>
-    <p>We will send you a confirmation email. Click on the link in it to change your password.</p>
+    <h2>{{ $t("auth.forgotPasswordTitle") }}</h2>
+    <p>{{ $t("auth.forgotPasswordDesc") }}</p>
   </div>
 
   <vee-form
@@ -10,29 +10,32 @@
     :validation-schema="schema"
     @submit="onSubmit"
   >
-    <InputField name="email" placeholder="Email address" :error="errors.email" />
+    <InputField name="email" :placeholder="$t('common.emailAddress')" :error="errors.email" />
 
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:envelope v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Send email
+      {{ $t("auth.sendEmail") }}
     </button>
 
     <div>
-      <router-link to="login"> Cancel </router-link>
+      <router-link to="login"> {{ $t("common.cancel") }} </router-link>
     </div>
   </vee-form>
 </template>
 
 <script setup lang="ts">
 import { Field, Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
 
+const { t } = useI18n();
+
 const schema = Yup.object().shape({
-  email: Yup.string().required("Email is required"),
+  email: Yup.string().required(t("validation.emailRequired")),
 });
 
 async function onSubmit(values: Record<string, unknown>): Promise<void> {
@@ -42,9 +45,9 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
     await api.POST("/auth/forget-password", {
       body: { email: values.email as string },
     });
-    success("Password reset email sent");
+    success(t("auth.resetEmailSent"));
   } catch (e) {
-    error(e instanceof Error ? e.message : "Failed to send password reset email");
+    error(e instanceof Error ? e.message : t("auth.failedSendReset"));
   }
 }
 </script>

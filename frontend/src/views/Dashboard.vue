@@ -1,10 +1,10 @@
 <template>
   <div v-if="shops">
-    <header-container title="Dashboard" />
+    <header-container :title="$t('dashboard.title')" />
     <Panel>
       <template #title>
         <icon-fa6-solid:shop />
-        My Shops
+        {{ $t("dashboard.myShops") }}
       </template>
 
       <element-empty
@@ -29,7 +29,12 @@
             class="item-link item-wrapper"
           >
             <div class="item-logo">
-              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img" />
+              <img
+                v-if="shop.favicon"
+                :src="shop.favicon"
+                :alt="$t('dashboard.shopLogo')"
+                class="item-logo-img"
+              />
             </div>
 
             <div class="item-info">
@@ -54,7 +59,7 @@
     <Panel>
       <template #title>
         <icon-fa6-solid:building />
-        My Organizations
+        {{ $t("dashboard.myOrganizations") }}
       </template>
 
       <div class="item-grid">
@@ -76,7 +81,8 @@
               </div>
 
               <div class="item-content">
-                {{ organization.memberCount }} Members, {{ organization.shopCount }} Shops
+                {{ $t("dashboard.nMembers", { count: organization.memberCount }) }},
+                {{ $t("dashboard.nShops", { count: organization.shopCount }) }}
               </div>
             </div>
           </router-link>
@@ -87,14 +93,14 @@
     <Panel v-if="changelogs.length > 0">
       <template #title>
         <icon-fa6-solid:file-waveform />
-        Last Changes
+        {{ $t("dashboard.lastChanges") }}
       </template>
 
       <data-table
         :columns="[
-          { key: 'shopName', name: 'Shop', sortable: true },
-          { key: 'extensions', name: 'Changes', sortable: true },
-          { key: 'date', name: 'Date', sortable: true, sortPath: 'date' },
+          { key: 'shopName', name: $t('dashboard.shop'), sortable: true },
+          { key: 'extensions', name: $t('dashboard.changes'), sortable: true },
+          { key: 'date', name: $t('common.date'), sortable: true, sortPath: 'date' },
         ]"
         :data="changelogs"
       >
@@ -125,12 +131,15 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { ref } from "vue";
 import { useAccountShops } from "@/composables/useAccountShops";
+
+const { t } = useI18n();
 
 const organizations = ref<components["schemas"]["AccountOrganization"][]>();
 api.GET("/account/organizations").then(({ data }) => {

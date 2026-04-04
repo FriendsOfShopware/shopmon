@@ -1,5 +1,5 @@
 <template>
-  <HeaderContainer title="Shop Management" />
+  <HeaderContainer :title="$t('admin.shopManagement')" />
 
   <Panel>
     <Alert v-if="error" type="danger">
@@ -10,27 +10,27 @@
       <div class="search-container">
         <BaseInput
           v-model="searchQuery"
-          placeholder="Search shops by name or URL..."
+          :placeholder="$t('admin.searchShops')"
           @input="debouncedSearch"
         />
       </div>
 
       <div class="filter-container">
         <BaseSelect v-model="sortBy" @change="loadShops">
-          <option value="createdAt">Sort by Created</option>
-          <option value="name">Sort by Name</option>
-          <option value="url">Sort by URL</option>
-          <option value="status">Sort by Status</option>
-          <option value="shopwareVersion">Sort by Shopware Version</option>
-          <option value="lastScrapedAt">Sort by Last Scraped</option>
-          <option value="organizationName">Sort by Organization</option>
+          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
+          <option value="name">{{ $t("admin.sortByName") }}</option>
+          <option value="url">{{ $t("admin.sortByUrl") }}</option>
+          <option value="status">{{ $t("admin.sortByStatus") }}</option>
+          <option value="shopwareVersion">{{ $t("admin.sortByShopwareVersion") }}</option>
+          <option value="lastScrapedAt">{{ $t("admin.sortByLastScraped") }}</option>
+          <option value="organizationName">{{ $t("admin.sortByOrg") }}</option>
         </BaseSelect>
       </div>
 
       <div class="filter-container">
         <BaseSelect v-model="sortDirection" @change="loadShops">
-          <option value="desc">Descending</option>
-          <option value="asc">Ascending</option>
+          <option value="desc">{{ $t("common.descending") }}</option>
+          <option value="asc">{{ $t("common.ascending") }}</option>
         </BaseSelect>
       </div>
     </div>
@@ -76,20 +76,22 @@
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
-      Loading shops...
+      {{ $t("admin.loadingShops") }}
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
       <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
-        Previous
+        {{ $t("common.previous") }}
       </button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="page-info">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
       <button
         class="btn btn-sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
-        Next
+        {{ $t("common.next") }}
       </button>
     </div>
   </Panel>
@@ -102,6 +104,7 @@ import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
+import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
 type Shop = components["schemas"]["AccountShop"];
@@ -120,14 +123,16 @@ const totalShops = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalShops.value / pageSize.value));
 
-const tableColumns = [
-  { key: "name" as const, name: "Name", sortable: true, searchable: true },
-  { key: "url" as const, name: "URL", sortable: true, searchable: true },
-  { key: "status" as const, name: "Status", sortable: true },
-  { key: "shopwareVersion" as const, name: "Shopware Version", sortable: true },
-  { key: "lastScrapedAt" as const, name: "Last Scraped", sortable: true },
-  { key: "organizationName" as const, name: "Organization", sortable: true },
-];
+const { t } = useI18n();
+
+const tableColumns = computed(() => [
+  { key: "name" as const, name: t("common.name"), sortable: true, searchable: true },
+  { key: "url" as const, name: t("common.url"), sortable: true, searchable: true },
+  { key: "status" as const, name: t("common.status"), sortable: true },
+  { key: "shopwareVersion" as const, name: t("admin.shopwareVersion"), sortable: true },
+  { key: "lastScrapedAt" as const, name: t("admin.lastScraped"), sortable: true },
+  { key: "organizationName" as const, name: t("settings.organization"), sortable: true },
+]);
 
 async function loadShops() {
   loading.value = true;

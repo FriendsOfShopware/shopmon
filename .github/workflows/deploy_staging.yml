@@ -63,7 +63,7 @@ jobs:
           ssh-hosts-to-scan: "shea.shyim.de"
 
       - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v2
+        uses: 1password/install-cli-action@v3
 
       - name: Deploy to Staging
         run: op run --env-file .env.staging --no-masking -- docker compose -f compose.deploy.yml up -d --pull=always --remove-orphans

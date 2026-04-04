@@ -1,9 +1,11 @@
 <template>
-  <header-container :title="project ? `Edit ${project.name}` : 'Edit Project'">
+  <header-container
+    :title="project ? $t('project.editProject', { name: project.name }) : $t('nav.editProject')"
+  >
     <div class="header-actions">
       <router-link :to="{ name: 'account.project.list' }" type="button" class="btn">
         <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
-        Back to Projects
+        {{ $t("project.backToProjects") }}
       </router-link>
 
       <router-link
@@ -13,7 +15,7 @@
         class="btn btn-secondary"
       >
         <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-        Add Shop
+        {{ $t("shop.addShop") }}
       </router-link>
     </div>
   </header-container>
@@ -21,11 +23,11 @@
   <main-container>
     <Panel v-if="isPageLoading" class="state-panel">
       <icon-line-md:loading-twotone-loop class="icon" />
-      Loading project...
+      {{ $t("project.loadingProject") }}
     </Panel>
 
     <Panel v-else-if="!project" class="state-panel">
-      <p>Project not found.</p>
+      <p>{{ $t("project.projectNotFound") }}</p>
     </Panel>
 
     <template v-else>
@@ -37,19 +39,19 @@
           :initial-values="projectFormInitialValues"
           @submit="onSubmitProject"
         >
-          <form-group title="Project Information">
-            <InputField name="name" label="Name" :error="errors.name" />
+          <form-group :title="$t('project.projectInfo')">
+            <InputField name="name" :label="$t('common.name')" :error="errors.name" />
 
             <TextareaField
               name="description"
-              label="Description"
-              placeholder="Optional project description..."
+              :label="$t('common.description')"
+              :placeholder="$t('project.optionalDescription')"
               :error="errors.description"
             />
 
             <InputField
               name="gitUrl"
-              label="Git Repository URL"
+              :label="$t('project.gitRepoUrl')"
               type="url"
               placeholder="https://github.com/org/repo"
               :error="errors.gitUrl"
@@ -68,38 +70,39 @@
                 aria-hidden="true"
               />
               <icon-line-md:loading-twotone-loop v-else class="icon" />
-              Save
+              {{ $t("common.save") }}
             </button>
           </div>
         </vee-form>
       </Panel>
 
-      <Panel id="api-keys" title="API Keys">
+      <Panel id="api-keys" :title="$t('project.apiKeys')">
         <template #action>
           <button type="button" class="btn btn-primary" @click="openAddKeyModal">
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            Create API Key
+            {{ $t("project.createApiKey") }}
           </button>
         </template>
 
         <Alert type="info">
-          <p><strong>API Key Information</strong></p>
           <p>
-            API keys allow external applications to interact with your project. Each key can have
-            specific scopes to limit what actions it can perform.
+            <strong>{{ $t("project.apiKeys") }}</strong>
+          </p>
+          <p>
+            {{ $t("project.apiKeyInfo") }}
           </p>
         </Alert>
 
         <div v-if="isApiKeysLoading" class="api-keys-loading">
           <icon-line-md:loading-twotone-loop class="icon" />
-          Loading API keys...
+          {{ $t("project.loadingApiKeys") }}
         </div>
 
         <div v-else-if="apiKeys.length === 0" class="api-keys-empty">
           <icon-fa6-solid:key class="icon icon-large" aria-hidden="true" />
-          <p>No API keys created yet.</p>
+          <p>{{ $t("project.noApiKeys") }}</p>
           <p class="text-muted">
-            Create an API key to allow external applications to access your project.
+            {{ $t("project.noApiKeysHint") }}
           </p>
         </div>
 
@@ -107,9 +110,11 @@
           <div v-for="apiKey in apiKeys" :key="apiKey.id" class="api-key-item">
             <div class="api-key-info">
               <h4>{{ apiKey.name }}</h4>
-              <p class="text-muted">Created {{ formatDate(apiKey.createdAt) }}</p>
+              <p class="text-muted">
+                {{ $t("project.createdDate", { date: formatDate(apiKey.createdAt) }) }}
+              </p>
               <p v-if="apiKey.lastUsedAt" class="text-muted">
-                Last used {{ formatDate(apiKey.lastUsedAt) }}
+                {{ $t("project.lastUsedDate", { date: formatDate(apiKey.lastUsedAt) }) }}
               </p>
               <div class="api-key-scopes">
                 <span v-for="scope in apiKey.scopes" :key="scope" class="badge badge-primary">
@@ -120,7 +125,7 @@
             <div class="api-key-actions">
               <button type="button" class="btn btn-danger" @click="confirmDeleteKey(apiKey)">
                 <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-                Delete
+                {{ $t("common.delete") }}
               </button>
             </div>
           </div>
@@ -130,25 +135,25 @@
       <Panel
         v-if="isPackagesConfigured"
         id="packages-tokens"
-        title="Packages Tokens"
-        description="Sync store packages through a Global CDN (~80ms vs ~6s). Tokens are synced automatically every hour."
+        :title="$t('packages.title')"
+        :description="$t('packages.description')"
       >
         <template #action>
           <button type="button" class="btn btn-primary" @click="showAddPackagesTokenModal = true">
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            Add Token
+            {{ $t("packages.addToken") }}
           </button>
         </template>
 
         <div v-if="isPackagesTokensLoading" class="api-keys-loading">
           <icon-line-md:loading-twotone-loop class="icon" />
-          Loading packages tokens...
+          {{ $t("packages.loading") }}
         </div>
 
         <div v-else-if="packagesTokens.length === 0" class="api-keys-empty">
           <icon-fa6-solid:cube class="icon icon-large" aria-hidden="true" />
-          <p>No packages tokens added yet.</p>
-          <p class="text-muted">Add a Shopware store token to sync packages through the mirror.</p>
+          <p>{{ $t("packages.noTokens") }}</p>
+          <p class="text-muted">{{ $t("packages.noTokensHint") }}</p>
         </div>
 
         <template v-else>
@@ -157,9 +162,9 @@
               <div class="api-key-info">
                 <h4>Token #{{ pt.id }}</h4>
                 <p v-if="pt.lastSyncedAt" class="text-muted">
-                  Last synced {{ timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000) }}
+                  {{ $t("packages.lastSynced", { time: timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000) }) }}
                 </p>
-                <p v-else class="text-muted">Not synced yet</p>
+                <p v-else class="text-muted">{{ $t("packages.notSyncedYet") }}</p>
               </div>
               <div class="api-key-actions">
                 <button
@@ -174,7 +179,7 @@
                     aria-hidden="true"
                   />
                   <icon-line-md:loading-twotone-loop v-else class="icon" />
-                  Sync
+                  {{ $t("packages.sync") }}
                 </button>
                 <button
                   type="button"
@@ -182,23 +187,21 @@
                   @click="confirmDeletePackagesToken(pt)"
                 >
                   <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-                  Delete
+                  {{ $t("common.delete") }}
                 </button>
               </div>
             </div>
           </div>
 
           <div v-if="packagesComposerUrl" class="composer-setup">
-            <h4>Composer Setup</h4>
+            <h4>{{ $t("packages.composerSetup") }}</h4>
             <Alert type="warning">
               <p>
-                Make sure to remove <code>packages.shopware.com</code> from your
-                <code>composer.json</code> repositories before adding the mirror, otherwise Composer
-                will still use the original source.
+                {{ $t("packages.composerWarning") }}
               </p>
             </Alert>
             <p class="text-muted">
-              Add the mirror as a repository in your <code>composer.json</code>:
+              {{ $t("packages.composerRepoHint") }}
             </p>
             <div class="code-block">
               <pre><code>{
@@ -215,10 +218,10 @@
                 @click="copyComposerRepository"
               >
                 <icon-fa6-solid:copy class="icon" aria-hidden="true" />
-                Copy
+                {{ $t("common.copy") }}
               </button>
             </div>
-            <p class="text-muted">Authenticate using your Shopware store token:</p>
+            <p class="text-muted">{{ $t("packages.composerAuthHint") }}</p>
             <div class="code-block">
               <pre><code>composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
             </div>
@@ -226,11 +229,11 @@
         </template>
       </Panel>
 
-      <Panel title="Danger Zone">
-        <p>Once you delete your project, you will lose all data associated with it.</p>
+      <Panel :title="$t('project.dangerZone')">
+        <p>{{ $t("project.deleteProjectWarning") }}</p>
 
         <p v-if="!canDeleteProject" class="delete-project-warning">
-          This project still has {{ shopsInProjectCount }} shop(s). Move or delete them first.
+          {{ $t("project.deleteProjectShopsWarning", { count: shopsInProjectCount }) }}
         </p>
 
         <button
@@ -240,14 +243,14 @@
           @click="showDeleteProjectModal = true"
         >
           <icon-fa6-solid:trash class="icon" aria-hidden="true" />
-          Delete project
+          {{ $t("project.deleteProject") }}
         </button>
       </Panel>
     </template>
 
     <!-- Add API Key Modal -->
     <modal :show="showAddKeyModal" close-x-mark @close="closeAddKeyModal">
-      <template #title> Create API Key </template>
+      <template #title> {{ $t("project.createApiKeyTitle") }} </template>
 
       <template #content>
         <vee-form
@@ -259,13 +262,13 @@
           @submit="onSubmitApiKey"
         >
           <div class="form-group">
-            <InputField name="name" label="Name" placeholder="My API Key" :error="errors.name" />
-            <p class="field-help">A descriptive name to identify this API key</p>
+            <InputField name="name" :label="$t('common.name')" :placeholder="$t('project.apiKeyPlaceholder')" :error="errors.name" />
+            <p class="field-help">{{ $t("packages.apiKeyHelp") }}</p>
           </div>
 
           <div class="form-group">
-            <label>Scopes</label>
-            <p class="field-help">Select the permissions this API key should have</p>
+            <label>{{ $t("project.scopes") }}</label>
+            <p class="field-help">{{ $t("project.scopesHelp") }}</p>
             <div class="scopes-list">
               <label v-for="scope in availableScopes" :key="scope.value" class="scope-checkbox">
                 <field type="checkbox" name="scopes" :value="scope.value" />
@@ -281,7 +284,9 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="closeAddKeyModal">Cancel</button>
+        <button type="button" class="btn" @click="closeAddKeyModal">
+          {{ $t("common.cancel") }}
+        </button>
         <button
           type="submit"
           class="btn btn-primary"
@@ -290,20 +295,22 @@
         >
           <icon-fa6-solid:key v-if="!isCreatingApiKey" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Create API Key
+          {{ $t("project.createApiKey") }}
         </button>
       </template>
     </modal>
 
     <!-- Show Token Modal -->
     <modal :show="showTokenModal" @close="closeTokenModal">
-      <template #title> API Key Created </template>
+      <template #title> {{ $t("project.apiKeyCreatedTitle") }} </template>
 
       <template #content>
         <Alert type="warning">
-          <p><strong>Copy your API key now!</strong></p>
           <p>
-            This is the only time you will see this key. Make sure to copy it and store it securely.
+            <strong>{{ $t("project.apiKeyCopyWarning") }}</strong>
+          </p>
+          <p>
+            {{ $t("project.apiKeyCopyDesc") }}
           </p>
         </Alert>
 
@@ -311,25 +318,27 @@
           <code class="token-value">{{ newToken }}</code>
           <button type="button" class="btn btn-secondary" @click="copyToken">
             <icon-fa6-solid:copy class="icon" aria-hidden="true" />
-            Copy
+            {{ $t("common.copy") }}
           </button>
         </div>
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="closeTokenModal">Done</button>
+        <button type="button" class="btn btn-primary" @click="closeTokenModal">
+          {{ $t("common.done") }}
+        </button>
       </template>
     </modal>
 
     <!-- Delete API Key Modal -->
     <delete-confirmation-modal
       :show="showDeleteApiKeyModal"
-      title="Delete API Key?"
+      :title="$t('project.deleteApiKeyTitle')"
       :entity-name="`the API key '${deletingApiKey?.name}'`"
-      custom-consequence="Applications using this key will no longer be able to access your project."
+      :custom-consequence="$t('project.deleteApiKeyWarning')"
       :reversed-buttons="true"
       :is-loading="isDeletingApiKey"
-      confirm-button-text="Delete Key"
+      :confirm-button-text="$t('project.deleteApiKeyConfirm')"
       @close="showDeleteApiKeyModal = false"
       @confirm="deleteApiKey"
     />
@@ -337,7 +346,7 @@
     <!-- Delete Project Modal -->
     <delete-confirmation-modal
       :show="showDeleteProjectModal"
-      title="Delete Project"
+      :title="$t('project.deleteProjectTitle')"
       :entity-name="project?.name || 'this project'"
       @close="showDeleteProjectModal = false"
       @confirm="deleteProject"
@@ -349,7 +358,7 @@
       close-x-mark
       @close="showAddPackagesTokenModal = false"
     >
-      <template #title> Add Packages Token </template>
+      <template #title> {{ $t("packages.addTokenTitle") }} </template>
 
       <template #content>
         <vee-form
@@ -363,19 +372,21 @@
           <div class="form-group">
             <InputField
               name="token"
-              label="Shopware Store Token"
-              placeholder="Enter your Shopware store token"
+              :label="$t('packages.tokenLabel')"
+              :placeholder="$t('packages.tokenPlaceholder')"
               :error="errors.token"
             />
             <p class="field-help">
-              The token from your Shopware account used to access store packages
+              {{ $t("packages.tokenHelp") }}
             </p>
           </div>
         </vee-form>
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">Cancel</button>
+        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">
+          {{ $t("common.cancel") }}
+        </button>
         <button
           type="submit"
           class="btn btn-primary"
@@ -384,7 +395,7 @@
         >
           <icon-fa6-solid:plus v-if="!isCreatingPackagesToken" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Add Token
+          {{ $t("packages.addToken") }}
         </button>
       </template>
     </modal>
@@ -392,12 +403,12 @@
     <!-- Delete Packages Token Modal -->
     <delete-confirmation-modal
       :show="showDeletePackagesTokenModal"
-      title="Delete Packages Token?"
+      :title="$t('packages.deleteTokenTitle')"
       :entity-name="`Token #${deletingPackagesToken?.id}`"
-      custom-consequence="Packages synced with this token will no longer be available through the mirror."
+      :custom-consequence="$t('packages.deleteTokenWarning')"
       :reversed-buttons="true"
       :is-loading="isDeletingPackagesToken"
-      confirm-button-text="Delete Token"
+      :confirm-button-text="$t('packages.deleteTokenConfirm')"
       @close="showDeletePackagesTokenModal = false"
       @confirm="deletePackagesToken"
     />
@@ -414,6 +425,7 @@ import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
 import { computed, nextTick, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
@@ -422,6 +434,7 @@ type ApiKey = components["schemas"]["ApiKey"];
 type AvailableScope = components["schemas"]["ApiKeyScope"];
 type PackagesToken = components["schemas"]["PackagesToken"];
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const alert = useAlert();
@@ -478,24 +491,24 @@ const projectFormInitialValues = computed(() => ({
 }));
 
 const projectSchema = Yup.object().shape({
-  name: Yup.string().required("Project name is required"),
+  name: Yup.string().required(t("validation.projectNameRequired")),
   description: Yup.string().optional(),
-  gitUrl: Yup.string().url("Must be a valid URL").optional(),
+  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
 });
 
 const apiKeySchema = Yup.object().shape({
   name: Yup.string()
-    .required("Name is required")
-    .min(1, "Name is required")
-    .max(100, "Name must be at most 100 characters"),
+    .required(t("validation.nameRequired"))
+    .min(1, t("validation.nameRequired"))
+    .max(100, t("validation.nameMaxLength")),
   scopes: Yup.array()
     .of(Yup.string())
-    .min(1, "At least one scope is required")
-    .required("At least one scope is required"),
+    .min(1, t("validation.required", { field: "Scope" }))
+    .required(t("validation.required", { field: "Scope" })),
 });
 
 const packagesTokenSchema = Yup.object().shape({
-  token: Yup.string().required("Token is required").min(1, "Token is required"),
+  token: Yup.string().required(t("validation.tokenRequired")).min(1, t("validation.tokenRequired")),
 });
 
 async function loadProjectSummary() {
@@ -520,7 +533,9 @@ async function loadApiKeys() {
     });
     apiKeys.value = data ?? [];
   } catch (error) {
-    alert.error(`Failed to load API keys${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedLoadApiKeys")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isApiKeysLoading.value = false;
   }
@@ -531,7 +546,9 @@ async function loadAvailableScopes() {
     const { data } = await api.GET("/api-key-scopes");
     availableScopes.value = data ?? [];
   } catch (error) {
-    alert.error(`Failed to load scopes${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedLoadScopes")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   }
 }
 
@@ -548,7 +565,7 @@ async function loadPageData() {
     await loadProjectSummary();
 
     if (!project.value) {
-      alert.error("Project not found");
+      alert.error(t("project.projectNotFound"));
       return;
     }
 
@@ -556,7 +573,9 @@ async function loadPageData() {
     await loadPackagesTokens();
     await scrollToHashSection();
   } catch (error) {
-    alert.error(`Failed to load project${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedLoadProject")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isPageLoading.value = false;
   }
@@ -584,9 +603,11 @@ async function onSubmitProject(values: Record<string, unknown>) {
     });
 
     await loadProjectSummary();
-    alert.success("Project updated successfully");
+    alert.success(t("project.projectUpdated"));
   } catch (error) {
-    alert.error(`Failed to update project${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedUpdateProject")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isSavingProject.value = false;
   }
@@ -628,9 +649,11 @@ async function onSubmitApiKey(values: Record<string, unknown>) {
     showTokenModal.value = true;
 
     await loadApiKeys();
-    alert.success("API key created successfully");
+    alert.success(t("project.apiKeyCreated"));
   } catch (error) {
-    alert.error(`Failed to create API key${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedCreateApiKey")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isCreatingApiKey.value = false;
   }
@@ -638,12 +661,12 @@ async function onSubmitApiKey(values: Record<string, unknown>) {
 
 function copyToken() {
   if (!navigator.clipboard) {
-    alert.error("Clipboard is not available");
+    alert.error(t("project.clipboardUnavailable"));
     return;
   }
 
   navigator.clipboard.writeText(newToken.value);
-  alert.success("API key copied to clipboard");
+  alert.success(t("project.apiKeyCopied"));
 }
 
 function copyComposerRepository() {
@@ -655,7 +678,7 @@ function copyComposerRepository() {
     4,
   );
   navigator.clipboard.writeText(json);
-  alert.success("Composer repository config copied to clipboard");
+  alert.success(t("packages.composerCopied"));
 }
 
 function confirmDeleteKey(apiKey: ApiKey) {
@@ -681,9 +704,11 @@ async function deleteApiKey() {
     showDeleteApiKeyModal.value = false;
     deletingApiKey.value = null;
     await loadApiKeys();
-    alert.success("API key deleted successfully");
+    alert.success(t("project.apiKeyDeleted"));
   } catch (error) {
-    alert.error(`Failed to delete API key${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedDeleteApiKey")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isDeletingApiKey.value = false;
   }
@@ -709,9 +734,7 @@ async function loadPackagesTokens() {
     });
     packagesTokens.value = data ?? [];
   } catch (error) {
-    alert.error(
-      `Failed to load packages tokens${error instanceof Error ? `: ${error.message}` : ""}`,
-    );
+    alert.error(`${t("packages.failedLoad")}${error instanceof Error ? `: ${error.message}` : ""}`);
   } finally {
     isPackagesTokensLoading.value = false;
   }
@@ -731,11 +754,9 @@ async function onSubmitPackagesToken(values: Record<string, unknown>) {
 
     showAddPackagesTokenModal.value = false;
     await loadPackagesTokens();
-    alert.success("Packages token added successfully");
+    alert.success(t("packages.tokenAdded"));
   } catch (error) {
-    alert.error(
-      `Failed to add packages token${error instanceof Error ? `: ${error.message}` : ""}`,
-    );
+    alert.error(`${t("packages.failedAdd")}${error instanceof Error ? `: ${error.message}` : ""}`);
   } finally {
     isCreatingPackagesToken.value = false;
   }
@@ -764,10 +785,10 @@ async function deletePackagesToken() {
     showDeletePackagesTokenModal.value = false;
     deletingPackagesToken.value = null;
     await loadPackagesTokens();
-    alert.success("Packages token deleted successfully");
+    alert.success(t("packages.tokenDeleted"));
   } catch (error) {
     alert.error(
-      `Failed to delete packages token${error instanceof Error ? `: ${error.message}` : ""}`,
+      `${t("packages.failedDelete")}${error instanceof Error ? `: ${error.message}` : ""}`,
     );
   } finally {
     isDeletingPackagesToken.value = false;
@@ -786,11 +807,9 @@ async function syncPackagesToken(pt: PackagesToken) {
     });
 
     await loadPackagesTokens();
-    alert.success("Token sync triggered successfully");
+    alert.success(t("packages.syncTriggered"));
   } catch (error) {
-    alert.error(
-      `Failed to sync packages token${error instanceof Error ? `: ${error.message}` : ""}`,
-    );
+    alert.error(`${t("packages.failedSync")}${error instanceof Error ? `: ${error.message}` : ""}`);
   } finally {
     isSyncingPackagesToken.value = null;
   }
@@ -805,10 +824,12 @@ async function deleteProject() {
       params: { path: { orgId: project.value.organizationId, projectId: project.value.id } },
     });
 
-    alert.success("Project deleted successfully");
+    alert.success(t("project.projectDeleted"));
     router.push({ name: "account.project.list" });
   } catch (error) {
-    alert.error(`Failed to delete project${error instanceof Error ? `: ${error.message}` : ""}`);
+    alert.error(
+      `${t("project.failedDeleteProject")}${error instanceof Error ? `: ${error.message}` : ""}`,
+    );
   } finally {
     isDeletingProject.value = false;
     showDeleteProjectModal.value = false;
@@ -818,7 +839,7 @@ async function deleteProject() {
 onMounted(() => {
   if (Number.isNaN(projectId)) {
     isPageLoading.value = false;
-    alert.error("Invalid project");
+    alert.error(t("project.invalidProject"));
     return;
   }
 

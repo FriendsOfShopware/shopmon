@@ -1,6 +1,6 @@
 <template>
   <div class="login-header">
-    <h2>Create account</h2>
+    <h2>{{ $t("auth.createAccountTitle") }}</h2>
   </div>
 
   <vee-form
@@ -10,26 +10,31 @@
     @submit="onSubmit"
   >
     <div class="login-form-group">
-      <InputField name="displayName" placeholder="Display Name" :error="errors.displayName" />
-      <InputField name="email" placeholder="Email address" :error="errors.email" />
+      <InputField name="displayName" :placeholder="$t('auth.displayName')" :error="errors.displayName" />
+      <InputField name="email" :placeholder="$t('common.emailAddress')" :error="errors.email" />
 
-      <PasswordField name="password" placeholder="Password" :error="errors.password" />
+      <PasswordField
+        name="password"
+        :placeholder="$t('common.password')"
+        :error="errors.password"
+      />
     </div>
 
     <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:user-plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
-      Register
+      {{ $t("auth.registerButton") }}
     </button>
 
     <div>
-      <router-link :to="{ name: 'account.login' }"> Cancel </router-link>
+      <router-link :to="{ name: 'account.login' }"> {{ $t("common.cancel") }} </router-link>
     </div>
   </vee-form>
 </template>
 
 <script setup lang="ts">
 import { Field, Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
 import { router } from "@/router";
@@ -37,16 +42,17 @@ import { router } from "@/router";
 import { useAlert } from "@/composables/useAlert";
 import { api, setToken } from "@/helpers/api";
 
+const { t } = useI18n();
 const alert = useAlert();
 
 const schema = Yup.object().shape({
-  displayName: Yup.string().required("Display Name is required"),
-  email: Yup.string().required("Email is required"),
+  displayName: Yup.string().required(t("validation.displayNameRequired")),
+  email: Yup.string().required(t("validation.emailRequired")),
   password: Yup.string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters")
-    .matches(/^(?=.*[0-9])/, "Password must Contain One Number Character")
-    .matches(/^(?=.*[!@#$%^&*])/, "Password must Contain  One Special Case Character"),
+    .required(t("validation.passwordRequired"))
+    .min(8, t("validation.passwordMinLength"))
+    .matches(/^(?=.*[0-9])/, t("validation.passwordNumber"))
+    .matches(/^(?=.*[!@#$%^&*])/, t("validation.passwordSpecial")),
 });
 
 async function onSubmit(values: Record<string, unknown>) {
@@ -59,7 +65,7 @@ async function onSubmit(values: Record<string, unknown>) {
   });
 
   if (error) {
-    alert.error((error as unknown as { message?: string }).message ?? "Failed to register");
+    alert.error((error as unknown as { message?: string }).message ?? t("auth.failedRegister"));
     return;
   }
 
@@ -68,8 +74,6 @@ async function onSubmit(values: Record<string, unknown>) {
   }
 
   await router.push({ name: "account.login" });
-  alert.success(
-    "Registration successful. Please check your mailbox and confirm your email address.",
-  );
+  alert.success(t("auth.registrationSuccess"));
 }
 </script>

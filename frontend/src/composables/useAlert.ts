@@ -1,4 +1,5 @@
 import { readonly, ref } from "vue";
+import { i18n } from "@/i18n";
 
 interface Alert {
   title: string;
@@ -10,10 +11,14 @@ interface Alert {
 const alert = ref<Alert | null>(null);
 let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
+function t(key: string): string {
+  return i18n.global.t(key);
+}
+
 export function useAlert() {
   function success(message: string) {
     clearExistingTimeout();
-    alert.value = { title: "Action success", message, type: "success" };
+    alert.value = { title: t("alert.successTitle"), message, type: "success" };
     timeoutId = setTimeout(() => {
       clear();
     }, 5000);
@@ -21,7 +26,7 @@ export function useAlert() {
 
   function info(message: string) {
     clearExistingTimeout();
-    alert.value = { title: "Information", message, type: "info" };
+    alert.value = { title: t("alert.infoTitle"), message, type: "info" };
     timeoutId = setTimeout(() => {
       clear();
     }, 5000);
@@ -29,14 +34,14 @@ export function useAlert() {
 
   function error(message: string) {
     clearExistingTimeout();
-    alert.value = { title: "Something went wrong", message, type: "error" };
+    alert.value = { title: t("alert.errorTitle"), message, type: "error" };
     // Error alerts don't auto-dismiss
   }
 
   function warning(message: string) {
     clearExistingTimeout();
     alert.value = {
-      title: "Additional information",
+      title: t("alert.warningTitle"),
       message,
       type: "warning",
     };

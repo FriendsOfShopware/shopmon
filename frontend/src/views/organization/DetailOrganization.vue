@@ -6,22 +6,22 @@
       class="btn btn-primary"
     >
       <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
-      Edit Organization
+      {{ $t("organization.editOrganization") }}
     </router-link>
   </header-container>
 
   <main-container v-if="organization">
-    <Panel title="Organization Information" class="organization-info">
+    <Panel :title="$t('organization.orgInfo')" class="organization-info">
       <dl class="organization-info-list">
         <div class="organization-info-item">
-          <dt>Organization Name</dt>
+          <dt>{{ $t("organization.orgName") }}</dt>
           <dd>
             {{ organization.name }}
           </dd>
         </div>
 
         <div class="organization-info-item">
-          <dt>Members</dt>
+          <dt>{{ $t("common.members") }}</dt>
           <dd>
             {{ members.length }}
           </dd>
@@ -29,19 +29,19 @@
       </dl>
     </Panel>
 
-    <Panel title="Members">
+    <Panel :title="$t('common.members')">
       <template #action>
         <button class="btn btn-sm btn-primary" type="button" @click="showAddMemberModal = true">
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-          Add
+          {{ $t("common.add") }}
         </button>
       </template>
 
       <DataTable
         :columns="[
-          { key: 'email', name: 'Email' },
-          { key: 'name', name: 'Name' },
-          { key: 'role', name: 'Role' },
+          { key: 'email', name: $t('common.email') },
+          { key: 'name', name: $t('common.name') },
+          { key: 'role', name: $t('common.role') },
         ]"
         :data="members"
       >
@@ -62,7 +62,7 @@
             v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
             class="tooltip tooltip-top-left"
-            data-tooltip="Change Role"
+            :data-tooltip="$t('organization.changeRole')"
             @click="openChangeRoleModal(row as OrganizationMember)"
           >
             <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
@@ -71,7 +71,7 @@
             v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
             class="tooltip tooltip-top-left"
-            data-tooltip="Unassign"
+            :data-tooltip="$t('organization.unassign')"
             @click="onRemoveMember(row.userId)"
           >
             <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -80,12 +80,12 @@
       </DataTable>
     </Panel>
 
-    <Panel title="Invitations">
+    <Panel :title="$t('organization.invitations')">
       <DataTable
         :columns="[
-          { key: 'email', name: 'Email' },
-          { key: 'role', name: 'Role' },
-          { key: 'status', name: 'Status' },
+          { key: 'email', name: $t('common.email') },
+          { key: 'role', name: $t('common.role') },
+          { key: 'status', name: $t('common.status') },
         ]"
         :data="invitations"
       >
@@ -94,7 +94,7 @@
             v-if="row.status !== 'canceled'"
             type="button"
             class="tooltip tooltip-top-left"
-            data-tooltip="Cancel Invitation"
+            :data-tooltip="$t('organization.cancelInvitation')"
             @click="cancelInvitation(row.id)"
           >
             <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
@@ -103,7 +103,7 @@
       </DataTable>
     </Panel>
 
-    <Panel title="SSO Configuration">
+    <Panel :title="$t('organization.ssoConfig')">
       <template #action>
         <router-link
           :to="{ name: 'account.organizations.sso', params: { organizationId: organization.id } }"
@@ -111,38 +111,39 @@
           class="btn btn-sm btn-primary"
         >
           <icon-fa6-solid:key class="icon" aria-hidden="true" />
-          Manage SSO
+          {{ $t("organization.manageSso") }}
         </router-link>
       </template>
 
       <div v-if="ssoProviders.length === 0" class="sso-empty">
-        <p>No SSO providers configured yet.</p>
+        <p>{{ $t("organization.noSsoProviders") }}</p>
         <p class="text-muted">
-          Configure SSO to allow users to login with their corporate identity provider.
+          {{ $t("organization.ssoConfigureHint") }}
         </p>
       </div>
 
       <DataTable
         v-else
         :columns="[
-          { key: 'domain', name: 'Domain' },
-          { key: 'issuer', name: 'Issuer' },
+          { key: 'domain', name: $t('organization.domain') },
+          { key: 'issuer', name: $t('organization.issuer') },
         ]"
         :data="ssoProviders"
       />
     </Panel>
 
-    <Panel title="Leave Organization">
+    <Panel :title="$t('organization.leaveOrgTitle')">
       <p class="mb-1">
-        If you leave this organization, you will lose access to all resources and data associated
-        with it.
+        {{ $t("organization.leaveOrgWarning") }}
       </p>
 
-      <button class="btn btn-danger mt-2" @click="leaveOrganization()">Leave Organization</button>
+      <button class="btn btn-danger mt-2" @click="leaveOrganization()">
+        {{ $t("organization.leaveOrganization") }}
+      </button>
     </Panel>
 
     <modal :show="showAddMemberModal" close-x-mark @close="showAddMemberModal = false">
-      <template #title> Add member </template>
+      <template #title> {{ $t("organization.addMember") }} </template>
 
       <template #content>
         <vee-form
@@ -152,30 +153,30 @@
           :initial-values="{ email: '', role: 'member' }"
           @submit="onAddMember"
         >
-          <InputField name="email" label="Email" autocomplete="email" :error="errors.email" />
+          <InputField name="email" :label="$t('common.email')" autocomplete="email" :error="errors.email" />
 
-          <SelectField name="role" label="Role" :error="errors.role">
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+          <SelectField name="role" :label="$t('common.role')" :error="errors.role">
+            <option value="member">{{ $t("organization.roleMember") }}</option>
+            <option value="admin">{{ $t("organization.roleAdmin") }}</option>
           </SelectField>
         </vee-form>
       </template>
 
       <template #footer>
         <button type="reset" class="btn" form="addMemberForm" @click="showAddMemberModal = false">
-          Cancel
+          {{ $t("common.cancel") }}
         </button>
 
         <button :disabled="isSubmitting" type="submit" class="btn btn-primary" form="addMemberForm">
           <icon-fa6-solid:plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Add
+          {{ $t("common.add") }}
         </button>
       </template>
     </modal>
 
     <modal :show="showChangeRoleModal" close-x-mark @close="showChangeRoleModal = false">
-      <template #title> Change Member Role </template>
+      <template #title> {{ $t("organization.changeMemberRole") }} </template>
 
       <template #content>
         <vee-form
@@ -185,16 +186,16 @@
           :initial-values="{ role: selectedMember?.role || 'member' }"
           @submit="onChangeRole"
         >
-          <SelectField name="role" label="Role" :error="errors.role">
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+          <SelectField name="role" :label="$t('common.role')" :error="errors.role">
+            <option value="member">{{ $t("organization.roleMember") }}</option>
+            <option value="admin">{{ $t("organization.roleAdmin") }}</option>
           </SelectField>
         </vee-form>
       </template>
 
       <template #footer>
         <button type="reset" class="btn" form="changeRoleForm" @click="showChangeRoleModal = false">
-          Cancel
+          {{ $t("common.cancel") }}
         </button>
 
         <button
@@ -205,7 +206,7 @@
         >
           <icon-fa6-solid:floppy-disk v-if="!isChangingRole" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
-          Save
+          {{ $t("common.save") }}
         </button>
       </template>
     </modal>
@@ -218,11 +219,13 @@ import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { Field, Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { ref } from "vue";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { session: sessionData } = useSession();
 
 const route = useRoute();
@@ -263,11 +266,11 @@ async function leaveOrganization() {
     });
 
     if (respError) {
-      alert.error((respError as { message?: string }).message ?? "Failed to leave organization");
+      alert.error((respError as { message?: string }).message ?? t("organization.failedLeaveOrg"));
       return;
     }
 
-    alert.success("You have left the organization successfully.");
+    alert.success(t("organization.leftOrg"));
     window.location.href = "/";
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -331,16 +334,16 @@ const isChangingRole = ref(false);
 const selectedMember = ref<OrganizationMember | null>(null);
 
 const schemaMembers = Yup.object().shape({
-  email: Yup.string().email("Email address is not valid").required("Email address is required"),
+  email: Yup.string().email(t("validation.emailInvalid")).required(t("validation.emailRequired")),
   role: Yup.string()
-    .oneOf(["member", "admin"], "Role must be either member or admin")
-    .required("Role is required"),
+    .oneOf(["member", "admin"], t("validation.roleInvalid"))
+    .required(t("validation.roleRequired")),
 });
 
 const schemaChangeRole = Yup.object().shape({
   role: Yup.string()
-    .oneOf(["member", "admin"], "Role must be either member or admin")
-    .required("Role is required"),
+    .oneOf(["member", "admin"], t("validation.roleInvalid"))
+    .required(t("validation.roleRequired")),
 });
 
 async function onAddMember(values: Record<string, unknown>) {
@@ -430,11 +433,11 @@ async function onChangeRole(values: Record<string, unknown>) {
       );
 
       if (respError) {
-        alert.error((respError as { message?: string }).message ?? "Failed to update member role");
+        alert.error((respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"));
         return;
       }
 
-      alert.success("Member role updated successfully");
+      alert.success(t("organization.memberRoleUpdated"));
 
       showChangeRoleModal.value = false;
       await loadOrganization();

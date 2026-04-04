@@ -1,5 +1,5 @@
 <template>
-  <header-container title="New Organization" />
+  <header-container :title="$t('organization.newOrganization')" />
   <main-container v-if="session?.user">
     <Panel>
       <vee-form
@@ -7,10 +7,10 @@
         :validation-schema="schema"
         @submit="onCreateOrganization"
       >
-        <form-group title="Organization Information">
+        <form-group :title="$t('organization.orgInfo')">
           <InputField
             name="name"
-            label="Name"
+            :label="$t('common.name')"
             autocomplete="name"
             :error="errors.name"
           />
@@ -20,7 +20,7 @@
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
@@ -34,16 +34,18 @@ import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 
 import { Form as VeeForm } from "vee-validate";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { session } = useSession();
 
 const { error } = useAlert();
 const router = useRouter();
 
 const schema = Yup.object().shape({
-  name: Yup.string().required("Name for organization is required"),
+  name: Yup.string().required(t("validation.orgNameRequired")),
 });
 
 async function onCreateOrganization(values: Record<string, unknown>) {

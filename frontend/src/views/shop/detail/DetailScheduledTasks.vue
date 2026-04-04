@@ -3,11 +3,11 @@
     <data-table
       v-if="shop"
       :columns="[
-        { key: 'name', name: 'Name', sortable: true },
-        { key: 'runInterval', name: 'Interval' },
-        { key: 'lastExecutionTime', name: 'Last Executed', sortable: true },
-        { key: 'nextExecutionTime', name: 'Next Execution', sortable: true },
-        { key: 'status', name: 'Status' },
+        { key: 'name', name: $t('common.name'), sortable: true },
+        { key: 'runInterval', name: $t('shopDetail.interval') },
+        { key: 'lastExecutionTime', name: $t('shopDetail.lastExecuted'), sortable: true },
+        { key: 'nextExecutionTime', name: $t('shopDetail.nextExecution'), sortable: true },
+        { key: 'status', name: $t('common.status') },
       ]"
       :data="shop.scheduledTasks || []"
       :default-sorting="{ by: 'nextExecutionTime' }"
@@ -56,7 +56,7 @@
       <template #cell-actions="{ row }">
         <button
           class="tooltip-top-left"
-          data-tooltip="Re-schedule task"
+          :data-tooltip="$t('shopDetail.rescheduleTask')"
           @click="onReScheduleTask(row.id)"
         >
           <icon-fa6-solid:arrow-rotate-right class="icon" />
@@ -67,10 +67,13 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { formatDateTime } from "@/helpers/formatter";
 import { useShopDetail } from "@/composables/useShopDetail";
 import { api } from "@/helpers/api";
+
+const { t } = useI18n();
 
 const { shop } = useShopDetail();
 
@@ -81,7 +84,7 @@ async function onReScheduleTask(taskId: string) {
     await api.POST("/shops/{shopId}/tasks/{taskId}/reschedule", {
       params: { path: { shopId: shop.value?.id ?? 0, taskId } },
     });
-    success("Task is re-scheduled");
+    success(t("shopDetail.taskRescheduled"));
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }

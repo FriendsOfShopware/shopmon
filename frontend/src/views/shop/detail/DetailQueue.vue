@@ -3,8 +3,8 @@
     <data-table
       v-if="shop"
       :columns="[
-        { key: 'name', name: 'Name', sortable: true },
-        { key: 'size', name: 'Size', sortable: true },
+        { key: 'name', name: $t('common.name'), sortable: true },
+        { key: 'size', name: $t('shopDetail.size'), sortable: true },
       ]"
       :data="shop.queues || []"
     />

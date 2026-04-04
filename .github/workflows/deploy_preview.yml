@@ -21,17 +21,10 @@ jobs:
         || github.event.comment.author_association == 'COLLABORATOR'
       )
     steps:
-      - name: Get PR ref
-        id: pr
-        run: |
-          echo "ref=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q .headRefName)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
-
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ steps.pr.outputs.ref }}
+          ref: refs/pull/${{ github.event.issue.number }}/head
 
       - name: Install and configure Namespace CLI
         uses: namespacelabs/nscloud-setup@v0
@@ -107,7 +100,7 @@ jobs:
           kubectl rollout status deployment/worker --timeout=120s
 
       - name: Comment on PR
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |

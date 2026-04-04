@@ -26,10 +26,11 @@
     "fuse.js": "^7.1.0",
     "openapi-fetch": "^0.17.0",
     "unplugin-icons": "23.0.1",
-    "unplugin-vue-components": "31.0.0",
+    "unplugin-vue-components": "32.0.0",
     "vee-validate": "4.15.1",
     "vue": "3.5.30",
-    "vue-router": "5.0.3",
+    "vue-i18n": "10",
+    "vue-router": "5.0.4",
     "yup": "1.7.1"
   },
   "devDependencies": {
@@ -54,7 +55,7 @@
     "oxfmt": "^0.40.0",
     "oxlint": "^1.47.0",
     "typescript": "5.9.3",
-    "vite": "8.0.0",
+    "vite": "8.0.1",
     "vitest": "^4.0.18"
   }
 }

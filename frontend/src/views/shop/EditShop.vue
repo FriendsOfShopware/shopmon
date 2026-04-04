@@ -1,5 +1,5 @@
 <template>
-  <header-container v-if="shop" :title="'Edit ' + shop.name">
+  <header-container v-if="shop" :title="$t('shop.editShop', { name: shop.name })">
     <router-link
       :to="{
         name: 'account.shops.detail',
@@ -11,7 +11,7 @@
       type="button"
       class="btn"
     >
-      Cancel
+      {{ $t("common.cancel") }}
     </router-link>
   </header-container>
 
@@ -24,13 +24,13 @@
         :initial-values="shop"
         @submit="onSubmit"
       >
-        <form-group title="Shop information">
-          <InputField name="name" label="Name" autocomplete="name" :error="errors.name" />
+        <form-group :title="$t('shop.shopInfo')">
+          <InputField name="name" :label="$t('common.name')" autocomplete="name" :error="errors.name" />
 
           <BaseSelect
             v-model="selectedProjectId"
             name="projectId"
-            label="Project"
+            :label="$t('shop.project')"
             :error="errors.projectId"
           >
             <option v-for="project in projects" :key="project.id" :value="project.id">
@@ -38,64 +38,62 @@
             </option>
           </BaseSelect>
 
-          <InputField name="shopUrl" label="URL" autocomplete="url" :error="errors.shopUrl" />
+          <InputField name="shopUrl" :label="$t('common.url')" autocomplete="url" :error="errors.shopUrl" />
         </form-group>
 
-        <form-group title="Integration">
+        <form-group :title="$t('shop.integration')">
           <template #info>
-            The easiest way to get started is to install the
-            <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank"
-              >Shopmon Plugin</a
-            >
-            or create an integration in your Shopware Administration with the following
+            <i18n-t keypath="shop.integrationDesc" tag="span">
+              <template #pluginLink>
+                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
+                  $t("shop.pluginName")
+                }}</a>
+              </template>
+            </i18n-t>
             <a
               href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
             >
-              permissions
+              {{ $t("shop.permissions") }}
             </a>
           </template>
 
           <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            Connect using Shopmon Plugin
+            {{ $t("shop.connectPlugin") }}
           </button>
 
-          <InputField name="clientId" label="Client-ID" :error="errors.clientId" />
-          <InputField name="clientSecret" label="Client-Secret" :error="errors.clientSecret" />
+          <InputField name="clientId" :label="$t('shop.clientId')" :error="errors.clientId" />
+          <InputField name="clientSecret" :label="$t('shop.clientSecret')" :error="errors.clientSecret" />
         </form-group>
 
         <div class="form-submit">
           <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save
+            {{ $t("common.save") }}
           </button>
         </div>
       </vee-form>
     </Panel>
 
-    <Panel v-if="shop" title="Sitespeed">
+    <Panel v-if="shop" :title="$t('shop.sitespeed')">
       <p>
-        <a href="https://www.sitespeed.io/" target="_blank">Sitespeed.io</a> allows you to monitor
-        the performance of your shop's frontend.
+        {{ $t("shop.sitespeedDesc") }}
       </p>
       <p>
-        To activate Sitespeed.io, you need to provide up to five URLs that you want to monitor.
-        These URLs will be used to run performance tests and gather insights about your shop's
-        frontend performance.
+        {{ $t("shop.sitespeedActivateDesc") }}
       </p>
       <p>
-        The Sitespeed run is scheduled to run every 24 hours, after the initial run you can view the
-        results of Sitespeed directly in Shopmon.
+        {{ $t("shop.sitespeedScheduleDesc") }}
       </p>
 
       <form @submit.prevent="onSitespeedSubmit">
         <div class="mb-1">
-          <label for="sitespeedEnabled">Sitespeed Enabled</label>
+          <label for="sitespeedEnabled">{{ $t("shop.sitespeedEnabled") }}</label>
           <input id="sitespeedEnabled" v-model="sitespeedEnabled" type="checkbox" class="field" />
         </div>
 
         <div v-if="sitespeedEnabled">
-          <label for="sitespeedUrls">Sitespeed URLs</label>
+          <label for="sitespeedUrls">{{ $t("shop.sitespeedUrls") }}</label>
 
           <div class="sitespeed-urls-container">
             <div v-for="(url, index) in sitespeedUrls" :key="index" class="sitespeed-url-row">
@@ -120,7 +118,7 @@
               @click="addSitespeedUrl"
             >
               <icon-fa6-solid:plus class="icon" />
-              New URL
+              {{ $t("shop.newUrl") }}
             </button>
           </div>
         </div>
@@ -138,24 +136,24 @@
             />
 
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-            Save Sitespeed Settings
+            {{ $t("shop.saveSitespeedSettings") }}
           </button>
         </div>
       </form>
     </Panel>
 
-    <Panel :title="'Deleting shop ' + shop.name">
-      <p>Once you delete your shop, you will lose all data associated with it.</p>
+    <Panel :title="$t('shop.deleteShopTitle', { name: shop.name })">
+      <p>{{ $t("shop.deleteShopWarning") }}</p>
 
       <button type="button" class="btn btn-danger" @click="showShopDeletionModal = true">
         <icon-fa6-solid:trash class="icon icon-delete" />
-        Delete shop
+        {{ $t("shop.deleteShop") }}
       </button>
     </Panel>
 
     <delete-confirmation-modal
       :show="showShopDeletionModal"
-      title="Delete shop"
+      :title="$t('shop.deleteShop')"
       :entity-name="shop?.name || 'this shop'"
       @close="showShopDeletionModal = false"
       @confirm="deleteShop"
@@ -179,9 +177,11 @@ import type { components } from "@/types/api";
 
 import { Form as VeeForm } from "vee-validate";
 import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
+const { t } = useI18n();
 const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
@@ -242,18 +242,18 @@ const isSitespeedFormValid = computed(() => {
 });
 
 const schema = Yup.object().shape({
-  name: Yup.string().required("Shop name is required"),
-  url: Yup.string().required("Shop URL is required").url(),
-  projectId: Yup.number().required("Project is required"),
+  name: Yup.string().required(t("validation.shopNameRequired")),
+  url: Yup.string().required(t("validation.shopUrlRequired")).url(),
+  projectId: Yup.number().required(t("validation.projectRequired")),
   clientId: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
     // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required("If you change the URL you need to provide Client-ID"),
+    then: () => Yup.string().required(t("validation.urlChangeClientId")),
   }),
   clientSecret: Yup.string().when("url", {
     is: (url: string) => url !== shop.value?.url,
     // eslint-disable-next-line unicorn/no-thenable -- Valid Yup schema method
-    then: () => Yup.string().required("If you change the URL you need to provide Client-Secret"),
+    then: () => Yup.string().required(t("validation.urlChangeClientSecret")),
   }),
 });
 
@@ -317,7 +317,7 @@ async function onSitespeedSubmit() {
 
       // Validate that if enabled, at least one URL is provided
       if (sitespeedEnabled.value && sitespeedUrls.value.length === 0) {
-        error("Please provide at least one URL when enabling Sitespeed");
+        error(t("shop.sitespeedUrlRequired"));
         return;
       }
 
@@ -331,7 +331,7 @@ async function onSitespeedSubmit() {
 
       // Reload shop data to refresh the UI
       await loadShop();
-      success("Sitespeed settings saved successfully");
+      success(t("shop.sitespeedSaved"));
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -357,7 +357,7 @@ function processPluginData() {
     pluginError.value = "";
 
     if (!pluginBase64.value.trim()) {
-      pluginError.value = "Please enter a base64 string";
+      pluginError.value = t("shop.base64Error");
       return;
     }
 
@@ -365,7 +365,7 @@ function processPluginData() {
     const data = JSON.parse(decodedString);
 
     if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = "Invalid data: missing required fields (url, clientId, clientSecret)";
+      pluginError.value = t("shop.base64InvalidData");
       return;
     }
 
@@ -375,7 +375,7 @@ function processPluginData() {
 
     closePluginModal();
   } catch (_e) {
-    pluginError.value = "Invalid base64 string or JSON format";
+    pluginError.value = t("shop.base64InvalidFormat");
   }
 }
 </script>
