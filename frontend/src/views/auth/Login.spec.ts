@@ -5,7 +5,7 @@ import Login from "./Login.vue";
 
 // Stubs
 const AlertStub = defineComponent({
-  name: "Alert",
+  name: "Banner",
   props: ["type", "dismissible"],
   template: '<div :class="`alert-${type}`"><slot /></div>',
 });
@@ -110,7 +110,7 @@ describe("Login", () => {
     return mount(Login, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: AlertStub,
           RouterLink: RouterLinkStub,
           Field: FieldStub,
           PasswordField: PasswordFieldStub,

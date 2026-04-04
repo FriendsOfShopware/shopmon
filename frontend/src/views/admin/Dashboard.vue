@@ -2,9 +2,9 @@
   <HeaderContainer :title="$t('admin.dashboard')" />
 
   <Panel>
-    <Alert v-if="error" type="danger">
+    <Banner v-if="error" variant="error">
       {{ error }}
-    </Alert>
+    </Banner>
 
     <div v-if="loading" class="loading-container">
       <icon-line-md:loading-twotone-loop class="loading-icon" />
@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import Alert from "@/components/layout/Alert.vue";
+import Banner from "@/components/layout/Banner.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import Panel from "@/components/layout/Panel.vue";
 import { api } from "@/helpers/api";

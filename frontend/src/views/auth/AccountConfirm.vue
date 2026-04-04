@@ -3,15 +3,15 @@
     <h2>{{ $t("auth.confirmingAccount") }}</h2>
   </div>
 
-  <Alert v-if="isLoading" type="info"> {{ $t("common.loading") }} </Alert>
+  <Banner v-if="isLoading" variant="default"> {{ $t("common.loading") }} </Banner>
 
   <template v-else>
-    <Alert v-if="success" type="success">
+    <Banner v-if="success" variant="success">
       {{ $t("auth.emailConfirmed") }}
       <router-link :to="{ name: 'account.login' }"> {{ $t("nav.login") }} </router-link>
-    </Alert>
+    </Banner>
 
-    <Alert v-else type="error"> {{ $t("auth.tokenExpired") }} </Alert>
+    <Banner v-else variant="error"> {{ $t("auth.tokenExpired") }} </Banner>
   </template>
 </template>
 

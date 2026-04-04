@@ -225,9 +225,9 @@
     </Panel>
 
     <Panel :title="$t('settings.deleteAccountTitle')">
-      <Alert v-if="!canDeleteAccount" type="error">
+      <Banner v-if="!canDeleteAccount" variant="error">
         {{ $t("settings.deleteAccountOrgWarning") }}
-      </Alert>
+      </Banner>
 
       <p>{{ $t("settings.deleteAccountWarning") }}</p>
 

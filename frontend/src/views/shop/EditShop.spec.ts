@@ -70,7 +70,7 @@ const DeleteConfirmationModalStub = defineComponent({
 });
 
 const AlertStub = defineComponent({
-  name: "Alert",
+  name: "Banner",
   props: ["type"],
   setup(_, { slots }) {
     return () => h("div", { class: "alert" }, slots.default?.());
@@ -156,7 +156,7 @@ describe("EditShop", () => {
           FormGroup: FormGroupStub,
           Modal: ModalStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
-          Alert: AlertStub,
+          Banner: AlertStub,
         },
       },
     });

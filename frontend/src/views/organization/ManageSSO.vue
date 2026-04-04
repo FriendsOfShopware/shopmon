@@ -26,14 +26,14 @@
         </UiButton>
       </template>
 
-      <Alert type="info">
+      <Banner variant="default">
         <p>
           <strong>{{ $t("sso.infoTitle") }}</strong>
         </p>
         <p>
           {{ $t("sso.infoDesc") }}
         </p>
-      </Alert>
+      </Banner>
 
       <div v-if="isLoading" class="sso-loading">
         <icon-line-md:loading-twotone-loop class="icon" />

@@ -111,10 +111,10 @@
             <router-link :to="{ name: 'account.environments.new' }">adding a new shop</router-link>.
           </p>
 
-          <Alert type="info">
+          <Banner variant="default">
             Your Client-Secret is encrypted before being stored. Shopmon uses it exclusively to
             authenticate with your Shopware API.
-          </Alert>
+          </Banner>
         </div>
       </section>
 
@@ -257,10 +257,10 @@
             </div>
           </dl>
 
-          <Alert type="info">
+          <Banner variant="default">
             You can suppress individual checks per shop using the ignore feature if they are known
             false positives for your environment.
-          </Alert>
+          </Banner>
         </div>
       </section>
 
@@ -409,10 +409,10 @@
             <li>Full deployment log output</li>
           </ul>
 
-          <Alert type="info">
+          <Banner variant="default">
             Sitespeed measurements are automatically tagged with the latest deployment, allowing you
             to correlate performance changes with specific releases.
-          </Alert>
+          </Banner>
         </div>
       </section>
 
@@ -526,11 +526,11 @@
             </li>
           </ol>
 
-          <Alert type="info">
+          <Banner variant="default">
             Tokens are validated against <code>packages.shopware.com</code> before being saved.
             Syncing happens automatically every hour, but you can also trigger a manual sync from
             the project settings.
-          </Alert>
+          </Banner>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 <template>
-  <Alert v-if="environment && !environment.sitespeedEnabled" type="info">
+  <Banner v-if="environment && !environment.sitespeedEnabled" variant="default">
     {{ $t("environment.sitespeedActivateDesc") }}
-  </Alert>
+  </Banner>
   <div class="mb-1">
     <UiButton
       v-if="showSitespeedData"

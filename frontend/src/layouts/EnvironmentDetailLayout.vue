@@ -65,10 +65,10 @@
     </header-container>
 
     <main-container v-if="environment && environment.lastScrapedAt">
-      <alert v-if="environment.lastScrapedError" class="environment-scrape-error" type="error">
+      <Banner v-if="environment.lastScrapedError" class="environment-scrape-error" variant="error">
         This environment will be not automatically updated anymore. Please update the API
         credentials or URL to fix this issue.
-      </alert>
+      </Banner>
 
       <router-view />
 
@@ -110,7 +110,7 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import SidebarDetail from "@/components/layout/SidebarDetail.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import MainContainer from "@/components/layout/MainContainer.vue";
-import Alert from "@/components/layout/Alert.vue";
+import Banner from "@/components/layout/Banner.vue";
 import Modal from "@/components/layout/Modal.vue";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
 import FaRotate from "~icons/fa6-solid/rotate";

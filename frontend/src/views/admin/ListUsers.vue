@@ -2,9 +2,9 @@
   <HeaderContainer :title="$t('admin.userManagement')" />
 
   <Panel>
-    <Alert v-if="error" type="danger">
+    <Banner v-if="error" variant="error">
       {{ error }}
-    </Alert>
+    </Banner>
 
     <div class="users-filter">
       <div class="search-container">
@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import Alert from "@/components/layout/Alert.vue";
+import Banner from "@/components/layout/Banner.vue";
 import DataTable from "@/components/layout/DataTable.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import { useSession } from "@/composables/useSession";

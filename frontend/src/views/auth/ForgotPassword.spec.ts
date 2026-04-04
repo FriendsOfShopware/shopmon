@@ -5,7 +5,7 @@ import ForgotPassword from "./ForgotPassword.vue";
 
 // Stubs
 const AlertStub = defineComponent({
-  name: "Alert",
+  name: "Banner",
   props: ["type", "dismissible"],
   setup(props, { slots }) {
     return () => h("div", { class: `alert alert-${props.type}` }, slots.default?.());
@@ -71,7 +71,7 @@ describe("ForgotPassword", () => {
     return mount(ForgotPassword, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: AlertStub,
           RouterLink: RouterLinkStub,
           Field: FieldStub,
         },

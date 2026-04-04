@@ -3,9 +3,9 @@
     <h3 class="form-group-title">{{ title }}</h3>
     <p v-if="subTitle" class="form-group-subtitle">{{ subTitle }}</p>
 
-    <Alert v-if="$slots.info" type="info">
+    <Banner v-if="$slots.info" variant="default">
       <slot name="info" />
-    </Alert>
+    </Banner>
 
     <div class="content">
       <slot />

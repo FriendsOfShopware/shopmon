@@ -32,7 +32,7 @@
         </li>
       </ul>
 
-      <alert v-else type="error"> {{ $t("extensionChangelog.noData") }} </alert>
+      <Banner v-else variant="error"> {{ $t("extensionChangelog.noData") }} </Banner>
     </template>
   </modal>
 </template>

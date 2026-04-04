@@ -3,12 +3,12 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { h, defineComponent } from "vue";
 import AccountConfirm from "./AccountConfirm.vue";
 
-// Create a stub for Alert component
-const AlertStub = defineComponent({
-  name: "Alert",
-  props: ["type"],
+// Create a stub for Banner component
+const BannerStub = defineComponent({
+  name: "Banner",
+  props: ["variant"],
   setup(props, { slots }) {
-    return () => h("div", { class: `alert alert-${props.type}` }, slots.default?.());
+    return () => h("div", { class: `banner banner-${props.variant}` }, slots.default?.());
   },
 });
 
@@ -75,14 +75,14 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: BannerStub,
           RouterLink: RouterLinkStub,
         },
       },
     });
 
     expect(wrapper.text()).toContain("Confirming your Account Registration");
-    expect(wrapper.find(".alert-info").exists()).toBe(true);
+    expect(wrapper.find(".banner-default").exists()).toBe(true);
     expect(wrapper.text()).toContain("Loading...");
   });
 
@@ -96,7 +96,7 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: BannerStub,
           RouterLink: RouterLinkStub,
         },
       },
@@ -104,7 +104,7 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    expect(wrapper.find(".alert-success").exists()).toBe(true);
+    expect(wrapper.find(".banner-success").exists()).toBe(true);
     expect(wrapper.text()).toContain("Your email address has been confirmed");
     expect(wrapper.find("a").exists()).toBe(true);
     expect(wrapper.find("a").text()).toBe("Login");
@@ -120,7 +120,7 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: BannerStub,
           RouterLink: RouterLinkStub,
         },
       },
@@ -128,7 +128,7 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    expect(wrapper.find(".alert-error").exists()).toBe(true);
+    expect(wrapper.find(".banner-error").exists()).toBe(true);
     expect(wrapper.text()).toContain("The given token has been expired");
     expect(mockCalls.error).toContain("Token expired");
   });
@@ -143,7 +143,7 @@ describe("AccountConfirm", () => {
     const wrapper = mount(AccountConfirm, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: BannerStub,
           RouterLink: RouterLinkStub,
         },
       },
@@ -151,7 +151,7 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    expect(wrapper.find(".alert-error").exists()).toBe(true);
+    expect(wrapper.find(".banner-error").exists()).toBe(true);
     expect(wrapper.text()).toContain("The given token has been expired");
     expect(mockCalls.error).toContain("Failed to verify email");
   });
@@ -166,7 +166,7 @@ describe("AccountConfirm", () => {
     mount(AccountConfirm, {
       global: {
         stubs: {
-          Alert: AlertStub,
+          Banner: BannerStub,
           RouterLink: RouterLinkStub,
         },
       },

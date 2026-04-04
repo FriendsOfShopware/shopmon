@@ -81,14 +81,14 @@
           </UiButton>
         </template>
 
-        <Alert type="info">
+        <Banner variant="default">
           <p>
             <strong>{{ $t("shop.apiKeys") }}</strong>
           </p>
           <p>
             {{ $t("shop.apiKeyInfo") }}
           </p>
-        </Alert>
+        </Banner>
 
         <div v-if="isApiKeysLoading" class="api-keys-loading">
           <icon-line-md:loading-twotone-loop class="icon" />
@@ -203,11 +203,11 @@
 
           <div v-if="packagesComposerUrl" class="composer-setup">
             <h4>{{ $t("packages.composerSetup") }}</h4>
-            <Alert type="warning">
+            <Banner variant="alert">
               <p>
                 {{ $t("packages.composerWarning") }}
               </p>
-            </Alert>
+            </Banner>
             <p class="text-muted">
               {{ $t("packages.composerRepoHint") }}
             </p>
@@ -318,14 +318,14 @@
       <template #title> {{ $t("shop.apiKeyCreatedTitle") }} </template>
 
       <template #content>
-        <Alert type="warning">
+        <Banner variant="alert">
           <p>
             <strong>{{ $t("shop.apiKeyCopyWarning") }}</strong>
           </p>
           <p>
             {{ $t("shop.apiKeyCopyDesc") }}
           </p>
-        </Alert>
+        </Banner>
 
         <div class="token-display">
           <code class="token-value">{{ newToken }}</code>

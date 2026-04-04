@@ -17,7 +17,7 @@ const MainContainerStub = defineComponent({
 });
 
 const AlertStub = defineComponent({
-  name: "Alert",
+  name: "Banner",
   props: ["type"],
   setup(_, { slots }) {
     return () => h("div", { class: "alert" }, slots.default?.());
@@ -31,7 +31,7 @@ describe("Docs", () => {
         stubs: {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
-          Alert: AlertStub,
+          Banner: AlertStub,
         },
       },
     });

@@ -155,9 +155,9 @@
       {{ $t("shopDetail.securityChecks") }}
     </template>
 
-    <Alert v-if="sortedCriticalChecks.length === 0" type="success">
+    <Banner v-if="sortedCriticalChecks.length === 0" variant="success">
       {{ $t("shopDetail.allChecksPassed") }}
-    </Alert>
+    </Banner>
 
     <ul v-else class="issue-list">
       <li v-for="check in sortedCriticalChecks" :key="check.id" class="issue-item">
@@ -197,9 +197,9 @@
       {{ $t("shopDetail.extensions") }}
     </template>
 
-    <Alert v-if="outdatedExtensions.length === 0" type="success">
+    <Banner v-if="outdatedExtensions.length === 0" variant="success">
       {{ $t("shopDetail.allExtensionsUpToDate") }}
-    </Alert>
+    </Banner>
 
     <ul v-else class="issue-list">
       <li v-for="extension in outdatedExtensions" :key="extension.name" class="issue-item">
@@ -251,9 +251,9 @@
       {{ $t("shopDetail.scheduledTasks") }}
     </template>
 
-    <Alert v-if="overdueTasks.length === 0" type="success">
+    <Banner v-if="overdueTasks.length === 0" variant="success">
       {{ $t("shopDetail.noOverdueTasks") }}
-    </Alert>
+    </Banner>
 
     <ul v-else class="issue-list">
       <li v-for="task in overdueTasks" :key="task.id" class="issue-item">
@@ -294,9 +294,9 @@
       {{ $t("shopDetail.recentChanges") }}
     </template>
 
-    <Alert v-if="recentChangelogs.length === 0" type="info">
+    <Banner v-if="recentChangelogs.length === 0" variant="default">
       {{ $t("shopDetail.noRecentChanges") }}
-    </Alert>
+    </Banner>
 
     <div v-else class="changes-list">
       <div v-for="changelog in recentChangelogs" :key="changelog.id" class="change-item">
