@@ -6,7 +6,9 @@
       v-if="shop"
       :breadcrumb="
         shop.nameCombined +
-        (route.meta.title && route.name !== 'account.shops.detail' ? ' / ' + route.meta.title : '')
+        (currentRouteTitle && route.name !== 'account.shops.detail'
+          ? ' / ' + currentRouteTitle
+          : '')
       "
       :title="shop.name"
       :titleMobileHide="true"
@@ -103,6 +105,8 @@
 
 <script setup lang="ts">
 import { useRoute } from "vue-router";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { useShopDetail } from "@/composables/useShopDetail";
 import SidebarDetail from "@/components/layout/SidebarDetail.vue";
 import HeaderContainer from "@/components/layout/HeaderContainer.vue";
@@ -112,6 +116,12 @@ import Modal from "@/components/layout/Modal.vue";
 import FaRotate from "~icons/fa6-solid/rotate";
 
 const route = useRoute();
+const { t } = useI18n();
+
+const currentRouteTitle = computed(() => {
+  const titleKey = route.meta.titleKey;
+  return typeof titleKey === "string" ? t(titleKey) : "";
+});
 
 const {
   shop,

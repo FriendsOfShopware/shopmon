@@ -4,6 +4,7 @@ import { compareVersions } from "compare-versions";
 import { trpcClient } from "@/helpers/trpc";
 import type { RouterOutput } from "@/helpers/trpc";
 import { useAlert } from "@/composables/useAlert";
+import { i18n } from "@/i18n";
 
 export function useShopDetail() {
   const route = useRoute();
@@ -46,7 +47,8 @@ export function useShopDetail() {
       latestShopwareVersion.value = shopwareVersions.value[0];
 
       if (shop.value?.name) {
-        const pageTitle = route.meta.title;
+        const titleKey = route.meta.titleKey;
+        const pageTitle = typeof titleKey === "string" ? i18n.global.t(titleKey) : null;
         document.title =
           typeof pageTitle === "string"
             ? `${pageTitle} - ${shop.value.name} | Shopmon`
