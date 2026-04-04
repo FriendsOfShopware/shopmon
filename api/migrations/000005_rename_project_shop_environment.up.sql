@@ -20,8 +20,8 @@ ALTER TABLE environment_cache RENAME COLUMN shop_id TO environment_id;
 ALTER TABLE deployment RENAME COLUMN shop_id TO environment_id;
 
 -- Drop FK constraints on deployment before renaming shop table
-ALTER TABLE deployment DROP CONSTRAINT fk_deployment_shop;
-ALTER TABLE deployment DROP CONSTRAINT deployment_shop_id_shop_id_fk;
+ALTER TABLE deployment DROP CONSTRAINT IF EXISTS fk_deployment_shop;
+ALTER TABLE deployment DROP CONSTRAINT IF EXISTS deployment_shop_id_shop_id_fk;
 
 -- Rename the main "shop" table to "environment"
 ALTER TABLE shop RENAME TO environment;
@@ -45,12 +45,22 @@ ALTER INDEX idx_shop_organization RENAME TO idx_environment_organization;
 ALTER INDEX idx_deployment_shop RENAME TO idx_deployment_environment;
 ALTER INDEX idx_shop_extension_shop RENAME TO idx_environment_extension_environment;
 
--- Rename unique constraints on child tables
-ALTER TABLE environment_extension RENAME CONSTRAINT shop_extension_shop_id_name_unique TO environment_extension_environment_id_name_unique;
-ALTER TABLE environment_queue RENAME CONSTRAINT shop_queue_shop_id_name_unique TO environment_queue_environment_id_name_unique;
-ALTER TABLE environment_scheduled_task RENAME CONSTRAINT shop_scheduled_task_shop_id_task_id_unique TO environment_scheduled_task_environment_id_task_id_unique;
-ALTER TABLE environment_check RENAME CONSTRAINT shop_check_shop_id_check_id_unique TO environment_check_environment_id_check_id_unique;
-ALTER TABLE environment_cache RENAME CONSTRAINT shop_cache_shop_id_unique TO environment_cache_environment_id_unique;
+-- Rename unique constraints on child tables (Postgres auto-generates _key suffix for inline UNIQUE)
+DO $$ BEGIN
+  ALTER TABLE environment_extension RENAME CONSTRAINT shop_extension_shop_id_name_key TO environment_extension_environment_id_name_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_queue RENAME CONSTRAINT shop_queue_shop_id_name_key TO environment_queue_environment_id_name_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_scheduled_task RENAME CONSTRAINT shop_scheduled_task_shop_id_task_id_key TO environment_scheduled_task_environment_id_task_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_check RENAME CONSTRAINT shop_check_shop_id_check_id_key TO environment_check_environment_id_check_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_cache RENAME CONSTRAINT shop_cache_shop_id_key TO environment_cache_environment_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
 -- Update user notification keys: "shop-123" -> "environment-123"
 UPDATE "user" SET notifications = (
