@@ -1,20 +1,19 @@
 <template>
   <header-container :title="shop ? $t('shop.editShop', { name: shop.name }) : $t('nav.editShop')">
     <div class="header-actions">
-      <router-link :to="{ name: 'account.shop.list' }" type="button" class="btn">
+      <UiButton :to="{ name: 'account.shop.list' }" type="button">
         <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
         {{ $t("shop.backToShops") }}
-      </router-link>
+      </UiButton>
 
-      <router-link
+      <UiButton
         v-if="shop"
         :to="{ name: 'account.environments.new', query: { shopId: shop.id } }"
         type="button"
-        class="btn btn-secondary"
       >
         <icon-fa6-solid:plus class="icon" aria-hidden="true" />
         {{ $t("environment.addEnvironment") }}
-      </router-link>
+      </UiButton>
     </div>
   </header-container>
 
@@ -57,7 +56,11 @@
           </form-group>
 
           <div class="form-submit">
-            <button :disabled="isSubmitting || isSavingShop" type="submit" class="btn btn-primary">
+            <UiButton
+              :disabled="isSubmitting || isSavingShop"
+              type="submit"
+              variant="primary"
+            >
               <icon-fa6-solid:floppy-disk
                 v-if="!(isSubmitting || isSavingShop)"
                 class="icon"
@@ -65,17 +68,17 @@
               />
               <icon-line-md:loading-twotone-loop v-else class="icon" />
               {{ $t("common.save") }}
-            </button>
+            </UiButton>
           </div>
         </vee-form>
       </Panel>
 
       <Panel id="api-keys" :title="$t('shop.apiKeys')">
         <template #action>
-          <button type="button" class="btn btn-primary" @click="openAddKeyModal">
+          <UiButton type="button" variant="primary" @click="openAddKeyModal">
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
             {{ $t("shop.createApiKey") }}
-          </button>
+          </UiButton>
         </template>
 
         <Alert type="info">
@@ -117,10 +120,14 @@
               </div>
             </div>
             <div class="api-key-actions">
-              <button type="button" class="btn btn-danger" @click="confirmDeleteKey(apiKey)">
+              <UiButton
+                type="button"
+                variant="destructive"
+                @click="confirmDeleteKey(apiKey)"
+              >
                 <icon-fa6-solid:trash class="icon" aria-hidden="true" />
                 {{ $t("common.delete") }}
-              </button>
+              </UiButton>
             </div>
           </div>
         </div>
@@ -133,10 +140,14 @@
         :description="$t('packages.description')"
       >
         <template #action>
-          <button type="button" class="btn btn-primary" @click="showAddPackagesTokenModal = true">
+          <UiButton
+            type="button"
+            variant="primary"
+            @click="showAddPackagesTokenModal = true"
+          >
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
             {{ $t("packages.addToken") }}
-          </button>
+          </UiButton>
         </template>
 
         <div v-if="isPackagesTokensLoading" class="api-keys-loading">
@@ -165,9 +176,8 @@
                 <p v-else class="text-muted">{{ $t("packages.notSyncedYet") }}</p>
               </div>
               <div class="api-key-actions">
-                <button
+                <UiButton
                   type="button"
-                  class="btn btn-secondary"
                   :disabled="isSyncingPackagesToken === pt.id"
                   @click="syncPackagesToken(pt)"
                 >
@@ -178,15 +188,15 @@
                   />
                   <icon-line-md:loading-twotone-loop v-else class="icon" />
                   {{ $t("packages.sync") }}
-                </button>
-                <button
+                </UiButton>
+                <UiButton
                   type="button"
-                  class="btn btn-danger"
+                  variant="destructive"
                   @click="confirmDeletePackagesToken(pt)"
                 >
                   <icon-fa6-solid:trash class="icon" aria-hidden="true" />
                   {{ $t("common.delete") }}
-                </button>
+                </UiButton>
               </div>
             </div>
           </div>
@@ -210,14 +220,14 @@
         }
     ]
 }</code></pre>
-              <button
+              <UiButton
                 type="button"
-                class="btn btn-secondary btn-sm"
+                size="sm"
                 @click="copyComposerRepository"
               >
                 <icon-fa6-solid:copy class="icon" aria-hidden="true" />
                 {{ $t("common.copy") }}
-              </button>
+              </UiButton>
             </div>
             <p class="text-muted">{{ $t("packages.composerAuthHint") }}</p>
             <div class="code-block">
@@ -234,15 +244,15 @@
           {{ $t("shop.deleteShopEnvironmentsWarning", { count: environmentsInShopCount }) }}
         </p>
 
-        <button
+        <UiButton
           type="button"
-          class="btn btn-danger"
+          variant="destructive"
           :disabled="!canDeleteShop || isDeletingShop"
           @click="showDeleteShopModal = true"
         >
           <icon-fa6-solid:trash class="icon" aria-hidden="true" />
           {{ $t("shop.deleteShop") }}
-        </button>
+        </UiButton>
       </Panel>
     </template>
 
@@ -287,19 +297,19 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="closeAddKeyModal">
+        <UiButton type="button" @click="closeAddKeyModal">
           {{ $t("common.cancel") }}
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="submit"
-          class="btn btn-primary"
+          variant="primary"
           form="apiKeyForm"
           :disabled="isCreatingApiKey"
         >
           <icon-fa6-solid:key v-if="!isCreatingApiKey" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           {{ $t("shop.createApiKey") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
 
@@ -319,17 +329,17 @@
 
         <div class="token-display">
           <code class="token-value">{{ newToken }}</code>
-          <button type="button" class="btn btn-secondary" @click="copyToken">
+          <UiButton type="button" @click="copyToken">
             <icon-fa6-solid:copy class="icon" aria-hidden="true" />
             {{ $t("common.copy") }}
-          </button>
+          </UiButton>
         </div>
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="closeTokenModal">
+        <UiButton type="button" variant="primary" @click="closeTokenModal">
           {{ $t("common.done") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
 
@@ -387,19 +397,19 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="showAddPackagesTokenModal = false">
+        <UiButton type="button" @click="showAddPackagesTokenModal = false">
           {{ $t("common.cancel") }}
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="submit"
-          class="btn btn-primary"
+          variant="primary"
           form="packagesTokenForm"
           :disabled="isCreatingPackagesToken"
         >
           <icon-fa6-solid:plus v-if="!isCreatingPackagesToken" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           {{ $t("packages.addToken") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
 
@@ -1052,7 +1062,7 @@ onMounted(() => {
     }
   }
 
-  .btn-sm {
+  .ui-button--sm {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;

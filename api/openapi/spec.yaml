@@ -1277,6 +1277,27 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /auth/set-active-organization:
+    post:
+      operationId: setActiveOrganization
+      tags: [Auth]
+      summary: Set the active organization for the current session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId]
+              properties:
+                organizationId:
+                  type: string
+      responses:
+        "200":
+          description: Active organization updated
+        "403":
+          description: Not a member of the specified organization
+
   /auth/verify-email:
     get:
       operationId: verifyEmail

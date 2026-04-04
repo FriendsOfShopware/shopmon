@@ -51,55 +51,61 @@ const { alert, clear } = alertComposable;
 .notification {
   position: relative;
   width: 100vw;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
+  padding: 1rem 1rem 0.95rem;
+  border-radius: 1rem;
   border: 1px solid var(--notification-border-color);
-  border-left-width: 5px;
   background-color: var(--panel-background);
   margin: 0 0.75rem 1rem 0;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    inset 0 0 0 1px var(--notification-border-color),
+    var(--surface-shadow-strong);
 }
 
 .notification-info {
-  border-left-color: var(--info-color);
+  background: color-mix(in srgb, var(--info-color) 8%, var(--panel-background));
+  --notification-accent: var(--info-color);
 }
 
 .notification-success {
-  border-left-color: var(--success-color);
+  background: color-mix(in srgb, var(--success-color) 8%, var(--panel-background));
+  --notification-accent: var(--success-color);
 }
 
 .notification-warning {
-  border-left-color: var(--warning-color);
+  background: color-mix(in srgb, var(--warning-color) 10%, var(--panel-background));
+  --notification-accent: var(--warning-color);
 }
 
 .notification-error {
-  border-left-color: var(--error-color);
+  background: color-mix(in srgb, var(--error-color) 8%, var(--panel-background));
+  --notification-accent: var(--error-color);
 }
 
 .notification-close {
   position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  width: 1rem;
-  height: 1rem;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
+  border-radius: 0.5rem;
+  color: var(--text-color-muted);
 
   &:hover {
-    opacity: 1;
+    background: var(--button-ghost-hover-background);
+    color: var(--text-color);
   }
 }
 
 .notification-icon {
   display: flex;
   justify-content: center;
-  margin-top: 0.25rem;
+  margin-top: 0.1rem;
+  color: var(--notification-accent);
 }
 
 .notification-content {
@@ -107,10 +113,8 @@ const { alert, clear } = alertComposable;
 }
 
 .notification-title {
-  font-weight: 500;
-}
-
-.dark .notification {
-  box-shadow: none;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  color: var(--notification-accent);
 }
 </style>

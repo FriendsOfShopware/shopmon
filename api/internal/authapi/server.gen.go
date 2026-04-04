@@ -186,6 +186,11 @@ type RevokeSessionJSONBody struct {
 	SessionId string `json:"sessionId"`
 }
 
+// SetActiveOrganizationJSONBody defines parameters for SetActiveOrganization.
+type SetActiveOrganizationJSONBody struct {
+	OrganizationId string `json:"organizationId"`
+}
+
 // SignInEmailJSONBody defines parameters for SignInEmail.
 type SignInEmailJSONBody struct {
 	Email    openapi_types.Email `json:"email"`
@@ -294,6 +299,9 @@ type ResetPasswordJSONRequestBody ResetPasswordJSONBody
 
 // RevokeSessionJSONRequestBody defines body for RevokeSession for application/json ContentType.
 type RevokeSessionJSONRequestBody RevokeSessionJSONBody
+
+// SetActiveOrganizationJSONRequestBody defines body for SetActiveOrganization for application/json ContentType.
+type SetActiveOrganizationJSONRequestBody SetActiveOrganizationJSONBody
 
 // SignInEmailJSONRequestBody defines body for SignInEmail for application/json ContentType.
 type SignInEmailJSONRequestBody SignInEmailJSONBody
@@ -432,6 +440,9 @@ type ServerInterface interface {
 	// Get current session
 	// (GET /auth/session)
 	GetSession(w http.ResponseWriter, r *http.Request)
+	// Set the active organization for the current session
+	// (POST /auth/set-active-organization)
+	SetActiveOrganization(w http.ResponseWriter, r *http.Request)
 	// Sign in with email and password
 	// (POST /auth/sign-in/email)
 	SignInEmail(w http.ResponseWriter, r *http.Request)
@@ -690,6 +701,12 @@ func (_ Unimplemented) RevokeSession(w http.ResponseWriter, r *http.Request) {
 // Get current session
 // (GET /auth/session)
 func (_ Unimplemented) GetSession(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Set the active organization for the current session
+// (POST /auth/set-active-organization)
+func (_ Unimplemented) SetActiveOrganization(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1678,6 +1695,26 @@ func (siw *ServerInterfaceWrapper) GetSession(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// SetActiveOrganization operation middleware
+func (siw *ServerInterfaceWrapper) SetActiveOrganization(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetActiveOrganization(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SignInEmail operation middleware
 func (siw *ServerInterfaceWrapper) SignInEmail(w http.ResponseWriter, r *http.Request) {
 
@@ -2074,6 +2111,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/session", wrapper.GetSession)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/set-active-organization", wrapper.SetActiveOrganization)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/sign-in/email", wrapper.SignInEmail)

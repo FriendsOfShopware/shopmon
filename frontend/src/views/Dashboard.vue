@@ -136,22 +136,32 @@ import { sumChanges } from "@/helpers/changelog";
 import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
-import { ref } from "vue";
-import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { ref, watch } from "vue";
+import { useAccountEnvironments, fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { useSession } from "@/composables/useSession";
 
 const { t } = useI18n();
+const { activeOrganizationId } = useSession();
 
 const organizations = ref<components["schemas"]["AccountOrganization"][]>();
-api.GET("/account/organizations").then(({ data }) => {
-  organizations.value = data;
-});
+const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
+
+function loadDashboardData() {
+  api.GET("/account/organizations").then(({ data }) => {
+    organizations.value = data;
+  });
+  api.GET("/account/changelogs").then(({ data }) => {
+    if (data) changelogs.value = data;
+  });
+}
+
+loadDashboardData();
 
 const { environments } = useAccountEnvironments();
 
-const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
-
-api.GET("/account/changelogs").then(({ data }) => {
-  if (data) changelogs.value = data;
+watch(activeOrganizationId, () => {
+  fetchAccountEnvironments();
+  loadDashboardData();
 });
 </script>
 

@@ -12,11 +12,11 @@
   >
     <InputField name="email" :placeholder="$t('common.emailAddress')" :error="errors.email" />
 
-    <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
+    <UiButton variant="primary" block :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:envelope v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
       {{ $t("auth.sendEmail") }}
-    </button>
+    </UiButton>
 
     <div>
       <router-link to="login"> {{ $t("common.cancel") }} </router-link>

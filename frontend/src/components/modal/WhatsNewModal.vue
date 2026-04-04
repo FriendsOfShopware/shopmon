@@ -50,19 +50,19 @@
     </template>
 
     <template #footer>
-      <router-link :to="{ name: 'account.shop.list' }" class="btn" @click="$emit('close')">
+      <UiButton :to="{ name: 'account.shop.list' }" @click="$emit('close')">
         <icon-fa6-solid:folder-open class="icon" />
         {{ $t("whatsNew.openProjects") }}
-      </router-link>
+      </UiButton>
 
-      <router-link :to="{ name: 'account.docs' }" class="btn" @click="$emit('close')">
+      <UiButton :to="{ name: 'account.docs' }" @click="$emit('close')">
         <icon-fa6-solid:book class="icon" />
         {{ $t("nav.documentation") }}
-      </router-link>
+      </UiButton>
 
-      <button type="button" class="btn btn-primary" @click="$emit('close')">
+      <UiButton type="button" variant="primary" @click="$emit('close')">
         {{ $t("whatsNew.close") }}
-      </button>
+      </UiButton>
     </template>
   </modal>
 </template>

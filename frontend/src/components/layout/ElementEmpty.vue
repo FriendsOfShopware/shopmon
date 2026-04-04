@@ -23,10 +23,10 @@
     </p>
 
     <div class="element-empty-cta">
-      <router-link :to="route" class="btn btn-primary">
+      <UiButton :to="route" variant="primary">
         <icon-fa6-solid:plus class="icon" aria-hidden="true" />
         {{ button || $t("common.addElement") }}
-      </router-link>
+      </UiButton>
     </div>
   </div>
 </template>
@@ -50,22 +50,30 @@ withDefaults(
 <style scoped>
 .element-empty {
   text-align: center;
+  padding: 2.5rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--panel-border-color);
+  background: var(--control-background);
+  box-shadow: var(--surface-shadow);
 }
 
 .element-empty-icon {
   width: 3rem;
   height: 3rem;
-  margin: 0 auto 0.5rem;
+  margin: 0 auto 0.75rem;
+  color: var(--text-color-muted);
 }
 
 .element-empty-title {
   font-size: 1.25rem;
-  line-height: 1.75rem;
-  font-weight: 500;
+  line-height: 1.5rem;
+  font-weight: 600;
 }
 
 .element-empty-description {
-  margin-top: 0.25rem;
+  max-width: 34rem;
+  margin: 0.5rem auto 0;
+  color: var(--text-color-muted);
 }
 
 .element-empty-cta {

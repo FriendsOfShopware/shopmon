@@ -1,7 +1,7 @@
 <template>
   <header>
     <div :class="['header-title', { 'mobile-hide': titleMobileHide }]">
-      <div v-if="breadcrumb" class="header-breadcrumb">{{ breadcrumb }}</div>
+      <Breadcrumbs v-if="breadcrumb?.length" class="header-breadcrumb" :items="breadcrumb" />
       <h1>{{ title }}</h1>
     </div>
 
@@ -12,7 +12,14 @@
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string; breadcrumb?: string; titleMobileHide?: boolean }>();
+import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
+import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
+
+defineProps<{
+  title: string;
+  breadcrumb?: BreadcrumbItem[];
+  titleMobileHide?: boolean;
+}>();
 </script>
 
 <style>
@@ -29,7 +36,7 @@ header {
     font-size: 1.875rem;
     line-height: 2.25rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-color);
   }
 
   &.mobile-hide {
@@ -39,16 +46,14 @@ header {
       margin-left: auto;
     }
 
-    @media all and (min-width: 1024px) {
+    @media all and (min-width: 768px) {
       display: block;
     }
   }
 }
 
 .header-breadcrumb {
-  font-size: 1rem;
-  color: #fff;
-  margin-bottom: 0.25rem;
+  margin-bottom: -0.125rem;
 }
 
 .header-actions {
@@ -56,14 +61,14 @@ header {
   gap: 0.5rem;
   align-items: flex-start;
 
-  .btn {
-    background: #0284c7;
+  .ui-button {
+    background: var(--primary-color);
     border-color: transparent;
-    color: #fff;
+    color: #ffffff;
     transition: background 0.4s;
 
     &:hover {
-      background: #0284c777;
+      background: color-mix(in srgb, var(--primary-color) 70%, white);
     }
   }
 }

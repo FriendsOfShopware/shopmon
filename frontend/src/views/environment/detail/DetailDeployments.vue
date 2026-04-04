@@ -22,7 +22,7 @@
         <div class="env-row">
           <span class="env-key">SHOPMON_API_KEY</span>
           <span class="env-value env-placeholder">
-            <router-link
+            <UiButton
               :to="{
                 name: 'account.shops.edit',
                 params: { shopId: environment.shopId },
@@ -30,7 +30,7 @@
               }"
             >
               {{ $t("deployments.manageApiKeys") }}
-            </router-link>
+            </UiButton>
           </span>
         </div>
       </div>
@@ -98,17 +98,16 @@
 
         <template #cell-actions="{ row }">
           <div class="action-buttons">
-            <a
+            <UiButton
               v-if="row.reference && row.gitUrl"
               :href="`${row.gitUrl}/commit/${row.reference}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn btn-secondary"
               :title="$t('deployments.openCommit')"
             >
               <icon-fa6-solid:arrow-up-right-from-square />
-            </a>
-            <router-link
+            </UiButton>
+            <UiButton
               :to="{
                 name: 'account.environments.detail.deployment',
                 params: {
@@ -117,14 +116,14 @@
                   deploymentId: row.id,
                 },
               }"
-              class="btn btn-sm"
+              size="sm"
             >
               <icon-fa6-solid:eye />
               {{ $t("common.view") }}
-            </router-link>
-            <button class="btn btn-danger" @click="confirmDeleteDeployment(row)">
+            </UiButton>
+            <UiButton variant="destructive" @click="confirmDeleteDeployment(row)">
               <icon-fa6-solid:trash />
-            </button>
+            </UiButton>
           </div>
         </template>
       </data-table>
@@ -151,17 +150,17 @@
       </template>
 
       <template #footer>
-        <button
+        <UiButton
           type="button"
-          class="btn btn-danger"
+          variant="destructive"
           :disabled="isDeletingDeployment"
           @click="deleteDeployment"
         >
           {{ $t("common.delete") }}
-        </button>
-        <button type="button" class="btn" @click="showDeleteDeploymentDialog = false">
+        </UiButton>
+        <UiButton type="button" @click="showDeleteDeploymentDialog = false">
           {{ $t("common.cancel") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
   </div>

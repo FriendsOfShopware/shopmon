@@ -6,7 +6,7 @@
           <th
             v-for="column in columns"
             :key="column.key"
-            :class="[column.class, { sortable: 'sortable' }]"
+            :class="[column.class, { sortable: column.sortable }]"
             @click="column.sortable ? setSort(column.key) : false"
           >
             {{ column.name }}
@@ -174,80 +174,58 @@ const sortedFilteredData = computed(() => {
 }
 
 .data-table {
+  isolation: isolate;
   width: 100%;
   border-spacing: 0;
   text-indent: 0;
   border-color: inherit;
   border-collapse: collapse;
+  background-color: var(--data-table-background);
+  text-align: left;
+  color: var(--text-color);
 
   thead {
     background-color: var(--data-table-head-background);
   }
 
   th {
-    padding: 1rem 0.75rem;
+    padding: 0.75rem;
     text-align: left;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--data-table-head-color);
-    white-space: nowrap;
+    border-bottom: 1px solid var(--data-table-border-color);
 
     &.sortable {
       cursor: pointer;
     }
+
+    .icon {
+      margin-left: 0.5rem;
+      font-size: 0.875rem;
+      vertical-align: middle;
+    }
   }
 
   tbody {
-    border-top: 2px solid var(--background-color);
-
-    tr {
+    td {
+      padding: 0.75rem;
       background-color: var(--data-table-row-background);
-
-      &:nth-child(odd) {
-        background-color: var(--data-table-row-odd-background);
-      }
-
-      &:hover {
-        background-color: var(--data-table-row-hover-background);
-      }
+      border-bottom: 1px solid var(--data-table-border-color);
     }
 
-    td {
-      padding: 1rem 0.75rem;
+    tr:last-child td {
+      border-bottom: 0;
     }
   }
 
   th,
   td {
-    &:first-child {
-      padding-left: 1rem;
-
-      @media (min-width: 1024px) {
-        padding-left: 1.5rem;
-      }
-    }
-
     &.actions {
       text-align: right;
-      padding-right: 1rem;
-
-      @media (min-width: 640px) {
-        padding-right: 1.5rem;
-      }
-
-      @media (min-width: 1024px) {
-        padding-right: 2rem;
-      }
 
       button {
         line-height: 1.4;
-      }
-
-      .icon {
-        opacity: 0.5;
-
-        &:hover {
-          opacity: 1;
-        }
       }
     }
 
@@ -261,18 +239,21 @@ const sortedFilteredData = computed(() => {
 .data-table-empty {
   padding: 1.5rem;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-color-muted);
+  border: 1px solid var(--data-table-empty-border-color);
+  border-radius: 0.875rem;
+  background-color: var(--data-table-empty-background);
 
   .empty-icon {
     font-size: 9rem;
-    color: #e5e7eb;
+    color: var(--data-table-empty-icon-color);
     margin-bottom: 1rem;
   }
 
   .empty-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #9ca3af;
+    color: var(--text-color-muted);
   }
 }
 </style>

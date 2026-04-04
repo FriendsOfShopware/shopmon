@@ -1,82 +1,100 @@
 <template>
-  <div v-if="props.environment" class="sidebar-wrapper">
-    <div
-      ref="toggleRef"
-      class="sidebar-detail-toggle btn btn-primary btn-block"
-      @click="toggleMobileOpen"
-    >
+  <div v-if="props.environment" class="detail-sidebar-shell">
+    <UiButton class="detail-sidebar-mobile-trigger" block @click="toggleMobileOpen">
+      <icon-fa6-solid:bars-staggered class="icon" />
       {{ environment?.organizationName + " / " + environment?.name }}
       {{ currentRouteTitle && route.name !== "account.environments.detail" ? " / " : "" }}
       {{ currentRouteTitle }}
-    </div>
+    </UiButton>
 
-    <div ref="sidebarRef" :class="['sidebar', 'sidebar-detail', { 'mobile-open': isMobileOpen }]">
-      <div class="environment-image-container">
-        <img
-          v-if="environment?.environmentImage"
-          :src="`${environment.environmentImage}`"
-          class="environment-image"
-        />
-        <icon-fa6-solid:image v-else class="placeholder-image" />
-      </div>
+    <div v-if="isMobileOpen" class="detail-sidebar-overlay" @click="isMobileOpen = false" />
 
-      <div class="environment-name">
-        <div class="sidebar-section-label">Environment:</div>
-        <h4>{{ environment?.name }}</h4>
-        <status-icon :status="environment?.status ?? ''" />
-        <div>
-          <a :href="environment?.url" data-tooltip="Go to storefront" target="_blank">
-            <icon-fa6-solid:store />
-            Storefront
-          </a>
-          &nbsp;/&nbsp;
-          <a
-            :href="(environment?.url ?? '') + '/admin'"
-            data-tooltip="Go to shopware admin"
-            target="_blank"
-          >
-            <icon-fa6-solid:user-gear />
-            Admin
-          </a>
+    <aside :class="['detail-sidebar', { 'mobile-open': isMobileOpen }]">
+      <div class="detail-sidebar-header">
+        <div class="detail-sidebar-brand">
+          <img
+            v-if="environment?.environmentImage"
+            :src="`${environment.environmentImage}`"
+            class="detail-sidebar-brand-image"
+          />
+          <icon-fa6-solid:image v-else class="detail-sidebar-brand-fallback" />
+        </div>
+
+        <div class="detail-sidebar-meta">
+          <div class="detail-sidebar-organization">{{ environment.organizationName }}</div>
+          <div class="detail-sidebar-title-row">
+            <h4>{{ environment?.name }}</h4>
+            <status-icon :status="environment?.status ?? ''" />
+          </div>
+          <div class="detail-sidebar-subtitle">{{ environmentHost }}</div>
         </div>
       </div>
 
-      <nav class="nav-main">
-        <router-link
-          v-for="item in detailNavigation"
-          :key="item.name"
-          :to="{
-            name: item.route,
-            params: {
-              organizationId: route.params.organizationId,
-              environmentId: route.params.environmentId,
-            },
-          }"
-          :class="{
-            'nav-link': true,
-            active: isRouteActive(item.route),
-          }"
-          active-class=""
-          exact-active-class=""
+      <div class="detail-sidebar-content">
+        <div class="detail-sidebar-group">
+          <div class="detail-sidebar-group-label">Navigation</div>
+          <nav class="detail-sidebar-menu">
+            <router-link
+              v-for="item in detailNavigation"
+              :key="item.name"
+              :to="{
+                name: item.route,
+                params: {
+                  organizationId: route.params.organizationId,
+                  environmentId: route.params.environmentId,
+                },
+              }"
+              :class="{
+                'detail-sidebar-menu-button': true,
+                active: isRouteActive(item.route),
+              }"
+              active-class=""
+              exact-active-class=""
+            >
+              <component
+                :is="$router.resolve({ name: item.route }).meta.icon"
+                v-if="$router.resolve({ name: item.route }).meta.icon"
+                class="detail-sidebar-menu-icon"
+              />
+              <span class="detail-sidebar-menu-label">{{
+                $t($router.resolve({ name: item.route }).meta.titleKey ?? "")
+              }}</span>
+              <span v-if="item.count !== undefined" class="detail-sidebar-menu-count">
+                {{ item.count }}
+              </span>
+            </router-link>
+          </nav>
+        </div>
+      </div>
+
+      <div class="detail-sidebar-footer">
+        <a
+          :href="environment?.url"
+          class="detail-sidebar-menu-button"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <component
-            :is="$router.resolve({ name: item.route }).meta.icon"
-            v-if="$router.resolve({ name: item.route }).meta.icon"
-            class="nav-link-icon"
-          />
-          <span class="nav-link-name">{{
-            $t($router.resolve({ name: item.route }).meta.titleKey ?? "")
-          }}</span>
-          <span v-if="item.count !== undefined" class="nav-link-count">{{ item.count }}</span>
-        </router-link>
-      </nav>
-    </div>
+          <icon-fa6-solid:store class="detail-sidebar-menu-icon" />
+          <span class="detail-sidebar-menu-label">Storefront</span>
+        </a>
+
+        <a
+          :href="(environment?.url ?? '') + '/admin'"
+          class="detail-sidebar-menu-button"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <icon-fa6-solid:user-gear class="detail-sidebar-menu-icon" />
+          <span class="detail-sidebar-menu-label">Admin</span>
+        </a>
+      </div>
+    </aside>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { components } from "@/types/api";
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import StatusIcon from "@/components/StatusIcon.vue";
@@ -85,8 +103,6 @@ const route = useRoute();
 const { t } = useI18n();
 
 const isMobileOpen = ref(false);
-const sidebarRef = ref<HTMLElement | null>(null);
-const toggleRef = ref<HTMLElement | null>(null);
 
 const props = defineProps<{
   environment: components["schemas"]["EnvironmentDetail"] | null;
@@ -97,11 +113,21 @@ const currentRouteTitle = computed(() => {
   return typeof titleKey === "string" ? t(titleKey) : "";
 });
 
+const environmentHost = computed(() => {
+  if (!props.environment?.url) {
+    return "No URL configured";
+  }
+
+  try {
+    return new URL(props.environment.url).host;
+  } catch {
+    return props.environment.url;
+  }
+});
+
 const isRouteActive = (routeName: string) => {
-  // Exact match
   if (route.name === routeName) return true;
 
-  // Check if current route is a child of deployments
   if (
     routeName === "account.environments.detail.deployments" &&
     route.name === "account.environments.detail.deployment"
@@ -158,28 +184,6 @@ function toggleMobileOpen() {
   isMobileOpen.value = !isMobileOpen.value;
 }
 
-function handleClickOutside(event: MouseEvent) {
-  if (!isMobileOpen.value) return;
-
-  // Check if click was outside both the sidebar and the toggle button
-  const clickedElement = event.target as Node;
-  const isClickInsideSidebar = sidebarRef.value?.contains(clickedElement) ?? false;
-  const isClickOnToggle = toggleRef.value?.contains(clickedElement) ?? false;
-
-  if (!isClickInsideSidebar && !isClickOnToggle) {
-    isMobileOpen.value = false;
-  }
-}
-
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
-
-// Close sidebar when route changes
 watch(route, () => {
   if (isMobileOpen.value) {
     isMobileOpen.value = false;
@@ -188,107 +192,232 @@ watch(route, () => {
 </script>
 
 <style scoped>
-.sidebar-wrapper {
+.detail-sidebar-shell {
   display: block;
   position: relative;
 }
 
-.sidebar-detail-toggle {
-  border-color: transparent;
+.detail-sidebar-mobile-trigger {
   margin-bottom: 1rem;
-  background-color: #0284c7;
 
-  &:after {
-    content: "";
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    margin-top: -2px;
-    border: 5px solid transparent;
-    border-top-color: #fff;
-  }
-
-  @media all and (min-width: 1024px) {
+  @media (min-width: 768px) {
     display: none;
   }
 }
 
-.sidebar {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% - 0.9rem);
+.detail-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.45);
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.detail-sidebar {
+  position: fixed;
+  inset-y: 0;
   left: 0;
-  right: 0;
-  display: none;
-  border: 1px solid var(--panel-border-color);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: 16rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  background-color: var(--panel-background);
+  color: var(--sidebar-nav-link-color);
+  border-right: 1px solid var(--panel-border-color);
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
 
   &.mobile-open {
-    display: block;
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  @media all and (min-width: 1024px) {
+  @media (min-width: 768px) {
     position: static;
-    display: block;
-    border: unset;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: none;
   }
 }
 
-.environment-image-container {
-  margin-top: 1.5rem;
+.detail-sidebar-header {
   display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--panel-border-color);
+  overflow: hidden;
+}
+
+.detail-sidebar-brand {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--panel-border-color);
-
-  @media (min-width: 640px) {
-    grid-column: 2 / span 1;
-    grid-row: 1 / span 1;
-    margin-top: 0;
-  }
-
-  @media (min-width: 960px) {
-    grid-column: 3 / span 1;
-    grid-row: 1 / span 1;
-  }
+  background: var(--item-background);
+  box-shadow: inset 0 0 0 1px var(--panel-border-color);
 }
 
-.placeholder-image {
-  color: #e5e7eb;
-  font-size: 9rem;
+.detail-sidebar-brand-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.environment-name {
-  padding: 0 0 1rem 0.75rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--panel-border-color);
+.detail-sidebar-brand-fallback {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--text-color-muted);
+}
+
+.detail-sidebar-meta {
   display: flex;
-  flex-flow: row wrap;
-  justify-content: space-between;
-  gap: 0.5rem;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.15rem;
+}
 
-  .sidebar-section-label {
-    flex: 1;
-    width: 100%;
-  }
+.detail-sidebar-organization {
+  font-size: 0.75rem;
+  color: var(--text-color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-sidebar-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
 
   h4 {
-    width: calc(100% - 1.5rem);
-  }
-
-  .icon-status {
-    margin-top: 0.2rem;
-    flex-shrink: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-color);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
-.nav-link-count {
+.detail-sidebar-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem;
+}
+
+.detail-sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.detail-sidebar-group-label {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-color-muted);
+}
+
+.detail-sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.detail-sidebar-menu-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  min-height: 34px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sidebar-nav-link-color);
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+
+  &:hover {
+    background-color: var(--button-ghost-hover-background);
+    color: var(--text-color);
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--primary-color);
+  }
+
+  &.active,
+  &.router-link-active {
+    background-color: var(--button-ghost-hover-background);
+    color: var(--text-color);
+  }
+}
+
+.detail-sidebar-menu-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--menu-icon-color);
+}
+
+.detail-sidebar-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-sidebar-menu-count {
   margin-left: auto;
-  background-color: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  background-color: var(--item-hover-background);
   color: inherit;
   border-radius: 9999px;
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.detail-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--panel-border-color);
 }
 </style>

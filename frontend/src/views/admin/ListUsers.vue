@@ -47,26 +47,28 @@
 
       <template #cell-actions="{ row }">
         <div class="actions-group">
-          <button
+          <UiButton
             v-if="row.id != sessionData?.user?.id"
-            class="btn btn-sm btn-primary"
+            size="sm"
+            variant="primary"
             @click="impersonateUser(row.id)"
           >
             <icon-fa6-solid:user-secret class="icon" />
             {{ $t("admin.impersonate") }}
-          </button>
+          </UiButton>
 
-          <button
+          <UiButton
             v-if="!row.banned && row.id != sessionData?.user?.id"
-            class="btn btn-sm btn-danger"
+            size="sm"
+            variant="destructive"
             @click="banUser(row.id)"
           >
             {{ $t("admin.ban") }}
-          </button>
+          </UiButton>
 
-          <button v-else-if="row.banned" class="btn btn-sm" @click="unbanUser(row.id)">
+          <UiButton v-else-if="row.banned" size="sm" @click="unbanUser(row.id)">
             {{ $t("admin.unban") }}
-          </button>
+          </UiButton>
         </div>
       </template>
     </DataTable>
@@ -77,19 +79,19 @@
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
-      <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+      <UiButton size="sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
         {{ $t("common.previous") }}
-      </button>
+      </UiButton>
       <span class="page-info">{{
         $t("common.pageOf", { current: currentPage, total: totalPages })
       }}</span>
-      <button
-        class="btn btn-sm"
+      <UiButton
+        size="sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
         {{ $t("common.next") }}
-      </button>
+      </UiButton>
     </div>
   </Panel>
 </template>

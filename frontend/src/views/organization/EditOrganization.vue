@@ -3,13 +3,12 @@
     v-if="organization"
     :title="$t('organization.editTitle', { name: organization.name })"
   >
-    <router-link
+    <UiButton
       :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
       type="button"
-      class="btn"
     >
       {{ $t("common.cancel") }}
-    </router-link>
+    </UiButton>
   </header-container>
 
   <main-container v-if="organization">
@@ -30,11 +29,11 @@
         </form-group>
 
         <div class="form-submit">
-          <button type="submit" class="btn btn-primary">
+          <UiButton type="submit" variant="primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
             {{ $t("common.save") }}
-          </button>
+          </UiButton>
         </div>
       </vee-form>
     </Panel>
@@ -45,10 +44,14 @@
     >
       <p>{{ $t("organization.deleteOrgWarning") }}</p>
 
-      <button type="button" class="btn btn-danger" @click="showOrganizationDeletionModal = true">
+      <UiButton
+        type="button"
+        variant="destructive"
+        @click="showOrganizationDeletionModal = true"
+      >
         <icon-fa6-solid:trash class="icon" />
         {{ $t("organization.deleteOrganization") }}
-      </button>
+      </UiButton>
     </Panel>
 
     <delete-confirmation-modal

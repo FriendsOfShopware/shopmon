@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { api, getToken } from "../helpers/api";
 
 interface SessionUser {
@@ -58,11 +58,23 @@ export async function fetchSession(): Promise<SessionData | null> {
   return _pending;
 }
 
+export async function setActiveOrganization(organizationId: string): Promise<void> {
+  await api.POST("/auth/set-active-organization" as any, {
+    body: { organizationId },
+  });
+  _fetched.value = false;
+  _pending = null;
+  await fetchSession();
+}
+
 export function useSession() {
   if (!_fetched.value) {
     fetchSession();
   }
-  return { session, loading, fetchSession };
+
+  const activeOrganizationId = computed(() => session.value?.session.activeOrganizationId ?? null);
+
+  return { session, loading, fetchSession, activeOrganizationId, setActiveOrganization };
 }
 
 export function clearSession() {

@@ -1,13 +1,13 @@
 <template>
   <header-container v-if="organization?.name" :title="organization.name">
-    <router-link
+    <UiButton
       :to="{ name: 'account.organizations.edit', params: { organizationId: organization.id } }"
       type="button"
-      class="btn btn-primary"
+      variant="primary"
     >
       <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
       {{ $t("organization.editOrganization") }}
-    </router-link>
+    </UiButton>
   </header-container>
 
   <main-container v-if="organization">
@@ -31,10 +31,10 @@
 
     <Panel :title="$t('common.members')">
       <template #action>
-        <button class="btn btn-sm btn-primary" type="button" @click="showAddMemberModal = true">
+        <UiButton size="sm" variant="primary" type="button" @click="showAddMemberModal = true">
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
           {{ $t("common.add") }}
-        </button>
+        </UiButton>
       </template>
 
       <DataTable
@@ -58,7 +58,7 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <button
+          <UiButton
             v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
             class="tooltip tooltip-top-left"
@@ -66,7 +66,7 @@
             @click="openChangeRoleModal(row as OrganizationMember)"
           >
             <icon-fa6-solid:user-pen aria-hidden="true" class="icon" />
-          </button>
+          </UiButton>
           <button
             v-if="row.userId !== sessionData?.user?.id && allowedToManageMembers"
             type="button"
@@ -105,14 +105,15 @@
 
     <Panel :title="$t('organization.ssoConfig')">
       <template #action>
-        <router-link
+        <UiButton
           :to="{ name: 'account.organizations.sso', params: { organizationId: organization.id } }"
           type="button"
-          class="btn btn-sm btn-primary"
+          size="sm"
+          variant="primary"
         >
           <icon-fa6-solid:key class="icon" aria-hidden="true" />
           {{ $t("organization.manageSso") }}
-        </router-link>
+        </UiButton>
       </template>
 
       <div v-if="ssoProviders.length === 0" class="sso-empty">
@@ -137,9 +138,9 @@
         {{ $t("organization.leaveOrgWarning") }}
       </p>
 
-      <button class="btn btn-danger mt-2" @click="leaveOrganization()">
+      <UiButton class="mt-2" variant="destructive" @click="leaveOrganization()">
         {{ $t("organization.leaveOrganization") }}
-      </button>
+      </UiButton>
     </Panel>
 
     <modal :show="showAddMemberModal" close-x-mark @close="showAddMemberModal = false">
@@ -168,15 +169,20 @@
       </template>
 
       <template #footer>
-        <button type="reset" class="btn" form="addMemberForm" @click="showAddMemberModal = false">
+        <UiButton type="reset" form="addMemberForm" @click="showAddMemberModal = false">
           {{ $t("common.cancel") }}
-        </button>
+        </UiButton>
 
-        <button :disabled="isSubmitting" type="submit" class="btn btn-primary" form="addMemberForm">
+        <UiButton
+          :disabled="isSubmitting"
+          type="submit"
+          variant="primary"
+          form="addMemberForm"
+        >
           <icon-fa6-solid:plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           {{ $t("common.add") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
 
@@ -199,20 +205,24 @@
       </template>
 
       <template #footer>
-        <button type="reset" class="btn" form="changeRoleForm" @click="showChangeRoleModal = false">
+        <UiButton
+          type="reset"
+          form="changeRoleForm"
+          @click="showChangeRoleModal = false"
+        >
           {{ $t("common.cancel") }}
-        </button>
+        </UiButton>
 
-        <button
+        <UiButton
           :disabled="isChangingRole"
           type="submit"
-          class="btn btn-primary"
+          variant="primary"
           form="changeRoleForm"
         >
           <icon-fa6-solid:floppy-disk v-if="!isChangingRole" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           {{ $t("common.save") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
   </main-container>

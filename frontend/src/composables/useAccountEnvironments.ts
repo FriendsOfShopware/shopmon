@@ -23,9 +23,15 @@ export function fetchAccountEnvironments(): Promise<AccountEnvironment[]> {
   return _pending;
 }
 
+export function resetAccountEnvironments(): void {
+  _fetched.value = false;
+  _pending = null;
+  environments.value = [];
+}
+
 export function useAccountEnvironments() {
   if (!_fetched.value) {
     fetchAccountEnvironments();
   }
-  return { environments, fetchAccountEnvironments };
+  return { environments, fetchAccountEnvironments, resetAccountEnvironments };
 }

@@ -31,13 +31,13 @@
         </div>
 
         <div class="empty-shop-cta">
-          <router-link
+          <UiButton
             :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }"
-            class="btn btn-primary"
+            variant="primary"
           >
             <icon-fa6-solid:plus class="icon" aria-hidden="true" />
             Create Shop
-          </router-link>
+          </UiButton>
         </div>
       </div>
     </Panel>
@@ -81,9 +81,9 @@
           <div class="environment-token-display">
             <code>{{ shopToken }}</code>
 
-            <button type="button" class="btn btn-sm btn-icon" @click="copyToken">
+            <UiButton type="button" size="sm" icon-only @click="copyToken">
               <icon-fa6-solid:copy />
-            </button>
+            </UiButton>
           </div>
         </form-group>
 
@@ -103,9 +103,9 @@
             </a>
           </template>
 
-          <button type="button" class="btn btn-secondary" @click="openPluginModal">
+          <UiButton type="button" @click="openPluginModal">
             {{ $t("environment.connectPlugin") }}
-          </button>
+          </UiButton>
 
           <InputField
             name="clientId"
@@ -120,11 +120,11 @@
         </form-group>
 
         <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
             {{ $t("common.save") }}
-          </button>
+          </UiButton>
         </div>
       </vee-form>
     </Panel>

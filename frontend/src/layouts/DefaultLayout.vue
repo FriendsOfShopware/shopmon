@@ -4,29 +4,30 @@
     <div class="top-bar">
       <div class="top-bar-container container">
         <div class="top-bar-logo">
-          <router-link :to="{ name: 'home' }">
+          <UiButton :to="{ name: 'home' }">
             <logo class="nav-logo-img" />
-          </router-link>
+          </UiButton>
         </div>
 
         <div class="top-bar-actions">
-          <router-link
+          <UiButton
             v-if="session"
             :to="{ name: 'account.dashboard' }"
-            class="btn btn-primary btn-sm"
+            variant="primary"
+            size="sm"
           >
             <icon-ri:dashboard-fill class="icon" />
             {{ $t("nav.dashboard") }}
-          </router-link>
+          </UiButton>
           <template v-else>
-            <router-link :to="{ name: 'account.login' }" class="btn btn-primary btn-sm">
+            <UiButton :to="{ name: 'account.login' }" variant="primary" size="sm">
               <icon-fa6-solid:right-to-bracket class="icon" />
               {{ $t("nav.login") }}
-            </router-link>
-            <router-link :to="{ name: 'account.register' }" class="btn btn-primary btn-sm">
+            </UiButton>
+            <UiButton :to="{ name: 'account.register' }" variant="primary" size="sm">
               <icon-fa6-solid:user-plus class="icon" />
               {{ $t("nav.register") }}
-            </router-link>
+            </UiButton>
           </template>
 
           <button class="action action-dark-mode" type="button" @click="toggleDarkMode">

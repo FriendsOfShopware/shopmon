@@ -2,48 +2,42 @@
   font-size: 0.75rem;
   line-height: 1;
   font-weight: 600;
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  background-color: #d1d5db;
-  color: var(--text-color);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background-color: var(--badge-background);
+  color: var(--badge-color);
   vertical-align: 0.2rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--panel-border-color) 90%, transparent);
 
   &:not(:first-child) {
     margin-left: 0.5rem;
   }
 }
 
-.dark .badge {
-  color: #111827;
-}
-
 .badge-primary {
-  background-color: #dbeafe;
-  color: #1d4ed8;
-}
-
-.dark .badge-primary {
-  background-color: #1e3a5f;
-  color: #93c5fd;
+  background-color: color-mix(in srgb, var(--primary-color) 12%, var(--panel-background));
+  color: var(--primary-color);
 }
 
 .badge-info {
-  background-color: var(--info-color);
-  color: #fff;
+  background-color: color-mix(in srgb, var(--info-color) 12%, var(--panel-background));
+  color: var(--info-color);
 }
 
 .badge-warning {
-  background-color: var(--warning-color);
+  background-color: color-mix(in srgb, var(--warning-color) 18%, var(--panel-background));
+  color: color-mix(in srgb, var(--warning-color) 85%, var(--text-color));
 }
 
 .badge-error,
 .badge-danger {
-  background-color: var(--error-color);
-  color: #fff;
+  background-color: color-mix(in srgb, var(--error-color) 12%, var(--panel-background));
+  color: var(--error-color);
 }
 
 .badge-success {
-  background-color: #10b981;
-  color: #fff;
+  background-color: color-mix(in srgb, var(--success-color) 14%, var(--panel-background));
+  color: var(--success-color);
 }

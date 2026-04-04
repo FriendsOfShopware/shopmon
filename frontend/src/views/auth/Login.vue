@@ -4,7 +4,7 @@
     <p>
       {{ $t("auth.newToShopmon") }}
       {{ " " }}
-      <router-link :to="{ name: 'account.register' }"> {{ $t("auth.createAccount") }} </router-link>
+      <UiButton :to="{ name: 'account.register' }"> {{ $t("auth.createAccount") }} </UiButton>
     </p>
   </div>
 
@@ -31,11 +31,11 @@
       />
     </div>
 
-    <button type="submit" class="btn btn-primary btn-block" :disabled="isSubmitting">
+    <UiButton type="submit" variant="primary" block :disabled="isSubmitting">
       <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
       {{ $t("auth.signInButton") }}
-    </button>
+    </UiButton>
 
     <div>
       <router-link :to="{ name: 'account.forgot.password' }">
@@ -47,9 +47,10 @@
   <div class="passkey-container">
     <div class="text-divider">{{ $t("common.or") }}</div>
 
-    <button
+    <UiButton
       type="button"
-      class="btn btn-primary btn-block btn-passkey"
+      variant="primary"
+      block
       :disabled="isAuthenticated"
       @click="webauthnLogin"
     >
@@ -60,18 +61,19 @@
       />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
       {{ $t("auth.loginPasskey") }}
-    </button>
+    </UiButton>
 
-    <button
+    <UiButton
       type="button"
-      class="btn btn-github btn-block"
+      variant="github"
+      block
       :disabled="isGithubLoading"
       @click="githubLogin"
     >
       <icon-mdi:github v-if="!isGithubLoading" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
       {{ $t("auth.continueGithub") }}
-    </button>
+    </UiButton>
 
     <div class="sso-section">
       <div class="text-divider">{{ $t("auth.enterpriseSSO") }}</div>
@@ -83,15 +85,15 @@
         @keyup.enter="ssoLogin"
       >
         <template #append>
-          <button
+          <UiButton
             type="button"
-            class="btn btn-secondary icon-only"
+            icon-only
             :disabled="isSSOLoading || !ssoEmail"
             @click="ssoLogin"
           >
             <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
-          </button>
+          </UiButton>
         </template>
       </BaseInput>
       <p class="sso-help">{{ $t("auth.ssoHelp") }}</p>
@@ -270,23 +272,6 @@ async function ssoLogin() {
 
   .text-divider {
     color: #6b7280;
-  }
-}
-
-.btn-github {
-  border-color: #24292e;
-  color: #fff;
-  background-color: #24292e;
-
-  &:hover {
-    background-color: #1a1e22;
-    border-color: #1a1e22;
-    color: #fff;
-  }
-
-  .icon {
-    width: 1.25rem;
-    height: 1.25rem;
   }
 }
 

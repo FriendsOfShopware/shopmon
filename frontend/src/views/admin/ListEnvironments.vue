@@ -84,19 +84,19 @@
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
-      <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+      <UiButton size="sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
         {{ $t("common.previous") }}
-      </button>
+      </UiButton>
       <span class="page-info">{{
         $t("common.pageOf", { current: currentPage, total: totalPages })
       }}</span>
-      <button
-        class="btn btn-sm"
+      <UiButton
+        size="sm"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
         {{ $t("common.next") }}
-      </button>
+      </UiButton>
     </div>
   </Panel>
 </template>

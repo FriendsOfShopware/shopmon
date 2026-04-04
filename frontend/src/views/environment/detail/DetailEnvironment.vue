@@ -24,10 +24,10 @@
                 {{ latestShopwareVersion }}
               </a>
 
-              <button class="badge badge-info" type="button" @click="openUpdateWizard">
+              <UiButton class="badge badge-info" type="button" @click="openUpdateWizard">
                 <icon-fa6-solid:rotate />
                 {{ $t("shopDetail.compatibilityCheck") }}
-              </button>
+              </UiButton>
             </template>
           </dd>
         </div>
@@ -133,14 +133,16 @@
           <dd class="shop-token-value">
             <code>{{ environment.environmentToken }}</code>
 
-            <button
+            <UiButton
               type="button"
-              class="btn btn-sm btn-icon tooltip-top-center"
+              class="tooltip-top-center"
+              size="sm"
+              icon-only
               data-tooltip="Copy token"
               @click="copyToken"
             >
               <icon-fa6-solid:copy />
-            </button>
+            </UiButton>
           </dd>
         </div>
       </dl>
@@ -173,7 +175,7 @@
     </ul>
 
     <div class="issue-more">
-      <router-link
+      <UiButton
         :to="{
           name: 'account.environments.detail.checks',
           params: {
@@ -181,11 +183,11 @@
             shopId: $route.params.environmentId,
           },
         }"
-        class="btn btn-sm"
+        size="sm"
       >
         <icon-fa6-solid:circle-check class="icon" />
         {{ $t("shopDetail.viewAllChecks") }}
-      </router-link>
+      </UiButton>
     </div>
   </Panel>
 
@@ -227,7 +229,7 @@
     </ul>
 
     <div class="issue-more">
-      <router-link
+      <UiButton
         :to="{
           name: 'account.environments.detail.extensions',
           params: {
@@ -235,11 +237,11 @@
             shopId: $route.params.environmentId,
           },
         }"
-        class="btn btn-sm"
+        size="sm"
       >
         <icon-fa6-solid:plug class="icon" />
         {{ $t("shopDetail.viewAllExtensions") }}
-      </router-link>
+      </UiButton>
     </div>
   </Panel>
 
@@ -270,7 +272,7 @@
     </ul>
 
     <div class="issue-more">
-      <router-link
+      <UiButton
         :to="{
           name: 'account.environments.detail.tasks',
           params: {
@@ -278,11 +280,11 @@
             shopId: $route.params.environmentId,
           },
         }"
-        class="btn btn-sm"
+        size="sm"
       >
         <icon-fa6-solid:list-check class="icon" />
         {{ $t("shopDetail.viewAllScheduledTasks") }}
-      </router-link>
+      </UiButton>
     </div>
   </Panel>
 
@@ -315,7 +317,7 @@
     </div>
 
     <div class="issue-more">
-      <router-link
+      <UiButton
         :to="{
           name: 'account.environments.detail.changelog',
           params: {
@@ -323,11 +325,11 @@
             shopId: $route.params.environmentId,
           },
         }"
-        class="btn btn-sm"
+        size="sm"
       >
         <icon-fa6-solid:file-waveform class="icon" />
         {{ $t("shopDetail.viewAllChanges") }}
-      </router-link>
+      </UiButton>
     </div>
   </Panel>
 

@@ -43,11 +43,11 @@
         </form-group>
 
         <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
             {{ $t("common.save") }}
-          </button>
+          </UiButton>
         </div>
       </vee-form>
     </Panel>

@@ -35,8 +35,9 @@ function getIconComponent(type: string) {
   display: flex;
   align-items: flex-start;
   padding: 1rem;
-  border-radius: 0.375rem;
+  border-radius: 0.875rem;
   border: 1px solid transparent;
+  box-shadow: var(--surface-shadow);
 }
 
 .alert-icon {
@@ -56,22 +57,22 @@ function getIconComponent(type: string) {
 }
 
 .alert-info {
-  border-color: var(--info-color);
-  background-color: var(--info-background);
+  border-color: color-mix(in srgb, var(--info-color) 30%, var(--panel-border-color));
+  background-color: color-mix(in srgb, var(--info-color) 10%, var(--panel-background));
 }
 
 .alert-success {
-  border-color: var(--success-color);
-  background-color: var(--success-background);
+  border-color: color-mix(in srgb, var(--success-color) 30%, var(--panel-border-color));
+  background-color: color-mix(in srgb, var(--success-color) 10%, var(--panel-background));
 }
 
 .alert-warning {
-  border-color: var(--warning-color);
-  background-color: var(--warning-background);
+  border-color: color-mix(in srgb, var(--warning-color) 34%, var(--panel-border-color));
+  background-color: color-mix(in srgb, var(--warning-color) 12%, var(--panel-background));
 }
 
 .alert-error {
-  border-color: var(--error-color);
-  background-color: var(--error-background);
+  border-color: color-mix(in srgb, var(--error-color) 30%, var(--panel-border-color));
+  background-color: color-mix(in srgb, var(--error-color) 10%, var(--panel-background));
 }
 </style>

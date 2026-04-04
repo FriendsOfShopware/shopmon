@@ -49,42 +49,41 @@ withDefaults(
 .panel {
   background-color: var(--panel-background);
   padding: 1.25rem;
-  border-radius: 0.375rem;
+  border-radius: 1rem;
   box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    inset 0 0 0 1px var(--panel-border-color),
+    var(--surface-shadow);
   margin-bottom: 2rem;
 }
 
-.dark .panel {
-  box-shadow: none;
-}
-
 .panel-title {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  font-weight: 500;
-  padding-bottom: 0.25rem;
+  font-size: 1.05rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  padding-bottom: 0.75rem;
   margin-bottom: 1rem;
   border-bottom: 1px solid var(--panel-border-color);
+  color: var(--item-title-color);
 
   .icon {
-    margin-right: 0.25rem;
+    margin-right: 0.375rem;
   }
 }
 
 .panel-header {
   display: flex;
-  padding-bottom: 0.75rem;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
   margin-bottom: 1rem;
   justify-content: space-between;
   align-items: flex-start;
   border-bottom: 1px solid var(--panel-border-color);
 
   h3 {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-    font-weight: 500;
+    font-size: 1.05rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    color: var(--item-title-color);
   }
 }
 
@@ -101,8 +100,7 @@ withDefaults(
 
 .panel-table {
   padding: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 
   @media (min-width: 768px) {
     overflow-y: hidden;
@@ -110,7 +108,7 @@ withDefaults(
 }
 
 .panel-table > .panel-title {
-  padding: 1.25rem 1.25rem 0.75rem;
+  padding: 1.25rem 1.25rem 0.9rem;
   margin-bottom: 0;
 }
 

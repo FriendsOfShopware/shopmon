@@ -1,9 +1,9 @@
 <template>
   <header-container :title="$t('organization.title')">
-    <router-link :to="{ name: 'account.organizations.new' }" type="button" class="btn btn-primary">
+    <UiButton :to="{ name: 'account.organizations.new' }" type="button" variant="primary">
       <icon-fa6-solid:plus class="icon" aria-hidden="true" />
       {{ $t("organization.addOrganization") }}
-    </router-link>
+    </UiButton>
   </header-container>
 
   <main-container>

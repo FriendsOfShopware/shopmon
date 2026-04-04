@@ -146,6 +146,65 @@ func (q *Queries) GetUserChangelogs(ctx context.Context, userID string) ([]GetUs
 	return items, nil
 }
 
+const getUserChangelogsByOrg = `-- name: GetUserChangelogsByOrg :many
+SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
+       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_changelog ec
+JOIN environment e ON e.id = ec.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY ec.date DESC
+LIMIT 10
+`
+
+type GetUserChangelogsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserChangelogsByOrgRow struct {
+	ID                          int32            `json:"id"`
+	EnvironmentID               *int32           `json:"environment_id"`
+	Extensions                  json.RawMessage  `json:"extensions"`
+	OldShopwareVersion          *string          `json:"old_shopware_version"`
+	NewShopwareVersion          *string          `json:"new_shopware_version"`
+	Date                        pgtype.Timestamp `json:"date"`
+	EnvironmentName             string           `json:"environment_name"`
+	EnvironmentOrganizationName string           `json:"environment_organization_name"`
+	EnvironmentOrganizationID   string           `json:"environment_organization_id"`
+}
+
+func (q *Queries) GetUserChangelogsByOrg(ctx context.Context, arg GetUserChangelogsByOrgParams) ([]GetUserChangelogsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserChangelogsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserChangelogsByOrgRow{}
+	for rows.Next() {
+		var i GetUserChangelogsByOrgRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.Extensions,
+			&i.OldShopwareVersion,
+			&i.NewShopwareVersion,
+			&i.Date,
+			&i.EnvironmentName,
+			&i.EnvironmentOrganizationName,
+			&i.EnvironmentOrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserEnvironments = `-- name: GetUserEnvironments :many
 SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
@@ -181,6 +240,70 @@ func (q *Queries) GetUserEnvironments(ctx context.Context, userID string) ([]Get
 	items := []GetUserEnvironmentsRow{}
 	for rows.Next() {
 		var i GetUserEnvironmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Favicon,
+			&i.Status,
+			&i.ShopwareVersion,
+			&i.LastScrapedAt,
+			&i.LastScrapedError,
+			&i.OrganizationID,
+			&i.OrganizationName,
+			&i.ShopID,
+			&i.ShopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserEnvironmentsByOrg = `-- name: GetUserEnvironmentsByOrg :many
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
+       e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
+FROM environment e
+JOIN member m ON m.organization_id = e.organization_id
+JOIN organization o ON o.id = e.organization_id
+LEFT JOIN shop s ON s.id = e.shop_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY e.name
+`
+
+type GetUserEnvironmentsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserEnvironmentsByOrgRow struct {
+	ID               int32            `json:"id"`
+	Name             string           `json:"name"`
+	Url              string           `json:"url"`
+	Favicon          *string          `json:"favicon"`
+	Status           string           `json:"status"`
+	ShopwareVersion  string           `json:"shopware_version"`
+	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError *string          `json:"last_scraped_error"`
+	OrganizationID   string           `json:"organization_id"`
+	OrganizationName string           `json:"organization_name"`
+	ShopID           *int32           `json:"shop_id"`
+	ShopName         *string          `json:"shop_name"`
+}
+
+func (q *Queries) GetUserEnvironmentsByOrg(ctx context.Context, arg GetUserEnvironmentsByOrgParams) ([]GetUserEnvironmentsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserEnvironmentsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserEnvironmentsByOrgRow{}
+	for rows.Next() {
+		var i GetUserEnvironmentsByOrgRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -244,6 +367,77 @@ func (q *Queries) GetUserExtensions(ctx context.Context, userID string) ([]GetUs
 	items := []GetUserExtensionsRow{}
 	for rows.Next() {
 		var i GetUserExtensionsRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Label,
+			&i.Version,
+			&i.LatestVersion,
+			&i.Active,
+			&i.Installed,
+			&i.StoreLink,
+			&i.RatingAverage,
+			&i.InstalledAt,
+			&i.Changelog,
+			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.EnvironmentUrl,
+			&i.EnvironmentOrganizationName,
+			&i.EnvironmentOrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserExtensionsByOrg = `-- name: GetUserExtensionsByOrg :many
+SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
+       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
+       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_extension ee
+JOIN environment e ON e.id = ee.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY ee.name, e.name
+`
+
+type GetUserExtensionsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserExtensionsByOrgRow struct {
+	Name                        string  `json:"name"`
+	Label                       string  `json:"label"`
+	Version                     string  `json:"version"`
+	LatestVersion               *string `json:"latest_version"`
+	Active                      bool    `json:"active"`
+	Installed                   bool    `json:"installed"`
+	StoreLink                   *string `json:"store_link"`
+	RatingAverage               *int32  `json:"rating_average"`
+	InstalledAt                 *string `json:"installed_at"`
+	Changelog                   []byte  `json:"changelog"`
+	EnvironmentID               int32   `json:"environment_id"`
+	EnvironmentName             string  `json:"environment_name"`
+	EnvironmentUrl              string  `json:"environment_url"`
+	EnvironmentOrganizationName string  `json:"environment_organization_name"`
+	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
+}
+
+func (q *Queries) GetUserExtensionsByOrg(ctx context.Context, arg GetUserExtensionsByOrgParams) ([]GetUserExtensionsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserExtensionsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserExtensionsByOrgRow{}
+	for rows.Next() {
+		var i GetUserExtensionsByOrgRow
 		if err := rows.Scan(
 			&i.Name,
 			&i.Label,
@@ -357,6 +551,56 @@ func (q *Queries) GetUserShops(ctx context.Context, userID string) ([]GetUserSho
 	items := []GetUserShopsRow{}
 	for rows.Next() {
 		var i GetUserShopsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.GitUrl,
+			&i.OrganizationID,
+			&i.OrganizationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserShopsByOrg = `-- name: GetUserShopsByOrg :many
+SELECT s.id, s.name, s.description, s.git_url, s.organization_id, o.name AS organization_name
+FROM shop s
+JOIN member m ON m.organization_id = s.organization_id
+JOIN organization o ON o.id = s.organization_id
+WHERE m.user_id = $1 AND s.organization_id = $2
+ORDER BY s.name
+`
+
+type GetUserShopsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserShopsByOrgRow struct {
+	ID               int32   `json:"id"`
+	Name             string  `json:"name"`
+	Description      *string `json:"description"`
+	GitUrl           *string `json:"git_url"`
+	OrganizationID   string  `json:"organization_id"`
+	OrganizationName string  `json:"organization_name"`
+}
+
+func (q *Queries) GetUserShopsByOrg(ctx context.Context, arg GetUserShopsByOrgParams) ([]GetUserShopsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserShopsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserShopsByOrgRow{}
+	for rows.Next() {
+		var i GetUserShopsByOrgRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,

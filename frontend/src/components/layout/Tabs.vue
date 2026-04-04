@@ -49,17 +49,16 @@ defineProps<{
   width: 100%;
   margin-bottom: 4rem;
   padding: 0;
-  overflow: hidden;
 }
 
 .tabs-list {
-  border-bottom: 1px solid var(--panel-border-color);
-  padding: 0 1.5rem;
-  gap: 1rem;
-  margin-bottom: -1px;
+  padding: 0.5rem;
+  gap: 0.375rem;
   display: grid;
   overflow-x: auto;
   overflow-y: hidden;
+  background: var(--recessed-background);
+  box-shadow: inset 0 -1px 0 var(--panel-border-color);
 
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -76,62 +75,48 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 0.75rem;
-  font-size: 1rem;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.95rem;
   font-weight: 500;
   position: relative;
-  transition: all 0.2s ease-in-out;
+  color: var(--text-color-muted);
+  border-radius: 0.75rem;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
   white-space: nowrap;
 
-  &::before {
-    content: "";
-    position: absolute;
-    bottom: -1px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 3px;
-    background-color: var(--primary-color);
-    transition: all 0.2s ease-in-out;
-  }
-
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: -1px;
-    left: -1.5rem;
-    right: -1.5rem;
-    height: 1px;
-    background-color: var(--panel-border-color);
-  }
-
   &:hover {
-    color: #0ea5e9;
-
-    &::before {
-      width: 100%;
-    }
+    color: var(--text-color);
+    background: var(--button-ghost-hover-background);
   }
 
   .icon {
-    margin-right: 0.5rem;
+    margin-right: 0.125rem;
   }
 
   .pill {
-    margin-left: 0.5rem;
+    margin-left: 0.125rem;
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--field-focus-ring-color);
   }
 }
 
 .tab-active {
-  color: #0ea5e9;
-
-  &::before {
-    width: 100%;
-  }
+  color: var(--text-color);
+  background: var(--panel-background);
+  box-shadow:
+    inset 0 0 0 1px var(--panel-border-color),
+    var(--surface-shadow);
 }
 
 .tab-panels {
-  margin-top: 1px;
+  margin-top: 0;
 }
 
 .tab-panel {

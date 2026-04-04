@@ -1,30 +1,29 @@
 <template>
   <header-container :title="$t('sso.title')">
-    <router-link
+    <UiButton
       :to="{
         name: 'account.organizations.detail',
         params: { organizationId: route.params.organizationId },
       }"
       type="button"
-      class="btn"
     >
       <icon-fa6-solid:arrow-left class="icon" aria-hidden="true" />
       {{ $t("sso.backToOrg") }}
-    </router-link>
+    </UiButton>
   </header-container>
 
   <main-container>
     <Panel :title="$t('sso.providers')">
       <template #action>
-        <button
+        <UiButton
           v-if="canManageOrganization"
           type="button"
-          class="btn btn-primary"
+          variant="primary"
           @click="openAddProviderModal"
         >
           <icon-fa6-solid:plus class="icon" aria-hidden="true" />
           {{ $t("sso.addProvider") }}
-        </button>
+        </UiButton>
       </template>
 
       <Alert type="info">
@@ -62,25 +61,24 @@
           </div>
 
           <div class="sso-provider-actions">
-            <button
+            <UiButton
               v-if="canManageOrganization"
               type="button"
-              class="btn btn-secondary"
               @click="openEditProviderModal(provider)"
             >
               <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
               {{ $t("common.edit") }}
-            </button>
+            </UiButton>
 
-            <button
+            <UiButton
               v-if="canManageOrganization"
               type="button"
-              class="btn btn-danger"
+              variant="destructive"
               @click="confirmDeleteProvider(provider)"
             >
               <icon-fa6-solid:trash class="icon" aria-hidden="true" />
               {{ $t("common.delete") }}
-            </button>
+            </UiButton>
           </div>
         </div>
       </div>
@@ -123,9 +121,8 @@
               @update:model-value="issuerUrl = $event"
             >
               <template v-if="!isEditMode" #append>
-                <button
+                <UiButton
                   type="button"
-                  class="btn btn-secondary"
                   :disabled="isDiscovering || !issuerUrl"
                   @click="discoverOpenIdConfig"
                 >
@@ -136,7 +133,7 @@
                   />
                   <icon-line-md:loading-twotone-loop v-else class="icon" />
                   {{ $t("sso.discover") }}
-                </button>
+                </UiButton>
               </template>
             </InputField>
             <p class="field-help">
@@ -213,14 +210,19 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn" @click="closeProviderModal">
+        <UiButton type="button" @click="closeProviderModal">
           {{ $t("common.cancel") }}
-        </button>
-        <button type="submit" class="btn btn-primary" form="providerForm" :disabled="isSubmitting">
+        </UiButton>
+        <UiButton
+          type="submit"
+          variant="primary"
+          form="providerForm"
+          :disabled="isSubmitting"
+        >
           <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
           <icon-line-md:loading-twotone-loop v-else class="icon" />
           {{ isEditMode ? $t("sso.updateProvider") : $t("sso.addProvider") }}
-        </button>
+        </UiButton>
       </template>
     </modal>
 

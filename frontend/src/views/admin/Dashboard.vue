@@ -61,12 +61,12 @@
 
     <!-- Action Links -->
     <div v-if="!loading && stats" class="action-links">
-      <router-link to="/admin/organizations" class="btn btn-primary">
+      <UiButton to="/admin/organizations" variant="primary">
         {{ $t("admin.manageOrgs") }}
-      </router-link>
-      <router-link to="/admin/environments" class="btn btn-primary">
+      </UiButton>
+      <UiButton to="/admin/environments" variant="primary">
         {{ $t("admin.manageEnvironments") }}
-      </router-link>
+      </UiButton>
     </div>
   </Panel>
 
@@ -453,23 +453,21 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
-.btn {
+.action-links .ui-button {
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
   display: inline-block;
   transition: all 0.2s ease;
-  cursor: pointer;
-  border: none;
 }
 
-.btn-primary {
+.action-links .ui-button--primary {
   background-color: var(--primary-color);
   color: white;
 }
 
-.btn-primary:hover {
+.action-links .ui-button--primary:hover {
   opacity: 0.9;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

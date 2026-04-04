@@ -183,6 +183,19 @@ func (h *AuthHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Auto-select first organization if none is active
+	if su.Session.ActiveOrganizationID == nil {
+		orgs, err := h.queries.ListUserOrganizations(r.Context(), su.User.ID)
+		if err == nil && len(orgs) > 0 {
+			orgID := orgs[0].ID
+			_ = h.queries.SetActiveOrganization(r.Context(), queries.SetActiveOrganizationParams{
+				ActiveOrganizationID: &orgID,
+				Token:                token,
+			})
+			su.Session.ActiveOrganizationID = &orgID
+		}
+	}
+
 	httputil.WriteJSON(w, http.StatusOK, currentSessionEnvelope{
 		User: authenticatedUserResponse{
 			ID:            su.User.ID,

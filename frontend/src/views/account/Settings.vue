@@ -10,10 +10,10 @@
       </form-group>
 
       <div class="form-submit">
-        <button type="button" class="btn btn-primary" @click="saveProfile">
+        <UiButton type="button" variant="primary" @click="saveProfile">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
           {{ $t("common.save") }}
-        </button>
+        </UiButton>
       </div>
     </Panel>
 
@@ -43,10 +43,10 @@
       </form-group>
 
       <div class="form-submit">
-        <button type="button" class="btn btn-primary" @click="saveEmail">
+        <UiButton type="button" variant="primary" @click="saveEmail">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
           {{ $t("common.save") }}
-        </button>
+        </UiButton>
       </div>
     </Panel>
 
@@ -107,10 +107,10 @@
       </form-group>
 
       <div class="form-submit">
-        <button type="button" class="btn btn-primary" @click="savePassword">
+        <UiButton type="button" variant="primary" @click="savePassword">
           <icon-fa6-solid:floppy-disk class="icon" aria-hidden="true" />
           {{ $t("common.save") }}
-        </button>
+        </UiButton>
       </div>
     </Panel>
 
@@ -121,20 +121,20 @@
       >
         <p>{{ $t("settings.githubLoginText") }}</p>
 
-        <button
+        <UiButton
           v-if="!connectedProviders.includes('github')"
           type="button"
-          class="btn btn-primary"
+          variant="primary"
           @click="linkSocial('github')"
         >
           <icon-fa6-brands:github class="icon" aria-hidden="true" />
           {{ $t("settings.linkGithub") }}
-        </button>
+        </UiButton>
 
-        <button v-else type="button" class="btn btn-danger" @click="unlinkSocial('github')">
+        <UiButton v-else type="button" variant="destructive" @click="unlinkSocial('github')">
           <icon-fa6-brands:github class="icon" aria-hidden="true" />
           {{ $t("settings.unlinkGithub") }}
-        </button>
+        </UiButton>
       </form-group>
     </Panel>
 
@@ -149,23 +149,23 @@
           :data="passkeys"
         >
           <template #cell-actions="{ row }">
-            <button
+            <UiButton
               type="button"
               class="tooltip-top-left"
               :data-tooltip="$t('common.delete')"
               @click="removePasskey(row.id)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
-            </button>
+            </UiButton>
           </template>
         </data-table>
       </form-group>
 
       <div class="form-submit">
-        <button type="button" class="btn btn-primary" @click="showPasskeyCreationModal = true">
+        <UiButton type="button" variant="primary" @click="showPasskeyCreationModal = true">
           <icon-material-symbols:passkey class="icon icon-passkey" aria-hidden="true" />
           {{ $t("settings.addDevice") }}
-        </button>
+        </UiButton>
       </div>
     </Panel>
 
@@ -180,7 +180,7 @@
           :data="sessions"
         >
           <template #cell-actions="{ row }">
-            <button
+            <UiButton
               v-if="row.id !== sessionData?.session?.id"
               type="button"
               class="tooltip-top-left"
@@ -188,7 +188,7 @@
               @click="removeSession(row)"
             >
               <icon-fa6-solid:trash aria-hidden="true" class="icon icon-error" />
-            </button>
+            </UiButton>
           </template>
         </data-table>
       </form-group>
@@ -231,21 +231,21 @@
 
       <p>{{ $t("settings.deleteAccountWarning") }}</p>
 
-      <button
+      <UiButton
         type="button"
-        class="btn btn-danger"
+        variant="destructive"
         :disabled="!canDeleteAccount"
         @click="showAccountDeletionModal = true"
       >
         <icon-fa6-solid:trash class="icon icon-trash" />
         {{ $t("settings.deleteAccount") }}
-      </button>
+      </UiButton>
     </Panel>
 
     <delete-confirmation-modal
       :show="showAccountDeletionModal"
       :title="$t('settings.deleteAccount')"
-      entity-name="your account"
+      :entity-name="$t('settings.accountEntityName')"
       :require-password="true"
       @close="showAccountDeletionModal = false"
       @confirm="deleteUser"
@@ -265,18 +265,18 @@
       </template>
 
       <template #footer>
-        <button type="button" class="btn btn-primary" @click="createPasskey">
+        <UiButton type="button" variant="primary" @click="createPasskey">
           {{ $t("common.create") }}
-        </button>
+        </UiButton>
 
-        <button
+        <UiButton
           ref="cancelButtonRef"
           type="button"
-          class="btn btn-cancel"
+          variant="ghost"
           @click="showPasskeyCreationModal = false"
         >
           {{ $t("common.cancel") }}
-        </button>
+        </UiButton>
       </template>
     </Modal>
   </main-container>
@@ -334,7 +334,7 @@ async function saveProfile() {
   }
 
   if (profileName.value.length < 5) {
-    alert.error("Name must be at least 5 characters");
+    alert.error(t("settings.nameMinLength"));
     return;
   }
 
@@ -343,11 +343,11 @@ async function saveProfile() {
   });
 
   if (error) {
-    alert.error((error as { message?: string }).message ?? "Failed to update name");
+    alert.error((error as { message?: string }).message ?? t("settings.updateNameFailed"));
     return;
   }
 
-  alert.success("Profile updated successfully");
+  alert.success(t("settings.profileUpdated"));
 }
 
 // Email
@@ -360,7 +360,7 @@ async function saveEmail() {
   }
 
   if (!emailCurrentPassword.value) {
-    alert.error("Please enter your current password");
+    alert.error(t("settings.currentPasswordRequired"));
     return;
   }
 
@@ -369,12 +369,12 @@ async function saveEmail() {
   });
 
   if (error) {
-    alert.error((error as { message?: string }).message ?? "Failed to change email");
+    alert.error((error as { message?: string }).message ?? t("settings.changeEmailFailed"));
     return;
   }
 
   emailCurrentPassword.value = "";
-  alert.success("Email updated successfully");
+  alert.success(t("settings.emailUpdated"));
 }
 
 // Password
@@ -390,17 +390,17 @@ async function savePassword() {
   }
 
   if (!currentPassword.value) {
-    alert.error("Please enter your current password");
+    alert.error(t("settings.currentPasswordRequired"));
     return;
   }
 
   if (newPassword.value.length < 8) {
-    alert.error("Password must be at least 8 characters");
+    alert.error(t("settings.passwordMinLength"));
     return;
   }
 
   if (newPassword.value !== confirmPassword.value) {
-    alert.error("Passwords do not match");
+    alert.error(t("settings.passwordsDoNotMatch"));
     return;
   }
 
@@ -409,14 +409,14 @@ async function savePassword() {
   });
 
   if (error) {
-    alert.error((error as { message?: string }).message ?? "Failed to change password");
+    alert.error((error as { message?: string }).message ?? t("settings.changePasswordFailed"));
     return;
   }
 
   currentPassword.value = "";
   newPassword.value = "";
   confirmPassword.value = "";
-  alert.success("Password changed successfully");
+  alert.success(t("settings.passwordChanged"));
 }
 
 // Data loading
@@ -513,7 +513,7 @@ async function createPasskey() {
     );
 
     if (optionsError || !optionsData) {
-      alert.error("Failed to get passkey registration options");
+      alert.error(t("settings.passkeyOptionsFailed"));
       return;
     }
 
@@ -535,7 +535,7 @@ async function createPasskey() {
     });
 
     if (registerError) {
-      alert.error("Failed to register passkey");
+      alert.error(t("settings.passkeyRegisterFailed"));
       return;
     }
 

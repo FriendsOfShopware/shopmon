@@ -3,14 +3,14 @@
     {{ $t("environment.sitespeedActivateDesc") }}
   </Alert>
   <div class="mb-1">
-    <a
+    <UiButton
       v-if="showSitespeedData"
-      class="btn btn-primary-outline"
+      variant="outline-primary"
       :href="environment?.sitespeedDetailUrl ?? undefined"
       target="_blank"
     >
       <i class="fa fa-chart-line" /> {{ $t("nav.sitespeed") }}
-    </a>
+    </UiButton>
   </div>
 
   <Panel v-if="showSitespeedData" class="chart-panel">

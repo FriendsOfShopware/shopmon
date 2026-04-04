@@ -37,7 +37,7 @@ const { locale, toggleLocale } = useLocale();
   justify-content: center;
   padding: 3rem 1rem;
 
-  .btn {
+  .ui-button {
     .icon {
       width: 1.25rem;
       height: 1.25rem;

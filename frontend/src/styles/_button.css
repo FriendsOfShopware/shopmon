@@ -12,110 +12,198 @@ button,
   cursor: pointer;
 }
 
-.btn {
+.ui-button {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 2px solid #404040;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.95rem;
+  border: 0;
   color: var(--text-color);
-  font-size: 1rem;
+  background-color: var(--button-secondary-background);
+  font-size: 0.95rem;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.75rem;
   outline: none;
-  transition: border-color 0.4s;
+  box-shadow:
+    inset 0 0 0 1px var(--button-secondary-border-color),
+    var(--surface-shadow);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-decoration: none;
+  user-select: none;
 
-  &.icon-only {
-    padding: 0.75rem 1rem;
+  &.ui-button--icon-only {
+    min-width: 2.25rem;
+    padding: 0.5rem;
   }
 
   .icon {
     width: 1rem;
     height: 1rem;
+    opacity: 0.75;
   }
 
-  &:not(.icon-only) {
+  &:not(.ui-button--icon-only) {
     .icon {
-      transition: opacity 0.4s;
-      opacity: 0.4;
-      margin: 0 0.5rem 0 -0.25rem;
+      transition: opacity 0.15s ease;
+      margin: 0 0.25rem 0 -0.1rem;
     }
 
-    &.btn-sm .icon {
-      margin: 0 0.35rem 0 -0.25rem;
+    &.ui-button--sm .icon {
+      margin: 0 0.2rem 0 -0.1rem;
     }
   }
 
   &:hover {
-    border-color: var(--primary-color);
+    background-color: var(--button-secondary-hover-background);
     color: var(--text-color);
+    box-shadow:
+      inset 0 0 0 1px var(--button-secondary-border-color),
+      var(--surface-shadow);
 
     .icon {
       &:not(:only-child) {
-        opacity: 0.6;
+        opacity: 1;
       }
     }
+  }
+
+  &:focus-visible {
+    box-shadow:
+      inset 0 0 0 1px var(--field-focus-ring-color),
+      0 0 0 3px var(--field-focus-shadow-color);
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: inset 0 0 0 1px var(--button-secondary-border-color);
   }
 }
 
-.btn-sm {
-  padding: 0.25rem 0.75rem;
-  font-size: 1rem;
+.ui-button--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--button-secondary-border-color);
 }
 
-.btn-primary {
-  border-color: var(--primary-color);
+.ui-button--sm {
+  min-height: 1.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 0.625rem;
+}
+
+.ui-button--secondary {
+  color: var(--text-color);
+  background-color: var(--button-secondary-background);
+}
+
+.ui-button--primary {
   color: #fff;
   background-color: var(--primary-color);
+  box-shadow: none;
 
   &:hover {
     background-color: #0284c7;
     color: #fff;
   }
-}
 
-.btn-primary-outline {
-  background: #0284c7;
-  border-color: transparent;
-  color: #fff;
-  transition: background 0.4s;
-
-  &:hover {
-    background: #0284c777;
-    color: #fff;
+  &:focus-visible {
+    box-shadow:
+      inset 0 0 0 1px #0284c7,
+      0 0 0 3px color-mix(in srgb, var(--primary-color) 22%, transparent);
   }
 }
 
-.btn-danger {
-  border-color: #dc2626;
-  color: #fff;
-  background-color: #dc2626;
+.ui-button--outline-primary {
+  background: color-mix(in srgb, var(--primary-color) 10%, var(--button-secondary-background));
+  color: var(--primary-color);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 26%, var(--button-secondary-border-color)),
+    var(--surface-shadow);
 
   &:hover {
-    border-color: #dc2626;
+    background: color-mix(in srgb, var(--primary-color) 16%, var(--button-secondary-background));
+    color: var(--primary-color);
+  }
+}
+
+.ui-button--destructive {
+  color: #fff;
+  background-color: #dc2626;
+  box-shadow: none;
+
+  &:hover {
     background-color: #b91c1c;
     color: #fff;
   }
 }
 
-.btn-danger-outline {
-  border-color: #dc2626;
+.ui-button--secondary-destructive {
+  color: var(--error-color);
+  background: var(--button-secondary-background);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--error-color) 45%, var(--button-secondary-border-color)),
+    var(--surface-shadow);
 
   &:hover {
-    border-color: #b91c1c;
+    background: color-mix(in srgb, var(--error-color) 10%, var(--button-secondary-background));
+    color: var(--error-color);
   }
 }
 
-.btn-block {
+.ui-button--ghost {
+  background: transparent;
+  color: var(--text-color);
+  box-shadow: none;
+
+  &:hover {
+    background: var(--button-ghost-hover-background);
+  }
+}
+
+.ui-button--github {
+  color: #fff;
+  background-color: #24292e;
+  box-shadow: none;
+
+  &:hover {
+    background-color: #1a1e22;
+    color: #fff;
+  }
+
+  .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    opacity: 1;
+  }
+}
+
+.ui-button--warning {
+  color: #ffffff;
+  background-color: color-mix(in srgb, var(--warning-color) 84%, #000 8%);
+  box-shadow: none;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--warning-color) 76%, #000 16%);
+    color: #ffffff;
+  }
+}
+
+.ui-button--block {
   width: 100%;
 
   .icon {
-    margin-left: -1.75rem;
+    margin-left: -0.25rem;
   }
 }

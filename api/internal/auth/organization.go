@@ -348,3 +348,34 @@ func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http
 
 	httputil.WriteJSON(w, http.StatusOK, mapOrganizationInvitations(invitations))
 }
+
+func (h *AuthHandler) SetActiveOrganization(w http.ResponseWriter, r *http.Request) {
+	su := h.requireAuth(w, r)
+	if su == nil {
+		return
+	}
+
+	var req struct {
+		OrganizationID string `json:"organizationId"`
+	}
+	if err := httputil.DecodeBody(r, &req); err != nil || req.OrganizationID == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "organizationId is required")
+		return
+	}
+
+	if !h.requireOrgMembership(w, r, su.User.ID, req.OrganizationID) {
+		return
+	}
+
+	token := httputil.ExtractToken(r)
+	if err := h.queries.SetActiveOrganization(r.Context(), queries.SetActiveOrganizationParams{
+		ActiveOrganizationID: &req.OrganizationID,
+		Token:                token,
+	}); err != nil {
+		slog.Error("failed to set active organization", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to set active organization")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+}

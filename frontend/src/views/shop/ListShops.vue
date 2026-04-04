@@ -1,10 +1,10 @@
 <template>
   <header-container :title="$t('shop.listTitle')">
     <div class="header-actions">
-      <router-link :to="{ name: 'account.shops.new' }" class="btn btn-primary">
+      <UiButton :to="{ name: 'account.shops.new' }" variant="primary">
         <icon-fa6-solid:folder-plus class="icon" aria-hidden="true" />
         {{ $t("shop.addShop") }}
-      </router-link>
+      </UiButton>
     </div>
   </header-container>
 
@@ -29,13 +29,12 @@
       >
         <template #title>{{ shop.name }}</template>
         <template #action>
-          <router-link
+          <UiButton
             :to="{ name: 'account.shops.edit', params: { shopId: shop.id } }"
-            class="btn btn-secondary"
           >
             <icon-fa6-solid:pen-to-square class="icon" aria-hidden="true" />
             {{ $t("nav.editShop") }}
-          </router-link>
+          </UiButton>
         </template>
 
         <p class="shop-meta">

@@ -11,11 +11,11 @@
   >
     <password-field name="password" :placeholder="$t('common.password')" :error="errors.password" />
 
-    <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
+    <UiButton variant="primary" block :disabled="isSubmitting" type="submit">
       <icon-fa6-solid:key v-if="isSubmitting" class="icon" aria-hidden="true" />
       <icon-line-md:loading-twotone-loop v-else class="icon" />
       {{ $t("auth.changePasswordButton") }}
-    </button>
+    </UiButton>
 
     <div>
       <router-link :to="{ name: 'account.login' }"> {{ $t("common.cancel") }} </router-link>

@@ -38,20 +38,20 @@
     </template>
 
     <template #footer>
-      <button
+      <UiButton
         type="button"
-        class="btn btn-danger"
+        variant="destructive"
         :disabled="isLoading || (requirePassword && !passwordValue)"
         @click="$emit('confirm')"
       >
         <icon-fa6-solid:trash v-if="!isLoading" class="icon" />
         <icon-line-md:loading-twotone-loop v-if="isLoading" class="icon" />
         {{ confirmButtonText || $t("common.delete") }}
-      </button>
+      </UiButton>
 
-      <button type="button" class="btn btn-cancel" @click="$emit('close')">
+      <UiButton type="button" variant="ghost" @click="$emit('close')">
         {{ $t("common.cancel") }}
-      </button>
+      </UiButton>
     </template>
   </modal>
 </template>

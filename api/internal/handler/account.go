@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -38,14 +39,23 @@ func (h *Handler) GetAccountMe(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, profile)
 }
 
-// GetAccountExtensions returns aggregated extensions across all environments the user has access to.
+// GetAccountExtensions returns aggregated extensions for the user's active organization.
 func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	rows, err := h.queries.GetUserExtensions(r.Context(), user.ID)
+	activeOrgID := h.getActiveOrganizationID(r)
+	if activeOrgID == nil {
+		httputil.WriteJSON(w, http.StatusOK, []api.AccountExtension{})
+		return
+	}
+
+	rows, err := h.queries.GetUserExtensionsByOrg(r.Context(), queries.GetUserExtensionsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
 	if err != nil {
 		slog.Error("failed to get user extensions", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extensions")
@@ -158,14 +168,23 @@ func (h *Handler) GetAccountOrganizations(w http.ResponseWriter, r *http.Request
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetAccountEnvironments returns all environments accessible to the user.
+// GetAccountEnvironments returns environments for the user's active organization.
 func (h *Handler) GetAccountEnvironments(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	rows, err := h.queries.GetUserEnvironments(r.Context(), user.ID)
+	activeOrgID := h.getActiveOrganizationID(r)
+	if activeOrgID == nil {
+		httputil.WriteJSON(w, http.StatusOK, []api.AccountEnvironment{})
+		return
+	}
+
+	rows, err := h.queries.GetUserEnvironmentsByOrg(r.Context(), queries.GetUserEnvironmentsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
 	if err != nil {
 		slog.Error("failed to get user environments", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get environments")
@@ -180,32 +199,34 @@ func (h *Handler) GetAccountEnvironments(w http.ResponseWriter, r *http.Request)
 			shopId = &v
 		}
 		result = append(result, api.AccountEnvironment{
-			Id:               int(row.ID),
-			Name:             row.Name,
-			Url:              row.Url,
-			Favicon:          row.Favicon,
-			Status:           row.Status,
-			ShopwareVersion:  row.ShopwareVersion,
-			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
-			LastScrapedError: row.LastScrapedError,
-			OrganizationId:   row.OrganizationID,
-			OrganizationName: row.OrganizationName,
-			ShopId:           shopId,
-			ShopName:         row.ShopName,
+			Id: int(row.ID), Name: row.Name, Url: row.Url, Favicon: row.Favicon,
+			Status: row.Status, ShopwareVersion: row.ShopwareVersion,
+			LastScrapedAt: pgtimeToTimePtr(row.LastScrapedAt), LastScrapedError: row.LastScrapedError,
+			OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
+			ShopId: shopId, ShopName: row.ShopName,
 		})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetAccountShops returns all shops accessible to the user.
+// GetAccountShops returns shops for the user's active organization.
 func (h *Handler) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	rows, err := h.queries.GetUserShops(r.Context(), user.ID)
+	activeOrgID := h.getActiveOrganizationID(r)
+	if activeOrgID == nil {
+		httputil.WriteJSON(w, http.StatusOK, []api.AccountShop{})
+		return
+	}
+
+	rows, err := h.queries.GetUserShopsByOrg(r.Context(), queries.GetUserShopsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
 	if err != nil {
 		slog.Error("failed to get user shops", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get shops")
@@ -215,26 +236,31 @@ func (h *Handler) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 	result := make([]api.AccountShop, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, api.AccountShop{
-			Id:               int(row.ID),
-			Name:             row.Name,
-			Description:      row.Description,
-			GitUrl:           row.GitUrl,
-			OrganizationId:   row.OrganizationID,
-			OrganizationName: row.OrganizationName,
+			Id: int(row.ID), Name: row.Name, Description: row.Description,
+			GitUrl: row.GitUrl, OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
 		})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetAccountChangelogs returns changelogs across all environments the user has access to.
+// GetAccountChangelogs returns changelogs for the user's active organization.
 func (h *Handler) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	rows, err := h.queries.GetUserChangelogs(r.Context(), user.ID)
+	activeOrgID := h.getActiveOrganizationID(r)
+	if activeOrgID == nil {
+		httputil.WriteJSON(w, http.StatusOK, []api.AccountChangelog{})
+		return
+	}
+
+	rows, err := h.queries.GetUserChangelogsByOrg(r.Context(), queries.GetUserChangelogsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
 	if err != nil {
 		slog.Error("failed to get user changelogs", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get changelogs")

@@ -234,6 +234,11 @@ export const router = createRouter({
           component: () => import("@/views/organization/AddOrganization.vue"),
         },
         {
+          name: "account.onboarding",
+          path: "onboarding",
+          component: () => import("@/views/organization/OnboardingOrganization.vue"),
+        },
+        {
           name: "account.organizations.detail",
           path: "organizations/:organizationId",
           component: () => import("@/views/organization/DetailOrganization.vue"),
@@ -339,6 +344,17 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     return { name: "account.login" };
   } else if (to.name === "account.login") {
     setReturnUrl("/app/dashboard");
+  }
+
+  // Redirect to onboarding if user has no active organization
+  if (
+    session.value &&
+    !session.value.session.activeOrganizationId &&
+    to.name !== "account.onboarding" &&
+    to.name !== "account.organization.accept" &&
+    to.name !== "account.organization.reject"
+  ) {
+    return { name: "account.onboarding" };
   }
 
   // Check admin routes

@@ -15,12 +15,12 @@
       </div>
     </template>
     <template #footer>
-      <button type="button" class="btn btn-primary" @click="$emit('import')">
+      <UiButton type="button" variant="primary" @click="$emit('import')">
         {{ $t("pluginModal.importData") }}
-      </button>
-      <button type="button" class="btn btn-cancel" @click="$emit('close')">
+      </UiButton>
+      <UiButton type="button" variant="ghost" @click="$emit('close')">
         {{ $t("common.cancel") }}
-      </button>
+      </UiButton>
     </template>
   </modal>
 </template>

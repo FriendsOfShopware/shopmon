@@ -5,9 +5,9 @@
         <icon-fa6-solid:user-secret class="impersonation-icon" />
         <span v-html="$t('impersonation.banner', { email: session?.user?.email })" />
       </div>
-      <button class="btn btn-sm btn-stop" @click="stopImpersonating">
+      <UiButton size="sm" variant="warning" @click="stopImpersonating">
         {{ $t("impersonation.stop") }}
-      </button>
+      </UiButton>
     </div>
   </div>
 </template>
@@ -81,7 +81,7 @@ async function stopImpersonating() {
   height: 1rem;
 }
 
-.btn-stop {
+.ui-button--warning {
   background-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -89,7 +89,7 @@ async function stopImpersonating() {
   font-size: 0.875rem;
 }
 
-.btn-stop:hover {
+.ui-button--warning:hover {
   background-color: rgba(255, 255, 255, 0.3);
   border-color: rgba(255, 255, 255, 0.4);
 }

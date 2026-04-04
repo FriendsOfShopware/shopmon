@@ -49,7 +49,7 @@ describe("WhatsNewModal", () => {
       },
     });
 
-    await wrapper.find("button.btn-primary").trigger("click");
+    await wrapper.find("button.ui-button--primary").trigger("click");
 
     expect(wrapper.emitted("close")).toHaveLength(1);
   });

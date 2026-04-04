@@ -115,9 +115,9 @@
         </p>
       </div>
 
-      <router-link :to="{ name: 'account.register' }" class="btn btn-primary-outline">
+      <UiButton :to="{ name: 'account.register' }" variant="outline-primary">
         {{ $t("home.startFree") }}
-      </router-link>
+      </UiButton>
     </div>
   </div>
 

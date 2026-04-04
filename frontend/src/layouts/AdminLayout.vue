@@ -5,9 +5,9 @@
     <nav class="top-bar">
       <div class="top-bar-container container">
         <div class="top-bar-nav">
-          <RouterLink to="/" class="top-bar-logo">
+          <UiButton to="/" class="top-bar-logo">
             <Logo />
-          </RouterLink>
+          </UiButton>
 
           <div class="top-bar-nav-links">
             <RouterLink
@@ -51,10 +51,10 @@
         </div>
 
         <div class="top-bar-actions">
-          <RouterLink to="/" class="btn btn-primary">
+          <UiButton to="/" variant="primary">
             <icon-fa6-solid:house class="icon" />
             Back to Dashboard
-          </RouterLink>
+          </UiButton>
         </div>
       </div>
     </nav>
@@ -113,7 +113,7 @@ import { RouterLink, RouterView } from "vue-router";
   display: flex;
   align-items: center;
 
-  .btn {
+  .ui-button {
     background-color: #0284c780;
 
     &:hover {

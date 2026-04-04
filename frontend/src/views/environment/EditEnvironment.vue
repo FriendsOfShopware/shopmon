@@ -3,7 +3,7 @@
     v-if="environment"
     :title="$t('environment.editEnvironment', { name: environment.name })"
   >
-    <router-link
+    <UiButton
       :to="{
         name: 'account.environments.detail',
         params: {
@@ -12,10 +12,9 @@
         },
       }"
       type="button"
-      class="btn"
     >
       {{ $t("common.cancel") }}
-    </router-link>
+    </UiButton>
   </header-container>
 
   <main-container v-if="environment">
@@ -70,9 +69,9 @@
             </a>
           </template>
 
-          <button type="button" class="btn btn-secondary" @click="openPluginModal">
+          <UiButton type="button" @click="openPluginModal">
             {{ $t("environment.connectPlugin") }}
-          </button>
+          </UiButton>
 
           <InputField
             name="clientId"
@@ -87,11 +86,11 @@
         </form-group>
 
         <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
+          <UiButton :disabled="isSubmitting" type="submit" variant="primary">
             <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="icon" />
             {{ $t("common.save") }}
-          </button>
+          </UiButton>
         </div>
       </vee-form>
     </Panel>
@@ -125,30 +124,29 @@
                 @update:model-value="sitespeedUrls[index] = $event"
               >
                 <template #append>
-                  <button type="button" class="btn btn-icon" @click="removeSitespeedUrl(index)">
+                  <UiButton type="button" icon-only @click="removeSitespeedUrl(index)">
                     <icon-fa6-solid:xmark />
-                  </button>
+                  </UiButton>
                 </template>
               </BaseInput>
             </div>
 
-            <button
+            <UiButton
               v-if="sitespeedUrls.length < 5"
               type="button"
-              class="btn btn-secondary"
               @click="addSitespeedUrl"
             >
               <icon-fa6-solid:plus class="icon" />
               {{ $t("environment.newUrl") }}
-            </button>
+            </UiButton>
           </div>
         </div>
 
         <div class="form-submit">
-          <button
+          <UiButton
             :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
             type="submit"
-            class="btn btn-primary"
+            variant="primary"
           >
             <icon-fa6-solid:floppy-disk
               v-if="!isSitespeedSubmitting"
@@ -158,7 +156,7 @@
 
             <icon-line-md:loading-twotone-loop v-else class="icon" />
             {{ $t("environment.saveSitespeedSettings") }}
-          </button>
+          </UiButton>
         </div>
       </form>
     </Panel>
@@ -166,10 +164,14 @@
     <Panel :title="$t('environment.deleteEnvironmentTitle', { name: environment.name })">
       <p>{{ $t("environment.deleteEnvironmentWarning") }}</p>
 
-      <button type="button" class="btn btn-danger" @click="showEnvironmentDeletionModal = true">
+      <UiButton
+        type="button"
+        variant="destructive"
+        @click="showEnvironmentDeletionModal = true"
+      >
         <icon-fa6-solid:trash class="icon icon-delete" />
         {{ $t("environment.deleteEnvironment") }}
-      </button>
+      </UiButton>
     </Panel>
 
     <delete-confirmation-modal
@@ -419,7 +421,7 @@ function processPluginData() {
   flex: 1;
 }
 
-.btn-icon {
+.ui-button--icon-only {
   padding: 0.5rem;
   min-width: auto;
 }

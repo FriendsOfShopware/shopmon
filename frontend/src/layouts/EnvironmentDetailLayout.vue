@@ -4,20 +4,13 @@
 
     <header-container
       v-if="environment"
-      :breadcrumb="
-        environment.organizationName +
-        ' / ' +
-        environment.name +
-        (currentRouteTitle && route.name !== 'account.environments.detail'
-          ? ' / ' + currentRouteTitle
-          : '')
-      "
+      :breadcrumb="breadcrumbItems"
       :title="environment.name"
       :titleMobileHide="true"
     >
       <slot name="header-actions">
-        <button
-          class="btn icon-only"
+        <UiButton
+          icon-only
           :data-tooltip="isSubscribed ? 'Unwatch environment' : 'Watch environment'"
           :disabled="isSubscribing"
           type="button"
@@ -29,10 +22,10 @@
             class="icon"
           />
           <icon-fa6-regular:bell v-else :class="{ 'animate-pulse': isSubscribing }" class="icon" />
-        </button>
+        </UiButton>
 
-        <button
-          class="btn icon-only"
+        <UiButton
+          icon-only
           data-tooltip="Clear environment cache"
           :disabled="isCacheClearing"
           type="button"
@@ -42,19 +35,19 @@
             :class="{ 'animate-pulse': isCacheClearing }"
             class="icon"
           />
-        </button>
+        </UiButton>
 
-        <button
-          class="btn icon-only"
+        <UiButton
+          icon-only
           data-tooltip="Refresh environment data"
           :disabled="isRefreshing"
           type="button"
           @click="showEnvironmentRefreshModal = true"
         >
           <icon-fa6-solid:rotate :class="{ icon: true, 'animate-spin': isRefreshing }" />
-        </button>
+        </UiButton>
 
-        <router-link
+        <UiButton
           :to="{
             name: 'account.environments.edit',
             params: {
@@ -63,11 +56,11 @@
             },
           }"
           type="button"
-          class="btn btn-primary"
+          variant="primary"
         >
           <icon-fa6-solid:pencil class="icon" aria-hidden="true" />
           Edit Environment
-        </router-link>
+        </UiButton>
       </slot>
     </header-container>
 
@@ -93,16 +86,16 @@
         <template #content> Do you also want to have a new pagespeed test? </template>
 
         <template #footer>
-          <button type="button" class="btn btn-primary" @click="onRefresh(true)">Yes</button>
+          <UiButton type="button" variant="primary" @click="onRefresh(true)">Yes</UiButton>
 
-          <button
+          <UiButton
             ref="cancelButtonRef"
             type="button"
-            class="btn btn-danger"
+            variant="destructive"
             @click="onRefresh(false)"
           >
             No
-          </button>
+          </UiButton>
         </template>
       </modal>
     </main-container>
@@ -119,6 +112,7 @@ import HeaderContainer from "@/components/layout/HeaderContainer.vue";
 import MainContainer from "@/components/layout/MainContainer.vue";
 import Alert from "@/components/layout/Alert.vue";
 import Modal from "@/components/layout/Modal.vue";
+import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
 import FaRotate from "~icons/fa6-solid/rotate";
 
 const route = useRoute();
@@ -140,17 +134,56 @@ const {
   onCacheClear,
   toggleNotificationSubscription,
 } = useEnvironmentDetail();
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+  if (!environment.value) {
+    return [];
+  }
+
+  const items: BreadcrumbItem[] = [
+    {
+      label: environment.value.organizationName,
+      to: {
+        name: "account.organizations.detail",
+        params: { organizationId: environment.value.organizationId },
+      },
+    },
+  ];
+
+  const isEnvironmentOverview = route.name === "account.environments.detail";
+
+  items.push({
+    label: environment.value.name,
+    to: isEnvironmentOverview
+      ? undefined
+      : {
+          name: "account.environments.detail",
+          params: {
+            organizationId: route.params.organizationId,
+            environmentId: route.params.environmentId,
+          },
+        },
+  });
+
+  if (!isEnvironmentOverview && currentRouteTitle.value) {
+    items.push({
+      label: currentRouteTitle.value,
+    });
+  }
+
+  return items;
+});
 </script>
 
 <style scoped>
 .detail-wrapper {
-  @media all and (min-width: 1024px) {
+  @media all and (min-width: 768px) {
     display: grid;
     column-gap: 1rem;
     grid-template-areas:
       "sidebar header"
       "sidebar content";
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: 16rem 1fr;
   }
 }
 

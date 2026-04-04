@@ -71,6 +71,15 @@ func (h *Handler) requireUser(w http.ResponseWriter, r *http.Request) *auth.User
 	return user
 }
 
+// getActiveOrganizationID returns the active organization ID from the session, or nil if not set.
+func (h *Handler) getActiveOrganizationID(r *http.Request) *string {
+	sess := middleware.GetSession(r.Context())
+	if sess == nil {
+		return nil
+	}
+	return sess.ActiveOrganizationID
+}
+
 // requireOrgMembership checks if the user is a member of the given organization.
 // Returns false and writes a 403 response if not a member.
 func (h *Handler) requireOrgMembership(w http.ResponseWriter, r *http.Request, user *auth.User, orgID string) bool {

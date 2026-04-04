@@ -77,25 +77,20 @@ function onBackdropClick(event: MouseEvent) {
 }
 
 .modal-dialog::backdrop {
-  background-color: #6b7280bf;
-}
-
-.dark .modal-dialog::backdrop,
-:global(.dark) .modal-dialog::backdrop {
-  background-color: #171717cc;
+  background-color: var(--overlay-background);
 }
 
 .modal-panel {
   position: relative;
   background-color: var(--panel-background);
   color: var(--text-color);
-  border-radius: 0.5rem;
+  border-radius: 1rem;
   padding: 1.25rem 1rem 1rem;
   text-align: left;
   overflow: hidden;
   box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    inset 0 0 0 1px var(--panel-border-color),
+    var(--surface-shadow-strong);
   max-width: 52rem;
   width: 90%;
   max-height: 90vh;
@@ -108,18 +103,23 @@ function onBackdropClick(event: MouseEvent) {
 
 .modal-close-button {
   position: absolute;
-  top: 0.25rem;
-  right: 0.625rem;
-  font-size: 1.25rem;
-  background: none;
-  border: none;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  background: transparent;
   outline: none;
   cursor: pointer;
-  transition: opacity 0.4s;
-  opacity: 0.5;
+  border-radius: 0.625rem;
+  color: var(--text-color-muted);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
-    opacity: 1;
+    background: var(--button-ghost-hover-background);
+    color: var(--text-color);
   }
 }
 
@@ -145,10 +145,10 @@ function onBackdropClick(event: MouseEvent) {
 }
 
 .modal-title {
-  font-size: 1.125rem;
+  font-size: 1.15rem;
   line-height: 1.5rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.625rem;
   color: var(--item-title-color);
 }
 
@@ -163,13 +163,13 @@ function onBackdropClick(event: MouseEvent) {
     flex-direction: row;
   }
 
-  .btn-cancel {
+  .ui-button--ghost {
     @media (min-width: 640px) {
       order: -1;
     }
   }
 
-  .btn {
+  .ui-button {
     display: block;
   }
 }
