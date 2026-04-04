@@ -7,6 +7,14 @@
       <SelectItem v-for="org in organizations" :key="org.id" :value="org.id">
         {{ org.name }}
       </SelectItem>
+      <SelectSeparator />
+      <button
+        class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        @mousedown.prevent="$router.push({ name: 'account.organizations.new' })"
+      >
+        <icon-fa6-solid:plus class="size-3" />
+        New organization
+      </button>
     </SelectContent>
   </Select>
 </template>
@@ -23,6 +31,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
