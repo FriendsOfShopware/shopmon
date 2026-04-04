@@ -6,8 +6,8 @@
       @click="toggleMobileOpen"
     >
       {{ shop.nameCombined }}
-      {{ route.meta.title && route.name !== "account.shops.detail" ? " / " : "" }}
-      {{ route.meta.title }}
+      {{ currentRouteTitle && route.name !== "account.shops.detail" ? " / " : "" }}
+      {{ currentRouteTitle }}
     </div>
 
     <div ref="sidebarRef" :class="['sidebar', 'sidebar-detail', { 'mobile-open': isMobileOpen }]">
@@ -56,7 +56,9 @@
             v-if="$router.resolve({ name: item.route }).meta.icon"
             class="nav-link-icon"
           />
-          <span class="nav-link-name">{{ $router.resolve({ name: item.route }).meta.title }}</span>
+          <span class="nav-link-name">{{
+            $t($router.resolve({ name: item.route }).meta.titleKey ?? "")
+          }}</span>
           <span v-if="item.count !== undefined" class="nav-link-count">{{ item.count }}</span>
         </router-link>
       </nav>
@@ -68,9 +70,11 @@
 import type { RouterOutput } from "@/helpers/trpc";
 import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import StatusIcon from "@/components/StatusIcon.vue";
 
 const route = useRoute();
+const { t } = useI18n();
 
 const isMobileOpen = ref(false);
 const sidebarRef = ref<HTMLElement | null>(null);
@@ -79,6 +83,11 @@ const toggleRef = ref<HTMLElement | null>(null);
 const props = defineProps<{
   shop: RouterOutput["organization"]["shop"]["get"] | null;
 }>();
+
+const currentRouteTitle = computed(() => {
+  const titleKey = route.meta.titleKey;
+  return typeof titleKey === "string" ? t(titleKey) : "";
+});
 
 const isRouteActive = (routeName: string) => {
   // Exact match
