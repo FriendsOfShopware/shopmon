@@ -32,12 +32,12 @@
             <SidebarMenu>
               <SidebarMenuItem v-for="item in navigation" :key="item.route">
                 <SidebarMenuButton as-child :is-active="isActive(item, $route)">
-                  <RouterLink :to="{ name: item.route }">
+                  <RouterLink :to="{ name: item.route, params: item.params }">
                     <component
-                      :is="$router.resolve({ name: item.route }).meta.icon"
-                      v-if="$router.resolve({ name: item.route }).meta.icon"
+                      :is="$router.resolve({ name: item.route, params: item.params }).meta.icon"
+                      v-if="$router.resolve({ name: item.route, params: item.params }).meta.icon"
                     />
-                    <span>{{ $t($router.resolve({ name: item.route }).meta.titleKey ?? "") }}</span>
+                    <span>{{ $t($router.resolve({ name: item.route, params: item.params }).meta.titleKey ?? "") }}</span>
                   </RouterLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -242,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
@@ -292,7 +292,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const router = useRouter();
-const { session } = useSession();
+const { session, activeOrganizationId } = useSession();
 const { environments } = useAccountEnvironments();
 
 const userAvatar = ref("https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon");
@@ -322,14 +322,20 @@ const {
 const { darkMode, toggleDarkMode } = useDarkMode();
 const { locale, toggleLocale } = useLocale();
 
-const navigation = [
+const navigation = computed(() => [
   { route: "account.dashboard" },
   { route: "account.shop.list", active: "shop" },
   { route: "account.extension.list" },
-  { route: "account.organizations.list", active: "organizations" },
-];
+  ...(activeOrganizationId.value
+    ? [{
+        route: "account.organizations.detail",
+        active: "organizations",
+        params: { organizationId: activeOrganizationId.value },
+      }]
+    : [{ route: "account.organizations.list", active: "organizations" }]),
+]);
 
-function isActive(item: { route: string; active?: string }, $route: RouteLocationNormalizedLoaded) {
+function isActive(item: { route: string; active?: string; params?: Record<string, string> }, $route: RouteLocationNormalizedLoaded) {
   if (item.route === $route.name) return true;
   return !!(
     $route.name &&

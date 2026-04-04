@@ -224,7 +224,7 @@ export const router = createRouter({
           path: "organizations",
           component: () => import("@/views/organization/ListOrganizations.vue"),
           meta: {
-            titleKey: "nav.myOrganizations",
+            titleKey: "nav.myOrganization",
             icon: FaBuilding,
           },
         },
@@ -242,6 +242,10 @@ export const router = createRouter({
           name: "account.organizations.detail",
           path: "organizations/:organizationId",
           component: () => import("@/views/organization/DetailOrganization.vue"),
+          meta: {
+            titleKey: "nav.myOrganization",
+            icon: FaBuilding,
+          },
         },
         {
           name: "account.organizations.edit",

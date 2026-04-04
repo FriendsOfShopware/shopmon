@@ -49,7 +49,7 @@
     "dashboard": "Dashboard",
     "settings": "Settings",
     "myShops": "My Shops",
-    "myOrganizations": "My Organisations",
+    "myOrganization": "My Organisation",
     "myExtensions": "My Extensions",
     "logout": "Logout",
     "login": "Login",
@@ -181,7 +181,7 @@
   "dashboard": {
     "title": "Dashboard",
     "myEnvironments": "My Environments",
-    "myOrganizations": "My Organizations",
+    "myOrganization": "My Organization",
     "lastChanges": "Last Changes",
     "environment": "Environment",
     "changes": "Changes",

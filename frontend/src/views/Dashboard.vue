@@ -104,48 +104,6 @@
       </div>
     </section>
 
-    <!-- Organizations -->
-    <section v-if="organizations?.length" class="mb-8">
-      <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
-        <icon-fa6-solid:building class="size-4 text-muted-foreground" />
-        {{ $t("dashboard.myOrganizations") }}
-      </h2>
-
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <RouterLink
-          v-for="organization in organizations"
-          :key="organization.id"
-          :to="{
-            name: 'account.organizations.detail',
-            params: { organizationId: organization.id },
-          }"
-          class="group flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
-        >
-          <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
-            <icon-fa6-solid:building class="size-4 text-muted-foreground" />
-          </div>
-
-          <div class="min-w-0 flex-1">
-            <div
-              class="truncate font-semibold leading-tight group-hover:text-primary transition-colors"
-            >
-              {{ organization.name }}
-            </div>
-            <div class="mt-0.5 flex items-center gap-3 text-sm text-muted-foreground">
-              <span class="flex items-center gap-1">
-                <icon-fa6-solid:users class="size-3" />
-                {{ organization.memberCount }}
-              </span>
-              <span class="flex items-center gap-1">
-                <icon-fa6-solid:earth-americas class="size-3" />
-                {{ organization.environmentCount }}
-              </span>
-            </div>
-          </div>
-        </RouterLink>
-      </div>
-    </section>
-
     <!-- Changelog table -->
     <section v-if="changelogs.length > 0">
       <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold">
@@ -226,13 +184,9 @@ import { FolderPlus, Plus } from "lucide-vue-next";
 const { t } = useI18n();
 const { activeOrganizationId } = useSession();
 
-const organizations = ref<components["schemas"]["AccountOrganization"][]>();
 const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
 
 function loadDashboardData() {
-  api.GET("/account/organizations").then(({ data }) => {
-    organizations.value = data;
-  });
   api.GET("/account/changelogs").then(({ data }) => {
     if (data) changelogs.value = data;
   });
