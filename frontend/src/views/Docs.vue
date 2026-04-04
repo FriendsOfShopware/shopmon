@@ -75,8 +75,8 @@
             <li>Copy the base64 connection string from the plugin configuration</li>
             <li>
               In Shopmon, go to
-              <router-link :to="{ name: 'account.shops.new' }">Add Shop</router-link> and click
-              "Connect using Shopmon Plugin"
+              <router-link :to="{ name: 'account.environments.new' }">Add Shop</router-link> and
+              click "Connect using Shopmon Plugin"
             </li>
             <li>Paste the connection string and the credentials will be filled automatically</li>
           </ol>
@@ -108,7 +108,7 @@
           <p>
             After creating the integration, copy the <strong>Client-ID</strong> and
             <strong>Client-Secret</strong> and enter them when
-            <router-link :to="{ name: 'account.shops.new' }">adding a new shop</router-link>.
+            <router-link :to="{ name: 'account.environments.new' }">adding a new shop</router-link>.
           </p>
 
           <Alert type="info">

@@ -32,20 +32,24 @@
 
       <div class="stat-card">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.totalShops") }}</h3>
+          <h3 class="stat-title">{{ $t("admin.totalEnvironments") }}</h3>
           <icon-fa6-solid:store class="stat-icon" />
         </div>
-        <div class="stat-value">{{ stats.totalShops }}</div>
-        <p class="stat-description">{{ $t("admin.totalShopsDesc") }}</p>
+        <div class="stat-value">{{ stats.totalEnvironments }}</div>
+        <p class="stat-description">{{ $t("admin.totalEnvironmentsDesc") }}</p>
       </div>
 
       <div class="stat-card status-breakdown">
         <div class="stat-header">
-          <h3 class="stat-title">{{ $t("admin.shopStatus") }}</h3>
+          <h3 class="stat-title">{{ $t("admin.environmentStatus") }}</h3>
           <icon-fa6-solid:chart-bar class="stat-icon" />
         </div>
         <div class="status-list">
-          <div v-for="(count, status) in stats.shopsByStatus" :key="status" class="status-item">
+          <div
+            v-for="(count, status) in stats.environmentsByStatus"
+            :key="status"
+            class="status-item"
+          >
             <div class="status-label-wrapper">
               <span class="badge" :class="`badge-${status}`">{{ status }}</span>
             </div>
@@ -60,8 +64,8 @@
       <router-link to="/admin/organizations" class="btn btn-primary">
         {{ $t("admin.manageOrgs") }}
       </router-link>
-      <router-link to="/admin/shops" class="btn btn-primary">
-        {{ $t("admin.manageShops") }}
+      <router-link to="/admin/environments" class="btn btn-primary">
+        {{ $t("admin.manageEnvironments") }}
       </router-link>
     </div>
   </Panel>
@@ -103,16 +107,18 @@
       </div>
     </Panel>
 
-    <Panel title="Recent Shops">
-      <div v-if="activity.recentShops.length === 0" class="empty-state">No recent shops</div>
+    <Panel title="Recent Environments">
+      <div v-if="activity.recentEnvironments.length === 0" class="empty-state">
+        No recent environments
+      </div>
       <div v-else class="activity-list">
-        <div v-for="shop in activity.recentShops" :key="shop.id" class="activity-item">
+        <div v-for="env in activity.recentEnvironments" :key="env.id" class="activity-item">
           <div class="activity-info">
-            <span class="activity-name">{{ shop.name }}</span>
-            <span class="activity-detail">{{ shop.organizationName }}</span>
+            <span class="activity-name">{{ env.name }}</span>
+            <span class="activity-detail">{{ env.organizationName }}</span>
           </div>
           <span class="activity-time">{{
-            shop.lastScrapedAt ? formatDateTime(shop.lastScrapedAt) : ""
+            env.lastScrapedAt ? formatDateTime(env.lastScrapedAt) : ""
           }}</span>
         </div>
       </div>
@@ -256,8 +262,8 @@ function renderCharts() {
     if (shopChartCanvas.value) {
       shopChartInstance = createGrowthChart(
         shopChartCanvas.value,
-        growthData.value.shops,
-        "Shops",
+        growthData.value.environments,
+        "Environments",
         "#10b981",
       );
     }

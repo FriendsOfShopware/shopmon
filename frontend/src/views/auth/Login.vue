@@ -246,7 +246,9 @@ async function ssoLogin() {
       if (error && (error as unknown as { status?: number }).status === 404) {
         alert.error(t("auth.noSSOProvider"));
       } else {
-        alert.error((error as unknown as { message?: string })?.message ?? t("auth.ssoLoginFailed"));
+        alert.error(
+          (error as unknown as { message?: string })?.message ?? t("auth.ssoLoginFailed"),
+        );
       }
     } else {
       window.location.href = data.url;

@@ -105,7 +105,7 @@ CREATE TABLE "sso_provider" (
   "domain" text NOT NULL
 );
 
-CREATE TABLE "project" (
+CREATE TABLE "shop" (
   "id" serial PRIMARY KEY NOT NULL,
   "organization_id" text NOT NULL REFERENCES "organization"("id") ON DELETE cascade,
   "name" text NOT NULL,
@@ -115,9 +115,9 @@ CREATE TABLE "project" (
   "updated_at" timestamp NOT NULL
 );
 
-CREATE TABLE "project_api_key" (
+CREATE TABLE "shop_api_key" (
   "id" text PRIMARY KEY NOT NULL,
-  "project_id" integer NOT NULL REFERENCES "project"("id") ON DELETE cascade,
+  "shop_id" integer NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
   "name" text NOT NULL,
   "token" text NOT NULL UNIQUE,
   "scopes" jsonb NOT NULL,
@@ -125,14 +125,14 @@ CREATE TABLE "project_api_key" (
   "last_used_at" timestamp
 );
 
--- deployment is created before shop to resolve the circular reference:
--- shop.active_deployment_id -> deployment and deployment.shop_id -> shop.
--- We create deployment first with shop_id as a plain integer (no FK),
--- then create shop with its FK to deployment, then ALTER deployment to add the FK to shop.
+-- deployment is created before environment to resolve the circular reference:
+-- environment.active_deployment_id -> deployment and deployment.environment_id -> environment.
+-- We create deployment first with environment_id as a plain integer (no FK),
+-- then create environment with its FK to deployment, then ALTER deployment to add the FK to environment.
 
 CREATE TABLE "deployment" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL,
+  "environment_id" integer NOT NULL,
   "name" text NOT NULL,
   "command" text NOT NULL,
   "return_code" integer NOT NULL,
@@ -144,10 +144,10 @@ CREATE TABLE "deployment" (
   "created_at" timestamp NOT NULL
 );
 
-CREATE TABLE "shop" (
+CREATE TABLE "environment" (
   "id" serial PRIMARY KEY NOT NULL,
   "organization_id" text NOT NULL REFERENCES "organization"("id"),
-  "project_id" integer NOT NULL REFERENCES "project"("id"),
+  "shop_id" integer NOT NULL REFERENCES "shop"("id"),
   "name" text NOT NULL,
   "status" text NOT NULL DEFAULT 'green',
   "url" text NOT NULL,
@@ -158,23 +158,23 @@ CREATE TABLE "shop" (
   "last_scraped_at" timestamp,
   "last_scraped_error" text,
   "ignores" jsonb NOT NULL DEFAULT '[]'::jsonb,
-  "shop_image" text,
+  "environment_image" text,
   "last_changelog" jsonb DEFAULT '{}'::jsonb,
   "active_deployment_id" integer REFERENCES "deployment"("id") ON DELETE set null,
   "connection_issue_count" integer NOT NULL DEFAULT 0,
   "sitespeed_enabled" boolean NOT NULL DEFAULT false,
   "sitespeed_urls" jsonb NOT NULL DEFAULT '[]'::jsonb,
-  "shop_token" text NOT NULL,
+  "environment_token" text NOT NULL,
   "created_at" timestamp NOT NULL
 );
 
--- Now add the FK from deployment.shop_id -> shop.id
-ALTER TABLE "deployment" ADD CONSTRAINT fk_deployment_shop
-  FOREIGN KEY ("shop_id") REFERENCES "shop"("id") ON DELETE cascade;
+-- Now add the FK from deployment.environment_id -> environment.id
+ALTER TABLE "deployment" ADD CONSTRAINT fk_deployment_environment
+  FOREIGN KEY ("environment_id") REFERENCES "environment"("id") ON DELETE cascade;
 
-CREATE TABLE "shop_sitespeed" (
+CREATE TABLE "environment_sitespeed" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer REFERENCES "shop"("id"),
+  "environment_id" integer REFERENCES "environment"("id"),
   "deployment_id" integer REFERENCES "deployment"("id") ON DELETE set null,
   "created_at" timestamp NOT NULL,
   "ttfb" integer,
@@ -185,37 +185,37 @@ CREATE TABLE "shop_sitespeed" (
   "transfer_size" integer
 );
 
-CREATE TABLE "shop_changelog" (
+CREATE TABLE "environment_changelog" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer REFERENCES "shop"("id"),
+  "environment_id" integer REFERENCES "environment"("id"),
   "extensions" jsonb NOT NULL,
   "old_shopware_version" text,
   "new_shopware_version" text,
   "date" timestamp NOT NULL
 );
 
-CREATE TABLE "shop_cache" (
+CREATE TABLE "environment_cache" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL UNIQUE REFERENCES "shop"("id") ON DELETE cascade,
+  "environment_id" integer NOT NULL UNIQUE REFERENCES "environment"("id") ON DELETE cascade,
   "environment" text NOT NULL,
   "http_cache" boolean NOT NULL,
   "cache_adapter" text NOT NULL
 );
 
-CREATE TABLE "shop_check" (
+CREATE TABLE "environment_check" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
   "check_id" text NOT NULL,
   "level" text NOT NULL,
   "message" text NOT NULL,
   "source" text NOT NULL,
   "link" text,
-  UNIQUE ("shop_id", "check_id")
+  UNIQUE ("environment_id", "check_id")
 );
 
-CREATE TABLE "shop_extension" (
+CREATE TABLE "environment_extension" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
   "name" text NOT NULL,
   "label" text NOT NULL,
   "active" boolean NOT NULL,
@@ -226,20 +226,20 @@ CREATE TABLE "shop_extension" (
   "store_link" text,
   "changelog" jsonb,
   "installed_at" text,
-  UNIQUE ("shop_id", "name")
+  UNIQUE ("environment_id", "name")
 );
 
-CREATE TABLE "shop_queue" (
+CREATE TABLE "environment_queue" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
   "name" text NOT NULL,
   "size" integer NOT NULL,
-  UNIQUE ("shop_id", "name")
+  UNIQUE ("environment_id", "name")
 );
 
-CREATE TABLE "shop_scheduled_task" (
+CREATE TABLE "environment_scheduled_task" (
   "id" serial PRIMARY KEY NOT NULL,
-  "shop_id" integer NOT NULL REFERENCES "shop"("id") ON DELETE cascade,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
   "task_id" text NOT NULL,
   "name" text NOT NULL,
   "status" text NOT NULL,
@@ -247,7 +247,7 @@ CREATE TABLE "shop_scheduled_task" (
   "overdue" boolean NOT NULL,
   "last_execution_time" text,
   "next_execution_time" text,
-  UNIQUE ("shop_id", "task_id")
+  UNIQUE ("environment_id", "task_id")
 );
 
 CREATE TABLE "user_notification" (

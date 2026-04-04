@@ -18,10 +18,10 @@ func TestGetDeployments_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	shopID := env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/shops/%d/deployments", env.Server.URL, shopID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -39,18 +39,18 @@ func TestGetDeployments_WithData(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	shopID := env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	// Seed a deployment
 	now := time.Now()
 	_, err := env.Pool.Exec(t.Context(), `
-		INSERT INTO deployment (shop_id, name, command, return_code, start_date, end_date, execution_time, created_at)
+		INSERT INTO deployment (environment_id, name, command, return_code, start_date, end_date, execution_time, created_at)
 		VALUES ($1, 'Deploy v1', 'bin/console deploy', 0, $2, $2, 12.5, $2)
-	`, shopID, now)
+	`, environmentID, now)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/shops/%d/deployments", env.Server.URL, shopID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -70,19 +70,19 @@ func TestGetDeployment(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	shopID := env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	now := time.Now()
 	var deploymentID int
 	err := env.Pool.QueryRow(t.Context(), `
-		INSERT INTO deployment (shop_id, name, command, return_code, start_date, end_date, execution_time, created_at)
+		INSERT INTO deployment (environment_id, name, command, return_code, start_date, end_date, execution_time, created_at)
 		VALUES ($1, 'Deploy v2', 'bin/console deploy', 0, $2, $2, 5.0, $2)
 		RETURNING id
-	`, shopID, now).Scan(&deploymentID)
+	`, environmentID, now).Scan(&deploymentID)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/shops/%d/deployments/%d", env.Server.URL, shopID, deploymentID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -103,19 +103,19 @@ func TestDeleteDeployment(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	shopID := env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	now := time.Now()
 	var deploymentID int
 	err := env.Pool.QueryRow(t.Context(), `
-		INSERT INTO deployment (shop_id, name, command, return_code, start_date, end_date, execution_time, created_at)
+		INSERT INTO deployment (environment_id, name, command, return_code, start_date, end_date, execution_time, created_at)
 		VALUES ($1, 'Deploy v3', 'bin/console deploy', 1, $2, $2, 3.0, $2)
 		RETURNING id
-	`, shopID, now).Scan(&deploymentID)
+	`, environmentID, now).Scan(&deploymentID)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/shops/%d/deployments/%d", env.Server.URL, shopID, deploymentID), nil)
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -125,7 +125,7 @@ func TestDeleteDeployment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify deleted
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/shops/%d/deployments/%d", env.Server.URL, shopID, deploymentID), nil)
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -140,21 +140,21 @@ func TestCreateCliDeployment(t *testing.T) {
 	// We need a user to own the org, but CLI uses API key auth
 	env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	shopID := env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	// Create API key directly in DB
 	apiKeyToken := "shm_test_api_key_token_1234"
 	_, err := env.Pool.Exec(t.Context(), `
-		INSERT INTO project_api_key (id, project_id, name, token, scopes, created_at)
+		INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
 		VALUES ('apikey-1', $1, 'CI Key', $2, '["deployments"]'::jsonb, NOW())
-	`, projectID, apiKeyToken)
+	`, shopID, apiKeyToken)
 	require.NoError(t, err)
 
 	now := time.Now()
 	name := "Production Deploy"
 	body, _ := json.Marshal(api.CreateCliDeploymentRequest{
-		ShopId:        shopID,
+		EnvironmentId: environmentID,
 		Command:       "bin/console deploy:run",
 		ReturnCode:    0,
 		StartDate:     now.Add(-time.Minute),
@@ -185,7 +185,7 @@ func TestCreateCliDeployment_InvalidToken(t *testing.T) {
 
 	now := time.Now()
 	body, _ := json.Marshal(api.CreateCliDeploymentRequest{
-		ShopId:        1,
+		EnvironmentId: 1,
 		Command:       "deploy",
 		ReturnCode:    0,
 		StartDate:     now,
@@ -204,26 +204,26 @@ func TestCreateCliDeployment_InvalidToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
-func TestCreateCliDeployment_WrongProject(t *testing.T) {
+func TestCreateCliDeployment_WrongShop(t *testing.T) {
 	env := testutil.Setup(t)
 	env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID1 := env.SeedProject(t, "org-1", "Project 1")
-	projectID2 := env.SeedProject(t, "org-1", "Project 2")
-	// Shop belongs to project 2
-	shopID := env.SeedShop(t, "org-1", projectID2, "My Shop", "https://shop.example.com")
+	shopID1 := env.SeedShop(t, "org-1", "Shop 1")
+	shopID2 := env.SeedShop(t, "org-1", "Shop 2")
+	// Environment belongs to shop 2
+	environmentID := env.SeedEnvironment(t, "org-1", shopID2, "My Environment", "https://env.example.com")
 
-	// API key belongs to project 1
-	apiKeyToken := "shm_wrong_project_key"
+	// API key belongs to shop 1
+	apiKeyToken := "shm_wrong_shop_key"
 	_, err := env.Pool.Exec(t.Context(), `
-		INSERT INTO project_api_key (id, project_id, name, token, scopes, created_at)
-		VALUES ('apikey-wp', $1, 'Wrong Project Key', $2, '["deployments"]'::jsonb, NOW())
-	`, projectID1, apiKeyToken)
+		INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
+		VALUES ('apikey-ws', $1, 'Wrong Shop Key', $2, '["deployments"]'::jsonb, NOW())
+	`, shopID1, apiKeyToken)
 	require.NoError(t, err)
 
 	now := time.Now()
 	body, _ := json.Marshal(api.CreateCliDeploymentRequest{
-		ShopId:        shopID,
+		EnvironmentId: environmentID,
 		Command:       "deploy",
 		ReturnCode:    0,
 		StartDate:     now,
@@ -247,10 +247,10 @@ func TestGetDeployments_NotMember(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
 	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
-	projectID := env.SeedProject(t, "org-2", "Other Project")
-	shopID := env.SeedShop(t, "org-2", projectID, "Other Shop", "https://other.example.com")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
+	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/shops/%d/deployments", env.Server.URL, shopID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

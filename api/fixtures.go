@@ -138,42 +138,42 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		return nil
 	}
 
-	// Create project
-	projectID, err := q.CreateProject(ctx, queries.CreateProjectParams{
+	// Create shop
+	shopID, err := q.CreateShop(ctx, queries.CreateShopParams{
 		OrganizationID: orgID, Name: "Acme Shop",
 	})
 	if err != nil {
-		return fmt.Errorf("create project: %w", err)
+		return fmt.Errorf("create shop: %w", err)
 	}
 
-	// Create shop
-	shopURL := "http://localhost:3889"
+	// Create environment
+	envURL := "http://localhost:3889"
 	clientID := "SWIAUZL4OXRKEG1RR3PMCEVNMG"
 	clientSecret := "aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks"
-	shopToken := uuid.New().String()
+	environmentToken := uuid.New().String()
 
 	encryptedSecret, err := crypto.Encrypt(clientSecret, cfg.AppSecret)
 	if err != nil {
 		return fmt.Errorf("encrypt secret: %w", err)
 	}
 
-	shopID, err := q.CreateShop(ctx, queries.CreateShopParams{
-		OrganizationID:  orgID,
-		ProjectID:       projectID,
-		Name:            "Local",
-		Url:             shopURL,
-		ClientID:        clientID,
-		ClientSecret:    encryptedSecret,
-		ShopwareVersion: "6.6.0.0",
-		ShopToken:       shopToken,
+	environmentID, err := q.CreateEnvironment(ctx, queries.CreateEnvironmentParams{
+		OrganizationID:   orgID,
+		ShopID:           shopID,
+		Name:             "Local",
+		Url:              envURL,
+		ClientID:         clientID,
+		ClientSecret:     encryptedSecret,
+		ShopwareVersion:  "6.6.0.0",
+		EnvironmentToken: environmentToken,
 	})
 	if err != nil {
-		return fmt.Errorf("create shop: %w", err)
+		return fmt.Errorf("create environment: %w", err)
 	}
 
-	slog.Info("created shop", "id", shopID, "url", shopURL)
+	slog.Info("created environment", "id", environmentID, "url", envURL)
 
-	// Dispatch a shop scrape task so the worker picks it up immediately
+	// Dispatch an environment scrape task so the worker picks it up immediately
 	mailSvc := mail.NewService(mail.SMTPConfig{
 		Host: cfg.SMTPHost, Port: cfg.SMTPPort, Secure: cfg.SMTPSecure,
 		User: cfg.SMTPUser, Pass: cfg.SMTPPass, From: cfg.MailFrom, ReplyTo: cfg.SMTPReplyTo,
@@ -182,10 +182,10 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 	if err != nil {
 		return fmt.Errorf("create queue bus: %w", err)
 	}
-	if err := goqueue.Dispatch(ctx, bus, jobs.ShopScrape{ShopID: shopID}); err != nil {
-		slog.Warn("failed to dispatch shop scrape", "error", err)
+	if err := goqueue.Dispatch(ctx, bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
+		slog.Warn("failed to dispatch environment scrape", "error", err)
 	} else {
-		slog.Info("dispatched shop scrape task", "shopId", shopID)
+		slog.Info("dispatched environment scrape task", "environmentId", environmentID)
 	}
 
 	// Create deployments over the last 7 days
@@ -218,7 +218,7 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 
 		ref := fmt.Sprintf("abc%d", 1000+i)
 		depID, err := q.CreateDeployment(ctx, queries.CreateDeploymentParams{
-			ShopID:        shopID,
+			EnvironmentID: environmentID,
 			Name:          names[i],
 			Command:       commands[i],
 			ReturnCode:    returnCode,
@@ -269,8 +269,8 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		cls := float32(math.Round(baseCLS*jitter()*deploymentPenalty*1000) / 1000)
 		transferSize := int32(math.Round(baseTransferSize * jitter()))
 
-		if err := q.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
-			ShopID:                 &shopID,
+		if err := q.InsertEnvironmentSitespeed(ctx, queries.InsertEnvironmentSitespeedParams{
+			EnvironmentID:          &environmentID,
 			DeploymentID:           deploymentID,
 			Ttfb:                   &ttfb,
 			FullyLoaded:            &fullyLoaded,
@@ -279,7 +279,7 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 			CumulativeLayoutShift:  &cls,
 			TransferSize:           &transferSize,
 		}); err != nil {
-			slog.Error("failed to insert sitespeed entry", "shopId", shopID, "error", err)
+			slog.Error("failed to insert sitespeed entry", "environmentId", environmentID, "error", err)
 		}
 		sitespeedCount++
 	}
@@ -287,11 +287,11 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 	slog.Info("created sitespeed entries", "count", sitespeedCount)
 
 	if len(deployments) > 0 {
-		if err := q.UpdateShopActiveDeployment(ctx, queries.UpdateShopActiveDeploymentParams{
+		if err := q.UpdateEnvironmentActiveDeployment(ctx, queries.UpdateEnvironmentActiveDeploymentParams{
 			ActiveDeploymentID: &deployments[0].id,
-			ID:                 shopID,
+			ID:                 environmentID,
 		}); err != nil {
-			slog.Error("failed to update shop active deployment", "shopId", shopID, "error", err)
+			slog.Error("failed to update environment active deployment", "environmentId", environmentID, "error", err)
 		}
 	}
 
@@ -301,7 +301,7 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 	fmt.Println("  Member:  member@fos.gg")
 	fmt.Println("  Regular: regular@fos.gg (no org)")
 	fmt.Printf("  Org:     Acme Corp (%s)\n", orgID)
-	fmt.Printf("  Shop:    %s (id: %d)\n", shopURL, shopID)
+	fmt.Printf("  Environment: %s (id: %d)\n", envURL, environmentID)
 	fmt.Printf("  Deployments: %d, Sitespeed entries: %d\n", len(deployments), sitespeedCount)
 	fmt.Println("  All users have password: password")
 

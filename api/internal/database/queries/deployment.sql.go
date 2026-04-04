@@ -12,13 +12,13 @@ import (
 )
 
 const createDeployment = `-- name: CreateDeployment :one
-INSERT INTO deployment (shop_id, name, command, return_code, start_date, end_date, execution_time, composer, reference, created_at)
+INSERT INTO deployment (environment_id, name, command, return_code, start_date, end_date, execution_time, composer, reference, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 RETURNING id
 `
 
 type CreateDeploymentParams struct {
-	ShopID        int32            `json:"shop_id"`
+	EnvironmentID int32            `json:"environment_id"`
 	Name          string           `json:"name"`
 	Command       string           `json:"command"`
 	ReturnCode    int32            `json:"return_code"`
@@ -31,7 +31,7 @@ type CreateDeploymentParams struct {
 
 func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createDeployment,
-		arg.ShopID,
+		arg.EnvironmentID,
 		arg.Name,
 		arg.Command,
 		arg.ReturnCode,
@@ -47,35 +47,35 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 }
 
 const deleteDeployment = `-- name: DeleteDeployment :exec
-DELETE FROM deployment WHERE id = $1 AND shop_id = $2
+DELETE FROM deployment WHERE id = $1 AND environment_id = $2
 `
 
 type DeleteDeploymentParams struct {
-	ID     int32 `json:"id"`
-	ShopID int32 `json:"shop_id"`
+	ID            int32 `json:"id"`
+	EnvironmentID int32 `json:"environment_id"`
 }
 
 func (q *Queries) DeleteDeployment(ctx context.Context, arg DeleteDeploymentParams) error {
-	_, err := q.db.Exec(ctx, deleteDeployment, arg.ID, arg.ShopID)
+	_, err := q.db.Exec(ctx, deleteDeployment, arg.ID, arg.EnvironmentID)
 	return err
 }
 
 const getDeploymentByID = `-- name: GetDeploymentByID :one
-SELECT id, shop_id, name, command, return_code, start_date, end_date, execution_time, composer, reference, created_at
-FROM deployment WHERE id = $1 AND shop_id = $2
+SELECT id, environment_id, name, command, return_code, start_date, end_date, execution_time, composer, reference, created_at
+FROM deployment WHERE id = $1 AND environment_id = $2
 `
 
 type GetDeploymentByIDParams struct {
-	ID     int32 `json:"id"`
-	ShopID int32 `json:"shop_id"`
+	ID            int32 `json:"id"`
+	EnvironmentID int32 `json:"environment_id"`
 }
 
 func (q *Queries) GetDeploymentByID(ctx context.Context, arg GetDeploymentByIDParams) (Deployment, error) {
-	row := q.db.QueryRow(ctx, getDeploymentByID, arg.ID, arg.ShopID)
+	row := q.db.QueryRow(ctx, getDeploymentByID, arg.ID, arg.EnvironmentID)
 	var i Deployment
 	err := row.Scan(
 		&i.ID,
-		&i.ShopID,
+		&i.EnvironmentID,
 		&i.Name,
 		&i.Command,
 		&i.ReturnCode,
@@ -90,19 +90,19 @@ func (q *Queries) GetDeploymentByID(ctx context.Context, arg GetDeploymentByIDPa
 }
 
 const listDeployments = `-- name: ListDeployments :many
-SELECT id, shop_id, name, command, return_code, start_date, end_date, execution_time, reference, created_at
-FROM deployment WHERE shop_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+SELECT id, environment_id, name, command, return_code, start_date, end_date, execution_time, reference, created_at
+FROM deployment WHERE environment_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
 `
 
 type ListDeploymentsParams struct {
-	ShopID int32 `json:"shop_id"`
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	EnvironmentID int32 `json:"environment_id"`
+	Limit         int32 `json:"limit"`
+	Offset        int32 `json:"offset"`
 }
 
 type ListDeploymentsRow struct {
 	ID            int32            `json:"id"`
-	ShopID        int32            `json:"shop_id"`
+	EnvironmentID int32            `json:"environment_id"`
 	Name          string           `json:"name"`
 	Command       string           `json:"command"`
 	ReturnCode    int32            `json:"return_code"`
@@ -114,7 +114,7 @@ type ListDeploymentsRow struct {
 }
 
 func (q *Queries) ListDeployments(ctx context.Context, arg ListDeploymentsParams) ([]ListDeploymentsRow, error) {
-	rows, err := q.db.Query(ctx, listDeployments, arg.ShopID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listDeployments, arg.EnvironmentID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (q *Queries) ListDeployments(ctx context.Context, arg ListDeploymentsParams
 		var i ListDeploymentsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ShopID,
+			&i.EnvironmentID,
 			&i.Name,
 			&i.Command,
 			&i.ReturnCode,

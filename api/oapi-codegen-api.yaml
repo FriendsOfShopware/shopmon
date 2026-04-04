@@ -8,8 +8,8 @@ output-options:
     - Health
     - Account
     - Notifications
+    - Environments
     - Shops
-    - Projects
     - ApiKeys
     - PackagesToken
     - Deployments

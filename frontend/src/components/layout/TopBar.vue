@@ -237,7 +237,7 @@ const userAvatar = ref("https://api.dicebear.com/7.x/personas/svg?seed=default?d
 
 const navigation = [
   { route: "account.dashboard" },
-  { route: "account.project.list", active: "shop" },
+  { route: "account.shop.list", active: "shop" },
   { route: "account.extension.list" },
   { route: "account.organizations.list", active: "organizations" },
 ];

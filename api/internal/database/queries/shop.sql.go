@@ -7,49 +7,38 @@ package queries
 
 import (
 	"context"
-	"encoding/json"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countShopDeployments = `-- name: CountShopDeployments :one
-SELECT COUNT(*)::int FROM deployment WHERE shop_id = $1
+const countEnvironmentsInShop = `-- name: CountEnvironmentsInShop :one
+SELECT COUNT(*)::int FROM environment WHERE shop_id = $1
 `
 
-func (q *Queries) CountShopDeployments(ctx context.Context, shopID int32) (int32, error) {
-	row := q.db.QueryRow(ctx, countShopDeployments, shopID)
+func (q *Queries) CountEnvironmentsInShop(ctx context.Context, shopID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, countEnvironmentsInShop, shopID)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
 const createShop = `-- name: CreateShop :one
-INSERT INTO shop (organization_id, project_id, name, url, client_id, client_secret, shopware_version, shop_token, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+INSERT INTO shop (organization_id, name, description, git_url, created_at, updated_at)
+VALUES ($1, $2, $3, $4, NOW(), NOW())
 RETURNING id
 `
 
 type CreateShopParams struct {
-	OrganizationID  string `json:"organization_id"`
-	ProjectID       int32  `json:"project_id"`
-	Name            string `json:"name"`
-	Url             string `json:"url"`
-	ClientID        string `json:"client_id"`
-	ClientSecret    string `json:"client_secret"`
-	ShopwareVersion string `json:"shopware_version"`
-	ShopToken       string `json:"shop_token"`
+	OrganizationID string  `json:"organization_id"`
+	Name           string  `json:"name"`
+	Description    *string `json:"description"`
+	GitUrl         *string `json:"git_url"`
 }
 
 func (q *Queries) CreateShop(ctx context.Context, arg CreateShopParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createShop,
 		arg.OrganizationID,
-		arg.ProjectID,
 		arg.Name,
-		arg.Url,
-		arg.ClientID,
-		arg.ClientSecret,
-		arg.ShopwareVersion,
-		arg.ShopToken,
+		arg.Description,
+		arg.GitUrl,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -57,690 +46,72 @@ func (q *Queries) CreateShop(ctx context.Context, arg CreateShopParams) (int32, 
 }
 
 const deleteShop = `-- name: DeleteShop :exec
-DELETE FROM shop WHERE id = $1
+DELETE FROM shop WHERE id = $1 AND organization_id = $2
 `
 
-func (q *Queries) DeleteShop(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteShop, id)
+type DeleteShopParams struct {
+	ID             int32  `json:"id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+func (q *Queries) DeleteShop(ctx context.Context, arg DeleteShopParams) error {
+	_, err := q.db.Exec(ctx, deleteShop, arg.ID, arg.OrganizationID)
 	return err
-}
-
-const deleteShopChecks = `-- name: DeleteShopChecks :exec
-DELETE FROM shop_check WHERE shop_id = $1
-`
-
-func (q *Queries) DeleteShopChecks(ctx context.Context, shopID int32) error {
-	_, err := q.db.Exec(ctx, deleteShopChecks, shopID)
-	return err
-}
-
-const deleteShopExtensionsNotIn = `-- name: DeleteShopExtensionsNotIn :exec
-DELETE FROM shop_extension WHERE shop_id = $1 AND name != ALL($2::text[])
-`
-
-type DeleteShopExtensionsNotInParams struct {
-	ShopID  int32    `json:"shop_id"`
-	Column2 []string `json:"column_2"`
-}
-
-func (q *Queries) DeleteShopExtensionsNotIn(ctx context.Context, arg DeleteShopExtensionsNotInParams) error {
-	_, err := q.db.Exec(ctx, deleteShopExtensionsNotIn, arg.ShopID, arg.Column2)
-	return err
-}
-
-const deleteShopQueuesNotIn = `-- name: DeleteShopQueuesNotIn :exec
-DELETE FROM shop_queue WHERE shop_id = $1 AND name != ALL($2::text[])
-`
-
-type DeleteShopQueuesNotInParams struct {
-	ShopID  int32    `json:"shop_id"`
-	Column2 []string `json:"column_2"`
-}
-
-func (q *Queries) DeleteShopQueuesNotIn(ctx context.Context, arg DeleteShopQueuesNotInParams) error {
-	_, err := q.db.Exec(ctx, deleteShopQueuesNotIn, arg.ShopID, arg.Column2)
-	return err
-}
-
-const deleteShopScheduledTasksNotIn = `-- name: DeleteShopScheduledTasksNotIn :exec
-DELETE FROM shop_scheduled_task WHERE shop_id = $1 AND task_id != ALL($2::text[])
-`
-
-type DeleteShopScheduledTasksNotInParams struct {
-	ShopID  int32    `json:"shop_id"`
-	Column2 []string `json:"column_2"`
-}
-
-func (q *Queries) DeleteShopScheduledTasksNotIn(ctx context.Context, arg DeleteShopScheduledTasksNotInParams) error {
-	_, err := q.db.Exec(ctx, deleteShopScheduledTasksNotIn, arg.ShopID, arg.Column2)
-	return err
-}
-
-const getAllShops = `-- name: GetAllShops :many
-SELECT s.id, s.name, s.url, s.client_id, s.client_secret, s.shopware_version,
-       s.organization_id, s.ignores, s.last_scraped_at, s.last_scraped_error,
-       s.connection_issue_count, s.shop_token, s.sitespeed_enabled, s.sitespeed_urls
-FROM shop s
-`
-
-type GetAllShopsRow struct {
-	ID                   int32            `json:"id"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	OrganizationID       string           `json:"organization_id"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	ShopToken            string           `json:"shop_token"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-}
-
-func (q *Queries) GetAllShops(ctx context.Context) ([]GetAllShopsRow, error) {
-	rows, err := q.db.Query(ctx, getAllShops)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetAllShopsRow{}
-	for rows.Next() {
-		var i GetAllShopsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Url,
-			&i.ClientID,
-			&i.ClientSecret,
-			&i.ShopwareVersion,
-			&i.OrganizationID,
-			&i.Ignores,
-			&i.LastScrapedAt,
-			&i.LastScrapedError,
-			&i.ConnectionIssueCount,
-			&i.ShopToken,
-			&i.SitespeedEnabled,
-			&i.SitespeedUrls,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getShopByID = `-- name: GetShopByID :one
-SELECT s.id, s.organization_id, s.project_id, s.name, s.status, s.url, s.favicon, s.client_id, s.client_secret, s.shopware_version, s.last_scraped_at, s.last_scraped_error, s.ignores, s.shop_image, s.last_changelog, s.active_deployment_id, s.connection_issue_count, s.sitespeed_enabled, s.sitespeed_urls, s.shop_token, s.created_at, o.name AS organization_name, p.name AS project_name, p.description AS project_description
-FROM shop s
-JOIN organization o ON o.id = s.organization_id
-LEFT JOIN project p ON p.id = s.project_id
-WHERE s.id = $1
+SELECT id, organization_id, name, description, git_url, created_at, updated_at
+FROM shop WHERE id = $1
 `
 
-type GetShopByIDRow struct {
-	ID                   int32            `json:"id"`
-	OrganizationID       string           `json:"organization_id"`
-	ProjectID            int32            `json:"project_id"`
-	Name                 string           `json:"name"`
-	Status               string           `json:"status"`
-	Url                  string           `json:"url"`
-	Favicon              *string          `json:"favicon"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	ShopImage            *string          `json:"shop_image"`
-	LastChangelog        []byte           `json:"last_changelog"`
-	ActiveDeploymentID   *int32           `json:"active_deployment_id"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	ShopToken            string           `json:"shop_token"`
-	CreatedAt            pgtype.Timestamp `json:"created_at"`
-	OrganizationName     string           `json:"organization_name"`
-	ProjectName          *string          `json:"project_name"`
-	ProjectDescription   *string          `json:"project_description"`
-}
-
-func (q *Queries) GetShopByID(ctx context.Context, id int32) (GetShopByIDRow, error) {
+func (q *Queries) GetShopByID(ctx context.Context, id int32) (Shop, error) {
 	row := q.db.QueryRow(ctx, getShopByID, id)
-	var i GetShopByIDRow
+	var i Shop
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.ProjectID,
 		&i.Name,
-		&i.Status,
-		&i.Url,
-		&i.Favicon,
-		&i.ClientID,
-		&i.ClientSecret,
-		&i.ShopwareVersion,
-		&i.LastScrapedAt,
-		&i.LastScrapedError,
-		&i.Ignores,
-		&i.ShopImage,
-		&i.LastChangelog,
-		&i.ActiveDeploymentID,
-		&i.ConnectionIssueCount,
-		&i.SitespeedEnabled,
-		&i.SitespeedUrls,
-		&i.ShopToken,
+		&i.Description,
+		&i.GitUrl,
 		&i.CreatedAt,
-		&i.OrganizationName,
-		&i.ProjectName,
-		&i.ProjectDescription,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getShopCache = `-- name: GetShopCache :one
-SELECT id, shop_id, environment, http_cache, cache_adapter FROM shop_cache WHERE shop_id = $1
+const getShopOrganizationID = `-- name: GetShopOrganizationID :one
+SELECT organization_id FROM shop WHERE id = $1
 `
 
-func (q *Queries) GetShopCache(ctx context.Context, shopID int32) (ShopCache, error) {
-	row := q.db.QueryRow(ctx, getShopCache, shopID)
-	var i ShopCache
-	err := row.Scan(
-		&i.ID,
-		&i.ShopID,
-		&i.Environment,
-		&i.HttpCache,
-		&i.CacheAdapter,
-	)
-	return i, err
-}
-
-const getShopChangelogs = `-- name: GetShopChangelogs :many
-SELECT id, shop_id, extensions, old_shopware_version, new_shopware_version, date
-FROM shop_changelog WHERE shop_id = $1 ORDER BY date DESC LIMIT 10
-`
-
-func (q *Queries) GetShopChangelogs(ctx context.Context, shopID *int32) ([]ShopChangelog, error) {
-	rows, err := q.db.Query(ctx, getShopChangelogs, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopChangelog{}
-	for rows.Next() {
-		var i ShopChangelog
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.Extensions,
-			&i.OldShopwareVersion,
-			&i.NewShopwareVersion,
-			&i.Date,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopChecks = `-- name: GetShopChecks :many
-SELECT id, shop_id, check_id, level, message, source, link FROM shop_check WHERE shop_id = $1
-`
-
-func (q *Queries) GetShopChecks(ctx context.Context, shopID int32) ([]ShopCheck, error) {
-	rows, err := q.db.Query(ctx, getShopChecks, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopCheck{}
-	for rows.Next() {
-		var i ShopCheck
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.CheckID,
-			&i.Level,
-			&i.Message,
-			&i.Source,
-			&i.Link,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopCredentials = `-- name: GetShopCredentials :one
-SELECT id, url, client_id, client_secret, shop_token FROM shop WHERE id = $1
-`
-
-type GetShopCredentialsRow struct {
-	ID           int32  `json:"id"`
-	Url          string `json:"url"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	ShopToken    string `json:"shop_token"`
-}
-
-func (q *Queries) GetShopCredentials(ctx context.Context, id int32) (GetShopCredentialsRow, error) {
-	row := q.db.QueryRow(ctx, getShopCredentials, id)
-	var i GetShopCredentialsRow
-	err := row.Scan(
-		&i.ID,
-		&i.Url,
-		&i.ClientID,
-		&i.ClientSecret,
-		&i.ShopToken,
-	)
-	return i, err
-}
-
-const getShopExtensions = `-- name: GetShopExtensions :many
-SELECT id, shop_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at
-FROM shop_extension WHERE shop_id = $1 ORDER BY name
-`
-
-func (q *Queries) GetShopExtensions(ctx context.Context, shopID int32) ([]ShopExtension, error) {
-	rows, err := q.db.Query(ctx, getShopExtensions, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopExtension{}
-	for rows.Next() {
-		var i ShopExtension
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.Name,
-			&i.Label,
-			&i.Active,
-			&i.Version,
-			&i.LatestVersion,
-			&i.Installed,
-			&i.RatingAverage,
-			&i.StoreLink,
-			&i.Changelog,
-			&i.InstalledAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopForScrape = `-- name: GetShopForScrape :one
-SELECT s.id, s.name, s.url, s.client_id, s.client_secret, s.shopware_version,
-       s.organization_id, s.ignores, s.last_scraped_at, s.last_scraped_error,
-       s.connection_issue_count, s.shop_token, s.sitespeed_enabled, s.sitespeed_urls
-FROM shop s WHERE s.id = $1
-`
-
-type GetShopForScrapeRow struct {
-	ID                   int32            `json:"id"`
-	Name                 string           `json:"name"`
-	Url                  string           `json:"url"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	OrganizationID       string           `json:"organization_id"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	ShopToken            string           `json:"shop_token"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-}
-
-func (q *Queries) GetShopForScrape(ctx context.Context, id int32) (GetShopForScrapeRow, error) {
-	row := q.db.QueryRow(ctx, getShopForScrape, id)
-	var i GetShopForScrapeRow
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Url,
-		&i.ClientID,
-		&i.ClientSecret,
-		&i.ShopwareVersion,
-		&i.OrganizationID,
-		&i.Ignores,
-		&i.LastScrapedAt,
-		&i.LastScrapedError,
-		&i.ConnectionIssueCount,
-		&i.ShopToken,
-		&i.SitespeedEnabled,
-		&i.SitespeedUrls,
-	)
-	return i, err
-}
-
-const getShopNotificationSubscribers = `-- name: GetShopNotificationSubscribers :many
-SELECT u.id, u.name, u.email
-FROM "user" u
-JOIN member m ON m.user_id = u.id
-WHERE m.organization_id = $1
-  AND u.notifications @> to_jsonb(ARRAY['shop-' || $2::text])::jsonb
-`
-
-type GetShopNotificationSubscribersParams struct {
-	OrganizationID string `json:"organization_id"`
-	ShopID         string `json:"shop_id"`
-}
-
-type GetShopNotificationSubscribersRow struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
-func (q *Queries) GetShopNotificationSubscribers(ctx context.Context, arg GetShopNotificationSubscribersParams) ([]GetShopNotificationSubscribersRow, error) {
-	rows, err := q.db.Query(ctx, getShopNotificationSubscribers, arg.OrganizationID, arg.ShopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetShopNotificationSubscribersRow{}
-	for rows.Next() {
-		var i GetShopNotificationSubscribersRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopQueues = `-- name: GetShopQueues :many
-SELECT id, shop_id, name, size FROM shop_queue WHERE shop_id = $1 ORDER BY name
-`
-
-func (q *Queries) GetShopQueues(ctx context.Context, shopID int32) ([]ShopQueue, error) {
-	rows, err := q.db.Query(ctx, getShopQueues, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopQueue{}
-	for rows.Next() {
-		var i ShopQueue
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.Name,
-			&i.Size,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopScheduledTasks = `-- name: GetShopScheduledTasks :many
-SELECT id, shop_id, task_id, name, status, interval, overdue, last_execution_time, next_execution_time
-FROM shop_scheduled_task WHERE shop_id = $1 ORDER BY name
-`
-
-func (q *Queries) GetShopScheduledTasks(ctx context.Context, shopID int32) ([]ShopScheduledTask, error) {
-	rows, err := q.db.Query(ctx, getShopScheduledTasks, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopScheduledTask{}
-	for rows.Next() {
-		var i ShopScheduledTask
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.TaskID,
-			&i.Name,
-			&i.Status,
-			&i.Interval,
-			&i.Overdue,
-			&i.LastExecutionTime,
-			&i.NextExecutionTime,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopSitespeeds = `-- name: GetShopSitespeeds :many
-SELECT id, shop_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size
-FROM shop_sitespeed WHERE shop_id = $1 ORDER BY created_at DESC LIMIT 100
-`
-
-func (q *Queries) GetShopSitespeeds(ctx context.Context, shopID *int32) ([]ShopSitespeed, error) {
-	rows, err := q.db.Query(ctx, getShopSitespeeds, shopID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ShopSitespeed{}
-	for rows.Next() {
-		var i ShopSitespeed
-		if err := rows.Scan(
-			&i.ID,
-			&i.ShopID,
-			&i.DeploymentID,
-			&i.CreatedAt,
-			&i.Ttfb,
-			&i.FullyLoaded,
-			&i.LargestContentfulPaint,
-			&i.FirstContentfulPaint,
-			&i.CumulativeLayoutShift,
-			&i.TransferSize,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getShopsWithSitespeedEnabled = `-- name: GetShopsWithSitespeedEnabled :many
-SELECT s.id, s.url, s.sitespeed_urls, s.active_deployment_id, s.shop_token FROM shop s WHERE s.sitespeed_enabled = true
-`
-
-type GetShopsWithSitespeedEnabledRow struct {
-	ID                 int32           `json:"id"`
-	Url                string          `json:"url"`
-	SitespeedUrls      json.RawMessage `json:"sitespeed_urls"`
-	ActiveDeploymentID *int32          `json:"active_deployment_id"`
-	ShopToken          string          `json:"shop_token"`
-}
-
-func (q *Queries) GetShopsWithSitespeedEnabled(ctx context.Context) ([]GetShopsWithSitespeedEnabledRow, error) {
-	rows, err := q.db.Query(ctx, getShopsWithSitespeedEnabled)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetShopsWithSitespeedEnabledRow{}
-	for rows.Next() {
-		var i GetShopsWithSitespeedEnabledRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Url,
-			&i.SitespeedUrls,
-			&i.ActiveDeploymentID,
-			&i.ShopToken,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const insertShopChangelog = `-- name: InsertShopChangelog :exec
-INSERT INTO shop_changelog (shop_id, extensions, old_shopware_version, new_shopware_version, date)
-VALUES ($1, $2, $3, $4, NOW())
-`
-
-type InsertShopChangelogParams struct {
-	ShopID             *int32          `json:"shop_id"`
-	Extensions         json.RawMessage `json:"extensions"`
-	OldShopwareVersion *string         `json:"old_shopware_version"`
-	NewShopwareVersion *string         `json:"new_shopware_version"`
-}
-
-func (q *Queries) InsertShopChangelog(ctx context.Context, arg InsertShopChangelogParams) error {
-	_, err := q.db.Exec(ctx, insertShopChangelog,
-		arg.ShopID,
-		arg.Extensions,
-		arg.OldShopwareVersion,
-		arg.NewShopwareVersion,
-	)
-	return err
-}
-
-const insertShopCheck = `-- name: InsertShopCheck :exec
-INSERT INTO shop_check (shop_id, check_id, level, message, source, link)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (shop_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
-`
-
-type InsertShopCheckParams struct {
-	ShopID  int32   `json:"shop_id"`
-	CheckID string  `json:"check_id"`
-	Level   string  `json:"level"`
-	Message string  `json:"message"`
-	Source  string  `json:"source"`
-	Link    *string `json:"link"`
-}
-
-func (q *Queries) InsertShopCheck(ctx context.Context, arg InsertShopCheckParams) error {
-	_, err := q.db.Exec(ctx, insertShopCheck,
-		arg.ShopID,
-		arg.CheckID,
-		arg.Level,
-		arg.Message,
-		arg.Source,
-		arg.Link,
-	)
-	return err
-}
-
-const insertShopSitespeed = `-- name: InsertShopSitespeed :exec
-INSERT INTO shop_sitespeed (shop_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size)
-VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8)
-`
-
-type InsertShopSitespeedParams struct {
-	ShopID                 *int32   `json:"shop_id"`
-	DeploymentID           *int32   `json:"deployment_id"`
-	Ttfb                   *int32   `json:"ttfb"`
-	FullyLoaded            *int32   `json:"fully_loaded"`
-	LargestContentfulPaint *int32   `json:"largest_contentful_paint"`
-	FirstContentfulPaint   *int32   `json:"first_contentful_paint"`
-	CumulativeLayoutShift  *float32 `json:"cumulative_layout_shift"`
-	TransferSize           *int32   `json:"transfer_size"`
-}
-
-func (q *Queries) InsertShopSitespeed(ctx context.Context, arg InsertShopSitespeedParams) error {
-	_, err := q.db.Exec(ctx, insertShopSitespeed,
-		arg.ShopID,
-		arg.DeploymentID,
-		arg.Ttfb,
-		arg.FullyLoaded,
-		arg.LargestContentfulPaint,
-		arg.FirstContentfulPaint,
-		arg.CumulativeLayoutShift,
-		arg.TransferSize,
-	)
-	return err
+func (q *Queries) GetShopOrganizationID(ctx context.Context, id int32) (string, error) {
+	row := q.db.QueryRow(ctx, getShopOrganizationID, id)
+	var organization_id string
+	err := row.Scan(&organization_id)
+	return organization_id, err
 }
 
 const listShopsByOrganization = `-- name: ListShopsByOrganization :many
-SELECT s.id, s.name, s.url, s.favicon, s.status, s.shopware_version,
-       s.last_scraped_at, s.last_scraped_error, s.created_at, s.project_id, s.organization_id,
-       o.name AS organization_name,
-       p.name AS project_name, p.description AS project_description
-FROM shop s
-JOIN organization o ON o.id = s.organization_id
-LEFT JOIN project p ON p.id = s.project_id
-WHERE s.organization_id = $1
-ORDER BY s.name
+SELECT id, organization_id, name, description, git_url, created_at, updated_at
+FROM shop WHERE organization_id = $1 ORDER BY name
 `
 
-type ListShopsByOrganizationRow struct {
-	ID                 int32            `json:"id"`
-	Name               string           `json:"name"`
-	Url                string           `json:"url"`
-	Favicon            *string          `json:"favicon"`
-	Status             string           `json:"status"`
-	ShopwareVersion    string           `json:"shopware_version"`
-	LastScrapedAt      pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError   *string          `json:"last_scraped_error"`
-	CreatedAt          pgtype.Timestamp `json:"created_at"`
-	ProjectID          int32            `json:"project_id"`
-	OrganizationID     string           `json:"organization_id"`
-	OrganizationName   string           `json:"organization_name"`
-	ProjectName        *string          `json:"project_name"`
-	ProjectDescription *string          `json:"project_description"`
-}
-
-func (q *Queries) ListShopsByOrganization(ctx context.Context, organizationID string) ([]ListShopsByOrganizationRow, error) {
+func (q *Queries) ListShopsByOrganization(ctx context.Context, organizationID string) ([]Shop, error) {
 	rows, err := q.db.Query(ctx, listShopsByOrganization, organizationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListShopsByOrganizationRow{}
+	items := []Shop{}
 	for rows.Next() {
-		var i ListShopsByOrganizationRow
+		var i Shop
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
-			&i.Url,
-			&i.Favicon,
-			&i.Status,
-			&i.ShopwareVersion,
-			&i.LastScrapedAt,
-			&i.LastScrapedError,
-			&i.CreatedAt,
-			&i.ProjectID,
 			&i.OrganizationID,
-			&i.OrganizationName,
-			&i.ProjectName,
-			&i.ProjectDescription,
+			&i.Name,
+			&i.Description,
+			&i.GitUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -753,235 +124,24 @@ func (q *Queries) ListShopsByOrganization(ctx context.Context, organizationID st
 }
 
 const updateShop = `-- name: UpdateShop :exec
-UPDATE shop SET name = $1, url = $2, client_id = $3, client_secret = $4, ignores = $5, project_id = $6 WHERE id = $7
+UPDATE shop SET name = $1, description = $2, git_url = $3, updated_at = NOW() WHERE id = $4 AND organization_id = $5
 `
 
 type UpdateShopParams struct {
-	Name         string          `json:"name"`
-	Url          string          `json:"url"`
-	ClientID     string          `json:"client_id"`
-	ClientSecret string          `json:"client_secret"`
-	Ignores      json.RawMessage `json:"ignores"`
-	ProjectID    int32           `json:"project_id"`
-	ID           int32           `json:"id"`
+	Name           string  `json:"name"`
+	Description    *string `json:"description"`
+	GitUrl         *string `json:"git_url"`
+	ID             int32   `json:"id"`
+	OrganizationID string  `json:"organization_id"`
 }
 
 func (q *Queries) UpdateShop(ctx context.Context, arg UpdateShopParams) error {
 	_, err := q.db.Exec(ctx, updateShop,
 		arg.Name,
-		arg.Url,
-		arg.ClientID,
-		arg.ClientSecret,
-		arg.Ignores,
-		arg.ProjectID,
+		arg.Description,
+		arg.GitUrl,
 		arg.ID,
-	)
-	return err
-}
-
-const updateShopActiveDeployment = `-- name: UpdateShopActiveDeployment :exec
-UPDATE shop SET active_deployment_id = $1 WHERE id = $2
-`
-
-type UpdateShopActiveDeploymentParams struct {
-	ActiveDeploymentID *int32 `json:"active_deployment_id"`
-	ID                 int32  `json:"id"`
-}
-
-func (q *Queries) UpdateShopActiveDeployment(ctx context.Context, arg UpdateShopActiveDeploymentParams) error {
-	_, err := q.db.Exec(ctx, updateShopActiveDeployment, arg.ActiveDeploymentID, arg.ID)
-	return err
-}
-
-const updateShopAfterScrape = `-- name: UpdateShopAfterScrape :exec
-UPDATE shop SET status = $1, shopware_version = $2, last_scraped_at = NOW(), last_scraped_error = $3,
-       favicon = $4, shop_image = $5, last_changelog = $6, connection_issue_count = 0
-WHERE id = $7
-`
-
-type UpdateShopAfterScrapeParams struct {
-	Status           string  `json:"status"`
-	ShopwareVersion  string  `json:"shopware_version"`
-	LastScrapedError *string `json:"last_scraped_error"`
-	Favicon          *string `json:"favicon"`
-	ShopImage        *string `json:"shop_image"`
-	LastChangelog    []byte  `json:"last_changelog"`
-	ID               int32   `json:"id"`
-}
-
-func (q *Queries) UpdateShopAfterScrape(ctx context.Context, arg UpdateShopAfterScrapeParams) error {
-	_, err := q.db.Exec(ctx, updateShopAfterScrape,
-		arg.Status,
-		arg.ShopwareVersion,
-		arg.LastScrapedError,
-		arg.Favicon,
-		arg.ShopImage,
-		arg.LastChangelog,
-		arg.ID,
-	)
-	return err
-}
-
-const updateShopImage = `-- name: UpdateShopImage :exec
-UPDATE shop SET shop_image = $1 WHERE id = $2
-`
-
-type UpdateShopImageParams struct {
-	ShopImage *string `json:"shop_image"`
-	ID        int32   `json:"id"`
-}
-
-func (q *Queries) UpdateShopImage(ctx context.Context, arg UpdateShopImageParams) error {
-	_, err := q.db.Exec(ctx, updateShopImage, arg.ShopImage, arg.ID)
-	return err
-}
-
-const updateShopName = `-- name: UpdateShopName :exec
-UPDATE shop SET name = $1 WHERE id = $2
-`
-
-type UpdateShopNameParams struct {
-	Name string `json:"name"`
-	ID   int32  `json:"id"`
-}
-
-func (q *Queries) UpdateShopName(ctx context.Context, arg UpdateShopNameParams) error {
-	_, err := q.db.Exec(ctx, updateShopName, arg.Name, arg.ID)
-	return err
-}
-
-const updateShopScrapeError = `-- name: UpdateShopScrapeError :exec
-UPDATE shop SET last_scraped_error = $1, last_scraped_at = NOW(), connection_issue_count = connection_issue_count + 1 WHERE id = $2
-`
-
-type UpdateShopScrapeErrorParams struct {
-	LastScrapedError *string `json:"last_scraped_error"`
-	ID               int32   `json:"id"`
-}
-
-func (q *Queries) UpdateShopScrapeError(ctx context.Context, arg UpdateShopScrapeErrorParams) error {
-	_, err := q.db.Exec(ctx, updateShopScrapeError, arg.LastScrapedError, arg.ID)
-	return err
-}
-
-const updateShopSitespeedSettings = `-- name: UpdateShopSitespeedSettings :exec
-UPDATE shop SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3
-`
-
-type UpdateShopSitespeedSettingsParams struct {
-	SitespeedEnabled bool            `json:"sitespeed_enabled"`
-	SitespeedUrls    json.RawMessage `json:"sitespeed_urls"`
-	ID               int32           `json:"id"`
-}
-
-func (q *Queries) UpdateShopSitespeedSettings(ctx context.Context, arg UpdateShopSitespeedSettingsParams) error {
-	_, err := q.db.Exec(ctx, updateShopSitespeedSettings, arg.SitespeedEnabled, arg.SitespeedUrls, arg.ID)
-	return err
-}
-
-const upsertShopCache = `-- name: UpsertShopCache :exec
-INSERT INTO shop_cache (shop_id, environment, http_cache, cache_adapter)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (shop_id) DO UPDATE SET environment = $2, http_cache = $3, cache_adapter = $4
-`
-
-type UpsertShopCacheParams struct {
-	ShopID       int32  `json:"shop_id"`
-	Environment  string `json:"environment"`
-	HttpCache    bool   `json:"http_cache"`
-	CacheAdapter string `json:"cache_adapter"`
-}
-
-func (q *Queries) UpsertShopCache(ctx context.Context, arg UpsertShopCacheParams) error {
-	_, err := q.db.Exec(ctx, upsertShopCache,
-		arg.ShopID,
-		arg.Environment,
-		arg.HttpCache,
-		arg.CacheAdapter,
-	)
-	return err
-}
-
-const upsertShopExtension = `-- name: UpsertShopExtension :exec
-INSERT INTO shop_extension (shop_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-ON CONFLICT (shop_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, rating_average = $8, store_link = $9, changelog = $10, installed_at = $11
-`
-
-type UpsertShopExtensionParams struct {
-	ShopID        int32   `json:"shop_id"`
-	Name          string  `json:"name"`
-	Label         string  `json:"label"`
-	Active        bool    `json:"active"`
-	Version       string  `json:"version"`
-	LatestVersion *string `json:"latest_version"`
-	Installed     bool    `json:"installed"`
-	RatingAverage *int32  `json:"rating_average"`
-	StoreLink     *string `json:"store_link"`
-	Changelog     []byte  `json:"changelog"`
-	InstalledAt   *string `json:"installed_at"`
-}
-
-func (q *Queries) UpsertShopExtension(ctx context.Context, arg UpsertShopExtensionParams) error {
-	_, err := q.db.Exec(ctx, upsertShopExtension,
-		arg.ShopID,
-		arg.Name,
-		arg.Label,
-		arg.Active,
-		arg.Version,
-		arg.LatestVersion,
-		arg.Installed,
-		arg.RatingAverage,
-		arg.StoreLink,
-		arg.Changelog,
-		arg.InstalledAt,
-	)
-	return err
-}
-
-const upsertShopQueue = `-- name: UpsertShopQueue :exec
-INSERT INTO shop_queue (shop_id, name, size) VALUES ($1, $2, $3)
-ON CONFLICT (shop_id, name) DO UPDATE SET size = $3
-`
-
-type UpsertShopQueueParams struct {
-	ShopID int32  `json:"shop_id"`
-	Name   string `json:"name"`
-	Size   int32  `json:"size"`
-}
-
-func (q *Queries) UpsertShopQueue(ctx context.Context, arg UpsertShopQueueParams) error {
-	_, err := q.db.Exec(ctx, upsertShopQueue, arg.ShopID, arg.Name, arg.Size)
-	return err
-}
-
-const upsertShopScheduledTask = `-- name: UpsertShopScheduledTask :exec
-INSERT INTO shop_scheduled_task (shop_id, task_id, name, status, interval, overdue, last_execution_time, next_execution_time)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (shop_id, task_id) DO UPDATE SET name = $3, status = $4, interval = $5, overdue = $6, last_execution_time = $7, next_execution_time = $8
-`
-
-type UpsertShopScheduledTaskParams struct {
-	ShopID            int32   `json:"shop_id"`
-	TaskID            string  `json:"task_id"`
-	Name              string  `json:"name"`
-	Status            string  `json:"status"`
-	Interval          int32   `json:"interval"`
-	Overdue           bool    `json:"overdue"`
-	LastExecutionTime *string `json:"last_execution_time"`
-	NextExecutionTime *string `json:"next_execution_time"`
-}
-
-func (q *Queries) UpsertShopScheduledTask(ctx context.Context, arg UpsertShopScheduledTaskParams) error {
-	_, err := q.db.Exec(ctx, upsertShopScheduledTask,
-		arg.ShopID,
-		arg.TaskID,
-		arg.Name,
-		arg.Status,
-		arg.Interval,
-		arg.Overdue,
-		arg.LastExecutionTime,
-		arg.NextExecutionTime,
+		arg.OrganizationID,
 	)
 	return err
 }

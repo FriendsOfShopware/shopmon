@@ -1,106 +1,45 @@
 <template>
   <header-container :title="$t('shop.newShop')" />
   <main-container>
-    <Panel v-if="projects.length === 0 && projectsLoaded">
-      <div class="empty-project-state">
-        <div class="empty-project-icon">
-          <icon-fa6-solid:folder-tree aria-hidden="true" />
-        </div>
-
-        <h3 class="empty-project-title">Create a project first</h3>
-
-        <p class="empty-project-description">
-          Projects group related shop environments together. For example:
-        </p>
-
-        <div class="empty-project-example">
-          <div class="example-project">
-            <icon-fa6-solid:folder class="example-icon" aria-hidden="true" />
-            <span class="example-project-name">Toy Shop X</span>
-          </div>
-          <div class="example-shops">
-            <div class="example-shop">
-              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
-              Production
-            </div>
-            <div class="example-shop">
-              <icon-fa6-solid:shop class="example-icon" aria-hidden="true" />
-              Staging
-            </div>
-          </div>
-        </div>
-
-        <div class="empty-project-cta">
-          <router-link :to="{ name: 'account.projects.new', query: { redirect: $route.fullPath } }" class="btn btn-primary">
-            <icon-fa6-solid:plus class="icon" aria-hidden="true" />
-            Create Project
-          </router-link>
-        </div>
-      </div>
-    </Panel>
-
-    <Panel v-else>
+    <Panel v-if="!isLoadingOrgs">
       <vee-form
-        ref="formRef"
         v-slot="{ errors, isSubmitting }"
         :validation-schema="schema"
-        :initial-values="shops"
+        :initial-values="initialValues"
         @submit="onSubmit"
       >
         <form-group :title="$t('shop.shopInfo')">
           <InputField name="name" :label="$t('common.name')" :error="errors.name" />
 
-          <BaseSelect
-            v-model="selectedProjectId"
-            name="projectId"
-            :label="$t('shop.project')"
-            required
-            :error="errors.projectId"
+          <TextareaField
+            name="description"
+            :label="$t('common.description')"
+            :placeholder="$t('shop.optionalDescription')"
+            :error="errors.description"
+          />
+
+          <InputField
+            name="gitUrl"
+            :label="$t('shop.gitRepoUrl')"
+            type="url"
+            placeholder="https://github.com/org/repo"
+            :error="errors.gitUrl"
+          />
+
+          <SelectField
+            name="organizationId"
+            :label="$t('settings.organization')"
+            :error="errors.organizationId"
           >
-            <option v-for="project in projects" :key="project.id" :value="project.id">
-              {{ project.organizationName + " / " + project.name }}
-            </option>
-          </BaseSelect>
-
-          <InputField name="shopUrl" :label="$t('common.url')" autocomplete="url" :error="errors.shopUrl" />
-        </form-group>
-
-        <form-group :title="$t('shop.bypassAuthHeader')">
-          <template #info>
-            {{ $t("shop.bypassAuthHeaderDesc") }}
-          </template>
-
-          <div class="shop-token-display">
-            <code>{{ shopToken }}</code>
-
-            <button type="button" class="btn btn-sm btn-icon" @click="copyToken">
-              <icon-fa6-solid:copy />
-            </button>
-          </div>
-        </form-group>
-
-        <form-group :title="$t('shop.integration')">
-          <template #info>
-            <i18n-t keypath="shop.integrationDesc" tag="span">
-              <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
-                  $t("shop.pluginName")
-                }}</a>
-              </template>
-            </i18n-t>
-            <a
-              href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
+            <option value="">{{ $t("shop.selectOrganization") }}</option>
+            <option
+              v-for="organization in organizations"
+              :key="organization.id"
+              :value="organization.id"
             >
-              {{ $t("shop.permissions") }}
-            </a>
-          </template>
-
-          <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            {{ $t("shop.connectPlugin") }}
-          </button>
-
-          <InputField name="clientId" :label="$t('shop.clientId')" :error="errors.clientId" />
-          <InputField name="clientSecret" :label="$t('shop.clientSecret')" :error="errors.clientSecret" />
+              {{ organization.name }}
+            </option>
+          </SelectField>
         </form-group>
 
         <div class="form-submit">
@@ -112,103 +51,71 @@
         </div>
       </vee-form>
     </Panel>
-
-    <!-- Plugin Connection Modal -->
-    <plugin-connection-modal
-      v-model:base64="pluginBase64"
-      :show="showPluginModal"
-      :error="pluginError"
-      @close="closePluginModal"
-      @import="processPluginData"
-    />
   </main-container>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-
 import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
 import { Form as VeeForm } from "vee-validate";
-import { ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { useRoute, useRouter } from "vue-router";
 import * as Yup from "yup";
 
 const { t } = useI18n();
-const { error, success } = useAlert();
+const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-function generateShopToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+interface Organization {
+  id: string;
+  name: string;
 }
 
-const shopToken = generateShopToken();
+const organizations = ref<Organization[]>([]);
+const isLoadingOrgs = ref(true);
 
-async function copyToken() {
-  await navigator.clipboard.writeText(shopToken);
-  success(t("shop.tokenCopied"));
-}
-
-const projects = ref<components["schemas"]["AccountProject"][]>([]);
-const projectsLoaded = ref(false);
-const selectedProjectId = ref<number>(route.query.projectId ? Number(route.query.projectId) : 0);
-
-const showPluginModal = ref(false);
-const pluginBase64 = ref("");
-const pluginError = ref("");
-
-const formRef = ref();
-
-api.GET("/account/projects").then(({ data }) => {
-  if (data) {
-    projects.value = data;
-    if (!selectedProjectId.value && data.length > 0) {
-      selectedProjectId.value = data[0].id;
-    }
-  }
-  projectsLoaded.value = true;
-});
-
-const isValidUrl = (url: string) => {
+async function loadOrganizations() {
+  isLoadingOrgs.value = true;
   try {
-    const parsedUrl = new URL(url);
-    return !!parsedUrl;
-  } catch (_e) {
-    return false;
+    const { data } = await api.GET("/auth/list-organizations");
+    if (data) {
+      organizations.value = data;
+    }
+  } catch {
+    // silently ignore
+  } finally {
+    isLoadingOrgs.value = false;
   }
-};
+}
 
 const schema = Yup.object().shape({
   name: Yup.string().required(t("validation.shopNameRequired")),
-  shopUrl: Yup.string()
-    .required(t("validation.shopUrlRequired"))
-    .test("is-url-valid", t("validation.shopUrlInvalid"), (value) => isValidUrl(value)),
-  projectId: Yup.number().required(t("validation.projectRequired")),
-  clientId: Yup.string().required(t("validation.clientIdRequired")),
-  clientSecret: Yup.string().required(t("validation.clientSecretRequired")),
+  description: Yup.string().optional(),
+  gitUrl: Yup.string().url(t("validation.urlInvalid")).optional(),
+  organizationId: Yup.string().required(t("validation.orgRequired")),
 });
 
-const shops = {
-  projectId: selectedProjectId.value,
-};
+const initialValues = computed(() => {
+  const firstOrgId = organizations.value[0]?.id ?? "";
+  return {
+    name: "",
+    description: "",
+    gitUrl: "",
+    organizationId: firstOrgId,
+  };
+});
 
 const onSubmit = async (values: Record<string, unknown>) => {
   try {
     const typedValues = values as Yup.InferType<typeof schema>;
-    const { error: apiError } = await api.POST("/shops", {
+    const { error: apiError } = await api.POST("/organizations/{orgId}/shops", {
+      params: { path: { orgId: typedValues.organizationId } },
       body: {
         name: typedValues.name,
-        shopUrl: typedValues.shopUrl.replace(/\/+$/, ""),
-        clientId: typedValues.clientId,
-        clientSecret: typedValues.clientSecret,
-        projectId: selectedProjectId.value,
-        shopToken,
+        description: typedValues.description ?? undefined,
+        gitUrl: typedValues.gitUrl || undefined,
       },
     });
 
@@ -217,132 +124,17 @@ const onSubmit = async (values: Record<string, unknown>) => {
       return;
     }
 
-    router.push({ name: "account.project.list" });
+    if (route.query.redirect) {
+      router.push(route.query.redirect as string);
+    } else {
+      router.push({ name: "account.shop.list" });
+    }
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
 };
 
-function openPluginModal() {
-  showPluginModal.value = true;
-  pluginBase64.value = "";
-  pluginError.value = "";
-}
-
-const closePluginModal = () => {
-  showPluginModal.value = false;
-  pluginBase64.value = "";
-  pluginError.value = "";
-};
-
-function processPluginData() {
-  try {
-    pluginError.value = "";
-
-    if (!pluginBase64.value.trim()) {
-      pluginError.value = t("shop.base64Error");
-      return;
-    }
-
-    const decodedString = window.atob(pluginBase64.value.trim());
-    const data = JSON.parse(decodedString);
-
-    if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t("shop.base64InvalidData");
-      return;
-    }
-
-    formRef.value.setFieldValue("shopUrl", data.url);
-    formRef.value.setFieldValue("clientId", data.clientId);
-    formRef.value.setFieldValue("clientSecret", data.clientSecret);
-
-    closePluginModal();
-  } catch (_e) {
-    pluginError.value = t("shop.base64InvalidFormat");
-  }
-}
+onMounted(() => {
+  loadOrganizations();
+});
 </script>
-
-<style scoped>
-.shop-token-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  code {
-    font-size: 0.8rem;
-    word-break: break-all;
-  }
-}
-
-.empty-project-state {
-  text-align: center;
-  padding: 2rem 1rem 1rem;
-}
-
-.empty-project-icon {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  opacity: 0.7;
-  margin-bottom: 1rem;
-}
-
-.empty-project-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--item-title-color);
-  margin-bottom: 0.5rem;
-}
-
-.empty-project-description {
-  color: var(--text-color-muted);
-  margin-bottom: 1.5rem;
-}
-
-.empty-project-example {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background-color: var(--item-background);
-  border: 1px solid var(--panel-border-color);
-  border-radius: 0.5rem;
-  padding: 1rem 1.5rem;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.example-project {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  color: var(--item-title-color);
-}
-
-.example-shops {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  margin-left: 1.5rem;
-  padding-left: 0.75rem;
-  border-left: 2px solid var(--panel-border-color);
-}
-
-.example-shop {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-color-muted);
-}
-
-.example-icon {
-  font-size: 0.75rem;
-  color: var(--primary-color);
-  opacity: 0.8;
-}
-
-.empty-project-cta {
-  margin-top: 2rem;
-}
-</style>

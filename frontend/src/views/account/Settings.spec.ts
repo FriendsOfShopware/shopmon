@@ -67,50 +67,36 @@ const AlertStub = defineComponent({
   },
 });
 
-const mockSession = {
-  value: {
-    data: {
-      user: { id: "1", name: "Test User", email: "test@example.com" },
-      session: { token: "test-token" },
-    },
+const mockSessionData = {
+  user: {
+    id: "1",
+    name: "Test User",
+    email: "test@example.com",
+    emailVerified: true,
+    image: null,
+    role: "user",
   },
+  session: { id: "sess-1", userId: "1", expiresAt: "2099-01-01", activeOrganizationId: null },
 };
 
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    useSession: () => mockSession,
-    useListOrganizations: () => ref({ data: [] }),
-    passkey: {
-      listUserPasskeys: vi.fn(() => Promise.resolve({ data: [] })),
-      addPasskey: vi.fn(() => Promise.resolve()),
-      deletePasskey: vi.fn(() => Promise.resolve()),
-    },
-    listSessions: vi.fn(() => Promise.resolve({ data: [] })),
-    listAccounts: vi.fn(() => Promise.resolve({ data: [] })),
-    changeEmail: vi.fn(() => Promise.resolve()),
-    updateUser: vi.fn(() => Promise.resolve()),
-    changePassword: vi.fn(() => Promise.resolve()),
-    deleteUser: vi.fn(() => Promise.resolve({ error: null })),
-    linkSocial: vi.fn(() => Promise.resolve()),
-    unlinkAccount: vi.fn(() => Promise.resolve()),
-  },
+vi.mock("@/composables/useSession", () => ({
+  useSession: () => ({
+    session: ref(mockSessionData),
+    loading: ref(false),
+    fetchSession: vi.fn(),
+  }),
 }));
 
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      subscribedShops: {
-        query: vi.fn(() => Promise.resolve([])),
-      },
-    },
-    organization: {
-      shop: {
-        unsubscribeFromNotifications: {
-          mutate: vi.fn(() => Promise.resolve()),
-        },
-      },
-    },
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(() => "test-token"),
 }));
 
 vi.mock("@/composables/useAlert", () => ({
@@ -120,9 +106,33 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
+vi.mock("@simplewebauthn/browser", () => ({
+  startRegistration: vi.fn(),
+}));
+
+import { api } from "@/helpers/api";
+
 describe("Settings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/auth/passkey/list-user-passkeys") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/auth/list-sessions") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/auth/list-accounts") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/auth/list-organizations") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/account/subscribed-environments") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
   });
 
   function mountComponent() {
@@ -209,6 +219,6 @@ describe("Settings", () => {
   it("shows empty notification state when no subscriptions", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("You are not subscribed to any shop notifications");
+    expect(wrapper.text()).toContain("You are not subscribed to any environment notifications");
   });
 });

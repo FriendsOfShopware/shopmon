@@ -1,54 +1,54 @@
 <template>
-  <div v-if="shops">
+  <div v-if="environments">
     <header-container :title="$t('dashboard.title')" />
     <Panel>
       <template #title>
         <icon-fa6-solid:shop />
-        {{ $t("dashboard.myShops") }}
+        {{ $t("dashboard.myEnvironments") }}
       </template>
 
       <element-empty
-        v-if="shops.length === 0"
-        :route="{ name: 'account.shops.new' }"
-        title="No shops yet"
-        button="Add Shop"
+        v-if="environments.length === 0"
+        :route="{ name: 'account.environments.new' }"
+        title="No environments yet"
+        button="Add Environment"
       >
-        Add your first Shopware shop to start monitoring.
+        Add your first Shopware environment to start monitoring.
       </element-empty>
 
       <div v-else class="item-grid">
-        <div v-for="shop in shops" :key="shop.id" class="item">
+        <div v-for="env in environments" :key="env.id" class="item">
           <router-link
             :to="{
-              name: 'account.shops.detail',
+              name: 'account.environments.detail',
               params: {
-                organizationId: shop.organizationId,
-                shopId: shop.id,
+                organizationId: env.organizationId,
+                environmentId: env.id,
               },
             }"
             class="item-link item-wrapper"
           >
             <div class="item-logo">
               <img
-                v-if="shop.favicon"
-                :src="shop.favicon"
-                :alt="$t('dashboard.shopLogo')"
+                v-if="env.favicon"
+                :src="env.favicon"
+                :alt="$t('dashboard.environmentLogo')"
                 class="item-logo-img"
               />
             </div>
 
             <div class="item-info">
               <div class="item-name">
-                {{ shop.name }}
+                {{ env.name }}
               </div>
 
               <div class="item-content">
-                {{ shop.projectName }}<br />
-                {{ shop.shopwareVersion }}
+                {{ env.shopName }}<br />
+                {{ env.shopwareVersion }}
               </div>
 
               <div class="item-state">
-                <status-icon :status="shop.status" />
+                <status-icon :status="env.status" />
               </div>
             </div>
           </router-link>
@@ -82,7 +82,7 @@
 
               <div class="item-content">
                 {{ $t("dashboard.nMembers", { count: organization.memberCount }) }},
-                {{ $t("dashboard.nShops", { count: organization.shopCount }) }}
+                {{ $t("dashboard.nEnvironments", { count: organization.environmentCount }) }}
               </div>
             </div>
           </router-link>
@@ -98,23 +98,23 @@
 
       <data-table
         :columns="[
-          { key: 'shopName', name: $t('dashboard.shop'), sortable: true },
+          { key: 'environmentName', name: $t('dashboard.environment'), sortable: true },
           { key: 'extensions', name: $t('dashboard.changes'), sortable: true },
           { key: 'date', name: $t('common.date'), sortable: true, sortPath: 'date' },
         ]"
         :data="changelogs"
       >
-        <template #cell-shopName="{ row }">
+        <template #cell-environmentName="{ row }">
           <router-link
             :to="{
-              name: 'account.shops.detail',
+              name: 'account.environments.detail',
               params: {
-                organizationId: row.shopOrganizationId,
-                shopId: row.shopId,
+                organizationId: row.environmentOrganizationId,
+                environmentId: row.environmentId,
               },
             }"
           >
-            {{ row.shopName }}
+            {{ row.environmentName }}
           </router-link>
         </template>
 
@@ -137,7 +137,7 @@ import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { ref } from "vue";
-import { useAccountShops } from "@/composables/useAccountShops";
+import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 
 const { t } = useI18n();
 
@@ -146,7 +146,7 @@ api.GET("/account/organizations").then(({ data }) => {
   organizations.value = data;
 });
 
-const { shops } = useAccountShops();
+const { environments } = useAccountEnvironments();
 
 const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
 

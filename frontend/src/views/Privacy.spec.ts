@@ -41,9 +41,9 @@ describe("Privacy", () => {
     expect(wrapper.text()).toContain("Password (hashed using bcrypt)");
   });
 
-  it("contains Shop Monitoring Data subsection", () => {
+  it("contains Environment Monitoring Data subsection", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.text()).toContain("Shop Monitoring Data");
+    expect(wrapper.text()).toContain("Environment Monitoring Data");
     expect(wrapper.text()).toContain("Shopware instance URLs");
   });
 
@@ -55,7 +55,7 @@ describe("Privacy", () => {
   it("contains How We Use Your Data section", () => {
     const wrapper = mount(Privacy);
     expect(wrapper.text()).toContain("How We Use Your Data");
-    expect(wrapper.text()).toContain("To provide shop monitoring services");
+    expect(wrapper.text()).toContain("To provide environment monitoring services");
   });
 
   it("contains Data Storage and Security section", () => {

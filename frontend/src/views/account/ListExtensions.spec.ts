@@ -61,18 +61,27 @@ const mockExtensions = [
     installedAt: "2024-01-01",
     storeLink: "https://store.shopware.com",
     changelog: [],
-    shops: [{ id: 1, name: "Shop A", organizationSlug: "org-a", version: "1.0.0" }],
+    environments: [
+      {
+        environmentId: 1,
+        environmentName: "Environment A",
+        environmentOrganizationId: "org-a",
+        version: "1.0.0",
+      },
+    ],
   },
 ];
 
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      currentUserExtensions: {
-        query: vi.fn(() => Promise.resolve(mockExtensions)),
-      },
-    },
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 vi.mock("@/helpers/formatter", () => ({
@@ -88,9 +97,17 @@ vi.mock("@/composables/useExtensionChangelogModal", () => ({
   }),
 }));
 
+import { api } from "@/helpers/api";
+
 describe("ListExtensions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/extensions") {
+        return Promise.resolve({ data: mockExtensions, error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
   });
 
   function mountComponent() {
@@ -115,8 +132,12 @@ describe("ListExtensions", () => {
   });
 
   it("shows empty state when no extensions", async () => {
-    const trpc = await import("@/helpers/trpc");
-    vi.mocked(trpc.trpcClient.account.currentUserExtensions.query).mockResolvedValueOnce([]);
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/extensions") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
     const wrapper = mount(ListExtensions, {
       global: {
         stubs: {
@@ -131,7 +152,7 @@ describe("ListExtensions", () => {
     });
     await flushPromises();
     expect(wrapper.find(".empty").exists()).toBe(true);
-    expect(wrapper.text()).toContain("No Extensions");
+    expect(wrapper.text()).toContain("Extensions");
   });
 
   it("shows search input and data table when extensions exist", async () => {

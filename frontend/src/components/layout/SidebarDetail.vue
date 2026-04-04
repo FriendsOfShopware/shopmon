@@ -1,33 +1,37 @@
 <template>
-  <div v-if="props.shop" class="sidebar-wrapper">
+  <div v-if="props.environment" class="sidebar-wrapper">
     <div
       ref="toggleRef"
       class="sidebar-detail-toggle btn btn-primary btn-block"
       @click="toggleMobileOpen"
     >
-      {{ shop?.organizationName + " / " + shop?.name }}
-      {{ route.meta.title && route.name !== "account.shops.detail" ? " / " : "" }}
+      {{ environment?.organizationName + " / " + environment?.name }}
+      {{ route.meta.title && route.name !== "account.environments.detail" ? " / " : "" }}
       {{ route.meta.title }}
     </div>
 
     <div ref="sidebarRef" :class="['sidebar', 'sidebar-detail', { 'mobile-open': isMobileOpen }]">
-      <div class="shop-image-container">
-        <img v-if="shop?.shopImage" :src="`${shop.shopImage}`" class="shop-image" />
+      <div class="environment-image-container">
+        <img
+          v-if="environment?.environmentImage"
+          :src="`${environment.environmentImage}`"
+          class="environment-image"
+        />
         <icon-fa6-solid:image v-else class="placeholder-image" />
       </div>
 
-      <div class="shop-name">
+      <div class="environment-name">
         <div class="sidebar-section-label">Environment:</div>
-        <h4>{{ shop?.name }}</h4>
-        <status-icon :status="shop?.status ?? ''" />
+        <h4>{{ environment?.name }}</h4>
+        <status-icon :status="environment?.status ?? ''" />
         <div>
-          <a :href="shop?.url" data-tooltip="Go to storefront" target="_blank">
+          <a :href="environment?.url" data-tooltip="Go to storefront" target="_blank">
             <icon-fa6-solid:store />
             Storefront
           </a>
           &nbsp;/&nbsp;
           <a
-            :href="(shop?.url ?? '') + '/admin'"
+            :href="(environment?.url ?? '') + '/admin'"
             data-tooltip="Go to shopware admin"
             target="_blank"
           >
@@ -45,7 +49,7 @@
             name: item.route,
             params: {
               organizationId: route.params.organizationId,
-              shopId: route.params.shopId,
+              environmentId: route.params.environmentId,
             },
           }"
           :class="{
@@ -81,7 +85,7 @@ const sidebarRef = ref<HTMLElement | null>(null);
 const toggleRef = ref<HTMLElement | null>(null);
 
 const props = defineProps<{
-  shop: components["schemas"]["ShopDetail"] | null;
+  environment: components["schemas"]["EnvironmentDetail"] | null;
 }>();
 
 const isRouteActive = (routeName: string) => {
@@ -90,8 +94,8 @@ const isRouteActive = (routeName: string) => {
 
   // Check if current route is a child of deployments
   if (
-    routeName === "account.shops.detail.deployments" &&
-    route.name === "account.shops.detail.deployment"
+    routeName === "account.environments.detail.deployments" &&
+    route.name === "account.environments.detail.deployment"
   ) {
     return true;
   }
@@ -101,43 +105,43 @@ const isRouteActive = (routeName: string) => {
 
 const detailNavigation = computed(() => [
   {
-    name: "Shop Information",
-    route: "account.shops.detail",
+    name: "Environment Information",
+    route: "account.environments.detail",
   },
   {
     name: "Checks",
-    route: "account.shops.detail.checks",
-    count: props.shop?.checks?.length ?? 0,
+    route: "account.environments.detail.checks",
+    count: props.environment?.checks?.length ?? 0,
   },
   {
     name: "Extensions",
-    route: "account.shops.detail.extensions",
-    count: props.shop?.extensions?.length ?? 0,
+    route: "account.environments.detail.extensions",
+    count: props.environment?.extensions?.length ?? 0,
   },
   {
     name: "Scheduled Tasks",
-    route: "account.shops.detail.tasks",
-    count: props.shop?.scheduledTasks?.length ?? 0,
+    route: "account.environments.detail.tasks",
+    count: props.environment?.scheduledTasks?.length ?? 0,
   },
   {
     name: "Queue",
-    route: "account.shops.detail.queue",
-    count: props.shop?.queues?.length ?? 0,
+    route: "account.environments.detail.queue",
+    count: props.environment?.queues?.length ?? 0,
   },
   {
     name: "Sitespeed",
-    route: "account.shops.detail.sitespeed",
-    count: props.shop?.sitespeeds?.length ?? 0,
+    route: "account.environments.detail.sitespeed",
+    count: props.environment?.sitespeeds?.length ?? 0,
   },
   {
     name: "Changelog",
-    route: "account.shops.detail.changelog",
-    count: props.shop?.changelogs?.length ?? 0,
+    route: "account.environments.detail.changelog",
+    count: props.environment?.changelogs?.length ?? 0,
   },
   {
     name: "Deployments",
-    route: "account.shops.detail.deployments",
-    count: props.shop?.deploymentsCount ?? 0,
+    route: "account.environments.detail.deployments",
+    count: props.environment?.deploymentsCount ?? 0,
   },
 ]);
 
@@ -220,7 +224,7 @@ watch(route, () => {
   }
 }
 
-.shop-image-container {
+.environment-image-container {
   margin-top: 1.5rem;
   display: flex;
   justify-content: center;
@@ -245,7 +249,7 @@ watch(route, () => {
   font-size: 9rem;
 }
 
-.shop-name {
+.environment-name {
   padding: 0 0 1rem 0.75rem;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--panel-border-color);

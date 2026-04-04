@@ -27,42 +27,42 @@ func NewSitespeedScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *conf
 }
 
 func (h *SitespeedScrapeHandler) HandleScrapeAll(ctx context.Context, _ SitespeedScrapeAll) error {
-	shops, err := h.queries.GetShopsWithSitespeedEnabled(ctx)
+	environments, err := h.queries.GetEnvironmentsWithSitespeedEnabled(ctx)
 	if err != nil {
-		return fmt.Errorf("get shops with sitespeed: %w", err)
+		return fmt.Errorf("get environments with sitespeed: %w", err)
 	}
 
-	for _, shop := range shops {
-		if err := h.scrapeShop(ctx, shop); err != nil {
-			slog.Error("failed to scrape sitespeed", "shopId", shop.ID, "error", err)
+	for _, env := range environments {
+		if err := h.scrapeEnvironment(ctx, env); err != nil {
+			slog.Error("failed to scrape sitespeed", "environmentId", env.ID, "error", err)
 		}
 	}
 	return nil
 }
 
 func (h *SitespeedScrapeHandler) HandleScrape(ctx context.Context, msg SitespeedScrape) error {
-	shops, err := h.queries.GetShopsWithSitespeedEnabled(ctx)
+	environments, err := h.queries.GetEnvironmentsWithSitespeedEnabled(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, shop := range shops {
-		if shop.ID == msg.ShopID {
-			return h.scrapeShop(ctx, shop)
+	for _, env := range environments {
+		if env.ID == msg.EnvironmentID {
+			return h.scrapeEnvironment(ctx, env)
 		}
 	}
 
-	return fmt.Errorf("shop %d not found or sitespeed not enabled", msg.ShopID)
+	return fmt.Errorf("environment %d not found or sitespeed not enabled", msg.EnvironmentID)
 }
 
-func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.GetShopsWithSitespeedEnabledRow) error {
-	log := slog.With("shopId", shop.ID)
+func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) error {
+	log := slog.With("environmentId", env.ID)
 
-	// Get URLs to test - default is the shop URL
+	// Get URLs to test - default is the environment URL
 	var urls []string
-	if shop.SitespeedUrls != nil {
-		if err := json.Unmarshal(shop.SitespeedUrls, &urls); err != nil {
-			slog.Error("failed to unmarshal sitespeed urls", "shopId", shop.ID, "error", err)
+	if env.SitespeedUrls != nil {
+		if err := json.Unmarshal(env.SitespeedUrls, &urls); err != nil {
+			slog.Error("failed to unmarshal sitespeed urls", "environmentId", env.ID, "error", err)
 			return nil
 		}
 	}
@@ -70,7 +70,7 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 		urls[i] = strings.Replace(u, "http://localhost:3889", "http://demoshop:8000", 1)
 	}
 
-	recordID := fmt.Sprintf("%sshop-%d", h.cfg.SitespeedPrefix, shop.ID)
+	recordID := fmt.Sprintf("%senvironment-%d", h.cfg.SitespeedPrefix, env.ID)
 
 	// Call sitespeed service
 	log.Info("calling sitespeed service", "urls", len(urls), "recordId", recordID)
@@ -79,7 +79,7 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"urls": urls,
 		"headers": map[string]string{
-			"shopmon-shop-token": shop.ShopToken,
+			"shopmon-shop-token": env.EnvironmentToken,
 		},
 	})
 
@@ -112,12 +112,12 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 		TransferSize           *int32   `json:"transferSize"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		slog.Error("failed to unmarshal sitespeed result", "shopId", shop.ID, "error", err)
+		slog.Error("failed to unmarshal sitespeed result", "environmentId", env.ID, "error", err)
 	}
 
-	if err := h.queries.InsertShopSitespeed(ctx, queries.InsertShopSitespeedParams{
-		ShopID:                 &shop.ID,
-		DeploymentID:           shop.ActiveDeploymentID,
+	if err := h.queries.InsertEnvironmentSitespeed(ctx, queries.InsertEnvironmentSitespeedParams{
+		EnvironmentID:          &env.ID,
+		DeploymentID:           env.ActiveDeploymentID,
 		Ttfb:                   result.TTFB,
 		FullyLoaded:            result.FullyLoaded,
 		LargestContentfulPaint: result.LargestContentfulPaint,
@@ -125,15 +125,15 @@ func (h *SitespeedScrapeHandler) scrapeShop(ctx context.Context, shop queries.Ge
 		CumulativeLayoutShift:  result.CumulativeLayoutShift,
 		TransferSize:           result.TransferSize,
 	}); err != nil {
-		slog.Error("failed to insert shop sitespeed", "shopId", shop.ID, "error", err)
+		slog.Error("failed to insert environment sitespeed", "environmentId", env.ID, "error", err)
 	}
 
 	screenshotURL := fmt.Sprintf("%s/screenshot/%s", h.cfg.SitespeedEndpoint, recordID)
-	if err := h.queries.UpdateShopImage(ctx, queries.UpdateShopImageParams{
-		ShopImage: &screenshotURL,
-		ID:        shop.ID,
+	if err := h.queries.UpdateEnvironmentImage(ctx, queries.UpdateEnvironmentImageParams{
+		EnvironmentImage: &screenshotURL,
+		ID:               env.ID,
 	}); err != nil {
-		slog.Error("failed to update shop image", "shopId", shop.ID, "error", err)
+		slog.Error("failed to update environment image", "environmentId", env.ID, "error", err)
 	}
 
 	log.Info("sitespeed scrape completed")

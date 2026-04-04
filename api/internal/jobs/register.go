@@ -17,13 +17,13 @@ const TransportName = "async"
 
 // Message types — plain structs for go-queue's generic dispatch.
 
-type ShopScrapeAll struct{}
-type ShopScrape struct {
-	ShopID int32 `json:"shop_id"`
+type EnvironmentScrapeAll struct{}
+type EnvironmentScrape struct {
+	EnvironmentID int32 `json:"environment_id"`
 }
 type SitespeedScrapeAll struct{}
 type SitespeedScrape struct {
-	ShopID int32 `json:"shop_id"`
+	EnvironmentID int32 `json:"environment_id"`
 }
 type LockCleanup struct{}
 type InvitationCleanup struct{}
@@ -44,12 +44,12 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 
 	bus.AddTransport(TransportName, transport)
 
-	shopScrape := NewShopScrapeHandler(pool, q, cfg, bus, mailSvc)
+	envScrape := NewEnvironmentScrapeHandler(pool, q, cfg, bus, mailSvc)
 	sitespeed := NewSitespeedScrapeHandler(pool, q, cfg)
 	cleanup := NewCleanupHandler(q)
 
-	goqueue.HandleFunc(bus, TransportName, shopScrape.HandleScrapeAll)
-	goqueue.HandleFunc(bus, TransportName, shopScrape.HandleScrape)
+	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrapeAll)
+	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrapeAll)
 	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleLockCleanup)

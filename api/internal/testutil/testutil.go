@@ -252,38 +252,38 @@ func (e *TestEnv) SeedOrganization(t *testing.T, orgID, name, slug, userID strin
 	}
 }
 
-// SeedProject creates a test project in an organization.
-func (e *TestEnv) SeedProject(t *testing.T, orgID, name string) int {
+// SeedShop creates a test shop in an organization.
+func (e *TestEnv) SeedShop(t *testing.T, orgID, name string) int {
 	t.Helper()
 	ctx := context.Background()
 	now := time.Now()
 
 	var id int
 	err := e.Pool.QueryRow(ctx, `
-		INSERT INTO project (organization_id, name, created_at, updated_at)
+		INSERT INTO shop (organization_id, name, created_at, updated_at)
 		VALUES ($1, $2, $3, $3)
 		RETURNING id
 	`, orgID, name, now).Scan(&id)
 	if err != nil {
-		t.Fatalf("failed to seed project: %v", err)
+		t.Fatalf("failed to seed shop: %v", err)
 	}
 	return id
 }
 
-// SeedShop creates a test shop in an organization/project.
-func (e *TestEnv) SeedShop(t *testing.T, orgID string, projectID int, name, url string) int {
+// SeedEnvironment creates a test environment in an organization/shop.
+func (e *TestEnv) SeedEnvironment(t *testing.T, orgID string, shopID int, name, url string) int {
 	t.Helper()
 	ctx := context.Background()
 	now := time.Now()
 
 	var id int
 	err := e.Pool.QueryRow(ctx, `
-		INSERT INTO shop (organization_id, project_id, name, url, client_id, client_secret, shopware_version, shop_token, created_at)
-		VALUES ($1, $2, $3, $4, 'test-client', 'test-secret', '6.5.0.0', 'test-shop-token', $5)
+		INSERT INTO environment (organization_id, shop_id, name, url, client_id, client_secret, shopware_version, environment_token, created_at)
+		VALUES ($1, $2, $3, $4, 'test-client', 'test-secret', '6.5.0.0', 'test-environment-token', $5)
 		RETURNING id
-	`, orgID, projectID, name, url, now).Scan(&id)
+	`, orgID, shopID, name, url, now).Scan(&id)
 	if err != nil {
-		t.Fatalf("failed to seed shop: %v", err)
+		t.Fatalf("failed to seed environment: %v", err)
 	}
 	return id
 }

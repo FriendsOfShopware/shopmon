@@ -28,31 +28,36 @@
       <!-- Store List -->
       <ul class="nav-stores">
         <li
-          v-for="shop in shops"
-          :key="shop.id"
+          v-for="env in environments"
+          :key="env.id"
           class="nav-link-item tooltip-right"
-          :data-tooltip="shop.name"
+          :data-tooltip="env.name"
         >
           <router-link
             :to="{
-              name: 'account.shops.detail',
+              name: 'account.environments.detail',
               params: {
-                organizationId: shop.organizationId,
-                shopId: shop.id,
+                organizationId: env.organizationId,
+                environmentId: env.id,
               },
             }"
             active-class=""
             class="nav-link"
           >
             <div class="nav-link-icon">
-              <img v-if="shop.favicon" :src="shop.favicon" alt="Shop Logo" class="item-logo-img" />
+              <img
+                v-if="env.favicon"
+                :src="env.favicon"
+                alt="Environment Logo"
+                class="item-logo-img"
+              />
               <icon-fa6-solid:earth-americas v-else class="placeholder-image" />
             </div>
 
-            <span class="nav-link-name">{{ shop.name }}</span>
+            <span class="nav-link-name">{{ env.name }}</span>
 
             <div class="nav-link-state">
-              <status-icon :status="shop.status" />
+              <status-icon :status="env.status" />
             </div>
           </router-link>
         </li>
@@ -66,9 +71,9 @@ import type { RouteLocationNormalizedLoaded } from "vue-router";
 
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { useAccountShops } from "@/composables/useAccountShops";
+import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 
-const { shops } = useAccountShops();
+const { environments } = useAccountEnvironments();
 
 const route = useRoute();
 
@@ -84,7 +89,7 @@ const currentViewClass = computed(() => {
 
 const navigation = [
   { route: "account.dashboard" },
-  { route: "account.project.list", active: "shop" },
+  { route: "account.shop.list", active: "shop" },
   { route: "account.extension.list" },
   { route: "account.organizations.list", active: "organizations" },
   { route: "account.docs" },
@@ -108,7 +113,7 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
   display: none;
   grid-area: sidebar;
 
-  &:not([class*="is-account-shops-detail"]) {
+  &:not([class*="is-account-environments-detail"]) {
     *[data-tooltip] {
       &:before,
       &:after {
@@ -121,7 +126,7 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
     display: block;
     width: 250px;
 
-    &[class*="is-account-shops-detail"] {
+    &[class*="is-account-environments-detail"] {
       width: 60px;
       position: relative;
       z-index: 10;

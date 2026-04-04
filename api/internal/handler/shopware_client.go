@@ -23,8 +23,8 @@ func (h *Handler) encryptShopSecret(secret string) (string, error) {
 	return encryptedSecret, nil
 }
 
-func (h *Handler) validateShopConnection(ctx context.Context, shopURL, clientID, clientSecret, shopToken string) (*shopConnectionInfo, error) {
-	client := shopware.NewClient(shopURL, clientID, clientSecret, shopToken)
+func (h *Handler) validateShopConnection(ctx context.Context, shopURL, clientID, clientSecret, environmentToken string) (*shopConnectionInfo, error) {
+	client := shopware.NewClient(shopURL, clientID, clientSecret, environmentToken)
 	body, err := client.Get(ctx, "/_info/config")
 	if err != nil {
 		return nil, fmt.Errorf("fetch shop config: %w", err)
@@ -38,11 +38,11 @@ func (h *Handler) validateShopConnection(ctx context.Context, shopURL, clientID,
 	return &info, nil
 }
 
-func (h *Handler) newShopwareClientFromCredentials(creds *queries.GetShopCredentialsRow) (*shopware.Client, error) {
+func (h *Handler) newShopwareClientFromCredentials(creds *queries.GetEnvironmentCredentialsRow) (*shopware.Client, error) {
 	decryptedSecret, err := crypto.Decrypt(creds.ClientSecret, h.cfg.AppSecret)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt client secret: %w", err)
 	}
 
-	return shopware.NewClient(creds.Url, creds.ClientID, decryptedSecret, creds.ShopToken), nil
+	return shopware.NewClient(creds.Url, creds.ClientID, decryptedSecret, creds.EnvironmentToken), nil
 }

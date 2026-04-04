@@ -1,9 +1,35 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock i18n before importing useAlert
+vi.mock("@/i18n", () => {
+  const { createI18n } = require("vue-i18n");
+  return {
+    i18n: createI18n({
+      legacy: false,
+      locale: "en",
+      fallbackLocale: "en",
+      messages: {
+        en: {
+          alert: {
+            successTitle: "Action success",
+            infoTitle: "Information",
+            errorTitle: "Something went wrong",
+            warningTitle: "Additional information",
+          },
+        },
+      },
+    }),
+  };
+});
+
 import { useAlert } from "@/composables/useAlert";
 
 describe("useAlert composable", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Clear state between tests
+    const { clear } = useAlert();
+    clear();
   });
 
   it("should have null alert initially", () => {

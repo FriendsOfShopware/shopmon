@@ -15,10 +15,10 @@ tags:
     description: Account information and aggregated data
   - name: Notifications
     description: User notifications
+  - name: Environments
+    description: Environment management and operations
   - name: Shops
-    description: Shop management and operations
-  - name: Projects
-    description: Project management
+    description: Shop management
   - name: ApiKeys
     description: API key management
   - name: PackagesToken
@@ -84,7 +84,7 @@ paths:
     get:
       operationId: getAccountExtensions
       tags: [Account]
-      summary: Get aggregated extensions across all shops
+      summary: Get aggregated extensions across all environments
       responses:
         "200":
           description: List of extensions
@@ -114,6 +114,23 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /account/environments:
+    get:
+      operationId: getAccountEnvironments
+      tags: [Account]
+      summary: Get all environments accessible to the user
+      responses:
+        "200":
+          description: List of environments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountEnvironment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /account/shops:
     get:
       operationId: getAccountShops
@@ -131,28 +148,11 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /account/projects:
-    get:
-      operationId: getAccountProjects
-      tags: [Account]
-      summary: Get all projects accessible to the user
-      responses:
-        "200":
-          description: List of projects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AccountProject"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
   /account/changelogs:
     get:
       operationId: getAccountChangelogs
       tags: [Account]
-      summary: Get changelogs across all shops
+      summary: Get changelogs across all environments
       responses:
         "200":
           description: List of changelogs
@@ -165,20 +165,20 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /account/subscribed-shops:
+  /account/subscribed-environments:
     get:
-      operationId: getAccountSubscribedShops
+      operationId: getAccountSubscribedEnvironments
       tags: [Account]
-      summary: Get shops the user is subscribed to for notifications
+      summary: Get environments the user is subscribed to for notifications
       responses:
         "200":
-          description: List of subscribed shops
+          description: List of subscribed environments
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SubscribedShop"
+                  $ref: "#/components/schemas/SubscribedEnvironment"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -238,6 +238,244 @@ paths:
           $ref: "#/components/responses/Unauthorized"
 
   # ──────────────────────────────────────────────
+  # Environments
+  # ──────────────────────────────────────────────
+  /organizations/{orgId}/environments:
+    get:
+      operationId: getOrganizationEnvironments
+      tags: [Environments]
+      summary: Get all environments in an organization
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
+      responses:
+        "200":
+          description: List of environments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountEnvironment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /environments:
+    post:
+      operationId: createEnvironment
+      tags: [Environments]
+      summary: Create a new environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnvironmentRequest"
+      responses:
+        "201":
+          description: Environment created
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /environments/{environmentId}:
+    get:
+      operationId: getEnvironment
+      tags: [Environments]
+      summary: Get full environment details
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "200":
+          description: Environment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateEnvironment
+      tags: [Environments]
+      summary: Update an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEnvironmentRequest"
+      responses:
+        "200":
+          description: Environment updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      operationId: deleteEnvironment
+      tags: [Environments]
+      summary: Delete an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "204":
+          description: Environment deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /environments/{environmentId}/refresh:
+    post:
+      operationId: refreshEnvironment
+      tags: [Environments]
+      summary: Refresh environment data from Shopware API
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sitespeed:
+                  type: boolean
+                  description: Also run sitespeed check
+      responses:
+        "204":
+          description: Environment refresh triggered
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /environments/{environmentId}/clear-cache:
+    post:
+      operationId: clearEnvironmentCache
+      tags: [Environments]
+      summary: Clear Shopware cache for the environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "204":
+          description: Cache cleared
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /environments/{environmentId}/tasks/{taskId}/reschedule:
+    post:
+      operationId: rescheduleTask
+      tags: [Environments]
+      summary: Reschedule a scheduled task
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "204":
+          description: Task rescheduled
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /environments/{environmentId}/subscribe:
+    get:
+      operationId: getEnvironmentSubscription
+      tags: [Environments]
+      summary: Check notification subscription status
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "200":
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - subscribed
+                properties:
+                  subscribed:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: subscribeToEnvironment
+      tags: [Environments]
+      summary: Subscribe to environment notifications
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "204":
+          description: Subscribed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      operationId: unsubscribeFromEnvironment
+      tags: [Environments]
+      summary: Unsubscribe from environment notifications
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "204":
+          description: Unsubscribed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /environments/{environmentId}/sitespeed-settings:
+    put:
+      operationId: updateSitespeedSettings
+      tags: [Environments]
+      summary: Update sitespeed settings for an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SitespeedSettingsRequest"
+      responses:
+        "200":
+          description: Sitespeed settings updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ──────────────────────────────────────────────
   # Shops
   # ──────────────────────────────────────────────
   /organizations/{orgId}/shops:
@@ -255,17 +493,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AccountShop"
+                  $ref: "#/components/schemas/Shop"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
-
-  /shops:
     post:
       operationId: createShop
       tags: [Shops]
       summary: Create a new shop
+      parameters:
+        - $ref: "#/components/parameters/OrgId"
       requestBody:
         required: true
         content:
@@ -277,34 +515,18 @@ paths:
           description: Shop created
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /shops/{shopId}:
-    get:
-      operationId: getShop
-      tags: [Shops]
-      summary: Get full shop details
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      responses:
-        "200":
-          description: Shop details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ShopDetail"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
+  /organizations/{orgId}/shops/{shopId}:
     patch:
       operationId: updateShop
       tags: [Shops]
       summary: Update a shop
       parameters:
+        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
@@ -328,233 +550,11 @@ paths:
       tags: [Shops]
       summary: Delete a shop
       parameters:
+        - $ref: "#/components/parameters/OrgId"
         - $ref: "#/components/parameters/ShopId"
       responses:
         "204":
           description: Shop deleted
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /shops/{shopId}/refresh:
-    post:
-      operationId: refreshShop
-      tags: [Shops]
-      summary: Refresh shop data from Shopware API
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sitespeed:
-                  type: boolean
-                  description: Also run sitespeed check
-      responses:
-        "204":
-          description: Shop refresh triggered
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /shops/{shopId}/clear-cache:
-    post:
-      operationId: clearShopCache
-      tags: [Shops]
-      summary: Clear Shopware cache for the shop
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      responses:
-        "204":
-          description: Cache cleared
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /shops/{shopId}/tasks/{taskId}/reschedule:
-    post:
-      operationId: rescheduleTask
-      tags: [Shops]
-      summary: Reschedule a scheduled task
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-        - $ref: "#/components/parameters/TaskId"
-      responses:
-        "204":
-          description: Task rescheduled
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /shops/{shopId}/subscribe:
-    get:
-      operationId: getShopSubscription
-      tags: [Shops]
-      summary: Check notification subscription status
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      responses:
-        "200":
-          description: Subscription status
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - subscribed
-                properties:
-                  subscribed:
-                    type: boolean
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    post:
-      operationId: subscribeToShop
-      tags: [Shops]
-      summary: Subscribe to shop notifications
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      responses:
-        "204":
-          description: Subscribed
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    delete:
-      operationId: unsubscribeFromShop
-      tags: [Shops]
-      summary: Unsubscribe from shop notifications
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      responses:
-        "204":
-          description: Unsubscribed
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /shops/{shopId}/sitespeed-settings:
-    put:
-      operationId: updateSitespeedSettings
-      tags: [Shops]
-      summary: Update sitespeed settings for a shop
-      parameters:
-        - $ref: "#/components/parameters/ShopId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SitespeedSettingsRequest"
-      responses:
-        "200":
-          description: Sitespeed settings updated
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-
-  # ──────────────────────────────────────────────
-  # Projects
-  # ──────────────────────────────────────────────
-  /organizations/{orgId}/projects:
-    get:
-      operationId: getOrganizationProjects
-      tags: [Projects]
-      summary: Get all projects in an organization
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
-      responses:
-        "200":
-          description: List of projects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Project"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    post:
-      operationId: createProject
-      tags: [Projects]
-      summary: Create a new project
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateProjectRequest"
-      responses:
-        "201":
-          description: Project created
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-
-  /organizations/{orgId}/projects/{projectId}:
-    patch:
-      operationId: updateProject
-      tags: [Projects]
-      summary: Update a project
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateProjectRequest"
-      responses:
-        "200":
-          description: Project updated
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-    delete:
-      operationId: deleteProject
-      tags: [Projects]
-      summary: Delete a project
-      parameters:
-        - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
-      responses:
-        "204":
-          description: Project deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -581,14 +581,14 @@ paths:
                 items:
                   $ref: "#/components/schemas/ApiKeyScope"
 
-  /organizations/{orgId}/projects/{projectId}/api-keys:
+  /organizations/{orgId}/shops/{shopId}/api-keys:
     get:
       operationId: getApiKeys
       tags: [ApiKeys]
-      summary: List API keys for a project
+      summary: List API keys for a shop
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
       responses:
         "200":
           description: List of API keys
@@ -608,7 +608,7 @@ paths:
       summary: Create a new API key
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
         content:
@@ -629,14 +629,14 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/projects/{projectId}/api-keys/{keyId}:
+  /organizations/{orgId}/shops/{shopId}/api-keys/{keyId}:
     delete:
       operationId: deleteApiKey
       tags: [ApiKeys]
       summary: Delete an API key
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/KeyId"
       responses:
         "204":
@@ -666,14 +666,14 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-  /organizations/{orgId}/projects/{projectId}/packages-tokens:
+  /organizations/{orgId}/shops/{shopId}/packages-tokens:
     get:
       operationId: getPackagesTokens
       tags: [PackagesToken]
-      summary: List packages tokens for a project
+      summary: List packages tokens for a shop
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
       responses:
         "200":
           description: List of packages tokens
@@ -693,7 +693,7 @@ paths:
       summary: Create a new packages token
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
       requestBody:
         required: true
         content:
@@ -710,14 +710,14 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
-  /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}:
+  /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}:
     delete:
       operationId: deletePackagesToken
       tags: [PackagesToken]
       summary: Delete a packages token
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/TokenId"
       responses:
         "204":
@@ -729,14 +729,14 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync:
+  /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync:
     post:
       operationId: syncPackagesToken
       tags: [PackagesToken]
       summary: Sync a packages token
       parameters:
         - $ref: "#/components/parameters/OrgId"
-        - $ref: "#/components/parameters/ProjectId"
+        - $ref: "#/components/parameters/ShopId"
         - $ref: "#/components/parameters/TokenId"
       responses:
         "204":
@@ -751,13 +751,13 @@ paths:
   # ──────────────────────────────────────────────
   # Deployments
   # ──────────────────────────────────────────────
-  /shops/{shopId}/deployments:
+  /environments/{environmentId}/deployments:
     get:
       operationId: getDeployments
       tags: [Deployments]
-      summary: List deployments for a shop
+      summary: List deployments for an environment
       parameters:
-        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/EnvironmentId"
         - name: limit
           in: query
           schema:
@@ -785,13 +785,13 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /shops/{shopId}/deployments/{deploymentId}:
+  /environments/{environmentId}/deployments/{deploymentId}:
     get:
       operationId: getDeployment
       tags: [Deployments]
       summary: Get deployment details with output
       parameters:
-        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/EnvironmentId"
         - $ref: "#/components/parameters/DeploymentId"
       responses:
         "200":
@@ -811,7 +811,7 @@ paths:
       tags: [Deployments]
       summary: Delete a deployment
       parameters:
-        - $ref: "#/components/parameters/ShopId"
+        - $ref: "#/components/parameters/EnvironmentId"
         - $ref: "#/components/parameters/DeploymentId"
       responses:
         "204":
@@ -1004,11 +1004,11 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /admin/shops:
+  /admin/environments:
     get:
-      operationId: adminGetShops
+      operationId: adminGetEnvironments
       tags: [Admin]
-      summary: List all shops (admin only)
+      summary: List all environments (admin only)
       parameters:
         - name: limit
           in: query
@@ -1053,11 +1053,11 @@ paths:
             type: string
       responses:
         "200":
-          description: Paginated list of shops
+          description: Paginated list of environments
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AdminShopsResponse"
+                $ref: "#/components/schemas/AdminEnvironmentsResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1101,7 +1101,7 @@ paths:
     get:
       operationId: adminGetRecentActivity
       tags: [Admin]
-      summary: Get recent user and shop activity
+      summary: Get recent user and environment activity
       responses:
         "200":
           description: Recent activity
@@ -1118,7 +1118,7 @@ paths:
     get:
       operationId: adminGetShopwareVersions
       tags: [Admin]
-      summary: Get Shopware version distribution across shops
+      summary: Get Shopware version distribution across environments
       responses:
         "200":
           description: Version distribution
@@ -2289,6 +2289,14 @@ components:
         type: string
       description: Organization ID
 
+    EnvironmentId:
+      name: environmentId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Environment ID
+
     ShopId:
       name: shopId
       in: path
@@ -2296,14 +2304,6 @@ components:
       schema:
         type: integer
       description: Shop ID
-
-    ProjectId:
-      name: projectId
-      in: path
-      required: true
-      schema:
-        type: integer
-      description: Project ID
 
     DeploymentId:
       name: deploymentId
@@ -2430,7 +2430,7 @@ components:
         - ratingAverage
         - installedAt
         - changelog
-        - shops
+        - environments
       properties:
         name:
           type: string
@@ -2457,33 +2457,33 @@ components:
         changelog:
           type: string
           nullable: true
-        shops:
+        environments:
           type: array
           items:
-            $ref: "#/components/schemas/AccountExtensionShop"
+            $ref: "#/components/schemas/AccountExtensionEnvironment"
 
-    AccountExtensionShop:
+    AccountExtensionEnvironment:
       type: object
       required:
-        - shopId
-        - shopName
-        - shopOrganizationName
-        - shopOrganizationId
-        - shopUrl
+        - environmentId
+        - environmentName
+        - environmentOrganizationName
+        - environmentOrganizationId
+        - environmentUrl
         - active
         - version
         - latestVersion
         - installed
       properties:
-        shopId:
+        environmentId:
           type: integer
-        shopName:
+        environmentName:
           type: string
-        shopOrganizationName:
+        environmentOrganizationName:
           type: string
-        shopOrganizationId:
+        environmentOrganizationId:
           type: string
-        shopUrl:
+        environmentUrl:
           type: string
         active:
           type: boolean
@@ -2501,7 +2501,7 @@ components:
         - name
         - logo
         - createdAt
-        - shopCount
+        - environmentCount
         - memberCount
       properties:
         id:
@@ -2514,12 +2514,12 @@ components:
         createdAt:
           type: string
           format: date-time
-        shopCount:
+        environmentCount:
           type: integer
         memberCount:
           type: integer
 
-    AccountShop:
+    AccountEnvironment:
       type: object
       required:
         - id
@@ -2532,8 +2532,8 @@ components:
         - lastScrapedError
         - organizationId
         - organizationName
-        - projectId
-        - projectName
+        - shopId
+        - shopName
       properties:
         id:
           type: integer
@@ -2559,14 +2559,14 @@ components:
           type: string
         organizationName:
           type: string
-        projectId:
+        shopId:
           type: integer
           nullable: true
-        projectName:
+        shopName:
           type: string
           nullable: true
 
-    AccountProject:
+    AccountShop:
       type: object
       required:
         - id
@@ -2595,18 +2595,18 @@ components:
       type: object
       required:
         - id
-        - shopId
+        - environmentId
         - extensions
         - oldShopwareVersion
         - newShopwareVersion
         - date
-        - shopName
-        - shopOrganizationName
-        - shopOrganizationId
+        - environmentName
+        - environmentOrganizationName
+        - environmentOrganizationId
       properties:
         id:
           type: integer
-        shopId:
+        environmentId:
           type: integer
         extensions:
           type: array
@@ -2622,11 +2622,11 @@ components:
         date:
           type: string
           format: date-time
-        shopName:
+        environmentName:
           type: string
-        shopOrganizationName:
+        environmentOrganizationName:
           type: string
-        shopOrganizationId:
+        environmentOrganizationId:
           type: string
 
     ExtensionDiff:
@@ -2675,7 +2675,7 @@ components:
         isCompatible:
           type: boolean
 
-    SubscribedShop:
+    SubscribedEnvironment:
       type: object
       required:
         - id
@@ -2733,15 +2733,15 @@ components:
         label:
           type: string
 
-    # ── Shops ────────────────────────────────────
-    CreateShopRequest:
+    # ── Environments ─────────────────────────────
+    CreateEnvironmentRequest:
       type: object
       required:
         - name
         - shopUrl
         - clientId
         - clientSecret
-        - projectId
+        - shopId
       properties:
         name:
           type: string
@@ -2751,16 +2751,16 @@ components:
           type: string
         clientSecret:
           type: string
-        projectId:
+        shopId:
           type: integer
-        shopToken:
+        environmentToken:
           type: string
           nullable: true
 
-    UpdateShopRequest:
+    UpdateEnvironmentRequest:
       type: object
       required:
-        - projectId
+        - shopId
       properties:
         name:
           type: string
@@ -2774,18 +2774,18 @@ components:
           type: array
           items:
             type: string
-        projectId:
+        shopId:
           type: integer
 
-    ShopDetail:
+    EnvironmentDetail:
       type: object
       required:
         - id
         - organizationId
         - organizationName
-        - projectId
-        - projectName
-        - projectDescription
+        - shopId
+        - shopName
+        - shopDescription
         - name
         - status
         - url
@@ -2794,13 +2794,13 @@ components:
         - lastScrapedAt
         - lastScrapedError
         - ignores
-        - shopImage
+        - environmentImage
         - lastChangelog
         - sitespeedEnabled
         - sitespeedUrls
         - sitespeedDetailUrl
         - createdAt
-        - shopToken
+        - environmentToken
         - extensions
         - scheduledTasks
         - queues
@@ -2816,13 +2816,13 @@ components:
           type: string
         organizationName:
           type: string
-        projectId:
+        shopId:
           type: integer
           nullable: true
-        projectName:
+        shopName:
           type: string
           nullable: true
-        projectDescription:
+        shopDescription:
           type: string
           nullable: true
         name:
@@ -2848,10 +2848,10 @@ components:
           nullable: true
           items:
             type: string
-        shopImage:
+        environmentImage:
           type: string
           nullable: true
-        shopToken:
+        environmentToken:
           type: string
         lastChangelog:
           allOf:
@@ -2873,7 +2873,7 @@ components:
         extensions:
           type: array
           items:
-            $ref: "#/components/schemas/ShopExtension"
+            $ref: "#/components/schemas/EnvironmentExtension"
         scheduledTasks:
           type: array
           items:
@@ -2889,7 +2889,7 @@ components:
         checks:
           type: array
           items:
-            $ref: "#/components/schemas/ShopCheck"
+            $ref: "#/components/schemas/EnvironmentCheck"
         sitespeeds:
           type: array
           items:
@@ -2901,7 +2901,7 @@ components:
         deploymentsCount:
           type: integer
 
-    ShopExtension:
+    EnvironmentExtension:
       type: object
       required:
         - name
@@ -2988,7 +2988,7 @@ components:
         cacheAdapter:
           type: string
 
-    ShopCheck:
+    EnvironmentCheck:
       type: object
       required:
         - id
@@ -3060,8 +3060,8 @@ components:
             type: string
           maxItems: 5
 
-    # ── Projects ─────────────────────────────────
-    Project:
+    # ── Shops ────────────────────────────────────
+    Shop:
       type: object
       required:
         - id
@@ -3083,7 +3083,7 @@ components:
         organizationId:
           type: string
 
-    CreateProjectRequest:
+    CreateShopRequest:
       type: object
       required:
         - name
@@ -3095,7 +3095,7 @@ components:
         gitUrl:
           type: string
 
-    UpdateProjectRequest:
+    UpdateShopRequest:
       type: object
       properties:
         name:
@@ -3265,14 +3265,14 @@ components:
     CreateCliDeploymentRequest:
       type: object
       required:
-        - shop_id
+        - environment_id
         - command
         - return_code
         - start_date
         - end_date
         - execution_time
       properties:
-        shop_id:
+        environment_id:
           type: integer
         command:
           type: string
@@ -3407,16 +3407,16 @@ components:
         total:
           type: integer
 
-    AdminShopsResponse:
+    AdminEnvironmentsResponse:
       type: object
       required:
-        - shops
+        - environments
         - total
       properties:
-        shops:
+        environments:
           type: array
           items:
-            $ref: "#/components/schemas/AccountShop"
+            $ref: "#/components/schemas/AccountEnvironment"
         total:
           type: integer
 
@@ -3425,16 +3425,16 @@ components:
       required:
         - totalUsers
         - totalOrganizations
-        - totalShops
-        - shopsByStatus
+        - totalEnvironments
+        - environmentsByStatus
       properties:
         totalUsers:
           type: integer
         totalOrganizations:
           type: integer
-        totalShops:
+        totalEnvironments:
           type: integer
-        shopsByStatus:
+        environmentsByStatus:
           type: object
           required:
             - green
@@ -3452,13 +3452,13 @@ components:
       type: object
       required:
         - users
-        - shops
+        - environments
       properties:
         users:
           type: array
           items:
             $ref: "#/components/schemas/GrowthDataPoint"
-        shops:
+        environments:
           type: array
           items:
             $ref: "#/components/schemas/GrowthDataPoint"
@@ -3478,16 +3478,16 @@ components:
       type: object
       required:
         - recentUsers
-        - recentShops
+        - recentEnvironments
       properties:
         recentUsers:
           type: array
           items:
             $ref: "#/components/schemas/UserProfile"
-        recentShops:
+        recentEnvironments:
           type: array
           items:
-            $ref: "#/components/schemas/AccountShop"
+            $ref: "#/components/schemas/AccountEnvironment"
 
     ShopwareVersionCount:
       type: object

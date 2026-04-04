@@ -25,12 +25,12 @@ api/                          <-- Go API (single binary)
     database/queries/         <-- sqlc-generated data access (DO NOT EDIT)
     handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
     httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
-    jobs/                     <-- Background jobs (shop scrape, sitespeed, cleanup)
+    jobs/                     <-- Background jobs (environment scrape, sitespeed, cleanup)
     mail/                     <-- SMTP service + email templates
-    middleware/               <-- HTTP middleware (auth, org membership, shop access)
+    middleware/               <-- HTTP middleware (auth, org membership, environment access)
     queue/                    <-- Queue task type definitions
     shopware/                 <-- Shopware HTTP client
-      checker/                <-- Shop health check system
+      checker/                <-- Environment health check system
     storage/                  <-- S3 storage for deployment outputs
     telemetry/                <-- OpenTelemetry tracing + logging setup
     testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)

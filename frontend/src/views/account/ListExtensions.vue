@@ -5,8 +5,8 @@
     <Panel v-if="extensions.length === 0">
       <element-empty
         :title="$t('shopDetail.extensions')"
-        :button="$t('shop.addShop')"
-        :route="{ name: 'account.shops.new' }"
+        :button="$t('environment.addEnvironment')"
+        :route="{ name: 'account.environments.new' }"
       >
         {{ $t("common.getStartedElement") }}
       </element-empty>
@@ -27,7 +27,7 @@
               sortable: true,
               searchable: true,
             },
-            { key: 'shops', name: $t('dashboard.shop') },
+            { key: 'environments', name: $t('dashboard.environment') },
             { key: 'version', name: $t('common.version') },
             { key: 'latestVersion', name: $t('shopDetail.latest') },
             { key: 'ratingAverage', name: $t('shopDetail.rating'), sortable: true },
@@ -47,30 +47,38 @@
             </component>
           </template>
 
-          <template #cell-shops="{ row }">
-            <div v-for="(shop, rowIndex) in row.shops" :key="rowIndex" class="shops-row">
+          <template #cell-environments="{ row }">
+            <div
+              v-for="(env, rowIndex) in row.environments"
+              :key="rowIndex"
+              class="environments-row"
+            >
               <router-link
                 :to="{
-                  name: 'account.shops.detail',
+                  name: 'account.environments.detail',
                   params: {
-                    organizationId: shop.shopOrganizationId,
-                    shopId: shop.shopId,
+                    organizationId: env.environmentOrganizationId,
+                    environmentId: env.environmentId,
                   },
                 }"
               >
                 <status-icon :status="getExtensionState(row)" :tooltip="true" />
-                {{ shop.shopName }}
+                {{ env.environmentName }}
               </router-link>
             </div>
           </template>
 
           <template #cell-version="{ row }">
-            <div v-for="(shop, rowIndex) in row.shops" :key="rowIndex" class="shops-row">
-              <span :data-tooltip="shop.version.length > 6 ? shop.version : ''">{{
-                shop.version.replace(/(.{6})..+/, "$1&hellip;")
+            <div
+              v-for="(env, rowIndex) in row.environments"
+              :key="rowIndex"
+              class="environments-row"
+            >
+              <span :data-tooltip="env.version.length > 6 ? env.version : ''">{{
+                env.version.replace(/(.{6})..+/, "$1&hellip;")
               }}</span>
               <span
-                v-if="row.latestVersion && shop.version < row.latestVersion"
+                v-if="row.latestVersion && env.version < row.latestVersion"
                 :data-tooltip="$t('shopDetail.updateAvailableClick')"
                 class="extension-update-available"
                 @click="openExtensionChangelog(row)"

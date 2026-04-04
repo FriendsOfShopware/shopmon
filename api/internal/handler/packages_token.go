@@ -27,8 +27,8 @@ func (h *Handler) GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.R
 	})
 }
 
-// GetPackagesTokens lists packages tokens for a project.
-func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId) {
+// GetPackagesTokens lists packages tokens for a shop.
+func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -43,7 +43,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 	}
 
 	// Proxy to packages API
-	url := fmt.Sprintf("%s/api/projects/%d/tokens", h.cfg.PackagesAPIURL, projectId)
+	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
 	resp, err := h.packagesRequest("GET", url, nil)
 	if err != nil {
 		slog.Error("failed to fetch packages tokens", "error", err)
@@ -64,7 +64,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 }
 
 // CreatePackagesToken creates a new packages token.
-func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId) {
+func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -79,7 +79,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 	}
 
 	// Proxy the request body to packages API
-	url := fmt.Sprintf("%s/api/projects/%d/tokens", h.cfg.PackagesAPIURL, projectId)
+	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
 	resp, err := h.packagesRequest("POST", url, r.Body)
 	if err != nil {
 		slog.Error("failed to create packages token", "error", err)
@@ -100,7 +100,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 }
 
 // DeletePackagesToken deletes a packages token.
-func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId, tokenId api.TokenId) {
+func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, tokenId api.TokenId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -114,7 +114,7 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/projects/%d/tokens/%d", h.cfg.PackagesAPIURL, projectId, tokenId)
+	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d", h.cfg.PackagesAPIURL, shopId, tokenId)
 	resp, err := h.packagesRequest("DELETE", url, nil)
 	if err != nil {
 		slog.Error("failed to delete packages token", "error", err)
@@ -140,7 +140,7 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 }
 
 // SyncPackagesToken syncs a packages token.
-func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId, tokenId api.TokenId) {
+func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, tokenId api.TokenId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -154,7 +154,7 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/projects/%d/tokens/%d/sync", h.cfg.PackagesAPIURL, projectId, tokenId)
+	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d/sync", h.cfg.PackagesAPIURL, shopId, tokenId)
 	resp, err := h.packagesRequest("POST", url, nil)
 	if err != nil {
 		slog.Error("failed to sync packages token", "error", err)

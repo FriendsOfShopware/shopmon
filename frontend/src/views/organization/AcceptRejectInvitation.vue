@@ -23,7 +23,9 @@ if (props.action === "accept") {
     })
     .then(({ error: respError }) => {
       if (respError) {
-        error((respError as { message?: string }).message ?? t("organization.failedAcceptInvitation"));
+        error(
+          (respError as { message?: string }).message ?? t("organization.failedAcceptInvitation"),
+        );
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });
@@ -37,7 +39,9 @@ if (props.action === "accept") {
     })
     .then(({ error: respError }) => {
       if (respError) {
-        error((respError as { message?: string }).message ?? t("organization.failedRejectInvitation"));
+        error(
+          (respError as { message?: string }).message ?? t("organization.failedRejectInvitation"),
+        );
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });

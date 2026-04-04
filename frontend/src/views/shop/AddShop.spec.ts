@@ -3,7 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h } from "vue";
 import AddShop from "./AddShop.vue";
 
-// Stubs
 const HeaderContainerStub = defineComponent({
   name: "HeaderContainer",
   props: ["title"],
@@ -17,71 +16,32 @@ const MainContainerStub = defineComponent({
   },
 });
 
+const PanelStub = defineComponent({
+  name: "Panel",
+  setup(_, { slots }) {
+    return () => h("div", { class: "panel" }, slots.default?.());
+  },
+});
+
 const FormGroupStub = defineComponent({
   name: "FormGroup",
   props: ["title"],
   setup(props, { slots }) {
-    return () =>
-      h("fieldset", {}, [h("legend", {}, props.title), slots.default?.(), slots.info?.()]);
+    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
   },
 });
 
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "class", "id", "autocomplete"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        class: props.class,
-        id: props.id,
-        autocomplete: props.autocomplete,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
-
-const PluginConnectionModalStub = defineComponent({
-  name: "PluginConnectionModal",
-  props: ["show", "base64", "error"],
-  emits: ["close", "import", "update:base64"],
-  setup(props, { emit }) {
-    return () =>
-      h("div", { class: "plugin-modal" }, [
-        props.show
-          ? h("div", { class: "modal-content" }, [
-              h("input", {
-                value: props.base64,
-                onInput: (e: Event) => emit("update:base64", (e.target as HTMLInputElement).value),
-              }),
-              h("div", { class: "error" }, props.error),
-              h("button", { onClick: () => emit("close") }, "Close"),
-              h("button", { onClick: () => emit("import") }, "Import"),
-            ])
-          : null,
-      ]);
-  },
-});
-
-// Mock router
-const mockPush = vi.fn();
-const mockRoute = { query: {} as Record<string, string> };
-vi.mock("vue-router", () => ({
-  useRouter: () => ({ push: mockPush }),
-  useRoute: () => mockRoute,
-}));
-
-// Mock projects data
-const mockProjects = [
-  { id: 1, nameCombined: "Project A" },
-  { id: 2, nameCombined: "Project B" },
+const mockOrganizations = [
+  { id: "org-1", name: "Organization A" },
+  { id: "org-2", name: "Organization B" },
 ];
 
-// Mock api client
+const mockPush = vi.fn();
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push: mockPush }),
+  useRoute: () => ({ query: {} }),
+}));
+
 vi.mock("@/helpers/api", () => ({
   api: {
     GET: vi.fn(),
@@ -94,7 +54,6 @@ vi.mock("@/helpers/api", () => ({
   getToken: vi.fn(),
 }));
 
-// Mock useAlert
 vi.mock("@/composables/useAlert", () => ({
   useAlert: () => ({
     error: vi.fn(),
@@ -107,18 +66,12 @@ import { api } from "@/helpers/api";
 describe("AddShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRoute.query = {};
     vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/projects") {
-        return Promise.resolve({ data: mockProjects, error: null, response: new Response() });
+      if (path === "/auth/list-organizations") {
+        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
       }
       return Promise.resolve({ data: null, error: null, response: new Response() });
     }) as any);
-    vi.mocked(api.POST).mockResolvedValue({
-      data: {},
-      error: null,
-      response: new Response(),
-    } as any);
   });
 
   function mountComponent() {
@@ -127,126 +80,65 @@ describe("AddShop", () => {
         stubs: {
           HeaderContainer: HeaderContainerStub,
           MainContainer: MainContainerStub,
+          Panel: PanelStub,
           FormGroup: FormGroupStub,
-          Field: FieldStub,
-          PluginConnectionModal: PluginConnectionModalStub,
         },
       },
     });
   }
 
-  it("renders successfully", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.exists()).toBe(true);
-  });
-
-  it("displays page title", async () => {
+  it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find("header").text()).toBe("New Shop");
   });
 
-  it("has form element", async () => {
+  it("renders form when organizations are loaded", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find("form").exists()).toBe(true);
+  });
+
+  it("displays Shop Information section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Shop Information");
   });
 
   it("has name input field", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const input = wrapper.find('input[name="name"]');
-    expect(input.exists()).toBe(true);
+    expect(wrapper.find('input[name="name"]').exists()).toBe(true);
   });
 
-  it("has project selection area", async () => {
+  it("has description textarea", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // Look for project-related content in the form
-    expect(wrapper.text()).toContain("Project");
+    expect(wrapper.find('textarea[name="description"]').exists()).toBe(true);
   });
 
-  it("populates project dropdown with projects", async () => {
+  it("has git URL input field", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // The projects data should be loaded
-    // Verify the component structure exists
-    expect(wrapper.find("form").exists()).toBe(true);
+    expect(wrapper.find('input[name="gitUrl"]').exists()).toBe(true);
   });
 
-  it("has shop URL input field", async () => {
+  it("has organization select with options", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const input = wrapper.find('input[name="shopUrl"]');
-    expect(input.exists()).toBe(true);
-  });
-
-  it("has client ID input field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const input = wrapper.find('input[name="clientId"]');
-    expect(input.exists()).toBe(true);
-  });
-
-  it("has client secret input field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const input = wrapper.find('input[name="clientSecret"]');
-    expect(input.exists()).toBe(true);
+    const select = wrapper.find('select[name="organizationId"]');
+    expect(select.exists()).toBe(true);
+    const options = select.findAll("option");
+    expect(options.length).toBe(3); // empty + 2 orgs
+    expect(options[1].text()).toBe("Organization A");
+    expect(options[2].text()).toBe("Organization B");
   });
 
   it("has save button", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const button = wrapper.find('button[type="submit"]');
-    expect(button.exists()).toBe(true);
-    expect(button.text()).toContain("Save");
-  });
-
-  it("has connect using plugin button", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const button = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Connect using Shopmon Plugin"));
-    expect(button).toBeTruthy();
-  });
-
-  it("displays shop information section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Shop information");
-  });
-
-  it("displays integration section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Integration");
-  });
-
-  it("displays plugin information in integration section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Shopmon Plugin");
-    expect(wrapper.text()).toContain("permissions");
-  });
-
-  it("has project dropdown with options", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    // Verify the form has the Project section with field
-    expect(wrapper.text()).toContain("Project");
-    expect(
-      wrapper.find('input[name="projectId"]').exists() || wrapper.find("select").exists(),
-    ).toBe(true);
-  });
-
-  it("respects projectId query parameter", async () => {
-    mockRoute.query = { projectId: "2" };
-    const wrapper = mountComponent();
-    await flushPromises();
-    // Just verify the component mounts without error
-    expect(wrapper.exists()).toBe(true);
+    const btn = wrapper.find('button[type="submit"]');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toContain("Save");
   });
 });

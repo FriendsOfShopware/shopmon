@@ -38,7 +38,7 @@ func (h *Handler) GetAccountMe(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, profile)
 }
 
-// GetAccountExtensions returns aggregated extensions across all shops the user has access to.
+// GetAccountExtensions returns aggregated extensions across all environments the user has access to.
 func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
@@ -52,7 +52,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Group extensions by name, aggregating shops
+	// Group extensions by name, aggregating environments
 	extMap := make(map[string]*api.AccountExtension)
 	extOrder := []string{}
 
@@ -96,7 +96,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 				RatingAverage: ratingAvg,
 				Changelog:     changelogStr,
 				InstalledAt:   installedAt,
-				Shops:         []api.AccountExtensionShop{},
+				Environments:  []api.AccountExtensionEnvironment{},
 			}
 			extMap[key] = ext
 			extOrder = append(extOrder, key)
@@ -107,18 +107,18 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 			latestVersion = *row.LatestVersion
 		}
 
-		shop := api.AccountExtensionShop{
-			ShopId:               int(row.ShopID),
-			ShopName:             row.ShopName,
-			ShopUrl:              row.ShopUrl,
-			ShopOrganizationName: row.ShopOrganizationName,
-			ShopOrganizationId:   row.ShopOrganizationID,
-			Version:              row.Version,
-			LatestVersion:        latestVersion,
-			Active:               row.Active,
-			Installed:            row.Installed,
+		env := api.AccountExtensionEnvironment{
+			EnvironmentId:               int(row.EnvironmentID),
+			EnvironmentName:             row.EnvironmentName,
+			EnvironmentUrl:              row.EnvironmentUrl,
+			EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationId:   row.EnvironmentOrganizationID,
+			Version:                     row.Version,
+			LatestVersion:               latestVersion,
+			Active:                      row.Active,
+			Installed:                   row.Installed,
 		}
-		ext.Shops = append(ext.Shops, shop)
+		ext.Environments = append(ext.Environments, env)
 	}
 
 	result := make([]api.AccountExtension, 0, len(extOrder))
@@ -146,12 +146,52 @@ func (h *Handler) GetAccountOrganizations(w http.ResponseWriter, r *http.Request
 	result := make([]api.AccountOrganization, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, api.AccountOrganization{
-			Id:          row.ID,
-			Name:        row.Name,
-			Logo:        row.Logo,
-			CreatedAt:   pgtimeToTime(row.CreatedAt),
-			ShopCount:   int(row.ShopCount),
-			MemberCount: int(row.MemberCount),
+			Id:               row.ID,
+			Name:             row.Name,
+			Logo:             row.Logo,
+			CreatedAt:        pgtimeToTime(row.CreatedAt),
+			EnvironmentCount: int(row.EnvironmentCount),
+			MemberCount:      int(row.MemberCount),
+		})
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
+// GetAccountEnvironments returns all environments accessible to the user.
+func (h *Handler) GetAccountEnvironments(w http.ResponseWriter, r *http.Request) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	rows, err := h.queries.GetUserEnvironments(r.Context(), user.ID)
+	if err != nil {
+		slog.Error("failed to get user environments", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get environments")
+		return
+	}
+
+	result := make([]api.AccountEnvironment, 0, len(rows))
+	for _, row := range rows {
+		var shopId *int
+		if row.ShopID != nil {
+			v := int(*row.ShopID)
+			shopId = &v
+		}
+		result = append(result, api.AccountEnvironment{
+			Id:               int(row.ID),
+			Name:             row.Name,
+			Url:              row.Url,
+			Favicon:          row.Favicon,
+			Status:           row.Status,
+			ShopwareVersion:  row.ShopwareVersion,
+			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
+			LastScrapedError: row.LastScrapedError,
+			OrganizationId:   row.OrganizationID,
+			OrganizationName: row.OrganizationName,
+			ShopId:           shopId,
+			ShopName:         row.ShopName,
 		})
 	}
 
@@ -174,47 +214,7 @@ func (h *Handler) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 
 	result := make([]api.AccountShop, 0, len(rows))
 	for _, row := range rows {
-		var projectId *int
-		if row.ProjectID != nil {
-			v := int(*row.ProjectID)
-			projectId = &v
-		}
 		result = append(result, api.AccountShop{
-			Id:               int(row.ID),
-			Name:             row.Name,
-			Url:              row.Url,
-			Favicon:          row.Favicon,
-			Status:           row.Status,
-			ShopwareVersion:  row.ShopwareVersion,
-			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
-			LastScrapedError: row.LastScrapedError,
-			OrganizationId:   row.OrganizationID,
-			OrganizationName: row.OrganizationName,
-			ProjectId:        projectId,
-			ProjectName:      row.ProjectName,
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, result)
-}
-
-// GetAccountProjects returns all projects accessible to the user.
-func (h *Handler) GetAccountProjects(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	rows, err := h.queries.GetUserProjects(r.Context(), user.ID)
-	if err != nil {
-		slog.Error("failed to get user projects", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get projects")
-		return
-	}
-
-	result := make([]api.AccountProject, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, api.AccountProject{
 			Id:               int(row.ID),
 			Name:             row.Name,
 			Description:      row.Description,
@@ -227,7 +227,7 @@ func (h *Handler) GetAccountProjects(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetAccountChangelogs returns changelogs across all shops the user has access to.
+// GetAccountChangelogs returns changelogs across all environments the user has access to.
 func (h *Handler) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
@@ -243,9 +243,9 @@ func (h *Handler) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 
 	result := make([]api.AccountChangelog, 0, len(rows))
 	for _, row := range rows {
-		shopID := 0
-		if row.ShopID != nil {
-			shopID = int(*row.ShopID)
+		environmentID := 0
+		if row.EnvironmentID != nil {
+			environmentID = int(*row.EnvironmentID)
 		}
 
 		var extensions []api.ExtensionDiff
@@ -259,57 +259,57 @@ func (h *Handler) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 		}
 
 		result = append(result, api.AccountChangelog{
-			Id:                   int(row.ID),
-			ShopId:               shopID,
-			ShopName:             row.ShopName,
-			ShopOrganizationName: row.ShopOrganizationName,
-			ShopOrganizationId:   row.ShopOrganizationID,
-			Extensions:           extensions,
-			OldShopwareVersion:   row.OldShopwareVersion,
-			NewShopwareVersion:   row.NewShopwareVersion,
-			Date:                 pgtimeToTime(row.Date),
+			Id:                          int(row.ID),
+			EnvironmentId:               environmentID,
+			EnvironmentName:             row.EnvironmentName,
+			EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationId:   row.EnvironmentOrganizationID,
+			Extensions:                  extensions,
+			OldShopwareVersion:          row.OldShopwareVersion,
+			NewShopwareVersion:          row.NewShopwareVersion,
+			Date:                        pgtimeToTime(row.Date),
 		})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// GetAccountSubscribedShops returns shops the user is subscribed to for notifications.
-func (h *Handler) GetAccountSubscribedShops(w http.ResponseWriter, r *http.Request) {
+// GetAccountSubscribedEnvironments returns environments the user is subscribed to for notifications.
+func (h *Handler) GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	// User notifications is a list of strings like "shop-123"
-	subscribedShops := []api.SubscribedShop{}
+	// User notifications is a list of strings like "environment-123"
+	subscribedEnvironments := []api.SubscribedEnvironment{}
 
 	for _, notification := range user.Notifications {
-		if strings.HasPrefix(notification, "shop-") {
-			idStr := strings.TrimPrefix(notification, "shop-")
-			shopID, err := strconv.Atoi(idStr)
+		if strings.HasPrefix(notification, "environment-") {
+			idStr := strings.TrimPrefix(notification, "environment-")
+			environmentID, err := strconv.Atoi(idStr)
 			if err != nil {
 				continue
 			}
 
-			// Fetch shop name
-			shop, err := h.queries.GetShopByID(r.Context(), int32(shopID))
+			// Fetch environment name
+			environment, err := h.queries.GetEnvironmentByID(r.Context(), int32(environmentID))
 			if err != nil {
-				slog.Warn("failed to get subscribed shop", "shopId", shopID, "error", err)
+				slog.Warn("failed to get subscribed environment", "environmentId", environmentID, "error", err)
 				continue
 			}
 
-			subscribedShops = append(subscribedShops, api.SubscribedShop{
-				Id:   shopID,
-				Name: shop.Name,
+			subscribedEnvironments = append(subscribedEnvironments, api.SubscribedEnvironment{
+				Id:   environmentID,
+				Name: environment.Name,
 			})
 		}
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, subscribedShops)
+	httputil.WriteJSON(w, http.StatusOK, subscribedEnvironments)
 }
 
-// helper to check for "shop-{id}" pattern match
-func shopNotificationKey(shopID int) string {
-	return fmt.Sprintf("shop-%d", shopID)
+// helper to check for "environment-{id}" pattern match
+func environmentNotificationKey(environmentID int) string {
+	return fmt.Sprintf("environment-%d", environmentID)
 }

@@ -28,7 +28,7 @@ type Account struct {
 
 type Deployment struct {
 	ID            int32            `json:"id"`
-	ShopID        int32            `json:"shop_id"`
+	EnvironmentID int32            `json:"environment_id"`
 	Name          string           `json:"name"`
 	Command       string           `json:"command"`
 	ReturnCode    int32            `json:"return_code"`
@@ -38,6 +38,104 @@ type Deployment struct {
 	Composer      []byte           `json:"composer"`
 	Reference     *string          `json:"reference"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
+type Environment struct {
+	ID                   int32            `json:"id"`
+	OrganizationID       string           `json:"organization_id"`
+	ShopID               int32            `json:"shop_id"`
+	Name                 string           `json:"name"`
+	Status               string           `json:"status"`
+	Url                  string           `json:"url"`
+	Favicon              *string          `json:"favicon"`
+	ClientID             string           `json:"client_id"`
+	ClientSecret         string           `json:"client_secret"`
+	ShopwareVersion      string           `json:"shopware_version"`
+	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError     *string          `json:"last_scraped_error"`
+	Ignores              json.RawMessage  `json:"ignores"`
+	EnvironmentImage     *string          `json:"environment_image"`
+	LastChangelog        []byte           `json:"last_changelog"`
+	ActiveDeploymentID   *int32           `json:"active_deployment_id"`
+	ConnectionIssueCount int32            `json:"connection_issue_count"`
+	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
+	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
+	EnvironmentToken     string           `json:"environment_token"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+}
+
+type EnvironmentCache struct {
+	ID            int32  `json:"id"`
+	EnvironmentID int32  `json:"environment_id"`
+	Environment   string `json:"environment"`
+	HttpCache     bool   `json:"http_cache"`
+	CacheAdapter  string `json:"cache_adapter"`
+}
+
+type EnvironmentChangelog struct {
+	ID                 int32            `json:"id"`
+	EnvironmentID      *int32           `json:"environment_id"`
+	Extensions         json.RawMessage  `json:"extensions"`
+	OldShopwareVersion *string          `json:"old_shopware_version"`
+	NewShopwareVersion *string          `json:"new_shopware_version"`
+	Date               pgtype.Timestamp `json:"date"`
+}
+
+type EnvironmentCheck struct {
+	ID            int32   `json:"id"`
+	EnvironmentID int32   `json:"environment_id"`
+	CheckID       string  `json:"check_id"`
+	Level         string  `json:"level"`
+	Message       string  `json:"message"`
+	Source        string  `json:"source"`
+	Link          *string `json:"link"`
+}
+
+type EnvironmentExtension struct {
+	ID            int32   `json:"id"`
+	EnvironmentID int32   `json:"environment_id"`
+	Name          string  `json:"name"`
+	Label         string  `json:"label"`
+	Active        bool    `json:"active"`
+	Version       string  `json:"version"`
+	LatestVersion *string `json:"latest_version"`
+	Installed     bool    `json:"installed"`
+	RatingAverage *int32  `json:"rating_average"`
+	StoreLink     *string `json:"store_link"`
+	Changelog     []byte  `json:"changelog"`
+	InstalledAt   *string `json:"installed_at"`
+}
+
+type EnvironmentQueue struct {
+	ID            int32  `json:"id"`
+	EnvironmentID int32  `json:"environment_id"`
+	Name          string `json:"name"`
+	Size          int32  `json:"size"`
+}
+
+type EnvironmentScheduledTask struct {
+	ID                int32   `json:"id"`
+	EnvironmentID     int32   `json:"environment_id"`
+	TaskID            string  `json:"task_id"`
+	Name              string  `json:"name"`
+	Status            string  `json:"status"`
+	Interval          int32   `json:"interval"`
+	Overdue           bool    `json:"overdue"`
+	LastExecutionTime *string `json:"last_execution_time"`
+	NextExecutionTime *string `json:"next_execution_time"`
+}
+
+type EnvironmentSitespeed struct {
+	ID                     int32            `json:"id"`
+	EnvironmentID          *int32           `json:"environment_id"`
+	DeploymentID           *int32           `json:"deployment_id"`
+	CreatedAt              pgtype.Timestamp `json:"created_at"`
+	Ttfb                   *int32           `json:"ttfb"`
+	FullyLoaded            *int32           `json:"fully_loaded"`
+	LargestContentfulPaint *int32           `json:"largest_contentful_paint"`
+	FirstContentfulPaint   *int32           `json:"first_contentful_paint"`
+	CumulativeLayoutShift  *float32         `json:"cumulative_layout_shift"`
+	TransferSize           *int32           `json:"transfer_size"`
 }
 
 type Invitation struct {
@@ -88,26 +186,6 @@ type Passkey struct {
 	Aaguid       *string          `json:"aaguid"`
 }
 
-type Project struct {
-	ID             int32            `json:"id"`
-	OrganizationID string           `json:"organization_id"`
-	Name           string           `json:"name"`
-	Description    *string          `json:"description"`
-	GitUrl         *string          `json:"git_url"`
-	CreatedAt      pgtype.Timestamp `json:"created_at"`
-	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
-}
-
-type ProjectApiKey struct {
-	ID         string           `json:"id"`
-	ProjectID  int32            `json:"project_id"`
-	Name       string           `json:"name"`
-	Token      string           `json:"token"`
-	Scopes     json.RawMessage  `json:"scopes"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
-}
-
 type Session struct {
 	ID                   string           `json:"id"`
 	ExpiresAt            pgtype.Timestamp `json:"expires_at"`
@@ -122,101 +200,23 @@ type Session struct {
 }
 
 type Shop struct {
-	ID                   int32            `json:"id"`
-	OrganizationID       string           `json:"organization_id"`
-	ProjectID            int32            `json:"project_id"`
-	Name                 string           `json:"name"`
-	Status               string           `json:"status"`
-	Url                  string           `json:"url"`
-	Favicon              *string          `json:"favicon"`
-	ClientID             string           `json:"client_id"`
-	ClientSecret         string           `json:"client_secret"`
-	ShopwareVersion      string           `json:"shopware_version"`
-	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
-	LastScrapedError     *string          `json:"last_scraped_error"`
-	Ignores              json.RawMessage  `json:"ignores"`
-	ShopImage            *string          `json:"shop_image"`
-	LastChangelog        []byte           `json:"last_changelog"`
-	ActiveDeploymentID   *int32           `json:"active_deployment_id"`
-	ConnectionIssueCount int32            `json:"connection_issue_count"`
-	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
-	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
-	ShopToken            string           `json:"shop_token"`
-	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	ID             int32            `json:"id"`
+	OrganizationID string           `json:"organization_id"`
+	Name           string           `json:"name"`
+	Description    *string          `json:"description"`
+	GitUrl         *string          `json:"git_url"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
 }
 
-type ShopCache struct {
-	ID           int32  `json:"id"`
-	ShopID       int32  `json:"shop_id"`
-	Environment  string `json:"environment"`
-	HttpCache    bool   `json:"http_cache"`
-	CacheAdapter string `json:"cache_adapter"`
-}
-
-type ShopChangelog struct {
-	ID                 int32            `json:"id"`
-	ShopID             *int32           `json:"shop_id"`
-	Extensions         json.RawMessage  `json:"extensions"`
-	OldShopwareVersion *string          `json:"old_shopware_version"`
-	NewShopwareVersion *string          `json:"new_shopware_version"`
-	Date               pgtype.Timestamp `json:"date"`
-}
-
-type ShopCheck struct {
-	ID      int32   `json:"id"`
-	ShopID  int32   `json:"shop_id"`
-	CheckID string  `json:"check_id"`
-	Level   string  `json:"level"`
-	Message string  `json:"message"`
-	Source  string  `json:"source"`
-	Link    *string `json:"link"`
-}
-
-type ShopExtension struct {
-	ID            int32   `json:"id"`
-	ShopID        int32   `json:"shop_id"`
-	Name          string  `json:"name"`
-	Label         string  `json:"label"`
-	Active        bool    `json:"active"`
-	Version       string  `json:"version"`
-	LatestVersion *string `json:"latest_version"`
-	Installed     bool    `json:"installed"`
-	RatingAverage *int32  `json:"rating_average"`
-	StoreLink     *string `json:"store_link"`
-	Changelog     []byte  `json:"changelog"`
-	InstalledAt   *string `json:"installed_at"`
-}
-
-type ShopQueue struct {
-	ID     int32  `json:"id"`
-	ShopID int32  `json:"shop_id"`
-	Name   string `json:"name"`
-	Size   int32  `json:"size"`
-}
-
-type ShopScheduledTask struct {
-	ID                int32   `json:"id"`
-	ShopID            int32   `json:"shop_id"`
-	TaskID            string  `json:"task_id"`
-	Name              string  `json:"name"`
-	Status            string  `json:"status"`
-	Interval          int32   `json:"interval"`
-	Overdue           bool    `json:"overdue"`
-	LastExecutionTime *string `json:"last_execution_time"`
-	NextExecutionTime *string `json:"next_execution_time"`
-}
-
-type ShopSitespeed struct {
-	ID                     int32            `json:"id"`
-	ShopID                 *int32           `json:"shop_id"`
-	DeploymentID           *int32           `json:"deployment_id"`
-	CreatedAt              pgtype.Timestamp `json:"created_at"`
-	Ttfb                   *int32           `json:"ttfb"`
-	FullyLoaded            *int32           `json:"fully_loaded"`
-	LargestContentfulPaint *int32           `json:"largest_contentful_paint"`
-	FirstContentfulPaint   *int32           `json:"first_contentful_paint"`
-	CumulativeLayoutShift  *float32         `json:"cumulative_layout_shift"`
-	TransferSize           *int32           `json:"transfer_size"`
+type ShopApiKey struct {
+	ID         string           `json:"id"`
+	ShopID     int32            `json:"shop_id"`
+	Name       string           `json:"name"`
+	Token      string           `json:"token"`
+	Scopes     json.RawMessage  `json:"scopes"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
 }
 
 type SsoProvider struct {

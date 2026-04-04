@@ -63,12 +63,35 @@ func TestGetAccountOrganizations(t *testing.T) {
 	assert.Equal(t, "Test Org", orgs[0].Name)
 }
 
+func TestGetAccountEnvironments(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/environments", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var environments []api.AccountEnvironment
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environments))
+	require.Len(t, environments, 1)
+	assert.Equal(t, "My Environment", environments[0].Name)
+	assert.Equal(t, "https://env.example.com", environments[0].Url)
+	assert.Equal(t, "green", environments[0].Status)
+}
+
 func TestGetAccountShops(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	env.SeedShop(t, "org-1", projectID, "My Shop", "https://shop.example.com")
+	env.SeedShop(t, "org-1", "My Shop")
 
 	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/shops", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -83,30 +106,7 @@ func TestGetAccountShops(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&shops))
 	require.Len(t, shops, 1)
 	assert.Equal(t, "My Shop", shops[0].Name)
-	assert.Equal(t, "https://shop.example.com", shops[0].Url)
-	assert.Equal(t, "green", shops[0].Status)
-}
-
-func TestGetAccountProjects(t *testing.T) {
-	env := testutil.Setup(t)
-	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
-	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	env.SeedProject(t, "org-1", "My Project")
-
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/projects", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var projects []api.AccountProject
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&projects))
-	require.Len(t, projects, 1)
-	assert.Equal(t, "My Project", projects[0].Name)
-	assert.Equal(t, "org-1", projects[0].OrganizationId)
+	assert.Equal(t, "org-1", shops[0].OrganizationId)
 }
 
 func TestGetAccountChangelogs_Empty(t *testing.T) {
@@ -127,11 +127,11 @@ func TestGetAccountChangelogs_Empty(t *testing.T) {
 	assert.Empty(t, changelogs)
 }
 
-func TestGetAccountSubscribedShops_Empty(t *testing.T) {
+func TestGetAccountSubscribedEnvironments_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/subscribed-shops", nil)
+	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/subscribed-environments", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -140,7 +140,7 @@ func TestGetAccountSubscribedShops_Empty(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var shops []api.SubscribedShop
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&shops))
-	assert.Empty(t, shops)
+	var environments []api.SubscribedEnvironment
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environments))
+	assert.Empty(t, environments)
 }

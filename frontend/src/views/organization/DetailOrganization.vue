@@ -153,7 +153,12 @@
           :initial-values="{ email: '', role: 'member' }"
           @submit="onAddMember"
         >
-          <InputField name="email" :label="$t('common.email')" autocomplete="email" :error="errors.email" />
+          <InputField
+            name="email"
+            :label="$t('common.email')"
+            autocomplete="email"
+            :error="errors.email"
+          />
 
           <SelectField name="role" :label="$t('common.role')" :error="errors.role">
             <option value="member">{{ $t("organization.roleMember") }}</option>
@@ -433,7 +438,9 @@ async function onChangeRole(values: Record<string, unknown>) {
       );
 
       if (respError) {
-        alert.error((respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"));
+        alert.error(
+          (respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"),
+        );
         return;
       }
 

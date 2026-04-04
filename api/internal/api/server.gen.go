@@ -18,6 +18,24 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for AdminGetEnvironmentsParamsSortDirection.
+const (
+	AdminGetEnvironmentsParamsSortDirectionAsc  AdminGetEnvironmentsParamsSortDirection = "asc"
+	AdminGetEnvironmentsParamsSortDirectionDesc AdminGetEnvironmentsParamsSortDirection = "desc"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetEnvironmentsParamsSortDirection enum.
+func (e AdminGetEnvironmentsParamsSortDirection) Valid() bool {
+	switch e {
+	case AdminGetEnvironmentsParamsSortDirectionAsc:
+		return true
+	case AdminGetEnvironmentsParamsSortDirectionDesc:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminGetOrganizationsParamsSortBy.
 const (
 	CreatedAt   AdminGetOrganizationsParamsSortBy = "createdAt"
@@ -60,79 +78,77 @@ func (e AdminGetOrganizationsParamsSortDirection) Valid() bool {
 	}
 }
 
-// Defines values for AdminGetShopsParamsSortDirection.
-const (
-	AdminGetShopsParamsSortDirectionAsc  AdminGetShopsParamsSortDirection = "asc"
-	AdminGetShopsParamsSortDirectionDesc AdminGetShopsParamsSortDirection = "desc"
-)
-
-// Valid indicates whether the value is a known member of the AdminGetShopsParamsSortDirection enum.
-func (e AdminGetShopsParamsSortDirection) Valid() bool {
-	switch e {
-	case AdminGetShopsParamsSortDirectionAsc:
-		return true
-	case AdminGetShopsParamsSortDirectionDesc:
-		return true
-	default:
-		return false
-	}
-}
-
 // AccountChangelog defines model for AccountChangelog.
 type AccountChangelog struct {
-	Date time.Time `json:"date"`
+	Date                        time.Time `json:"date"`
+	EnvironmentId               int       `json:"environmentId"`
+	EnvironmentName             string    `json:"environmentName"`
+	EnvironmentOrganizationId   string    `json:"environmentOrganizationId"`
+	EnvironmentOrganizationName string    `json:"environmentOrganizationName"`
 
 	// Extensions JSON data describing extension changes
-	Extensions           []ExtensionDiff `json:"extensions"`
-	Id                   int             `json:"id"`
-	NewShopwareVersion   *string         `json:"newShopwareVersion"`
-	OldShopwareVersion   *string         `json:"oldShopwareVersion"`
-	ShopId               int             `json:"shopId"`
-	ShopName             string          `json:"shopName"`
-	ShopOrganizationId   string          `json:"shopOrganizationId"`
-	ShopOrganizationName string          `json:"shopOrganizationName"`
+	Extensions         []ExtensionDiff `json:"extensions"`
+	Id                 int             `json:"id"`
+	NewShopwareVersion *string         `json:"newShopwareVersion"`
+	OldShopwareVersion *string         `json:"oldShopwareVersion"`
+}
+
+// AccountEnvironment defines model for AccountEnvironment.
+type AccountEnvironment struct {
+	Favicon          *string    `json:"favicon"`
+	Id               int        `json:"id"`
+	LastScrapedAt    *time.Time `json:"lastScrapedAt"`
+	LastScrapedError *string    `json:"lastScrapedError"`
+	Name             string     `json:"name"`
+	OrganizationId   string     `json:"organizationId"`
+	OrganizationName string     `json:"organizationName"`
+	ShopId           *int       `json:"shopId"`
+	ShopName         *string    `json:"shopName"`
+	ShopwareVersion  string     `json:"shopwareVersion"`
+	Status           string     `json:"status"`
+	Url              string     `json:"url"`
 }
 
 // AccountExtension defines model for AccountExtension.
 type AccountExtension struct {
-	Active        bool                   `json:"active"`
-	Changelog     *string                `json:"changelog"`
-	Installed     bool                   `json:"installed"`
-	InstalledAt   *time.Time             `json:"installedAt"`
-	Label         string                 `json:"label"`
-	LatestVersion string                 `json:"latestVersion"`
-	Name          string                 `json:"name"`
-	RatingAverage *float32               `json:"ratingAverage"`
-	Shops         []AccountExtensionShop `json:"shops"`
-	StoreLink     *string                `json:"storeLink"`
-	Version       string                 `json:"version"`
+	Active        bool                          `json:"active"`
+	Changelog     *string                       `json:"changelog"`
+	Environments  []AccountExtensionEnvironment `json:"environments"`
+	Installed     bool                          `json:"installed"`
+	InstalledAt   *time.Time                    `json:"installedAt"`
+	Label         string                        `json:"label"`
+	LatestVersion string                        `json:"latestVersion"`
+	Name          string                        `json:"name"`
+	RatingAverage *float32                      `json:"ratingAverage"`
+	StoreLink     *string                       `json:"storeLink"`
+	Version       string                        `json:"version"`
 }
 
-// AccountExtensionShop defines model for AccountExtensionShop.
-type AccountExtensionShop struct {
-	Active               bool   `json:"active"`
-	Installed            bool   `json:"installed"`
-	LatestVersion        string `json:"latestVersion"`
-	ShopId               int    `json:"shopId"`
-	ShopName             string `json:"shopName"`
-	ShopOrganizationId   string `json:"shopOrganizationId"`
-	ShopOrganizationName string `json:"shopOrganizationName"`
-	ShopUrl              string `json:"shopUrl"`
-	Version              string `json:"version"`
+// AccountExtensionEnvironment defines model for AccountExtensionEnvironment.
+type AccountExtensionEnvironment struct {
+	Active                      bool   `json:"active"`
+	EnvironmentId               int    `json:"environmentId"`
+	EnvironmentName             string `json:"environmentName"`
+	EnvironmentOrganizationId   string `json:"environmentOrganizationId"`
+	EnvironmentOrganizationName string `json:"environmentOrganizationName"`
+	EnvironmentUrl              string `json:"environmentUrl"`
+	Installed                   bool   `json:"installed"`
+	LatestVersion               string `json:"latestVersion"`
+	Version                     string `json:"version"`
 }
 
 // AccountOrganization defines model for AccountOrganization.
 type AccountOrganization struct {
-	CreatedAt   time.Time `json:"createdAt"`
-	Id          string    `json:"id"`
-	Logo        *string   `json:"logo"`
-	MemberCount int       `json:"memberCount"`
-	Name        string    `json:"name"`
-	ShopCount   int       `json:"shopCount"`
+	CreatedAt        time.Time `json:"createdAt"`
+	EnvironmentCount int       `json:"environmentCount"`
+	Id               string    `json:"id"`
+	Logo             *string   `json:"logo"`
+	MemberCount      int       `json:"memberCount"`
+	Name             string    `json:"name"`
 }
 
-// AccountProject defines model for AccountProject.
-type AccountProject struct {
+// AccountShop defines model for AccountShop.
+type AccountShop struct {
 	Description      *string `json:"description"`
 	GitUrl           *string `json:"gitUrl"`
 	Id               int     `json:"id"`
@@ -141,26 +157,16 @@ type AccountProject struct {
 	OrganizationName string  `json:"organizationName"`
 }
 
-// AccountShop defines model for AccountShop.
-type AccountShop struct {
-	Favicon          *string    `json:"favicon"`
-	Id               int        `json:"id"`
-	LastScrapedAt    *time.Time `json:"lastScrapedAt"`
-	LastScrapedError *string    `json:"lastScrapedError"`
-	Name             string     `json:"name"`
-	OrganizationId   string     `json:"organizationId"`
-	OrganizationName string     `json:"organizationName"`
-	ProjectId        *int       `json:"projectId"`
-	ProjectName      *string    `json:"projectName"`
-	ShopwareVersion  string     `json:"shopwareVersion"`
-	Status           string     `json:"status"`
-	Url              string     `json:"url"`
+// AdminEnvironmentsResponse defines model for AdminEnvironmentsResponse.
+type AdminEnvironmentsResponse struct {
+	Environments []AccountEnvironment `json:"environments"`
+	Total        int                  `json:"total"`
 }
 
 // AdminGrowth defines model for AdminGrowth.
 type AdminGrowth struct {
-	Shops []GrowthDataPoint `json:"shops"`
-	Users []GrowthDataPoint `json:"users"`
+	Environments []GrowthDataPoint `json:"environments"`
+	Users        []GrowthDataPoint `json:"users"`
 }
 
 // AdminOrganizationsResponse defines model for AdminOrganizationsResponse.
@@ -171,25 +177,19 @@ type AdminOrganizationsResponse struct {
 
 // AdminRecentActivity defines model for AdminRecentActivity.
 type AdminRecentActivity struct {
-	RecentShops []AccountShop `json:"recentShops"`
-	RecentUsers []UserProfile `json:"recentUsers"`
-}
-
-// AdminShopsResponse defines model for AdminShopsResponse.
-type AdminShopsResponse struct {
-	Shops []AccountShop `json:"shops"`
-	Total int           `json:"total"`
+	RecentEnvironments []AccountEnvironment `json:"recentEnvironments"`
+	RecentUsers        []UserProfile        `json:"recentUsers"`
 }
 
 // AdminStats defines model for AdminStats.
 type AdminStats struct {
-	ShopsByStatus struct {
+	EnvironmentsByStatus struct {
 		Green  int `json:"green"`
 		Red    int `json:"red"`
 		Yellow int `json:"yellow"`
-	} `json:"shopsByStatus"`
+	} `json:"environmentsByStatus"`
+	TotalEnvironments  int `json:"totalEnvironments"`
 	TotalOrganizations int `json:"totalOrganizations"`
-	TotalShops         int `json:"totalShops"`
 	TotalUsers         int `json:"totalUsers"`
 }
 
@@ -236,11 +236,11 @@ type CreateCliDeploymentRequest struct {
 	Command       string    `json:"command"`
 	Composer      *string   `json:"composer,omitempty"`
 	EndDate       time.Time `json:"end_date"`
+	EnvironmentId int       `json:"environment_id"`
 	ExecutionTime float32   `json:"execution_time"`
 	Name          *string   `json:"name,omitempty"`
 	Reference     *string   `json:"reference,omitempty"`
 	ReturnCode    int       `json:"return_code"`
-	ShopId        int       `json:"shop_id"`
 	StartDate     time.Time `json:"start_date"`
 }
 
@@ -253,26 +253,26 @@ type CreateCliDeploymentResponse struct {
 	Url          string `json:"url"`
 }
 
+// CreateEnvironmentRequest defines model for CreateEnvironmentRequest.
+type CreateEnvironmentRequest struct {
+	ClientId         string  `json:"clientId"`
+	ClientSecret     string  `json:"clientSecret"`
+	EnvironmentToken *string `json:"environmentToken,omitempty"`
+	Name             string  `json:"name"`
+	ShopId           int     `json:"shopId"`
+	ShopUrl          string  `json:"shopUrl"`
+}
+
 // CreatePackagesTokenRequest defines model for CreatePackagesTokenRequest.
 type CreatePackagesTokenRequest struct {
 	Token string `json:"token"`
 }
 
-// CreateProjectRequest defines model for CreateProjectRequest.
-type CreateProjectRequest struct {
+// CreateShopRequest defines model for CreateShopRequest.
+type CreateShopRequest struct {
 	Description *string `json:"description,omitempty"`
 	GitUrl      *string `json:"gitUrl,omitempty"`
 	Name        string  `json:"name"`
-}
-
-// CreateShopRequest defines model for CreateShopRequest.
-type CreateShopRequest struct {
-	ClientId     string  `json:"clientId"`
-	ClientSecret string  `json:"clientSecret"`
-	Name         string  `json:"name"`
-	ProjectId    int     `json:"projectId"`
-	ShopToken    *string `json:"shopToken,omitempty"`
-	ShopUrl      string  `json:"shopUrl"`
 }
 
 // Deployment defines model for Deployment.
@@ -304,6 +304,61 @@ type DeploymentDetail struct {
 	Reference     *string   `json:"reference"`
 	ReturnCode    int       `json:"returnCode"`
 	StartDate     time.Time `json:"startDate"`
+}
+
+// EnvironmentCheck defines model for EnvironmentCheck.
+type EnvironmentCheck struct {
+	Id      string  `json:"id"`
+	Level   string  `json:"level"`
+	Link    *string `json:"link,omitempty"`
+	Message string  `json:"message"`
+}
+
+// EnvironmentDetail defines model for EnvironmentDetail.
+type EnvironmentDetail struct {
+	Cache              *CacheInfo             `json:"cache"`
+	Changelogs         []AccountChangelog     `json:"changelogs"`
+	Checks             []EnvironmentCheck     `json:"checks"`
+	CreatedAt          time.Time              `json:"createdAt"`
+	DeploymentsCount   int                    `json:"deploymentsCount"`
+	EnvironmentImage   *string                `json:"environmentImage"`
+	EnvironmentToken   string                 `json:"environmentToken"`
+	Extensions         []EnvironmentExtension `json:"extensions"`
+	Favicon            *string                `json:"favicon"`
+	Id                 int                    `json:"id"`
+	Ignores            *[]string              `json:"ignores"`
+	LastChangelog      *AccountChangelog      `json:"lastChangelog"`
+	LastScrapedAt      *time.Time             `json:"lastScrapedAt"`
+	LastScrapedError   *string                `json:"lastScrapedError"`
+	Name               string                 `json:"name"`
+	OrganizationId     string                 `json:"organizationId"`
+	OrganizationName   string                 `json:"organizationName"`
+	Queues             []Queue                `json:"queues"`
+	ScheduledTasks     []ScheduledTask        `json:"scheduledTasks"`
+	ShopDescription    *string                `json:"shopDescription"`
+	ShopId             *int                   `json:"shopId"`
+	ShopName           *string                `json:"shopName"`
+	ShopwareVersion    string                 `json:"shopwareVersion"`
+	SitespeedDetailUrl *string                `json:"sitespeedDetailUrl"`
+	SitespeedEnabled   bool                   `json:"sitespeedEnabled"`
+	SitespeedUrls      *[]string              `json:"sitespeedUrls"`
+	Sitespeeds         []Sitespeed            `json:"sitespeeds"`
+	Status             string                 `json:"status"`
+	Url                string                 `json:"url"`
+}
+
+// EnvironmentExtension defines model for EnvironmentExtension.
+type EnvironmentExtension struct {
+	Active        bool       `json:"active"`
+	Changelog     *string    `json:"changelog,omitempty"`
+	Installed     bool       `json:"installed"`
+	InstalledAt   *time.Time `json:"installedAt,omitempty"`
+	Label         string     `json:"label"`
+	LatestVersion string     `json:"latestVersion"`
+	Name          string     `json:"name"`
+	RatingAverage *float32   `json:"ratingAverage,omitempty"`
+	StoreLink     *string    `json:"storeLink,omitempty"`
+	Version       string     `json:"version"`
 }
 
 // ErrorResponse defines model for ErrorResponse.
@@ -390,15 +445,6 @@ type PackagesTokenConfiguration struct {
 	Configured  bool    `json:"configured"`
 }
 
-// Project defines model for Project.
-type Project struct {
-	Description    *string `json:"description"`
-	GitUrl         *string `json:"gitUrl"`
-	Id             int     `json:"id"`
-	Name           string  `json:"name"`
-	OrganizationId string  `json:"organizationId"`
-}
-
 // Queue defines model for Queue.
 type Queue struct {
 	Name string `json:"name"`
@@ -416,59 +462,13 @@ type ScheduledTask struct {
 	Status            string     `json:"status"`
 }
 
-// ShopCheck defines model for ShopCheck.
-type ShopCheck struct {
-	Id      string  `json:"id"`
-	Level   string  `json:"level"`
-	Link    *string `json:"link,omitempty"`
-	Message string  `json:"message"`
-}
-
-// ShopDetail defines model for ShopDetail.
-type ShopDetail struct {
-	Cache              *CacheInfo         `json:"cache"`
-	Changelogs         []AccountChangelog `json:"changelogs"`
-	Checks             []ShopCheck        `json:"checks"`
-	CreatedAt          time.Time          `json:"createdAt"`
-	DeploymentsCount   int                `json:"deploymentsCount"`
-	Extensions         []ShopExtension    `json:"extensions"`
-	Favicon            *string            `json:"favicon"`
-	Id                 int                `json:"id"`
-	Ignores            *[]string          `json:"ignores"`
-	LastChangelog      *AccountChangelog  `json:"lastChangelog"`
-	LastScrapedAt      *time.Time         `json:"lastScrapedAt"`
-	LastScrapedError   *string            `json:"lastScrapedError"`
-	Name               string             `json:"name"`
-	OrganizationId     string             `json:"organizationId"`
-	OrganizationName   string             `json:"organizationName"`
-	ProjectDescription *string            `json:"projectDescription"`
-	ProjectId          *int               `json:"projectId"`
-	ProjectName        *string            `json:"projectName"`
-	Queues             []Queue            `json:"queues"`
-	ScheduledTasks     []ScheduledTask    `json:"scheduledTasks"`
-	ShopImage          *string            `json:"shopImage"`
-	ShopToken          string             `json:"shopToken"`
-	ShopwareVersion    string             `json:"shopwareVersion"`
-	SitespeedDetailUrl *string            `json:"sitespeedDetailUrl"`
-	SitespeedEnabled   bool               `json:"sitespeedEnabled"`
-	SitespeedUrls      *[]string          `json:"sitespeedUrls"`
-	Sitespeeds         []Sitespeed        `json:"sitespeeds"`
-	Status             string             `json:"status"`
-	Url                string             `json:"url"`
-}
-
-// ShopExtension defines model for ShopExtension.
-type ShopExtension struct {
-	Active        bool       `json:"active"`
-	Changelog     *string    `json:"changelog,omitempty"`
-	Installed     bool       `json:"installed"`
-	InstalledAt   *time.Time `json:"installedAt,omitempty"`
-	Label         string     `json:"label"`
-	LatestVersion string     `json:"latestVersion"`
-	Name          string     `json:"name"`
-	RatingAverage *float32   `json:"ratingAverage,omitempty"`
-	StoreLink     *string    `json:"storeLink,omitempty"`
-	Version       string     `json:"version"`
+// Shop defines model for Shop.
+type Shop struct {
+	Description    *string `json:"description"`
+	GitUrl         *string `json:"gitUrl"`
+	Id             int     `json:"id"`
+	Name           string  `json:"name"`
+	OrganizationId string  `json:"organizationId"`
 }
 
 // ShopwareVersionCount defines model for ShopwareVersionCount.
@@ -522,27 +522,27 @@ type SsoProvider struct {
 	TokenEndpoint         string `json:"tokenEndpoint"`
 }
 
-// SubscribedShop defines model for SubscribedShop.
-type SubscribedShop struct {
+// SubscribedEnvironment defines model for SubscribedEnvironment.
+type SubscribedEnvironment struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-// UpdateProjectRequest defines model for UpdateProjectRequest.
-type UpdateProjectRequest struct {
-	Description *string `json:"description,omitempty"`
-	GitUrl      *string `json:"gitUrl,omitempty"`
-	Name        *string `json:"name,omitempty"`
-}
-
-// UpdateShopRequest defines model for UpdateShopRequest.
-type UpdateShopRequest struct {
+// UpdateEnvironmentRequest defines model for UpdateEnvironmentRequest.
+type UpdateEnvironmentRequest struct {
 	ClientId     *string   `json:"clientId,omitempty"`
 	ClientSecret *string   `json:"clientSecret,omitempty"`
 	Ignores      *[]string `json:"ignores,omitempty"`
 	Name         *string   `json:"name,omitempty"`
-	ProjectId    int       `json:"projectId"`
+	ShopId       int       `json:"shopId"`
 	ShopUrl      *string   `json:"shopUrl,omitempty"`
+}
+
+// UpdateShopRequest defines model for UpdateShopRequest.
+type UpdateShopRequest struct {
+	Description *string `json:"description,omitempty"`
+	GitUrl      *string `json:"gitUrl,omitempty"`
+	Name        *string `json:"name,omitempty"`
 }
 
 // UpdateSsoProviderRequest defines model for UpdateSsoProviderRequest.
@@ -567,6 +567,9 @@ type UserProfile struct {
 // DeploymentId defines model for DeploymentId.
 type DeploymentId = int
 
+// EnvironmentId defines model for EnvironmentId.
+type EnvironmentId = int
+
 // KeyId defines model for KeyId.
 type KeyId = int
 
@@ -575,9 +578,6 @@ type NotificationId = int
 
 // OrgId defines model for OrgId.
 type OrgId = string
-
-// ProjectId defines model for ProjectId.
-type ProjectId = int
 
 // ProviderId defines model for ProviderId.
 type ProviderId = string
@@ -603,6 +603,23 @@ type Unauthorized = ErrorResponse
 // ValidationError defines model for ValidationError.
 type ValidationError = ErrorResponse
 
+// AdminGetEnvironmentsParams defines parameters for AdminGetEnvironments.
+type AdminGetEnvironmentsParams struct {
+	Limit          *int                                     `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset         *int                                     `form:"offset,omitempty" json:"offset,omitempty"`
+	SortBy         *string                                  `form:"sortBy,omitempty" json:"sortBy,omitempty"`
+	SortDirection  *AdminGetEnvironmentsParamsSortDirection `form:"sortDirection,omitempty" json:"sortDirection,omitempty"`
+	SearchField    *string                                  `form:"searchField,omitempty" json:"searchField,omitempty"`
+	SearchOperator *string                                  `form:"searchOperator,omitempty" json:"searchOperator,omitempty"`
+	SearchValue    *string                                  `form:"searchValue,omitempty" json:"searchValue,omitempty"`
+	FilterField    *string                                  `form:"filterField,omitempty" json:"filterField,omitempty"`
+	FilterOperator *string                                  `form:"filterOperator,omitempty" json:"filterOperator,omitempty"`
+	FilterValue    *string                                  `form:"filterValue,omitempty" json:"filterValue,omitempty"`
+}
+
+// AdminGetEnvironmentsParamsSortDirection defines parameters for AdminGetEnvironments.
+type AdminGetEnvironmentsParamsSortDirection string
+
 // AdminGetOrganizationsParams defines parameters for AdminGetOrganizations.
 type AdminGetOrganizationsParams struct {
 	Limit          *int                                      `form:"limit,omitempty" json:"limit,omitempty"`
@@ -623,31 +640,14 @@ type AdminGetOrganizationsParamsSortBy string
 // AdminGetOrganizationsParamsSortDirection defines parameters for AdminGetOrganizations.
 type AdminGetOrganizationsParamsSortDirection string
 
-// AdminGetShopsParams defines parameters for AdminGetShops.
-type AdminGetShopsParams struct {
-	Limit          *int                              `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset         *int                              `form:"offset,omitempty" json:"offset,omitempty"`
-	SortBy         *string                           `form:"sortBy,omitempty" json:"sortBy,omitempty"`
-	SortDirection  *AdminGetShopsParamsSortDirection `form:"sortDirection,omitempty" json:"sortDirection,omitempty"`
-	SearchField    *string                           `form:"searchField,omitempty" json:"searchField,omitempty"`
-	SearchOperator *string                           `form:"searchOperator,omitempty" json:"searchOperator,omitempty"`
-	SearchValue    *string                           `form:"searchValue,omitempty" json:"searchValue,omitempty"`
-	FilterField    *string                           `form:"filterField,omitempty" json:"filterField,omitempty"`
-	FilterOperator *string                           `form:"filterOperator,omitempty" json:"filterOperator,omitempty"`
-	FilterValue    *string                           `form:"filterValue,omitempty" json:"filterValue,omitempty"`
-}
-
-// AdminGetShopsParamsSortDirection defines parameters for AdminGetShops.
-type AdminGetShopsParamsSortDirection string
-
 // GetDeploymentsParams defines parameters for GetDeployments.
 type GetDeploymentsParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-// RefreshShopJSONBody defines parameters for RefreshShop.
-type RefreshShopJSONBody struct {
+// RefreshEnvironmentJSONBody defines parameters for RefreshEnvironment.
+type RefreshEnvironmentJSONBody struct {
 	// Sitespeed Also run sitespeed check
 	Sitespeed *bool `json:"sitespeed,omitempty"`
 }
@@ -660,14 +660,26 @@ type DiscoverSsoParams struct {
 // CreateCliDeploymentJSONRequestBody defines body for CreateCliDeployment for application/json ContentType.
 type CreateCliDeploymentJSONRequestBody = CreateCliDeploymentRequest
 
+// CreateEnvironmentJSONRequestBody defines body for CreateEnvironment for application/json ContentType.
+type CreateEnvironmentJSONRequestBody = CreateEnvironmentRequest
+
+// UpdateEnvironmentJSONRequestBody defines body for UpdateEnvironment for application/json ContentType.
+type UpdateEnvironmentJSONRequestBody = UpdateEnvironmentRequest
+
+// RefreshEnvironmentJSONRequestBody defines body for RefreshEnvironment for application/json ContentType.
+type RefreshEnvironmentJSONRequestBody RefreshEnvironmentJSONBody
+
+// UpdateSitespeedSettingsJSONRequestBody defines body for UpdateSitespeedSettings for application/json ContentType.
+type UpdateSitespeedSettingsJSONRequestBody = SitespeedSettingsRequest
+
 // CheckExtensionCompatibilityJSONRequestBody defines body for CheckExtensionCompatibility for application/json ContentType.
 type CheckExtensionCompatibilityJSONRequestBody = ExtensionCompatibilityRequest
 
-// CreateProjectJSONRequestBody defines body for CreateProject for application/json ContentType.
-type CreateProjectJSONRequestBody = CreateProjectRequest
+// CreateShopJSONRequestBody defines body for CreateShop for application/json ContentType.
+type CreateShopJSONRequestBody = CreateShopRequest
 
-// UpdateProjectJSONRequestBody defines body for UpdateProject for application/json ContentType.
-type UpdateProjectJSONRequestBody = UpdateProjectRequest
+// UpdateShopJSONRequestBody defines body for UpdateShop for application/json ContentType.
+type UpdateShopJSONRequestBody = UpdateShopRequest
 
 // CreateApiKeyJSONRequestBody defines body for CreateApiKey for application/json ContentType.
 type CreateApiKeyJSONRequestBody = CreateApiKeyRequest
@@ -678,24 +690,15 @@ type CreatePackagesTokenJSONRequestBody = CreatePackagesTokenRequest
 // UpdateSsoProviderJSONRequestBody defines body for UpdateSsoProvider for application/json ContentType.
 type UpdateSsoProviderJSONRequestBody = UpdateSsoProviderRequest
 
-// CreateShopJSONRequestBody defines body for CreateShop for application/json ContentType.
-type CreateShopJSONRequestBody = CreateShopRequest
-
-// UpdateShopJSONRequestBody defines body for UpdateShop for application/json ContentType.
-type UpdateShopJSONRequestBody = UpdateShopRequest
-
-// RefreshShopJSONRequestBody defines body for RefreshShop for application/json ContentType.
-type RefreshShopJSONRequestBody RefreshShopJSONBody
-
-// UpdateSitespeedSettingsJSONRequestBody defines body for UpdateSitespeedSettings for application/json ContentType.
-type UpdateSitespeedSettingsJSONRequestBody = SitespeedSettingsRequest
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Get changelogs across all shops
+	// Get changelogs across all environments
 	// (GET /account/changelogs)
 	GetAccountChangelogs(w http.ResponseWriter, r *http.Request)
-	// Get aggregated extensions across all shops
+	// Get all environments accessible to the user
+	// (GET /account/environments)
+	GetAccountEnvironments(w http.ResponseWriter, r *http.Request)
+	// Get aggregated extensions across all environments
 	// (GET /account/extensions)
 	GetAccountExtensions(w http.ResponseWriter, r *http.Request)
 	// Get current user profile
@@ -704,28 +707,25 @@ type ServerInterface interface {
 	// Get organizations the user belongs to
 	// (GET /account/organizations)
 	GetAccountOrganizations(w http.ResponseWriter, r *http.Request)
-	// Get all projects accessible to the user
-	// (GET /account/projects)
-	GetAccountProjects(w http.ResponseWriter, r *http.Request)
 	// Get all shops accessible to the user
 	// (GET /account/shops)
 	GetAccountShops(w http.ResponseWriter, r *http.Request)
-	// Get shops the user is subscribed to for notifications
-	// (GET /account/subscribed-shops)
-	GetAccountSubscribedShops(w http.ResponseWriter, r *http.Request)
+	// Get environments the user is subscribed to for notifications
+	// (GET /account/subscribed-environments)
+	GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request)
+	// List all environments (admin only)
+	// (GET /admin/environments)
+	AdminGetEnvironments(w http.ResponseWriter, r *http.Request, params AdminGetEnvironmentsParams)
 	// Get growth data over time
 	// (GET /admin/growth)
 	AdminGetGrowth(w http.ResponseWriter, r *http.Request)
 	// List all organizations (admin only)
 	// (GET /admin/organizations)
 	AdminGetOrganizations(w http.ResponseWriter, r *http.Request, params AdminGetOrganizationsParams)
-	// Get recent user and shop activity
+	// Get recent user and environment activity
 	// (GET /admin/recent-activity)
 	AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
-	// List all shops (admin only)
-	// (GET /admin/shops)
-	AdminGetShops(w http.ResponseWriter, r *http.Request, params AdminGetShopsParams)
-	// Get Shopware version distribution across shops
+	// Get Shopware version distribution across environments
 	// (GET /admin/shopware-versions)
 	AdminGetShopwareVersions(w http.ResponseWriter, r *http.Request)
 	// Get admin dashboard statistics
@@ -737,6 +737,48 @@ type ServerInterface interface {
 	// Create a deployment via CLI
 	// (POST /cli/deployments)
 	CreateCliDeployment(w http.ResponseWriter, r *http.Request)
+	// Create a new environment
+	// (POST /environments)
+	CreateEnvironment(w http.ResponseWriter, r *http.Request)
+	// Delete an environment
+	// (DELETE /environments/{environmentId})
+	DeleteEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Get full environment details
+	// (GET /environments/{environmentId})
+	GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Update an environment
+	// (PATCH /environments/{environmentId})
+	UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Clear Shopware cache for the environment
+	// (POST /environments/{environmentId}/clear-cache)
+	ClearEnvironmentCache(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// List deployments for an environment
+	// (GET /environments/{environmentId}/deployments)
+	GetDeployments(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetDeploymentsParams)
+	// Delete a deployment
+	// (DELETE /environments/{environmentId}/deployments/{deploymentId})
+	DeleteDeployment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, deploymentId DeploymentId)
+	// Get deployment details with output
+	// (GET /environments/{environmentId}/deployments/{deploymentId})
+	GetDeployment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, deploymentId DeploymentId)
+	// Refresh environment data from Shopware API
+	// (POST /environments/{environmentId}/refresh)
+	RefreshEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Update sitespeed settings for an environment
+	// (PUT /environments/{environmentId}/sitespeed-settings)
+	UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Unsubscribe from environment notifications
+	// (DELETE /environments/{environmentId}/subscribe)
+	UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Check notification subscription status
+	// (GET /environments/{environmentId}/subscribe)
+	GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Subscribe to environment notifications
+	// (POST /environments/{environmentId}/subscribe)
+	SubscribeToEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Reschedule a scheduled task
+	// (POST /environments/{environmentId}/tasks/{taskId}/reschedule)
+	RescheduleTask(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, taskId TaskId)
 	// Health check
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -758,42 +800,42 @@ type ServerInterface interface {
 	// Delete a single notification
 	// (DELETE /notifications/{id})
 	DeleteNotification(w http.ResponseWriter, r *http.Request, id NotificationId)
-	// Get all projects in an organization
-	// (GET /organizations/{orgId}/projects)
-	GetOrganizationProjects(w http.ResponseWriter, r *http.Request, orgId OrgId)
-	// Create a new project
-	// (POST /organizations/{orgId}/projects)
-	CreateProject(w http.ResponseWriter, r *http.Request, orgId OrgId)
-	// Delete a project
-	// (DELETE /organizations/{orgId}/projects/{projectId})
-	DeleteProject(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// Update a project
-	// (PATCH /organizations/{orgId}/projects/{projectId})
-	UpdateProject(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// List API keys for a project
-	// (GET /organizations/{orgId}/projects/{projectId}/api-keys)
-	GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// Create a new API key
-	// (POST /organizations/{orgId}/projects/{projectId}/api-keys)
-	CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// Delete an API key
-	// (DELETE /organizations/{orgId}/projects/{projectId}/api-keys/{keyId})
-	DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, keyId KeyId)
-	// List packages tokens for a project
-	// (GET /organizations/{orgId}/projects/{projectId}/packages-tokens)
-	GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// Create a new packages token
-	// (POST /organizations/{orgId}/projects/{projectId}/packages-tokens)
-	CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId)
-	// Delete a packages token
-	// (DELETE /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId})
-	DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, tokenId TokenId)
-	// Sync a packages token
-	// (POST /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync)
-	SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, tokenId TokenId)
+	// Get all environments in an organization
+	// (GET /organizations/{orgId}/environments)
+	GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgId OrgId)
 	// Get all shops in an organization
 	// (GET /organizations/{orgId}/shops)
 	GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// Create a new shop
+	// (POST /organizations/{orgId}/shops)
+	CreateShop(w http.ResponseWriter, r *http.Request, orgId OrgId)
+	// Delete a shop
+	// (DELETE /organizations/{orgId}/shops/{shopId})
+	DeleteShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// Update a shop
+	// (PATCH /organizations/{orgId}/shops/{shopId})
+	UpdateShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// List API keys for a shop
+	// (GET /organizations/{orgId}/shops/{shopId}/api-keys)
+	GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// Create a new API key
+	// (POST /organizations/{orgId}/shops/{shopId}/api-keys)
+	CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// Delete an API key
+	// (DELETE /organizations/{orgId}/shops/{shopId}/api-keys/{keyId})
+	DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, keyId KeyId)
+	// List packages tokens for a shop
+	// (GET /organizations/{orgId}/shops/{shopId}/packages-tokens)
+	GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// Create a new packages token
+	// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens)
+	CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId)
+	// Delete a packages token
+	// (DELETE /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId})
+	DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId)
+	// Sync a packages token
+	// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync)
+	SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId)
 	// List SSO providers for an organization
 	// (GET /organizations/{orgId}/sso-providers)
 	GetSsoProviders(w http.ResponseWriter, r *http.Request, orgId OrgId)
@@ -806,48 +848,6 @@ type ServerInterface interface {
 	// Get packages token configuration
 	// (GET /packages-token/configuration)
 	GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.Request)
-	// Create a new shop
-	// (POST /shops)
-	CreateShop(w http.ResponseWriter, r *http.Request)
-	// Delete a shop
-	// (DELETE /shops/{shopId})
-	DeleteShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Get full shop details
-	// (GET /shops/{shopId})
-	GetShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Update a shop
-	// (PATCH /shops/{shopId})
-	UpdateShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Clear Shopware cache for the shop
-	// (POST /shops/{shopId}/clear-cache)
-	ClearShopCache(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// List deployments for a shop
-	// (GET /shops/{shopId}/deployments)
-	GetDeployments(w http.ResponseWriter, r *http.Request, shopId ShopId, params GetDeploymentsParams)
-	// Delete a deployment
-	// (DELETE /shops/{shopId}/deployments/{deploymentId})
-	DeleteDeployment(w http.ResponseWriter, r *http.Request, shopId ShopId, deploymentId DeploymentId)
-	// Get deployment details with output
-	// (GET /shops/{shopId}/deployments/{deploymentId})
-	GetDeployment(w http.ResponseWriter, r *http.Request, shopId ShopId, deploymentId DeploymentId)
-	// Refresh shop data from Shopware API
-	// (POST /shops/{shopId}/refresh)
-	RefreshShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Update sitespeed settings for a shop
-	// (PUT /shops/{shopId}/sitespeed-settings)
-	UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Unsubscribe from shop notifications
-	// (DELETE /shops/{shopId}/subscribe)
-	UnsubscribeFromShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Check notification subscription status
-	// (GET /shops/{shopId}/subscribe)
-	GetShopSubscription(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Subscribe to shop notifications
-	// (POST /shops/{shopId}/subscribe)
-	SubscribeToShop(w http.ResponseWriter, r *http.Request, shopId ShopId)
-	// Reschedule a scheduled task
-	// (POST /shops/{shopId}/tasks/{taskId}/reschedule)
-	RescheduleTask(w http.ResponseWriter, r *http.Request, shopId ShopId, taskId TaskId)
 	// Discover OIDC configuration from an issuer URL
 	// (GET /sso/discover)
 	DiscoverSso(w http.ResponseWriter, r *http.Request, params DiscoverSsoParams)
@@ -857,13 +857,19 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// Get changelogs across all shops
+// Get changelogs across all environments
 // (GET /account/changelogs)
 func (_ Unimplemented) GetAccountChangelogs(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get aggregated extensions across all shops
+// Get all environments accessible to the user
+// (GET /account/environments)
+func (_ Unimplemented) GetAccountEnvironments(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get aggregated extensions across all environments
 // (GET /account/extensions)
 func (_ Unimplemented) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -881,21 +887,21 @@ func (_ Unimplemented) GetAccountOrganizations(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get all projects accessible to the user
-// (GET /account/projects)
-func (_ Unimplemented) GetAccountProjects(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Get all shops accessible to the user
 // (GET /account/shops)
 func (_ Unimplemented) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get shops the user is subscribed to for notifications
-// (GET /account/subscribed-shops)
-func (_ Unimplemented) GetAccountSubscribedShops(w http.ResponseWriter, r *http.Request) {
+// Get environments the user is subscribed to for notifications
+// (GET /account/subscribed-environments)
+func (_ Unimplemented) GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List all environments (admin only)
+// (GET /admin/environments)
+func (_ Unimplemented) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, params AdminGetEnvironmentsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -911,19 +917,13 @@ func (_ Unimplemented) AdminGetOrganizations(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get recent user and shop activity
+// Get recent user and environment activity
 // (GET /admin/recent-activity)
 func (_ Unimplemented) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// List all shops (admin only)
-// (GET /admin/shops)
-func (_ Unimplemented) AdminGetShops(w http.ResponseWriter, r *http.Request, params AdminGetShopsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Get Shopware version distribution across shops
+// Get Shopware version distribution across environments
 // (GET /admin/shopware-versions)
 func (_ Unimplemented) AdminGetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -944,6 +944,90 @@ func (_ Unimplemented) GetApiKeyScopes(w http.ResponseWriter, r *http.Request) {
 // Create a deployment via CLI
 // (POST /cli/deployments)
 func (_ Unimplemented) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new environment
+// (POST /environments)
+func (_ Unimplemented) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete an environment
+// (DELETE /environments/{environmentId})
+func (_ Unimplemented) DeleteEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get full environment details
+// (GET /environments/{environmentId})
+func (_ Unimplemented) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update an environment
+// (PATCH /environments/{environmentId})
+func (_ Unimplemented) UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Clear Shopware cache for the environment
+// (POST /environments/{environmentId}/clear-cache)
+func (_ Unimplemented) ClearEnvironmentCache(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List deployments for an environment
+// (GET /environments/{environmentId}/deployments)
+func (_ Unimplemented) GetDeployments(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetDeploymentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete a deployment
+// (DELETE /environments/{environmentId}/deployments/{deploymentId})
+func (_ Unimplemented) DeleteDeployment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, deploymentId DeploymentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get deployment details with output
+// (GET /environments/{environmentId}/deployments/{deploymentId})
+func (_ Unimplemented) GetDeployment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, deploymentId DeploymentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Refresh environment data from Shopware API
+// (POST /environments/{environmentId}/refresh)
+func (_ Unimplemented) RefreshEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update sitespeed settings for an environment
+// (PUT /environments/{environmentId}/sitespeed-settings)
+func (_ Unimplemented) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Unsubscribe from environment notifications
+// (DELETE /environments/{environmentId}/subscribe)
+func (_ Unimplemented) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Check notification subscription status
+// (GET /environments/{environmentId}/subscribe)
+func (_ Unimplemented) GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Subscribe to environment notifications
+// (POST /environments/{environmentId}/subscribe)
+func (_ Unimplemented) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Reschedule a scheduled task
+// (POST /environments/{environmentId}/tasks/{taskId}/reschedule)
+func (_ Unimplemented) RescheduleTask(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, taskId TaskId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -989,75 +1073,75 @@ func (_ Unimplemented) DeleteNotification(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get all projects in an organization
-// (GET /organizations/{orgId}/projects)
-func (_ Unimplemented) GetOrganizationProjects(w http.ResponseWriter, r *http.Request, orgId OrgId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Create a new project
-// (POST /organizations/{orgId}/projects)
-func (_ Unimplemented) CreateProject(w http.ResponseWriter, r *http.Request, orgId OrgId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Delete a project
-// (DELETE /organizations/{orgId}/projects/{projectId})
-func (_ Unimplemented) DeleteProject(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Update a project
-// (PATCH /organizations/{orgId}/projects/{projectId})
-func (_ Unimplemented) UpdateProject(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// List API keys for a project
-// (GET /organizations/{orgId}/projects/{projectId}/api-keys)
-func (_ Unimplemented) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Create a new API key
-// (POST /organizations/{orgId}/projects/{projectId}/api-keys)
-func (_ Unimplemented) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Delete an API key
-// (DELETE /organizations/{orgId}/projects/{projectId}/api-keys/{keyId})
-func (_ Unimplemented) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, keyId KeyId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// List packages tokens for a project
-// (GET /organizations/{orgId}/projects/{projectId}/packages-tokens)
-func (_ Unimplemented) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Create a new packages token
-// (POST /organizations/{orgId}/projects/{projectId}/packages-tokens)
-func (_ Unimplemented) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Delete a packages token
-// (DELETE /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId})
-func (_ Unimplemented) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, tokenId TokenId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Sync a packages token
-// (POST /organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync)
-func (_ Unimplemented) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, projectId ProjectId, tokenId TokenId) {
+// Get all environments in an organization
+// (GET /organizations/{orgId}/environments)
+func (_ Unimplemented) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgId OrgId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get all shops in an organization
 // (GET /organizations/{orgId}/shops)
 func (_ Unimplemented) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new shop
+// (POST /organizations/{orgId}/shops)
+func (_ Unimplemented) CreateShop(w http.ResponseWriter, r *http.Request, orgId OrgId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete a shop
+// (DELETE /organizations/{orgId}/shops/{shopId})
+func (_ Unimplemented) DeleteShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update a shop
+// (PATCH /organizations/{orgId}/shops/{shopId})
+func (_ Unimplemented) UpdateShop(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List API keys for a shop
+// (GET /organizations/{orgId}/shops/{shopId}/api-keys)
+func (_ Unimplemented) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new API key
+// (POST /organizations/{orgId}/shops/{shopId}/api-keys)
+func (_ Unimplemented) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete an API key
+// (DELETE /organizations/{orgId}/shops/{shopId}/api-keys/{keyId})
+func (_ Unimplemented) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, keyId KeyId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List packages tokens for a shop
+// (GET /organizations/{orgId}/shops/{shopId}/packages-tokens)
+func (_ Unimplemented) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new packages token
+// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens)
+func (_ Unimplemented) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete a packages token
+// (DELETE /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId})
+func (_ Unimplemented) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Sync a packages token
+// (POST /organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync)
+func (_ Unimplemented) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgId OrgId, shopId ShopId, tokenId TokenId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1082,90 +1166,6 @@ func (_ Unimplemented) UpdateSsoProvider(w http.ResponseWriter, r *http.Request,
 // Get packages token configuration
 // (GET /packages-token/configuration)
 func (_ Unimplemented) GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Create a new shop
-// (POST /shops)
-func (_ Unimplemented) CreateShop(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Delete a shop
-// (DELETE /shops/{shopId})
-func (_ Unimplemented) DeleteShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Get full shop details
-// (GET /shops/{shopId})
-func (_ Unimplemented) GetShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Update a shop
-// (PATCH /shops/{shopId})
-func (_ Unimplemented) UpdateShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Clear Shopware cache for the shop
-// (POST /shops/{shopId}/clear-cache)
-func (_ Unimplemented) ClearShopCache(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// List deployments for a shop
-// (GET /shops/{shopId}/deployments)
-func (_ Unimplemented) GetDeployments(w http.ResponseWriter, r *http.Request, shopId ShopId, params GetDeploymentsParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Delete a deployment
-// (DELETE /shops/{shopId}/deployments/{deploymentId})
-func (_ Unimplemented) DeleteDeployment(w http.ResponseWriter, r *http.Request, shopId ShopId, deploymentId DeploymentId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Get deployment details with output
-// (GET /shops/{shopId}/deployments/{deploymentId})
-func (_ Unimplemented) GetDeployment(w http.ResponseWriter, r *http.Request, shopId ShopId, deploymentId DeploymentId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Refresh shop data from Shopware API
-// (POST /shops/{shopId}/refresh)
-func (_ Unimplemented) RefreshShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Update sitespeed settings for a shop
-// (PUT /shops/{shopId}/sitespeed-settings)
-func (_ Unimplemented) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Unsubscribe from shop notifications
-// (DELETE /shops/{shopId}/subscribe)
-func (_ Unimplemented) UnsubscribeFromShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Check notification subscription status
-// (GET /shops/{shopId}/subscribe)
-func (_ Unimplemented) GetShopSubscription(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Subscribe to shop notifications
-// (POST /shops/{shopId}/subscribe)
-func (_ Unimplemented) SubscribeToShop(w http.ResponseWriter, r *http.Request, shopId ShopId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Reschedule a scheduled task
-// (POST /shops/{shopId}/tasks/{taskId}/reschedule)
-func (_ Unimplemented) RescheduleTask(w http.ResponseWriter, r *http.Request, shopId ShopId, taskId TaskId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1195,6 +1195,26 @@ func (siw *ServerInterfaceWrapper) GetAccountChangelogs(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountChangelogs(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAccountEnvironments operation middleware
+func (siw *ServerInterfaceWrapper) GetAccountEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAccountEnvironments(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1264,26 +1284,6 @@ func (siw *ServerInterfaceWrapper) GetAccountOrganizations(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// GetAccountProjects operation middleware
-func (siw *ServerInterfaceWrapper) GetAccountProjects(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAccountProjects(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // GetAccountShops operation middleware
 func (siw *ServerInterfaceWrapper) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 
@@ -1304,8 +1304,8 @@ func (siw *ServerInterfaceWrapper) GetAccountShops(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
-// GetAccountSubscribedShops operation middleware
-func (siw *ServerInterfaceWrapper) GetAccountSubscribedShops(w http.ResponseWriter, r *http.Request) {
+// GetAccountSubscribedEnvironments operation middleware
+func (siw *ServerInterfaceWrapper) GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -1314,7 +1314,112 @@ func (siw *ServerInterfaceWrapper) GetAccountSubscribedShops(w http.ResponseWrit
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAccountSubscribedShops(w, r)
+		siw.Handler.GetAccountSubscribedEnvironments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetEnvironments operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetEnvironmentsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "sortBy" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortBy", r.URL.Query(), &params.SortBy, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortBy", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "sortDirection" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortDirection", r.URL.Query(), &params.SortDirection, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortDirection", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "searchField" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchField", r.URL.Query(), &params.SearchField, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchField", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "searchOperator" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchOperator", r.URL.Query(), &params.SearchOperator, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchOperator", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "searchValue" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchValue", r.URL.Query(), &params.SearchValue, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchValue", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "filterField" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterField", r.URL.Query(), &params.FilterField, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterField", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "filterOperator" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterOperator", r.URL.Query(), &params.FilterOperator, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterOperator", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "filterValue" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterValue", r.URL.Query(), &params.FilterValue, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterValue", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetEnvironments(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1469,111 +1574,6 @@ func (siw *ServerInterfaceWrapper) AdminGetRecentActivity(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
-// AdminGetShops operation middleware
-func (siw *ServerInterfaceWrapper) AdminGetShops(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params AdminGetShopsParams
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "offset" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "sortBy" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortBy", r.URL.Query(), &params.SortBy, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortBy", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "sortDirection" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortDirection", r.URL.Query(), &params.SortDirection, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortDirection", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "searchField" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchField", r.URL.Query(), &params.SearchField, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchField", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "searchOperator" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchOperator", r.URL.Query(), &params.SearchOperator, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchOperator", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "searchValue" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "searchValue", r.URL.Query(), &params.SearchValue, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "searchValue", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "filterField" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterField", r.URL.Query(), &params.FilterField, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterField", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "filterOperator" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterOperator", r.URL.Query(), &params.FilterOperator, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterOperator", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "filterValue" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "filterValue", r.URL.Query(), &params.FilterValue, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filterValue", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AdminGetShops(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // AdminGetShopwareVersions operation middleware
 func (siw *ServerInterfaceWrapper) AdminGetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 
@@ -1639,6 +1639,475 @@ func (siw *ServerInterfaceWrapper) CreateCliDeployment(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateCliDeployment(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateEnvironment(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ClearEnvironmentCache operation middleware
+func (siw *ServerInterfaceWrapper) ClearEnvironmentCache(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ClearEnvironmentCache(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeployments operation middleware
+func (siw *ServerInterfaceWrapper) GetDeployments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetDeploymentsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeployments(w, r, environmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteDeployment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteDeployment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deploymentId" -------------
+	var deploymentId DeploymentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deploymentId", chi.URLParam(r, "deploymentId"), &deploymentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deploymentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteDeployment(w, r, environmentId, deploymentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDeployment operation middleware
+func (siw *ServerInterfaceWrapper) GetDeployment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "deploymentId" -------------
+	var deploymentId DeploymentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deploymentId", chi.URLParam(r, "deploymentId"), &deploymentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deploymentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDeployment(w, r, environmentId, deploymentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RefreshEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) RefreshEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RefreshEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSitespeedSettings operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSitespeedSettings(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnsubscribeFromEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnsubscribeFromEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEnvironmentSubscription operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEnvironmentSubscription(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubscribeToEnvironment operation middleware
+func (siw *ServerInterfaceWrapper) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubscribeToEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RescheduleTask operation middleware
+func (siw *ServerInterfaceWrapper) RescheduleTask(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "taskId" -------------
+	var taskId TaskId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "taskId", chi.URLParam(r, "taskId"), &taskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "taskId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RescheduleTask(w, r, environmentId, taskId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1781,8 +2250,8 @@ func (siw *ServerInterfaceWrapper) DeleteNotification(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
-// GetOrganizationProjects operation middleware
-func (siw *ServerInterfaceWrapper) GetOrganizationProjects(w http.ResponseWriter, r *http.Request) {
+// GetOrganizationEnvironments operation middleware
+func (siw *ServerInterfaceWrapper) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -1802,425 +2271,7 @@ func (siw *ServerInterfaceWrapper) GetOrganizationProjects(w http.ResponseWriter
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetOrganizationProjects(w, r, orgId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreateProject operation middleware
-func (siw *ServerInterfaceWrapper) CreateProject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateProject(w, r, orgId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteProject operation middleware
-func (siw *ServerInterfaceWrapper) DeleteProject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteProject(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UpdateProject operation middleware
-func (siw *ServerInterfaceWrapper) UpdateProject(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateProject(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetApiKeys operation middleware
-func (siw *ServerInterfaceWrapper) GetApiKeys(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetApiKeys(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreateApiKey operation middleware
-func (siw *ServerInterfaceWrapper) CreateApiKey(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateApiKey(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteApiKey operation middleware
-func (siw *ServerInterfaceWrapper) DeleteApiKey(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "keyId" -------------
-	var keyId KeyId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "keyId", chi.URLParam(r, "keyId"), &keyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "keyId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteApiKey(w, r, orgId, projectId, keyId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetPackagesTokens operation middleware
-func (siw *ServerInterfaceWrapper) GetPackagesTokens(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPackagesTokens(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreatePackagesToken operation middleware
-func (siw *ServerInterfaceWrapper) CreatePackagesToken(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePackagesToken(w, r, orgId, projectId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeletePackagesToken operation middleware
-func (siw *ServerInterfaceWrapper) DeletePackagesToken(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "tokenId" -------------
-	var tokenId TokenId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "tokenId", chi.URLParam(r, "tokenId"), &tokenId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tokenId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePackagesToken(w, r, orgId, projectId, tokenId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SyncPackagesToken operation middleware
-func (siw *ServerInterfaceWrapper) SyncPackagesToken(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "orgId" -------------
-	var orgId OrgId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "projectId" -------------
-	var projectId ProjectId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "tokenId" -------------
-	var tokenId TokenId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "tokenId", chi.URLParam(r, "tokenId"), &tokenId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tokenId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SyncPackagesToken(w, r, orgId, projectId, tokenId)
+		siw.Handler.GetOrganizationEnvironments(w, r, orgId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2252,6 +2303,424 @@ func (siw *ServerInterfaceWrapper) GetOrganizationShops(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetOrganizationShops(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateShop operation middleware
+func (siw *ServerInterfaceWrapper) CreateShop(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateShop(w, r, orgId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteShop operation middleware
+func (siw *ServerInterfaceWrapper) DeleteShop(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteShop(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateShop operation middleware
+func (siw *ServerInterfaceWrapper) UpdateShop(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateShop(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetApiKeys operation middleware
+func (siw *ServerInterfaceWrapper) GetApiKeys(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetApiKeys(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateApiKey operation middleware
+func (siw *ServerInterfaceWrapper) CreateApiKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateApiKey(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteApiKey operation middleware
+func (siw *ServerInterfaceWrapper) DeleteApiKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "keyId" -------------
+	var keyId KeyId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "keyId", chi.URLParam(r, "keyId"), &keyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "keyId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteApiKey(w, r, orgId, shopId, keyId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPackagesTokens operation middleware
+func (siw *ServerInterfaceWrapper) GetPackagesTokens(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPackagesTokens(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreatePackagesToken operation middleware
+func (siw *ServerInterfaceWrapper) CreatePackagesToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreatePackagesToken(w, r, orgId, shopId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePackagesToken operation middleware
+func (siw *ServerInterfaceWrapper) DeletePackagesToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "tokenId" -------------
+	var tokenId TokenId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tokenId", chi.URLParam(r, "tokenId"), &tokenId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tokenId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePackagesToken(w, r, orgId, shopId, tokenId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SyncPackagesToken operation middleware
+func (siw *ServerInterfaceWrapper) SyncPackagesToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId OrgId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "shopId" -------------
+	var shopId ShopId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "tokenId" -------------
+	var tokenId TokenId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "tokenId", chi.URLParam(r, "tokenId"), &tokenId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tokenId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SyncPackagesToken(w, r, orgId, shopId, tokenId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2383,475 +2852,6 @@ func (siw *ServerInterfaceWrapper) GetPackagesTokenConfiguration(w http.Response
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetPackagesTokenConfiguration(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// CreateShop operation middleware
-func (siw *ServerInterfaceWrapper) CreateShop(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateShop(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteShop operation middleware
-func (siw *ServerInterfaceWrapper) DeleteShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetShop operation middleware
-func (siw *ServerInterfaceWrapper) GetShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UpdateShop operation middleware
-func (siw *ServerInterfaceWrapper) UpdateShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ClearShopCache operation middleware
-func (siw *ServerInterfaceWrapper) ClearShopCache(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ClearShopCache(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeployments operation middleware
-func (siw *ServerInterfaceWrapper) GetDeployments(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetDeploymentsParams
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "offset" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeployments(w, r, shopId, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// DeleteDeployment operation middleware
-func (siw *ServerInterfaceWrapper) DeleteDeployment(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "deploymentId" -------------
-	var deploymentId DeploymentId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "deploymentId", chi.URLParam(r, "deploymentId"), &deploymentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deploymentId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteDeployment(w, r, shopId, deploymentId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetDeployment operation middleware
-func (siw *ServerInterfaceWrapper) GetDeployment(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "deploymentId" -------------
-	var deploymentId DeploymentId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "deploymentId", chi.URLParam(r, "deploymentId"), &deploymentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deploymentId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetDeployment(w, r, shopId, deploymentId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RefreshShop operation middleware
-func (siw *ServerInterfaceWrapper) RefreshShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RefreshShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UpdateSitespeedSettings operation middleware
-func (siw *ServerInterfaceWrapper) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateSitespeedSettings(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UnsubscribeFromShop operation middleware
-func (siw *ServerInterfaceWrapper) UnsubscribeFromShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UnsubscribeFromShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetShopSubscription operation middleware
-func (siw *ServerInterfaceWrapper) GetShopSubscription(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetShopSubscription(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SubscribeToShop operation middleware
-func (siw *ServerInterfaceWrapper) SubscribeToShop(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SubscribeToShop(w, r, shopId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RescheduleTask operation middleware
-func (siw *ServerInterfaceWrapper) RescheduleTask(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "shopId" -------------
-	var shopId ShopId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "shopId", chi.URLParam(r, "shopId"), &shopId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "shopId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "taskId" -------------
-	var taskId TaskId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "taskId", chi.URLParam(r, "taskId"), &taskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "taskId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RescheduleTask(w, r, shopId, taskId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3018,6 +3018,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/changelogs", wrapper.GetAccountChangelogs)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/account/environments", wrapper.GetAccountEnvironments)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/extensions", wrapper.GetAccountExtensions)
 	})
 	r.Group(func(r chi.Router) {
@@ -3027,13 +3030,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/organizations", wrapper.GetAccountOrganizations)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/account/projects", wrapper.GetAccountProjects)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/shops", wrapper.GetAccountShops)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/account/subscribed-shops", wrapper.GetAccountSubscribedShops)
+		r.Get(options.BaseURL+"/account/subscribed-environments", wrapper.GetAccountSubscribedEnvironments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/environments", wrapper.AdminGetEnvironments)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/growth", wrapper.AdminGetGrowth)
@@ -3043,9 +3046,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/recent-activity", wrapper.AdminGetRecentActivity)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/admin/shops", wrapper.AdminGetShops)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/shopware-versions", wrapper.AdminGetShopwareVersions)
@@ -3058,6 +3058,48 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/cli/deployments", wrapper.CreateCliDeployment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/environments", wrapper.CreateEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/environments/{environmentId}", wrapper.DeleteEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}", wrapper.GetEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/environments/{environmentId}", wrapper.UpdateEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/environments/{environmentId}/clear-cache", wrapper.ClearEnvironmentCache)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/deployments", wrapper.GetDeployments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/environments/{environmentId}/deployments/{deploymentId}", wrapper.DeleteDeployment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/deployments/{deploymentId}", wrapper.GetDeployment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/environments/{environmentId}/refresh", wrapper.RefreshEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/environments/{environmentId}/sitespeed-settings", wrapper.UpdateSitespeedSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.UnsubscribeFromEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.GetEnvironmentSubscription)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.SubscribeToEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/environments/{environmentId}/tasks/{taskId}/reschedule", wrapper.RescheduleTask)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/health", wrapper.GetHealth)
@@ -3081,40 +3123,40 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Delete(options.BaseURL+"/notifications/{id}", wrapper.DeleteNotification)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/projects", wrapper.GetOrganizationProjects)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/projects", wrapper.CreateProject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/projects/{projectId}", wrapper.DeleteProject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/organizations/{orgId}/projects/{projectId}", wrapper.UpdateProject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/api-keys", wrapper.GetApiKeys)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/api-keys", wrapper.CreateApiKey)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/api-keys/{keyId}", wrapper.DeleteApiKey)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/packages-tokens", wrapper.GetPackagesTokens)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/packages-tokens", wrapper.CreatePackagesToken)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}", wrapper.DeletePackagesToken)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/organizations/{orgId}/projects/{projectId}/packages-tokens/{tokenId}/sync", wrapper.SyncPackagesToken)
+		r.Get(options.BaseURL+"/organizations/{orgId}/environments", wrapper.GetOrganizationEnvironments)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/organizations/{orgId}/shops", wrapper.GetOrganizationShops)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/shops", wrapper.CreateShop)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}", wrapper.DeleteShop)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/organizations/{orgId}/shops/{shopId}", wrapper.UpdateShop)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys", wrapper.GetApiKeys)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys", wrapper.CreateApiKey)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}", wrapper.DeleteApiKey)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens", wrapper.GetPackagesTokens)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens", wrapper.CreatePackagesToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}", wrapper.DeletePackagesToken)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync", wrapper.SyncPackagesToken)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/organizations/{orgId}/sso-providers", wrapper.GetSsoProviders)
@@ -3127,48 +3169,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/packages-token/configuration", wrapper.GetPackagesTokenConfiguration)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/shops", wrapper.CreateShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/shops/{shopId}", wrapper.DeleteShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/shops/{shopId}", wrapper.GetShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/shops/{shopId}", wrapper.UpdateShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/shops/{shopId}/clear-cache", wrapper.ClearShopCache)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/shops/{shopId}/deployments", wrapper.GetDeployments)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/shops/{shopId}/deployments/{deploymentId}", wrapper.DeleteDeployment)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/shops/{shopId}/deployments/{deploymentId}", wrapper.GetDeployment)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/shops/{shopId}/refresh", wrapper.RefreshShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/shops/{shopId}/sitespeed-settings", wrapper.UpdateSitespeedSettings)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/shops/{shopId}/subscribe", wrapper.UnsubscribeFromShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/shops/{shopId}/subscribe", wrapper.GetShopSubscription)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/shops/{shopId}/subscribe", wrapper.SubscribeToShop)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/shops/{shopId}/tasks/{taskId}/reschedule", wrapper.RescheduleTask)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sso/discover", wrapper.DiscoverSso)

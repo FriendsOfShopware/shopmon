@@ -5,12 +5,7 @@
       <form-group :title="$t('settings.profile')" :sub-title="$t('settings.displayName')">
         <div>
           <label for="name">{{ $t("common.name") }}</label>
-          <BaseInput
-            id="name"
-            v-model="profileName"
-            type="text"
-            autocomplete="name"
-          />
+          <BaseInput id="name" v-model="profileName" type="text" autocomplete="name" />
         </div>
       </form-group>
 
@@ -78,7 +73,10 @@
               autocomplete="new-password"
               class="field field-password"
             />
-            <div class="password-toggle" @click="newPasswordType = newPasswordType === 'password' ? 'text' : 'password'">
+            <div
+              class="password-toggle"
+              @click="newPasswordType = newPasswordType === 'password' ? 'text' : 'password'"
+            >
               <icon-fa6-solid:eye v-if="newPasswordType === 'password'" class="icon" />
               <icon-fa6-solid:eye-slash v-else class="icon" />
             </div>
@@ -95,7 +93,12 @@
               autocomplete="new-password"
               class="field field-password"
             />
-            <div class="password-toggle" @click="confirmPasswordType = confirmPasswordType === 'password' ? 'text' : 'password'">
+            <div
+              class="password-toggle"
+              @click="
+                confirmPasswordType = confirmPasswordType === 'password' ? 'text' : 'password'
+              "
+            >
               <icon-fa6-solid:eye v-if="confirmPasswordType === 'password'" class="icon" />
               <icon-fa6-solid:eye-slash v-else class="icon" />
             </div>
@@ -112,7 +115,10 @@
     </Panel>
 
     <Panel>
-      <form-group :title="$t('settings.connectedAccounts')" :sub-title="$t('settings.connectedAccountsDesc')">
+      <form-group
+        :title="$t('settings.connectedAccounts')"
+        :sub-title="$t('settings.connectedAccountsDesc')"
+      >
         <p>{{ $t("settings.githubLoginText") }}</p>
 
         <button
@@ -201,11 +207,7 @@
 
         <data-table
           v-else
-          :columns="[
-            { key: 'name', name: $t('settings.shopName'), sortable: true },
-            { key: 'organizationName', name: $t('settings.organization'), sortable: true },
-            { key: 'shopwareVersion', name: $t('common.version'), sortable: true },
-          ]"
+          :columns="[{ key: 'name', name: $t('settings.environmentName'), sortable: true }]"
           :data="subscribedShops"
         >
           <template #cell-actions="{ row }">
@@ -213,7 +215,7 @@
               type="button"
               class="tooltip-top-left"
               :data-tooltip="$t('settings.unsubscribe')"
-              @click="unsubscribeFromShop(row.id)"
+              @click="unsubscribeFromEnvironment(row.id)"
             >
               <icon-fa6-solid:bell-slash aria-hidden="true" class="icon icon-error" />
             </button>
@@ -277,7 +279,6 @@
         </button>
       </template>
     </Modal>
-
   </main-container>
 </template>
 
@@ -315,7 +316,7 @@ interface SessionEntry {
 const passkeys = ref<PasskeyEntry[] | null>([]);
 const sessions = ref<SessionEntry[] | null>([]);
 const connectedProviders = ref<string[]>([]);
-const subscribedShops = ref<components["schemas"]["SubscribedShop"][] | null>(null);
+const subscribedShops = ref<components["schemas"]["SubscribedEnvironment"][] | null>(null);
 const organizations = ref<{ id: string; name: string }[]>([]);
 
 const deleteCurrentPassword = ref("");
@@ -463,9 +464,9 @@ async function loadOrganizations() {
   }
 }
 
-async function loadSubscribedShops() {
+async function loadSubscribedEnvironments() {
   try {
-    const { data } = await api.GET("/account/subscribed-shops");
+    const { data } = await api.GET("/account/subscribed-environments");
     subscribedShops.value = data ?? null;
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -601,13 +602,13 @@ async function unlinkSocial(providerId: string) {
   }
 }
 
-async function unsubscribeFromShop(shopId: number) {
+async function unsubscribeFromEnvironment(environmentId: number) {
   try {
-    await api.DELETE("/shops/{shopId}/subscribe", {
-      params: { path: { shopId } },
+    await api.DELETE("/environments/{environmentId}/subscribe", {
+      params: { path: { environmentId } },
     });
-    await loadSubscribedShops();
-    alert.success(t("settings.unsubscribedShop"));
+    await loadSubscribedEnvironments();
+    alert.success(t("settings.unsubscribedEnvironment"));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
@@ -618,7 +619,7 @@ onMounted(() => {
   loadSessions();
   loadLinkedAccounts();
   loadOrganizations();
-  loadSubscribedShops();
+  loadSubscribedEnvironments();
 });
 </script>
 

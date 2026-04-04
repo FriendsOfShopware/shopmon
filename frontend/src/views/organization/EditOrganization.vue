@@ -1,5 +1,8 @@
 <template>
-  <header-container v-if="organization" :title="$t('organization.editTitle', { name: organization.name })">
+  <header-container
+    v-if="organization"
+    :title="$t('organization.editTitle', { name: organization.name })"
+  >
     <router-link
       :to="{ name: 'account.organizations.detail', params: { organizationId: organization.id } }"
       type="button"
@@ -18,7 +21,12 @@
         @submit="onSaveOrganization"
       >
         <form-group :title="$t('organization.orgInfo')">
-          <InputField name="name" :label="$t('common.name')" autocomplete="name" :error="errors.name" />
+          <InputField
+            name="name"
+            :label="$t('common.name')"
+            autocomplete="name"
+            :error="errors.name"
+          />
         </form-group>
 
         <div class="form-submit">
@@ -31,7 +39,10 @@
       </vee-form>
     </Panel>
 
-    <Panel v-if="canDeleteOrganization" :title="$t('organization.deleteOrgTitle', { name: organization.name })">
+    <Panel
+      v-if="canDeleteOrganization"
+      :title="$t('organization.deleteOrgTitle', { name: organization.name })"
+    >
       <p>{{ $t("organization.deleteOrgWarning") }}</p>
 
       <button type="button" class="btn btn-danger" @click="showOrganizationDeletionModal = true">

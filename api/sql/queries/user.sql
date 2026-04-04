@@ -16,55 +16,55 @@ WHERE s.token = $1 AND s.expires_at > NOW();
 
 -- name: GetUserOrganizations :many
 SELECT o.id, o.name, o.slug, o.logo, o.created_at,
-       (SELECT COUNT(*) FROM shop WHERE organization_id = o.id)::int AS shop_count,
+       (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
        (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
 FROM organization o
 JOIN member m ON m.organization_id = o.id
 WHERE m.user_id = $1
 ORDER BY o.name;
 
+-- name: GetUserEnvironments :many
+SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
+       e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
+FROM environment e
+JOIN member m ON m.organization_id = e.organization_id
+JOIN organization o ON o.id = e.organization_id
+LEFT JOIN shop s ON s.id = e.shop_id
+WHERE m.user_id = $1
+ORDER BY e.name;
+
 -- name: GetUserShops :many
-SELECT s.id, s.name, s.url, s.favicon, s.status, s.shopware_version, s.last_scraped_at, s.last_scraped_error,
-       s.organization_id, o.name AS organization_name, p.id AS project_id, p.name AS project_name
+SELECT s.id, s.name, s.description, s.git_url, s.organization_id, o.name AS organization_name
 FROM shop s
 JOIN member m ON m.organization_id = s.organization_id
 JOIN organization o ON o.id = s.organization_id
-LEFT JOIN project p ON p.id = s.project_id
 WHERE m.user_id = $1
 ORDER BY s.name;
 
--- name: GetUserProjects :many
-SELECT p.id, p.name, p.description, p.git_url, p.organization_id, o.name AS organization_name
-FROM project p
-JOIN member m ON m.organization_id = p.organization_id
-JOIN organization o ON o.id = p.organization_id
-WHERE m.user_id = $1
-ORDER BY p.name;
-
 -- name: GetUserChangelogs :many
-SELECT sc.id, sc.shop_id, sc.extensions, sc.old_shopware_version, sc.new_shopware_version, sc.date,
-       s.name AS shop_name, o.name AS shop_organization_name, s.organization_id AS shop_organization_id
-FROM shop_changelog sc
-JOIN shop s ON s.id = sc.shop_id
-JOIN organization o ON o.id = s.organization_id
-JOIN member m ON m.organization_id = s.organization_id
+SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
+       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_changelog ec
+JOIN environment e ON e.id = ec.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1
-ORDER BY sc.date DESC
+ORDER BY ec.date DESC
 LIMIT 10;
 
 -- name: GetUserExtensions :many
-SELECT se.name, se.label, se.version, se.latest_version, se.active, se.installed,
-       se.store_link, se.rating_average, se.installed_at, se.changelog,
-       se.shop_id, s.name AS shop_name, s.url AS shop_url, o.name AS shop_organization_name, s.organization_id AS shop_organization_id
-FROM shop_extension se
-JOIN shop s ON s.id = se.shop_id
-JOIN organization o ON o.id = s.organization_id
-JOIN member m ON m.organization_id = s.organization_id
+SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
+       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
+       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_extension ee
+JOIN environment e ON e.id = ee.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1
-ORDER BY se.name, s.name;
+ORDER BY ee.name, e.name;
 
 -- name: IsOrganizationMember :one
 SELECT COUNT(*) > 0 AS is_member FROM member WHERE organization_id = $1 AND user_id = $2;
 
--- name: GetShopOrganizationID :one
-SELECT organization_id FROM shop WHERE id = $1;
+-- name: GetEnvironmentOrganizationID :one
+SELECT organization_id FROM environment WHERE id = $1;

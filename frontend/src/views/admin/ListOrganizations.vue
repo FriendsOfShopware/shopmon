@@ -54,8 +54,10 @@
         </router-link>
       </template>
 
-      <template #cell-shopCount="{ row }">
-        <span class="badge badge-info"> {{ $t("admin.nShops", { count: row.shopCount }) }} </span>
+      <template #cell-environmentCount="{ row }">
+        <span class="badge badge-info">
+          {{ $t("admin.nShops", { count: row.environmentCount }) }}
+        </span>
       </template>
 
       <template #cell-memberCount="{ row }">
@@ -121,7 +123,7 @@ const { t } = useI18n();
 const tableColumns = computed(() => [
   { key: "logo" as const, name: t("admin.logo") },
   { key: "name" as const, name: t("common.name"), sortable: true, searchable: true },
-  { key: "shopCount" as const, name: t("common.shops"), sortable: true },
+  { key: "environmentCount" as const, name: t("common.environments"), sortable: true },
   { key: "memberCount" as const, name: t("common.members"), sortable: true },
   { key: "createdAt" as const, name: t("admin.created"), sortable: true },
 ]);

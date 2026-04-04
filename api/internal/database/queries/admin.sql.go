@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminCountEnvironments = `-- name: AdminCountEnvironments :one
+SELECT COUNT(*)::int FROM environment
+`
+
+func (q *Queries) AdminCountEnvironments(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountEnvironments)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const adminCountOrganizations = `-- name: AdminCountOrganizations :one
 SELECT COUNT(*)::int FROM organization
 `
@@ -22,36 +33,25 @@ func (q *Queries) AdminCountOrganizations(ctx context.Context) (int32, error) {
 	return column_1, err
 }
 
-const adminCountShops = `-- name: AdminCountShops :one
-SELECT COUNT(*)::int FROM shop
-`
-
-func (q *Queries) AdminCountShops(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountShops)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
-const adminGetGrowthShops = `-- name: AdminGetGrowthShops :many
+const adminGetGrowthEnvironments = `-- name: AdminGetGrowthEnvironments :many
 SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*)::int AS count
-FROM shop GROUP BY month ORDER BY month
+FROM environment GROUP BY month ORDER BY month
 `
 
-type AdminGetGrowthShopsRow struct {
+type AdminGetGrowthEnvironmentsRow struct {
 	Month string `json:"month"`
 	Count int32  `json:"count"`
 }
 
-func (q *Queries) AdminGetGrowthShops(ctx context.Context) ([]AdminGetGrowthShopsRow, error) {
-	rows, err := q.db.Query(ctx, adminGetGrowthShops)
+func (q *Queries) AdminGetGrowthEnvironments(ctx context.Context) ([]AdminGetGrowthEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetGrowthEnvironments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []AdminGetGrowthShopsRow{}
+	items := []AdminGetGrowthEnvironmentsRow{}
 	for rows.Next() {
-		var i AdminGetGrowthShopsRow
+		var i AdminGetGrowthEnvironmentsRow
 		if err := rows.Scan(&i.Month, &i.Count); err != nil {
 			return nil, err
 		}
@@ -93,14 +93,14 @@ func (q *Queries) AdminGetGrowthUsers(ctx context.Context) ([]AdminGetGrowthUser
 	return items, nil
 }
 
-const adminGetRecentShops = `-- name: AdminGetRecentShops :many
-SELECT s.id, s.name, s.url, o.name AS organization_name, s.created_at
-FROM shop s
-JOIN organization o ON o.id = s.organization_id
-ORDER BY s.created_at DESC LIMIT 10
+const adminGetRecentEnvironments = `-- name: AdminGetRecentEnvironments :many
+SELECT e.id, e.name, e.url, o.name AS organization_name, e.created_at
+FROM environment e
+JOIN organization o ON o.id = e.organization_id
+ORDER BY e.created_at DESC LIMIT 10
 `
 
-type AdminGetRecentShopsRow struct {
+type AdminGetRecentEnvironmentsRow struct {
 	ID               int32            `json:"id"`
 	Name             string           `json:"name"`
 	Url              string           `json:"url"`
@@ -108,15 +108,15 @@ type AdminGetRecentShopsRow struct {
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 }
 
-func (q *Queries) AdminGetRecentShops(ctx context.Context) ([]AdminGetRecentShopsRow, error) {
-	rows, err := q.db.Query(ctx, adminGetRecentShops)
+func (q *Queries) AdminGetRecentEnvironments(ctx context.Context) ([]AdminGetRecentEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetRecentEnvironments)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []AdminGetRecentShopsRow{}
+	items := []AdminGetRecentEnvironmentsRow{}
 	for rows.Next() {
-		var i AdminGetRecentShopsRow
+		var i AdminGetRecentEnvironmentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -172,7 +172,7 @@ func (q *Queries) AdminGetRecentUsers(ctx context.Context) ([]AdminGetRecentUser
 
 const adminGetShopwareVersions = `-- name: AdminGetShopwareVersions :many
 SELECT shopware_version AS version, COUNT(*)::int AS count
-FROM shop GROUP BY shopware_version ORDER BY count DESC
+FROM environment GROUP BY shopware_version ORDER BY count DESC
 `
 
 type AdminGetShopwareVersionsRow struct {
@@ -204,19 +204,19 @@ const adminGetStats = `-- name: AdminGetStats :one
 SELECT
   (SELECT COUNT(*) FROM "user")::int AS total_users,
   (SELECT COUNT(*) FROM organization)::int AS total_organizations,
-  (SELECT COUNT(*) FROM shop)::int AS total_shops,
-  (SELECT COUNT(*) FROM shop WHERE status = 'green')::int AS shops_green,
-  (SELECT COUNT(*) FROM shop WHERE status = 'yellow')::int AS shops_yellow,
-  (SELECT COUNT(*) FROM shop WHERE status = 'red')::int AS shops_red
+  (SELECT COUNT(*) FROM environment)::int AS total_environments,
+  (SELECT COUNT(*) FROM environment WHERE status = 'green')::int AS environments_green,
+  (SELECT COUNT(*) FROM environment WHERE status = 'yellow')::int AS environments_yellow,
+  (SELECT COUNT(*) FROM environment WHERE status = 'red')::int AS environments_red
 `
 
 type AdminGetStatsRow struct {
 	TotalUsers         int32 `json:"total_users"`
 	TotalOrganizations int32 `json:"total_organizations"`
-	TotalShops         int32 `json:"total_shops"`
-	ShopsGreen         int32 `json:"shops_green"`
-	ShopsYellow        int32 `json:"shops_yellow"`
-	ShopsRed           int32 `json:"shops_red"`
+	TotalEnvironments  int32 `json:"total_environments"`
+	EnvironmentsGreen  int32 `json:"environments_green"`
+	EnvironmentsYellow int32 `json:"environments_yellow"`
+	EnvironmentsRed    int32 `json:"environments_red"`
 }
 
 func (q *Queries) AdminGetStats(ctx context.Context) (AdminGetStatsRow, error) {
@@ -225,17 +225,73 @@ func (q *Queries) AdminGetStats(ctx context.Context) (AdminGetStatsRow, error) {
 	err := row.Scan(
 		&i.TotalUsers,
 		&i.TotalOrganizations,
-		&i.TotalShops,
-		&i.ShopsGreen,
-		&i.ShopsYellow,
-		&i.ShopsRed,
+		&i.TotalEnvironments,
+		&i.EnvironmentsGreen,
+		&i.EnvironmentsYellow,
+		&i.EnvironmentsRed,
 	)
 	return i, err
 }
 
+const adminListEnvironments = `-- name: AdminListEnvironments :many
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
+       e.organization_id, o.name AS organization_name
+FROM environment e
+JOIN organization o ON o.id = e.organization_id
+ORDER BY e.name
+LIMIT $1 OFFSET $2
+`
+
+type AdminListEnvironmentsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type AdminListEnvironmentsRow struct {
+	ID               int32            `json:"id"`
+	Name             string           `json:"name"`
+	Url              string           `json:"url"`
+	Status           string           `json:"status"`
+	ShopwareVersion  string           `json:"shopware_version"`
+	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	OrganizationID   string           `json:"organization_id"`
+	OrganizationName string           `json:"organization_name"`
+}
+
+func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnvironmentsParams) ([]AdminListEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, adminListEnvironments, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListEnvironmentsRow{}
+	for rows.Next() {
+		var i AdminListEnvironmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Status,
+			&i.ShopwareVersion,
+			&i.LastScrapedAt,
+			&i.CreatedAt,
+			&i.OrganizationID,
+			&i.OrganizationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminListOrganizations = `-- name: AdminListOrganizations :many
 SELECT o.id, o.name, o.slug, o.logo, o.created_at,
-       (SELECT COUNT(*) FROM shop WHERE organization_id = o.id)::int AS shop_count,
+       (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
        (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
 FROM organization o
 ORDER BY o.created_at DESC
@@ -248,13 +304,13 @@ type AdminListOrganizationsParams struct {
 }
 
 type AdminListOrganizationsRow struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	Slug        string           `json:"slug"`
-	Logo        *string          `json:"logo"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	ShopCount   int32            `json:"shop_count"`
-	MemberCount int32            `json:"member_count"`
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	Slug             string           `json:"slug"`
+	Logo             *string          `json:"logo"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	EnvironmentCount int32            `json:"environment_count"`
+	MemberCount      int32            `json:"member_count"`
 }
 
 func (q *Queries) AdminListOrganizations(ctx context.Context, arg AdminListOrganizationsParams) ([]AdminListOrganizationsRow, error) {
@@ -272,64 +328,8 @@ func (q *Queries) AdminListOrganizations(ctx context.Context, arg AdminListOrgan
 			&i.Slug,
 			&i.Logo,
 			&i.CreatedAt,
-			&i.ShopCount,
+			&i.EnvironmentCount,
 			&i.MemberCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const adminListShops = `-- name: AdminListShops :many
-SELECT s.id, s.name, s.url, s.status, s.shopware_version, s.last_scraped_at, s.created_at,
-       s.organization_id, o.name AS organization_name
-FROM shop s
-JOIN organization o ON o.id = s.organization_id
-ORDER BY s.name
-LIMIT $1 OFFSET $2
-`
-
-type AdminListShopsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-type AdminListShopsRow struct {
-	ID               int32            `json:"id"`
-	Name             string           `json:"name"`
-	Url              string           `json:"url"`
-	Status           string           `json:"status"`
-	ShopwareVersion  string           `json:"shopware_version"`
-	LastScrapedAt    pgtype.Timestamp `json:"last_scraped_at"`
-	CreatedAt        pgtype.Timestamp `json:"created_at"`
-	OrganizationID   string           `json:"organization_id"`
-	OrganizationName string           `json:"organization_name"`
-}
-
-func (q *Queries) AdminListShops(ctx context.Context, arg AdminListShopsParams) ([]AdminListShopsRow, error) {
-	rows, err := q.db.Query(ctx, adminListShops, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []AdminListShopsRow{}
-	for rows.Next() {
-		var i AdminListShopsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Url,
-			&i.Status,
-			&i.ShopwareVersion,
-			&i.LastScrapedAt,
-			&i.CreatedAt,
-			&i.OrganizationID,
-			&i.OrganizationName,
 		); err != nil {
 			return nil, err
 		}

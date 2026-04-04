@@ -38,13 +38,13 @@
               Organizations
             </RouterLink>
             <RouterLink
-              to="/admin/shops"
+              to="/admin/environments"
               class="nav-link"
               :class="{
-                active: $route.name?.toString().startsWith('admin.shops'),
+                active: $route.name?.toString().startsWith('admin.environments'),
               }"
             >
-              Shops
+              Environments
             </RouterLink>
             <a href="/admin/queues" class="nav-link" target="_blank"> Queues </a>
           </div>

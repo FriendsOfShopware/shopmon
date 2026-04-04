@@ -10,7 +10,11 @@
     @submit="onSubmit"
   >
     <div class="login-form-group">
-      <InputField name="displayName" :placeholder="$t('auth.displayName')" :error="errors.displayName" />
+      <InputField
+        name="displayName"
+        :placeholder="$t('auth.displayName')"
+        :error="errors.displayName"
+      />
       <InputField name="email" :placeholder="$t('common.emailAddress')" :error="errors.email" />
 
       <PasswordField

@@ -31,23 +31,23 @@ const RouterLinkStub = defineComponent({
 });
 
 // Mock data
-const mockShops = [
+const mockEnvironments = [
   {
     id: "1",
-    name: "Test Shop 1",
+    name: "Test Environment 1",
     organizationId: "org-1",
     organizationName: "Test Org",
-    projectName: "Test Project",
+    shopName: "Test Shop",
     shopwareVersion: "6.5.0",
     status: "green",
     favicon: null,
   },
   {
     id: "2",
-    name: "Test Shop 2",
+    name: "Test Environment 2",
     organizationId: "org-1",
     organizationName: "Test Org",
-    projectName: "Another Project",
+    shopName: "Another Shop",
     shopwareVersion: "6.4.0",
     status: "red",
     favicon: "/favicon.ico",
@@ -59,17 +59,17 @@ const mockOrganizations = [
     id: "1",
     name: "Test Organization",
     memberCount: 5,
-    shopCount: 2,
+    environmentCount: 2,
   },
 ];
 
 const mockChangelogs = [
   {
     id: "1",
-    shopId: "1",
-    shopName: "Test Shop 1",
-    shopOrganizationName: "Test Org",
-    shopOrganizationId: "org-1",
+    environmentId: "1",
+    environmentName: "Test Environment 1",
+    environmentOrganizationName: "Test Org",
+    environmentOrganizationId: "org-1",
     extensions: [{ name: "Test Extension", oldVersion: "1.0.0", newVersion: "1.1.0" }],
     date: new Date("2024-01-15").toISOString(),
   },
@@ -108,8 +108,8 @@ describe("Dashboard", () => {
       if (path === "/account/organizations") {
         return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
       }
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      if (path === "/account/environments") {
+        return Promise.resolve({ data: mockEnvironments, error: null, response: new Response() });
       }
       if (path === "/account/changelogs") {
         return Promise.resolve({ data: mockChangelogs, error: null, response: new Response() });
@@ -143,22 +143,22 @@ describe("Dashboard", () => {
     expect(wrapper.find("header").text()).toBe("Dashboard");
   });
 
-  it("displays My Shops section", async () => {
+  it("displays My Environments section", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("My Shops");
+    expect(wrapper.text()).toContain("My Environments");
   });
 
-  it("displays shops data", async () => {
+  it("displays environments data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Shop 1");
-    expect(wrapper.text()).toContain("Test Shop 2");
-    expect(wrapper.text()).toContain("Test Project");
+    expect(wrapper.text()).toContain("Test Environment 1");
+    expect(wrapper.text()).toContain("Test Environment 2");
+    expect(wrapper.text()).toContain("Test Shop");
     expect(wrapper.text()).toContain("6.5.0");
   });
 
-  it("displays shop status icons", async () => {
+  it("displays environment status icons", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     const statusIcons = wrapper.findAll(".green, .red");
@@ -176,7 +176,7 @@ describe("Dashboard", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("Test Organization");
     expect(wrapper.text()).toContain("5 Members");
-    expect(wrapper.text()).toContain("2 Shops");
+    expect(wrapper.text()).toContain("2 Environments");
   });
 
   it("displays Last Changes section when changelogs exist", async () => {
@@ -190,8 +190,8 @@ describe("Dashboard", () => {
       if (path === "/account/organizations") {
         return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
       }
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
+      if (path === "/account/environments") {
+        return Promise.resolve({ data: mockEnvironments, error: null, response: new Response() });
       }
       if (path === "/account/changelogs") {
         return Promise.resolve({ data: [], error: null, response: new Response() });
@@ -206,14 +206,14 @@ describe("Dashboard", () => {
   it("displays changelog data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Shop 1");
+    expect(wrapper.text()).toContain("Test Environment 1");
   });
 
-  it("displays correct shop links", async () => {
+  it("displays correct environment links", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     const links = wrapper.findAll("a");
-    const shopLink = links.find((l) => l.text().includes("Test Shop 1"));
-    expect(shopLink).toBeTruthy();
+    const envLink = links.find((l) => l.text().includes("Test Environment 1"));
+    expect(envLink).toBeTruthy();
   });
 });

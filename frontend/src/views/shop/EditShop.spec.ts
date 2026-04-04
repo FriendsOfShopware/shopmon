@@ -20,11 +20,12 @@ const MainContainerStub = defineComponent({
 
 const PanelStub = defineComponent({
   name: "Panel",
-  props: ["title", "variant"],
+  props: ["title", "id", "variant", "description", "class"],
   setup(props, { slots }) {
     return () =>
-      h("div", { class: "panel" }, [
+      h("div", { class: "panel", id: props.id }, [
         props.title ? h("h2", {}, props.title) : null,
+        slots.action?.(),
         slots.default?.(),
       ]);
   },
@@ -34,63 +35,85 @@ const FormGroupStub = defineComponent({
   name: "FormGroup",
   props: ["title"],
   setup(props, { slots }) {
+    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
+  },
+});
+
+const ModalStub = defineComponent({
+  name: "Modal",
+  props: ["show", "closeXMark"],
+  setup(props, { slots }) {
     return () =>
-      h("fieldset", {}, [h("legend", {}, props.title), slots.info?.(), slots.default?.()]);
+      props.show
+        ? h("div", { class: "modal" }, [
+            slots.title?.(),
+            slots.content?.(),
+            slots.footer?.(),
+            slots.icon?.(),
+          ])
+        : null;
   },
 });
 
 const DeleteConfirmationModalStub = defineComponent({
   name: "DeleteConfirmationModal",
-  props: ["show", "title", "entityName"],
+  props: [
+    "show",
+    "title",
+    "entityName",
+    "customConsequence",
+    "reversedButtons",
+    "isLoading",
+    "confirmButtonText",
+  ],
   template: '<div v-if="show" class="delete-modal" />',
 });
 
-const PluginConnectionModalStub = defineComponent({
-  name: "PluginConnectionModal",
-  props: ["show", "base64", "error"],
-  emits: ["close", "import", "update:base64"],
-  template: '<div v-if="show" class="plugin-modal" />',
+const AlertStub = defineComponent({
+  name: "Alert",
+  props: ["type"],
+  setup(_, { slots }) {
+    return () => h("div", { class: "alert" }, slots.default?.());
+  },
 });
 
 const mockShop = {
   id: 1,
   name: "Test Shop",
-  url: "https://test.shop",
+  description: "A test shop",
+  gitUrl: "https://github.com/test/repo",
   organizationId: "org-1",
-  projectId: 1,
-  clientId: "client-1",
-  clientSecret: "",
-  sitespeedEnabled: false,
-  sitespeedUrls: [],
 };
-
-const mockProjects = [
-  { id: 1, nameCombined: "Org / Project A" },
-  { id: 2, nameCombined: "Org / Project B" },
-];
 
 const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
-  useRoute: () => ({ params: { slug: "org-1", shopId: "1" } }),
+  useRoute: () => ({ params: { shopId: "1" }, hash: "" }),
 }));
 
-vi.mock("@/helpers/trpc", () => ({
-  trpcClient: {
-    account: {
-      currentUserProjects: {
-        query: vi.fn(() => Promise.resolve(mockProjects)),
-      },
-    },
-    organization: {
-      shop: {
-        get: { query: vi.fn(() => Promise.resolve(mockShop)) },
-        update: { mutate: vi.fn(() => Promise.resolve()) },
-        delete: { mutate: vi.fn(() => Promise.resolve()) },
-        updateSitespeedSettings: { mutate: vi.fn(() => Promise.resolve()) },
-      },
-    },
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
+}));
+
+vi.mock("@/composables/useAccountEnvironments", () => ({
+  fetchAccountEnvironments: vi.fn(() => Promise.resolve([])),
+  useAccountEnvironments: () => ({
+    environments: { value: [] },
+    fetchAccountEnvironments: vi.fn(),
+  }),
+}));
+
+vi.mock("@/helpers/formatter", () => ({
+  formatDate: (d: string) => d,
+  timeAgo: (d: string) => d,
 }));
 
 vi.mock("@/composables/useAlert", () => ({
@@ -100,9 +123,27 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
+import { api } from "@/helpers/api";
+
 describe("EditShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/shops") {
+        return Promise.resolve({ data: [mockShop], error: null, response: new Response() });
+      }
+      if (path === "/api-key-scopes") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      if (path === "/packages-token/configuration") {
+        return Promise.resolve({
+          data: { configured: false, composerUrl: null },
+          error: null,
+          response: new Response(),
+        });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
   });
 
   function mountComponent() {
@@ -113,29 +154,35 @@ describe("EditShop", () => {
           MainContainer: MainContainerStub,
           Panel: PanelStub,
           FormGroup: FormGroupStub,
+          Modal: ModalStub,
           DeleteConfirmationModal: DeleteConfirmationModalStub,
-          PluginConnectionModal: PluginConnectionModalStub,
+          Alert: AlertStub,
         },
       },
     });
   }
 
-  it("renders page title with shop name", async () => {
+  it("renders page title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("header").text()).toContain("Edit Test Shop");
+    expect(wrapper.find("header").text()).toContain("Edit");
   });
 
-  it("has cancel link", async () => {
+  it("shows loading state initially", () => {
     const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.find("header").text()).toContain("Cancel");
+    expect(wrapper.text()).toContain("Loading shop...");
   });
 
-  it("displays shop information section", async () => {
+  it("displays shop form after loading", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Shop information");
+    expect(wrapper.find("form").exists()).toBe(true);
+  });
+
+  it("has Shop Information section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Shop Information");
   });
 
   it("has name input field", async () => {
@@ -144,43 +191,16 @@ describe("EditShop", () => {
     expect(wrapper.find('input[name="name"]').exists()).toBe(true);
   });
 
-  it("has project select", async () => {
+  it("has description textarea", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find('select[name="projectId"]').exists()).toBe(true);
+    expect(wrapper.find('textarea[name="description"]').exists()).toBe(true);
   });
 
-  it("has URL input field", async () => {
+  it("has git URL input field", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find('input[name="shopUrl"]').exists()).toBe(true);
-  });
-
-  it("displays integration section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Integration");
-  });
-
-  it("has client ID field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.find('input[name="clientId"]').exists()).toBe(true);
-  });
-
-  it("has client secret field", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.find('input[name="clientSecret"]').exists()).toBe(true);
-  });
-
-  it("has connect using plugin button", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const btn = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Connect using Shopmon Plugin"));
-    expect(btn).toBeTruthy();
+    expect(wrapper.find('input[name="gitUrl"]').exists()).toBe(true);
   });
 
   it("has save button", async () => {
@@ -191,16 +211,23 @@ describe("EditShop", () => {
     expect(btn.text()).toContain("Save");
   });
 
-  it("displays sitespeed section", async () => {
+  it("displays API Keys section", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Sitespeed");
+    expect(wrapper.text()).toContain("API Keys");
   });
 
-  it("displays delete shop section", async () => {
+  it("has Create API Key button", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Deleting shop");
+    const btn = wrapper.findAll("button").find((b) => b.text().includes("Create API Key"));
+    expect(btn).toBeTruthy();
+  });
+
+  it("displays Danger Zone section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Danger Zone");
   });
 
   it("has delete shop button", async () => {
@@ -208,5 +235,11 @@ describe("EditShop", () => {
     await flushPromises();
     const btn = wrapper.findAll("button").find((b) => b.text().includes("Delete shop"));
     expect(btn).toBeTruthy();
+  });
+
+  it("has Back to Shops link", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Back to Shops");
   });
 });

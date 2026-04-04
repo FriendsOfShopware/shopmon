@@ -31,15 +31,15 @@ func (h *Handler) AdminGetStats(w http.ResponseWriter, r *http.Request) {
 	result := api.AdminStats{
 		TotalUsers:         int(stats.TotalUsers),
 		TotalOrganizations: int(stats.TotalOrganizations),
-		TotalShops:         int(stats.TotalShops),
-		ShopsByStatus: struct {
+		TotalEnvironments:  int(stats.TotalEnvironments),
+		EnvironmentsByStatus: struct {
 			Green  int `json:"green"`
 			Red    int `json:"red"`
 			Yellow int `json:"yellow"`
 		}{
-			Green:  int(stats.ShopsGreen),
-			Yellow: int(stats.ShopsYellow),
-			Red:    int(stats.ShopsRed),
+			Green:  int(stats.EnvironmentsGreen),
+			Yellow: int(stats.EnvironmentsYellow),
+			Red:    int(stats.EnvironmentsRed),
 		},
 	}
 
@@ -85,12 +85,12 @@ func (h *Handler) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, 
 	orgs := make([]api.AccountOrganization, 0, len(rows))
 	for _, row := range rows {
 		orgs = append(orgs, api.AccountOrganization{
-			Id:          row.ID,
-			Name:        row.Name,
-			Logo:        row.Logo,
-			CreatedAt:   pgtimeToTime(row.CreatedAt),
-			ShopCount:   int(row.ShopCount),
-			MemberCount: int(row.MemberCount),
+			Id:               row.ID,
+			Name:             row.Name,
+			Logo:             row.Logo,
+			CreatedAt:        pgtimeToTime(row.CreatedAt),
+			EnvironmentCount: int(row.EnvironmentCount),
+			MemberCount:      int(row.MemberCount),
 		})
 	}
 
@@ -100,8 +100,8 @@ func (h *Handler) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, 
 	})
 }
 
-// AdminGetShops lists all shops (admin only).
-func (h *Handler) AdminGetShops(w http.ResponseWriter, r *http.Request, params api.AdminGetShopsParams) {
+// AdminGetEnvironments lists all environments (admin only).
+func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, params api.AdminGetEnvironmentsParams) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -120,25 +120,25 @@ func (h *Handler) AdminGetShops(w http.ResponseWriter, r *http.Request, params a
 		offset = int32(*params.Offset)
 	}
 
-	rows, err := h.queries.AdminListShops(r.Context(), queries.AdminListShopsParams{
+	rows, err := h.queries.AdminListEnvironments(r.Context(), queries.AdminListEnvironmentsParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		slog.Error("failed to list shops", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get shops")
+		slog.Error("failed to list environments", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get environments")
 		return
 	}
 
-	total, err := h.queries.AdminCountShops(r.Context())
+	total, err := h.queries.AdminCountEnvironments(r.Context())
 	if err != nil {
-		slog.Error("failed to count shops", "error", err)
+		slog.Error("failed to count environments", "error", err)
 		total = 0
 	}
 
-	shops := make([]api.AccountShop, 0, len(rows))
+	environments := make([]api.AccountEnvironment, 0, len(rows))
 	for _, row := range rows {
-		shops = append(shops, api.AccountShop{
+		environments = append(environments, api.AccountEnvironment{
 			Id:               int(row.ID),
 			Name:             row.Name,
 			Url:              row.Url,
@@ -150,9 +150,9 @@ func (h *Handler) AdminGetShops(w http.ResponseWriter, r *http.Request, params a
 		})
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, api.AdminShopsResponse{
-		Shops: shops,
-		Total: int(total),
+	httputil.WriteJSON(w, http.StatusOK, api.AdminEnvironmentsResponse{
+		Environments: environments,
+		Total:        int(total),
 	})
 }
 
@@ -167,9 +167,9 @@ func (h *Handler) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopRows, err := h.queries.AdminGetGrowthShops(r.Context())
+	environmentRows, err := h.queries.AdminGetGrowthEnvironments(r.Context())
 	if err != nil {
-		slog.Error("failed to get shop growth", "error", err)
+		slog.Error("failed to get environment growth", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get growth data")
 		return
 	}
@@ -181,9 +181,9 @@ func (h *Handler) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopGrowth := make([]api.GrowthDataPoint, 0, len(shopRows))
-	for _, row := range shopRows {
-		shopGrowth = append(shopGrowth, api.GrowthDataPoint{
+	environmentGrowth := make([]api.GrowthDataPoint, 0, len(environmentRows))
+	for _, row := range environmentRows {
+		environmentGrowth = append(environmentGrowth, api.GrowthDataPoint{
 			Month: row.Month,
 			Count: int(row.Count),
 		})
@@ -198,12 +198,12 @@ func (h *Handler) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, api.AdminGrowth{
-		Shops: shopGrowth,
-		Users: userGrowth,
+		Environments: environmentGrowth,
+		Users:        userGrowth,
 	})
 }
 
-// AdminGetRecentActivity returns recent user and shop activity.
+// AdminGetRecentActivity returns recent user and environment activity.
 func (h *Handler) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {
@@ -214,9 +214,9 @@ func (h *Handler) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	recentShopRows, err := h.queries.AdminGetRecentShops(r.Context())
+	recentEnvironmentRows, err := h.queries.AdminGetRecentEnvironments(r.Context())
 	if err != nil {
-		slog.Error("failed to get recent shops", "error", err)
+		slog.Error("failed to get recent environments", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get recent activity")
 		return
 	}
@@ -228,9 +228,9 @@ func (h *Handler) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	recentShops := make([]api.AccountShop, 0, len(recentShopRows))
-	for _, row := range recentShopRows {
-		recentShops = append(recentShops, api.AccountShop{
+	recentEnvironments := make([]api.AccountEnvironment, 0, len(recentEnvironmentRows))
+	for _, row := range recentEnvironmentRows {
+		recentEnvironments = append(recentEnvironments, api.AccountEnvironment{
 			Id:               int(row.ID),
 			Name:             row.Name,
 			Url:              row.Url,
@@ -249,12 +249,12 @@ func (h *Handler) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, api.AdminRecentActivity{
-		RecentShops: recentShops,
-		RecentUsers: recentUsers,
+		RecentEnvironments: recentEnvironments,
+		RecentUsers:        recentUsers,
 	})
 }
 
-// AdminGetShopwareVersions returns Shopware version distribution across shops.
+// AdminGetShopwareVersions returns Shopware version distribution across environments.
 func (h *Handler) AdminGetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 	user := h.requireUser(w, r)
 	if user == nil {

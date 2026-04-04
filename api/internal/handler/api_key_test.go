@@ -33,9 +33,9 @@ func TestGetApiKeys_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/projects/%d/api-keys", env.Server.URL, projectID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -53,14 +53,14 @@ func TestCreateApiKey(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
 	body, _ := json.Marshal(api.CreateApiKeyRequest{
 		Name:   "My API Key",
 		Scopes: []string{"deployments"},
 	})
 
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/projects/%d/api-keys", env.Server.URL, projectID), bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -81,14 +81,14 @@ func TestCreateAndListApiKeys(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
 	// Create a key
 	body, _ := json.Marshal(api.CreateApiKeyRequest{
 		Name:   "Key 1",
 		Scopes: []string{"deployments"},
 	})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/projects/%d/api-keys", env.Server.URL, projectID), bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
@@ -97,7 +97,7 @@ func TestCreateAndListApiKeys(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	// List keys
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/projects/%d/api-keys", env.Server.URL, projectID), nil)
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -114,25 +114,17 @@ func TestDeleteApiKey(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
 	// Create a key directly in DB to get the ID
 	_, err := env.Pool.Exec(t.Context(), `
-		INSERT INTO project_api_key (id, project_id, name, token, scopes, created_at)
+		INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
 		VALUES ('key-1', $1, 'Test Key', 'shm_test_token', '["deployments"]'::jsonb, NOW())
-	`, projectID)
+	`, shopID)
 	require.NoError(t, err)
 
-	// The DeleteApiKey handler uses strconv.Itoa(keyId) as the ID, but keyId is an int from the URL.
-	// The handler does: DeleteApiKey with ID = strconv.Itoa(keyId) and projectID.
-	// Since our key has id='key-1' (string) and the URL param keyId is an int,
-	// we need to create a key with an integer-like ID to make the delete work through the API.
-	// Actually looking at the handler, it uses `strconv.Itoa(keyId)` where keyId is int from URL.
-	// So we can't easily test delete through the API with UUID keys. Let's test that the endpoint
-	// returns 204 even if key doesn't exist (since DeleteApiKey is a no-op for non-existent rows).
-
 	// Test with a numeric-ish key ID via the URL - just verify the endpoint responds
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/projects/%d/api-keys/999", env.Server.URL, projectID), nil)
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys/999", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -147,9 +139,9 @@ func TestGetApiKeys_NotMember(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
 	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
-	projectID := env.SeedProject(t, "org-2", "Other Project")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-2/projects/%d/api-keys", env.Server.URL, projectID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-2/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

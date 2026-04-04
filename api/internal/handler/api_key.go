@@ -27,8 +27,8 @@ func (h *Handler) GetApiKeyScopes(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, scopes)
 }
 
-// GetApiKeys lists API keys for a project.
-func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId) {
+// GetApiKeys lists API keys for a shop.
+func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -37,11 +37,11 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 		return
 	}
 
-	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
 		return
 	}
 
-	rows, err := h.queries.ListApiKeysByProject(r.Context(), int32(projectId))
+	rows, err := h.queries.ListApiKeysByShop(r.Context(), int32(shopId))
 	if err != nil {
 		slog.Error("failed to list api keys", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get api keys")
@@ -75,8 +75,8 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
-// CreateApiKey creates a new API key for a project.
-func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId) {
+// CreateApiKey creates a new API key for a shop.
+func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -85,7 +85,7 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
 		return
 	}
 
@@ -116,11 +116,11 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 
 	id := uuid.New().String()
 	_, err = h.queries.CreateApiKey(r.Context(), queries.CreateApiKeyParams{
-		ID:        id,
-		ProjectID: int32(projectId),
-		Name:      req.Name,
-		Token:     token,
-		Scopes:    scopesJSON,
+		ID:     id,
+		ShopID: int32(shopId),
+		Name:   req.Name,
+		Token:  token,
+		Scopes: scopesJSON,
 	})
 	if err != nil {
 		slog.Error("failed to create api key", "error", err)
@@ -138,7 +138,7 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 }
 
 // DeleteApiKey deletes an API key.
-func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, projectId api.ProjectId, keyId api.KeyId) {
+func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId, keyId api.KeyId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -147,13 +147,13 @@ func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	if !h.requireProjectInOrganization(w, r, int32(projectId), orgId) {
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
 		return
 	}
 
 	if err := h.queries.DeleteApiKey(r.Context(), queries.DeleteApiKeyParams{
-		ID:        strconv.Itoa(keyId),
-		ProjectID: int32(projectId),
+		ID:     strconv.Itoa(keyId),
+		ShopID: int32(shopId),
 	}); err != nil {
 		slog.Error("failed to delete api key", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete api key")

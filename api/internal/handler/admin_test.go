@@ -16,9 +16,9 @@ func TestAdminGetStats(t *testing.T) {
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
 	env.SeedUser(t, "user-1", "Regular User", "user@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "admin-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	env.SeedShop(t, "org-1", projectID, "Shop 1", "https://shop1.example.com")
-	env.SeedShop(t, "org-1", projectID, "Shop 2", "https://shop2.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
+	env.SeedEnvironment(t, "org-1", shopID, "Environment 2", "https://env2.example.com")
 
 	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/stats", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -33,8 +33,8 @@ func TestAdminGetStats(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&stats))
 	assert.Equal(t, 2, stats.TotalUsers)
 	assert.Equal(t, 1, stats.TotalOrganizations)
-	assert.Equal(t, 2, stats.TotalShops)
-	assert.Equal(t, 2, stats.ShopsByStatus.Green)
+	assert.Equal(t, 2, stats.TotalEnvironments)
+	assert.Equal(t, 2, stats.EnvironmentsByStatus.Green)
 }
 
 func TestAdminGetStats_NonAdmin(t *testing.T) {
@@ -72,14 +72,14 @@ func TestAdminGetOrganizations(t *testing.T) {
 	assert.Len(t, result.Organizations, 2)
 }
 
-func TestAdminGetShops(t *testing.T) {
+func TestAdminGetEnvironments(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "admin-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	env.SeedShop(t, "org-1", projectID, "Shop 1", "https://shop1.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/shops?limit=10", nil)
+	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/environments?limit=10", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -88,10 +88,10 @@ func TestAdminGetShops(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result api.AdminShopsResponse
+	var result api.AdminEnvironmentsResponse
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.Equal(t, 1, result.Total)
-	assert.Len(t, result.Shops, 1)
+	assert.Len(t, result.Environments, 1)
 }
 
 func TestAdminGetGrowth(t *testing.T) {
@@ -110,15 +110,15 @@ func TestAdminGetGrowth(t *testing.T) {
 	var growth api.AdminGrowth
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&growth))
 	assert.NotNil(t, growth.Users)
-	assert.NotNil(t, growth.Shops)
+	assert.NotNil(t, growth.Environments)
 }
 
 func TestAdminGetShopwareVersions(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "admin-1")
-	projectID := env.SeedProject(t, "org-1", "Test Project")
-	env.SeedShop(t, "org-1", projectID, "Shop 1", "https://shop1.example.com")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
 
 	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/shopware-versions", nil)
 	req.Header.Set("Authorization", "Bearer "+token)

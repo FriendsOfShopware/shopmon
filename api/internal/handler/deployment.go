@@ -13,14 +13,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// GetDeployments lists deployments for a shop.
-func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, shopId api.ShopId, params api.GetDeploymentsParams) {
+// GetDeployments lists deployments for an environment.
+func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetDeploymentsParams) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
+	if _, ok := h.loadAuthorizedEnvironment(w, r, user, int32(environmentId)); !ok {
 		return
 	}
 
@@ -34,9 +34,9 @@ func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, shopId 
 	}
 
 	rows, err := h.queries.ListDeployments(r.Context(), queries.ListDeploymentsParams{
-		ShopID: int32(shopId),
-		Limit:  limit,
-		Offset: offset,
+		EnvironmentID: int32(environmentId),
+		Limit:         limit,
+		Offset:        offset,
 	})
 	if err != nil {
 		slog.Error("failed to list deployments", "error", err)
@@ -64,19 +64,19 @@ func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, shopId 
 }
 
 // GetDeployment returns deployment details with output.
-func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, shopId api.ShopId, deploymentId api.DeploymentId) {
+func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, deploymentId api.DeploymentId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
+	if _, ok := h.loadAuthorizedEnvironment(w, r, user, int32(environmentId)); !ok {
 		return
 	}
 
 	row, err := h.queries.GetDeploymentByID(r.Context(), queries.GetDeploymentByIDParams{
-		ID:     int32(deploymentId),
-		ShopID: int32(shopId),
+		ID:            int32(deploymentId),
+		EnvironmentID: int32(environmentId),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "deployment not found")
@@ -113,19 +113,19 @@ func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, shopId a
 }
 
 // DeleteDeployment deletes a deployment.
-func (h *Handler) DeleteDeployment(w http.ResponseWriter, r *http.Request, shopId api.ShopId, deploymentId api.DeploymentId) {
+func (h *Handler) DeleteDeployment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, deploymentId api.DeploymentId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
 
-	if _, ok := h.loadAuthorizedShop(w, r, user, int32(shopId)); !ok {
+	if _, ok := h.loadAuthorizedEnvironment(w, r, user, int32(environmentId)); !ok {
 		return
 	}
 
 	if err := h.queries.DeleteDeployment(r.Context(), queries.DeleteDeploymentParams{
-		ID:     int32(deploymentId),
-		ShopID: int32(shopId),
+		ID:            int32(deploymentId),
+		EnvironmentID: int32(environmentId),
 	}); err != nil {
 		slog.Error("failed to delete deployment", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete deployment")
@@ -187,19 +187,19 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify shop belongs to the API key's project
-	shop, err := h.queries.GetShopByID(r.Context(), int32(req.ShopId))
+	// Verify environment belongs to the API key's shop
+	environment, err := h.queries.GetEnvironmentByID(r.Context(), int32(req.EnvironmentId))
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		httputil.WriteError(w, http.StatusNotFound, "environment not found")
 		return
 	}
 
-	if shop.ProjectID != apiKey.ProjectID {
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this project")
+	if environment.ShopID != apiKey.ShopID {
+		httputil.WriteError(w, http.StatusForbidden, "environment does not belong to this shop")
 		return
 	}
 
-	name := fmt.Sprintf("CLI Deployment #%d", req.ShopId)
+	name := fmt.Sprintf("CLI Deployment #%d", req.EnvironmentId)
 	if req.Name != nil {
 		name = *req.Name
 	}
@@ -210,7 +210,7 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deploymentID, err := h.queries.CreateDeployment(r.Context(), queries.CreateDeploymentParams{
-		ShopID:        int32(req.ShopId),
+		EnvironmentID: int32(req.EnvironmentId),
 		Name:          name,
 		Command:       req.Command,
 		ReturnCode:    int32(req.ReturnCode),
@@ -226,11 +226,11 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the active deployment on the shop
+	// Update the active deployment on the environment
 	deployID := deploymentID
-	_ = h.queries.UpdateShopActiveDeployment(r.Context(), queries.UpdateShopActiveDeploymentParams{
+	_ = h.queries.UpdateEnvironmentActiveDeployment(r.Context(), queries.UpdateEnvironmentActiveDeploymentParams{
 		ActiveDeploymentID: &deployID,
-		ID:                 int32(req.ShopId),
+		ID:                 int32(req.EnvironmentId),
 	})
 
 	// Get presigned upload URL from S3
@@ -249,6 +249,6 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 		Name:         name,
 		Success:      true,
 		UploadUrl:    uploadURL,
-		Url:          fmt.Sprintf("%s/shops/%d/deployments/%d", h.cfg.FrontendURL, req.ShopId, deploymentID),
+		Url:          fmt.Sprintf("%s/environments/%d/deployments/%d", h.cfg.FrontendURL, req.EnvironmentId, deploymentID),
 	})
 }

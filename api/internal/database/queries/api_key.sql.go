@@ -13,23 +13,23 @@ import (
 )
 
 const createApiKey = `-- name: CreateApiKey :one
-INSERT INTO project_api_key (id, project_id, name, token, scopes, created_at)
+INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
 VALUES ($1, $2, $3, $4, $5, NOW())
 RETURNING id
 `
 
 type CreateApiKeyParams struct {
-	ID        string          `json:"id"`
-	ProjectID int32           `json:"project_id"`
-	Name      string          `json:"name"`
-	Token     string          `json:"token"`
-	Scopes    json.RawMessage `json:"scopes"`
+	ID     string          `json:"id"`
+	ShopID int32           `json:"shop_id"`
+	Name   string          `json:"name"`
+	Token  string          `json:"token"`
+	Scopes json.RawMessage `json:"scopes"`
 }
 
 func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (string, error) {
 	row := q.db.QueryRow(ctx, createApiKey,
 		arg.ID,
-		arg.ProjectID,
+		arg.ShopID,
 		arg.Name,
 		arg.Token,
 		arg.Scopes,
@@ -40,30 +40,30 @@ func (q *Queries) CreateApiKey(ctx context.Context, arg CreateApiKeyParams) (str
 }
 
 const deleteApiKey = `-- name: DeleteApiKey :exec
-DELETE FROM project_api_key WHERE id = $1 AND project_id = $2
+DELETE FROM shop_api_key WHERE id = $1 AND shop_id = $2
 `
 
 type DeleteApiKeyParams struct {
-	ID        string `json:"id"`
-	ProjectID int32  `json:"project_id"`
+	ID     string `json:"id"`
+	ShopID int32  `json:"shop_id"`
 }
 
 func (q *Queries) DeleteApiKey(ctx context.Context, arg DeleteApiKeyParams) error {
-	_, err := q.db.Exec(ctx, deleteApiKey, arg.ID, arg.ProjectID)
+	_, err := q.db.Exec(ctx, deleteApiKey, arg.ID, arg.ShopID)
 	return err
 }
 
 const getApiKeyByToken = `-- name: GetApiKeyByToken :one
-SELECT pak.id, pak.project_id, pak.name, pak.token, pak.scopes, pak.created_at, pak.last_used_at,
-       p.organization_id
-FROM project_api_key pak
-JOIN project p ON p.id = pak.project_id
-WHERE pak.token = $1
+SELECT sak.id, sak.shop_id, sak.name, sak.token, sak.scopes, sak.created_at, sak.last_used_at,
+       s.organization_id
+FROM shop_api_key sak
+JOIN shop s ON s.id = sak.shop_id
+WHERE sak.token = $1
 `
 
 type GetApiKeyByTokenRow struct {
 	ID             string           `json:"id"`
-	ProjectID      int32            `json:"project_id"`
+	ShopID         int32            `json:"shop_id"`
 	Name           string           `json:"name"`
 	Token          string           `json:"token"`
 	Scopes         json.RawMessage  `json:"scopes"`
@@ -77,7 +77,7 @@ func (q *Queries) GetApiKeyByToken(ctx context.Context, token string) (GetApiKey
 	var i GetApiKeyByTokenRow
 	err := row.Scan(
 		&i.ID,
-		&i.ProjectID,
+		&i.ShopID,
 		&i.Name,
 		&i.Token,
 		&i.Scopes,
@@ -88,32 +88,32 @@ func (q *Queries) GetApiKeyByToken(ctx context.Context, token string) (GetApiKey
 	return i, err
 }
 
-const listApiKeysByProject = `-- name: ListApiKeysByProject :many
-SELECT id, project_id, name, scopes, created_at, last_used_at
-FROM project_api_key WHERE project_id = $1 ORDER BY created_at DESC
+const listApiKeysByShop = `-- name: ListApiKeysByShop :many
+SELECT id, shop_id, name, scopes, created_at, last_used_at
+FROM shop_api_key WHERE shop_id = $1 ORDER BY created_at DESC
 `
 
-type ListApiKeysByProjectRow struct {
+type ListApiKeysByShopRow struct {
 	ID         string           `json:"id"`
-	ProjectID  int32            `json:"project_id"`
+	ShopID     int32            `json:"shop_id"`
 	Name       string           `json:"name"`
 	Scopes     json.RawMessage  `json:"scopes"`
 	CreatedAt  pgtype.Timestamp `json:"created_at"`
 	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
 }
 
-func (q *Queries) ListApiKeysByProject(ctx context.Context, projectID int32) ([]ListApiKeysByProjectRow, error) {
-	rows, err := q.db.Query(ctx, listApiKeysByProject, projectID)
+func (q *Queries) ListApiKeysByShop(ctx context.Context, shopID int32) ([]ListApiKeysByShopRow, error) {
+	rows, err := q.db.Query(ctx, listApiKeysByShop, shopID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListApiKeysByProjectRow{}
+	items := []ListApiKeysByShopRow{}
 	for rows.Next() {
-		var i ListApiKeysByProjectRow
+		var i ListApiKeysByShopRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ProjectID,
+			&i.ShopID,
 			&i.Name,
 			&i.Scopes,
 			&i.CreatedAt,
@@ -130,7 +130,7 @@ func (q *Queries) ListApiKeysByProject(ctx context.Context, projectID int32) ([]
 }
 
 const updateApiKeyLastUsed = `-- name: UpdateApiKeyLastUsed :exec
-UPDATE project_api_key SET last_used_at = NOW() WHERE id = $1
+UPDATE shop_api_key SET last_used_at = NOW() WHERE id = $1
 `
 
 func (q *Queries) UpdateApiKeyLastUsed(ctx context.Context, id string) error {

@@ -69,11 +69,11 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	// Cron scheduler for recurring tasks
 	c := cron.New()
 	if _, err := c.AddFunc("0 * * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.ShopScrapeAll{}); err != nil {
-			slog.Error("failed to dispatch shop scrape all", "error", err)
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.EnvironmentScrapeAll{}); err != nil {
+			slog.Error("failed to dispatch environment scrape all", "error", err)
 		}
 	}); err != nil {
-		slog.Error("failed to add shop scrape cron", "error", err)
+		slog.Error("failed to add environment scrape cron", "error", err)
 	}
 	if _, err := c.AddFunc("0 3 * * *", func() {
 		if err := goqueue.Dispatch(context.Background(), bus, jobs.SitespeedScrapeAll{}); err != nil {

@@ -52,11 +52,11 @@ func pgtimeToTimePtr(t pgtype.Timestamp) *time.Time {
 	return &t.Time
 }
 
-func sitespeedDetailUrl(cfg *config.Config, shopID int32, enabled bool) *string {
+func sitespeedDetailUrl(cfg *config.Config, environmentID int32, enabled bool) *string {
 	if !enabled || cfg.SitespeedEndpoint == "" {
 		return nil
 	}
-	url := fmt.Sprintf("%s/result/%sshop-%d/index.html", cfg.SitespeedEndpoint, cfg.SitespeedPrefix, shopID)
+	url := fmt.Sprintf("%s/result/%senvironment-%d/index.html", cfg.SitespeedEndpoint, cfg.SitespeedPrefix, environmentID)
 	return &url
 }
 
@@ -85,30 +85,30 @@ func (h *Handler) requireOrgMembership(w http.ResponseWriter, r *http.Request, u
 	return true
 }
 
-func (h *Handler) loadAuthorizedShop(w http.ResponseWriter, r *http.Request, user *auth.User, shopID int32) (*queries.GetShopByIDRow, bool) {
-	shop, err := h.queries.GetShopByID(r.Context(), shopID)
+func (h *Handler) loadAuthorizedEnvironment(w http.ResponseWriter, r *http.Request, user *auth.User, environmentID int32) (*queries.GetEnvironmentByIDRow, bool) {
+	environment, err := h.queries.GetEnvironmentByID(r.Context(), environmentID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		httputil.WriteError(w, http.StatusNotFound, "environment not found")
 		return nil, false
 	}
 
-	if !h.requireOrgMembership(w, r, user, shop.OrganizationID) {
+	if !h.requireOrgMembership(w, r, user, environment.OrganizationID) {
 		return nil, false
 	}
 
-	return &shop, true
+	return &environment, true
 }
 
-func (h *Handler) loadAuthorizedShopCredentials(w http.ResponseWriter, r *http.Request, user *auth.User, shopID int32) (*queries.GetShopCredentialsRow, bool) {
-	creds, err := h.queries.GetShopCredentials(r.Context(), shopID)
+func (h *Handler) loadAuthorizedEnvironmentCredentials(w http.ResponseWriter, r *http.Request, user *auth.User, environmentID int32) (*queries.GetEnvironmentCredentialsRow, bool) {
+	creds, err := h.queries.GetEnvironmentCredentials(r.Context(), environmentID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		httputil.WriteError(w, http.StatusNotFound, "environment not found")
 		return nil, false
 	}
 
-	orgID, err := h.queries.GetShopOrganizationID(r.Context(), shopID)
+	orgID, err := h.queries.GetEnvironmentOrganizationID(r.Context(), environmentID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		httputil.WriteError(w, http.StatusNotFound, "environment not found")
 		return nil, false
 	}
 
@@ -119,15 +119,15 @@ func (h *Handler) loadAuthorizedShopCredentials(w http.ResponseWriter, r *http.R
 	return &creds, true
 }
 
-func (h *Handler) requireProjectInOrganization(w http.ResponseWriter, r *http.Request, projectID int32, orgID string) bool {
-	project, err := h.queries.GetProjectByID(r.Context(), projectID)
+func (h *Handler) requireShopInOrganization(w http.ResponseWriter, r *http.Request, shopID int32, orgID string) bool {
+	shop, err := h.queries.GetShopByID(r.Context(), shopID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "project not found")
+		httputil.WriteError(w, http.StatusNotFound, "shop not found")
 		return false
 	}
 
-	if project.OrganizationID != orgID {
-		httputil.WriteError(w, http.StatusForbidden, "project does not belong to this organization")
+	if shop.OrganizationID != orgID {
+		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
 		return false
 	}
 
