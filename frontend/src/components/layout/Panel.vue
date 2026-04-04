@@ -108,4 +108,14 @@ withDefaults(
     overflow-y: hidden;
   }
 }
+
+.panel-table > .panel-title {
+  padding: 1.25rem 1.25rem 0.75rem;
+  margin-bottom: 0;
+}
+
+.panel-table > .panel-header {
+  padding: 1.25rem 1.25rem 1rem;
+  margin-bottom: 0;
+}
 </style>
