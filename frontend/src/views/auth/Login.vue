@@ -258,6 +258,13 @@ async function ssoLogin() {
         );
       }
     } else {
+      // Store state for client-side verification on callback
+      const oauthUrl = new URL(data.url);
+      const state = oauthUrl.searchParams.get("state");
+      if (state) {
+        sessionStorage.setItem("oauth_state", state);
+      }
+
       window.location.href = data.url;
     }
   } catch (e: unknown) {

@@ -152,9 +152,6 @@ func runServer(cmd *cobra.Command, args []string) error {
 				auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, 20)),
 			},
 		})
-		// Callback route not in generated spec
-		apiRouter.Get("/auth/sso/callback/{providerId}", authHandler.SSOCallback)
-
 		// Generated API routes
 		apiserver.HandlerWithOptions(h, apiserver.ChiServerOptions{
 			BaseRouter: apiRouter,

@@ -46,6 +46,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("@/views/auth/OAuthCallback.vue"),
   },
   {
+    path: "/auth/sso/callback/:providerId",
+    name: "auth.sso.callback",
+    component: () => import("@/views/auth/SSOCallback.vue"),
+  },
+  {
     path: "/account",
     component: LoginLayout,
     children: [

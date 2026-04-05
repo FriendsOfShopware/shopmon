@@ -1424,6 +1424,41 @@ paths:
         "404":
           description: No SSO provider for this domain
 
+  /auth/sso/callback/{providerId}:
+    get:
+      operationId: ssoCallback
+      tags: [Auth]
+      summary: Handle SSO OIDC callback
+      security: []
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One-time authorization code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+        "400":
+          description: Missing or invalid parameters
+
   /auth/passkey/register-options:
     post:
       operationId: passkeyRegisterOptions

@@ -203,28 +203,17 @@ func TestSSOCallback(t *testing.T) {
 	callbackURL := fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state))
 
-	// Don't follow redirects so we can check the response
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	resp, err = client.Get(callbackURL)
+	resp, err = http.Get(callbackURL)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
-	// Should redirect to the callback URL with a one-time code
-	assert.Equal(t, http.StatusFound, resp.StatusCode)
-	location := resp.Header.Get("Location")
-	locationURL, err := url.Parse(location)
-	require.NoError(t, err)
-	assert.Equal(t, "localhost:3000", locationURL.Host)
-	assert.Equal(t, "/dashboard", locationURL.Path)
+	// Should return JSON with one-time code
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// Code should be in the redirect URL (not the token)
-	code := locationURL.Query().Get("code")
-	require.NotEmpty(t, code, "code must be in redirect URL query params")
-	assert.Empty(t, locationURL.Query().Get("token"), "token must NOT be in redirect URL")
+	var callbackResult map[string]string
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&callbackResult))
+	code := callbackResult["code"]
+	require.NotEmpty(t, code, "code must be in JSON response")
 
 	// Exchange code for token
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
@@ -285,12 +274,7 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 	authURL, _ := url.Parse(initResult["url"])
 	state := authURL.Query().Get("state")
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	resp, _ = client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, _ = http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	_ = resp.Body.Close()
 
@@ -343,12 +327,7 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 	state := authURL.Query().Get("state")
 
 	// Use invalid code
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	resp, err := client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=invalid-code&state=%s",
+	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=invalid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -390,20 +369,13 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	authURL, _ := url.Parse(initResult["url"])
 	state := authURL.Query().Get("state")
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	resp, _ = client.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, _ = http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
-	_ = resp.Body.Close()
 
-	// Extract code from redirect URL and exchange for token
-	location := resp.Header.Get("Location")
-	locationURL, err := url.Parse(location)
-	require.NoError(t, err)
-	code := locationURL.Query().Get("code")
+	var callbackResult map[string]string
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&callbackResult))
+	_ = resp.Body.Close()
+	code := callbackResult["code"]
 	require.NotEmpty(t, code)
 
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})

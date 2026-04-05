@@ -225,6 +225,12 @@ type SignUpEmailJSONBody struct {
 	Password string              `json:"password"`
 }
 
+// SsoCallbackParams defines parameters for SsoCallback.
+type SsoCallbackParams struct {
+	Code  string `form:"code" json:"code"`
+	State string `form:"state" json:"state"`
+}
+
 // RegisterSSOProviderJSONBody defines parameters for RegisterSSOProvider.
 type RegisterSSOProviderJSONBody struct {
 	AuthorizationEndpoint string `json:"authorizationEndpoint"`
@@ -467,6 +473,9 @@ type ServerInterface interface {
 	// Register with email and password
 	// (POST /auth/sign-up/email)
 	SignUpEmail(w http.ResponseWriter, r *http.Request)
+	// Handle SSO OIDC callback
+	// (GET /auth/sso/callback/{providerId})
+	SsoCallback(w http.ResponseWriter, r *http.Request, providerId string, params SsoCallbackParams)
 	// Register an SSO provider
 	// (POST /auth/sso/register)
 	RegisterSSOProvider(w http.ResponseWriter, r *http.Request)
@@ -752,6 +761,12 @@ func (_ Unimplemented) SignOut(w http.ResponseWriter, r *http.Request) {
 // Register with email and password
 // (POST /auth/sign-up/email)
 func (_ Unimplemented) SignUpEmail(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Handle SSO OIDC callback
+// (GET /auth/sso/callback/{providerId})
+func (_ Unimplemented) SsoCallback(w http.ResponseWriter, r *http.Request, providerId string, params SsoCallbackParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1855,6 +1870,64 @@ func (siw *ServerInterfaceWrapper) SignUpEmail(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// SsoCallback operation middleware
+func (siw *ServerInterfaceWrapper) SsoCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "providerId" -------------
+	var providerId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "providerId", chi.URLParam(r, "providerId"), &providerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "providerId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SsoCallbackParams
+
+	// ------------- Required query parameter "code" -------------
+
+	if paramValue := r.URL.Query().Get("code"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "code"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "code", r.URL.Query(), &params.Code, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "state" -------------
+
+	if paramValue := r.URL.Query().Get("state"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SsoCallback(w, r, providerId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RegisterSSOProvider operation middleware
 func (siw *ServerInterfaceWrapper) RegisterSSOProvider(w http.ResponseWriter, r *http.Request) {
 
@@ -2196,6 +2269,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/sign-up/email", wrapper.SignUpEmail)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/sso/callback/{providerId}", wrapper.SsoCallback)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/sso/register", wrapper.RegisterSSOProvider)

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -105,20 +105,11 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
 
-// SSOCallback handles the OIDC callback after IdP authentication.
-func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
-	providerId := chi.URLParam(r, "providerId")
-	code := r.URL.Query().Get("code")
-	state := r.URL.Query().Get("state")
-
-	if code == "" || state == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "missing code or state")
-		return
-	}
-
+// SsoCallback handles the OIDC callback after IdP authentication.
+func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, providerId string, params authapi.SsoCallbackParams) {
 	// Validate state
 	var stateData ssoState
-	if err := h.challenges.Get(r.Context(), "sso:"+state, &stateData); err != nil {
+	if err := h.challenges.Get(r.Context(), "sso:"+params.State, &stateData); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired state")
 		return
 	}
@@ -151,7 +142,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 	tokenResp, err := httputil.NewHTTPClient().PostForm(cfg.TokenEndpoint, url.Values{
 		"client_id":     {cfg.ClientID},
 		"client_secret": {cfg.ClientSecret},
-		"code":          {code},
+		"code":          {params.Code},
 		"grant_type":    {"authorization_code"},
 		"redirect_uri":  {callbackURL},
 	})
@@ -329,16 +320,7 @@ func (h *AuthHandler) SSOCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Redirect with short-lived code — frontend exchanges it for a token via POST /auth/exchange-code
-	redirectURL := stateData.CallbackURL
-	if redirectURL == "" {
-		redirectURL = h.cfg.FrontendURL
-	}
-	u, _ := url.Parse(redirectURL)
-	q := u.Query()
-	q.Set("code", authCode)
-	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	httputil.WriteJSON(w, http.StatusOK, map[string]string{"code": authCode})
 }
 
 type userInfoResponse struct {
