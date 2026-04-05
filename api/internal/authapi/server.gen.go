@@ -94,6 +94,12 @@ type AdminSetUserRoleJSONBody struct {
 // AdminSetUserRoleJSONBodyRole defines parameters for AdminSetUserRole.
 type AdminSetUserRoleJSONBodyRole string
 
+// GithubCallbackParams defines parameters for GithubCallback.
+type GithubCallbackParams struct {
+	Code  string `form:"code" json:"code"`
+	State string `form:"state" json:"state"`
+}
+
 // CancelInvitationJSONBody defines parameters for CancelInvitation.
 type CancelInvitationJSONBody struct {
 	InvitationId string `json:"invitationId"`
@@ -344,6 +350,9 @@ type ServerInterface interface {
 	// Unban a user
 	// (POST /auth/admin/users/{userId}/unban)
 	AdminUnbanUser(w http.ResponseWriter, r *http.Request, userId string)
+	// Handle GitHub OAuth callback
+	// (GET /auth/callback/github)
+	GithubCallback(w http.ResponseWriter, r *http.Request, params GithubCallbackParams)
 	// Cancel a pending invitation
 	// (POST /auth/cancel-invitation)
 	CancelInvitation(w http.ResponseWriter, r *http.Request)
@@ -509,6 +518,12 @@ func (_ Unimplemented) AdminSetUserRole(w http.ResponseWriter, r *http.Request, 
 // Unban a user
 // (POST /auth/admin/users/{userId}/unban)
 func (_ Unimplemented) AdminUnbanUser(w http.ResponseWriter, r *http.Request, userId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Handle GitHub OAuth callback
+// (GET /auth/callback/github)
+func (_ Unimplemented) GithubCallback(w http.ResponseWriter, r *http.Request, params GithubCallbackParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -928,6 +943,55 @@ func (siw *ServerInterfaceWrapper) AdminUnbanUser(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUnbanUser(w, r, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GithubCallback operation middleware
+func (siw *ServerInterfaceWrapper) GithubCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GithubCallbackParams
+
+	// ------------- Required query parameter "code" -------------
+
+	if paramValue := r.URL.Query().Get("code"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "code"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "code", r.URL.Query(), &params.Code, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "state" -------------
+
+	if paramValue := r.URL.Query().Get("state"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GithubCallback(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2015,6 +2079,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/admin/users/{userId}/unban", wrapper.AdminUnbanUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/callback/github", wrapper.GithubCallback)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/cancel-invitation", wrapper.CancelInvitation)

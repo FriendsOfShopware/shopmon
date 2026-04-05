@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/google/uuid"
@@ -54,18 +55,10 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
 
-func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	state := r.URL.Query().Get("state")
-
-	if code == "" || state == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "missing code or state")
-		return
-	}
-
+func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, params authapi.GithubCallbackParams) {
 	// Validate state (Get consumes the key)
 	var stateData oauthState
-	if err := h.challenges.Get(r.Context(), "oauth:"+state, &stateData); err != nil {
+	if err := h.challenges.Get(r.Context(), "oauth:"+params.State, &stateData); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired state")
 		return
 	}
@@ -74,7 +67,7 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 	tokenResp, err := httputil.NewHTTPClient().PostForm("https://github.com/login/oauth/access_token", url.Values{
 		"client_id":     {h.cfg.GithubClientID},
 		"client_secret": {h.cfg.GithubClientSecret},
-		"code":          {code},
+		"code":          {params.Code},
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code")
@@ -83,8 +76,8 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = tokenResp.Body.Close() }()
 
 	body, _ := io.ReadAll(tokenResp.Body)
-	params, _ := url.ParseQuery(string(body))
-	accessToken := params.Get("access_token")
+	tokenParams, _ := url.ParseQuery(string(body))
+	accessToken := tokenParams.Get("access_token")
 	if accessToken == "" {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to get access token")
 		return
@@ -216,14 +209,5 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Redirect with short-lived code — frontend exchanges it for a token
-	redirectURL := stateData.CallbackURL
-	if redirectURL == "" {
-		redirectURL = h.cfg.FrontendURL
-	}
-	u, _ := url.Parse(redirectURL)
-	q := u.Query()
-	q.Set("code", authCode)
-	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	httputil.WriteJSON(w, http.StatusOK, map[string]string{"code": authCode})
 }

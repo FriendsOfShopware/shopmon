@@ -153,8 +153,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		authapi.HandlerWithOptions(authHandler, authapi.ChiServerOptions{
 			BaseRouter: apiRouter,
 		})
-		// Callback routes not in generated spec
-		apiRouter.Get("/auth/callback/github", authHandler.GithubCallback)
+		// Callback route not in generated spec
 		apiRouter.Get("/auth/sso/callback/{providerId}", authHandler.SSOCallback)
 
 		// Generated API routes

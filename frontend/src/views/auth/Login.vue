@@ -208,13 +208,20 @@ async function githubLogin() {
   try {
     const redirectUrl = returnUrl.value ?? "/";
     const { data, error } = await api.POST("/auth/sign-in/social", {
-      body: { provider: "github", callbackURL: redirectUrl },
+      body: { provider: "github", callbackURL: `${window.location.origin}${redirectUrl}` },
     });
 
     if (error || !data?.url) {
       alert.error(t("auth.failedSignInGithub"));
       isGithubLoading.value = false;
       return;
+    }
+
+    // Store state for client-side verification on callback
+    const oauthUrl = new URL(data.url);
+    const state = oauthUrl.searchParams.get("state");
+    if (state) {
+      sessionStorage.setItem("oauth_state", state);
     }
 
     // Redirect to the OAuth provider

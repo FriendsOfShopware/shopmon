@@ -45,6 +45,7 @@ export function setupRouterGuards(router: Router) {
       "account.confirm",
       "account.forgot.password",
       "account.forgot.password.confirm",
+      "auth.callback",
     ];
     const authRequired = !publicPages.includes(to.name as string);
     const { setReturnUrl } = useReturnUrl();

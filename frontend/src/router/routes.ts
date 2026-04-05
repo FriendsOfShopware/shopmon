@@ -41,6 +41,11 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: "/auth/callback",
+    name: "auth.callback",
+    component: () => import("@/views/auth/OAuthCallback.vue"),
+  },
+  {
     path: "/account",
     component: LoginLayout,
     children: [
