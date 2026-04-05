@@ -126,17 +126,16 @@ func serveIndex(w http.ResponseWriter, r *http.Request, dist fs.FS) {
 }
 
 func setCacheHeaders(w http.ResponseWriter, assetPath string) {
+	// Hashed filenames in assets/ are safe to cache forever
 	if strings.HasPrefix(assetPath, "assets/") {
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		return
 	}
 
-	switch mime.TypeByExtension(path.Ext(assetPath)) {
-	case "text/css; charset=utf-8", "application/javascript", "image/svg+xml", "image/x-icon":
-		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	default:
-		w.Header().Set("Cache-Control", "public, max-age=3600")
-	}
+	// All other static files (images, fonts, icons, manifest, etc.) are
+	// embedded at build time and only change on redeploy. Cache for 1 day
+	// so Lighthouse is happy but updates still propagate reasonably fast.
+	w.Header().Set("Cache-Control", "public, max-age=86400")
 }
 
 func looksLikeAsset(assetPath string) bool {

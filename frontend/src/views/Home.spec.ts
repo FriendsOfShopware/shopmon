@@ -105,9 +105,9 @@ describe("Home", () => {
 
   it("uses theme-aware images", () => {
     mount(Home);
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-dashboard.png");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-performance-checks.png");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-sitespeed.png");
+    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-dashboard.webp");
+    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-performance-checks.webp");
+    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-sitespeed.webp");
   });
 
   it("has main heading in h1", () => {

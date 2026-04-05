@@ -65,7 +65,7 @@
         >
           <div class="overflow-hidden rounded-lg">
             <img
-              :src="getThemeImage('/home/shopmon-dashboard.png')"
+              :src="getThemeImage({ light: imgDashboard, dark: imgDashboardDark })"
               :alt="$t('home.altDashboard')"
               class="w-full"
               fetchpriority="high"
@@ -233,24 +233,35 @@ import FaGithub from "~icons/mdi/github";
 import FaChartLine from "~icons/fa6-solid/chart-line";
 import FaShieldHalved from "~icons/fa6-solid/shield-halved";
 
+// Vite-processed images (hashed filenames for optimal caching)
+import imgDashboard from "@/assets/home/shopmon-dashboard.webp";
+import imgDashboardDark from "@/assets/home/shopmon-dashboard-dark.webp";
+import imgDashboardIcon from "@/assets/home/dashboard.svg";
+import imgAutoChecks from "@/assets/home/automatic-performancechecks.svg";
+import imgSpeed from "@/assets/home/speed.webp";
+import imgPerformanceChecks from "@/assets/home/shopmon-performance-checks.webp";
+import imgPerformanceChecksDark from "@/assets/home/shopmon-performance-checks-dark.webp";
+import imgSitespeed from "@/assets/home/shopmon-sitespeed.webp";
+import imgSitespeedDark from "@/assets/home/shopmon-sitespeed-dark.webp";
+
 const { getThemeImage } = useDarkMode();
 const { t } = useI18n();
 
 const features = computed(() => [
   {
-    icon: "/home/dashboard.svg",
+    icon: imgDashboardIcon,
     alt: t("home.altDashboard"),
     title: t("home.dashboardOverview"),
     description: t("home.dashboardOverviewDesc"),
   },
   {
-    icon: "/home/automatic-performancechecks.svg",
+    icon: imgAutoChecks,
     alt: t("home.altAutoChecks"),
     title: t("home.autoPerformanceChecks"),
     description: t("home.autoPerformanceChecksDesc"),
   },
   {
-    icon: "/home/speed.png",
+    icon: imgSpeed,
     alt: t("home.altSitespeedLogo"),
     title: t("home.performanceMonitoring"),
     description: t("home.performanceMonitoringDesc"),
@@ -263,7 +274,7 @@ const showcaseSections = computed(() => [
     icon: FaShieldHalved,
     title: t("home.froshToolsTitle"),
     description: t("home.froshToolsDesc"),
-    image: "/home/shopmon-performance-checks.png",
+    image: { light: imgPerformanceChecks, dark: imgPerformanceChecksDark },
     alt: t("home.altPerformanceChecks"),
   },
   {
@@ -271,7 +282,7 @@ const showcaseSections = computed(() => [
     icon: FaChartLine,
     title: t("home.sitespeedTitle"),
     description: t("home.sitespeedDesc"),
-    image: "/home/shopmon-sitespeed.png",
+    image: { light: imgSitespeed, dark: imgSitespeedDark },
     alt: t("home.altSitespeed"),
   },
 ]);
