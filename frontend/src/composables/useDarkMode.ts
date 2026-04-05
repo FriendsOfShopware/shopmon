@@ -44,6 +44,10 @@ export function useDarkMode(): {
 }
 
 function initializeDarkMode() {
+  if (import.meta.env.SSR) {
+    return;
+  }
+
   // Get initial preference
   const stored = localStorage.getItem(DARK_MODE_STORAGE_KEY);
   if (stored !== null) {
@@ -79,6 +83,9 @@ function initializeDarkMode() {
 }
 
 function updateDarkModeClass(isDark: boolean): void {
+  if (import.meta.env.SSR) {
+    return;
+  }
   if (isDark) {
     document.documentElement.classList.add("dark");
   } else {

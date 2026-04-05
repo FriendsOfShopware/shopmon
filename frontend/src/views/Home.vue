@@ -42,7 +42,11 @@
     </div>
 
     <div class="col-img">
-      <img :src="getThemeImage('/home/shopmon-dashboard.png')" :alt="$t('home.altDashboard')" />
+      <img
+        :src="getThemeImage('/home/shopmon-dashboard.png')"
+        :alt="$t('home.altDashboard')"
+        fetchpriority="high"
+      />
     </div>
   </div>
 

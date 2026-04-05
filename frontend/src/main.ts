@@ -1,14 +1,22 @@
-import { createApp } from "vue";
+import { ViteSSG } from "vite-ssg";
 
 import "./style.css";
 
 import App from "./App.vue";
-import { router } from "./router";
+import { routes, setupRouterGuards } from "./router";
 import { i18n } from "./i18n";
 
-const app = createApp(App);
+export const createApp = ViteSSG(
+  App,
+  {
+    routes,
+    linkActiveClass: "active",
+  },
+  ({ app, router, isClient }) => {
+    app.use(i18n as any);
 
-app.use(i18n as any);
-app.use(router);
-
-app.mount("#app");
+    if (isClient) {
+      setupRouterGuards(router);
+    }
+  },
+);
