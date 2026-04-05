@@ -4,6 +4,7 @@ package telemetry
 import (
 	"context"
 	"log/slog"
+	"net/url"
 	"os"
 	"time"
 
@@ -68,7 +69,7 @@ func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) 
 	// Logging
 	if logEndpoint != "" {
 		logExporter, err := otlploghttp.New(setupCtx,
-			otlploghttp.WithEndpointURL(logEndpoint),
+			otlploghttp.WithEndpointURL(ensurePath(logEndpoint, "/v1/logs")),
 		)
 		if err != nil {
 			slog.Error("failed to create OTLP log exporter", "error", err)
@@ -94,6 +95,16 @@ func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) 
 		}
 		return firstErr
 	}
+}
+
+// ensurePath appends defaultPath to the endpoint URL if it has no path set.
+func ensurePath(endpoint, defaultPath string) string {
+	u, err := url.Parse(endpoint)
+	if err != nil || (u.Path != "" && u.Path != "/") {
+		return endpoint
+	}
+	u.Path = defaultPath
+	return u.String()
 }
 
 // multiHandler fans out log records to multiple slog handlers.

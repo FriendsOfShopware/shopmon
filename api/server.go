@@ -169,9 +169,18 @@ func runServer(cmd *cobra.Command, args []string) error {
 		slog.Warn("no embedded frontend assets were found")
 	}
 
+	// Wrap router so /healthz bypasses all middleware (tracing, logging, etc.)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/healthz" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		r.ServeHTTP(w, req)
+	})
+
 	srv := &http.Server{
 		Addr:    cfg.ListenAddr,
-		Handler: r,
+		Handler: handler,
 	}
 
 	go func() {

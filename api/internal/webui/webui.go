@@ -2,7 +2,6 @@ package webui
 
 import (
 	"io/fs"
-	"mime"
 	"net/http"
 	"path"
 	"strings"
