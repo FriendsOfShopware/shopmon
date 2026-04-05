@@ -32,12 +32,12 @@
             <SidebarMenu>
               <SidebarMenuItem v-for="item in navigation" :key="item.route">
                 <SidebarMenuButton as-child :is-active="isActive(item, $route)">
-                  <RouterLink :to="{ name: item.route, params: item.params }">
+                  <RouterLink :to="{ name: item.route }">
                     <component
-                      :is="$router.resolve({ name: item.route, params: item.params }).meta.icon"
-                      v-if="$router.resolve({ name: item.route, params: item.params }).meta.icon"
+                      :is="$router.resolve({ name: item.route }).meta.icon"
+                      v-if="$router.resolve({ name: item.route }).meta.icon"
                     />
-                    <span>{{ $t($router.resolve({ name: item.route, params: item.params }).meta.titleKey ?? "") }}</span>
+                    <span>{{ $t($router.resolve({ name: item.route }).meta.titleKey ?? "") }}</span>
                   </RouterLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -57,7 +57,7 @@
                   <RouterLink
                     :to="{
                       name: 'account.environments.detail',
-                      params: { organizationId: env.organizationId, environmentId: env.id },
+                      params: { environmentId: env.id },
                     }"
                   >
                     <img v-if="env.favicon" :src="env.favicon" alt="" class="size-4 rounded" />
@@ -327,15 +327,16 @@ const navigation = computed(() => [
   { route: "account.shop.list", active: "shop" },
   { route: "account.extension.list" },
   ...(activeOrganizationId.value
-    ? [{
-        route: "account.organizations.detail",
-        active: "organizations",
-        params: { organizationId: activeOrganizationId.value },
-      }]
+    ? [
+        {
+          route: "account.organizations.detail",
+          active: "organizations",
+        },
+      ]
     : [{ route: "account.organizations.list", active: "organizations" }]),
 ]);
 
-function isActive(item: { route: string; active?: string; params?: Record<string, string> }, $route: RouteLocationNormalizedLoaded) {
+function isActive(item: { route: string; active?: string }, $route: RouteLocationNormalizedLoaded) {
   if (item.route === $route.name) return true;
   return !!(
     $route.name &&

@@ -65,7 +65,7 @@
                 :key="env.id"
                 :to="{
                   name: 'account.environments.detail',
-                  params: { organizationId: env.organizationId, environmentId: env.id },
+                  params: { environmentId: env.id },
                 }"
                 class="group flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
               >

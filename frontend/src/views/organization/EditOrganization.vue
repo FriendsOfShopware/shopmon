@@ -9,7 +9,6 @@
         <RouterLink
           :to="{
             name: 'account.organizations.detail',
-            params: { organizationId: organization.id },
           }"
         >
           {{ $t("common.cancel") }}
@@ -88,12 +87,13 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
 import { useI18n } from "vue-i18n";
 import { ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
+import { useSession } from "@/composables/useSession";
 
 const { t } = useI18n();
 const { error } = useAlert();
 const router = useRouter();
-const route = useRoute();
+const { activeOrganizationId } = useSession();
 
 interface OrganizationData {
   id: string;
@@ -118,7 +118,7 @@ watch(organization, (org) => {
 async function loadOrganization() {
   try {
     const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
+      params: { query: { organizationId: activeOrganizationId.value! } },
     });
     if (!data) return;
     organization.value = data as unknown as OrganizationData;
@@ -153,7 +153,6 @@ const onSubmit = handleSubmit(async (values) => {
     }
     await router.push({
       name: "account.organizations.detail",
-      params: { organizationId: organization.value.id },
     });
   } catch (err) {
     error(err instanceof Error ? err.message : String(err));

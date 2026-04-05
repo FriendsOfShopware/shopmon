@@ -130,11 +130,11 @@ export const router = createRouter({
         },
         {
           name: "account.environments.edit",
-          path: "organizations/:organizationId/environments/:environmentId(\\d+)/edit",
+          path: "environments/:environmentId(\\d+)/edit",
           component: () => import("@/views/environment/EditEnvironment.vue"),
         },
         {
-          path: "organizations/:organizationId/environments/:environmentId(\\d+)",
+          path: "environments/:environmentId(\\d+)",
           component: EnvironmentDetailLayout,
           children: [
             {
@@ -240,7 +240,7 @@ export const router = createRouter({
         },
         {
           name: "account.organizations.detail",
-          path: "organizations/:organizationId",
+          path: "organization",
           component: () => import("@/views/organization/DetailOrganization.vue"),
           meta: {
             titleKey: "nav.myOrganization",
@@ -249,12 +249,12 @@ export const router = createRouter({
         },
         {
           name: "account.organizations.edit",
-          path: "organizations/edit/:organizationId",
+          path: "organization/edit",
           component: () => import("@/views/organization/EditOrganization.vue"),
         },
         {
           name: "account.organizations.sso",
-          path: "organizations/:organizationId/sso",
+          path: "organization/sso",
           component: () => import("@/views/organization/ManageSSO.vue"),
         },
         {

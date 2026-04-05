@@ -4,9 +4,7 @@
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold tracking-tight">{{ organization.name }}</h1>
       <Button size="sm" as-child>
-        <RouterLink
-          :to="{ name: 'account.organizations.edit', params: { organizationId: organization.id } }"
-        >
+        <RouterLink :to="{ name: 'account.organizations.edit' }">
           <icon-fa6-solid:pencil class="mr-1.5 size-3" />
           {{ $t("organization.editOrganization") }}
         </RouterLink>
@@ -172,7 +170,6 @@
             <RouterLink
               :to="{
                 name: 'account.organizations.sso',
-                params: { organizationId: organization.id },
               }"
             >
               <icon-fa6-solid:gear class="mr-1.5 size-3" />
@@ -346,12 +343,11 @@ import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+
 import { ref } from "vue";
 
 const { t } = useI18n();
-const { session: sessionData } = useSession();
-const route = useRoute();
+const { session: sessionData, activeOrganizationId } = useSession();
 const alert = useAlert();
 
 interface OrganizationData {
@@ -398,7 +394,7 @@ async function leaveOrganization() {
 async function loadOrganization() {
   try {
     const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
+      params: { query: { organizationId: activeOrganizationId.value! } },
     });
     if (!data) {
       alert.error("Failed to load organization");

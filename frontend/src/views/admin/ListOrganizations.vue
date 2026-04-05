@@ -14,16 +14,23 @@
           :key="s.value"
           :class="[
             'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            sortBy === s.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            sortBy === s.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
           ]"
-          @click="sortBy = s.value; loadOrganizations()"
+          @click="
+            sortBy = s.value;
+            loadOrganizations();
+          "
         >
           {{ s.label }}
         </button>
       </div>
 
       <div class="relative">
-        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           v-model="searchQuery"
           :placeholder="$t('admin.searchOrgs')"
@@ -44,16 +51,23 @@
       <RouterLink
         v-for="org in organizations"
         :key="org.id"
-        :to="{ name: 'account.organizations.detail', params: { organizationId: org.id } }"
+        :to="{ name: 'account.organizations.detail' }"
         class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
         <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
-          <img v-if="org.logo" :src="org.logo" :alt="org.name" class="size-7 rounded object-cover" />
+          <img
+            v-if="org.logo"
+            :src="org.logo"
+            :alt="org.name"
+            class="size-7 rounded object-cover"
+          />
           <icon-fa6-solid:building v-else class="size-4 text-muted-foreground" />
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="truncate font-medium transition-colors group-hover:text-primary">{{ org.name }}</div>
+          <div class="truncate font-medium transition-colors group-hover:text-primary">
+            {{ org.name }}
+          </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <span class="flex items-center gap-1">
               <icon-fa6-solid:earth-americas class="size-2.5" />
@@ -67,24 +81,43 @@
           </div>
         </div>
 
-        <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <icon-fa6-solid:chevron-right
+          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+        />
       </RouterLink>
     </div>
 
     <!-- Empty -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:building class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No organizations found</h3>
-      <p v-if="searchQuery" class="text-sm text-muted-foreground">No organizations match "{{ searchQuery }}"</p>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">
+        No organizations match "{{ searchQuery }}"
+      </p>
     </div>
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
-      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
         {{ $t("common.previous") }}
       </Button>
-      <span class="text-sm tabular-nums text-muted-foreground">{{ $t("common.pageOf", { current: currentPage, total: totalPages }) }}</span>
-      <Button size="sm" variant="outline" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+      <span class="text-sm tabular-nums text-muted-foreground">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === totalPages"
+        @click="changePage(currentPage + 1)"
+      >
         {{ $t("common.next") }}
       </Button>
     </div>
@@ -169,8 +202,13 @@ function changePage(page: number) {
 let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => { currentPage.value = 1; loadOrganizations(); }, 300);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    loadOrganizations();
+  }, 300);
 }
 
-onMounted(() => { loadOrganizations(); });
+onMounted(() => {
+  loadOrganizations();
+});
 </script>

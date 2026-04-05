@@ -31,7 +31,11 @@
       <!-- Status breakdown -->
       <div class="flex flex-wrap items-center gap-3">
         <span class="text-sm text-muted-foreground">Environment health:</span>
-        <div v-for="(count, status) in stats.environmentsByStatus" :key="status" class="flex items-center gap-1.5">
+        <div
+          v-for="(count, status) in stats.environmentsByStatus"
+          :key="status"
+          class="flex items-center gap-1.5"
+        >
           <StatusIcon :status="String(status)" />
           <span class="text-sm font-medium tabular-nums">{{ count }}</span>
         </div>
@@ -72,13 +76,20 @@
           <CardContent>
             <div class="space-y-2">
               <div v-for="v in versionData" :key="v.version" class="flex items-center gap-3">
-                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{ v.version }}</Badge>
+                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
+                  v.version
+                }}</Badge>
                 <div class="flex-1">
                   <div class="h-2 overflow-hidden rounded-full bg-muted">
-                    <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${(v.count / totalEnvCount) * 100}%` }" />
+                    <div
+                      class="h-full rounded-full bg-primary transition-all"
+                      :style="{ width: `${(v.count / totalEnvCount) * 100}%` }"
+                    />
                   </div>
                 </div>
-                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{ v.count }}</span>
+                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{
+                  v.count
+                }}</span>
               </div>
             </div>
           </CardContent>
@@ -90,20 +101,31 @@
             <CardTitle class="text-base">Recent Signups</CardTitle>
           </CardHeader>
           <CardContent>
-            <div v-if="!activity?.recentUsers?.length" class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
+            <div
+              v-if="!activity?.recentUsers?.length"
+              class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground"
+            >
               <icon-fa6-solid:users class="size-6 opacity-30" />
               <p class="text-sm">No recent signups</p>
             </div>
             <div v-else class="space-y-1.5">
-              <div v-for="user in activity.recentUsers" :key="user.id" class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
-                <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <div
+                v-for="user in activity.recentUsers"
+                :key="user.id"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
+              >
+                <div
+                  class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10"
+                >
                   <icon-fa6-solid:user class="size-3 text-primary" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="truncate text-sm font-medium">{{ user.displayName }}</div>
                   <div class="truncate text-xs text-muted-foreground">{{ user.email }}</div>
                 </div>
-                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatDate(user.createdAt) }}</span>
+                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+                  formatDate(user.createdAt)
+                }}</span>
               </div>
             </div>
           </CardContent>
@@ -115,18 +137,29 @@
             <CardTitle class="text-base">Recent Environments</CardTitle>
           </CardHeader>
           <CardContent>
-            <div v-if="!activity?.recentEnvironments?.length" class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
+            <div
+              v-if="!activity?.recentEnvironments?.length"
+              class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground"
+            >
               <icon-fa6-solid:earth-americas class="size-6 opacity-30" />
               <p class="text-sm">No recent environments</p>
             </div>
             <div v-else class="space-y-1.5">
-              <div v-for="env in activity.recentEnvironments" :key="env.id" class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent">
-                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted">
+              <div
+                v-for="env in activity.recentEnvironments"
+                :key="env.id"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-accent"
+              >
+                <div
+                  class="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted"
+                >
                   <icon-fa6-solid:earth-americas class="size-3 text-muted-foreground" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="truncate text-sm font-medium">{{ env.name }}</div>
-                  <div class="truncate text-xs text-muted-foreground">{{ env.organizationName }}</div>
+                  <div class="truncate text-xs text-muted-foreground">
+                    {{ env.organizationName }}
+                  </div>
                 </div>
                 <StatusIcon :status="env.status" />
               </div>
@@ -200,7 +233,11 @@ const shopChartCanvas = ref<HTMLCanvasElement | null>(null);
 let userChartInstance: Chart | null = null;
 let shopChartInstance: Chart | null = null;
 
-function createGrowthChart(canvas: HTMLCanvasElement, data: { month: string; count: number }[], color: string) {
+function createGrowthChart(
+  canvas: HTMLCanvasElement,
+  data: { month: string; count: number }[],
+  color: string,
+) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
@@ -208,15 +245,17 @@ function createGrowthChart(canvas: HTMLCanvasElement, data: { month: string; cou
     type: "line",
     data: {
       labels: data.map((d) => d.month),
-      datasets: [{
-        data: data.map((d) => d.count),
-        borderColor: color,
-        backgroundColor: color + "20",
-        fill: true,
-        tension: 0.3,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-      }],
+      datasets: [
+        {
+          data: data.map((d) => d.count),
+          borderColor: color,
+          backgroundColor: color + "20",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -236,10 +275,18 @@ function renderCharts() {
 
   if (growthData.value) {
     if (userChartCanvas.value) {
-      userChartInstance = createGrowthChart(userChartCanvas.value, growthData.value.users, "#6366f1");
+      userChartInstance = createGrowthChart(
+        userChartCanvas.value,
+        growthData.value.users,
+        "#6366f1",
+      );
     }
     if (shopChartCanvas.value) {
-      shopChartInstance = createGrowthChart(shopChartCanvas.value, growthData.value.environments, "#10b981");
+      shopChartInstance = createGrowthChart(
+        shopChartCanvas.value,
+        growthData.value.environments,
+        "#10b981",
+      );
     }
   }
 }

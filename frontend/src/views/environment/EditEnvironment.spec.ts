@@ -44,7 +44,7 @@ const mockShops = [
 const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push: mockPush }),
-  useRoute: () => ({ params: { organizationId: "org-1", environmentId: "1" } }),
+  useRoute: () => ({ params: { environmentId: "1" } }),
   RouterLink: {
     name: "RouterLink",
     props: ["to"],

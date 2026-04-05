@@ -33,7 +33,8 @@
       <RouterLink
         v-for="org in organizations"
         :key="org.id"
-        :to="{ name: 'account.organizations.detail', params: { organizationId: org.id } }"
+        :to="{ name: 'account.organizations.detail' }"
+        @click="switchToOrg(org.id)"
         class="group flex items-center gap-3 rounded-xl border bg-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
         <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -53,6 +54,7 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { api } from "@/helpers/api";
+import { setActiveOrganization } from "@/composables/useSession";
 import { onMounted, ref } from "vue";
 
 interface Organization {
@@ -74,6 +76,10 @@ async function loadOrganizations() {
   } finally {
     loaded.value = true;
   }
+}
+
+async function switchToOrg(orgId: string) {
+  await setActiveOrganization(orgId);
 }
 
 onMounted(() => {

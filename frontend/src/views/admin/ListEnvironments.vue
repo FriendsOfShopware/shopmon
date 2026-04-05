@@ -14,16 +14,23 @@
           :key="s.value"
           :class="[
             'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            sortBy === s.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            sortBy === s.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
           ]"
-          @click="sortBy = s.value; loadEnvironments()"
+          @click="
+            sortBy = s.value;
+            loadEnvironments();
+          "
         >
           {{ s.label }}
         </button>
       </div>
 
       <div class="relative">
-        <icon-fa6-solid:magnifying-glass class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           v-model="searchQuery"
           :placeholder="$t('admin.searchEnvironments')"
@@ -41,47 +48,80 @@
 
     <!-- Environment list -->
     <div v-else-if="environments.length > 0" class="space-y-2">
-      <div v-for="env in environments" :key="env.id" class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3">
+      <div
+        v-for="env in environments"
+        :key="env.id"
+        class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3"
+      >
         <StatusIcon :status="env.status" class="shrink-0" />
 
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <a :href="env.url" target="_blank" class="truncate font-medium hover:text-primary transition-colors">
+            <a
+              :href="env.url"
+              target="_blank"
+              class="truncate font-medium hover:text-primary transition-colors"
+            >
               {{ env.name }}
             </a>
-            <Badge variant="secondary" class="font-mono text-[10px]">{{ env.shopwareVersion }}</Badge>
+            <Badge variant="secondary" class="font-mono text-[10px]">{{
+              env.shopwareVersion
+            }}</Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <RouterLink
-              :to="{ name: 'account.organizations.detail', params: { organizationId: env.organizationId } }"
+              :to="{ name: 'account.organizations.detail' }"
               class="hover:text-primary transition-colors"
             >
               {{ env.organizationName }}
             </RouterLink>
-            <span v-if="env.lastScrapedAt" class="hidden tabular-nums sm:inline">{{ formatDate(env.lastScrapedAt) }}</span>
+            <span v-if="env.lastScrapedAt" class="hidden tabular-nums sm:inline">{{
+              formatDate(env.lastScrapedAt)
+            }}</span>
           </div>
         </div>
 
-        <a :href="env.url" target="_blank" class="shrink-0 text-muted-foreground hover:text-foreground">
+        <a
+          :href="env.url"
+          target="_blank"
+          class="shrink-0 text-muted-foreground hover:text-foreground"
+        >
           <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
         </a>
       </div>
     </div>
 
     <!-- Empty -->
-    <div v-else class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
       <icon-fa6-solid:earth-americas class="size-10 text-muted-foreground" />
       <h3 class="text-lg font-semibold">No environments found</h3>
-      <p v-if="searchQuery" class="text-sm text-muted-foreground">No environments match "{{ searchQuery }}"</p>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">
+        No environments match "{{ searchQuery }}"
+      </p>
     </div>
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
-      <Button size="sm" variant="outline" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
         {{ $t("common.previous") }}
       </Button>
-      <span class="text-sm tabular-nums text-muted-foreground">{{ $t("common.pageOf", { current: currentPage, total: totalPages }) }}</span>
-      <Button size="sm" variant="outline" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+      <span class="text-sm tabular-nums text-muted-foreground">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === totalPages"
+        @click="changePage(currentPage + 1)"
+      >
         {{ $t("common.next") }}
       </Button>
     </div>
@@ -106,7 +146,9 @@ const environments = ref<Environment[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const sortBy = ref<"createdAt" | "name" | "url" | "status" | "shopwareVersion" | "lastScrapedAt" | "organizationName">("createdAt");
+const sortBy = ref<
+  "createdAt" | "name" | "url" | "status" | "shopwareVersion" | "lastScrapedAt" | "organizationName"
+>("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const pageSize = ref(20);
@@ -170,8 +212,13 @@ function changePage(page: number) {
 let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => { currentPage.value = 1; loadEnvironments(); }, 300);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1;
+    loadEnvironments();
+  }, 300);
 }
 
-onMounted(() => { loadEnvironments(); });
+onMounted(() => {
+  loadEnvironments();
+});
 </script>

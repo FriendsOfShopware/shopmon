@@ -8,7 +8,6 @@
           <RouterLink
             :to="{
               name: 'account.organizations.detail',
-              params: { organizationId: route.params.organizationId },
             }"
           >
             <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
@@ -271,10 +270,10 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useSession } from "@/composables/useSession";
 
 const { t } = useI18n();
-const route = useRoute();
+const { activeOrganizationId } = useSession();
 const alert = useAlert();
 
 const isLoading = ref(true);
@@ -378,7 +377,7 @@ const callbackUrl = computed(() => {
 async function loadOrganization() {
   try {
     const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: route.params.organizationId as string } },
+      params: { query: { organizationId: activeOrganizationId.value! } },
     });
     if (!data) {
       alert.error("Failed to load organization");

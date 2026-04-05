@@ -1,7 +1,9 @@
 <template>
   <div v-if="environments">
     <!-- Page header -->
-    <div class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
+    <div
+      class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4"
+    >
       <div>
         <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("dashboard.title") }}</h1>
         <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
@@ -17,23 +19,38 @@
           <div class="text-xs text-muted-foreground">Healthy</div>
         </div>
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums" :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'">{{ warnCount }}</div>
+          <div
+            class="text-2xl font-bold tabular-nums"
+            :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'"
+          >
+            {{ warnCount }}
+          </div>
           <div class="text-xs text-muted-foreground">Warnings</div>
         </div>
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums" :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'">{{ errorCount }}</div>
+          <div
+            class="text-2xl font-bold tabular-nums"
+            :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'"
+          >
+            {{ errorCount }}
+          </div>
           <div class="text-xs text-muted-foreground">Errors</div>
         </div>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-if="environments.length === 0" class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center">
+    <div
+      v-if="environments.length === 0"
+      class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center"
+    >
       <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
         <icon-fa6-solid:earth-americas class="size-6 text-primary" />
       </div>
       <h2 class="text-xl font-semibold">No environments yet</h2>
-      <p class="max-w-sm text-muted-foreground">Add your first Shopware environment to start monitoring.</p>
+      <p class="max-w-sm text-muted-foreground">
+        Add your first Shopware environment to start monitoring.
+      </p>
       <Button as-child>
         <RouterLink :to="{ name: 'account.environments.new' }">
           <icon-fa6-solid:plus class="mr-1.5 size-3" />
@@ -44,7 +61,10 @@
 
     <template v-else>
       <!-- Alerts row -->
-      <div v-if="outdatedExtensionCount > 0 || errorCount > 0" class="mb-6 grid gap-3 sm:grid-cols-2">
+      <div
+        v-if="outdatedExtensionCount > 0 || errorCount > 0"
+        class="mb-6 grid gap-3 sm:grid-cols-2"
+      >
         <!-- Outdated extensions alert -->
         <RouterLink
           v-if="outdatedExtensionCount > 0"
@@ -55,19 +75,31 @@
             <icon-fa6-solid:arrow-up class="size-4 text-warning" />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="text-sm font-semibold">{{ outdatedExtensionCount }} extension updates available</div>
+            <div class="text-sm font-semibold">
+              {{ outdatedExtensionCount }} extension updates available
+            </div>
             <div class="text-xs text-muted-foreground">across your environments</div>
           </div>
           <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground" />
         </RouterLink>
 
         <!-- Error environments alert -->
-        <div v-if="errorCount > 0" class="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-          <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
+        <div
+          v-if="errorCount > 0"
+          class="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4"
+        >
+          <div
+            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10"
+          >
             <icon-fa6-solid:circle-xmark class="size-4 text-destructive" />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="text-sm font-semibold">{{ errorCount }} environment{{ errorCount !== 1 ? 's' : '' }} need{{ errorCount === 1 ? 's' : '' }} attention</div>
+            <div class="text-sm font-semibold">
+              {{ errorCount }} environment{{ errorCount !== 1 ? "s" : "" }} need{{
+                errorCount === 1 ? "s" : ""
+              }}
+              attention
+            </div>
             <div class="text-xs text-muted-foreground">Health checks are failing</div>
           </div>
         </div>
@@ -75,10 +107,14 @@
 
       <!-- Environments grouped by shop -->
       <section class="mb-8">
-        <div v-for="group in groupedEnvironments" :key="group.shopId ?? 'ungrouped'" class="mb-6 last:mb-0">
+        <div
+          v-for="group in groupedEnvironments"
+          :key="group.shopId ?? 'ungrouped'"
+          class="mb-6 last:mb-0"
+        >
           <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
             <icon-fa6-solid:folder class="size-3" />
-            {{ group.shopName || 'Ungrouped' }}
+            {{ group.shopName || "Ungrouped" }}
           </h3>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <RouterLink
@@ -86,21 +122,33 @@
               :key="env.id"
               :to="{
                 name: 'account.environments.detail',
-                params: { organizationId: env.organizationId, environmentId: env.id },
+                params: { environmentId: env.id },
               }"
               class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
             >
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
-                <img v-if="env.favicon" :src="env.favicon" :alt="$t('dashboard.environmentLogo')" class="size-5 rounded" />
+              <div
+                class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted"
+              >
+                <img
+                  v-if="env.favicon"
+                  :src="env.favicon"
+                  :alt="$t('dashboard.environmentLogo')"
+                  class="size-5 rounded"
+                />
                 <icon-fa6-solid:earth-americas v-else class="size-4 text-muted-foreground/50" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="truncate font-semibold leading-tight transition-colors group-hover:text-primary">{{ env.name }}</span>
+                  <span
+                    class="truncate font-semibold leading-tight transition-colors group-hover:text-primary"
+                    >{{ env.name }}</span
+                  >
                   <StatusIcon :status="env.status" />
                 </div>
                 <div class="mt-1.5 flex items-center gap-2">
-                  <Badge variant="secondary" class="font-mono text-xs">{{ env.shopwareVersion }}</Badge>
+                  <Badge variant="secondary" class="font-mono text-xs">{{
+                    env.shopwareVersion
+                  }}</Badge>
                 </div>
               </div>
             </RouterLink>
@@ -120,14 +168,25 @@
           </CardHeader>
           <CardContent>
             <div class="space-y-2">
-              <div v-for="version in versionDistribution" :key="version.version" class="flex items-center gap-3">
-                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{ version.version }}</Badge>
+              <div
+                v-for="version in versionDistribution"
+                :key="version.version"
+                class="flex items-center gap-3"
+              >
+                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
+                  version.version
+                }}</Badge>
                 <div class="flex-1">
                   <div class="h-2 overflow-hidden rounded-full bg-muted">
-                    <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${(version.count / environments.length) * 100}%` }" />
+                    <div
+                      class="h-full rounded-full bg-primary transition-all"
+                      :style="{ width: `${(version.count / environments.length) * 100}%` }"
+                    />
                   </div>
                 </div>
-                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{ version.count }}</span>
+                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{
+                  version.count
+                }}</span>
               </div>
             </div>
           </CardContent>
@@ -142,7 +201,10 @@
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div v-if="changelogs.length === 0" class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
+            <div
+              v-if="changelogs.length === 0"
+              class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground"
+            >
               <icon-fa6-solid:clock-rotate-left class="size-8 opacity-30" />
               <p class="text-sm">No recent changes</p>
             </div>
@@ -152,14 +214,18 @@
                 :key="log.id"
                 :to="{
                   name: 'account.environments.detail',
-                  params: { organizationId: log.environmentOrganizationId, environmentId: log.environmentId },
+                  params: { environmentId: log.environmentId },
                 }"
                 class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
               >
-                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatDate(log.date) }}</span>
+                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+                  formatDate(log.date)
+                }}</span>
                 <Separator orientation="vertical" class="h-4" />
                 <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
-                <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{ sumChanges(log) }}</span>
+                <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{
+                  sumChanges(log)
+                }}</span>
               </RouterLink>
             </div>
           </CardContent>
@@ -224,18 +290,29 @@ watch(activeOrganizationId, () => {
   loadDashboardData();
 });
 
-const greenCount = computed(() => environments.value?.filter((e) => e.status === "green").length ?? 0);
-const warnCount = computed(() => environments.value?.filter((e) => e.status === "yellow").length ?? 0);
-const errorCount = computed(() => environments.value?.filter((e) => e.status === "red").length ?? 0);
+const greenCount = computed(
+  () => environments.value?.filter((e) => e.status === "green").length ?? 0,
+);
+const warnCount = computed(
+  () => environments.value?.filter((e) => e.status === "yellow").length ?? 0,
+);
+const errorCount = computed(
+  () => environments.value?.filter((e) => e.status === "red").length ?? 0,
+);
 
 // Outdated extensions count
-const outdatedExtensionCount = computed(() =>
-  extensions.value.filter((e) => e.installed && e.latestVersion && e.version !== e.latestVersion).length,
+const outdatedExtensionCount = computed(
+  () =>
+    extensions.value.filter((e) => e.installed && e.latestVersion && e.version !== e.latestVersion)
+      .length,
 );
 
 // Environments grouped by shop/project
 const groupedEnvironments = computed(() => {
-  const groups = new Map<number | null, { shopId: number | null; shopName: string | null; environments: typeof environments.value }>();
+  const groups = new Map<
+    number | null,
+    { shopId: number | null; shopName: string | null; environments: typeof environments.value }
+  >();
 
   for (const env of environments.value ?? []) {
     const key = env.shopId;
