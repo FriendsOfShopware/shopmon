@@ -1,86 +1,68 @@
 <template>
-  <header class="flex items-start justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-bold tracking-tight">{{ $t("onboarding.welcome") }}</h1>
+  <div class="mx-auto max-w-lg py-12">
+    <!-- Welcome header -->
+    <div class="mb-10 text-center">
+      <div class="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-primary/10">
+        <icon-fa6-solid:rocket class="size-7 text-primary" />
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight">{{ $t("onboarding.welcome") }}</h1>
+      <p class="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        {{ $t("onboarding.description") }}
+      </p>
     </div>
-    <div class="flex gap-2 items-start" />
-  </header>
 
-  <div class="w-full">
-    <Card>
-      <CardContent class="pt-6">
-        <div class="text-center pb-8 mb-8 border-b">
-          <icon-fa6-solid:building class="size-12 text-primary mx-auto mb-4" />
-          <h2 class="text-2xl font-semibold mb-2">{{ $t("onboarding.title") }}</h2>
-          <p class="text-muted-foreground max-w-md mx-auto leading-relaxed">
-            {{ $t("onboarding.description") }}
-          </p>
+    <!-- Create org -->
+    <Card class="mb-4">
+      <CardContent class="p-6">
+        <div class="mb-4 flex items-center gap-3">
+          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+            <icon-fa6-solid:plus class="size-3.5 text-primary" />
+          </div>
+          <div>
+            <h2 class="font-semibold">{{ $t("onboarding.createTitle") }}</h2>
+            <p class="text-xs text-muted-foreground">{{ $t("onboarding.createDescription") }}</p>
+          </div>
         </div>
 
-        <div class="flex flex-col gap-6">
-          <div class="flex gap-4 items-start">
-            <div
-              class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"
-            >
-              <icon-fa6-solid:plus class="size-4" />
-            </div>
-            <div class="flex-1">
-              <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.createTitle") }}</h3>
-              <p class="text-muted-foreground text-sm leading-relaxed mb-0">
-                {{ $t("onboarding.createDescription") }}
-              </p>
+        <form class="flex gap-2" @submit="onSubmit">
+          <FormField v-slot="{ componentField }" name="name">
+            <FormItem class="flex-1">
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  :placeholder="$t('onboarding.orgNamePlaceholder')"
+                  autocomplete="organization"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-              <form class="mt-4 flex gap-3 items-end" @submit="onSubmit">
-                <div class="flex-1">
-                  <FormField v-slot="{ componentField }" name="name">
-                    <FormItem>
-                      <FormLabel>{{ $t("common.name") }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          v-bind="componentField"
-                          :placeholder="$t('onboarding.orgNamePlaceholder')"
-                          autocomplete="organization"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </div>
+          <Button :disabled="isSubmitting" type="submit" class="shrink-0">
+            <icon-fa6-solid:arrow-right v-if="!isSubmitting" class="mr-1.5 size-3" />
+            <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3" />
+            {{ $t("onboarding.createButton") }}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
 
-                <Button :disabled="isSubmitting" type="submit" class="shrink-0">
-                  <icon-fa6-solid:floppy-disk
-                    v-if="!isSubmitting"
-                    class="size-4"
-                    aria-hidden="true"
-                  />
-                  <icon-line-md:loading-twotone-loop v-else class="size-4" />
-                  {{ $t("onboarding.createButton") }}
-                </Button>
-              </form>
-            </div>
-          </div>
+    <!-- Divider -->
+    <div class="flex items-center gap-3 py-2 text-xs uppercase tracking-wide text-muted-foreground">
+      <div class="h-px flex-1 bg-border" />
+      <span>{{ $t("common.or") }}</span>
+      <div class="h-px flex-1 bg-border" />
+    </div>
 
-          <div
-            class="flex items-center gap-4 text-muted-foreground text-sm uppercase tracking-wide"
-          >
-            <div class="flex-1 h-px bg-border" />
-            <span>{{ $t("common.or") }}</span>
-            <div class="flex-1 h-px bg-border" />
-          </div>
-
-          <div class="flex gap-4 items-start">
-            <div
-              class="shrink-0 size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"
-            >
-              <icon-fa6-solid:envelope class="size-4" />
-            </div>
-            <div class="flex-1">
-              <h3 class="text-lg font-semibold mb-1">{{ $t("onboarding.inviteTitle") }}</h3>
-              <p class="text-muted-foreground text-sm leading-relaxed mb-0">
-                {{ $t("onboarding.inviteDescription") }}
-              </p>
-            </div>
-          </div>
+    <!-- Join existing -->
+    <Card class="mt-4">
+      <CardContent class="flex items-center gap-3 p-6">
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <icon-fa6-solid:envelope class="size-3.5 text-muted-foreground" />
+        </div>
+        <div>
+          <h2 class="font-semibold">{{ $t("onboarding.inviteTitle") }}</h2>
+          <p class="mt-0.5 text-xs leading-relaxed text-muted-foreground">{{ $t("onboarding.inviteDescription") }}</p>
         </div>
       </CardContent>
     </Card>
@@ -93,7 +75,7 @@ import { fetchSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
@@ -111,16 +93,12 @@ const validationSchema = toTypedSchema(
   }),
 );
 
-const { handleSubmit, isSubmitting } = useForm({
-  validationSchema,
-});
+const { handleSubmit, isSubmitting } = useForm({ validationSchema });
 
 const onSubmit = handleSubmit(async (values) => {
   try {
     const { error: respError } = await api.POST("/auth/organizations", {
-      body: {
-        name: values.name,
-      },
+      body: { name: values.name },
     });
 
     if (respError) {
