@@ -61,12 +61,13 @@ import { Field, Form as VeeForm } from "vee-validate";
 import { useI18n } from "vue-i18n";
 import * as Yup from "yup";
 
-import { router } from "@/router";
+import { useRouter } from "vue-router";
 
 import { useAlert } from "@/composables/useAlert";
 import { authClient } from "@/helpers/auth-client";
 
 const { t } = useI18n();
+const router = useRouter();
 const alert = useAlert();
 
 const schema = Yup.object().shape({

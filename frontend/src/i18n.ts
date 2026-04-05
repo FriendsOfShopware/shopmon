@@ -5,6 +5,9 @@ import de from "./locales/de.json";
 const LOCALE_STORAGE_KEY = "shopmon-locale";
 
 function getInitialLocale(): string {
+  if (import.meta.env.SSR) {
+    return "en";
+  }
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
   if (stored && ["en", "de"].includes(stored)) {
     return stored;

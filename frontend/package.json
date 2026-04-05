@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
-    "build": "vite build",
+    "build": "vite-ssg build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -49,12 +49,15 @@
     "@iconify-json/octicon": "^1.2.19",
     "@iconify-json/ri": "^1.2.6",
     "@trpc/server": "^11.7.2",
+    "@unhead/vue": "^2.1.12",
     "@vitejs/plugin-vue": "6.0.5",
     "@vitest/ui": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
+    "beasties": "^0.3.5",
     "jsdom": "^29.0.0",
     "typescript": "catalog:",
     "vite": "8.0.1",
+    "vite-ssg": "^28.3.0",
     "vitest": "^4.0.18"
   }
 }
