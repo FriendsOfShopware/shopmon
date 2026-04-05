@@ -2,39 +2,9 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary bar -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-destructive/10">
-            <icon-fa6-solid:circle-xmark class="size-4 text-destructive" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.red }}</div>
-            <div class="text-xs text-muted-foreground">Errors</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-warning/10">
-            <icon-fa6-solid:circle-info class="size-4 text-warning" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.yellow }}</div>
-            <div class="text-xs text-muted-foreground">Warnings</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-success/10">
-            <icon-fa6-solid:circle-check class="size-4 text-success" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.green }}</div>
-            <div class="text-xs text-muted-foreground">Passed</div>
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard :icon="IconCircleXmark" :value="counts.red" label="Errors" color="destructive" />
+      <StatCard :icon="IconCircleInfo" :value="counts.yellow" label="Warnings" color="warning" />
+      <StatCard :icon="IconCircleCheck" :value="counts.green" label="Passed" color="success" />
     </div>
 
     <!-- Filter tabs -->
@@ -126,9 +96,13 @@ import { api } from "@/helpers/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import StatusIcon from "@/components/StatusIcon.vue";
+import StatCard from "@/components/StatCard.vue";
+
+import IconCircleXmark from "~icons/fa6-solid/circle-xmark";
+import IconCircleInfo from "~icons/fa6-solid/circle-info";
+import IconCircleCheck from "~icons/fa6-solid/circle-check";
 
 const { t } = useI18n();
 const { info } = useAlert();

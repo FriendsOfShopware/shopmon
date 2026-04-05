@@ -3,22 +3,19 @@
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("nav.myExtensions") }}</h1>
 
     <!-- Empty state -->
-    <div
+    <EmptyState
       v-if="extensions && extensions.length === 0"
-      class="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center"
+      :icon="IconPuzzlePiece"
+      :title="$t('shopDetail.extensions')"
+      :description="$t('common.getStartedElement')"
     >
-      <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-        <icon-fa6-solid:puzzle-piece class="size-6 text-primary" />
-      </div>
-      <h2 class="text-xl font-semibold">{{ $t("shopDetail.extensions") }}</h2>
-      <p class="max-w-md text-muted-foreground">{{ $t("common.getStartedElement") }}</p>
       <Button as-child>
         <RouterLink :to="{ name: 'account.environments.new' }">
           <icon-fa6-solid:plus class="mr-1.5 size-3" />
           {{ $t("environment.addEnvironment") }}
         </RouterLink>
       </Button>
-    </div>
+    </EmptyState>
 
     <template v-else-if="extensions && extensions.length > 0">
       <!-- Summary + search -->
@@ -175,6 +172,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import StatusIcon from "@/components/StatusIcon.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";

@@ -40,22 +40,19 @@
     </div>
 
     <!-- Empty state -->
-    <div
+    <EmptyState
       v-if="shops.length === 0"
-      class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center"
+      :icon="IconFolder"
+      :title="$t('shop.noShops')"
+      :description="$t('shop.getStarted')"
     >
-      <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-        <icon-fa6-solid:folder class="size-6 text-primary" />
-      </div>
-      <h2 class="text-xl font-semibold">{{ $t("shop.noShops") }}</h2>
-      <p class="max-w-sm text-muted-foreground">{{ $t("shop.getStarted") }}</p>
       <Button as-child>
         <RouterLink :to="{ name: 'account.shops.new' }">
           <icon-fa6-solid:plus class="mr-1.5 size-3" />
           {{ $t("shop.addShop") }}
         </RouterLink>
       </Button>
-    </div>
+    </EmptyState>
 
     <template v-else>
       <!-- Alerts row -->
@@ -147,77 +144,65 @@
       <!-- Shopware version overview + recent changes -->
       <div class="mb-8 grid gap-6 lg:grid-cols-3">
         <!-- Version distribution -->
-        <Card>
-          <CardHeader class="pb-3">
-            <CardTitle class="flex items-center gap-2 text-base">
-              <icon-fa6-solid:code-branch class="size-4 text-muted-foreground" />
-              Shopware Versions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="space-y-2">
-              <div
-                v-for="version in versionDistribution"
-                :key="version.version"
-                class="flex items-center gap-3"
-              >
-                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
-                  version.version
-                }}</Badge>
-                <div class="flex-1">
-                  <div class="h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: `${(version.count / environments.length) * 100}%` }"
-                    />
-                  </div>
+        <CardSection :icon="IconCodeBranch" title="Shopware Versions">
+          <div class="space-y-2">
+            <div
+              v-for="version in versionDistribution"
+              :key="version.version"
+              class="flex items-center gap-3"
+            >
+              <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
+                version.version
+              }}</Badge>
+              <div class="flex-1">
+                <div class="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all"
+                    :style="{ width: `${(version.count / environments.length) * 100}%` }"
+                  />
                 </div>
-                <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{
-                  version.count
-                }}</span>
               </div>
+              <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{
+                version.count
+              }}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardSection>
 
         <!-- Recent changes -->
-        <Card class="lg:col-span-2">
-          <CardHeader class="pb-3">
-            <CardTitle class="flex items-center gap-2 text-base">
-              <icon-fa6-solid:clock-rotate-left class="size-4 text-muted-foreground" />
-              {{ $t("dashboard.lastChanges") }}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              v-if="changelogs.length === 0"
-              class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground"
+        <CardSection
+          :icon="IconClockRotateLeft"
+          :title="$t('dashboard.lastChanges')"
+          class="lg:col-span-2"
+        >
+          <div
+            v-if="changelogs.length === 0"
+            class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground"
+          >
+            <icon-fa6-solid:clock-rotate-left class="size-8 opacity-30" />
+            <p class="text-sm">No recent changes</p>
+          </div>
+          <div v-else class="space-y-1.5">
+            <RouterLink
+              v-for="log in changelogs.slice(0, 8)"
+              :key="log.id"
+              :to="{
+                name: 'account.environments.detail',
+                params: { environmentId: log.environmentId },
+              }"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
             >
-              <icon-fa6-solid:clock-rotate-left class="size-8 opacity-30" />
-              <p class="text-sm">No recent changes</p>
-            </div>
-            <div v-else class="space-y-1.5">
-              <RouterLink
-                v-for="log in changelogs.slice(0, 8)"
-                :key="log.id"
-                :to="{
-                  name: 'account.environments.detail',
-                  params: { environmentId: log.environmentId },
-                }"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
-              >
-                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
-                  formatDate(log.date)
-                }}</span>
-                <Separator orientation="vertical" class="h-4" />
-                <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
-                <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{
-                  sumChanges(log)
-                }}</span>
-              </RouterLink>
-            </div>
-          </CardContent>
-        </Card>
+              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+                formatDate(log.date)
+              }}</span>
+              <Separator orientation="vertical" class="h-4" />
+              <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
+              <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{
+                sumChanges(log)
+              }}</span>
+            </RouterLink>
+          </div>
+        </CardSection>
       </div>
     </template>
   </div>
@@ -247,12 +232,16 @@ import {
 } from "@/composables/useAccountEnvironments";
 import { useSession } from "@/composables/useSession";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import StatusIcon from "@/components/StatusIcon.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import CardSection from "@/components/CardSection.vue";
+import IconFolder from "~icons/fa6-solid/folder";
+import IconCodeBranch from "~icons/fa6-solid/code-branch";
+import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 
 type AccountShop = components["schemas"]["AccountShop"];
 type AccountEnvironment = components["schemas"]["AccountEnvironment"];

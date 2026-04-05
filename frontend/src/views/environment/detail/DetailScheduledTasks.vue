@@ -2,82 +2,19 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-            <icon-fa6-solid:list-check class="size-4 text-primary" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ tasks.length }}</div>
-            <div class="text-xs text-muted-foreground">Total</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-success/10">
-            <icon-fa6-solid:circle-check class="size-4 text-success" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.healthy }}</div>
-            <div class="text-xs text-muted-foreground">Healthy</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-warning/10">
-            <icon-fa6-solid:clock class="size-4 text-warning" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.overdue }}</div>
-            <div class="text-xs text-muted-foreground">Overdue</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-muted">
-            <icon-fa6-solid:pause class="size-4 text-muted-foreground" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.inactive }}</div>
-            <div class="text-xs text-muted-foreground">Inactive</div>
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard :icon="IconListCheck" :value="tasks.length" label="Total" />
+      <StatCard :icon="IconCircleCheck" :value="counts.healthy" label="Healthy" color="success" />
+      <StatCard :icon="IconClock" :value="counts.overdue" label="Overdue" color="warning" />
+      <StatCard :icon="IconPause" :value="counts.inactive" label="Inactive" color="muted" />
     </div>
 
     <!-- Filter + search -->
-    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-        <button
-          v-for="f in filters"
-          :key="f.value"
-          :class="[
-            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            activeFilter === f.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="activeFilter = f.value"
-        >
-          {{ f.label }}
-        </button>
-      </div>
-
-      <div class="relative">
-        <icon-fa6-solid:magnifying-glass
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          v-model="searchQuery"
-          type="search"
-          placeholder="Search tasks..."
-          class="h-8 w-full sm:w-56 pl-8 text-sm"
-        />
-      </div>
-    </div>
+    <FilterSearchBar
+      v-model:filter="activeFilter"
+      v-model:search="searchQuery"
+      :filters="filters"
+      search-placeholder="Search tasks..."
+    />
 
     <!-- Task list -->
     <div v-if="filteredTasks.length > 0" class="space-y-2">
@@ -139,17 +76,12 @@
     </div>
 
     <!-- Empty state -->
-    <div
-      v-else
-      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
-    >
-      <icon-fa6-solid:list-check class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No tasks found</h3>
+    <EmptyState v-else :icon="IconListCheck" title="No tasks found" size="sm">
       <p class="text-sm text-muted-foreground">
         <template v-if="searchQuery">No tasks match "{{ searchQuery }}".</template>
         <template v-else>No scheduled tasks match the current filter.</template>
       </p>
-    </div>
+    </EmptyState>
   </div>
 </template>
 
@@ -162,10 +94,16 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import StatCard from "@/components/StatCard.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import FilterSearchBar from "@/components/FilterSearchBar.vue";
+
+import IconListCheck from "~icons/fa6-solid/list-check";
+import IconCircleCheck from "~icons/fa6-solid/circle-check";
+import IconClock from "~icons/fa6-solid/clock";
+import IconPause from "~icons/fa6-solid/pause";
 
 import FaCheck from "~icons/fa6-solid/check";
 import FaRotate from "~icons/fa6-solid/rotate";

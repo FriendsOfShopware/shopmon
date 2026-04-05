@@ -3,317 +3,243 @@
     <h1 class="text-2xl font-bold tracking-tight">{{ $t("settings.title") }}</h1>
 
     <!-- Profile -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:user class="size-4 text-muted-foreground" />
-          {{ $t("settings.profile") }}
-        </CardTitle>
-        <CardDescription>{{ $t("settings.displayName") }}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="space-y-4">
-          <div>
-            <Label for="name">{{ $t("common.name") }}</Label>
-            <Input id="name" v-model="profileName" type="text" autocomplete="name" class="mt-1.5" />
-          </div>
+    <CardSection
+      :icon="IconUser"
+      :title="$t('settings.profile')"
+      :description="$t('settings.displayName')"
+    >
+      <div class="space-y-4">
+        <div>
+          <Label for="name">{{ $t("common.name") }}</Label>
+          <Input id="name" v-model="profileName" type="text" autocomplete="name" class="mt-1.5" />
         </div>
-        <div class="flex justify-end mt-4">
-          <Button size="sm" @click="saveProfile">
-            <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
-            {{ $t("common.save") }}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div class="flex justify-end mt-4">
+        <Button size="sm" @click="saveProfile">
+          <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
+          {{ $t("common.save") }}
+        </Button>
+      </div>
+    </CardSection>
 
     <!-- Email -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:envelope class="size-4 text-muted-foreground" />
-          {{ $t("settings.email") }}
-        </CardTitle>
-        <CardDescription>{{ $t("settings.changeEmail") }}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="space-y-4">
-          <div>
-            <Label for="email">{{ $t("common.emailAddress") }}</Label>
-            <Input
-              id="email"
-              v-model="emailAddress"
-              type="email"
-              autocomplete="email"
-              class="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label for="emailCurrentPassword">{{ $t("settings.currentPassword") }}</Label>
-            <Input
-              id="emailCurrentPassword"
-              v-model="emailCurrentPassword"
-              type="password"
-              autocomplete="current-password"
-              class="mt-1.5"
-            />
-          </div>
+    <CardSection
+      :icon="IconEnvelope"
+      :title="$t('settings.email')"
+      :description="$t('settings.changeEmail')"
+    >
+      <div class="space-y-4">
+        <div>
+          <Label for="email">{{ $t("common.emailAddress") }}</Label>
+          <Input
+            id="email"
+            v-model="emailAddress"
+            type="email"
+            autocomplete="email"
+            class="mt-1.5"
+          />
         </div>
-        <div class="flex justify-end mt-4">
-          <Button size="sm" @click="saveEmail">
-            <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
-            {{ $t("common.save") }}
-          </Button>
+        <div>
+          <Label for="emailCurrentPassword">{{ $t("settings.currentPassword") }}</Label>
+          <Input
+            id="emailCurrentPassword"
+            v-model="emailCurrentPassword"
+            type="password"
+            autocomplete="current-password"
+            class="mt-1.5"
+          />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div class="flex justify-end mt-4">
+        <Button size="sm" @click="saveEmail">
+          <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
+          {{ $t("common.save") }}
+        </Button>
+      </div>
+    </CardSection>
 
     <!-- Password -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:lock class="size-4 text-muted-foreground" />
-          {{ $t("settings.password") }}
-        </CardTitle>
-        <CardDescription>{{ $t("settings.changePassword") }}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="space-y-4">
-          <div>
-            <Label for="currentPassword">{{ $t("settings.currentPassword") }}</Label>
+    <CardSection
+      :icon="IconLock"
+      :title="$t('settings.password')"
+      :description="$t('settings.changePassword')"
+    >
+      <div class="space-y-4">
+        <div>
+          <Label for="currentPassword">{{ $t("settings.currentPassword") }}</Label>
+          <div class="mt-1.5">
             <Input
               id="currentPassword"
               v-model="currentPassword"
               type="password"
               autocomplete="current-password"
-              class="mt-1.5"
             />
           </div>
-          <div>
-            <Label for="newPassword">{{ $t("settings.newPassword") }}</Label>
-            <div class="relative mt-1.5">
-              <Input
-                id="newPassword"
-                v-model="newPassword"
-                :type="newPasswordType"
-                autocomplete="new-password"
-                class="pr-10"
-              />
-              <button
-                type="button"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground opacity-50 hover:opacity-100 transition-opacity"
-                @click="newPasswordType = newPasswordType === 'password' ? 'text' : 'password'"
-              >
-                <icon-fa6-solid:eye v-if="newPasswordType === 'password'" class="size-3.5" />
-                <icon-fa6-solid:eye-slash v-else class="size-3.5" />
-              </button>
-            </div>
-          </div>
-          <div>
-            <Label for="confirmPassword">{{ $t("settings.confirmNewPassword") }}</Label>
-            <div class="relative mt-1.5">
-              <Input
-                id="confirmPassword"
-                v-model="confirmPassword"
-                :type="confirmPasswordType"
-                autocomplete="new-password"
-                class="pr-10"
-              />
-              <button
-                type="button"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground opacity-50 hover:opacity-100 transition-opacity"
-                @click="
-                  confirmPasswordType = confirmPasswordType === 'password' ? 'text' : 'password'
-                "
-              >
-                <icon-fa6-solid:eye v-if="confirmPasswordType === 'password'" class="size-3.5" />
-                <icon-fa6-solid:eye-slash v-else class="size-3.5" />
-              </button>
-            </div>
+        </div>
+        <div>
+          <Label for="newPassword">{{ $t("settings.newPassword") }}</Label>
+          <div class="mt-1.5">
+            <PasswordInput id="newPassword" v-model="newPassword" autocomplete="new-password" />
           </div>
         </div>
-        <div class="flex justify-end mt-4">
-          <Button size="sm" @click="savePassword">
-            <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
-            {{ $t("common.save") }}
-          </Button>
+        <div>
+          <Label for="confirmPassword">{{ $t("settings.confirmNewPassword") }}</Label>
+          <div class="mt-1.5">
+            <PasswordInput
+              id="confirmPassword"
+              v-model="confirmPassword"
+              autocomplete="new-password"
+            />
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div class="flex justify-end mt-4">
+        <Button size="sm" @click="savePassword">
+          <icon-fa6-solid:floppy-disk class="mr-1.5 size-3.5" />
+          {{ $t("common.save") }}
+        </Button>
+      </div>
+    </CardSection>
 
     <!-- Connected Accounts -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-brands:github class="size-4 text-muted-foreground" />
-          {{ $t("settings.connectedAccounts") }}
-        </CardTitle>
-        <CardDescription>{{ $t("settings.connectedAccountsDesc") }}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="flex items-center justify-between rounded-xl border px-4 py-3">
-          <div class="flex items-center gap-3">
-            <div class="flex size-9 items-center justify-center rounded-lg bg-muted">
-              <icon-fa6-brands:github class="size-4" />
-            </div>
-            <div>
-              <div class="text-sm font-medium">GitHub</div>
-              <div class="text-xs text-muted-foreground">
-                {{
-                  connectedProviders.includes("github")
-                    ? $t("settings.linked")
-                    : $t("settings.notLinked")
-                }}
-              </div>
+    <CardSection
+      :icon="IconGithub"
+      :title="$t('settings.connectedAccounts')"
+      :description="$t('settings.connectedAccountsDesc')"
+    >
+      <div class="flex items-center justify-between rounded-xl border px-4 py-3">
+        <div class="flex items-center gap-3">
+          <div class="flex size-9 items-center justify-center rounded-lg bg-muted">
+            <icon-fa6-brands:github class="size-4" />
+          </div>
+          <div>
+            <div class="text-sm font-medium">GitHub</div>
+            <div class="text-xs text-muted-foreground">
+              {{
+                connectedProviders.includes("github")
+                  ? $t("settings.linked")
+                  : $t("settings.notLinked")
+              }}
             </div>
           </div>
-          <Button
-            v-if="!connectedProviders.includes('github')"
-            size="sm"
-            variant="outline"
-            @click="linkSocial('github')"
-          >
-            {{ $t("settings.linkGithub") }}
-          </Button>
-          <Button v-else size="sm" variant="destructive" @click="unlinkSocial('github')">
-            {{ $t("settings.unlinkGithub") }}
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+        <Button
+          v-if="!connectedProviders.includes('github')"
+          size="sm"
+          variant="outline"
+          @click="linkSocial('github')"
+        >
+          {{ $t("settings.linkGithub") }}
+        </Button>
+        <Button v-else size="sm" variant="destructive" @click="unlinkSocial('github')">
+          {{ $t("settings.unlinkGithub") }}
+        </Button>
+      </div>
+    </CardSection>
 
     <!-- Passkeys -->
-    <Card>
-      <CardHeader class="pb-3">
-        <div class="flex items-center justify-between">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <icon-material-symbols:passkey class="size-5 text-muted-foreground" />
-            {{ $t("settings.passkeyDevices") }}
-          </CardTitle>
-          <Button size="sm" @click="showPasskeyCreationModal = true">
-            <icon-fa6-solid:plus class="mr-1.5 size-3" />
-            {{ $t("settings.addDevice") }}
+    <CardSection :icon="IconPasskey" :title="$t('settings.passkeyDevices')">
+      <template #action>
+        <Button size="sm" @click="showPasskeyCreationModal = true">
+          <icon-fa6-solid:plus class="mr-1.5 size-3" />
+          {{ $t("settings.addDevice") }}
+        </Button>
+      </template>
+      <EmptyState
+        v-if="!passkeys?.length"
+        :icon="IconPasskey"
+        title="No passkeys registered yet."
+        size="sm"
+      />
+      <div v-else class="space-y-2">
+        <div
+          v-for="pk in passkeys"
+          :key="pk.id"
+          class="flex items-center justify-between rounded-xl border px-4 py-3"
+        >
+          <div>
+            <div class="text-sm font-medium">{{ pk.name || "Unnamed passkey" }}</div>
+            <div class="text-xs text-muted-foreground">{{ pk.createdAt }}</div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-7 text-muted-foreground hover:text-destructive"
+            @click="removePasskey(pk.id)"
+          >
+            <icon-fa6-solid:trash class="size-3" />
           </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div
-          v-if="!passkeys?.length"
-          class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-8 text-center"
-        >
-          <icon-material-symbols:passkey class="size-8 text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">No passkeys registered yet.</p>
-        </div>
-        <div v-else class="space-y-2">
-          <div
-            v-for="pk in passkeys"
-            :key="pk.id"
-            class="flex items-center justify-between rounded-xl border px-4 py-3"
-          >
-            <div>
-              <div class="text-sm font-medium">{{ pk.name || "Unnamed passkey" }}</div>
-              <div class="text-xs text-muted-foreground">{{ pk.createdAt }}</div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-7 text-muted-foreground hover:text-destructive"
-              @click="removePasskey(pk.id)"
-            >
-              <icon-fa6-solid:trash class="size-3" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CardSection>
 
     <!-- Sessions -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:desktop class="size-4 text-muted-foreground" />
-          {{ $t("settings.sessions") }}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CardSection :icon="IconDesktop" :title="$t('settings.sessions')">
+      <EmptyState
+        v-if="!sessions?.length"
+        :icon="IconDesktop"
+        title="No active sessions."
+        size="sm"
+      />
+      <div v-else class="space-y-2">
         <div
-          v-if="!sessions?.length"
-          class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-8 text-center"
+          v-for="session in sessions"
+          :key="session.id"
+          class="flex items-center justify-between rounded-xl border px-4 py-3"
         >
-          <icon-fa6-solid:desktop class="size-8 text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">No active sessions.</p>
-        </div>
-        <div v-else class="space-y-2">
-          <div
-            v-for="session in sessions"
-            :key="session.id"
-            class="flex items-center justify-between rounded-xl border px-4 py-3"
-          >
-            <div class="min-w-0 flex-1">
-              <div class="truncate text-sm font-medium">
-                {{ session.userAgent || "Unknown device" }}
-              </div>
-              <div class="text-xs text-muted-foreground">{{ session.createdAt }}</div>
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-sm font-medium">
+              {{ session.userAgent || "Unknown device" }}
             </div>
-            <Badge
-              v-if="session.id === sessionData?.session?.id"
-              variant="secondary"
-              class="mr-2 text-xs"
-              >Current</Badge
-            >
-            <Button
-              v-if="session.id !== sessionData?.session?.id"
-              variant="ghost"
-              size="icon"
-              class="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-              @click="removeSession(session)"
-            >
-              <icon-fa6-solid:trash class="size-3" />
-            </Button>
+            <div class="text-xs text-muted-foreground">{{ session.createdAt }}</div>
           </div>
+          <Badge
+            v-if="session.id === sessionData?.session?.id"
+            variant="secondary"
+            class="mr-2 text-xs"
+            >Current</Badge
+          >
+          <Button
+            v-if="session.id !== sessionData?.session?.id"
+            variant="ghost"
+            size="icon"
+            class="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+            @click="removeSession(session)"
+          >
+            <icon-fa6-solid:trash class="size-3" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CardSection>
 
     <!-- Notifications -->
-    <Card>
-      <CardHeader class="pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:bell class="size-4 text-muted-foreground" />
-          {{ $t("settings.notifications") }}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <CardSection :icon="IconBell" :title="$t('settings.notifications')">
+      <EmptyState
+        v-if="!subscribedShops?.length"
+        :icon="IconBellSlash"
+        :title="$t('settings.notSubscribed')"
+        :description="$t('settings.notSubscribedHint')"
+        size="sm"
+      />
+      <div v-else class="space-y-2">
         <div
-          v-if="!subscribedShops?.length"
-          class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-8 text-center"
+          v-for="env in subscribedShops"
+          :key="env.id"
+          class="flex items-center justify-between rounded-xl border px-4 py-3"
         >
-          <icon-fa6-regular:bell-slash class="size-8 text-muted-foreground" />
-          <p class="font-medium">{{ $t("settings.notSubscribed") }}</p>
-          <p class="max-w-sm text-sm text-muted-foreground">
-            {{ $t("settings.notSubscribedHint") }}
-          </p>
-        </div>
-        <div v-else class="space-y-2">
-          <div
-            v-for="env in subscribedShops"
-            :key="env.id"
-            class="flex items-center justify-between rounded-xl border px-4 py-3"
+          <div class="text-sm font-medium">{{ env.name }}</div>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-7 text-muted-foreground hover:text-destructive"
+            :title="$t('settings.unsubscribe')"
+            @click="unsubscribeFromEnvironment(env.id)"
           >
-            <div class="text-sm font-medium">{{ env.name }}</div>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-7 text-muted-foreground hover:text-destructive"
-              :title="$t('settings.unsubscribe')"
-              @click="unsubscribeFromEnvironment(env.id)"
-            >
-              <icon-fa6-solid:bell-slash class="size-3" />
-            </Button>
-          </div>
+            <icon-fa6-solid:bell-slash class="size-3" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CardSection>
 
     <!-- Delete Account -->
     <Card class="border-destructive/30">
@@ -386,7 +312,10 @@ import { useI18n } from "vue-i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CardSection from "@/components/CardSection.vue";
+import PasswordInput from "@/components/PasswordInput.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import {
   Dialog,
   DialogContent,
@@ -397,6 +326,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
+
+import IconUser from "~icons/fa6-solid/user";
+import IconEnvelope from "~icons/fa6-solid/envelope";
+import IconLock from "~icons/fa6-solid/lock";
+import IconGithub from "~icons/fa6-brands/github";
+import IconPasskey from "~icons/material-symbols/passkey";
+import IconDesktop from "~icons/fa6-solid/desktop";
+import IconBell from "~icons/fa6-solid/bell";
+import IconBellSlash from "~icons/fa6-regular/bell-slash";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
@@ -469,9 +407,7 @@ async function saveEmail() {
 
 const currentPassword = ref("");
 const newPassword = ref("");
-const newPasswordType = ref("password");
 const confirmPassword = ref("");
-const confirmPasswordType = ref("password");
 
 async function savePassword() {
   if (!newPassword.value) return;

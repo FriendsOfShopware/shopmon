@@ -1,34 +1,30 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">{{ $t("shop.listTitle") }}</h1>
+    <PageHeader :title="$t('shop.listTitle')">
       <Button size="sm" as-child>
         <RouterLink :to="{ name: 'account.shops.new' }">
           <icon-fa6-solid:folder-plus class="mr-1.5 size-3" />
           {{ $t("shop.addShop") }}
         </RouterLink>
       </Button>
-    </div>
+    </PageHeader>
 
     <template v-if="!loading">
       <!-- Empty state -->
-      <div
+      <EmptyState
         v-if="shops.length === 0"
-        class="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center"
+        :icon="IconFolder"
+        :title="$t('shop.noShops')"
+        :description="$t('shop.getStarted')"
       >
-        <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-          <icon-fa6-solid:folder class="size-6 text-primary" />
-        </div>
-        <h2 class="text-xl font-semibold">{{ $t("shop.noShops") }}</h2>
-        <p class="max-w-md text-muted-foreground">{{ $t("shop.getStarted") }}</p>
         <Button as-child>
           <RouterLink :to="{ name: 'account.shops.new' }">
             <icon-fa6-solid:plus class="mr-1.5 size-3" />
             {{ $t("shop.addShop") }}
           </RouterLink>
         </Button>
-      </div>
+      </EmptyState>
 
       <!-- Shop list -->
       <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -92,6 +88,9 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StatusIcon from "@/components/StatusIcon.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import IconFolder from "~icons/fa6-solid/folder";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { ref } from "vue";

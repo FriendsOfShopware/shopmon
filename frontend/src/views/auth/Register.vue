@@ -26,20 +26,7 @@
       <FormField v-slot="{ componentField }" name="password">
         <FormItem>
           <FormControl>
-            <div class="relative">
-              <Input
-                :type="passwordType"
-                :placeholder="$t('common.password')"
-                v-bind="componentField"
-              />
-              <div
-                class="absolute inset-y-0 right-0 z-10 flex cursor-pointer items-center pr-3 opacity-40 transition-opacity hover:opacity-100"
-                @click="passwordType = passwordType === 'password' ? 'text' : 'password'"
-              >
-                <icon-fa6-solid:eye v-if="passwordType === 'password'" class="size-4" />
-                <icon-fa6-solid:eye-slash v-else class="size-4" />
-              </div>
-            </div>
+            <PasswordInput :placeholder="$t('common.password')" v-bind="componentField" />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -64,7 +51,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
 import { useForm } from "vee-validate";
@@ -76,11 +62,10 @@ import { api, setToken } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import PasswordInput from "@/components/PasswordInput.vue";
 
 const { t } = useI18n();
 const alert = useAlert();
-const passwordType = ref("password");
-
 const schema = z.object({
   displayName: z.string().min(1, t("validation.displayNameRequired")),
   email: z.string().min(1, t("validation.emailRequired")),

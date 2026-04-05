@@ -90,189 +90,161 @@
     <!-- ═══════ MIDDLE: Bento grid — checks + extensions + tasks ═══════ -->
     <div class="grid gap-4 lg:grid-cols-2">
       <!-- Security checks -->
-      <Card>
-        <CardHeader class="flex-row items-center justify-between pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <icon-fa6-solid:shield-halved class="size-4 text-muted-foreground" />
-            {{ $t("shopDetail.securityChecks") }}
-          </CardTitle>
+      <CardSection :icon="IconShieldHalved" :title="$t('shopDetail.securityChecks')">
+        <template #action>
           <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
             <RouterLink :to="checksRoute">
               {{ $t("shopDetail.viewAllChecks") }}
               <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
             </RouterLink>
           </Button>
-        </CardHeader>
-        <CardContent class="pt-0">
+        </template>
+        <div
+          v-if="sortedCriticalChecks.length === 0"
+          class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+        >
+          <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+          {{ $t("shopDetail.allChecksPassed") }}
+        </div>
+        <div v-else class="space-y-1.5">
           <div
-            v-if="sortedCriticalChecks.length === 0"
-            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+            v-for="check in sortedCriticalChecks"
+            :key="check.id"
+            class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
           >
-            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
-            {{ $t("shopDetail.allChecksPassed") }}
-          </div>
-          <div v-else class="space-y-1.5">
-            <div
-              v-for="check in sortedCriticalChecks"
-              :key="check.id"
-              class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
-            >
-              <StatusIcon :status="check.level" class="mt-0.5 shrink-0" />
-              <div class="min-w-0 flex-1 text-sm">
-                <span>{{ check.message }}</span>
-                <a
-                  v-if="check.link"
-                  :href="check.link"
-                  target="_blank"
-                  class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline"
-                >
-                  <icon-fa6-solid:arrow-up-right-from-square class="size-2.5" />
-                </a>
-              </div>
+            <StatusIcon :status="check.level" class="mt-0.5 shrink-0" />
+            <div class="min-w-0 flex-1 text-sm">
+              <span>{{ check.message }}</span>
+              <a
+                v-if="check.link"
+                :href="check.link"
+                target="_blank"
+                class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline"
+              >
+                <icon-fa6-solid:arrow-up-right-from-square class="size-2.5" />
+              </a>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardSection>
 
       <!-- Outdated extensions -->
-      <Card>
-        <CardHeader class="flex-row items-center justify-between pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <icon-fa6-solid:plug class="size-4 text-muted-foreground" />
-            {{ $t("shopDetail.extensions") }}
-          </CardTitle>
+      <CardSection :icon="IconPlug" :title="$t('shopDetail.extensions')">
+        <template #action>
           <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
             <RouterLink :to="extensionsRoute">
               {{ $t("shopDetail.viewAllExtensions") }}
               <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
             </RouterLink>
           </Button>
-        </CardHeader>
-        <CardContent class="pt-0">
+        </template>
+        <div
+          v-if="outdatedExtensions.length === 0"
+          class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+        >
+          <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+          {{ $t("shopDetail.allExtensionsUpToDate") }}
+        </div>
+        <div v-else class="space-y-1.5">
           <div
-            v-if="outdatedExtensions.length === 0"
-            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+            v-for="ext in outdatedExtensions"
+            :key="ext.name"
+            class="flex items-center gap-2.5 rounded-lg border px-3 py-2"
           >
-            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
-            {{ $t("shopDetail.allExtensionsUpToDate") }}
-          </div>
-          <div v-else class="space-y-1.5">
-            <div
-              v-for="ext in outdatedExtensions"
-              :key="ext.name"
-              class="flex items-center gap-2.5 rounded-lg border px-3 py-2"
-            >
-              <icon-fa6-solid:arrow-up class="size-3.5 shrink-0 text-info" />
-              <div class="min-w-0 flex-1 text-sm">
-                <span class="font-medium">{{ ext.label }}</span>
-                <button
-                  class="ml-1 text-primary hover:underline"
-                  @click="openExtensionChangelog(ext)"
-                >
-                  {{ ext.version }} → {{ ext.latestVersion }}
-                </button>
-              </div>
-              <a
-                v-if="ext.storeLink"
-                :href="ext.storeLink"
-                target="_blank"
-                class="shrink-0 text-muted-foreground hover:text-foreground"
+            <icon-fa6-solid:arrow-up class="size-3.5 shrink-0 text-info" />
+            <div class="min-w-0 flex-1 text-sm">
+              <span class="font-medium">{{ ext.label }}</span>
+              <button
+                class="ml-1 text-primary hover:underline"
+                @click="openExtensionChangelog(ext)"
               >
-                <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
-              </a>
+                {{ ext.version }} → {{ ext.latestVersion }}
+              </button>
             </div>
+            <a
+              v-if="ext.storeLink"
+              :href="ext.storeLink"
+              target="_blank"
+              class="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
+            </a>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardSection>
 
       <!-- Overdue tasks -->
-      <Card>
-        <CardHeader class="flex-row items-center justify-between pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <icon-fa6-solid:list-check class="size-4 text-muted-foreground" />
-            {{ $t("shopDetail.scheduledTasks") }}
-          </CardTitle>
+      <CardSection :icon="IconListCheck" :title="$t('shopDetail.scheduledTasks')">
+        <template #action>
           <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
             <RouterLink :to="tasksRoute">
               {{ $t("shopDetail.viewAllScheduledTasks") }}
               <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
             </RouterLink>
           </Button>
-        </CardHeader>
-        <CardContent class="pt-0">
+        </template>
+        <div
+          v-if="overdueTasks.length === 0"
+          class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+        >
+          <icon-fa6-solid:circle-check class="size-4 shrink-0" />
+          {{ $t("shopDetail.noOverdueTasks") }}
+        </div>
+        <div v-else class="space-y-1.5">
           <div
-            v-if="overdueTasks.length === 0"
-            class="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success"
+            v-for="task in overdueTasks"
+            :key="task.id"
+            class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
           >
-            <icon-fa6-solid:circle-check class="size-4 shrink-0" />
-            {{ $t("shopDetail.noOverdueTasks") }}
-          </div>
-          <div v-else class="space-y-1.5">
-            <div
-              v-for="task in overdueTasks"
-              :key="task.id"
-              class="flex items-start gap-2.5 rounded-lg border px-3 py-2"
-            >
-              <icon-fa6-solid:clock class="mt-0.5 size-3.5 shrink-0 text-warning" />
-              <div class="min-w-0 text-sm">
-                <div class="font-medium">{{ task.name }}</div>
-                <div class="text-xs text-muted-foreground">
-                  {{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue
-                </div>
+            <icon-fa6-solid:clock class="mt-0.5 size-3.5 shrink-0 text-warning" />
+            <div class="min-w-0 text-sm">
+              <div class="font-medium">{{ task.name }}</div>
+              <div class="text-xs text-muted-foreground">
+                {{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardSection>
 
       <!-- Recent changes -->
-      <Card>
-        <CardHeader class="flex-row items-center justify-between pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <icon-fa6-solid:clock-rotate-left class="size-4 text-muted-foreground" />
-            {{ $t("shopDetail.recentChanges") }}
-          </CardTitle>
+      <CardSection :icon="IconClockRotateLeft" :title="$t('shopDetail.recentChanges')">
+        <template #action>
           <Button as-child variant="ghost" size="sm" class="h-7 text-xs">
             <RouterLink :to="changelogRoute">
               {{ $t("shopDetail.viewAllChanges") }}
               <icon-fa6-solid:arrow-right class="ml-1 size-2.5" />
             </RouterLink>
           </Button>
-        </CardHeader>
-        <CardContent class="pt-0">
+        </template>
+        <div
+          v-if="recentChangelogs.length === 0"
+          class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground"
+        >
+          <icon-fa6-solid:circle-info class="size-4 shrink-0" />
+          {{ $t("shopDetail.noRecentChanges") }}
+        </div>
+        <div v-else class="space-y-1.5">
           <div
-            v-if="recentChangelogs.length === 0"
-            class="flex items-center gap-2 rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground"
+            v-for="changelog in recentChangelogs"
+            :key="changelog.id"
+            class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors hover:bg-accent"
+            @click="openEnvironmentChangelog(changelog)"
           >
-            <icon-fa6-solid:circle-info class="size-4 shrink-0" />
-            {{ $t("shopDetail.noRecentChanges") }}
+            <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+              formatDate(changelog.date)
+            }}</span>
+            <Separator orientation="vertical" class="h-4" />
+            <span class="min-w-0 flex-1 truncate text-sm">{{ sumChanges(changelog) }}</span>
+            <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
           </div>
-          <div v-else class="space-y-1.5">
-            <div
-              v-for="changelog in recentChangelogs"
-              :key="changelog.id"
-              class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors hover:bg-accent"
-              @click="openEnvironmentChangelog(changelog)"
-            >
-              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
-                formatDate(changelog.date)
-              }}</span>
-              <Separator orientation="vertical" class="h-4" />
-              <span class="min-w-0 flex-1 truncate text-sm">{{ sumChanges(changelog) }}</span>
-              <icon-fa6-solid:chevron-right class="size-2.5 shrink-0 text-muted-foreground" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardSection>
     </div>
 
     <!-- ═══════ BOTTOM: Environment info ═══════ -->
-    <Card>
-      <CardHeader class="flex-row items-center justify-between pb-3">
-        <CardTitle class="flex items-center gap-2 text-base">
-          <icon-fa6-solid:circle-info class="size-4 text-muted-foreground" />
-          {{ $t("shopDetail.shopInfo") }}
-        </CardTitle>
+    <CardSection :icon="IconCircleInfo" :title="$t('shopDetail.shopInfo')">
+      <template #action>
         <Button
           v-if="latestShopwareVersion && latestShopwareVersion !== environment.shopwareVersion"
           variant="outline"
@@ -283,44 +255,42 @@
           <icon-fa6-solid:rotate class="mr-1 size-2.5" />
           {{ $t("shopDetail.compatibilityCheck") }}
         </Button>
-      </CardHeader>
-      <CardContent class="pt-0">
-        <div class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="item in infoItems" :key="item.label">
-            <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
-            <dd class="mt-0.5">
-              <span class="text-sm">{{ item.value }}</span>
-            </dd>
-          </div>
-
-          <div class="sm:col-span-2 lg:col-span-3">
-            <dt class="text-xs font-medium text-muted-foreground">
-              Bypass Authentication Header
-              <span
-                title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
-              >
-                <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
-              </span>
-            </dt>
-            <dd class="mt-1 flex items-center gap-2">
-              <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
-                environment.environmentToken
-              }}</code>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="size-7 shrink-0"
-                title="Copy token"
-                @click="copyToken"
-              >
-                <icon-fa6-solid:copy class="size-3" />
-              </Button>
-            </dd>
-          </div>
+      </template>
+      <div class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-for="item in infoItems" :key="item.label">
+          <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
+          <dd class="mt-0.5">
+            <span class="text-sm">{{ item.value }}</span>
+          </dd>
         </div>
-      </CardContent>
-    </Card>
+
+        <div class="sm:col-span-2 lg:col-span-3">
+          <dt class="text-xs font-medium text-muted-foreground">
+            Bypass Authentication Header
+            <span
+              title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
+            >
+              <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
+            </span>
+          </dt>
+          <dd class="mt-1 flex items-center gap-2">
+            <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
+              environment.environmentToken
+            }}</code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              class="size-7 shrink-0"
+              title="Copy token"
+              @click="copyToken"
+            >
+              <icon-fa6-solid:copy class="size-3" />
+            </Button>
+          </dd>
+        </div>
+      </div>
+    </CardSection>
 
     <!-- Modals -->
     <EnvironmentChangelog
@@ -359,10 +329,17 @@ import { sumChanges } from "@/helpers/changelog";
 import { useI18n } from "vue-i18n";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import StatusIcon from "@/components/StatusIcon.vue";
+import CardSection from "@/components/CardSection.vue";
+
+import IconShieldHalved from "~icons/fa6-solid/shield-halved";
+import IconPlug from "~icons/fa6-solid/plug";
+import IconListCheck from "~icons/fa6-solid/list-check";
+import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
+import IconCircleInfo from "~icons/fa6-solid/circle-info";
 
 type Extension = components["schemas"]["EnvironmentExtension"];
 type ExtensionWithCompatibility = Extension & {

@@ -2,51 +2,19 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-            <icon-fa6-solid:layer-group class="size-4 text-primary" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ queues.length }}</div>
-            <div class="text-xs text-muted-foreground">Queues</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div
-            class="flex size-9 items-center justify-center rounded-lg"
-            :class="totalSize > 0 ? 'bg-warning/10' : 'bg-success/10'"
-          >
-            <icon-fa6-solid:envelope
-              class="size-4"
-              :class="totalSize > 0 ? 'text-warning' : 'text-success'"
-            />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ totalSize.toLocaleString() }}</div>
-            <div class="text-xs text-muted-foreground">Pending messages</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div
-            class="flex size-9 items-center justify-center rounded-lg"
-            :class="busyQueues > 0 ? 'bg-warning/10' : 'bg-success/10'"
-          >
-            <icon-fa6-solid:gauge-high
-              class="size-4"
-              :class="busyQueues > 0 ? 'text-warning' : 'text-success'"
-            />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ busyQueues }}</div>
-            <div class="text-xs text-muted-foreground">Queues with backlog</div>
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard :icon="IconLayerGroup" :value="queues.length" label="Queues" />
+      <StatCard
+        :icon="IconEnvelope"
+        :value="totalSize.toLocaleString()"
+        label="Pending messages"
+        :color="totalSize > 0 ? 'warning' : 'success'"
+      />
+      <StatCard
+        :icon="IconGaugeHigh"
+        :value="busyQueues"
+        label="Queues with backlog"
+        :color="busyQueues > 0 ? 'warning' : 'success'"
+      />
     </div>
 
     <!-- Queue list -->
@@ -89,14 +57,12 @@
     </div>
 
     <!-- Empty state -->
-    <div
-      v-else
-      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
-    >
-      <icon-fa6-solid:layer-group class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No queues</h3>
-      <p class="text-sm text-muted-foreground">This environment has no message queues.</p>
-    </div>
+    <EmptyState
+      :icon="IconLayerGroup"
+      title="No queues"
+      description="This environment has no message queues."
+      size="sm"
+    />
   </div>
 </template>
 
@@ -104,7 +70,12 @@
 import { computed } from "vue";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 
-import { Card, CardContent } from "@/components/ui/card";
+import StatCard from "@/components/StatCard.vue";
+import EmptyState from "@/components/EmptyState.vue";
+
+import IconLayerGroup from "~icons/fa6-solid/layer-group";
+import IconEnvelope from "~icons/fa6-solid/envelope";
+import IconGaugeHigh from "~icons/fa6-solid/gauge-high";
 
 const { environment } = useEnvironmentDetail();
 

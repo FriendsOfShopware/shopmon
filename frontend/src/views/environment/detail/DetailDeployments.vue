@@ -2,58 +2,25 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary cards -->
     <div v-if="deployments.length > 0" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-            <icon-fa6-solid:rocket class="size-4 text-primary" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ deployments.length }}</div>
-            <div class="text-xs text-muted-foreground">Total</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-success/10">
-            <icon-fa6-solid:circle-check class="size-4 text-success" />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.success }}</div>
-            <div class="text-xs text-muted-foreground">Successful</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent class="flex items-center gap-3 p-4">
-          <div
-            class="flex size-9 items-center justify-center rounded-lg"
-            :class="counts.failed > 0 ? 'bg-destructive/10' : 'bg-muted'"
-          >
-            <icon-fa6-solid:circle-xmark
-              class="size-4"
-              :class="counts.failed > 0 ? 'text-destructive' : 'text-muted-foreground'"
-            />
-          </div>
-          <div>
-            <div class="text-2xl font-bold tabular-nums">{{ counts.failed }}</div>
-            <div class="text-xs text-muted-foreground">Failed</div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card v-if="latestDeployment">
-        <CardContent class="flex items-center gap-3 p-4">
-          <div class="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-            <icon-fa6-solid:clock class="size-4 text-primary" />
-          </div>
-          <div>
-            <div class="truncate text-sm font-bold tabular-nums">
-              {{ formatDateTime(latestDeployment.createdAt) }}
-            </div>
-            <div class="text-xs text-muted-foreground">Last deploy</div>
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard :icon="IconRocket" :value="deployments.length" label="Total" />
+      <StatCard
+        :icon="IconCircleCheck"
+        :value="counts.success"
+        label="Successful"
+        color="success"
+      />
+      <StatCard
+        :icon="IconCircleXmark"
+        :value="counts.failed"
+        label="Failed"
+        :color="counts.failed > 0 ? 'destructive' : 'muted'"
+      />
+      <StatCard
+        v-if="latestDeployment"
+        :icon="IconClock"
+        :value="formatDateTime(latestDeployment.createdAt)"
+        label="Last deploy"
+      />
     </div>
 
     <!-- Deployment list -->
@@ -158,16 +125,13 @@
     </div>
 
     <!-- Empty state -->
-    <div
+    <EmptyState
       v-else
-      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
-    >
-      <icon-fa6-solid:rocket class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">{{ $t("deployments.noDeployments") }}</h3>
-      <p class="max-w-md text-sm text-muted-foreground">
-        Set up the CLI to start tracking deployments.
-      </p>
-    </div>
+      :icon="IconRocket"
+      :title="$t('deployments.noDeployments')"
+      description="Set up the CLI to start tracking deployments."
+      size="sm"
+    />
 
     <!-- Setup instructions (collapsible) -->
     <Card>
@@ -276,8 +240,15 @@ import { formatDateTime } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import StatCard from "@/components/StatCard.vue";
+import EmptyState from "@/components/EmptyState.vue";
+
+import IconRocket from "~icons/fa6-solid/rocket";
+import IconCircleCheck from "~icons/fa6-solid/circle-check";
+import IconCircleXmark from "~icons/fa6-solid/circle-xmark";
+import IconClock from "~icons/fa6-solid/clock";
 import {
   Dialog,
   DialogContent,
