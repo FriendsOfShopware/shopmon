@@ -1,53 +1,60 @@
 <template>
-  <div class="my-8 text-center">
-    <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.createAccountTitle") }}</h2>
-  </div>
+  <Card class="border-0 shadow-none sm:border sm:shadow-sm">
+    <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
+      <CardTitle class="text-2xl font-semibold tracking-tight">
+        {{ $t("auth.createAccountTitle") }}
+      </CardTitle>
+      <CardDescription>
+        {{ $t("auth.alreadyHaveAccount", "Already have an account?") }}
+        {{ " " }}
+        <RouterLink
+          :to="{ name: 'account.login' }"
+          class="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {{ $t("auth.signIn") }}
+        </RouterLink>
+      </CardDescription>
+    </CardHeader>
 
-  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
-    <div class="flex flex-col gap-2">
-      <FormField v-slot="{ componentField }" name="displayName">
-        <FormItem>
-          <FormControl>
-            <Input :placeholder="$t('auth.displayName')" v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+    <CardContent class="px-6 pb-6">
+      <form class="flex flex-col gap-4" @submit="onSubmit">
+        <FormField v-slot="{ componentField }" name="displayName">
+          <FormItem>
+            <FormLabel>{{ $t("auth.displayName") }}</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <FormField v-slot="{ componentField }" name="email">
-        <FormItem>
-          <FormControl>
-            <Input type="email" :placeholder="$t('common.emailAddress')" v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>{{ $t("common.emailAddress") }}</FormLabel>
+            <FormControl>
+              <Input type="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <FormField v-slot="{ componentField }" name="password">
-        <FormItem>
-          <FormControl>
-            <PasswordInput :placeholder="$t('common.password')" v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-    </div>
+        <FormField v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>{{ $t("common.password") }}</FormLabel>
+            <FormControl>
+              <PasswordInput v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-    <Button type="submit" class="w-full" :disabled="isSubmitting">
-      <icon-fa6-solid:user-plus v-if="!isSubmitting" class="size-5" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="size-5" />
-      {{ $t("auth.registerButton") }}
-    </Button>
-
-    <div>
-      <RouterLink
-        :to="{ name: 'account.login' }"
-        class="text-sm text-muted-foreground underline-offset-4 hover:underline"
-      >
-        {{ $t("common.cancel") }}
-      </RouterLink>
-    </div>
-  </form>
+        <Button type="submit" class="mt-2 w-full" :disabled="isSubmitting">
+          <icon-line-md:loading-twotone-loop v-if="isSubmitting" class="size-5" />
+          {{ $t("auth.registerButton") }}
+        </Button>
+      </form>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -60,8 +67,9 @@ import { useRouter } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
 import { api, setToken } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
 import PasswordInput from "@/components/PasswordInput.vue";
 
 const { t } = useI18n();

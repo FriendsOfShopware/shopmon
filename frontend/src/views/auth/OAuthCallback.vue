@@ -1,7 +1,10 @@
 <template>
-  <div class="flex items-center justify-center py-12">
-    <icon-line-md:loading-twotone-loop class="size-8" />
-  </div>
+  <Card class="border-0 shadow-none sm:border sm:shadow-sm">
+    <CardContent class="flex flex-col items-center gap-3 px-6 py-12">
+      <icon-line-md:loading-twotone-loop class="size-8 text-muted-foreground" />
+      <p class="text-sm text-muted-foreground">{{ $t("common.loading") }}</p>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -9,6 +12,7 @@ import { useRouter } from "vue-router";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
 import { api, setToken } from "@/helpers/api";
+import { Card, CardContent } from "@/components/ui/card";
 
 const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();

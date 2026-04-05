@@ -1,99 +1,121 @@
 <template>
-  <div class="my-8 text-center">
-    <h2 class="mb-2 text-3xl font-bold leading-tight">{{ $t("auth.signIn") }}</h2>
-    <p class="text-muted-foreground">
-      {{ $t("auth.newToShopmon") }}
-      {{ " " }}
-      <Button variant="link" as-child class="p-0">
-        <RouterLink :to="{ name: 'account.register' }">{{ $t("auth.createAccount") }}</RouterLink>
-      </Button>
-    </p>
-  </div>
+  <Card class="border-0 shadow-none sm:border sm:shadow-sm">
+    <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
+      <CardTitle class="text-2xl font-semibold tracking-tight">
+        {{ $t("auth.signIn") }}
+      </CardTitle>
+      <CardDescription>
+        {{ $t("auth.newToShopmon") }}
+        {{ " " }}
+        <RouterLink
+          :to="{ name: 'account.register' }"
+          class="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {{ $t("auth.createAccount") }}
+        </RouterLink>
+      </CardDescription>
+    </CardHeader>
 
-  <form class="flex w-full flex-col gap-6 text-center" @submit="onSubmit">
-    <div class="flex flex-col gap-2">
-      <FormField v-slot="{ componentField }" name="email">
-        <FormItem>
-          <FormControl>
-            <Input
-              type="email"
-              autocomplete="email"
-              :placeholder="$t('common.emailAddress')"
-              v-bind="componentField"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+    <CardContent class="px-6 pb-6">
+      <!-- Social & Passkey login buttons -->
+      <div class="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          class="w-full"
+          :disabled="isGithubLoading"
+          @click="githubLogin"
+        >
+          <icon-mdi:github v-if="!isGithubLoading" class="size-5" aria-hidden="true" />
+          <icon-line-md:loading-twotone-loop v-else class="size-5" />
+          {{ $t("auth.continueGithub") }}
+        </Button>
 
-      <FormField v-slot="{ componentField }" name="password">
-        <FormItem>
-          <FormControl>
-            <PasswordInput :placeholder="$t('common.password')" v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-    </div>
-
-    <Button type="submit" class="w-full" :disabled="isSubmitting">
-      <icon-fa6-solid:right-to-bracket v-if="!isSubmitting" class="size-5" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="size-5" />
-      {{ $t("auth.signInButton") }}
-    </Button>
-
-    <div>
-      <RouterLink
-        :to="{ name: 'account.forgot.password' }"
-        class="text-sm text-muted-foreground underline-offset-4 hover:underline"
-      >
-        {{ $t("auth.forgotPassword") }}
-      </RouterLink>
-    </div>
-  </form>
-
-  <div class="mt-8 flex flex-col gap-6">
-    <div class="text-center text-sm text-muted-foreground">{{ $t("common.or") }}</div>
-
-    <Button type="button" class="w-full" :disabled="isAuthenticated" @click="webauthnLogin">
-      <icon-material-symbols:passkey v-if="!isAuthenticated" class="size-5" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="size-5" />
-      {{ $t("auth.loginPasskey") }}
-    </Button>
-
-    <Button
-      type="button"
-      variant="outline"
-      class="w-full"
-      :disabled="isGithubLoading"
-      @click="githubLogin"
-    >
-      <icon-mdi:github v-if="!isGithubLoading" class="size-5" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="size-5" />
-      {{ $t("auth.continueGithub") }}
-    </Button>
-
-    <div class="mt-4">
-      <div class="mb-4 text-center text-sm text-muted-foreground">
-        {{ $t("auth.enterpriseSSO") }}
-      </div>
-
-      <div class="flex gap-2">
-        <Input
-          v-model="ssoEmail"
-          type="email"
-          class="flex-1"
-          :placeholder="$t('auth.enterWorkEmail')"
-          @keyup.enter="ssoLogin"
-        />
-        <Button type="button" size="icon" :disabled="isSSOLoading || !ssoEmail" @click="ssoLogin">
-          <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="size-4" aria-hidden="true" />
-          <icon-line-md:loading-twotone-loop v-else class="size-4" />
+        <Button
+          type="button"
+          variant="outline"
+          class="w-full"
+          :disabled="isAuthenticated"
+          @click="webauthnLogin"
+        >
+          <icon-material-symbols:passkey
+            v-if="!isAuthenticated"
+            class="size-5"
+            aria-hidden="true"
+          />
+          <icon-line-md:loading-twotone-loop v-else class="size-5" />
+          {{ $t("auth.loginPasskey") }}
         </Button>
       </div>
-      <p class="mt-2 text-center text-sm text-muted-foreground">{{ $t("auth.ssoHelp") }}</p>
-    </div>
-  </div>
+
+      <!-- Divider -->
+      <div class="relative my-6">
+        <Separator />
+        <span
+          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground"
+        >
+          {{ $t("common.or") }}
+        </span>
+      </div>
+
+      <!-- Email / Password form -->
+      <form class="flex flex-col gap-4" @submit="onSubmit">
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>{{ $t("common.emailAddress") }}</FormLabel>
+            <FormControl>
+              <Input type="email" autocomplete="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <FormField v-slot="{ componentField }" name="password">
+          <FormItem>
+            <div class="flex items-center justify-between">
+              <FormLabel>{{ $t("common.password") }}</FormLabel>
+              <RouterLink
+                :to="{ name: 'account.forgot.password' }"
+                class="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {{ $t("auth.forgotPassword") }}
+              </RouterLink>
+            </div>
+            <FormControl>
+              <PasswordInput v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+
+        <Button type="submit" class="mt-2 w-full" :disabled="isSubmitting">
+          <icon-line-md:loading-twotone-loop v-if="isSubmitting" class="size-5" />
+          {{ $t("auth.signInButton") }}
+        </Button>
+      </form>
+
+      <!-- Enterprise SSO -->
+      <div class="mt-6 rounded-lg border border-dashed p-4">
+        <p class="mb-3 text-center text-sm font-medium text-muted-foreground">
+          {{ $t("auth.enterpriseSSO") }}
+        </p>
+        <div class="flex gap-2">
+          <Input
+            v-model="ssoEmail"
+            type="email"
+            class="flex-1"
+            :placeholder="$t('auth.enterWorkEmail')"
+            @keyup.enter="ssoLogin"
+          />
+          <Button type="button" size="icon" :disabled="isSSOLoading || !ssoEmail" @click="ssoLogin">
+            <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="size-4" aria-hidden="true" />
+            <icon-line-md:loading-twotone-loop v-else class="size-4" />
+          </Button>
+        </div>
+        <p class="mt-2 text-center text-xs text-muted-foreground">{{ $t("auth.ssoHelp") }}</p>
+      </div>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -110,8 +132,10 @@ import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
 import { api, setToken } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
 import PasswordInput from "@/components/PasswordInput.vue";
 
 const { t } = useI18n();
