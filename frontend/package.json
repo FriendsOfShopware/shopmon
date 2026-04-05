@@ -11,6 +11,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "lint": "oxlint && vitest run",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "generate:api": "openapi-typescript ../api/openapi/spec.yaml -o src/types/api.d.ts"

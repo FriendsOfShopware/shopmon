@@ -89,7 +89,7 @@ describe("AccountConfirm", () => {
     expect(successAlert).toBeTruthy();
     expect(wrapper.text()).toContain("Your email address has been confirmed");
     expect(wrapper.find("a").exists()).toBe(true);
-    expect(wrapper.find("a").text()).toBe("Login");
+    expect(wrapper.find("a").text()).toBe("Back to sign in");
   });
 
   it("renders error state when token is expired", async () => {

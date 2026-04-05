@@ -9,8 +9,12 @@ vi.mock("@/router", () => ({
   },
 }));
 
-// Mock vue-router for RouterLink
+// Mock vue-router for RouterLink and useRouter
+const mockPush = vi.fn();
 vi.mock("vue-router", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
   RouterLink: {
     name: "RouterLink",
     props: ["to"],
@@ -55,7 +59,7 @@ describe("Register", () => {
 
   it("displays page title", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h2").text()).toBe("Create account");
+    expect(wrapper.find("h3").text()).toBe("Create account");
   });
 
   it("has display name input field", () => {
@@ -84,9 +88,10 @@ describe("Register", () => {
     expect(button.text()).toContain("Register");
   });
 
-  it("has cancel link to login", () => {
+  it("has link to login", () => {
     const wrapper = mountComponent();
-    expect(wrapper.text()).toContain("Cancel");
+    expect(wrapper.text()).toContain("Already have an account?");
+    expect(wrapper.text()).toContain("Sign in to your account");
   });
 
   it("has form element with submit handler", () => {
@@ -95,16 +100,15 @@ describe("Register", () => {
     expect(form.exists()).toBe(true);
   });
 
-  it("has display name input with correct placeholder", () => {
+  it("has display name label", () => {
     const wrapper = mountComponent();
-    const inputs = wrapper.findAll("input");
-    const displayNameInput = inputs.find((i) => i.attributes("placeholder") === "Display Name");
-    expect(displayNameInput).toBeTruthy();
+    // The component uses FormLabel instead of a placeholder attribute
+    expect(wrapper.text()).toContain("Display Name");
   });
 
-  it("has email input with correct placeholder", () => {
+  it("has email label", () => {
     const wrapper = mountComponent();
-    const input = wrapper.find('input[type="email"]');
-    expect(input.attributes("placeholder")).toBe("Email address");
+    // The component uses FormLabel instead of a placeholder attribute
+    expect(wrapper.text()).toContain("Email address");
   });
 });

@@ -105,9 +105,18 @@ describe("Home", () => {
 
   it("uses theme-aware images", () => {
     mount(Home);
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-dashboard.webp");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-performance-checks.webp");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-sitespeed.webp");
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-dashboard.webp",
+      dark: "/src/assets/home/shopmon-dashboard-dark.webp",
+    });
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-performance-checks.webp",
+      dark: "/src/assets/home/shopmon-performance-checks-dark.webp",
+    });
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-sitespeed.webp",
+      dark: "/src/assets/home/shopmon-sitespeed-dark.webp",
+    });
   });
 
   it("has main heading in h1", () => {

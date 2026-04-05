@@ -44,6 +44,12 @@ const commands = {
 					cwd: "frontend",
 					label: "oxfmt",
 				},
+				{
+					cmd: "npx",
+					args: ["vitest", "run"],
+					cwd: "frontend",
+					label: "vitest",
+				},
 			]),
 	},
 	"lint-fix": {

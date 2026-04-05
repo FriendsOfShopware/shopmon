@@ -102,6 +102,6 @@ describe("AddShop", () => {
     await flushPromises();
     const btn = wrapper.find('button[type="submit"]');
     expect(btn.exists()).toBe(true);
-    expect(btn.text()).toContain("Save");
+    expect(btn.text()).toContain("Create Shop");
   });
 });

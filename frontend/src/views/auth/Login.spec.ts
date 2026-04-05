@@ -70,7 +70,7 @@ describe("Login", () => {
 
   it("displays sign in heading", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h2").text()).toBe("Sign in to your account");
+    expect(wrapper.find("h3").text()).toBe("Sign in to your account");
   });
 
   it("displays link to create account", () => {
@@ -83,14 +83,16 @@ describe("Login", () => {
     const wrapper = mountComponent();
     const emailInput = wrapper.find('input[type="email"]');
     expect(emailInput.exists()).toBe(true);
-    expect(emailInput.attributes("placeholder")).toBe("Email address");
+    // The component uses FormLabel instead of a placeholder attribute
+    expect(wrapper.text()).toContain("Email address");
   });
 
   it("has password input field", () => {
     const wrapper = mountComponent();
     const passwordInput = wrapper.find('input[type="password"]');
     expect(passwordInput.exists()).toBe(true);
-    expect(passwordInput.attributes("placeholder")).toBe("Password");
+    // The component uses FormLabel instead of a placeholder attribute
+    expect(wrapper.text()).toContain("Password");
   });
 
   it("has sign in button", () => {

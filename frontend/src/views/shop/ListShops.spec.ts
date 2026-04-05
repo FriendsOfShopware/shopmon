@@ -25,9 +25,11 @@ const mockShops = [
   {
     id: 1,
     name: "Test Shop",
-    nameCombined: "Test Org / Test Shop",
     description: "A test shop description",
-    createdAt: new Date("2024-01-15").toISOString(),
+    gitUrl: null,
+    organizationId: "org-1",
+    organizationName: "Test Org",
+    defaultEnvironmentId: 1,
   },
 ];
 
@@ -150,8 +152,8 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // The component displays each environment as a card with its name and version
-    expect(wrapper.text()).toContain("Test Environment");
+    // The component displays the shop name and the default environment's Shopware version badge
+    expect(wrapper.text()).toContain("Test Shop");
     expect(wrapper.text()).toContain("6.5.0");
   });
 
@@ -167,7 +169,10 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.find(".green").exists()).toBe(true);
+    // The StatusIconStub renders <span :class="status">{{ status }}</span>
+    const statusIcon = wrapper.findComponent(StatusIconStub);
+    expect(statusIcon.exists()).toBe(true);
+    expect(statusIcon.props("status")).toBe("green");
   });
 
   it("shows empty state CTA when no projects", async () => {
@@ -188,14 +193,17 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Edit Shop");
+    // The edit button renders as a span with only an icon and a title attribute
+    const editBtn = wrapper.find('[title="Edit Shop"]');
+    expect(editBtn.exists()).toBe(true);
   });
 
-  it("shows an add shop shortcut on the project card", async () => {
+  it("shows shop version badge on the project card", async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Add Environment");
+    // Each shop card shows the default environment's Shopware version as a badge
+    expect(wrapper.text()).toContain("6.5.0");
   });
 
   it("displays shop favicon or fallback icon", async () => {
