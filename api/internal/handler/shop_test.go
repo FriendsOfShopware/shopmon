@@ -52,13 +52,21 @@ func TestListShops_NotMember(t *testing.T) {
 }
 
 func TestCreateShop(t *testing.T) {
+	// Mock Shopware API server
+	mockShopware := testutil.NewMockShopwareServer(t)
+	defer mockShopware.Close()
+
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 
 	body, _ := json.Marshal(api.CreateShopRequest{
-		Name:        "New Shop",
-		Description: strPtr("A test shop"),
+		Name:            "New Shop",
+		Description:     strPtr("A test shop"),
+		EnvironmentName: "Production",
+		EnvironmentUrl:  mockShopware.URL,
+		ClientId:        "test-client-id",
+		ClientSecret:    "test-client-secret",
 	})
 
 	req, _ := http.NewRequest("POST", env.Server.URL+"/api/organizations/org-1/shops", bytes.NewReader(body))

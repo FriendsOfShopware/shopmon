@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -46,7 +47,7 @@ func (h *Handler) runCreateEnvironment(ctx context.Context, organizationID strin
 	}
 
 	if err := goqueue.Dispatch(ctx, h.bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
-		return environmentID, fmt.Errorf("enqueue initial scrape: %w", err)
+		slog.Error("failed to enqueue initial scrape", "environmentId", environmentID, "error", err)
 	}
 
 	return environmentID, nil

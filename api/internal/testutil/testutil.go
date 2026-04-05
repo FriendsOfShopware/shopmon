@@ -22,6 +22,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	goqueue "github.com/shyim/go-queue"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/redis"
@@ -125,7 +126,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	q := queries.New(pool)
 
 	cfg := &config.Config{
-		AppSecret:         "test-secret-key-32-bytes-long!!", // 32 bytes for AES-256
+		AppSecret:         "test-secret-key-32-bytes-long!!!", // 32 bytes for AES-256
 		FrontendURL:       "http://localhost:3000",
 		MailFrom:          "test@shopmon.io",
 		RedisURL:          shared.redisURL,
@@ -140,7 +141,8 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 
 	mailSvc := mail.NewService(mail.SMTPConfig{From: "test@shopmon.io"})
 
-	h := handler.New(pool, q, nil, cfg, mailSvc, nil)
+	bus := goqueue.NewBus()
+	h := handler.New(pool, q, nil, cfg, mailSvc, bus)
 
 	// Build chi router matching production setup
 	r := chi.NewRouter()
@@ -246,6 +248,14 @@ func (e *TestEnv) SeedOrganization(t *testing.T, orgID, name, slug, userID strin
 	if err != nil {
 		t.Fatalf("failed to seed member: %v", err)
 	}
+
+	// Set as active organization on the user's session
+	_, err = e.Pool.Exec(ctx, `
+		UPDATE session SET active_organization_id = $1 WHERE user_id = $2 AND active_organization_id IS NULL
+	`, orgID, userID)
+	if err != nil {
+		t.Fatalf("failed to set active organization: %v", err)
+	}
 }
 
 // SeedShop creates a test shop in an organization.
@@ -307,6 +317,24 @@ func (e *TestEnv) SeedNotification(t *testing.T, userID, key, level, title, mess
 		t.Fatalf("failed to seed notification: %v", err)
 	}
 	return id
+}
+
+// NewMockShopwareServer creates a mock Shopware API server that handles OAuth token and info endpoints.
+func NewMockShopwareServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/api/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token":"mock-token","expires_in":600}`))
+	})
+
+	mux.HandleFunc("/api/_info/config", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"version":"6.5.0.0"}`))
+	})
+
+	return httptest.NewServer(mux)
 }
 
 // AuthRequest creates a new HTTP request with the session token set.
