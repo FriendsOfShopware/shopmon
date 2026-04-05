@@ -111,6 +111,7 @@ CREATE TABLE "shop" (
   "name" text NOT NULL,
   "description" text,
   "git_url" text,
+  "default_environment_id" integer,
   "created_at" timestamp NOT NULL,
   "updated_at" timestamp NOT NULL
 );

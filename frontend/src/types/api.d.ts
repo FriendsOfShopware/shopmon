@@ -1568,6 +1568,7 @@ export interface components {
       gitUrl: string | null;
       organizationId: string;
       organizationName: string;
+      defaultEnvironmentId: number;
     };
     AccountChangelog: {
       id: number;
@@ -1732,16 +1733,22 @@ export interface components {
       description: string | null;
       gitUrl: string | null;
       organizationId: string;
+      defaultEnvironmentId: number;
     };
     CreateShopRequest: {
       name: string;
       description?: string;
       gitUrl?: string;
+      environmentName: string;
+      environmentUrl: string;
+      clientId: string;
+      clientSecret: string;
     };
     UpdateShopRequest: {
       name?: string;
       description?: string;
       gitUrl?: string;
+      defaultEnvironmentId?: number;
     };
     ApiKeyScope: {
       value: string;

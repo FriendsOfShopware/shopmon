@@ -570,7 +570,7 @@ func (q *Queries) GetUserShops(ctx context.Context, userID string) ([]GetUserSho
 }
 
 const getUserShopsByOrg = `-- name: GetUserShopsByOrg :many
-SELECT s.id, s.name, s.description, s.git_url, s.organization_id, o.name AS organization_name
+SELECT s.id, s.name, s.description, s.git_url, s.default_environment_id, s.organization_id, o.name AS organization_name
 FROM shop s
 JOIN member m ON m.organization_id = s.organization_id
 JOIN organization o ON o.id = s.organization_id
@@ -584,12 +584,13 @@ type GetUserShopsByOrgParams struct {
 }
 
 type GetUserShopsByOrgRow struct {
-	ID               int32   `json:"id"`
-	Name             string  `json:"name"`
-	Description      *string `json:"description"`
-	GitUrl           *string `json:"git_url"`
-	OrganizationID   string  `json:"organization_id"`
-	OrganizationName string  `json:"organization_name"`
+	ID                   int32   `json:"id"`
+	Name                 string  `json:"name"`
+	Description          *string `json:"description"`
+	GitUrl               *string `json:"git_url"`
+	DefaultEnvironmentID *int32  `json:"default_environment_id"`
+	OrganizationID       string  `json:"organization_id"`
+	OrganizationName     string  `json:"organization_name"`
 }
 
 func (q *Queries) GetUserShopsByOrg(ctx context.Context, arg GetUserShopsByOrgParams) ([]GetUserShopsByOrgRow, error) {
@@ -606,6 +607,7 @@ func (q *Queries) GetUserShopsByOrg(ctx context.Context, arg GetUserShopsByOrgPa
 			&i.Name,
 			&i.Description,
 			&i.GitUrl,
+			&i.DefaultEnvironmentID,
 			&i.OrganizationID,
 			&i.OrganizationName,
 		); err != nil {

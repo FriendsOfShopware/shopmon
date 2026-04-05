@@ -149,12 +149,13 @@ type AccountOrganization struct {
 
 // AccountShop defines model for AccountShop.
 type AccountShop struct {
-	Description      *string `json:"description"`
-	GitUrl           *string `json:"gitUrl"`
-	Id               int     `json:"id"`
-	Name             string  `json:"name"`
-	OrganizationId   string  `json:"organizationId"`
-	OrganizationName string  `json:"organizationName"`
+	DefaultEnvironmentId int     `json:"defaultEnvironmentId"`
+	Description          *string `json:"description"`
+	GitUrl               *string `json:"gitUrl"`
+	Id                   int     `json:"id"`
+	Name                 string  `json:"name"`
+	OrganizationId       string  `json:"organizationId"`
+	OrganizationName     string  `json:"organizationName"`
 }
 
 // AdminEnvironmentsResponse defines model for AdminEnvironmentsResponse.
@@ -270,9 +271,13 @@ type CreatePackagesTokenRequest struct {
 
 // CreateShopRequest defines model for CreateShopRequest.
 type CreateShopRequest struct {
-	Description *string `json:"description,omitempty"`
-	GitUrl      *string `json:"gitUrl,omitempty"`
-	Name        string  `json:"name"`
+	ClientId        string  `json:"clientId"`
+	ClientSecret    string  `json:"clientSecret"`
+	Description     *string `json:"description,omitempty"`
+	EnvironmentName string  `json:"environmentName"`
+	EnvironmentUrl  string  `json:"environmentUrl"`
+	GitUrl          *string `json:"gitUrl,omitempty"`
+	Name            string  `json:"name"`
 }
 
 // Deployment defines model for Deployment.
@@ -464,11 +469,12 @@ type ScheduledTask struct {
 
 // Shop defines model for Shop.
 type Shop struct {
-	Description    *string `json:"description"`
-	GitUrl         *string `json:"gitUrl"`
-	Id             int     `json:"id"`
-	Name           string  `json:"name"`
-	OrganizationId string  `json:"organizationId"`
+	DefaultEnvironmentId int     `json:"defaultEnvironmentId"`
+	Description          *string `json:"description"`
+	GitUrl               *string `json:"gitUrl"`
+	Id                   int     `json:"id"`
+	Name                 string  `json:"name"`
+	OrganizationId       string  `json:"organizationId"`
 }
 
 // ShopwareVersionCount defines model for ShopwareVersionCount.
@@ -540,9 +546,10 @@ type UpdateEnvironmentRequest struct {
 
 // UpdateShopRequest defines model for UpdateShopRequest.
 type UpdateShopRequest struct {
-	Description *string `json:"description,omitempty"`
-	GitUrl      *string `json:"gitUrl,omitempty"`
-	Name        *string `json:"name,omitempty"`
+	DefaultEnvironmentId *int    `json:"defaultEnvironmentId,omitempty"`
+	Description          *string `json:"description,omitempty"`
+	GitUrl               *string `json:"gitUrl,omitempty"`
+	Name                 *string `json:"name,omitempty"`
 }
 
 // UpdateSsoProviderRequest defines model for UpdateSsoProviderRequest.

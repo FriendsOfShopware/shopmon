@@ -37,7 +37,8 @@
     "environments": "Umgebungen",
     "noElements": "Keine Einträge",
     "addElement": "Eintrag hinzufügen",
-    "getStartedElement": "Fügen Sie Ihren ersten Eintrag hinzu, um loszulegen."
+    "getStartedElement": "Fügen Sie Ihren ersten Eintrag hinzu, um loszulegen.",
+    "default": "Standard"
   },
   "alert": {
     "successTitle": "Aktion erfolgreich",
@@ -247,6 +248,8 @@
     "unsubscribedEnvironment": "Umgebungs-Benachrichtigungen erfolgreich abbestellt"
   },
   "environment": {
+    "title": "Umgebungen",
+    "environmentName": "Umgebungsname",
     "newEnvironment": "Neue Umgebung",
     "editEnvironment": "{name} bearbeiten",
     "environmentInfo": "Umgebungs-Informationen",
@@ -300,6 +303,14 @@
     "deleteShopWarning": "Wenn Sie Ihr Shop löschen, gehen alle damit verbundenen Daten unwiderruflich verloren.",
     "deleteShopEnvironmentsWarning": "Dieses Shop hat noch {count} Umgebung(en). Verschieben oder löschen Sie diese zuerst.",
     "deleteShop": "Shop löschen",
+    "setDefault": "Als Standard setzen",
+    "unsetDefault": "Standard entfernen",
+    "defaultEnvSet": "Standard-Umgebung aktualisiert",
+    "defaultEnvUnset": "Standard-Umgebung entfernt",
+    "firstEnvironment": "Erste Umgebung",
+    "firstEnvironmentDesc": "Verbinden Sie Ihre erste Shopware-Umgebung mit diesem Shop. Weitere Umgebungen können Sie später hinzufügen.",
+    "createShop": "Shop erstellen",
+    "envCount": "{count} Umgebungen",
     "createApiKeyTitle": "API-Schlüssel erstellen",
     "apiKeyPlaceholder": "Mein API-Schlüssel",
     "scopes": "Berechtigungen",
@@ -515,8 +526,13 @@
   },
   "pluginModal": {
     "title": "Über Shopmon Plugin verbinden",
-    "description": "Fügen Sie den Base64-String aus Ihrem Shopmon Plugin ein:",
-    "importData": "Daten importieren"
+    "subtitle": "Importieren Sie Ihre Shop-Zugangsdaten automatisch in drei Schritten.",
+    "step1Title": "Plugin installieren",
+    "step1Desc": "Installieren und aktivieren Sie das {link} Plugin in Ihrer Shopware-Administration.",
+    "step2Title": "Verbindungsstring kopieren",
+    "step2Desc": "Öffnen Sie die Plugin-Konfiguration und kopieren Sie den Base64-Verbindungsstring.",
+    "step3Title": "Hier einfügen",
+    "importData": "Verbindung importieren"
   },
   "changelogModal": {
     "title": "Umgebungs-Änderungsprotokoll - {date}",

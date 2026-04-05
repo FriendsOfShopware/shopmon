@@ -1,5 +1,5 @@
 <template>
-  <div v-if="environments">
+  <div v-if="shops">
     <!-- Page header -->
     <div
       class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4"
@@ -8,10 +8,10 @@
         <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("dashboard.title") }}</h1>
         <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
       </div>
-      <div v-if="environments.length > 0" class="hidden items-center gap-6 sm:flex">
+      <div v-if="shops.length > 0" class="hidden items-center gap-6 sm:flex">
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums">{{ environments.length }}</div>
-          <div class="text-xs text-muted-foreground">Environments</div>
+          <div class="text-2xl font-bold tabular-nums">{{ shops.length }}</div>
+          <div class="text-xs text-muted-foreground">Shops</div>
         </div>
         <Separator orientation="vertical" class="h-10" />
         <div class="text-right">
@@ -41,20 +41,18 @@
 
     <!-- Empty state -->
     <div
-      v-if="environments.length === 0"
+      v-if="shops.length === 0"
       class="flex w-full flex-col items-center gap-6 rounded-xl border border-dashed bg-card px-10 py-16 text-center"
     >
       <div class="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-        <icon-fa6-solid:earth-americas class="size-6 text-primary" />
+        <icon-fa6-solid:folder class="size-6 text-primary" />
       </div>
-      <h2 class="text-xl font-semibold">No environments yet</h2>
-      <p class="max-w-sm text-muted-foreground">
-        Add your first Shopware environment to start monitoring.
-      </p>
+      <h2 class="text-xl font-semibold">{{ $t("shop.noShops") }}</h2>
+      <p class="max-w-sm text-muted-foreground">{{ $t("shop.getStarted") }}</p>
       <Button as-child>
-        <RouterLink :to="{ name: 'account.environments.new' }">
+        <RouterLink :to="{ name: 'account.shops.new' }">
           <icon-fa6-solid:plus class="mr-1.5 size-3" />
-          Add Environment
+          {{ $t("shop.addShop") }}
         </RouterLink>
       </Button>
     </div>
@@ -78,12 +76,12 @@
             <div class="text-sm font-semibold">
               {{ outdatedExtensionCount }} extension updates available
             </div>
-            <div class="text-xs text-muted-foreground">across your environments</div>
+            <div class="text-xs text-muted-foreground">across your shops</div>
           </div>
           <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground" />
         </RouterLink>
 
-        <!-- Error environments alert -->
+        <!-- Error shops alert -->
         <div
           v-if="errorCount > 0"
           class="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4"
@@ -95,7 +93,7 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="text-sm font-semibold">
-              {{ errorCount }} environment{{ errorCount !== 1 ? "s" : "" }} need{{
+              {{ errorCount }} shop{{ errorCount !== 1 ? "s" : "" }} need{{
                 errorCount === 1 ? "s" : ""
               }}
               attention
@@ -105,54 +103,44 @@
         </div>
       </div>
 
-      <!-- Environments grouped by shop -->
+      <!-- Shops grid -->
       <section class="mb-8">
-        <div
-          v-for="group in groupedEnvironments"
-          :key="group.shopId ?? 'ungrouped'"
-          class="mb-6 last:mb-0"
-        >
-          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <icon-fa6-solid:folder class="size-3" />
-            {{ group.shopName || "Ungrouped" }}
-          </h3>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <RouterLink
-              v-for="env in group.environments"
-              :key="env.id"
-              :to="{
-                name: 'account.environments.detail',
-                params: { environmentId: env.id },
-              }"
-              class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <RouterLink
+            v-for="shop in shops"
+            :key="shop.id"
+            :to="shopLink(shop)"
+            class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+          >
+            <div
+              class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted"
             >
-              <div
-                class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted"
-              >
-                <img
-                  v-if="env.favicon"
-                  :src="env.favicon"
-                  :alt="$t('dashboard.environmentLogo')"
-                  class="size-5 rounded"
-                />
-                <icon-fa6-solid:earth-americas v-else class="size-4 text-muted-foreground/50" />
+              <img
+                v-if="defaultEnv(shop)?.favicon"
+                :src="defaultEnv(shop)!.favicon!"
+                alt=""
+                class="size-5 rounded"
+              />
+              <icon-fa6-solid:folder v-else class="size-4 text-muted-foreground/50" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span
+                  class="truncate font-semibold leading-tight transition-colors group-hover:text-primary"
+                  >{{ shop.name }}</span
+                >
+                <StatusIcon v-if="defaultEnv(shop)" :status="defaultEnv(shop)!.status" />
               </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="truncate font-semibold leading-tight transition-colors group-hover:text-primary"
-                    >{{ env.name }}</span
-                  >
-                  <StatusIcon :status="env.status" />
-                </div>
-                <div class="mt-1.5 flex items-center gap-2">
-                  <Badge variant="secondary" class="font-mono text-xs">{{
-                    env.shopwareVersion
-                  }}</Badge>
-                </div>
+              <div class="mt-1.5 flex items-center gap-2">
+                <Badge v-if="defaultEnv(shop)" variant="secondary" class="font-mono text-xs">
+                  {{ defaultEnv(shop)!.shopwareVersion }}
+                </Badge>
+                <span v-if="envCount(shop) > 1" class="text-xs text-muted-foreground">
+                  {{ $t("shop.envCount", { count: envCount(shop) }) }}
+                </span>
               </div>
-            </RouterLink>
-          </div>
+            </div>
+          </RouterLink>
         </div>
       </section>
 
@@ -266,11 +254,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import StatusIcon from "@/components/StatusIcon.vue";
 
+type AccountShop = components["schemas"]["AccountShop"];
+type AccountEnvironment = components["schemas"]["AccountEnvironment"];
+
 const { t } = useI18n();
 const { activeOrganizationId } = useSession();
 
 const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
 const extensions = ref<components["schemas"]["AccountExtension"][]>([]);
+const shops = ref<AccountShop[] | null>(null);
 
 function loadDashboardData() {
   api.GET("/account/changelogs").then(({ data }) => {
@@ -278,6 +270,9 @@ function loadDashboardData() {
   });
   api.GET("/account/extensions").then(({ data }) => {
     if (data) extensions.value = data;
+  });
+  api.GET("/account/shops").then(({ data }) => {
+    shops.value = data ?? [];
   });
 }
 
@@ -290,14 +285,30 @@ watch(activeOrganizationId, () => {
   loadDashboardData();
 });
 
+function defaultEnv(shop: AccountShop): AccountEnvironment | undefined {
+  return environments.value.find((e) => e.id === shop.defaultEnvironmentId);
+}
+
+function envCount(shop: AccountShop): number {
+  return environments.value.filter((e) => e.shopId === shop.id).length;
+}
+
+function shopLink(shop: AccountShop) {
+  return {
+    name: "account.environments.detail",
+    params: { environmentId: shop.defaultEnvironmentId },
+  };
+}
+
+// Status counts based on default environments
 const greenCount = computed(
-  () => environments.value?.filter((e) => e.status === "green").length ?? 0,
+  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "green").length,
 );
 const warnCount = computed(
-  () => environments.value?.filter((e) => e.status === "yellow").length ?? 0,
+  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "yellow").length,
 );
 const errorCount = computed(
-  () => environments.value?.filter((e) => e.status === "red").length ?? 0,
+  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "red").length,
 );
 
 // Outdated extensions count
@@ -307,30 +318,7 @@ const outdatedExtensionCount = computed(
       .length,
 );
 
-// Environments grouped by shop/project
-const groupedEnvironments = computed(() => {
-  const groups = new Map<
-    number | null,
-    { shopId: number | null; shopName: string | null; environments: typeof environments.value }
-  >();
-
-  for (const env of environments.value ?? []) {
-    const key = env.shopId;
-    if (!groups.has(key)) {
-      groups.set(key, { shopId: key, shopName: env.shopName, environments: [] });
-    }
-    groups.get(key)!.environments.push(env);
-  }
-
-  // Sort: named shops first, then ungrouped
-  return Array.from(groups.values()).sort((a, b) => {
-    if (a.shopName && !b.shopName) return -1;
-    if (!a.shopName && b.shopName) return 1;
-    return (a.shopName ?? "").localeCompare(b.shopName ?? "");
-  });
-});
-
-// Shopware version distribution
+// Shopware version distribution (still per-environment for accuracy)
 const versionDistribution = computed(() => {
   const counts = new Map<string, number>();
   for (const env of environments.value ?? []) {

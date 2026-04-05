@@ -200,13 +200,14 @@ type Session struct {
 }
 
 type Shop struct {
-	ID             int32            `json:"id"`
-	OrganizationID string           `json:"organization_id"`
-	Name           string           `json:"name"`
-	Description    *string          `json:"description"`
-	GitUrl         *string          `json:"git_url"`
-	CreatedAt      pgtype.Timestamp `json:"created_at"`
-	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
+	ID                   int32            `json:"id"`
+	OrganizationID       string           `json:"organization_id"`
+	Name                 string           `json:"name"`
+	Description          *string          `json:"description"`
+	GitUrl               *string          `json:"git_url"`
+	DefaultEnvironmentID *int32           `json:"default_environment_id"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	UpdatedAt            pgtype.Timestamp `json:"updated_at"`
 }
 
 type ShopApiKey struct {

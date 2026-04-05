@@ -186,6 +186,17 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		slog.Info("created environment", "name", ed.name, "id", envID, "url", envURL)
 	}
 
+	// Set the first environment as the shop's default
+	if len(environmentIDs) > 0 {
+		if err := q.SetShopDefaultEnvironment(ctx, queries.SetShopDefaultEnvironmentParams{
+			DefaultEnvironmentID: &environmentIDs[0],
+			ID:                   shopID,
+			OrganizationID:       orgID,
+		}); err != nil {
+			slog.Error("failed to set default environment", "shopId", shopID, "error", err)
+		}
+	}
+
 	// Dispatch environment scrape tasks so the worker picks them up immediately
 	mailSvc := mail.NewService(mail.SMTPConfig{
 		Host: cfg.SMTPHost, Port: cfg.SMTPPort, Secure: cfg.SMTPSecure,

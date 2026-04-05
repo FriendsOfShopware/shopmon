@@ -10,8 +10,8 @@
           class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted"
         >
           <img
-            v-if="environment.environmentImage"
-            :src="environment.environmentImage"
+            v-if="environment.favicon"
+            :src="environment.favicon"
             class="size-full object-cover"
             alt=""
           />
@@ -68,7 +68,7 @@
             </template>
           </div>
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
-            <span class="truncate">{{ environment.organizationName }}</span>
+            <span class="truncate">{{ environment.shopName || environment.organizationName }}</span>
             <template v-if="environmentHost">
               <span class="text-border">/</span>
               <a
@@ -138,12 +138,12 @@
           <icon-fa6-solid:rotate :class="['size-3.5', { 'animate-spin': isRefreshing }]" />
         </Button>
 
-        <Button as-child size="sm">
+        <Button v-if="environment.shopId" as-child size="sm">
           <RouterLink
             :to="{
-              name: 'account.environments.edit',
+              name: 'account.shops.edit',
               params: {
-                environmentId: environment.id,
+                shopId: environment.shopId,
               },
             }"
           >
@@ -382,6 +382,16 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
       },
     },
   ];
+
+  if (environment.value.shopName && environment.value.shopId) {
+    items.push({
+      label: environment.value.shopName,
+      to: {
+        name: "account.shops.edit",
+        params: { shopId: environment.value.shopId },
+      },
+    });
+  }
 
   const isOverview = route.name === "account.environments.detail";
 

@@ -2596,6 +2596,7 @@ components:
         - gitUrl
         - organizationId
         - organizationName
+        - defaultEnvironmentId
       properties:
         id:
           type: integer
@@ -2611,6 +2612,8 @@ components:
           type: string
         organizationName:
           type: string
+        defaultEnvironmentId:
+          type: integer
 
     AccountChangelog:
       type: object
@@ -3090,6 +3093,7 @@ components:
         - description
         - gitUrl
         - organizationId
+        - defaultEnvironmentId
       properties:
         id:
           type: integer
@@ -3103,17 +3107,31 @@ components:
           nullable: true
         organizationId:
           type: string
+        defaultEnvironmentId:
+          type: integer
 
     CreateShopRequest:
       type: object
       required:
         - name
+        - environmentName
+        - environmentUrl
+        - clientId
+        - clientSecret
       properties:
         name:
           type: string
         description:
           type: string
         gitUrl:
+          type: string
+        environmentName:
+          type: string
+        environmentUrl:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
           type: string
 
     UpdateShopRequest:
@@ -3125,6 +3143,8 @@ components:
           type: string
         gitUrl:
           type: string
+        defaultEnvironmentId:
+          type: integer
 
     # ── API Keys ─────────────────────────────────
     ApiKeyScope:

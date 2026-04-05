@@ -128,6 +128,21 @@ func (h *Handler) loadAuthorizedEnvironmentCredentials(w http.ResponseWriter, r 
 	return &creds, true
 }
 
+func int32PtrToIntPtr(v *int32) *int {
+	if v == nil {
+		return nil
+	}
+	i := int(*v)
+	return &i
+}
+
+func derefInt32(v *int32) int {
+	if v == nil {
+		return 0
+	}
+	return int(*v)
+}
+
 func (h *Handler) requireShopInOrganization(w http.ResponseWriter, r *http.Request, shopID int32, orgID string) bool {
 	shop, err := h.queries.GetShopByID(r.Context(), shopID)
 	if err != nil {

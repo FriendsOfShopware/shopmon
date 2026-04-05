@@ -62,7 +62,9 @@
         </div>
         <div>
           <h2 class="font-semibold">{{ $t("onboarding.inviteTitle") }}</h2>
-          <p class="mt-0.5 text-xs leading-relaxed text-muted-foreground">{{ $t("onboarding.inviteDescription") }}</p>
+          <p class="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+            {{ $t("onboarding.inviteDescription") }}
+          </p>
         </div>
       </CardContent>
     </Card>

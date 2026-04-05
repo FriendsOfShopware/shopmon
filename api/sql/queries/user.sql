@@ -74,7 +74,7 @@ WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY e.name;
 
 -- name: GetUserShopsByOrg :many
-SELECT s.id, s.name, s.description, s.git_url, s.organization_id, o.name AS organization_name
+SELECT s.id, s.name, s.description, s.git_url, s.default_environment_id, s.organization_id, o.name AS organization_name
 FROM shop s
 JOIN member m ON m.organization_id = s.organization_id
 JOIN organization o ON o.id = s.organization_id

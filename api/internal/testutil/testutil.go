@@ -271,6 +271,7 @@ func (e *TestEnv) SeedShop(t *testing.T, orgID, name string) int {
 }
 
 // SeedEnvironment creates a test environment in an organization/shop.
+// It also sets the environment as the shop's default if none is set.
 func (e *TestEnv) SeedEnvironment(t *testing.T, orgID string, shopID int, name, url string) int {
 	t.Helper()
 	ctx := context.Background()
@@ -285,6 +286,12 @@ func (e *TestEnv) SeedEnvironment(t *testing.T, orgID string, shopID int, name, 
 	if err != nil {
 		t.Fatalf("failed to seed environment: %v", err)
 	}
+
+	// Auto-set as shop default if not yet set
+	_, _ = e.Pool.Exec(ctx, `
+		UPDATE shop SET default_environment_id = $1 WHERE id = $2 AND default_environment_id IS NULL
+	`, id, shopID)
+
 	return id
 }
 

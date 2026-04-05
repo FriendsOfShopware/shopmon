@@ -238,6 +238,7 @@ func (h *Handler) GetAccountShops(w http.ResponseWriter, r *http.Request) {
 		result = append(result, api.AccountShop{
 			Id: int(row.ID), Name: row.Name, Description: row.Description,
 			GitUrl: row.GitUrl, OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
+			DefaultEnvironmentId: derefInt32(row.DefaultEnvironmentID),
 		})
 	}
 

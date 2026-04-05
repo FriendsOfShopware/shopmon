@@ -47,25 +47,32 @@
 
         <SidebarSeparator />
 
-        <!-- Environments -->
-        <SidebarGroup v-if="environments.length > 0">
-          <SidebarGroupLabel>Environments</SidebarGroupLabel>
+        <!-- Shops -->
+        <SidebarGroup v-if="shops.length > 0">
+          <SidebarGroupLabel>Shops</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem v-for="env in environments" :key="env.id">
+              <SidebarMenuItem v-for="shop in shops" :key="shop.id">
                 <SidebarMenuButton as-child>
                   <RouterLink
                     :to="{
                       name: 'account.environments.detail',
-                      params: { environmentId: env.id },
+                      params: { environmentId: shop.defaultEnvironmentId },
                     }"
                   >
-                    <img v-if="env.favicon" :src="env.favicon" alt="" class="size-4 rounded" />
-                    <icon-fa6-solid:earth-americas v-else class="opacity-40" />
-                    <span>{{ env.name }}</span>
+                    <img
+                      v-if="defaultEnvFavicon(shop)"
+                      :src="defaultEnvFavicon(shop)!"
+                      alt=""
+                      class="size-4 rounded"
+                    />
+                    <icon-fa6-solid:folder v-else class="opacity-40" />
+                    <span>{{ shop.name }}</span>
                   </RouterLink>
                 </SidebarMenuButton>
-                <SidebarMenuBadge><StatusIcon :status="env.status" /></SidebarMenuBadge>
+                <SidebarMenuBadge v-if="defaultEnvStatus(shop)"
+                  ><StatusIcon :status="defaultEnvStatus(shop)!"
+                /></SidebarMenuBadge>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
@@ -242,7 +249,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
@@ -260,6 +267,7 @@ import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { api, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
+import type { components } from "@/types/api";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -294,6 +302,25 @@ import {
 const router = useRouter();
 const { session, activeOrganizationId } = useSession();
 const { environments } = useAccountEnvironments();
+
+type AccountShop = components["schemas"]["AccountShop"];
+const shops = ref<AccountShop[]>([]);
+
+function loadShops() {
+  api.GET("/account/shops").then(({ data }) => {
+    shops.value = data ?? [];
+  });
+}
+loadShops();
+watch(activeOrganizationId, () => loadShops());
+
+function defaultEnvFavicon(shop: AccountShop): string | null {
+  return environments.value.find((e) => e.id === shop.defaultEnvironmentId)?.favicon ?? null;
+}
+
+function defaultEnvStatus(shop: AccountShop): string | null {
+  return environments.value.find((e) => e.id === shop.defaultEnvironmentId)?.status ?? null;
+}
 
 const userAvatar = ref("https://api.dicebear.com/7.x/personas/svg?seed=default?d=identicon");
 

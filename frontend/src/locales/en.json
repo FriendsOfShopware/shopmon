@@ -37,7 +37,8 @@
     "environments": "Environments",
     "noElements": "No elements",
     "addElement": "Add element",
-    "getStartedElement": "Get started by adding your first element."
+    "getStartedElement": "Get started by adding your first element.",
+    "default": "Default"
   },
   "alert": {
     "successTitle": "Action success",
@@ -247,6 +248,8 @@
     "unsubscribedEnvironment": "Successfully unsubscribed from environment notifications"
   },
   "environment": {
+    "title": "Environments",
+    "environmentName": "Environment Name",
     "newEnvironment": "New Environment",
     "editEnvironment": "Edit {name}",
     "environmentInfo": "Environment information",
@@ -300,6 +303,14 @@
     "deleteShopWarning": "Once you delete your shop, you will lose all data associated with it.",
     "deleteShopEnvironmentsWarning": "This shop still has {count} environment(s). Move or delete them first.",
     "deleteShop": "Delete shop",
+    "setDefault": "Set as default",
+    "unsetDefault": "Remove default",
+    "defaultEnvSet": "Default environment updated",
+    "defaultEnvUnset": "Default environment removed",
+    "firstEnvironment": "First Environment",
+    "firstEnvironmentDesc": "Connect your first Shopware environment to this shop. You can add more environments later.",
+    "createShop": "Create Shop",
+    "envCount": "{count} environments",
     "createApiKeyTitle": "Create API Key",
     "apiKeyPlaceholder": "My API Key",
     "scopes": "Scopes",
@@ -515,8 +526,13 @@
   },
   "pluginModal": {
     "title": "Connect using Shopmon Plugin",
-    "description": "Paste the base64 string from your Shopmon Plugin:",
-    "importData": "Import Data"
+    "subtitle": "Automatically import your shop credentials in three steps.",
+    "step1Title": "Install the plugin",
+    "step1Desc": "Install and activate the {link} plugin in your Shopware Administration.",
+    "step2Title": "Copy the connection string",
+    "step2Desc": "Open the plugin configuration and copy the base64 connection string.",
+    "step3Title": "Paste it below",
+    "importData": "Import Connection"
   },
   "changelogModal": {
     "title": "Environment changelog - {date}",

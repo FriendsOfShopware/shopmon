@@ -95,6 +95,99 @@
         </CardContent>
       </Card>
 
+      <!-- Environments -->
+      <Card v-if="shopEnvironments.length > 0">
+        <CardHeader class="pb-3">
+          <div class="flex items-center justify-between">
+            <CardTitle class="flex items-center gap-2 text-base">
+              <icon-fa6-solid:earth-americas class="size-4 text-muted-foreground" />
+              {{ $t("environment.title") }}
+            </CardTitle>
+            <Button size="sm" as-child>
+              <RouterLink :to="{ name: 'account.environments.new', query: { shopId: shop!.id } }">
+                <icon-fa6-solid:plus class="mr-1.5 size-3" />
+                {{ $t("environment.addEnvironment") }}
+              </RouterLink>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent class="space-y-2">
+          <div
+            v-for="env in shopEnvironments"
+            :key="env.id"
+            :class="[
+              'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
+              env.id === shop!.defaultEnvironmentId
+                ? 'border-primary/30 bg-primary/5'
+                : 'hover:bg-muted/50',
+            ]"
+          >
+            <div
+              class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted"
+            >
+              <img v-if="env.favicon" :src="env.favicon" alt="" class="size-5 rounded" />
+              <icon-fa6-solid:earth-americas v-else class="size-3.5 text-muted-foreground/50" />
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <RouterLink
+                  :to="{ name: 'account.environments.detail', params: { environmentId: env.id } }"
+                  class="truncate font-medium hover:text-primary transition-colors"
+                >
+                  {{ env.name }}
+                </RouterLink>
+                <StatusIcon :status="env.status" />
+                <Badge
+                  v-if="env.id === shop!.defaultEnvironmentId"
+                  variant="default"
+                  class="text-[10px]"
+                >
+                  {{ $t("common.default") }}
+                </Badge>
+              </div>
+              <div class="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="secondary" class="font-mono text-[10px]">{{
+                  env.shopwareVersion
+                }}</Badge>
+                <span v-if="env.url" class="truncate">{{ env.url }}</span>
+              </div>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-1">
+              <Button
+                v-if="env.id !== shop!.defaultEnvironmentId"
+                variant="ghost"
+                size="sm"
+                class="text-xs text-muted-foreground"
+                :disabled="isSettingDefaultEnv === env.id"
+                @click="setDefaultEnvironment(env.id)"
+              >
+                <icon-fa6-solid:star v-if="isSettingDefaultEnv !== env.id" class="mr-1 size-3" />
+                <icon-line-md:loading-twotone-loop v-else class="mr-1 size-3" />
+                {{ $t("shop.setDefault") }}
+              </Button>
+              <Button
+                as-child
+                variant="ghost"
+                size="icon"
+                class="size-8"
+                :title="$t('common.edit')"
+              >
+                <RouterLink
+                  :to="{
+                    name: 'account.environments.edit',
+                    params: { environmentId: env.id },
+                  }"
+                >
+                  <icon-fa6-solid:pencil class="size-3.5" />
+                </RouterLink>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <!-- API Keys -->
       <Card id="api-keys">
         <CardHeader class="pb-3">
@@ -479,6 +572,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import StatusIcon from "@/components/StatusIcon.vue";
 import {
   Dialog,
   DialogContent,
@@ -500,6 +594,7 @@ type Shop = components["schemas"]["AccountShop"];
 type ApiKey = components["schemas"]["ApiKey"];
 type AvailableScope = components["schemas"]["ApiKeyScope"];
 type PackagesToken = components["schemas"]["PackagesToken"];
+type AccountEnvironment = components["schemas"]["AccountEnvironment"];
 
 const { t } = useI18n();
 const route = useRoute();
@@ -509,7 +604,9 @@ const alert = useAlert();
 const shopId = Number(route.params.shopId);
 
 const shop = ref<Shop | null>(null);
+const shopEnvironments = ref<AccountEnvironment[]>([]);
 const environmentsInShopCount = ref(0);
+const isSettingDefaultEnv = ref<number | null>(null);
 const apiKeys = ref<ApiKey[]>([]);
 const availableScopes = ref<AvailableScope[]>([]);
 
@@ -618,7 +715,26 @@ async function loadShopSummary() {
   ]);
   const shopsData = shopsRes.data ?? [];
   shop.value = shopsData.find((currentShop) => currentShop.id === shopId) ?? null;
-  environmentsInShopCount.value = environmentsData.filter((env) => env.shopId === shopId).length;
+  const envs = environmentsData.filter((env) => env.shopId === shopId);
+  shopEnvironments.value = envs;
+  environmentsInShopCount.value = envs.length;
+}
+
+async function setDefaultEnvironment(envId: number) {
+  if (!shop.value) return;
+  isSettingDefaultEnv.value = envId;
+  try {
+    await api.PATCH("/organizations/{orgId}/shops/{shopId}", {
+      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+      body: { defaultEnvironmentId: envId },
+    });
+    await loadShopSummary();
+    alert.success(t("shop.defaultEnvSet"));
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  } finally {
+    isSettingDefaultEnv.value = null;
+  }
 }
 
 async function loadApiKeys() {

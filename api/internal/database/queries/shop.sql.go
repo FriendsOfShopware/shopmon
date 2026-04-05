@@ -60,7 +60,7 @@ func (q *Queries) DeleteShop(ctx context.Context, arg DeleteShopParams) error {
 }
 
 const getShopByID = `-- name: GetShopByID :one
-SELECT id, organization_id, name, description, git_url, created_at, updated_at
+SELECT id, organization_id, name, description, git_url, default_environment_id, created_at, updated_at
 FROM shop WHERE id = $1
 `
 
@@ -73,6 +73,7 @@ func (q *Queries) GetShopByID(ctx context.Context, id int32) (Shop, error) {
 		&i.Name,
 		&i.Description,
 		&i.GitUrl,
+		&i.DefaultEnvironmentID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -91,7 +92,7 @@ func (q *Queries) GetShopOrganizationID(ctx context.Context, id int32) (string, 
 }
 
 const listShopsByOrganization = `-- name: ListShopsByOrganization :many
-SELECT id, organization_id, name, description, git_url, created_at, updated_at
+SELECT id, organization_id, name, description, git_url, default_environment_id, created_at, updated_at
 FROM shop WHERE organization_id = $1 ORDER BY name
 `
 
@@ -110,6 +111,7 @@ func (q *Queries) ListShopsByOrganization(ctx context.Context, organizationID st
 			&i.Name,
 			&i.Description,
 			&i.GitUrl,
+			&i.DefaultEnvironmentID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -121,6 +123,21 @@ func (q *Queries) ListShopsByOrganization(ctx context.Context, organizationID st
 		return nil, err
 	}
 	return items, nil
+}
+
+const setShopDefaultEnvironment = `-- name: SetShopDefaultEnvironment :exec
+UPDATE shop SET default_environment_id = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3
+`
+
+type SetShopDefaultEnvironmentParams struct {
+	DefaultEnvironmentID *int32 `json:"default_environment_id"`
+	ID                   int32  `json:"id"`
+	OrganizationID       string `json:"organization_id"`
+}
+
+func (q *Queries) SetShopDefaultEnvironment(ctx context.Context, arg SetShopDefaultEnvironmentParams) error {
+	_, err := q.db.Exec(ctx, setShopDefaultEnvironment, arg.DefaultEnvironmentID, arg.ID, arg.OrganizationID)
+	return err
 }
 
 const updateShop = `-- name: UpdateShop :exec
