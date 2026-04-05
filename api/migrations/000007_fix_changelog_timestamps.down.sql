@@ -1,0 +1,1 @@
+-- No-op: we don't revert timestamp format fixes
