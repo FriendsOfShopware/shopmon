@@ -81,8 +81,32 @@ func NewHandler(dist fs.FS) http.Handler {
 			return
 		}
 
+		// Serve prerendered HTML if available (e.g., /privacy -> privacy/index.html)
+		if prerendered := assetPath + "/index.html"; assetPath != "" {
+			if info, err := fs.Stat(dist, prerendered); err == nil && !info.IsDir() {
+				serveFile(w, r, dist, prerendered)
+				return
+			}
+		}
+
 		serveIndex(w, r, dist)
 	})
+}
+
+func serveFile(w http.ResponseWriter, r *http.Request, dist fs.FS, name string) {
+	w.Header().Set("Cache-Control", "no-cache")
+
+	data, err := fs.ReadFile(dist, name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if r.Method == http.MethodHead {
+		return
+	}
+	_, _ = w.Write(data)
 }
 
 func serveIndex(w http.ResponseWriter, r *http.Request, dist fs.FS) {

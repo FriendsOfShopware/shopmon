@@ -56,7 +56,7 @@ import { z } from "zod";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 
-import { router } from "@/router";
+import { useRouter } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
 import { api, setToken } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/f
 import PasswordInput from "@/components/PasswordInput.vue";
 
 const { t } = useI18n();
+const router = useRouter();
 const alert = useAlert();
 const schema = z.object({
   displayName: z.string().min(1, t("validation.displayNameRequired")),

@@ -7,8 +7,10 @@ export function useLocale() {
 
   function setLocale(lang: string) {
     locale.value = lang;
-    localStorage.setItem(LOCALE_STORAGE_KEY, lang);
-    document.documentElement.lang = lang;
+    if (!import.meta.env.SSR) {
+      localStorage.setItem(LOCALE_STORAGE_KEY, lang);
+      document.documentElement.lang = lang;
+    }
   }
 
   function toggleLocale() {

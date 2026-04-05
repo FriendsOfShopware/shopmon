@@ -2,10 +2,12 @@ import createClient from "openapi-fetch";
 import type { paths } from "../types/api";
 
 export function getToken(): string | null {
+  if (import.meta.env.SSR) return null;
   return localStorage.getItem("shopmon_token");
 }
 
 export function setToken(token: string | null) {
+  if (import.meta.env.SSR) return;
   if (token) {
     localStorage.setItem("shopmon_token", token);
   } else {

@@ -68,6 +68,7 @@
               :src="getThemeImage('/home/shopmon-dashboard.png')"
               :alt="$t('home.altDashboard')"
               class="w-full"
+              fetchpriority="high"
             />
           </div>
         </div>
