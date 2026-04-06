@@ -88,6 +88,16 @@ func NewHandler(dist fs.FS) http.Handler {
 			}
 		}
 
+		// Check parent path prefixes for a SPA fallback (e.g., app/dashboard -> app/index.html)
+		parts := strings.Split(assetPath, "/")
+		for i := len(parts) - 1; i > 0; i-- {
+			parentFallback := strings.Join(parts[:i], "/") + "/index.html"
+			if info, err := fs.Stat(dist, parentFallback); err == nil && !info.IsDir() {
+				serveFile(w, r, dist, parentFallback)
+				return
+			}
+		}
+
 		serveIndex(w, r, dist)
 	})
 }

@@ -1,5 +1,5 @@
 import { URL, fileURLToPath } from "node:url";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -47,6 +47,18 @@ export default defineConfig({
 ${ssgRoutes.map((route) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`).join("\n")}
 </urlset>`;
       writeFileSync(resolve("dist", "sitemap.xml"), sitemap);
+
+      // Generate a clean SPA fallback for /app/* routes so users
+      // don't briefly see the SSG'd landing page before Vue hydrates.
+      const indexHtml = readFileSync(resolve("dist", "index.html"), "utf-8");
+      const appDivStart = indexHtml.indexOf('<div id="app"');
+      const afterAppDiv = indexHtml.indexOf("<link", appDivStart);
+      const appFallback =
+        indexHtml.substring(0, appDivStart) +
+        '<div id="app" class="h-full"></div>\n' +
+        indexHtml.substring(afterAppDiv);
+      mkdirSync(resolve("dist", "app"), { recursive: true });
+      writeFileSync(resolve("dist", "app", "index.html"), appFallback);
     },
   },
   ssr: {
