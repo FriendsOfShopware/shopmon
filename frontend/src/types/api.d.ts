@@ -729,6 +729,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/info/config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get instance feature configuration
+     * @description Returns which features are enabled on this instance, based on server configuration.
+     */
+    get: operations["getInstanceConfig"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/auth/sign-up/email": {
     parameters: {
       query?: never;
@@ -1953,6 +1973,12 @@ export interface components {
       /** Format: date-time */
       expiresAt?: string;
       activeOrganizationId?: string | null;
+    };
+    InstanceConfig: {
+      registrationEnabled: boolean;
+      githubAuthEnabled: boolean;
+      sitespeedEnabled: boolean;
+      packageMirrorEnabled: boolean;
     };
   };
   responses: {
@@ -3338,6 +3364,26 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  getInstanceConfig: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Instance configuration */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstanceConfig"];
+        };
       };
     };
   };

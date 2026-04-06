@@ -38,6 +38,8 @@ type Config struct {
 	PackagesAPIURL   string
 	PackagesAPIToken string
 
+	DisableRegistration bool
+
 	ShopwareAPIURL      string
 	ShopwareVersionsURL string
 
@@ -74,9 +76,9 @@ func Load() *Config {
 		MailFrom:    getEnv("MAIL_FROM", "noreply@shopmon.io"),
 		SMTPReplyTo: getEnv("SMTP_REPLY_TO", ""),
 
-		SitespeedEndpoint: getEnv("APP_SITESPEED_ENDPOINT", "http://localhost:3001"),
+		SitespeedEndpoint: getEnv("APP_SITESPEED_ENDPOINT", ""),
 		SitespeedPrefix:   getEnv("APP_SITESPEED_PREFIX", "local-"),
-		SitespeedAPIKey:   getEnv("APP_SITESPEED_API_KEY", "secret"),
+		SitespeedAPIKey:   getEnv("APP_SITESPEED_API_KEY", ""),
 
 		S3Endpoint:  getEnv("APP_S3_ENDPOINT", ""),
 		S3AccessKey: getEnv("APP_S3_ACCESS_KEY_ID", ""),
@@ -89,6 +91,8 @@ func Load() *Config {
 
 		PackagesAPIURL:   getEnv("PACKAGES_API_URL", ""),
 		PackagesAPIToken: getEnv("PACKAGES_API_TOKEN", ""),
+
+		DisableRegistration: getEnv("DISABLE_REGISTRATION", "false") == "true",
 
 		ShopwareAPIURL:      getEnv("SHOPWARE_API_URL", "https://api.shopware.com"),
 		ShopwareVersionsURL: getEnv("SHOPWARE_VERSIONS_URL", "https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/all-supported-php-versions-by-shopware-version.json"),

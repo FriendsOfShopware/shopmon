@@ -128,14 +128,6 @@ func (h *Handler) loadAuthorizedEnvironmentCredentials(w http.ResponseWriter, r 
 	return &creds, true
 }
 
-func int32PtrToIntPtr(v *int32) *int {
-	if v == nil {
-		return nil
-	}
-	i := int(*v)
-	return &i
-}
-
 func derefInt32(v *int32) int {
 	if v == nil {
 		return 0

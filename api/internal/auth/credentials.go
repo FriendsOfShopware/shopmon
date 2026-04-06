@@ -17,6 +17,11 @@ import (
 
 // SignUpEmail handles email+password registration.
 func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
+	if h.cfg.DisableRegistration {
+		httputil.WriteError(w, http.StatusForbidden, "registration is disabled")
+		return
+	}
+
 	var req signUpEmailRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")

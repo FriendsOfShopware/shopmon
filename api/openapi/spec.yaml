@@ -1170,6 +1170,21 @@ paths:
         "200":
           description: Shopware version information
 
+  /info/config:
+    get:
+      operationId: getInstanceConfig
+      tags: [Info]
+      summary: Get instance feature configuration
+      description: Returns which features are enabled on this instance, based on server configuration.
+      security: []
+      responses:
+        "200":
+          description: Instance configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstanceConfig"
+
   # ──────────────────────────────────────────────
   # Auth – Authentication
   # ──────────────────────────────────────────────
@@ -3696,3 +3711,20 @@ components:
         activeOrganizationId:
           type: string
           nullable: true
+
+    InstanceConfig:
+      type: object
+      required:
+        - registrationEnabled
+        - githubAuthEnabled
+        - sitespeedEnabled
+        - packageMirrorEnabled
+      properties:
+        registrationEnabled:
+          type: boolean
+        githubAuthEnabled:
+          type: boolean
+        sitespeedEnabled:
+          type: boolean
+        packageMirrorEnabled:
+          type: boolean

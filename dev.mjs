@@ -31,22 +31,28 @@ const commands = {
 		description: "Run linters",
 		run: () =>
 			sequential([
-				{ cmd: "go", args: ["vet", "./..."], cwd: "api", label: "go vet" },
+				{ cmd: "golangci-lint", args: ["run"], cwd: "api", label: "golangci-lint" },
 				{
-					cmd: "npx",
-					args: ["oxlint"],
+					cmd: "npm",
+					args: ["run", "lint"],
 					cwd: "frontend",
 					label: "oxlint",
 				},
 				{
-					cmd: "npx",
-					args: ["oxfmt", "--check"],
+					cmd: "npm",
+					args: ["run", "format"],
 					cwd: "frontend",
 					label: "oxfmt",
 				},
 				{
-					cmd: "npx",
-					args: ["vitest", "run"],
+					cmd: "npm",
+					args: ["run", "tsc"],
+					cwd: "frontend",
+					label: "vue-tsc",
+				},
+				{
+					cmd: "npm",
+					args: ["run", "test:run"],
 					cwd: "frontend",
 					label: "vitest",
 				},
@@ -56,7 +62,8 @@ const commands = {
 		description: "Fix lint issues",
 		run: () =>
 			sequential([
-				{ cmd: "npx", args: ["oxfmt"], cwd: "frontend", label: "oxfmt" },
+				{ cmd: "npm", args: ["run", "lint:fix"], cwd: "frontend", label: "oxlint" },
+				{ cmd: "npm", args: ["run", "format:fix"], cwd: "frontend", label: "oxfmt" },
 			]),
 	},
 	generate: {

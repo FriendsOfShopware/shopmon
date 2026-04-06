@@ -11,6 +11,16 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
+// GetInstanceConfig returns the feature configuration for this instance.
+func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
+	httputil.WriteJSON(w, http.StatusOK, api.InstanceConfig{
+		RegistrationEnabled: !h.cfg.DisableRegistration,
+		GithubAuthEnabled:   h.cfg.GithubClientID != "" && h.cfg.GithubClientSecret != "",
+		SitespeedEnabled:    h.cfg.SitespeedEndpoint != "",
+		PackageMirrorEnabled: h.cfg.PackagesAPIURL != "" && h.cfg.PackagesAPIToken != "",
+	})
+}
+
 // CheckExtensionCompatibility checks extension compatibility between Shopware versions.
 func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
 	var req api.ExtensionCompatibilityRequest

@@ -418,6 +418,14 @@ type GrowthDataPoint struct {
 	Month string `json:"month"`
 }
 
+// InstanceConfig defines model for InstanceConfig.
+type InstanceConfig struct {
+	GithubAuthEnabled    bool `json:"githubAuthEnabled"`
+	PackageMirrorEnabled bool `json:"packageMirrorEnabled"`
+	RegistrationEnabled  bool `json:"registrationEnabled"`
+	SitespeedEnabled     bool `json:"sitespeedEnabled"`
+}
+
 // Notification defines model for Notification.
 type Notification struct {
 	CreatedAt time.Time         `json:"createdAt"`
@@ -789,6 +797,9 @@ type ServerInterface interface {
 	// Health check
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// Get instance feature configuration
+	// (GET /info/config)
+	GetInstanceConfig(w http.ResponseWriter, r *http.Request)
 	// Check extension compatibility between Shopware versions
 	// (POST /info/extension-compatibility)
 	CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request)
@@ -1041,6 +1052,12 @@ func (_ Unimplemented) RescheduleTask(w http.ResponseWriter, r *http.Request, en
 // Health check
 // (GET /health)
 func (_ Unimplemented) GetHealth(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get instance feature configuration
+// (GET /info/config)
+func (_ Unimplemented) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2138,6 +2155,20 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// GetInstanceConfig operation middleware
+func (siw *ServerInterfaceWrapper) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstanceConfig(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CheckExtensionCompatibility operation middleware
 func (siw *ServerInterfaceWrapper) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
 
@@ -3110,6 +3141,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/health", wrapper.GetHealth)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/info/config", wrapper.GetInstanceConfig)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/info/extension-compatibility", wrapper.CheckExtensionCompatibility)

@@ -135,7 +135,7 @@
     </Card>
 
     <!-- Sitespeed settings -->
-    <Card>
+    <Card v-if="instanceConfig?.sitespeedEnabled !== false">
       <CardHeader class="pb-3">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:rocket class="size-4 text-muted-foreground" />
@@ -244,6 +244,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useForm } from "vee-validate";
@@ -271,6 +272,7 @@ import PluginConnectionModal from "@/components/modal/PluginConnectionModal.vue"
 
 const { t } = useI18n();
 const { error, success } = useAlert();
+const { config: instanceConfig } = useInstanceConfig();
 const router = useRouter();
 const route = useRoute();
 const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);

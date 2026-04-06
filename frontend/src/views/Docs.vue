@@ -78,8 +78,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Card, CardContent } from "@/components/ui/card";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 
 import FaRocket from "~icons/fa6-solid/rocket";
 import FaPlug from "~icons/fa6-solid/plug";
@@ -101,28 +102,9 @@ import FaRotate from "~icons/fa6-solid/rotate";
 
 const mobileTocOpen = ref(false);
 const activeSection = ref("getting-started");
+const { config: instanceConfig } = useInstanceConfig();
 
-const tocItems = [
-  { href: "#getting-started", label: "Getting Started" },
-  { href: "#connecting-shop", label: "Connecting a Shop" },
-  { href: "#organizations", label: "Organizations" },
-  { href: "#projects", label: "Projects" },
-  { href: "#dashboard-overview", label: "Dashboard" },
-  { href: "#health-checks", label: "Health Checks" },
-  { href: "#extensions", label: "Extensions" },
-  { href: "#scheduled-tasks", label: "Scheduled Tasks" },
-  { href: "#queue", label: "Queue" },
-  { href: "#sitespeed", label: "Sitespeed" },
-  { href: "#deployments", label: "Deployments" },
-  { href: "#changelog", label: "Changelog" },
-  { href: "#notifications", label: "Notifications" },
-  { href: "#shop-token", label: "Auth Bypass" },
-  { href: "#packages-mirror", label: "Packages Mirror" },
-  { href: "#sso", label: "SSO" },
-  { href: "#scraping", label: "How Scraping Works" },
-];
-
-const sections = [
+const allSections = [
   {
     id: "getting-started",
     title: "Getting Started",
@@ -206,6 +188,7 @@ const sections = [
     id: "sitespeed",
     title: "Performance Monitoring",
     icon: FaChartLine,
+    feature: "sitespeedEnabled" as const,
     content: `<p>Shopmon can perform daily automated page speed checks using <a href="https://www.sitespeed.io" target="_blank">sitespeed.io</a>.</p>
 <h4>What's Measured</h4>
 <ul><li><strong>TTFB</strong> — Time to First Byte</li><li><strong>Fully Loaded</strong> — Total page load time</li><li><strong>LCP</strong> — Largest Contentful Paint</li><li><strong>FCP</strong> — First Contentful Paint</li><li><strong>CLS</strong> — Cumulative Layout Shift</li><li><strong>Transfer Size</strong> — Total bytes transferred</li></ul>
@@ -245,6 +228,7 @@ const sections = [
     id: "packages-mirror",
     title: "Packages Mirror",
     icon: FaCube,
+    feature: "packageMirrorEnabled" as const,
     content: `<p>Serve Shopware store packages through a Global CDN — ~80ms instead of ~6s from <code>packages.shopware.com</code>.</p>
 <ol><li>Add your Shopware store token in the project settings</li><li>Replace <code>packages.shopware.com</code> with the mirror URL in <code>composer.json</code></li><li>Authenticate with <code>composer config --auth</code></li></ol>
 <div class="callout">Tokens are validated against the Shopware store and synced automatically every hour.</div>`,
@@ -265,12 +249,22 @@ const sections = [
   },
 ];
 
+const sections = computed(() =>
+  allSections.filter(
+    (s) =>
+      !("feature" in s) ||
+      instanceConfig.value?.[s.feature as keyof typeof instanceConfig.value] !== false,
+  ),
+);
+
+const tocItems = computed(() => sections.value.map((s) => ({ href: `#${s.id}`, label: s.title })));
+
 // Intersection observer for active section tracking
 function updateActiveSection() {
   const headerOffset = 80;
-  let current = sections[0].id;
+  let current = sections.value[0]?.id ?? "getting-started";
 
-  for (const section of sections) {
+  for (const section of sections.value) {
     const el = document.getElementById(section.id);
     if (el) {
       const top = el.getBoundingClientRect().top;

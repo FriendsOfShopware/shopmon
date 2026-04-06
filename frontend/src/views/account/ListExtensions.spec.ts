@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
+import { defineComponent } from "vue";
 import ListExtensions from "./ListExtensions.vue";
 
 const ExtensionChangelogStub = defineComponent({

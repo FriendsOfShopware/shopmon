@@ -11,9 +11,11 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "oxlint && vitest run",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
+    "tsc": "vue-tsc --noEmit --skipLibCheck",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt --write",
     "generate:api": "openapi-typescript ../api/openapi/spec.yaml -o src/types/api.d.ts"
   },
   "dependencies": {
@@ -69,9 +71,11 @@
     "openapi-typescript": "^7.13.0",
     "oxfmt": "^0.40.0",
     "oxlint": "^1.47.0",
+    "oxlint-tsgolint": "^0.19.0",
     "typescript": "5.9.3",
     "vite": "8.0.1",
     "vite-ssg": "^28.3.0",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "vue-tsc": "^3.2.6"
   }
 }

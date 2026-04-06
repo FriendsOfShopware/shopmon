@@ -265,7 +265,10 @@
       </Card>
 
       <!-- Packages Tokens -->
-      <Card v-if="isPackagesConfigured" id="packages-tokens">
+      <Card
+        v-if="instanceConfig?.packageMirrorEnabled !== false && isPackagesConfigured"
+        id="packages-tokens"
+      >
         <CardHeader class="pb-3">
           <div class="flex items-center justify-between">
             <div>
@@ -564,6 +567,7 @@
 <script setup lang="ts">
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { useAlert } from "@/composables/useAlert";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { formatDate, timeAgo } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
@@ -600,6 +604,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const alert = useAlert();
+const { config: instanceConfig } = useInstanceConfig();
 
 const shopId = Number(route.params.shopId);
 

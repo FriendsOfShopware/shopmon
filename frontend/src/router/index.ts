@@ -2,6 +2,7 @@ import type { RouteLocationNormalized, Router } from "vue-router";
 
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { useSession, fetchSession } from "@/composables/useSession";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { api, setToken } from "@/helpers/api";
 import { i18n } from "@/i18n";
 import { nextTick } from "vue";
@@ -27,11 +28,14 @@ export function setupRouterGuards(router: Router) {
 
     const { session, loading } = useSession();
 
-    // On first navigation, wait for the session to load
+    // On first navigation, load session and instance config in parallel
     if (!initialSessionLoaded) {
+      const { load: loadConfig } = useInstanceConfig();
+      const promises: Promise<unknown>[] = [loadConfig()];
       if (loading.value) {
-        await fetchSession();
+        promises.push(fetchSession());
       }
+      await Promise.all(promises);
       initialSessionLoaded = true;
     }
 
@@ -56,6 +60,12 @@ export function setupRouterGuards(router: Router) {
       return { name: "account.login" };
     } else if (to.name === "account.login") {
       setReturnUrl("/app/dashboard");
+    }
+
+    // Block registration page when registration is disabled
+    const { config } = useInstanceConfig();
+    if (to.name === "account.register" && config.value && !config.value.registrationEnabled) {
+      return { name: "account.login" };
     }
 
     // Redirect to onboarding if user has no active organization

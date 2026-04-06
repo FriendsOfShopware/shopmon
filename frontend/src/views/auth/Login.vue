@@ -4,7 +4,7 @@
       <CardTitle class="text-2xl font-semibold tracking-tight">
         {{ $t("auth.signIn") }}
       </CardTitle>
-      <CardDescription>
+      <CardDescription v-if="instanceConfig?.registrationEnabled !== false">
         {{ $t("auth.newToShopmon") }}
         {{ " " }}
         <RouterLink
@@ -20,6 +20,7 @@
       <!-- Social & Passkey login buttons -->
       <div class="flex flex-col gap-3">
         <Button
+          v-if="instanceConfig?.githubAuthEnabled !== false"
           type="button"
           variant="outline"
           class="w-full"
@@ -128,6 +129,7 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { startAuthentication } from "@simplewebauthn/browser";
 
 import { useAlert } from "@/composables/useAlert";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
 import { api, setToken } from "@/helpers/api";
@@ -141,6 +143,7 @@ import PasswordInput from "@/components/PasswordInput.vue";
 const { t } = useI18n();
 const router = useRouter();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
+const { config: instanceConfig } = useInstanceConfig();
 
 const isAuthenticated = ref(false);
 const isGithubLoading = ref(false);

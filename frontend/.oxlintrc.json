@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {},
+  "rules": {},
+  "env": {
+    "builtin": true
+  },
+  "options": {
+    "typeCheck": true,
+    "typeAware": true
+  },
+  "ignorePatterns": []
+}

@@ -212,11 +212,20 @@
             <DialogTitle>Refresh {{ environment.name }}</DialogTitle>
           </div>
         </DialogHeader>
-        <p>Do you also want to have a new pagespeed test?</p>
-        <DialogFooter>
-          <Button variant="destructive" @click="onRefresh(false)">No</Button>
-          <Button @click="onRefresh(true)">Yes</Button>
-        </DialogFooter>
+        <template v-if="instanceConfig?.sitespeedEnabled !== false">
+          <p>Do you also want to have a new pagespeed test?</p>
+          <DialogFooter>
+            <Button variant="destructive" @click="onRefresh(false)">No</Button>
+            <Button @click="onRefresh(true)">Yes</Button>
+          </DialogFooter>
+        </template>
+        <template v-else>
+          <p>This will refresh the environment data.</p>
+          <DialogFooter>
+            <Button variant="outline" @click="showEnvironmentRefreshModal = false">Cancel</Button>
+            <Button @click="onRefresh(false)">Refresh</Button>
+          </DialogFooter>
+        </template>
       </DialogContent>
     </Dialog>
   </div>
@@ -228,6 +237,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -277,6 +287,7 @@ const {
 } = useEnvironmentDetail();
 
 const { environments: allEnvironments } = useAccountEnvironments();
+const { config: instanceConfig } = useInstanceConfig();
 
 // Environments in the same project (same shopId)
 const siblingEnvironments = computed(() => {
@@ -304,56 +315,63 @@ const environmentHost = computed(() => {
   }
 });
 
-const tabs = computed(() => [
-  {
-    route: "account.environments.detail",
-    label: t("nav.environmentInformation"),
-    icon: FaShop,
-    count: 0,
-  },
-  {
-    route: "account.environments.detail.checks",
-    label: t("nav.checks"),
-    icon: FaCircleCheck,
-    count: environment.value?.checks?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.extensions",
-    label: t("nav.extensions"),
-    icon: FaPlug,
-    count: environment.value?.extensions?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.tasks",
-    label: t("nav.scheduledTasks"),
-    icon: FaListCheck,
-    count: environment.value?.scheduledTasks?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.queue",
-    label: t("nav.queue"),
-    icon: FaCircleCheck,
-    count: environment.value?.queues?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.sitespeed",
-    label: t("nav.sitespeed"),
-    icon: FaRocket,
-    count: environment.value?.sitespeeds?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.changelog",
-    label: t("nav.changelog"),
-    icon: FaFileWaveform,
-    count: environment.value?.changelogs?.length ?? 0,
-  },
-  {
-    route: "account.environments.detail.deployments",
-    label: t("nav.deployments"),
-    icon: FaCodeBranch,
-    count: environment.value?.deploymentsCount ?? 0,
-  },
-]);
+const tabs = computed(() => {
+  const allTabs = [
+    {
+      route: "account.environments.detail",
+      label: t("nav.environmentInformation"),
+      icon: FaShop,
+      count: 0,
+    },
+    {
+      route: "account.environments.detail.checks",
+      label: t("nav.checks"),
+      icon: FaCircleCheck,
+      count: environment.value?.checks?.length ?? 0,
+    },
+    {
+      route: "account.environments.detail.extensions",
+      label: t("nav.extensions"),
+      icon: FaPlug,
+      count: environment.value?.extensions?.length ?? 0,
+    },
+    {
+      route: "account.environments.detail.tasks",
+      label: t("nav.scheduledTasks"),
+      icon: FaListCheck,
+      count: environment.value?.scheduledTasks?.length ?? 0,
+    },
+    {
+      route: "account.environments.detail.queue",
+      label: t("nav.queue"),
+      icon: FaCircleCheck,
+      count: environment.value?.queues?.length ?? 0,
+    },
+    ...(instanceConfig.value?.sitespeedEnabled !== false
+      ? [
+          {
+            route: "account.environments.detail.sitespeed",
+            label: t("nav.sitespeed"),
+            icon: FaRocket,
+            count: environment.value?.sitespeeds?.length ?? 0,
+          },
+        ]
+      : []),
+    {
+      route: "account.environments.detail.changelog",
+      label: t("nav.changelog"),
+      icon: FaFileWaveform,
+      count: environment.value?.changelogs?.length ?? 0,
+    },
+    {
+      route: "account.environments.detail.deployments",
+      label: t("nav.deployments"),
+      icon: FaCodeBranch,
+      count: environment.value?.deploymentsCount ?? 0,
+    },
+  ];
+  return allTabs;
+});
 
 function isTabActive(tabRoute: string): boolean {
   if (route.name === tabRoute) return true;
