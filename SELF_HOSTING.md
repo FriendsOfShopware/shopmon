@@ -176,11 +176,6 @@ Required only if you use the deployment tracking feature.
 | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | | Override for log-specific endpoint |
 | `OTEL_SERVICE_NAME` | `shopmon` | Service name in traces |
 
-### Server
-
-| Variable | Default | Description |
-|---|---|---|
-| `LISTEN_ADDR` | `:8080` | Address the API server listens on |
 
 ## Reverse Proxy Examples
 
