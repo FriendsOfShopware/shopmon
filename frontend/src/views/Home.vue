@@ -1,7 +1,7 @@
 <template>
   <!-- ═══════ HERO ═══════ -->
   <section
-    class="relative overflow-hidden bg-gradient-to-b from-[#0a3d5c] via-[#0c6ea6] to-primary/50 pb-12 pt-28 sm:pt-36 md:pb-20"
+    class="relative flex flex-col overflow-visible bg-gradient-to-b from-[#0a3d5c] via-[#0c6ea6] to-primary/50 pt-24 sm:pt-28 lg:h-dvh"
   >
     <!-- Subtle pattern -->
     <div
@@ -15,7 +15,7 @@
       class="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[800px] rounded-full bg-white/[0.03] blur-3xl"
     />
 
-    <div class="relative mx-auto max-w-5xl px-6 text-center">
+    <div class="relative mx-auto flex flex-col items-center max-w-5xl px-4 sm:px-6 text-center lg:flex-1 lg:justify-center lg:pb-16">
       <div
         class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 py-1.5 text-sm text-white/80 backdrop-blur-sm"
       >
@@ -34,7 +34,7 @@
         {{ $t("home.description") }}
       </p>
 
-      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <div class="mt-5 sm:mt-8 flex flex-wrap items-center justify-center gap-3">
         <Button
           as-child
           size="lg"
@@ -58,8 +58,11 @@
         </Button>
       </div>
 
-      <!-- Hero screenshot -->
-      <div class="mx-auto mt-12 max-w-4xl sm:mt-16">
+    </div>
+
+    <!-- Hero screenshot — positioned at bottom, overflows behind features section -->
+    <div class="relative mt-6 sm:mt-10 mb-[-2rem] sm:mb-[-4rem] px-4 sm:px-6 lg:mb-[-8rem]">
+      <div class="mx-auto max-w-7xl">
         <div
           class="rounded-xl bg-gradient-to-b from-white/10 to-white/5 p-1.5 shadow-2xl ring-1 ring-white/10"
         >
@@ -77,28 +80,30 @@
   </section>
 
   <!-- ═══════ FEATURES — 3-column ═══════ -->
-  <section class="mx-auto max-w-6xl px-6 py-20 md:py-28">
-    <div class="mb-12 text-center md:mb-16">
-      <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("home.subtitle") }}</h2>
-      <p class="mx-auto mt-3 max-w-lg text-muted-foreground">
-        One dashboard to monitor status, performance, extensions, and deployments across all your
-        environments.
-      </p>
-    </div>
+  <section class="relative z-10 bg-background pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-28">
+    <div class="mx-auto max-w-6xl px-6">
+      <div class="mb-12 text-center md:mb-16">
+        <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("home.subtitle") }}</h2>
+        <p class="mx-auto mt-3 max-w-lg text-muted-foreground">
+          One dashboard to monitor status, performance, extensions, and deployments across all your
+          environments.
+        </p>
+      </div>
 
-    <div class="grid gap-6 md:grid-cols-3">
-      <div
-        v-for="feature in features"
-        :key="feature.title"
-        class="group rounded-2xl border bg-card p-7 transition-all duration-200 hover:shadow-lg"
-      >
-        <div class="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10">
-          <img :src="feature.icon" :alt="feature.alt" class="size-6 object-contain" />
+      <div class="grid gap-6 md:grid-cols-3">
+        <div
+          v-for="feature in features"
+          :key="feature.title"
+          class="group rounded-2xl border bg-card p-7 transition-all duration-200 hover:shadow-lg"
+        >
+          <div class="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10">
+            <img :src="feature.icon" :alt="feature.alt" class="size-6 object-contain" />
+          </div>
+          <h3 class="mb-2 text-lg font-semibold group-hover:text-primary transition-colors">
+            {{ feature.title }}
+          </h3>
+          <p class="text-sm leading-relaxed text-muted-foreground">{{ feature.description }}</p>
         </div>
-        <h3 class="mb-2 text-lg font-semibold group-hover:text-primary transition-colors">
-          {{ feature.title }}
-        </h3>
-        <p class="text-sm leading-relaxed text-muted-foreground">{{ feature.description }}</p>
       </div>
     </div>
   </section>
