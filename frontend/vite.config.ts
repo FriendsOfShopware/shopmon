@@ -18,12 +18,6 @@ const ssgRoutes = [
   "/account/forgot-password",
 ];
 
-const hmr = {};
-
-if (process.env.HMR_PORT) {
-  hmr.clientPort = process.env.HMR_PORT;
-}
-
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -64,7 +58,6 @@ ${ssgRoutes.map((route) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <las
     },
   },
   server: {
-    hmr,
     proxy: {
       "/api": {
         target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",

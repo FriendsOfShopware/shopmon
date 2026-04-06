@@ -59,6 +59,7 @@
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/octicon": "^1.2.19",
     "@iconify-json/ri": "^1.2.6",
+    "@types/node": "^25.5.2",
     "@unhead/vue": "^2.1.12",
     "@vitejs/plugin-vue": "6.0.5",
     "@vitest/ui": "^4.1.2",
