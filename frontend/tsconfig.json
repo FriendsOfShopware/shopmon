@@ -1,18 +1,20 @@
 {
   "compilerOptions": {
     "strict": true,
-    "baseUrl": "src",
-    "target": "esnext",
-    "moduleResolution": "bundler",
-    "module": "ES2020",
+    "target": "ESNext",
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
-    "strictNullChecks": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2015", "ESNext"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "preserve",
-    "types": ["unplugin-icons/types/vue", "vitest/globals"]
+    "types": ["vite/client", "unplugin-icons/types/vue", "vitest/globals"]
   },
-  "exclude": ["node_modules", "dist"]
+  "include": ["components.d.ts", "src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
 }
