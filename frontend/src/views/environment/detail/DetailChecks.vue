@@ -2,9 +2,24 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary bar -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <StatCard :icon="IconCircleXmark" :value="counts.red" label="Errors" color="destructive" />
-      <StatCard :icon="IconCircleInfo" :value="counts.yellow" label="Warnings" color="warning" />
-      <StatCard :icon="IconCircleCheck" :value="counts.green" label="Passed" color="success" />
+      <StatCard
+        :icon="IconCircleXmark"
+        :value="counts.red"
+        :label="$t('common.errors')"
+        color="destructive"
+      />
+      <StatCard
+        :icon="IconCircleInfo"
+        :value="counts.yellow"
+        :label="$t('common.warnings')"
+        color="warning"
+      />
+      <StatCard
+        :icon="IconCircleCheck"
+        :value="counts.green"
+        :label="$t('common.passed')"
+        color="success"
+      />
     </div>
 
     <!-- Filter tabs -->
@@ -28,7 +43,7 @@
       <div class="flex items-center gap-2">
         <label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
           <Switch :checked="showIgnored" @update:checked="showIgnored = $event" />
-          Show ignored
+          {{ $t("common.showIgnored") }}
         </label>
       </div>
     </div>
@@ -82,8 +97,8 @@
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:circle-check class="size-10 text-success" />
-      <h3 class="text-lg font-semibold">All clear</h3>
-      <p class="text-sm text-muted-foreground">No checks match the current filter.</p>
+      <h3 class="text-lg font-semibold">{{ $t("shopDetail.allClear") }}</h3>
+      <p class="text-sm text-muted-foreground">{{ $t("shopDetail.noChecksMatch") }}</p>
     </div>
   </div>
 </template>
@@ -112,10 +127,10 @@ const activeFilter = ref<"all" | "red" | "yellow" | "green">("all");
 const showIgnored = ref(false);
 
 const filters = [
-  { label: "All", value: "all" as const },
-  { label: "Errors", value: "red" as const },
-  { label: "Warnings", value: "yellow" as const },
-  { label: "Passed", value: "green" as const },
+  { label: t("common.all"), value: "all" as const },
+  { label: t("common.errors"), value: "red" as const },
+  { label: t("common.warnings"), value: "yellow" as const },
+  { label: t("common.passed"), value: "green" as const },
 ];
 
 const counts = computed(() => {

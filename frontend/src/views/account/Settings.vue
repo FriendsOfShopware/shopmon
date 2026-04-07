@@ -113,7 +113,7 @@
             <icon-fa6-brands:github class="size-4" />
           </div>
           <div>
-            <div class="text-sm font-medium">GitHub</div>
+            <div class="text-sm font-medium">{{ $t("home.openSourceGithub") }}</div>
             <div class="text-xs text-muted-foreground">
               {{
                 connectedProviders.includes("github")
@@ -148,7 +148,7 @@
       <EmptyState
         v-if="!passkeys?.length"
         :icon="IconPasskey"
-        title="No passkeys registered yet."
+        :title="$t('settings.noPasskeys')"
         size="sm"
       />
       <div v-else class="space-y-2">
@@ -158,7 +158,7 @@
           class="flex items-center justify-between rounded-xl border px-4 py-3"
         >
           <div>
-            <div class="text-sm font-medium">{{ pk.name || "Unnamed passkey" }}</div>
+            <div class="text-sm font-medium">{{ pk.name || $t("settings.unnamedPasskey") }}</div>
             <div class="text-xs text-muted-foreground">{{ pk.createdAt }}</div>
           </div>
           <Button
@@ -178,7 +178,7 @@
       <EmptyState
         v-if="!sessions?.length"
         :icon="IconDesktop"
-        title="No active sessions."
+        :title="$t('settings.noSessions')"
         size="sm"
       />
       <div v-else class="space-y-2">
@@ -189,7 +189,7 @@
         >
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium">
-              {{ session.userAgent || "Unknown device" }}
+              {{ session.userAgent || $t("settings.unknownDevice") }}
             </div>
             <div class="text-xs text-muted-foreground">{{ session.createdAt }}</div>
           </div>
@@ -197,7 +197,7 @@
             v-if="session.id === sessionData?.session?.id"
             variant="secondary"
             class="mr-2 text-xs"
-            >Current</Badge
+            >{{ $t("settings.currentSession") }}</Badge
           >
           <Button
             v-if="session.id !== sessionData?.session?.id"
@@ -292,7 +292,7 @@
           v-model="passKeyName"
           name="name"
           autocomplete="off"
-          placeholder="e.g. MacBook Pro"
+          :placeholder="$t('settings.passkeyPlaceholder')"
         />
         <DialogFooter>
           <Button variant="outline" @click="showPasskeyCreationModal = false">{{

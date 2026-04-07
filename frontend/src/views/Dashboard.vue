@@ -11,12 +11,12 @@
       <div v-if="shops.length > 0" class="hidden items-center gap-6 sm:flex">
         <div class="text-right">
           <div class="text-2xl font-bold tabular-nums">{{ shops.length }}</div>
-          <div class="text-xs text-muted-foreground">Shops</div>
+          <div class="text-xs text-muted-foreground">{{ $t("dashboard.shops") }}</div>
         </div>
         <Separator orientation="vertical" class="h-10" />
         <div class="text-right">
           <div class="text-2xl font-bold tabular-nums text-success">{{ greenCount }}</div>
-          <div class="text-xs text-muted-foreground">Healthy</div>
+          <div class="text-xs text-muted-foreground">{{ $t("dashboard.healthy") }}</div>
         </div>
         <div class="text-right">
           <div
@@ -25,7 +25,7 @@
           >
             {{ warnCount }}
           </div>
-          <div class="text-xs text-muted-foreground">Warnings</div>
+          <div class="text-xs text-muted-foreground">{{ $t("dashboard.warnings") }}</div>
         </div>
         <div class="text-right">
           <div
@@ -34,7 +34,7 @@
           >
             {{ errorCount }}
           </div>
-          <div class="text-xs text-muted-foreground">Errors</div>
+          <div class="text-xs text-muted-foreground">{{ $t("dashboard.errors") }}</div>
         </div>
       </div>
     </div>
@@ -71,9 +71,9 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="text-sm font-semibold">
-              {{ outdatedExtensionCount }} extension updates available
+              {{ $t("dashboard.extensionUpdatesAvailable", { count: outdatedExtensionCount }) }}
             </div>
-            <div class="text-xs text-muted-foreground">across your shops</div>
+            <div class="text-xs text-muted-foreground">{{ $t("dashboard.acrossYourShops") }}</div>
           </div>
           <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground" />
         </RouterLink>
@@ -90,12 +90,11 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="text-sm font-semibold">
-              {{ errorCount }} shop{{ errorCount !== 1 ? "s" : "" }} need{{
-                errorCount === 1 ? "s" : ""
-              }}
-              attention
+              {{ $t("dashboard.shopsNeedAttention", { count: errorCount }) }}
             </div>
-            <div class="text-xs text-muted-foreground">Health checks are failing</div>
+            <div class="text-xs text-muted-foreground">
+              {{ $t("dashboard.healthChecksFailing") }}
+            </div>
           </div>
         </div>
       </div>
@@ -144,7 +143,7 @@
       <!-- Shopware version overview + recent changes -->
       <div class="mb-8 grid gap-6 lg:grid-cols-3">
         <!-- Version distribution -->
-        <CardSection :icon="IconCodeBranch" title="Shopware Versions">
+        <CardSection :icon="IconCodeBranch" :title="$t('dashboard.shopwareVersions')">
           <div class="space-y-2">
             <div
               v-for="version in versionDistribution"
@@ -180,7 +179,7 @@
             class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground"
           >
             <icon-fa6-solid:clock-rotate-left class="size-8 opacity-30" />
-            <p class="text-sm">No recent changes</p>
+            <p class="text-sm">{{ $t("dashboard.noRecentChanges") }}</p>
           </div>
           <div v-else class="space-y-1.5">
             <RouterLink

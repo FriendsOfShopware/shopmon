@@ -2,24 +2,24 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary cards -->
     <div v-if="deployments.length > 0" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <StatCard :icon="IconRocket" :value="deployments.length" label="Total" />
+      <StatCard :icon="IconRocket" :value="deployments.length" :label="$t('common.total')" />
       <StatCard
         :icon="IconCircleCheck"
         :value="counts.success"
-        label="Successful"
+        :label="$t('common.successful')"
         color="success"
       />
       <StatCard
         :icon="IconCircleXmark"
         :value="counts.failed"
-        label="Failed"
+        :label="$t('common.failed')"
         :color="counts.failed > 0 ? 'destructive' : 'muted'"
       />
       <StatCard
         v-if="latestDeployment"
         :icon="IconClock"
         :value="formatDateTime(latestDeployment.createdAt)"
-        label="Last deploy"
+        :label="$t('shopDetail.lastDeploy')"
       />
     </div>
 
@@ -67,7 +67,7 @@
               class="inline-flex gap-1 text-[10px]"
             >
               <icon-fa6-solid:check class="size-2" />
-              success
+              {{ $t("deployments.success") }}
             </Badge>
             <Badge v-else variant="destructive" class="inline-flex gap-1 text-[10px]">
               <icon-fa6-solid:xmark class="size-2" />
@@ -98,7 +98,13 @@
               <icon-fa6-solid:code-branch class="size-3.5" />
             </a>
           </Button>
-          <Button as-child variant="ghost" size="icon" class="size-7" title="View details">
+          <Button
+            as-child
+            variant="ghost"
+            size="icon"
+            class="size-7"
+            :title="$t('common.viewDetails')"
+          >
             <RouterLink
               :to="{
                 name: 'account.environments.detail.deployment',
@@ -115,7 +121,7 @@
             variant="ghost"
             size="icon"
             class="size-7 text-muted-foreground hover:text-destructive"
-            title="Delete"
+            :title="$t('common.delete')"
             @click="confirmDeleteDeployment(dep)"
           >
             <icon-fa6-solid:trash class="size-3" />
@@ -129,7 +135,7 @@
       v-else
       :icon="IconRocket"
       :title="$t('deployments.noDeployments')"
-      description="Set up the CLI to start tracking deployments."
+      :description="$t('shopDetail.setupCliDescription')"
       size="sm"
     />
 

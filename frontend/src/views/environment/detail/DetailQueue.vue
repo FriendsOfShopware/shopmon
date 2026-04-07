@@ -2,17 +2,17 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <StatCard :icon="IconLayerGroup" :value="queues.length" label="Queues" />
+      <StatCard :icon="IconLayerGroup" :value="queues.length" :label="$t('common.queues')" />
       <StatCard
         :icon="IconEnvelope"
         :value="totalSize.toLocaleString()"
-        label="Pending messages"
+        :label="$t('shopDetail.pendingMessages')"
         :color="totalSize > 0 ? 'warning' : 'success'"
       />
       <StatCard
         :icon="IconGaugeHigh"
         :value="busyQueues"
-        label="Queues with backlog"
+        :label="$t('shopDetail.queuesWithBacklog')"
         :color="busyQueues > 0 ? 'warning' : 'success'"
       />
     </div>
@@ -51,7 +51,7 @@
           >
             {{ queue.size.toLocaleString() }}
           </span>
-          <span class="ml-1 text-xs text-muted-foreground">messages</span>
+          <span class="ml-1 text-xs text-muted-foreground">{{ $t("common.messages") }}</span>
         </div>
       </div>
     </div>
@@ -59,8 +59,8 @@
     <!-- Empty state -->
     <EmptyState
       :icon="IconLayerGroup"
-      title="No queues"
-      description="This environment has no message queues."
+      :title="$t('shopDetail.noQueues')"
+      :description="$t('shopDetail.noQueueDescription')"
       size="sm"
     />
   </div>

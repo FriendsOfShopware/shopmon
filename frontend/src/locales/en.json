@@ -38,7 +38,32 @@
     "noElements": "No elements",
     "addElement": "Add element",
     "getStartedElement": "Get started by adding your first element.",
-    "default": "Default"
+    "default": "Default",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "passed": "Passed",
+    "healthy": "Healthy",
+    "total": "Total",
+    "active": "Active",
+    "inactive": "Inactive",
+    "updates": "Updates",
+    "all": "All",
+    "overdue": "Overdue",
+    "successful": "Successful",
+    "failed": "Failed",
+    "queues": "Queues",
+    "messages": "messages",
+    "copyToken": "Copy token",
+    "viewDetails": "View details",
+    "showIgnored": "Show ignored",
+    "noSearchMatch": "No extensions match \"{query}\".",
+    "noFilterMatch": "No extensions match the current filter.",
+    "noTaskSearchMatch": "No tasks match \"{query}\".",
+    "noTaskFilterMatch": "No scheduled tasks match the current filter.",
+    "users": "Users",
+    "organizations": "Organizations"
   },
   "alert": {
     "successTitle": "Action success",
@@ -65,7 +90,10 @@
     "deploymentDetails": "Deployment Details",
     "environmentInformation": "Environment informations",
     "editShop": "Edit Shop",
-    "documentation": "Documentation"
+    "documentation": "Documentation",
+    "navigation": "Navigation",
+    "shops": "Shops",
+    "onThisPage": "On this page"
   },
   "home": {
     "title": "Shopmon - The Open-Source Dashboard for Shopware Developers",
@@ -188,7 +216,17 @@
     "changes": "Changes",
     "environmentLogo": "Environment Logo",
     "nMembers": "{count} Members",
-    "nEnvironments": "{count} Environments"
+    "nEnvironments": "{count} Environments",
+    "shops": "Shops",
+    "healthy": "Healthy",
+    "warnings": "Warnings",
+    "errors": "Errors",
+    "extensionUpdatesAvailable": "{count} extension updates available",
+    "acrossYourShops": "across your shops",
+    "shopsNeedAttention": "{count} shop needs attention | {count} shops need attention",
+    "healthChecksFailing": "Health checks are failing",
+    "shopwareVersions": "Shopware Versions",
+    "noRecentChanges": "No recent changes"
   },
   "settings": {
     "title": "Settings",
@@ -245,7 +283,13 @@
     "passwordRequiredForDelete": "Please provide your current password to delete your account.",
     "unlinkedProvider": "Successfully unlinked your account from {providerId}",
     "errorUnlinkAccount": "Failed to unlink account",
-    "unsubscribedEnvironment": "Successfully unsubscribed from environment notifications"
+    "unsubscribedEnvironment": "Successfully unsubscribed from environment notifications",
+    "noPasskeys": "No passkeys registered yet.",
+    "unnamedPasskey": "Unnamed passkey",
+    "noSessions": "No active sessions.",
+    "unknownDevice": "Unknown device",
+    "currentSession": "Current",
+    "passkeyPlaceholder": "e.g. MacBook Pro"
   },
   "environment": {
     "title": "Environments",
@@ -280,7 +324,13 @@
     "base64Error": "Please enter a base64 string",
     "base64InvalidData": "Invalid data: missing required fields (url, clientId, clientSecret)",
     "base64InvalidFormat": "Invalid base64 string or JSON format",
-    "addEnvironment": "Add Environment"
+    "addEnvironment": "Add Environment",
+    "createShopFirst": "Create a shop first",
+    "shopsGroupDescription": "Shops group related environments together. For example:",
+    "exampleShopName": "Toy Shop X",
+    "exampleProduction": "Production",
+    "exampleStaging": "Staging",
+    "createShop": "Create Shop"
   },
   "shop": {
     "newShop": "New Shop",
@@ -475,7 +525,23 @@
     "inactive": "inactive",
     "rescheduleTask": "Re-schedule task",
     "taskRescheduled": "Task is re-scheduled",
-    "size": "Size"
+    "size": "Size",
+    "allClear": "All clear",
+    "noChecksMatch": "No checks match the current filter.",
+    "noChangesRecorded": "No changes recorded",
+    "changesWillAppear": "Changes to this environment will appear here.",
+    "performanceOverTime": "Performance over time",
+    "history": "History",
+    "lastDeploy": "Last deploy",
+    "setupCliDescription": "Set up the CLI to start tracking deployments.",
+    "searchExtensions": "Search extensions...",
+    "noExtensionsFound": "No extensions found",
+    "pendingMessages": "Pending messages",
+    "queuesWithBacklog": "Queues with backlog",
+    "noQueues": "No queues",
+    "noQueueDescription": "This environment has no message queues.",
+    "searchTasks": "Search tasks...",
+    "noTasksFound": "No tasks found"
   },
   "sitespeed": {
     "checkedAt": "Checked At",
@@ -494,7 +560,8 @@
     "sizeKb": "Size (KB)",
     "clsOverTime": "Cumulative Layout Shift Over Time",
     "clsScore": "CLS Score",
-    "date": "Date"
+    "date": "Date",
+    "sitespeedDetails": "{name} details"
   },
   "deployments": {
     "setupTitle": "How to Track Deployments",
@@ -598,6 +665,19 @@
     "failedImpersonate": "Failed to impersonate user: {error}",
     "failedBan": "Failed to ban user: {error}",
     "failedUnban": "Failed to unban user: {error}",
+    "impersonateTitle": "Impersonate",
+    "banUser": "Ban user",
+    "unbanUser": "Unban user",
+    "noUsersFound": "No users found",
+    "noUsersMatch": "No users match \"{query}\"",
+    "shopwareVersions": "Shopware Versions",
+    "userGrowth": "User Growth",
+    "environmentGrowth": "Environment Growth",
+    "recentSignups": "Recent Signups",
+    "recentEnvironments": "Recent Environments",
+    "noRecentSignups": "No recent signups",
+    "noRecentEnvironments": "No recent environments",
+    "environmentHealth": "Environment health:",
     "environmentManagement": "Environment Management",
     "searchEnvironments": "Search environments by name or URL...",
     "sortByUrl": "Sort by URL",
@@ -657,7 +737,8 @@
   "footer": {
     "whatsNew": "What's new",
     "privacy": "Privacy",
-    "legalNotice": "Legal Notice"
+    "legalNotice": "Legal Notice",
+    "tagline": "Open-Source Shopware Monitoring"
   },
   "dataTable": {
     "noSearchResult": "no search result for",

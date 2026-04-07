@@ -30,7 +30,7 @@
 
       <!-- Status breakdown -->
       <div class="flex flex-wrap items-center gap-3">
-        <span class="text-sm text-muted-foreground">Environment health:</span>
+        <span class="text-sm text-muted-foreground">{{ $t("admin.environmentHealth") }}</span>
         <div
           v-for="(count, status) in stats.environmentsByStatus"
           :key="status"
@@ -45,7 +45,7 @@
       <div v-if="growthData" class="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader class="pb-2">
-            <CardTitle class="text-base">User Growth</CardTitle>
+            <CardTitle class="text-base">{{ $t("admin.userGrowth") }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="h-56">
@@ -56,7 +56,7 @@
 
         <Card>
           <CardHeader class="pb-2">
-            <CardTitle class="text-base">Environment Growth</CardTitle>
+            <CardTitle class="text-base">{{ $t("admin.environmentGrowth") }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="h-56">
@@ -71,7 +71,7 @@
         <!-- Version distribution -->
         <Card v-if="versionData?.length">
           <CardHeader class="pb-3">
-            <CardTitle class="text-base">Shopware Versions</CardTitle>
+            <CardTitle class="text-base">{{ $t("admin.shopwareVersions") }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="space-y-2">
@@ -98,7 +98,7 @@
         <!-- Recent signups -->
         <Card>
           <CardHeader class="pb-3">
-            <CardTitle class="text-base">Recent Signups</CardTitle>
+            <CardTitle class="text-base">{{ $t("admin.recentSignups") }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div
@@ -106,7 +106,7 @@
               class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground"
             >
               <icon-fa6-solid:users class="size-6 opacity-30" />
-              <p class="text-sm">No recent signups</p>
+              <p class="text-sm">{{ $t("admin.noRecentSignups") }}</p>
             </div>
             <div v-else class="space-y-1.5">
               <div
@@ -134,7 +134,7 @@
         <!-- Recent environments -->
         <Card>
           <CardHeader class="pb-3">
-            <CardTitle class="text-base">Recent Environments</CardTitle>
+            <CardTitle class="text-base">{{ $t("admin.recentEnvironments") }}</CardTitle>
           </CardHeader>
           <CardContent>
             <div
@@ -142,7 +142,7 @@
               class="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground"
             >
               <icon-fa6-solid:earth-americas class="size-6 opacity-30" />
-              <p class="text-sm">No recent environments</p>
+              <p class="text-sm">{{ $t("admin.noRecentEnvironments") }}</p>
             </div>
             <div v-else class="space-y-1.5">
               <div
@@ -197,6 +197,7 @@ import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
 import { onMounted, onUnmounted, ref, nextTick, watch, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { Chart, registerables } from "chart.js";
 
 import FaUsers from "~icons/fa6-solid/users";
@@ -204,6 +205,8 @@ import FaBuilding from "~icons/fa6-solid/building";
 import FaEarth from "~icons/fa6-solid/earth-americas";
 
 Chart.register(...registerables);
+
+const { t } = useI18n();
 
 type Stats = components["schemas"]["AdminStats"];
 type GrowthData = components["schemas"]["AdminGrowth"];
@@ -220,9 +223,9 @@ const error = ref("");
 const statCards = computed(() => {
   if (!stats.value) return [];
   return [
-    { icon: FaUsers, value: stats.value.totalUsers, label: "Users" },
-    { icon: FaBuilding, value: stats.value.totalOrganizations, label: "Organizations" },
-    { icon: FaEarth, value: stats.value.totalEnvironments, label: "Environments" },
+    { icon: FaUsers, value: stats.value.totalUsers, label: t("common.users") },
+    { icon: FaBuilding, value: stats.value.totalOrganizations, label: t("common.organizations") },
+    { icon: FaEarth, value: stats.value.totalEnvironments, label: t("common.environments") },
   ];
 });
 

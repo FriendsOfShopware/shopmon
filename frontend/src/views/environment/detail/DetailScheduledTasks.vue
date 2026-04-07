@@ -2,10 +2,25 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <StatCard :icon="IconListCheck" :value="tasks.length" label="Total" />
-      <StatCard :icon="IconCircleCheck" :value="counts.healthy" label="Healthy" color="success" />
-      <StatCard :icon="IconClock" :value="counts.overdue" label="Overdue" color="warning" />
-      <StatCard :icon="IconPause" :value="counts.inactive" label="Inactive" color="muted" />
+      <StatCard :icon="IconListCheck" :value="tasks.length" :label="$t('common.total')" />
+      <StatCard
+        :icon="IconCircleCheck"
+        :value="counts.healthy"
+        :label="$t('common.healthy')"
+        color="success"
+      />
+      <StatCard
+        :icon="IconClock"
+        :value="counts.overdue"
+        :label="$t('common.overdue')"
+        color="warning"
+      />
+      <StatCard
+        :icon="IconPause"
+        :value="counts.inactive"
+        :label="$t('common.inactive')"
+        color="muted"
+      />
     </div>
 
     <!-- Filter + search -->
@@ -13,7 +28,7 @@
       v-model:filter="activeFilter"
       v-model:search="searchQuery"
       :filters="filters"
-      search-placeholder="Search tasks..."
+      :search-placeholder="$t('shopDetail.searchTasks')"
     />
 
     <!-- Task list -->
@@ -76,10 +91,12 @@
     </div>
 
     <!-- Empty state -->
-    <EmptyState v-else :icon="IconListCheck" title="No tasks found" size="sm">
+    <EmptyState v-else :icon="IconListCheck" :title="$t('shopDetail.noTasksFound')" size="sm">
       <p class="text-sm text-muted-foreground">
-        <template v-if="searchQuery">No tasks match "{{ searchQuery }}".</template>
-        <template v-else>No scheduled tasks match the current filter.</template>
+        <template v-if="searchQuery">{{
+          $t("common.noTaskSearchMatch", { query: searchQuery })
+        }}</template>
+        <template v-else>{{ $t("common.noTaskFilterMatch") }}</template>
       </p>
     </EmptyState>
   </div>
@@ -121,10 +138,10 @@ const activeFilter = ref<"all" | "healthy" | "overdue" | "inactive">("all");
 const searchQuery = ref("");
 
 const filters = [
-  { label: "All", value: "all" as const },
-  { label: "Healthy", value: "healthy" as const },
-  { label: "Overdue", value: "overdue" as const },
-  { label: "Inactive", value: "inactive" as const },
+  { label: t("common.all"), value: "all" as const },
+  { label: t("common.healthy"), value: "healthy" as const },
+  { label: t("common.overdue"), value: "overdue" as const },
+  { label: t("common.inactive"), value: "inactive" as const },
 ];
 
 const tasks = computed(() => environment.value?.scheduledTasks ?? []);

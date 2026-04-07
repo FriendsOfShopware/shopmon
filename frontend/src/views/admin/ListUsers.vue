@@ -101,7 +101,7 @@
             variant="ghost"
             size="icon"
             class="size-7"
-            title="Impersonate"
+            :title="$t('admin.impersonateTitle')"
             @click="impersonateUser(user.id)"
           >
             <icon-fa6-solid:user-secret class="size-3.5" />
@@ -111,7 +111,7 @@
             variant="ghost"
             size="icon"
             class="size-7 text-muted-foreground hover:text-destructive"
-            title="Ban user"
+            :title="$t('admin.banUser')"
             @click="banUser(user.id)"
           >
             <icon-fa6-solid:ban class="size-3.5" />
@@ -121,7 +121,7 @@
             variant="ghost"
             size="icon"
             class="size-7"
-            title="Unban user"
+            :title="$t('admin.unbanUser')"
             @click="unbanUser(user.id)"
           >
             <icon-fa6-solid:rotate class="size-3.5" />
@@ -136,9 +136,9 @@
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:users class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No users found</h3>
+      <h3 class="text-lg font-semibold">{{ $t("admin.noUsersFound") }}</h3>
       <p v-if="searchQuery" class="text-sm text-muted-foreground">
-        No users match "{{ searchQuery }}"
+        {{ $t("admin.noUsersMatch", { query: searchQuery }) }}
       </p>
     </div>
 

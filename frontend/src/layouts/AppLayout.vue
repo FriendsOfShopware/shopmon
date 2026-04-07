@@ -27,7 +27,7 @@
 
         <!-- Main nav -->
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>{{ $t("nav.navigation") }}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem v-for="item in navigation" :key="item.route">
@@ -49,7 +49,7 @@
 
         <!-- Shops -->
         <SidebarGroup v-if="shops.length > 0">
-          <SidebarGroupLabel>Shops</SidebarGroupLabel>
+          <SidebarGroupLabel>{{ $t("nav.shops") }}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem v-for="shop in shops" :key="shop.id">
@@ -115,7 +115,7 @@
                 <DropdownMenuItem @click="toggleDarkMode">
                   <icon-fa6-regular:moon v-if="darkMode" class="mr-2 size-3.5" />
                   <icon-octicon:sun-16 v-else class="mr-2 size-3.5" />
-                  {{ darkMode ? "Light mode" : "Dark mode" }}
+                  {{ darkMode ? $t("common.lightMode") : $t("common.darkMode") }}
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="toggleLocale">
                   <icon-fa6-solid:globe class="mr-2 size-3.5" />
@@ -128,7 +128,7 @@
                   target="_blank"
                 >
                   <icon-fa-brands:github class="mr-2 size-3.5" />
-                  GitHub
+                  {{ $t("home.openSourceGithub") }}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem class="text-destructive focus:text-destructive" @click="logout">
@@ -162,7 +162,7 @@
                 size="icon"
                 class="relative size-8"
                 @click="markAllRead"
-                aria-label="Notifications"
+                :aria-label="$t('topBar.viewNotifications')"
               >
                 <icon-fa6-solid:bell class="size-4" />
                 <span

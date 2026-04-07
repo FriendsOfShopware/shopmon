@@ -22,11 +22,11 @@
 
     <!-- External link -->
     <div v-if="environment.sitespeedDetailUrl" class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold">Performance over time</h2>
+      <h2 class="text-lg font-semibold">{{ $t("shopDetail.performanceOverTime") }}</h2>
       <Button variant="outline" size="sm" as-child>
         <a :href="environment.sitespeedDetailUrl" target="_blank">
           <icon-fa6-solid:chart-line class="mr-1.5 size-3" />
-          {{ $t("nav.sitespeed") }} details
+          {{ $t("sitespeed.sitespeedDetails", { name: $t("nav.sitespeed") }) }}
           <icon-fa6-solid:arrow-up-right-from-square class="ml-1.5 size-2.5" />
         </a>
       </Button>
@@ -73,19 +73,19 @@
     <!-- History table -->
     <Card v-if="environment.sitespeeds?.length" class="overflow-hidden p-0">
       <CardHeader class="p-4 pb-0">
-        <CardTitle class="text-base">History</CardTitle>
+        <CardTitle class="text-base">{{ $t("shopDetail.history") }}</CardTitle>
       </CardHeader>
       <CardContent class="p-0 pt-3">
         <DataTable
           :columns="[
             { key: 'createdAt', name: $t('sitespeed.checkedAt'), sortable: true },
             { key: 'deployment', name: $t('sitespeed.deployment') },
-            { key: 'ttfb', name: 'TTFB', sortable: true },
-            { key: 'fullyLoaded', name: 'Loaded', sortable: true },
-            { key: 'largestContentfulPaint', name: 'LCP', sortable: true },
-            { key: 'firstContentfulPaint', name: 'FCP', sortable: true },
-            { key: 'cumulativeLayoutShift', name: 'CLS', sortable: true },
-            { key: 'transferSize', name: 'Size', sortable: true },
+            { key: 'ttfb', name: t('sitespeed.ttfb'), sortable: true },
+            { key: 'fullyLoaded', name: t('sitespeed.fullyLoaded'), sortable: true },
+            { key: 'largestContentfulPaint', name: t('sitespeed.lcp'), sortable: true },
+            { key: 'firstContentfulPaint', name: t('sitespeed.fcp'), sortable: true },
+            { key: 'cumulativeLayoutShift', name: t('sitespeed.cls'), sortable: true },
+            { key: 'transferSize', name: t('shopDetail.size'), sortable: true },
           ]"
           :data="environment.sitespeeds"
         >
@@ -229,7 +229,7 @@ const metricCards = computed(() => {
 
   const cards = [
     {
-      label: "TTFB",
+      label: t("sitespeed.ttfb"),
       value: formatMs(latest.value.ttfb),
       color: msColor(latest.value.ttfb, 800, 1800),
       ...(() => {
@@ -238,7 +238,7 @@ const metricCards = computed(() => {
       })(),
     },
     {
-      label: "Fully Loaded",
+      label: t("sitespeed.fullyLoaded"),
       value: formatMs(latest.value.fullyLoaded),
       color: msColor(latest.value.fullyLoaded, 3000, 6000),
       ...(() => {
@@ -247,7 +247,7 @@ const metricCards = computed(() => {
       })(),
     },
     {
-      label: "LCP",
+      label: t("sitespeed.lcp"),
       value: formatMs(latest.value.largestContentfulPaint),
       color: msColor(latest.value.largestContentfulPaint, 2500, 4000),
       ...(() => {
@@ -256,7 +256,7 @@ const metricCards = computed(() => {
       })(),
     },
     {
-      label: "FCP",
+      label: t("sitespeed.fcp"),
       value: formatMs(latest.value.firstContentfulPaint),
       color: msColor(latest.value.firstContentfulPaint, 1800, 3000),
       ...(() => {
@@ -265,7 +265,7 @@ const metricCards = computed(() => {
       })(),
     },
     {
-      label: "CLS",
+      label: t("sitespeed.cls"),
       value:
         latest.value.cumulativeLayoutShift != null
           ? String(latest.value.cumulativeLayoutShift)
@@ -273,7 +273,7 @@ const metricCards = computed(() => {
       color: clsColor(latest.value.cumulativeLayoutShift),
     },
     {
-      label: "Transfer Size",
+      label: t("sitespeed.transferSize"),
       value: latest.value.transferSize ? formatBytes(latest.value.transferSize) : "—",
       color: "",
       ...(() => {

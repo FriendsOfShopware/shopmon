@@ -7,7 +7,7 @@
         <Logo class="size-4" />
         <span>Shopmon</span>
         <span class="text-border">·</span>
-        <span>Open-Source Shopware Monitoring</span>
+        <span>{{ $t("footer.tagline") }}</span>
       </div>
 
       <nav class="flex items-center gap-4 text-xs">

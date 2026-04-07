@@ -1,11 +1,11 @@
 <template>
   <div class="mx-auto max-w-5xl px-6 py-8">
-    <h1 class="mb-8 text-2xl font-bold tracking-tight lg:hidden">Documentation</h1>
+    <h1 class="mb-8 text-2xl font-bold tracking-tight lg:hidden">{{ $t("nav.documentation") }}</h1>
 
     <div class="flex gap-10">
       <!-- Sticky sidebar TOC -->
       <aside class="hidden w-52 shrink-0 self-start lg:sticky lg:top-16 lg:block">
-        <div class="mb-3 text-sm font-bold tracking-tight">Documentation</div>
+        <div class="mb-3 text-sm font-bold tracking-tight">{{ $t("nav.documentation") }}</div>
         <a
           v-for="item in tocItems"
           :key="item.href"
@@ -30,7 +30,7 @@
               class="flex w-full items-center justify-between text-sm font-medium"
               @click="mobileTocOpen = !mobileTocOpen"
             >
-              On this page
+              {{ $t("nav.onThisPage") }}
               <icon-fa6-solid:chevron-down
                 :class="[
                   'size-3 text-muted-foreground transition-transform',

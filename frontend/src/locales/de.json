@@ -38,7 +38,32 @@
     "noElements": "Keine Einträge",
     "addElement": "Eintrag hinzufügen",
     "getStartedElement": "Fügen Sie Ihren ersten Eintrag hinzu, um loszulegen.",
-    "default": "Standard"
+    "default": "Standard",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "errors": "Fehler",
+    "warnings": "Warnungen",
+    "passed": "Bestanden",
+    "healthy": "Gesund",
+    "total": "Gesamt",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "updates": "Aktualisierungen",
+    "all": "Alle",
+    "overdue": "Überfällig",
+    "successful": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "queues": "Warteschlangen",
+    "messages": "Nachrichten",
+    "copyToken": "Token kopieren",
+    "viewDetails": "Details anzeigen",
+    "showIgnored": "Ignorierte anzeigen",
+    "noSearchMatch": "Keine Erweiterungen entsprechen \"{query}\".",
+    "noFilterMatch": "Keine Erweiterungen entsprechen dem aktuellen Filter.",
+    "noTaskSearchMatch": "Keine Aufgaben entsprechen \"{query}\".",
+    "noTaskFilterMatch": "Keine geplanten Aufgaben entsprechen dem aktuellen Filter.",
+    "users": "Benutzer",
+    "organizations": "Organisationen"
   },
   "alert": {
     "successTitle": "Aktion erfolgreich",
@@ -65,7 +90,10 @@
     "deploymentDetails": "Deployment-Details",
     "environmentInformation": "Umgebungs-Informationen",
     "editShop": "Shop bearbeiten",
-    "documentation": "Dokumentation"
+    "documentation": "Dokumentation",
+    "navigation": "Navigation",
+    "shops": "Shops",
+    "onThisPage": "Auf dieser Seite"
   },
   "home": {
     "title": "Shopmon - Das Open-Source-Dashboard für Shopware-Entwickler",
@@ -188,7 +216,17 @@
     "changes": "Änderungen",
     "environmentLogo": "Umgebungs-Logo",
     "nMembers": "{count} Mitglieder",
-    "nEnvironments": "{count} Umgebungen"
+    "nEnvironments": "{count} Umgebungen",
+    "shops": "Shops",
+    "healthy": "Gesund",
+    "warnings": "Warnungen",
+    "errors": "Fehler",
+    "extensionUpdatesAvailable": "{count} Erweiterungs-Updates verfügbar",
+    "acrossYourShops": "in Ihren Shops",
+    "shopsNeedAttention": "{count} Shop benötigt Aufmerksamkeit | {count} Shops benötigen Aufmerksamkeit",
+    "healthChecksFailing": "Zustandsprüfungen schlagen fehl",
+    "shopwareVersions": "Shopware-Versionen",
+    "noRecentChanges": "Keine aktuellen Änderungen"
   },
   "settings": {
     "title": "Einstellungen",
@@ -245,7 +283,13 @@
     "passwordRequiredForDelete": "Bitte geben Sie Ihr aktuelles Passwort ein, um Ihr Konto zu löschen.",
     "unlinkedProvider": "Verknüpfung mit {providerId} erfolgreich aufgehoben",
     "errorUnlinkAccount": "Verknüpfung des Kontos konnte nicht aufgehoben werden",
-    "unsubscribedEnvironment": "Umgebungs-Benachrichtigungen erfolgreich abbestellt"
+    "unsubscribedEnvironment": "Umgebungs-Benachrichtigungen erfolgreich abbestellt",
+    "noPasskeys": "Noch keine Passkeys registriert.",
+    "unnamedPasskey": "Unbenannter Passkey",
+    "noSessions": "Keine aktiven Sitzungen.",
+    "unknownDevice": "Unbekanntes Gerät",
+    "currentSession": "Aktuell",
+    "passkeyPlaceholder": "z.B. MacBook Pro"
   },
   "environment": {
     "title": "Umgebungen",
@@ -280,7 +324,13 @@
     "base64Error": "Bitte geben Sie einen Base64-String ein",
     "base64InvalidData": "Ungültige Daten: erforderliche Felder fehlen (url, clientId, clientSecret)",
     "base64InvalidFormat": "Ungültiger Base64-String oder JSON-Format",
-    "addEnvironment": "Umgebung hinzufügen"
+    "addEnvironment": "Umgebung hinzufügen",
+    "createShopFirst": "Erstellen Sie zuerst ein Shop",
+    "shopsGroupDescription": "Shops fassen verwandte Umgebungen zusammen. Zum Beispiel:",
+    "exampleShopName": "Spielzeug Shop X",
+    "exampleProduction": "Produktion",
+    "exampleStaging": "Staging",
+    "createShop": "Shop erstellen"
   },
   "shop": {
     "newShop": "Neues Shop",
@@ -475,7 +525,23 @@
     "inactive": "Inaktiv",
     "rescheduleTask": "Aufgabe neu planen",
     "taskRescheduled": "Aufgabe wurde neu geplant",
-    "size": "Größe"
+    "size": "Größe",
+    "allClear": "Alles in Ordnung",
+    "noChecksMatch": "Keine Prüfungen entsprechen dem aktuellen Filter.",
+    "noChangesRecorded": "Keine Änderungen aufgezeichnet",
+    "changesWillAppear": "Änderungen an dieser Umgebung werden hier angezeigt.",
+    "performanceOverTime": "Performance über die Zeit",
+    "history": "Verlauf",
+    "lastDeploy": "Letztes Deployment",
+    "setupCliDescription": "Richten Sie die CLI ein, um Deployments zu verfolgen.",
+    "searchExtensions": "Erweiterungen suchen...",
+    "noExtensionsFound": "Keine Erweiterungen gefunden",
+    "pendingMessages": "Ausstehende Nachrichten",
+    "queuesWithBacklog": "Warteschlangen mit Rückstand",
+    "noQueues": "Keine Warteschlangen",
+    "noQueueDescription": "Diese Umgebung hat keine Nachrichtenwarteschlangen.",
+    "searchTasks": "Aufgaben suchen...",
+    "noTasksFound": "Keine Aufgaben gefunden"
   },
   "sitespeed": {
     "checkedAt": "Geprüft am",
@@ -494,7 +560,8 @@
     "sizeKb": "Größe (KB)",
     "clsOverTime": "Cumulative Layout Shift über Zeit",
     "clsScore": "CLS-Wert",
-    "date": "Datum"
+    "date": "Datum",
+    "sitespeedDetails": "{name} Details"
   },
   "deployments": {
     "setupTitle": "Deployments nachverfolgen",
@@ -611,7 +678,20 @@
     "orgSlug": "Organisations-Slug",
     "loadingEnvironments": "Umgebungen werden geladen...",
     "failedLoadEnvironments": "Umgebungen konnten nicht geladen werden: {error}",
-    "created": "Erstellt"
+    "created": "Erstellt",
+    "impersonateTitle": "Verkörpern",
+    "banUser": "Benutzer sperren",
+    "unbanUser": "Benutzer entsperren",
+    "noUsersFound": "Keine Benutzer gefunden",
+    "noUsersMatch": "Keine Benutzer entsprechen \"{query}\"",
+    "shopwareVersions": "Shopware-Versionen",
+    "userGrowth": "Benutzerwachstum",
+    "environmentGrowth": "Umgebungswachstum",
+    "recentSignups": "Letzte Registrierungen",
+    "recentEnvironments": "Letzte Umgebungen",
+    "noRecentSignups": "Keine aktuellen Registrierungen",
+    "noRecentEnvironments": "Keine aktuellen Umgebungen",
+    "environmentHealth": "Umgebungs-Zustand:"
   },
   "privacy": {
     "title": "Datenschutzerklärung",
@@ -657,7 +737,8 @@
   "footer": {
     "whatsNew": "Neuigkeiten",
     "privacy": "Datenschutz",
-    "legalNotice": "Impressum"
+    "legalNotice": "Impressum",
+    "tagline": "Open-Source Shopware Monitoring"
   },
   "dataTable": {
     "noSearchResult": "Kein Suchergebnis für",

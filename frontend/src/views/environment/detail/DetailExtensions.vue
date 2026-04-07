@@ -2,10 +2,25 @@
   <div v-if="environment" class="space-y-6">
     <!-- Summary cards -->
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <StatCard :icon="IconPuzzlePiece" :value="extensions.length" label="Total" />
-      <StatCard :icon="IconCircleCheck" :value="counts.active" label="Active" color="success" />
-      <StatCard :icon="IconArrowUp" :value="counts.outdated" label="Updates" color="warning" />
-      <StatCard :icon="IconPowerOff" :value="counts.inactive" label="Inactive" color="muted" />
+      <StatCard :icon="IconPuzzlePiece" :value="extensions.length" :label="$t('common.total')" />
+      <StatCard
+        :icon="IconCircleCheck"
+        :value="counts.active"
+        :label="$t('common.active')"
+        color="success"
+      />
+      <StatCard
+        :icon="IconArrowUp"
+        :value="counts.outdated"
+        :label="$t('common.updates')"
+        color="warning"
+      />
+      <StatCard
+        :icon="IconPowerOff"
+        :value="counts.inactive"
+        :label="$t('common.inactive')"
+        color="muted"
+      />
     </div>
 
     <!-- Filter + search bar -->
@@ -13,7 +28,7 @@
       v-model:filter="activeFilter"
       v-model:search="searchQuery"
       :filters="filters"
-      search-placeholder="Search extensions..."
+      :search-placeholder="$t('shopDetail.searchExtensions')"
     />
 
     <!-- Extension list -->
@@ -87,10 +102,17 @@
     </div>
 
     <!-- Empty state -->
-    <EmptyState v-else :icon="IconPuzzlePiece" title="No extensions found" size="sm">
+    <EmptyState
+      v-else
+      :icon="IconPuzzlePiece"
+      :title="$t('shopDetail.noExtensionsFound')"
+      size="sm"
+    >
       <p class="text-sm text-muted-foreground">
-        <template v-if="searchQuery">No extensions match "{{ searchQuery }}".</template>
-        <template v-else>No extensions match the current filter.</template>
+        <template v-if="searchQuery">{{
+          $t("common.noSearchMatch", { query: searchQuery })
+        }}</template>
+        <template v-else>{{ $t("common.noFilterMatch") }}</template>
       </p>
     </EmptyState>
   </div>
@@ -105,6 +127,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { formatDate } from "@/helpers/formatter";
 import type { components } from "@/types/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
@@ -125,6 +148,7 @@ import IconPowerOff from "~icons/fa6-solid/power-off";
 
 type Extension = components["schemas"]["EnvironmentExtension"];
 
+const { t } = useI18n();
 const { environment } = useEnvironmentDetail();
 
 const {
@@ -138,10 +162,10 @@ const activeFilter = ref<"all" | "active" | "inactive" | "updates">("all");
 const searchQuery = ref("");
 
 const filters = [
-  { label: "All", value: "all" as const },
-  { label: "Active", value: "active" as const },
-  { label: "Inactive", value: "inactive" as const },
-  { label: "Updates", value: "updates" as const },
+  { label: t("common.all"), value: "all" as const },
+  { label: t("common.active"), value: "active" as const },
+  { label: t("common.inactive"), value: "inactive" as const },
+  { label: t("common.updates"), value: "updates" as const },
 ];
 
 const extensions = computed(() => environment.value?.extensions ?? []);

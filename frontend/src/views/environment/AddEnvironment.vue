@@ -9,9 +9,9 @@
           <icon-fa6-solid:folder-tree class="size-6 text-primary" />
         </div>
 
-        <h3 class="mb-2 text-xl font-semibold">Create a shop first</h3>
+        <h3 class="mb-2 text-xl font-semibold">{{ $t("environment.createShopFirst") }}</h3>
         <p class="mb-6 max-w-sm text-muted-foreground">
-          Shops group related environments together. For example:
+          {{ $t("environment.shopsGroupDescription") }}
         </p>
 
         <div
@@ -19,16 +19,16 @@
         >
           <div class="flex items-center gap-2 font-medium">
             <icon-fa6-solid:folder class="size-3 text-primary" />
-            <span>Toy Shop X</span>
+            <span>{{ $t("environment.exampleShopName") }}</span>
           </div>
           <div class="ml-6 flex flex-col gap-1.5 border-l-2 pl-3">
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
               <icon-fa6-solid:shop class="size-3 text-primary/60" />
-              Production
+              {{ $t("environment.exampleProduction") }}
             </div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
               <icon-fa6-solid:shop class="size-3 text-primary/60" />
-              Staging
+              {{ $t("environment.exampleStaging") }}
             </div>
           </div>
         </div>
@@ -36,7 +36,7 @@
         <Button as-child>
           <RouterLink :to="{ name: 'account.shops.new', query: { redirect: $route.fullPath } }">
             <icon-fa6-solid:plus class="mr-1.5 size-3.5" />
-            Create Shop
+            {{ $t("environment.createShop") }}
           </RouterLink>
         </Button>
       </CardContent>
@@ -110,7 +110,7 @@
                   variant="ghost"
                   size="icon"
                   class="size-7 shrink-0"
-                  title="Copy token"
+                  :title="$t('common.copyToken')"
                   @click="copyToken"
                 >
                   <icon-fa6-solid:copy class="size-3" />

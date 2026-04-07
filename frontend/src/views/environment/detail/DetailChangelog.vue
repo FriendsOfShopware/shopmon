@@ -6,8 +6,8 @@
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:clock-rotate-left class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No changes recorded</h3>
-      <p class="text-sm text-muted-foreground">Changes to this environment will appear here.</p>
+      <h3 class="text-lg font-semibold">{{ $t("shopDetail.noChangesRecorded") }}</h3>
+      <p class="text-sm text-muted-foreground">{{ $t("shopDetail.changesWillAppear") }}</p>
     </div>
 
     <!-- Timeline -->
