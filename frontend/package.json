@@ -56,7 +56,7 @@
     "beasties": "^0.4.0",
     "jsdom": "^29.0.0",
     "typescript": "catalog:",
-    "vite": "8.0.5",
+    "vite": "8.0.8",
     "vite-ssg": "^28.3.0",
     "vitest": "^4.0.18"
   }
