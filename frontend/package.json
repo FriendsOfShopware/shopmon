@@ -50,13 +50,13 @@
     "@iconify-json/ri": "^1.2.6",
     "@trpc/server": "^11.7.2",
     "@unhead/vue": "^2.1.12",
-    "@vitejs/plugin-vue": "6.0.5",
+    "@vitejs/plugin-vue": "6.0.6",
     "@vitest/ui": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
     "beasties": "^0.4.0",
     "jsdom": "^29.0.0",
     "typescript": "catalog:",
-    "vite": "8.0.5",
+    "vite": "8.0.8",
     "vite-ssg": "^28.3.0",
     "vitest": "^4.0.18"
   }

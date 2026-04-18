@@ -12,7 +12,7 @@
     }
   },
   "devDependencies": {
-    "oxfmt": "^0.44.0",
+    "oxfmt": "^0.45.0",
     "oxlint": "^1.47.0"
   },
   "overrides": {
