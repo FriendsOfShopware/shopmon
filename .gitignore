@@ -10,3 +10,4 @@ frontend/components.d.ts
 litestream.yml
 .eslintcache
 /.jj
+.soulforge

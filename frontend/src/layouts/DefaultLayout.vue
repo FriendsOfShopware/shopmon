@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen flex-col">
+  <div class="flex min-h-screen flex-col overflow-x-hidden">
     <!-- Transparent nav — floats over hero -->
     <nav class="absolute inset-x-0 top-0 z-20">
       <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
