@@ -62,7 +62,7 @@
     "@iconify-json/octicon": "^1.2.26",
     "@iconify-json/ri": "^1.2.10",
     "@types/node": "^25.9.1",
-    "@unhead/vue": "^3.1.1",
+    "@unhead/vue": "^2.1.15",
     "@vitejs/plugin-vue": "6.0.7",
     "@vitest/ui": "^4.1.7",
     "@vue/test-utils": "^2.4.10",

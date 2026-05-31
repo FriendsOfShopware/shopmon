@@ -4,8 +4,6 @@ import { useReturnUrl } from "@/composables/useReturnUrl";
 import { useSession, fetchSession } from "@/composables/useSession";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { api, setToken } from "@/helpers/api";
-import { i18n } from "@/i18n";
-import { nextTick } from "vue";
 
 export { routes } from "./routes";
 
@@ -86,20 +84,5 @@ export function setupRouterGuards(router: Router) {
         return { name: "home" };
       }
     }
-  });
-
-  const DEFAULT_TITLE = "Shopmon";
-  router.afterEach(async (to) => {
-    if (typeof document === "undefined") return;
-
-    await nextTick();
-
-    const titleKey = to.meta.titleKey;
-    if (typeof titleKey === "string") {
-      document.title = `${i18n.global.t(titleKey)} | ${DEFAULT_TITLE}`;
-      return;
-    }
-
-    document.title = DEFAULT_TITLE;
   });
 }

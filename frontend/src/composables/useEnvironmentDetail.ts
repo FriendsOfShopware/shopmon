@@ -1,4 +1,6 @@
 import { ref, computed, onMounted, watch } from "vue";
+import { useHead } from "@unhead/vue";
+import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { compareVersions } from "compare-versions";
 import { api } from "@/helpers/api";
@@ -7,6 +9,7 @@ import { useAlert } from "@/composables/useAlert";
 
 export function useEnvironmentDetail() {
   const route = useRoute();
+  const { t } = useI18n();
   const { success, error } = useAlert();
 
   const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);
@@ -22,6 +25,22 @@ export function useEnvironmentDetail() {
   // shopwareVersions and latestShopwareVersion are still needed for the update wizard in DetailEnvironment.vue
 
   const environmentId = computed(() => Number.parseInt(route.params.environmentId as string, 10));
+  const pageTitle = computed(() => {
+    const titleKey = route.meta.titleKey;
+    return typeof titleKey === "string" ? t(titleKey) : "";
+  });
+
+  useHead({
+    title: computed(() => {
+      if (!environment.value?.name) {
+        return pageTitle.value || undefined;
+      }
+
+      return pageTitle.value
+        ? `${pageTitle.value} - ${environment.value.name}`
+        : environment.value.name;
+    }),
+  });
 
   async function loadEnvironment() {
     isLoading.value = true;
@@ -47,14 +66,6 @@ export function useEnvironmentDetail() {
               compareVersions(environment.value?.shopwareVersion ?? "", version) < 0,
           );
         latestShopwareVersion.value = shopwareVersions.value[0];
-      }
-
-      if (environment.value?.name) {
-        const pageTitle = route.meta.title;
-        document.title =
-          typeof pageTitle === "string"
-            ? `${pageTitle} - ${environment.value.name} | Shopmon`
-            : `${environment.value.name} | Shopmon`;
       }
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));
