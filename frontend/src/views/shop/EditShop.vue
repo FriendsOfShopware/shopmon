@@ -1,18 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="min-w-0 text-2xl font-bold tracking-tight break-words">
         {{ shop ? $t("shop.editShop", { name: shop.name }) : $t("nav.editShop") }}
       </h1>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" as-child>
+      <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <Button variant="outline" size="sm" class="w-full sm:w-auto" as-child>
           <RouterLink :to="{ name: 'account.shop.list' }">
             <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
             {{ $t("shop.backToShops") }}
           </RouterLink>
         </Button>
-        <Button v-if="shop" size="sm" as-child>
+        <Button v-if="shop" size="sm" class="w-full sm:w-auto" as-child>
           <RouterLink :to="{ name: 'account.environments.new', query: { shopId: shop.id } }">
             <icon-fa6-solid:plus class="mr-1.5 size-3" />
             {{ $t("environment.addEnvironment") }}
@@ -39,13 +39,13 @@
     <template v-else>
       <!-- Shop info form -->
       <Card>
-        <CardHeader class="pb-3">
+        <CardHeader class="px-4 pb-3 sm:px-6">
           <CardTitle class="flex items-center gap-2 text-base">
             <icon-fa6-solid:folder class="size-4 text-muted-foreground" />
             {{ $t("shop.shopInfo") }}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="px-4 sm:px-6">
           <form @submit="onSubmitShop" class="space-y-4">
             <FormField v-slot="{ componentField }" name="name">
               <FormItem>
@@ -97,13 +97,13 @@
 
       <!-- Environments -->
       <Card v-if="shopEnvironments.length > 0">
-        <CardHeader class="pb-3">
-          <div class="flex items-center justify-between">
+        <CardHeader class="px-4 pb-3 sm:px-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle class="flex items-center gap-2 text-base">
               <icon-fa6-solid:earth-americas class="size-4 text-muted-foreground" />
               {{ $t("environment.title") }}
             </CardTitle>
-            <Button size="sm" as-child>
+            <Button size="sm" class="w-full sm:w-auto" as-child>
               <RouterLink :to="{ name: 'account.environments.new', query: { shopId: shop!.id } }">
                 <icon-fa6-solid:plus class="mr-1.5 size-3" />
                 {{ $t("environment.addEnvironment") }}
@@ -111,50 +111,54 @@
             </Button>
           </div>
         </CardHeader>
-        <CardContent class="space-y-2">
+        <CardContent class="space-y-2 px-4 sm:px-6">
           <div
             v-for="env in shopEnvironments"
             :key="env.id"
             :class="[
-              'flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
+              'flex flex-col gap-3 rounded-lg border p-3 transition-colors sm:flex-row sm:items-center sm:px-4',
               env.id === shop!.defaultEnvironmentId
                 ? 'border-primary/30 bg-primary/5'
                 : 'hover:bg-muted/50',
             ]"
           >
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted"
+              >
+                <img v-if="env.favicon" :src="env.favicon" alt="" class="size-5 rounded" />
+                <icon-fa6-solid:earth-americas v-else class="size-3.5 text-muted-foreground/50" />
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  <RouterLink
+                    :to="{ name: 'account.environments.detail', params: { environmentId: env.id } }"
+                    class="min-w-0 max-w-full truncate font-medium transition-colors hover:text-primary"
+                  >
+                    {{ env.name }}
+                  </RouterLink>
+                  <StatusIcon :status="env.status" />
+                  <Badge
+                    v-if="env.id === shop!.defaultEnvironmentId"
+                    variant="default"
+                    class="text-[10px]"
+                  >
+                    {{ $t("common.default") }}
+                  </Badge>
+                </div>
+                <div class="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary" class="shrink-0 font-mono text-[10px]">{{
+                    env.shopwareVersion
+                  }}</Badge>
+                  <span v-if="env.url" class="min-w-0 truncate">{{ env.url }}</span>
+                </div>
+              </div>
+            </div>
+
             <div
-              class="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted"
+              class="flex w-full shrink-0 items-center justify-end gap-1 border-t pt-2 sm:w-auto sm:border-t-0 sm:pt-0"
             >
-              <img v-if="env.favicon" :src="env.favicon" alt="" class="size-5 rounded" />
-              <icon-fa6-solid:earth-americas v-else class="size-3.5 text-muted-foreground/50" />
-            </div>
-
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <RouterLink
-                  :to="{ name: 'account.environments.detail', params: { environmentId: env.id } }"
-                  class="truncate font-medium hover:text-primary transition-colors"
-                >
-                  {{ env.name }}
-                </RouterLink>
-                <StatusIcon :status="env.status" />
-                <Badge
-                  v-if="env.id === shop!.defaultEnvironmentId"
-                  variant="default"
-                  class="text-[10px]"
-                >
-                  {{ $t("common.default") }}
-                </Badge>
-              </div>
-              <div class="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="secondary" class="font-mono text-[10px]">{{
-                  env.shopwareVersion
-                }}</Badge>
-                <span v-if="env.url" class="truncate">{{ env.url }}</span>
-              </div>
-            </div>
-
-            <div class="flex shrink-0 items-center gap-1">
               <Button
                 v-if="env.id !== shop!.defaultEnvironmentId"
                 variant="ghost"
@@ -190,19 +194,19 @@
 
       <!-- API Keys -->
       <Card id="api-keys">
-        <CardHeader class="pb-3">
-          <div class="flex items-center justify-between">
+        <CardHeader class="px-4 pb-3 sm:px-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle class="flex items-center gap-2 text-base">
               <icon-fa6-solid:key class="size-4 text-muted-foreground" />
               {{ $t("shop.apiKeys") }}
             </CardTitle>
-            <Button size="sm" @click="openAddKeyModal">
+            <Button size="sm" class="w-full sm:w-auto" @click="openAddKeyModal">
               <icon-fa6-solid:plus class="mr-1.5 size-3" />
               {{ $t("shop.createApiKey") }}
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="px-4 sm:px-6">
           <Alert class="mb-4">
             <AlertDescription>{{ $t("shop.apiKeyInfo") }}</AlertDescription>
           </Alert>
@@ -228,7 +232,7 @@
             <div
               v-for="apiKey in apiKeys"
               :key="apiKey.id"
-              class="flex items-center justify-between rounded-xl border px-4 py-3"
+              class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
             >
               <div class="min-w-0">
                 <div class="font-medium">{{ apiKey.name }}</div>
@@ -269,22 +273,22 @@
         v-if="instanceConfig?.packageMirrorEnabled !== false && isPackagesConfigured"
         id="packages-tokens"
       >
-        <CardHeader class="pb-3">
-          <div class="flex items-center justify-between">
-            <div>
+        <CardHeader class="px-4 pb-3 sm:px-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
               <CardTitle class="flex items-center gap-2 text-base">
                 <icon-fa6-solid:cube class="size-4 text-muted-foreground" />
                 {{ $t("packages.title") }}
               </CardTitle>
               <CardDescription class="mt-1">{{ $t("packages.description") }}</CardDescription>
             </div>
-            <Button size="sm" @click="showAddPackagesTokenModal = true">
+            <Button size="sm" class="w-full sm:w-auto" @click="showAddPackagesTokenModal = true">
               <icon-fa6-solid:plus class="mr-1.5 size-3" />
               {{ $t("packages.addToken") }}
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent class="px-4 sm:px-6">
           <div
             v-if="isPackagesTokensLoading"
             class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
@@ -307,7 +311,7 @@
               <div
                 v-for="pt in packagesTokens"
                 :key="pt.id"
-                class="flex items-center justify-between rounded-xl border px-4 py-3"
+                class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
               >
                 <div class="min-w-0">
                   <div class="font-medium">Token #{{ pt.id }}</div>
@@ -391,13 +395,13 @@
 
       <!-- Danger zone -->
       <Card class="border-destructive/30">
-        <CardHeader class="pb-3">
+        <CardHeader class="px-4 pb-3 sm:px-6">
           <CardTitle class="flex items-center gap-2 text-base text-destructive">
             <icon-fa6-solid:triangle-exclamation class="size-4" />
             {{ $t("shop.dangerZone") }}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="px-4 sm:px-6">
           <p class="mb-3 text-sm text-muted-foreground">{{ $t("shop.deleteShopWarning") }}</p>
           <p v-if="!canDeleteShop" class="mb-3 text-sm text-destructive">
             {{ $t("shop.deleteShopEnvironmentsWarning", { count: environmentsInShopCount }) }}

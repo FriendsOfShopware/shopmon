@@ -1,11 +1,11 @@
 <template>
   <div v-if="environment" class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="min-w-0 text-2xl font-bold tracking-tight break-words">
         {{ $t("environment.editEnvironment", { name: environment.name }) }}
       </h1>
-      <Button as-child variant="outline">
+      <Button as-child variant="outline" class="w-full sm:w-auto">
         <RouterLink
           :to="{
             name: 'account.environments.detail',
@@ -21,13 +21,13 @@
 
     <!-- Environment settings form -->
     <Card>
-      <CardHeader class="pb-3">
+      <CardHeader class="px-4 pb-3 sm:px-6">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:gear class="size-4 text-muted-foreground" />
           {{ $t("environment.environmentInfo") }}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent class="px-4 sm:px-6">
         <form @submit="onSubmit" class="space-y-6">
           <div class="grid gap-4 sm:grid-cols-2">
             <FormField v-slot="{ componentField }" name="name">
@@ -74,8 +74,8 @@
 
           <!-- Integration section -->
           <div>
-            <div class="flex items-center justify-between">
-              <div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0">
                 <h3 class="text-sm font-semibold">{{ $t("environment.integration") }}</h3>
                 <p class="mt-0.5 text-xs text-muted-foreground">
                   <i18n-t keypath="environment.integrationDesc" tag="span">
@@ -90,7 +90,13 @@
                   </i18n-t>
                 </p>
               </div>
-              <Button type="button" variant="outline" size="sm" @click="openPluginModal">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="w-full whitespace-normal text-xs sm:w-auto sm:whitespace-nowrap sm:text-sm"
+                @click="openPluginModal"
+              >
                 <icon-fa6-solid:plug class="mr-1.5 size-3" />
                 {{ $t("environment.connectPlugin") }}
               </Button>
@@ -136,13 +142,13 @@
 
     <!-- Sitespeed settings -->
     <Card v-if="instanceConfig?.sitespeedEnabled !== false">
-      <CardHeader class="pb-3">
+      <CardHeader class="px-4 pb-3 sm:px-6">
         <CardTitle class="flex items-center gap-2 text-base">
           <icon-fa6-solid:rocket class="size-4 text-muted-foreground" />
           {{ $t("environment.sitespeed") }}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent class="px-4 sm:px-6">
         <p class="mb-4 text-sm text-muted-foreground">{{ $t("environment.sitespeedDesc") }}</p>
 
         <form @submit.prevent="onSitespeedSubmit" class="space-y-4">
@@ -190,7 +196,11 @@
           </div>
 
           <div class="flex justify-end">
-            <Button :disabled="isSitespeedSubmitting || !isSitespeedFormValid" type="submit">
+            <Button
+              :disabled="isSitespeedSubmitting || !isSitespeedFormValid"
+              type="submit"
+              class="w-full whitespace-normal text-xs sm:w-auto sm:whitespace-nowrap sm:text-sm"
+            >
               <icon-fa6-solid:floppy-disk
                 v-if="!isSitespeedSubmitting"
                 class="mr-1.5 size-3.5"
@@ -206,13 +216,13 @@
 
     <!-- Danger zone -->
     <Card class="border-destructive/30">
-      <CardHeader class="pb-3">
+      <CardHeader class="px-4 pb-3 sm:px-6">
         <CardTitle class="flex items-center gap-2 text-base text-destructive">
           <icon-fa6-solid:triangle-exclamation class="size-4" />
           {{ $t("environment.deleteEnvironmentTitle", { name: environment.name }) }}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent class="px-4 sm:px-6">
         <p class="mb-4 text-sm text-muted-foreground">
           {{ $t("environment.deleteEnvironmentWarning") }}
         </p>
