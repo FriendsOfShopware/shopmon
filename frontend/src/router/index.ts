@@ -96,7 +96,7 @@ export function setupRouterGuards(router: Router) {
 
     const titleKey = to.meta.titleKey;
     if (typeof titleKey === "string") {
-      document.title = i18n.global.t(titleKey) + `| ${DEFAULT_TITLE}`;
+      document.title = `${i18n.global.t(titleKey)} | ${DEFAULT_TITLE}`;
       return;
     }
 
