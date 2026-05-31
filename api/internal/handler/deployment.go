@@ -134,7 +134,10 @@ func (h *Handler) DeleteDeployment(w http.ResponseWriter, r *http.Request, envir
 
 	// Clean up S3 output
 	if h.storage != nil {
-		if err := h.storage.DeleteDeploymentOutput(r.Context(), deploymentId); err != nil {
+		cleanupCtx, cancel := deploymentOutputCleanupContext(r.Context())
+		defer cancel()
+
+		if err := h.storage.DeleteDeploymentOutput(cleanupCtx, deploymentId); err != nil {
 			slog.Warn("failed to delete deployment output from S3", "deploymentId", deploymentId, "error", err)
 		}
 	}

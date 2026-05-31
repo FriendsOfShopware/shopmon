@@ -181,8 +181,15 @@ func (h *Handler) DeleteEnvironment(w http.ResponseWriter, r *http.Request, envi
 			Offset:        0,
 		})
 		if err == nil {
+			cleanupCtx, cancel := deploymentOutputCleanupContext(r.Context())
+			defer cancel()
+
 			for _, d := range deployments {
-				if err := h.storage.DeleteDeploymentOutput(r.Context(), int(d.ID)); err != nil {
+				if err := cleanupCtx.Err(); err != nil {
+					slog.Warn("stopped deleting deployment outputs", "environmentId", environmentId, "error", err)
+					break
+				}
+				if err := h.storage.DeleteDeploymentOutput(cleanupCtx, int(d.ID)); err != nil {
 					slog.Warn("failed to delete deployment output", "deploymentId", d.ID, "error", err)
 				}
 			}

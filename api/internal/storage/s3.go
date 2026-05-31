@@ -10,18 +10,30 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/klauspost/compress/zstd"
 )
 
+const (
+	defaultS3HTTPClientTimeout   = 30 * time.Second
+	defaultS3PresignTimeout      = 5 * time.Second
+	defaultS3GetOutputTimeout    = 30 * time.Second
+	defaultS3DeleteOutputTimeout = 10 * time.Second
+)
+
 type S3Storage struct {
-	client *s3.Client
-	bucket string
+	client         *s3.Client
+	bucket         string
+	presignTimeout time.Duration
+	getTimeout     time.Duration
+	deleteTimeout  time.Duration
 }
 
 func NewS3Storage(endpoint, accessKey, secretKey, bucket, region string) (*S3Storage, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		config.WithHTTPClient(httputil.NewHTTPClient(httputil.WithTimeout(defaultS3HTTPClientTimeout))),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("load aws config: %w", err)
@@ -34,11 +46,19 @@ func NewS3Storage(endpoint, accessKey, secretKey, bucket, region string) (*S3Sto
 		}
 	})
 
-	return &S3Storage{client: client, bucket: bucket}, nil
+	return &S3Storage{
+		client:         client,
+		bucket:         bucket,
+		presignTimeout: defaultS3PresignTimeout,
+		getTimeout:     defaultS3GetOutputTimeout,
+		deleteTimeout:  defaultS3DeleteOutputTimeout,
+	}, nil
 }
 
 func (s *S3Storage) PresignUpload(ctx context.Context, deploymentID int) (string, error) {
 	key := fmt.Sprintf("deployments/%d/output.zst", deploymentID)
+	ctx, cancel := context.WithTimeout(ctx, s.presignTimeout)
+	defer cancel()
 
 	presignClient := s3.NewPresignClient(s.client)
 	req, err := presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
@@ -54,6 +74,8 @@ func (s *S3Storage) PresignUpload(ctx context.Context, deploymentID int) (string
 
 func (s *S3Storage) GetDeploymentOutput(ctx context.Context, deploymentID int) (string, error) {
 	key := fmt.Sprintf("deployments/%d/output.zst", deploymentID)
+	ctx, cancel := context.WithTimeout(ctx, s.getTimeout)
+	defer cancel()
 
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -80,6 +102,8 @@ func (s *S3Storage) GetDeploymentOutput(ctx context.Context, deploymentID int) (
 
 func (s *S3Storage) DeleteDeploymentOutput(ctx context.Context, deploymentID int) error {
 	key := fmt.Sprintf("deployments/%d/output.zst", deploymentID)
+	ctx, cancel := context.WithTimeout(ctx, s.deleteTimeout)
+	defer cancel()
 
 	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
