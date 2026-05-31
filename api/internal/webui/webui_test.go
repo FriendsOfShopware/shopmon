@@ -13,6 +13,7 @@ func testFS() fs.FS {
 	return fstest.MapFS{
 		"index.html":              {Data: []byte("<html>frontend</html>")},
 		"assets/app.js":           {Data: []byte("console.log('ok')")},
+		"assets/large.js":         {Data: []byte(strings.Repeat("console.log('ok');\n", 512))},
 		"favicon.ico":             {Data: []byte("ico")},
 		"site.webmanifest":        {Data: []byte("{}")},
 		"nested/route/index.html": {Data: []byte("<html>nested</html>")},
@@ -50,6 +51,45 @@ func TestNewHandlerServesStaticAssets(t *testing.T) {
 
 	if cacheControl := rec.Header().Get("Cache-Control"); !strings.Contains(cacheControl, "immutable") {
 		t.Fatalf("expected immutable cache header, got %q", cacheControl)
+	}
+}
+
+func TestNewHandlerCompressesAssets(t *testing.T) {
+	handler := NewHandler(testFS())
+
+	for _, encoding := range []string{"zstd", "gzip"} {
+		req := httptest.NewRequest(http.MethodGet, "/assets/large.js", nil)
+		req.Header.Set("Accept-Encoding", encoding)
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: expected 200, got %d", encoding, rec.Code)
+		}
+
+		if got := rec.Header().Get("Content-Encoding"); got != encoding {
+			t.Fatalf("%s: expected Content-Encoding %q, got %q", encoding, encoding, got)
+		}
+
+		if rec.Header().Get("Cache-Control") == "" {
+			t.Fatalf("%s: expected cache headers to survive compression", encoding)
+		}
+	}
+}
+
+func TestNewHandlerSkipsTinyAssets(t *testing.T) {
+	handler := NewHandler(testFS())
+
+	req := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
+	req.Header.Set("Accept-Encoding", "gzip, zstd")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	// app.js is below MinSize, so it must be served uncompressed.
+	if got := rec.Header().Get("Content-Encoding"); got != "" {
+		t.Fatalf("expected no Content-Encoding for tiny asset, got %q", got)
 	}
 }
 

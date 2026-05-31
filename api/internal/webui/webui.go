@@ -5,7 +5,25 @@ import (
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/klauspost/compress/gzhttp"
 )
+
+// compress wraps a handler with transparent gzip/zstd content negotiation.
+// gzhttp prefers zstd when the client advertises it (Accept-Encoding), falling
+// back to gzip, and leaves responses untouched for clients supporting neither.
+var compress = func() func(http.Handler) http.HandlerFunc {
+	wrapper, err := gzhttp.NewWrapper(
+		// Skip tiny responses where compression overhead outweighs the savings.
+		gzhttp.MinSize(1024),
+	)
+	if err != nil {
+		// The only error source is invalid option values, all hardcoded above,
+		// so this is effectively unreachable.
+		panic(err)
+	}
+	return wrapper
+}()
 
 func Available() bool {
 	_, ok := FS()
@@ -42,7 +60,7 @@ func Handler() (http.Handler, bool) {
 func NewHandler(dist fs.FS) http.Handler {
 	files := http.FileServerFS(dist)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return compress(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "" {
 			r.URL.Path = "/"
 		}
@@ -99,7 +117,7 @@ func NewHandler(dist fs.FS) http.Handler {
 		}
 
 		serveIndex(w, r, dist)
-	})
+	}))
 }
 
 func serveFile(w http.ResponseWriter, r *http.Request, dist fs.FS, name string) {

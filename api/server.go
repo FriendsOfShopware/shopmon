@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -96,6 +97,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 	if cfg.OtelEnabled {
 		r.Use(func(next http.Handler) http.Handler {
 			return otelhttp.NewMiddleware("",
+				// Only trace API/auth traffic. Everything else is served by the
+				// embedded frontend handler (static assets + SPA fallback), which
+				// would otherwise create a high-cardinality span per asset URL.
+				otelhttp.WithFilter(func(r *http.Request) bool {
+					return r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/")
+				}),
 				otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
 					rctx := chi.RouteContext(r.Context())
 					if rctx != nil && rctx.RoutePattern() != "" {
