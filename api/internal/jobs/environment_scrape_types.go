@@ -1,5 +1,7 @@
 package jobs
 
+import "time"
+
 // ---- Shopware API response types ----
 
 type shopwareConfig struct {
@@ -89,18 +91,18 @@ type extensionEntry struct {
 }
 
 type extensionChangelog struct {
-	Version      string `json:"version"`
-	Text         string `json:"text"`
-	CreationDate string `json:"creationDate"`
-	IsCompatible bool   `json:"isCompatible"`
+	Version      string    `json:"version"`
+	Text         string    `json:"text"`
+	CreationDate time.Time `json:"creationDate"`
+	IsCompatible bool      `json:"isCompatible"`
 }
 
 type extensionDiff struct {
 	Name       string               `json:"name"`
 	Label      string               `json:"label"`
 	State      string               `json:"state"`
-	OldVersion *string              `json:"old_version"`
-	NewVersion *string              `json:"new_version"`
+	OldVersion *string              `json:"oldVersion,omitempty"`
+	NewVersion *string              `json:"newVersion,omitempty"`
 	Changelog  []extensionChangelog `json:"changelog,omitempty"`
 	Active     bool                 `json:"active"`
 }

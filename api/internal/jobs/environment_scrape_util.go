@@ -85,7 +85,7 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 						changelogs = append(changelogs, extensionChangelog{
 							Version:      cl.Version,
 							Text:         cl.Text,
-							CreationDate: cl.CreationDate.Date,
+							CreationDate: parseStoreDate(cl.CreationDate.Date),
 							IsCompatible: isCompatible,
 						})
 					}
@@ -291,4 +291,22 @@ func getFavicon(shopURL string) *string {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// parseStoreDate parses the date string returned by the Shopware store API
+// (e.g. "2024-01-15 00:00:00.000000") into a time.Time. It returns the zero
+// time if the value cannot be parsed.
+func parseStoreDate(s string) time.Time {
+	formats := []string{
+		"2006-01-02 15:04:05.000000",
+		"2006-01-02 15:04:05",
+		time.RFC3339,
+		"2006-01-02",
+	}
+	for _, format := range formats {
+		if t, err := time.Parse(format, s); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
 }

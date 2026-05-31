@@ -476,7 +476,7 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		changelogs := []changelogEntry{
 			{
 				extensions: mustJSON([]map[string]interface{}{
-					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "old_version": "5.0.0", "new_version": "5.1.0", "active": true},
+					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.0.0", "newVersion": "5.1.0", "active": true},
 					{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "activated", "active": true},
 				}),
 				oldShopwareVersion: &v650,
@@ -485,8 +485,8 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 			},
 			{
 				extensions: mustJSON([]map[string]interface{}{
-					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "old_version": "5.1.0", "new_version": "5.2.0", "active": true},
-					{"name": "FroshTools", "label": "FroshTools", "state": "installed", "new_version": "1.0.0", "active": true},
+					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.1.0", "newVersion": "5.2.0", "active": true},
+					{"name": "FroshTools", "label": "FroshTools", "state": "installed", "newVersion": "1.0.0", "active": true},
 				}),
 				date: now.Add(-4 * 24 * time.Hour),
 			},
@@ -500,8 +500,8 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 			},
 			{
 				extensions: mustJSON([]map[string]interface{}{
-					{"name": "FroshTools", "label": "FroshTools", "state": "updated", "old_version": "1.0.0", "new_version": "1.1.0", "active": true},
-					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "old_version": "5.2.0", "new_version": "6.0.0", "active": true},
+					{"name": "FroshTools", "label": "FroshTools", "state": "updated", "oldVersion": "1.0.0", "newVersion": "1.1.0", "active": true},
+					{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.2.0", "newVersion": "6.0.0", "active": true},
 				}),
 				oldShopwareVersion: &v652,
 				newShopwareVersion: &v660,
