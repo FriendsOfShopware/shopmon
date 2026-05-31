@@ -15,7 +15,9 @@
       class="pointer-events-none absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[800px] rounded-full bg-white/[0.03] blur-3xl"
     />
 
-    <div class="relative mx-auto flex flex-col items-center max-w-5xl px-4 sm:px-6 text-center lg:flex-1 lg:justify-center lg:pb-16">
+    <div
+      class="relative mx-auto flex flex-col items-center max-w-5xl px-4 sm:px-6 text-center lg:flex-1 lg:justify-center lg:pb-16"
+    >
       <div
         class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 py-1.5 text-sm text-white/80 backdrop-blur-sm"
       >
@@ -57,7 +59,6 @@
           </a>
         </Button>
       </div>
-
     </div>
 
     <!-- Hero screenshot — positioned at bottom, overflows behind features section -->

@@ -12,12 +12,12 @@ const search = defineModel<string>("search", { required: true });
 
 <template>
   <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-    <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+    <div class="flex w-full gap-1 rounded-lg border bg-muted/50 p-1 sm:w-auto">
       <button
         v-for="f in filters"
         :key="f.value"
         :class="[
-          'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+          'flex-1 rounded-md px-3 py-1 text-sm font-medium transition-colors sm:flex-none',
           filter === f.value
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground',
@@ -28,7 +28,7 @@ const search = defineModel<string>("search", { required: true });
       </button>
     </div>
 
-    <div class="relative">
+    <div class="relative w-full sm:w-auto">
       <icon-fa6-solid:magnifying-glass
         class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
       />
@@ -36,7 +36,7 @@ const search = defineModel<string>("search", { required: true });
         v-model="search"
         type="search"
         :placeholder="searchPlaceholder ?? 'Search...'"
-        class="h-8 w-full sm:w-56 pl-8 text-sm"
+        class="h-8 w-full pl-8 text-sm sm:w-56"
       />
     </div>
   </div>

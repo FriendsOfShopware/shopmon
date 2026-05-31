@@ -125,6 +125,151 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		slog.Error("failed to create member", "user", "member", "error", err)
 	}
 
+	// Create notifications for users
+	notifications := []struct {
+		userID  string
+		key     string
+		level   string
+		title   string
+		message string
+		link    json.RawMessage
+		read    bool
+	}{
+		{
+			userID: user1ID, key: "environment.change-status.1", level: "warning",
+			title:   "Environment: Production status changed",
+			message: "Status changed from green to yellow",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/1"}),
+			read:    false,
+		},
+		{
+			userID: user1ID, key: "environment.update-auth-error.2", level: "error",
+			title:   "Environment: Staging could not be updated",
+			message: "Could not connect to environment. Please check your credentials and try again.",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/2"}),
+			read:    false,
+		},
+		{
+			userID: user1ID, key: "deployment.completed.1", level: "info",
+			title:   "Deployment completed",
+			message: "Theme Update deployment finished successfully.",
+			link:    mustJSON(map[string]interface{}{"label": "View Deployment", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user2ID, key: "environment.change-status.1", level: "warning",
+			title:   "Environment: Production status changed",
+			message: "Status changed from green to yellow",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/1"}),
+			read:    false,
+		},
+		{
+			userID: user2ID, key: "deployment.failed.1", level: "error",
+			title:   "Deployment failed",
+			message: "Hotfix Login deployment failed with exit code 1.",
+			link:    mustJSON(map[string]interface{}{"label": "View Deployment", "url": "/environments/1"}),
+			read:    false,
+		},
+		{
+			userID: user3ID, key: "environment.not.updated_2", level: "error",
+			title:   "Environment: Staging could not be updated",
+			message: "Could not connect to environment. Please check your credentials and try again.",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/2"}),
+			read:    false,
+		},
+		// More notifications for owner
+		{
+			userID: user1ID, key: "environment.cache-cleared.1", level: "info",
+			title:   "Cache cleared",
+			message: "Production environment cache has been cleared successfully.",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user1ID, key: "environment.extension-update.1", level: "info",
+			title:   "Extension update available",
+			message: "SwagPayPal has a new version 6.1.0 available for Production.",
+			link:    mustJSON(map[string]interface{}{"label": "View Extensions", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user1ID, key: "deployment.completed.2", level: "info",
+			title:   "Deployment completed",
+			message: "Cache Warmup deployment finished successfully.",
+			link:    mustJSON(map[string]interface{}{"label": "View Deployment", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user1ID, key: "environment.shopware-update.2", level: "info",
+			title:   "Shopware version updated",
+			message: "Staging environment updated from Shopware 6.5.1.0 to 6.5.2.0.",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/2"}),
+			read: true,
+		},
+		// More notifications for admin
+		{
+			userID: user2ID, key: "environment.extension-update.2", level: "info",
+			title:   "Extension update available",
+			message: "FroshTools has a new version 1.2.0 available for Staging.",
+			link:    mustJSON(map[string]interface{}{"label": "View Extensions", "url": "/environments/2"}),
+			read: true,
+		},
+		{
+			userID: user2ID, key: "deployment.completed.3", level: "info",
+			title:   "Deployment completed",
+			message: "v6.5.8.0 Release deployment finished successfully.",
+			link:    mustJSON(map[string]interface{}{"label": "View Deployment", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user2ID, key: "environment.change-status.2", level: "warning",
+			title:   "Environment: Staging status changed",
+			message: "Status changed from green to yellow",
+			link:    mustJSON(map[string]interface{}{"label": "View Environment", "url": "/environments/2"}),
+			read:    false,
+		},
+		// More notifications for member
+		{
+			userID: user3ID, key: "deployment.completed.4", level: "info",
+			title:   "Deployment completed",
+			message: "Index Rebuild deployment finished successfully.",
+			link:    mustJSON(map[string]interface{}{"label": "View Deployment", "url": "/environments/1"}),
+			read: true,
+		},
+		{
+			userID: user3ID, key: "environment.extension-deactivated.2", level: "warning",
+			title:   "Extension deactivated",
+			message: "SwagCmsExtensions was deactivated on Staging.",
+			link:    mustJSON(map[string]interface{}{"label": "View Extensions", "url": "/environments/2"}),
+			read:    false,
+		},
+	}
+
+	for i, n := range notifications {
+		linkJSON := n.link
+		if err := q.UpsertNotification(ctx, queries.UpsertNotificationParams{
+			UserID:  n.userID,
+			Key:     n.key,
+			Level:   n.level,
+			Title:   n.title,
+			Message: n.message,
+			Link:    linkJSON,
+		}); err != nil {
+			slog.Warn("failed to create notification", "key", n.key, "error", err)
+			continue
+		}
+		// Mark individual read notifications after upsert
+		if n.read {
+			if _, err := pool.Exec(ctx,
+				`UPDATE user_notification SET read = true WHERE user_id = $1 AND key = $2`,
+				n.userID, n.key,
+			); err != nil {
+				slog.Warn("failed to mark notification as read", "key", n.key, "error", err)
+			}
+		}
+		slog.Info("created notification", "key", n.key, "read", n.read, "userIndex", i)
+	}
+
 	slog.Info("created users and organization",
 		"org", "Acme Corp",
 		"owner", "owner@fos.gg",

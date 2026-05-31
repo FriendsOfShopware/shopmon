@@ -42,8 +42,8 @@
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="description" class="sm:col-span-2">
-              <FormItem>
+            <FormField v-slot="{ componentField }" name="description">
+              <FormItem class="sm:col-span-2">
                 <FormLabel>{{ $t("common.description") }}</FormLabel>
                 <FormControl>
                   <Textarea v-bind="componentField" :placeholder="$t('shop.optionalDescription')" />
@@ -52,8 +52,8 @@
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="gitUrl" class="sm:col-span-2">
-              <FormItem>
+            <FormField v-slot="{ componentField }" name="gitUrl">
+              <FormItem class="sm:col-span-2">
                 <FormLabel>{{ $t("shop.gitRepoUrl") }}</FormLabel>
                 <FormControl>
                   <Input

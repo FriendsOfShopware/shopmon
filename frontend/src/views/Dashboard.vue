@@ -189,14 +189,16 @@
                 name: 'account.environments.detail',
                 params: { environmentId: log.environmentId },
               }"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
+              class="flex flex-col gap-1 rounded-lg px-3 py-2 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:gap-3"
             >
-              <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
-                formatDate(log.date)
-              }}</span>
-              <Separator orientation="vertical" class="h-4" />
-              <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
-              <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{
+              <div class="flex items-center gap-3">
+                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
+                  formatDate(log.date)
+                }}</span>
+                <Separator orientation="vertical" class="h-4" />
+                <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
+              </div>
+              <span class="min-w-0 truncate text-xs text-muted-foreground sm:flex-1">{{
                 sumChanges(log)
               }}</span>
             </RouterLink>

@@ -58,6 +58,7 @@
 
     <!-- Empty state -->
     <EmptyState
+      v-else
       :icon="IconLayerGroup"
       :title="$t('shopDetail.noQueues')"
       :description="$t('shopDetail.noQueueDescription')"

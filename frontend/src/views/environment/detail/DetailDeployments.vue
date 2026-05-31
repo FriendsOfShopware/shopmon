@@ -48,7 +48,7 @@
 
         <!-- Name + date -->
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <RouterLink
               :to="{
                 name: 'account.environments.detail.deployment',
@@ -170,13 +170,15 @@
           to report deployments.
         </p>
 
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-3">
-            <code class="font-mono text-xs font-semibold min-w-[180px]">SHOPMON_SHOP_ID</code>
-            <Badge variant="secondary" class="font-mono text-xs">{{ environment.id }}</Badge>
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap">
+            <code class="font-mono text-xs font-semibold sm:min-w-[180px]">SHOPMON_SHOP_ID</code>
+            <Badge variant="secondary" class="font-mono text-xs break-all">{{
+              environment.id
+            }}</Badge>
           </div>
-          <div class="flex items-center gap-3">
-            <code class="font-mono text-xs font-semibold min-w-[180px]">SHOPMON_API_KEY</code>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap">
+            <code class="font-mono text-xs font-semibold sm:min-w-[180px]">SHOPMON_API_KEY</code>
             <Button as-child variant="outline" size="sm" class="h-6 text-xs">
               <RouterLink
                 :to="{

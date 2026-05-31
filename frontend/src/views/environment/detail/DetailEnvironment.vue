@@ -27,7 +27,7 @@
           <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
             <icon-fa6-solid:code-branch class="size-4 text-primary" />
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <div class="text-xs font-medium text-muted-foreground">
               {{ $t("shopDetail.shopwareVersion") }}
             </div>
@@ -257,10 +257,10 @@
         </Button>
       </template>
       <div class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div v-for="item in infoItems" :key="item.label">
+        <div v-for="item in infoItems" :key="item.label" class="min-w-0">
           <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
           <dd class="mt-0.5">
-            <span class="text-sm">{{ item.value }}</span>
+            <span class="text-sm break-words">{{ item.value }}</span>
           </dd>
         </div>
 
@@ -273,8 +273,8 @@
               <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
             </span>
           </dt>
-          <dd class="mt-1 flex items-center gap-2">
-            <code class="rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
+          <dd class="mt-1 flex items-start gap-2">
+            <code class="min-w-0 flex-1 rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
               environment.environmentToken
             }}</code>
             <Button

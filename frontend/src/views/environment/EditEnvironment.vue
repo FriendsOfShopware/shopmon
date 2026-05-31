@@ -147,7 +147,7 @@
 
         <form @submit.prevent="onSitespeedSubmit" class="space-y-4">
           <label class="flex cursor-pointer items-center gap-3">
-            <Switch :checked="sitespeedEnabled" @update:checked="sitespeedEnabled = $event" />
+            <Switch v-model="sitespeedEnabled" />
             <span class="text-sm font-medium">{{ $t("environment.sitespeedEnabled") }}</span>
           </label>
 

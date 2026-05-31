@@ -19,11 +19,11 @@
       >
         <!-- Header row — always visible -->
         <button
-          class="flex w-full items-center gap-4 px-4 py-3 text-left"
+          class="flex w-full items-start gap-4 px-4 py-3 text-left sm:items-center"
           @click="toggle(entry.id)"
         >
           <!-- Date -->
-          <div class="shrink-0 text-sm tabular-nums text-muted-foreground">
+          <div class="shrink-0 pt-0.5 text-sm tabular-nums text-muted-foreground sm:pt-0">
             {{ formatDate(entry.date) }}
           </div>
 
@@ -88,56 +88,81 @@
             <div
               v-for="ext in entry.extensions"
               :key="ext.name"
-              class="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-sm"
+              class="rounded-lg bg-muted/50 px-3 py-2 text-sm"
             >
-              <!-- State icon -->
-              <div class="shrink-0">
-                <icon-fa6-solid:arrow-up
-                  v-if="ext.state === 'updated'"
-                  class="size-3.5 text-info"
-                />
-                <icon-fa6-solid:plus
-                  v-else-if="ext.state === 'installed'"
-                  class="size-3.5 text-success"
-                />
-                <icon-fa6-solid:trash
-                  v-else-if="ext.state === 'removed'"
-                  class="size-3.5 text-destructive"
-                />
-                <icon-fa6-solid:toggle-on
-                  v-else-if="ext.state === 'activated'"
-                  class="size-3.5 text-success"
-                />
-                <icon-fa6-solid:toggle-off
-                  v-else-if="ext.state === 'deactivated'"
-                  class="size-3.5 text-warning"
-                />
-                <icon-fa6-solid:circle v-else class="size-2.5 text-muted-foreground" />
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <!-- State icon -->
+                <div class="shrink-0">
+                  <icon-fa6-solid:arrow-up
+                    v-if="ext.state === 'updated'"
+                    class="size-3.5 text-info"
+                  />
+                  <icon-fa6-solid:plus
+                    v-else-if="ext.state === 'installed'"
+                    class="size-3.5 text-success"
+                  />
+                  <icon-fa6-solid:trash
+                    v-else-if="ext.state === 'removed'"
+                    class="size-3.5 text-destructive"
+                  />
+                  <icon-fa6-solid:toggle-on
+                    v-else-if="ext.state === 'activated'"
+                    class="size-3.5 text-success"
+                  />
+                  <icon-fa6-solid:toggle-off
+                    v-else-if="ext.state === 'deactivated'"
+                    class="size-3.5 text-warning"
+                  />
+                  <icon-fa6-solid:circle v-else class="size-2.5 text-muted-foreground" />
+                </div>
+
+                <!-- Extension info -->
+                <div class="min-w-0 flex-1 basis-full sm:basis-0">
+                  <span class="font-medium break-words">{{ ext.label }}</span>
+                  <span class="ml-1 text-muted-foreground break-all">({{ ext.name }})</span>
+                </div>
+
+                <!-- Version change -->
+                <div
+                  v-if="ext.state === 'updated' && ext.oldVersion && ext.newVersion"
+                  class="shrink-0"
+                >
+                  <Badge variant="secondary" class="font-mono text-xs">
+                    {{ ext.oldVersion }} → {{ ext.newVersion }}
+                  </Badge>
+                </div>
+                <div v-else-if="ext.newVersion || ext.oldVersion" class="shrink-0">
+                  <Badge variant="secondary" class="font-mono text-xs">
+                    {{ ext.newVersion || ext.oldVersion }}
+                  </Badge>
+                </div>
+
+                <!-- State label -->
+                <Badge variant="outline" class="shrink-0 capitalize text-xs">{{ ext.state }}</Badge>
               </div>
 
-              <!-- Extension info -->
-              <div class="min-w-0 flex-1">
-                <span class="font-medium">{{ ext.label }}</span>
-                <span class="ml-1 text-muted-foreground">({{ ext.name }})</span>
-              </div>
-
-              <!-- Version change -->
+              <!-- Extension changelog text (only for updates) -->
               <div
-                v-if="ext.state === 'updated' && ext.oldVersion && ext.newVersion"
-                class="shrink-0"
+                v-if="ext.state === 'updated' && ext.changelog && ext.changelog.length > 0"
+                class="mt-3 space-y-3 border-t border-border/60 pt-3"
               >
-                <Badge variant="secondary" class="font-mono text-xs">
-                  {{ ext.oldVersion }} → {{ ext.newVersion }}
-                </Badge>
+                <div v-for="entryLog in ext.changelog" :key="entryLog.version">
+                  <div class="mb-1 flex items-center gap-2 text-xs font-semibold">
+                    <Badge variant="secondary" class="font-mono text-[10px]">{{
+                      entryLog.version
+                    }}</Badge>
+                    <span class="font-normal text-muted-foreground tabular-nums">{{
+                      formatDate(entryLog.creationDate)
+                    }}</span>
+                  </div>
+                  <!-- eslint-disable vue/no-v-html -->
+                  <div
+                    class="prose prose-sm dark:prose-invert max-w-none text-xs"
+                    v-html="entryLog.text"
+                  />
+                  <!-- eslint-enable vue/no-v-html -->
+                </div>
               </div>
-              <div v-else-if="ext.newVersion || ext.oldVersion" class="shrink-0">
-                <Badge variant="secondary" class="font-mono text-xs">
-                  {{ ext.newVersion || ext.oldVersion }}
-                </Badge>
-              </div>
-
-              <!-- State label -->
-              <Badge variant="outline" class="shrink-0 capitalize text-xs">{{ ext.state }}</Badge>
             </div>
           </div>
         </div>

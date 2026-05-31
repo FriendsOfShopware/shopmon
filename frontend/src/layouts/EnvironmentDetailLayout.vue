@@ -168,32 +168,58 @@
     </Alert>
 
     <!-- Tab navigation -->
-    <nav class="flex gap-1 overflow-x-auto border-b" v-if="environment.lastScrapedAt">
-      <RouterLink
-        v-for="tab in tabs"
-        :key="tab.route"
-        :to="{
-          name: tab.route,
-          params: {
-            environmentId: route.params.environmentId,
-          },
-        }"
-        :class="[
-          'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
-          isTabActive(tab.route)
-            ? 'border-primary text-primary'
-            : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
-        ]"
-        active-class=""
-        exact-active-class=""
-      >
-        <component :is="tab.icon" class="size-3.5" />
-        {{ tab.label }}
-        <Badge v-if="tab.count" variant="secondary" class="ml-0.5 h-5 min-w-5 px-1 text-[10px]">{{
-          tab.count
-        }}</Badge>
-      </RouterLink>
-    </nav>
+    <template v-if="environment.lastScrapedAt">
+      <!-- Mobile: select dropdown -->
+      <div class="sm:hidden">
+        <Select :model-value="activeTabRoute" @update:model-value="onTabSelect">
+          <SelectTrigger class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="tab in tabs" :key="tab.route" :value="tab.route">
+              <span class="flex items-center gap-2">
+                <component :is="tab.icon" class="size-3.5" />
+                {{ tab.label }}
+                <Badge
+                  v-if="tab.count"
+                  variant="secondary"
+                  class="ml-auto h-5 min-w-5 px-1 text-[10px]"
+                  >{{ tab.count }}</Badge
+                >
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <!-- Desktop: tab bar -->
+      <nav class="hidden sm:flex gap-1 overflow-x-auto border-b">
+        <RouterLink
+          v-for="tab in tabs"
+          :key="tab.route"
+          :to="{
+            name: tab.route,
+            params: {
+              environmentId: route.params.environmentId,
+            },
+          }"
+          :class="[
+            'inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
+            isTabActive(tab.route)
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+          ]"
+          active-class=""
+          exact-active-class=""
+        >
+          <component :is="tab.icon" class="size-3.5" />
+          {{ tab.label }}
+          <Badge v-if="tab.count" variant="secondary" class="ml-0.5 h-5 min-w-5 px-1 text-[10px]">{{
+            tab.count
+          }}</Badge>
+        </RouterLink>
+      </nav>
+    </template>
 
     <!-- Page content -->
     <div v-if="environment.lastScrapedAt">
@@ -232,7 +258,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
@@ -261,6 +287,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { AcceptableValue } from "reka-ui";
 import FaRotate from "~icons/fa6-solid/rotate";
 
 import FaShop from "~icons/fa6-solid/shop";
@@ -272,6 +306,7 @@ import FaFileWaveform from "~icons/fa6-solid/file-waveform";
 import FaCodeBranch from "~icons/fa6-solid/code-branch";
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 
 const {
@@ -372,6 +407,16 @@ const tabs = computed(() => {
   ];
   return allTabs;
 });
+
+const activeTabRoute = computed(() => {
+  const match = tabs.value.find((t) => isTabActive(t.route));
+  return match?.route ?? "account.environments.detail";
+});
+
+function onTabSelect(value: AcceptableValue) {
+  if (typeof value !== "string") return;
+  router.push({ name: value, params: { environmentId: route.params.environmentId } });
+}
 
 function isTabActive(tabRoute: string): boolean {
   if (route.name === tabRoute) return true;

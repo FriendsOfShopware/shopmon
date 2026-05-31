@@ -17,13 +17,13 @@
 
       <SidebarContent>
         <!-- Org switcher -->
-        <SidebarGroup class="py-2">
+        <SidebarGroup class="py-2 group-data-[collapsible=icon]:hidden">
           <SidebarGroupContent>
             <OrganizationSwitcher />
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
+        <SidebarSeparator class="group-data-[collapsible=icon]:hidden" />
 
         <!-- Main nav -->
         <SidebarGroup>
@@ -85,9 +85,11 @@
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <SidebarMenuButton class="h-10">
+                <SidebarMenuButton
+                  class="h-10 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center"
+                >
                   <img
-                    class="size-6 shrink-0 rounded-full bg-primary object-cover"
+                    class="aspect-square h-7 w-7 shrink-0 rounded-full bg-primary object-cover"
                     :src="userAvatar"
                     alt=""
                   />
@@ -187,7 +189,7 @@
                 </Button>
               </div>
 
-              <ScrollArea v-if="notifications.length > 0" class="max-h-80">
+              <div v-if="notifications.length > 0" class="max-h-80 overflow-y-auto">
                 <div
                   v-for="(notification, index) in notifications"
                   :key="index"
@@ -201,16 +203,18 @@
                     <icon-fa6-solid:circle-info v-else class="size-4 text-info" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium">{{ notification.title }}</div>
+                    <div class="text-sm font-medium break-words">{{ notification.title }}</div>
                     <div class="text-xs text-muted-foreground">
                       {{ formatDateTime(notification.createdAt) }}
                     </div>
-                    <div class="text-[0.8125rem] leading-snug text-muted-foreground">
+                    <div
+                      class="text-[0.8125rem] leading-snug text-muted-foreground break-words [overflow-wrap:anywhere]"
+                    >
                       {{ notification.message }}
                       <a
                         v-if="notification.link"
                         :href="notification.link.url"
-                        class="text-primary"
+                        class="text-primary break-all"
                       >
                         {{ notification.link.label || $t("topBar.more") }}
                       </a>
@@ -224,7 +228,7 @@
                     <icon-fa6-solid:xmark class="size-3" />
                   </button>
                 </div>
-              </ScrollArea>
+              </div>
               <div v-else class="px-4 py-6 text-center text-sm text-muted-foreground">
                 {{ $t("notifications.notMuchGoingOn") }}
               </div>
@@ -271,7 +275,6 @@ import type { components } from "@/types/api";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
