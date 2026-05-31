@@ -148,12 +148,15 @@
             <div
               v-for="version in versionDistribution"
               :key="version.version"
-              class="flex items-center gap-3"
+              class="flex min-w-0 items-center gap-3"
             >
-              <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
-                version.version
-              }}</Badge>
-              <div class="flex-1">
+              <Badge
+                variant="secondary"
+                class="min-w-[5rem] shrink-0 justify-center font-mono text-xs"
+              >
+                {{ version.version }}
+              </Badge>
+              <div class="min-w-0 flex-1">
                 <div class="h-2 overflow-hidden rounded-full bg-muted">
                   <div
                     class="h-full rounded-full bg-primary transition-all"
@@ -189,9 +192,9 @@
                 name: 'account.environments.detail',
                 params: { environmentId: log.environmentId },
               }"
-              class="flex flex-col gap-1 rounded-lg px-3 py-2 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:gap-3"
+              class="flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:gap-3"
             >
-              <div class="flex items-center gap-3">
+              <div class="flex min-w-0 items-center gap-3">
                 <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
                   formatDate(log.date)
                 }}</span>

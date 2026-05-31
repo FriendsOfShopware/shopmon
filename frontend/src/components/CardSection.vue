@@ -12,7 +12,7 @@ defineProps<{
 </script>
 
 <template>
-  <Card :class="cn($props.class)">
+  <Card :class="cn('min-w-0', $props.class)">
     <CardHeader class="pb-3">
       <div class="flex items-center justify-between">
         <CardTitle class="flex items-center gap-2 text-base">
@@ -23,7 +23,7 @@ defineProps<{
       </div>
       <CardDescription v-if="description">{{ description }}</CardDescription>
     </CardHeader>
-    <CardContent>
+    <CardContent class="min-w-0">
       <slot />
     </CardContent>
   </Card>
