@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -67,7 +69,7 @@ func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 	if user == nil {
 		return
 	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
+	if !h.requireOrgRole(w, r, user, orgId, "owner", "admin") {
 		return
 	}
 
@@ -75,6 +77,15 @@ func (h *Handler) UpdateSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 	if err := httputil.DecodeBody(r, &req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+
+	// Validate the tenant-supplied OIDC endpoints so the login flow never issues
+	// server-side requests to internal/private targets.
+	for _, endpoint := range []string{req.Issuer, req.AuthorizationEndpoint, req.TokenEndpoint, req.JwksEndpoint} {
+		if err := httputil.ValidateHTTPSEndpoint(endpoint); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid OIDC endpoint: "+err.Error())
+			return
+		}
 	}
 
 	// Build the OIDC config JSON
@@ -118,7 +129,7 @@ func (h *Handler) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 	if user == nil {
 		return
 	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
+	if !h.requireOrgRole(w, r, user, orgId, "owner", "admin") {
 		return
 	}
 
@@ -137,16 +148,30 @@ func (h *Handler) DeleteSsoProvider(w http.ResponseWriter, r *http.Request, orgI
 
 // DiscoverSso discovers OIDC configuration from an issuer URL.
 func (h *Handler) DiscoverSso(w http.ResponseWriter, r *http.Request, params api.DiscoverSsoParams) {
+	// Only authenticated users may trigger server-side discovery requests; this
+	// limits the SSRF surface to logged-in accounts.
+	if h.requireUser(w, r) == nil {
+		return
+	}
+
 	issuer := params.Issuer
 	if issuer == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "issuer is required")
 		return
 	}
 
-	// Validate URL scheme - only allow HTTPS (except localhost/127.0.0.1 for dev)
 	parsed, err := url.Parse(issuer)
-	isLocal := parsed != nil && (strings.HasPrefix(parsed.Host, "localhost") || strings.HasPrefix(parsed.Host, "127.0.0.1"))
-	if err != nil || (parsed.Scheme != "https" && !isLocal) {
+	if err != nil || parsed.Host == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid issuer URL")
+		return
+	}
+
+	// A loopback issuer (local-dev IdP) may use plain HTTP. Match the hostname
+	// exactly to avoid bypasses like "localhost.attacker.com".
+	isLoopback := isLoopbackHost(parsed.Hostname())
+
+	// Every other issuer must use HTTPS.
+	if parsed.Scheme != "https" && !isLoopback {
 		httputil.WriteError(w, http.StatusBadRequest, "issuer must use HTTPS")
 		return
 	}
@@ -159,7 +184,15 @@ func (h *Handler) DiscoverSso(w http.ResponseWriter, r *http.Request, params api
 		return
 	}
 
-	resp, err := httputil.NewHTTPClient().Do(req)
+	// Use an SSRF-safe client that refuses private/loopback/link-local targets
+	// and bounds the request with a timeout. The plain client is only used for
+	// the explicitly-allowed loopback dev case.
+	client := httputil.NewSSRFSafeHTTPClient(15 * time.Second)
+	if isLoopback {
+		client = httputil.NewHTTPClient(httputil.WithTimeout(15 * time.Second))
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		slog.Error("failed to fetch OIDC discovery", "url", discoveryURL, "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch OIDC discovery document")
@@ -205,4 +238,16 @@ func (h *Handler) DiscoverSso(w http.ResponseWriter, r *http.Request, params api
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
+// isLoopbackHost reports whether host is exactly "localhost" or a loopback IP
+// literal. It deliberately does NOT match suffixes like "localhost.evil.com".
+func isLoopbackHost(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
 }

@@ -14,9 +14,21 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+// isTrue interprets an OIDC claim value (which may be a bool or a string) as a
+// boolean. OIDC providers sometimes encode email_verified as the string "true".
+func isTrue(v interface{}) bool {
+	switch val := v.(type) {
+	case bool:
+		return val
+	case string:
+		return val == "true"
+	default:
+		return false
+	}
+}
 
 type oidcConfig struct {
 	AuthorizationEndpoint string `json:"authorizationEndpoint"`
@@ -136,16 +148,40 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 		return
 	}
 
+	// Re-validate the stored endpoints before issuing any server-side request.
+	// Create/update validation can be bypassed by pre-existing or out-of-band
+	// rows, so a row with an http:// non-loopback or private/loopback endpoint
+	// must be rejected here (loopback dev URLs are still allowed).
+	for _, endpoint := range []string{cfg.TokenEndpoint, cfg.JwksEndpoint, provider.Issuer} {
+		if err := httputil.ValidateSSOEndpoint(endpoint); err != nil {
+			slog.Error("stored SSO endpoint failed validation", "error", err, "provider", providerId)
+			httputil.WriteError(w, http.StatusBadGateway, "SSO provider has an invalid endpoint configured")
+			return
+		}
+	}
+
 	// Exchange code for tokens
 	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.cfg.FrontendURL, providerId)
 
-	tokenResp, err := httputil.NewHTTPClient().PostForm(cfg.TokenEndpoint, url.Values{
+	tokenForm := url.Values{
 		"client_id":     {cfg.ClientID},
 		"client_secret": {cfg.ClientSecret},
 		"code":          {params.Code},
 		"grant_type":    {"authorization_code"},
 		"redirect_uri":  {callbackURL},
-	})
+	}
+	tokenReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, cfg.TokenEndpoint, strings.NewReader(tokenForm.Encode()))
+	if err != nil {
+		slog.Error("failed to build SSO token request", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to build token request")
+		return
+	}
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	tokenReq.Header.Set("Accept", "application/json")
+
+	// Each provider-controlled endpoint picks its own client based on its own
+	// URL, so a loopback endpoint never downgrades requests to other hosts.
+	tokenResp, err := httputil.ClientForURL(cfg.TokenEndpoint, 15*time.Second).Do(tokenReq)
 	if err != nil {
 		slog.Error("SSO token exchange failed", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code for token")
@@ -171,54 +207,73 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 		return
 	}
 
-	// Parse ID token - since received directly from token endpoint over TLS,
-	// signature verification is optional, but validate claims
-	parser := jwt.NewParser()
-	token, _, err := parser.ParseUnverified(tokenData.IDToken, jwt.MapClaims{})
+	if tokenData.IDToken == "" {
+		httputil.WriteError(w, http.StatusBadGateway, "token response missing id_token")
+		return
+	}
+
+	if cfg.JwksEndpoint == "" {
+		slog.Error("SSO provider has no JWKS endpoint configured", "provider", providerId)
+		httputil.WriteError(w, http.StatusInternalServerError, "SSO provider has no JWKS endpoint configured")
+		return
+	}
+
+	// Verify the ID token's RS256 signature against the provider's JWKS and
+	// validate the issuer, audience (client id), and expiry. Also enforces that
+	// sub and iat are present.
+	jwksClient := httputil.ClientForURL(cfg.JwksEndpoint, 15*time.Second)
+	idToken, claims, err := verifyIDToken(r.Context(), jwksClient, tokenData.IDToken, cfg.JwksEndpoint, provider.Issuer, cfg.ClientID)
 	if err != nil {
-		slog.Error("failed to parse ID token", "error", err)
-		httputil.WriteError(w, http.StatusBadGateway, "failed to parse ID token")
+		slog.Error("failed to verify ID token", "error", err, "provider", providerId)
+		httputil.WriteError(w, http.StatusBadGateway, "failed to verify ID token")
 		return
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		httputil.WriteError(w, http.StatusBadGateway, "invalid ID token claims")
+	// Validate the nonce matches the one we issued to prevent token replay.
+	// go-oidc surfaces the nonce but does not verify it — that is our job.
+	if stateData.Nonce == "" || claims.Nonce != stateData.Nonce {
+		slog.Error("SSO ID token nonce mismatch", "provider", providerId)
+		httputil.WriteError(w, http.StatusBadGateway, "invalid token nonce")
 		return
 	}
 
-	// Validate issuer matches the provider
-	if iss, _ := claims["iss"].(string); iss != "" && iss != provider.Issuer {
-		httputil.WriteError(w, http.StatusBadGateway, "invalid token issuer")
-		return
+	// Extract user info. sub is guaranteed non-empty by verifyIDToken; it is the
+	// stable subject we key the account on.
+	sub := idToken.Subject
+	email := claims.Email
+	name := claims.Name
+	picture := claims.Picture
+
+	// Track email_verified from whichever endpoint supplied the email. The
+	// claim may be a bool or the string "true"; a present-but-falsey value
+	// means the email is NOT verified. Default to "verified" only when the
+	// claim is entirely absent (some providers omit it for trusted directories).
+	emailVerified := true
+	if claims.EmailVerified != nil {
+		emailVerified = isTrue(claims.EmailVerified)
 	}
 
-	// Validate expiry
-	if exp, ok := claims["exp"].(float64); ok {
-		if time.Unix(int64(exp), 0).Before(time.Now()) {
-			httputil.WriteError(w, http.StatusBadGateway, "token expired")
-			return
-		}
-	}
-
-	// Extract user info from claims
-	sub, _ := claims["sub"].(string)
-	email, _ := claims["email"].(string)
-	name, _ := claims["name"].(string)
-	picture, _ := claims["picture"].(string)
-
-	if sub == "" || email == "" {
-		// Try userinfo endpoint as fallback
+	if email == "" {
+		// Fall back to the userinfo endpoint for the email/profile, but never
+		// for sub. Verify the userinfo subject matches the ID token subject so a
+		// compromised/mismatched userinfo response cannot bind a different user.
 		userInfo, err := h.fetchUserInfo(r.Context(), tokenData.AccessToken, provider.Issuer)
 		if err != nil {
 			httputil.WriteError(w, http.StatusBadGateway, "could not get user info from SSO provider")
 			return
 		}
-		if sub == "" {
-			sub = userInfo.Sub
+		if userInfo.Sub == "" || userInfo.Sub != sub {
+			slog.Error("SSO userinfo subject mismatch", "provider", providerId)
+			httputil.WriteError(w, http.StatusBadGateway, "userinfo subject does not match ID token")
+			return
 		}
 		if email == "" {
 			email = userInfo.Email
+			// The email now comes from userinfo, so its verification status must
+			// come from userinfo too — don't trust the (absent) ID token claim.
+			if userInfo.EmailVerified != nil {
+				emailVerified = isTrue(userInfo.EmailVerified)
+			}
 		}
 		if name == "" {
 			name = userInfo.Name
@@ -230,6 +285,15 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 
 	if email == "" {
 		httputil.WriteError(w, http.StatusBadRequest, "SSO provider did not return an email")
+		return
+	}
+
+	// We treat SSO emails as verified identities and must not trust an
+	// unverified address, regardless of whether it came from the ID token or the
+	// userinfo endpoint.
+	if !emailVerified {
+		slog.Error("SSO provider returned unverified email", "provider", providerId)
+		httputil.WriteError(w, http.StatusBadRequest, "SSO provider returned an unverified email")
 		return
 	}
 
@@ -324,21 +388,23 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 }
 
 type userInfoResponse struct {
-	Sub     string `json:"sub"`
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	Picture string `json:"picture"`
+	Sub           string      `json:"sub"`
+	Email         string      `json:"email"`
+	EmailVerified interface{} `json:"email_verified"`
+	Name          string      `json:"name"`
+	Picture       string      `json:"picture"`
 }
 
 func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer string) (*userInfoResponse, error) {
-	// Discover userinfo endpoint
+	// Discover userinfo endpoint. The client is chosen per-URL so a loopback
+	// issuer never downgrades the (separately-chosen) userinfo request.
 	discoveryURL := issuer + "/.well-known/openid-configuration"
 	discoveryReq, err := http.NewRequestWithContext(ctx, http.MethodGet, discoveryURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := httputil.NewHTTPClient().Do(discoveryReq)
+	resp, err := httputil.ClientForURL(discoveryURL, 15*time.Second).Do(discoveryReq)
 	if err != nil {
 		return nil, err
 	}
@@ -355,14 +421,20 @@ func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer str
 		return nil, fmt.Errorf("no userinfo endpoint found")
 	}
 
-	// Fetch userinfo
+	// The userinfo endpoint comes from the (provider-controlled) discovery
+	// document, so validate it before use: public HTTPS, or loopback for dev.
+	if err := httputil.ValidateSSOEndpoint(discovery.UserinfoEndpoint); err != nil {
+		return nil, fmt.Errorf("invalid userinfo endpoint: %w", err)
+	}
+
+	// Fetch userinfo using a client selected for the userinfo URL specifically.
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, discovery.UserinfoEndpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	uiResp, err := httputil.NewHTTPClient().Do(req)
+	uiResp, err := httputil.ClientForURL(discovery.UserinfoEndpoint, 15*time.Second).Do(req)
 	if err != nil {
 		return nil, err
 	}

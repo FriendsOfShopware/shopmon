@@ -163,10 +163,13 @@ func TestDiscoverSso(t *testing.T) {
 	defer mockServer.Close()
 
 	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	// Use the mock server URL as the issuer
+	// Use the mock server URL (127.0.0.1) as the issuer; discovery against a
+	// local address is allowed for dev workflows.
 	issuerURL := mockServer.URL
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/sso/discover?issuer=%s", env.Server.URL, issuerURL), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -180,4 +183,113 @@ func TestDiscoverSso(t *testing.T) {
 	assert.Equal(t, "https://idp.example.com/authorize", discovery.AuthorizationEndpoint)
 	assert.Equal(t, "https://idp.example.com/token", discovery.TokenEndpoint)
 	assert.Contains(t, discovery.Scopes, "openid")
+}
+
+// TestDiscoverSso_Unauthenticated ensures discovery requires authentication,
+// reducing the SSRF attack surface to logged-in accounts.
+func TestDiscoverSso_Unauthenticated(t *testing.T) {
+	env := testutil.Setup(t)
+
+	req, _ := http.NewRequest("GET", env.Server.URL+"/api/sso/discover?issuer=https://idp.example.com", nil)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+// TestDiscoverSso_RejectsNonHTTPS ensures non-HTTPS, non-local issuers are
+// rejected before any outbound request is made.
+func TestDiscoverSso_RejectsNonHTTPS(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+
+	req, _ := http.NewRequest("GET", env.Server.URL+"/api/sso/discover?issuer=http://idp.example.com", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+}
+
+// seedOrgMember adds a user to an org with the given role and returns a token.
+func seedOrgMember(t *testing.T, env *testutil.TestEnv, memberID, orgID, role string) string {
+	t.Helper()
+	token := env.SeedUser(t, memberID, "Member "+memberID, memberID+"@example.com", "user")
+	_, err := env.Pool.Exec(t.Context(),
+		`INSERT INTO member (id, organization_id, user_id, role, created_at)
+		 VALUES ($1, $2, $3, $4, NOW())`,
+		"mem-"+memberID, orgID, memberID, role)
+	require.NoError(t, err)
+	return token
+}
+
+func TestUpdateSsoProvider_MemberDenied(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "owner-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "owner-1")
+	memberToken := seedOrgMember(t, env, "member-1", "org-1", "member")
+
+	body, _ := json.Marshal(api.UpdateSsoProviderRequest{
+		Domain:                "example.com",
+		Issuer:                "https://idp.example.com",
+		ClientId:              "client-123",
+		AuthorizationEndpoint: "https://idp.example.com/authorize",
+		TokenEndpoint:         "https://idp.example.com/token",
+		JwksEndpoint:          "https://idp.example.com/jwks",
+	})
+
+	req, _ := http.NewRequest("PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+memberToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestDeleteSsoProvider_MemberDenied(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "owner-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "owner-1")
+	memberToken := seedOrgMember(t, env, "member-1", "org-1", "member")
+
+	req, _ := http.NewRequest("DELETE", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", nil)
+	req.Header.Set("Authorization", "Bearer "+memberToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestUpdateSsoProvider_AdminAllowed(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "owner-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "owner-1")
+	adminToken := seedOrgMember(t, env, "admin-1", "org-1", "admin")
+
+	body, _ := json.Marshal(api.UpdateSsoProviderRequest{
+		Domain:                "example.com",
+		Issuer:                "https://idp.example.com",
+		ClientId:              "client-123",
+		AuthorizationEndpoint: "https://idp.example.com/authorize",
+		TokenEndpoint:         "https://idp.example.com/token",
+		JwksEndpoint:          "https://idp.example.com/jwks",
+	})
+
+	req, _ := http.NewRequest("PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+adminToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }

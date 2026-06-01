@@ -94,6 +94,26 @@ func (h *Handler) requireOrgMembership(w http.ResponseWriter, r *http.Request, u
 	return true
 }
 
+// requireOrgRole checks that the user holds one of the allowed roles in the
+// organization. Returns false and writes a 403 response otherwise.
+func (h *Handler) requireOrgRole(w http.ResponseWriter, r *http.Request, user *auth.User, orgID string, allowedRoles ...string) bool {
+	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
+		OrganizationID: orgID,
+		UserID:         user.ID,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+		return false
+	}
+	for _, allowed := range allowedRoles {
+		if role == allowed {
+			return true
+		}
+	}
+	httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	return false
+}
+
 func (h *Handler) loadAuthorizedEnvironment(w http.ResponseWriter, r *http.Request, user *auth.User, environmentID int32) (*queries.GetEnvironmentByIDRow, bool) {
 	environment, err := h.queries.GetEnvironmentByID(r.Context(), environmentID)
 	if err != nil {

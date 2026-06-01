@@ -465,6 +465,15 @@ func (h *AuthHandler) RegisterSSOProvider(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Validate the tenant-supplied OIDC endpoints up front so the login flow
+	// never issues server-side requests to internal/private targets.
+	for _, endpoint := range []string{req.Issuer, req.AuthorizationEndpoint, req.TokenEndpoint, req.JwksEndpoint} {
+		if err := httputil.ValidateHTTPSEndpoint(endpoint); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "invalid OIDC endpoint: "+err.Error())
+			return
+		}
+	}
+
 	providerID := "sso-" + req.Domain
 
 	oidcConfig, err := json.Marshal(map[string]string{
