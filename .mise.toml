@@ -1,0 +1,139 @@
+[tools]
+go = "1.26"
+node = "26"
+sqlc = "1.31"
+golangci-lint = "2"
+"go:github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen" = "latest"
+"go:github.com/air-verse/air" = "latest"
+
+[env]
+# Database
+DATABASE_URL = "postgres://shopmon:shopmon@localhost:5432/shopmon"
+REDIS_URL = "redis://localhost:6379"
+
+# Security (generate a proper secret for real deployments)
+APP_SECRET = "RU8f0yb6JpnyGnzBgovqAYNTaEULP1h1"
+
+# Frontend
+FRONTEND_URL = "http://localhost:3000"
+
+# SMTP (Mailpit in dev)
+SMTP_HOST = "localhost"
+SMTP_PORT = "1025"
+MAIL_FROM = "noreply@shopmon.local"
+
+# S3 (rustfs in dev)
+S3_ENDPOINT = "http://localhost:9000"
+S3_ACCESS_KEY = "rustfsadmin"
+S3_SECRET_KEY = "rustfsadmin"
+S3_BUCKET = "shopmon"
+S3_REGION = "us-east-1"
+
+# Sitespeed
+APP_SITESPEED_ENDPOINT = "http://localhost:3001"
+APP_SITESPEED_API_KEY = "secret"
+
+# Observability
+OTEL_ENABLED = "false"
+
+[tasks."setup:frontend"]
+description = "Install frontend dependencies"
+run = "cd frontend && npm install"
+
+[tasks."setup:api"]
+description = "Download Go modules"
+run = "cd api && go mod download"
+
+[tasks.setup]
+description = "Install all dependencies in parallel"
+run = { tasks = ["setup:frontend", "setup:api"] }
+
+[tasks.up]
+description = "Start infrastructure (DB, Redis, Mailpit, demo shop, etc.)"
+run = "docker compose up -d"
+wait_for = ["docker"]
+
+[tasks.down]
+description = "Stop infrastructure"
+run = "docker compose stop"
+
+[tasks.migrate]
+description = "Run database migrations"
+run = "cd api && go run . migrate up"
+depends = ["up"]
+
+[tasks."migrate-status"]
+description = "Show migration status"
+run = "cd api && go run . migrate status"
+
+[tasks."drop-db"]
+description = "Drop and recreate the database"
+run = 'docker compose exec -T db psql -U shopmon -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"'
+
+[tasks.fixtures]
+description = "Seed test fixtures"
+run = "cd api && go run . fixtures"
+depends = ["migrate"]
+
+[tasks."load-fixtures"]
+description = "Reset DB, migrate, and seed fixtures"
+run = [
+  "mise run drop-db",
+  "mise run migrate",
+  "mise run fixtures",
+]
+
+[tasks.generate]
+description = "Generate code (sqlc + oapi-codegen + frontend types)"
+run = [
+  "cd api && sqlc generate",
+  "cd api && oapi-codegen --config oapi-codegen-api.yaml openapi/spec.yaml",
+  "cd api && oapi-codegen --config oapi-codegen-auth.yaml openapi/spec.yaml",
+  "cd frontend && npm run generate:api",
+]
+
+[tasks.lint]
+description = "Run all linters"
+run = [
+  "cd api && golangci-lint run",
+  "cd api && go test ./internal/... -count=1 -timeout 120s",
+  "cd frontend && npm run lint",
+  "cd frontend && npm run format",
+  "cd frontend && npm run tsc",
+  "cd frontend && npm run test:run",
+]
+
+[tasks."lint-fix"]
+description = "Fix lint issues"
+run = [
+  "cd frontend && npm run lint:fix",
+  "cd frontend && npm run format:fix",
+]
+
+[tasks.test]
+description = "Run Go integration tests"
+run = "cd api && go test ./internal/... -count=1 -timeout 120s"
+
+[tasks.build]
+description = "Build the API binary"
+run = "cd api && go build -o bin/shopmon ."
+
+[tasks."dev:api"]
+description = "Run API server with live reload"
+run = "cd api && LISTEN_ADDR=127.0.0.1:5789 air"
+
+[tasks."dev:worker"]
+description = "Run background worker with live reload"
+run = "cd api && air -c .air-worker.toml"
+
+[tasks."dev:frontend"]
+description = "Run frontend dev server"
+run = "cd frontend && SHOPMON_API_URL=http://127.0.0.1:5789 npm run dev"
+
+[tasks.dev]
+description = "Run API, worker, and frontend in parallel"
+run = { tasks = ["dev:api", "dev:worker", "dev:frontend"] }
+
+[tasks.tidy]
+description = "Tidy Go modules"
+run = "cd api && go mod tidy"

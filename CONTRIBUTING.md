@@ -29,45 +29,58 @@ Thank you for your interest in contributing to Shopmon! This document provides g
 
 ### Prerequisites
 
-- Docker and Docker Compose (for running the demo environment)
-- Node.js 24+ (for some build tools)
+- [mise](https://mise.jdx.dev) — manages Go, Node.js, and other tool versions
+- Docker and Docker Compose — for running the development infrastructure
+- All other tools (Go, Node, sqlc, etc.) are managed by mise and installed automatically
 
 ### Initial Setup
 
-1. Install dependencies:
-
+1. Trust the mise config and install tools:
    ```bash
-   make setup
-   make up
+   mise trust
+   mise install
    ```
 
-2. Set up the database:
+2. Install dependencies:
    ```bash
-   make load-fixtures
+   mise run setup
    ```
 
-This will create a few users and a shop with sample data to help you get started.
-
-3. Start the development environment:
+3. Start the development infrastructure (PostgreSQL, Redis, Mailpit, demo shop):
    ```bash
-   make dev
+   mise run up
    ```
 
-This will start:
+4. Set up the database and seed fixtures:
+   ```bash
+   mise run load-fixtures
+   ```
 
-- API server on http://localhost:5789
-- Frontend dev server on http://localhost:3000
+   This creates test users, organizations, and a shop with sample data.
+
+5. Start the development environment:
+   ```bash
+   mise run dev
+   ```
+
+   This starts three processes in parallel:
+   - API server with live reload on http://localhost:5789
+   - Background worker with live reload
+   - Frontend dev server on http://localhost:3000
+
+### Running Individual Services
+
+```bash
+mise run dev:api        # API server only (with air live reload)
+mise run dev:worker     # Background worker only (with air live reload)
+mise run dev:frontend   # Frontend only (Vite dev server)
+```
 
 ### Environment Variables
 
-Copy the example environment files and configure them:
+Environment variables for local development are pre-configured in [`.mise.toml`](.mise.toml) under `[env]`. Defaults point to the Docker Compose services (Postgres, Redis, Mailpit, S3-compatible storage).
 
-```bash
-# API configuration
-cp api/.env.example api/.env
-```
-
-See the Environment Configuration section in [CLAUDE.md](./CLAUDE.md) for detailed variable descriptions.
+For production/staging, see [`.env.production`](.env.production) and [`.env.staging`](.env.staging).
 
 ## Making Changes
 
@@ -84,82 +97,93 @@ git checkout -b fix/your-bug-fix
 ### Development Workflow
 
 1. Make your changes in the appropriate directory:
-   - API code: `/api/src/`
-   - Frontend code: `/frontend/src/`
-   - Database migrations: `/api/drizzle/`
+   - API code: `api/`
+   - Frontend code: `frontend/`
+   - Database queries: `api/sql/queries/`
+   - Database migrations: `api/migrations/`
+   - API specification: `api/openapi/spec.yaml`
 
 2. Run code quality checks:
-
    ```bash
-   make lint
+   mise run lint
    ```
 
 3. Fix any issues:
    ```bash
-   make lint-fix
+   mise run lint-fix
    ```
+
+### API Changes
+
+When adding or modifying API endpoints:
+
+1. Edit `api/openapi/spec.yaml` (add paths, schemas, parameters)
+2. Run `mise run generate` (regenerates sqlc queries + oapi-codegen server interface)
+3. Implement the new method on the Handler in `api/internal/handler/`
+4. Add sqlc queries if needed (`api/sql/queries/`, then `mise run generate`)
 
 ### Database Changes
 
 If your changes require database modifications:
 
-1. Generate a new migration:
-
-   ```bash
-   cd api
-   bun run db:generate
-   ```
-
+1. Add a new migration file in `api/migrations/`
 2. Apply the migration:
    ```bash
-   bun run db:migrate
+   mise run migrate
    ```
 
 ## Code Style
 
-We use [oxfmt](https://oxc.rs/) for code formatting and [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting. Both are part of the oxc toolchain. The oxfmt configuration is in `.oxfmt.toml` and oxlint configuration is in `oxlintrc.json`.
+### API (Go)
 
-### Key Guidelines
+- Use `log/slog` for all logging — never `log` or `fmt.Println`
+- Always include structured context: `slog.Error("msg", "key", value, "error", err)`
+- Wrap errors with context: `fmt.Errorf("create shop: %w", err)`
+- Handlers implement the generated `openapi.ServerInterface`
+- Use `httputil.WriteJSON()` and `httputil.WriteError()` for all HTTP responses
+- Use `r.Context()` for all database calls (propagates OpenTelemetry traces)
+- See [AGENTS.md](AGENTS.md) for detailed Go conventions
 
-- Use TypeScript for all new code
-- Follow the existing patterns in the codebase
-- Keep functions small and focused
-- Add types for all function parameters and return values
-- Use meaningful variable and function names
-- Comment complex logic
+### Frontend (Vue 3 + TypeScript)
 
-### Frontend Specific
-
-- Use Composition API for Vue components
+- Use Composition API (`<script setup lang="ts">`)
 - Keep components small and reusable
-- Use Pinia stores for state management
-- Follow the existing CSS structure with PostCSS
+- Use Tailwind CSS for styling
+- Run `mise run lint` before committing
 
-### API Specific
+### Code Generation
 
-- Use tRPC procedures for API endpoints
-- Add proper input validation with Zod
-- Handle errors appropriately
-- Keep database queries efficient
+After changing SQL queries or the OpenAPI spec, regenerate code:
+
+```bash
+mise run generate
+```
+
+This runs `sqlc generate`, `oapi-codegen`, and regenerates frontend API types.
+
+**Never edit files in `api/internal/database/queries/` or `api/openapi/generated/`** — they are auto-generated.
 
 ## Testing
 
-### Manual Testing
+### Go Integration Tests
 
-1. Test your changes locally in the development environment
-2. Test with the demo environment:
-   ```bash
-   make up
-   ```
+Integration tests use testcontainers (real PostgreSQL + Redis). Run them with:
 
-### Automated Tests
+```bash
+mise run test
+```
 
-Currently, the project doesn't have automated tests. If you'd like to contribute tests, that would be greatly appreciated!
+Test helpers are in `api/internal/testutil/`. Use `Setup(t)` to get a `TestEnv` with a seeded database.
+
+### Frontend Tests
+
+```bash
+cd frontend && npm run test:run
+```
 
 ## Submitting Changes
 
 1. Commit your changes with clear, descriptive messages:
-
    ```bash
    git commit -m "feat: add shop health dashboard"
    # or
@@ -167,7 +191,6 @@ Currently, the project doesn't have automated tests. If you'd like to contribute
    ```
 
 2. Push to your fork:
-
    ```bash
    git push origin your-branch-name
    ```
@@ -182,13 +205,13 @@ Currently, the project doesn't have automated tests. If you'd like to contribute
 
 We follow conventional commits:
 
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks
+- `feat:` — New features
+- `fix:` — Bug fixes
+- `docs:` — Documentation changes
+- `style:` — Code style changes (formatting, etc.)
+- `refactor:` — Code refactoring
+- `test:` — Adding or updating tests
+- `chore:` — Maintenance tasks
 
 ## Reporting Issues
 
@@ -204,7 +227,6 @@ When reporting bugs, please include:
 6. Your environment details:
    - OS and version
    - Browser (for frontend issues)
-   - Bun version
    - Any relevant logs
 
 ### Feature Requests
@@ -220,7 +242,7 @@ For feature requests, please include:
 
 If you have questions about contributing, feel free to:
 
-1. Check the existing issues and pull requests
+1. Check existing issues and pull requests
 2. Open a discussion issue
 
 Thank you for contributing to Shopmon! 🎉
