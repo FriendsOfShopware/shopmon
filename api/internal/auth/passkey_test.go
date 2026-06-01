@@ -3,6 +3,7 @@ package auth_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 
@@ -111,6 +112,10 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("register failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var regResult map[string]interface{}
@@ -158,11 +163,16 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("login failed: status=%d body=%s", resp.StatusCode, string(body))
+	}
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var loginResult map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&loginResult))
-	user := loginResult["user"].(map[string]interface{})
+	user, ok := loginResult["user"].(map[string]interface{})
+	require.True(t, ok, "response must contain user object, got: %v", loginResult)
 	assert.Equal(t, "passkey@example.com", user["email"])
 	assert.Equal(t, "Passkey User", user["name"])
 

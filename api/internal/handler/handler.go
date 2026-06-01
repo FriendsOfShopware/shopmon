@@ -26,11 +26,11 @@ type Handler struct {
 	queries *queries.Queries
 	storage *storage.S3Storage
 	cfg     *config.Config
-	mail    *mail.Service
+	mail    mail.Sender
 	bus     *goqueue.Bus
 }
 
-func New(pool *pgxpool.Pool, q *queries.Queries, s *storage.S3Storage, cfg *config.Config, mail *mail.Service, bus *goqueue.Bus) *Handler {
+func New(pool *pgxpool.Pool, q *queries.Queries, s *storage.S3Storage, cfg *config.Config, mail mail.Sender, bus *goqueue.Bus) *Handler {
 	return &Handler{
 		pool:    pool,
 		queries: q,

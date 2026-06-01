@@ -27,12 +27,12 @@ type AuthHandler struct {
 	pool       *pgxpool.Pool
 	queries    *queries.Queries
 	cfg        *config.Config
-	mail       *mail.Service
+	mail       mail.Sender
 	wan        *webauthn.WebAuthn
 	challenges *ChallengeStore
 }
 
-func NewAuthHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mail *mail.Service) *AuthHandler {
+func NewAuthHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mail mail.Sender) *AuthHandler {
 	var wan *webauthn.WebAuthn
 	if cfg.WebAuthnRPID != "" {
 		var err error

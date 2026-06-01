@@ -139,14 +139,14 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		fn(cfg)
 	}
 
-	mailSvc := mail.NewService(mail.SMTPConfig{From: "test@shopmon.io"})
+	mailSender := mail.NoopSender{}
 
 	bus := goqueue.NewBus()
-	h := handler.New(pool, q, nil, cfg, mailSvc, bus)
+	h := handler.New(pool, q, nil, cfg, mailSender, bus)
 
 	// Build chi router matching production setup
 	r := chi.NewRouter()
-	authHandler := auth.NewAuthHandler(pool, q, cfg, mailSvc)
+	authHandler := auth.NewAuthHandler(pool, q, cfg, mailSender)
 
 	r.Route("/api", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.OptionalAuthMiddleware(q))

@@ -4,9 +4,15 @@ package mail
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net/smtp"
 	"strings"
 )
+
+// Sender sends an HTML email to a recipient.
+type Sender interface {
+	Send(to, subject, body string) error
+}
 
 // SMTPConfig holds SMTP connection settings.
 type SMTPConfig struct {
@@ -28,6 +34,15 @@ type Service struct {
 // NewService creates a new mail service.
 func NewService(cfg SMTPConfig) *Service {
 	return &Service{cfg: cfg}
+}
+
+// NoopSender silently discards emails. Useful in tests.
+type NoopSender struct{}
+
+// Send implements Sender.
+func (NoopSender) Send(to, subject, body string) error {
+	slog.Debug("noop mail send", "to", to, "subject", subject)
+	return nil
 }
 
 // Send sends an HTML email.

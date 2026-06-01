@@ -38,11 +38,11 @@ type EnvironmentScrapeHandler struct {
 	queries *queries.Queries
 	cfg     *config.Config
 	bus     *goqueue.Bus
-	mail    *mail.Service
+	mail    mail.Sender
 }
 
 // NewEnvironmentScrapeHandler creates a new EnvironmentScrapeHandler.
-func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, bus *goqueue.Bus, mail *mail.Service) *EnvironmentScrapeHandler {
+func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, bus *goqueue.Bus, mail mail.Sender) *EnvironmentScrapeHandler {
 	return &EnvironmentScrapeHandler{pool: pool, queries: q, cfg: cfg, bus: bus, mail: mail}
 }
 

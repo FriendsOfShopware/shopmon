@@ -29,7 +29,7 @@ type LockCleanup struct{}
 type InvitationCleanup struct{}
 
 // NewBus creates a go-queue Bus backed by PostgreSQL and registers all job handlers.
-func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mailSvc *mail.Service) (*goqueue.Bus, error) {
+func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mailSvc mail.Sender) (*goqueue.Bus, error) {
 	transport := postgres.NewTransportFromPool(pool, postgres.Config{
 		Table: "queue_messages",
 	})
