@@ -54,7 +54,7 @@
               v-bind="
                 ext.storeLink
                   ? {
-                      href: shopwareStoreSearchUrl(ext.name),
+                      href: ext.storeLink,
                       target: '_blank',
                       class: 'hover:text-primary transition-colors',
                     }
@@ -126,10 +126,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 import { formatDate } from "@/helpers/formatter";
-import { shopwareStoreSearchUrl } from "@/helpers/shopware-store";
 import type { components } from "@/types/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
@@ -150,6 +150,7 @@ import IconPowerOff from "~icons/fa6-solid/power-off";
 type Extension = components["schemas"]["EnvironmentExtension"];
 
 const { t } = useI18n();
+const route = useRoute();
 const { environment } = useEnvironmentDetail();
 
 const {
@@ -161,6 +162,14 @@ const {
 
 const activeFilter = ref<"all" | "active" | "inactive" | "updates">("all");
 const searchQuery = ref("");
+
+watch(
+  () => route.query.extension,
+  (extension) => {
+    searchQuery.value = typeof extension === "string" ? extension : "";
+  },
+  { immediate: true },
+);
 
 const filters = [
   { label: t("common.all"), value: "all" as const },

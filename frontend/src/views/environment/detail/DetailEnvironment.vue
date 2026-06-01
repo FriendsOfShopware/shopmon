@@ -163,7 +163,7 @@
             </div>
             <a
               v-if="ext.storeLink"
-              :href="shopwareStoreSearchUrl(ext.name)"
+              :href="ext.storeLink"
               target="_blank"
               class="shrink-0 text-muted-foreground hover:text-foreground"
             >
@@ -326,7 +326,6 @@ import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
-import { shopwareStoreSearchUrl } from "@/helpers/shopware-store";
 import { useI18n } from "vue-i18n";
 
 import { Button } from "@/components/ui/button";
