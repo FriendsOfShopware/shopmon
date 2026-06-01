@@ -99,7 +99,7 @@ services:
       - redis-data:/data
 
   db:
-    image: postgres:18.3
+    image: postgres:18.4
     labels:
       - docker-backup.enable=true
       - docker-backup.shopmon-${ENVIRONMENT}-db-hourly.type=postgres
