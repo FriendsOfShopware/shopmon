@@ -9,6 +9,13 @@ const ExtensionChangelogStub = defineComponent({
   template: '<div class="extension-changelog" />',
 });
 
+const RouterLinkStub = defineComponent({
+  name: "RouterLink",
+  props: ["to"],
+  template:
+    '<a class="router-link-stub" :data-route-name="to.name" :data-environment-id="to.params?.environmentId" :data-extension="to.query?.extension"><slot /></a>',
+});
+
 const mockExtensions = [
   {
     name: "FroshTools",
@@ -27,6 +34,9 @@ const mockExtensions = [
         environmentName: "Environment A",
         environmentOrganizationId: "org-a",
         version: "1.0.0",
+        latestVersion: "1.1.0",
+        active: true,
+        installed: true,
       },
     ],
   },
@@ -74,9 +84,8 @@ describe("ListExtensions", () => {
     return mount(ListExtensions, {
       global: {
         stubs: {
-          RouterLink: defineComponent({
-            template: "<a><slot /></a>",
-          }),
+          RouterLink: RouterLinkStub,
+          "router-link": RouterLinkStub,
           ExtensionChangelog: ExtensionChangelogStub,
           StatusIcon: defineComponent({ template: "<span />" }),
           RatingStars: defineComponent({ template: "<span />" }),
@@ -101,9 +110,8 @@ describe("ListExtensions", () => {
     const wrapper = mount(ListExtensions, {
       global: {
         stubs: {
-          RouterLink: defineComponent({
-            template: "<a><slot /></a>",
-          }),
+          RouterLink: RouterLinkStub,
+          "router-link": RouterLinkStub,
           ExtensionChangelog: ExtensionChangelogStub,
           StatusIcon: defineComponent({ template: "<span />" }),
           RatingStars: defineComponent({ template: "<span />" }),
@@ -135,5 +143,21 @@ describe("ListExtensions", () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find(".extension-changelog").exists()).toBe(true);
+  });
+
+  it("links installed environments to the environment extensions tab", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const expandButton = wrapper.find("button.size-7");
+    expect(expandButton.exists()).toBe(true);
+    await expandButton.trigger("click");
+
+    const environmentLink = wrapper.find(".router-link-stub");
+    expect(environmentLink.attributes("data-route-name")).toBe(
+      "account.environments.detail.extensions",
+    );
+    expect(environmentLink.attributes("data-environment-id")).toBe("1");
+    expect(environmentLink.attributes("data-extension")).toBe("FroshTools");
   });
 });

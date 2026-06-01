@@ -134,11 +134,11 @@
                 v-for="env in ext.environments"
                 :key="env.environmentId"
                 :to="{
-                  name: 'account.environments.detail',
+                  name: 'account.environments.detail.extensions',
                   params: {
-                    organizationId: env.environmentOrganizationId,
                     environmentId: env.environmentId,
                   },
+                  query: { extension: ext.name },
                 }"
                 class="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-accent"
               >
