@@ -12,8 +12,7 @@ const ExtensionChangelogStub = defineComponent({
 const RouterLinkStub = defineComponent({
   name: "RouterLink",
   props: ["to"],
-  template:
-    '<a class="router-link-stub" :data-route-name="to.name" :data-environment-id="to.params?.environmentId" :data-extension="to.query?.extension"><slot /></a>',
+  template: "<a><slot /></a>",
 });
 
 const mockExtensions = [
@@ -145,19 +144,14 @@ describe("ListExtensions", () => {
     expect(wrapper.find(".extension-changelog").exists()).toBe(true);
   });
 
-  it("links installed environments to the environment extensions tab", async () => {
+  it("links store-backed extensions to Shopware Store search", async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    const expandButton = wrapper.find("button.size-7");
-    expect(expandButton.exists()).toBe(true);
-    await expandButton.trigger("click");
-
-    const environmentLink = wrapper.find(".router-link-stub");
-    expect(environmentLink.attributes("data-route-name")).toBe(
-      "account.environments.detail.extensions",
+    const storeLink = wrapper.find(
+      'a[href="https://store.shopware.com/en/search?search=FroshTools"]',
     );
-    expect(environmentLink.attributes("data-environment-id")).toBe("1");
-    expect(environmentLink.attributes("data-extension")).toBe("FroshTools");
+    expect(storeLink.exists()).toBe(true);
+    expect(storeLink.attributes("target")).toBe("_blank");
   });
 });

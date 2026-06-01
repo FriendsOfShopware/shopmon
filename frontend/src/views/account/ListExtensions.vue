@@ -70,7 +70,7 @@
                   v-bind="
                     ext.storeLink
                       ? {
-                          href: ext.storeLink,
+                          href: shopwareStoreSearchUrl(ext.name),
                           target: '_blank',
                           class: 'hover:text-primary transition-colors',
                         }
@@ -134,11 +134,11 @@
                 v-for="env in ext.environments"
                 :key="env.environmentId"
                 :to="{
-                  name: 'account.environments.detail.extensions',
+                  name: 'account.environments.detail',
                   params: {
+                    organizationId: env.environmentOrganizationId,
                     environmentId: env.environmentId,
                   },
-                  query: { extension: ext.name },
                 }"
                 class="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-accent"
               >
@@ -175,6 +175,7 @@ import RatingStars from "@/components/RatingStars.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import { api } from "@/helpers/api";
+import { shopwareStoreSearchUrl } from "@/helpers/shopware-store";
 import type { components } from "@/types/api";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";

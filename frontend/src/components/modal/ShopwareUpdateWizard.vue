@@ -62,7 +62,9 @@
                 <component
                   :is="extension.storeLink ? 'a' : 'span'"
                   v-bind="
-                    extension.storeLink ? { href: extension.storeLink, target: '_blank' } : {}
+                    extension.storeLink
+                      ? { href: shopwareStoreSearchUrl(extension.name), target: '_blank' }
+                      : {}
                   "
                 >
                   <strong>{{ extension.label }}</strong>
@@ -96,6 +98,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { shopwareStoreSearchUrl } from "@/helpers/shopware-store";
 
 interface ExtensionCompatibility {
   type: string;
