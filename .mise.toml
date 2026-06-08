@@ -91,16 +91,36 @@ run = [
   "cd frontend && npm run generate:api",
 ]
 
-[tasks.lint]
-description = "Run all linters"
+[tasks."lint:api"]
+description = "Run Go linter and tests"
 run = [
   "cd api && golangci-lint run",
   "cd api && go test ./internal/... -count=1 -timeout 120s",
-  "cd frontend && npm run lint",
-  "cd frontend && npm run format",
-  "cd frontend && npm run tsc",
-  "cd frontend && npm run test:run",
 ]
+
+[tasks."lint:fe:oxlint"]
+description = "Run frontend oxlint"
+run = "cd frontend && npm run lint"
+
+[tasks."lint:fe:format"]
+description = "Check frontend formatting"
+run = "cd frontend && npm run format"
+
+[tasks."lint:fe:tsc"]
+description = "Type-check frontend"
+run = "cd frontend && npm run tsc"
+
+[tasks."lint:fe:test"]
+description = "Run frontend tests"
+run = "cd frontend && npm run test:run"
+
+[tasks."lint:fe"]
+description = "Run all frontend checks in parallel"
+run = { tasks = ["lint:fe:oxlint", "lint:fe:format", "lint:fe:tsc", "lint:fe:test"] }
+
+[tasks.lint]
+description = "Run all linters (Go and frontend checks in parallel)"
+run = { tasks = ["lint:api", "lint:fe"] }
 
 [tasks."lint-fix"]
 description = "Fix lint issues"
