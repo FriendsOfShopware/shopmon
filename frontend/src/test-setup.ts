@@ -29,10 +29,19 @@ if (typeof HTMLDialogElement !== "undefined") {
 config.global.plugins = config.global.plugins || [];
 config.global.plugins.push(i18n as any);
 
-// Globally stub router-link to prevent Vue warnings
+// Globally stub router-link/router-view to prevent Vue warnings.
+// Components use both kebab-case (<router-link>) and PascalCase (<RouterLink>),
+// and Vue resolves stub keys case-sensitively, so register every variant.
+const routerLinkStub = {
+  props: ["to"],
+  template: '<a :href="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>',
+};
+const routerViewStub = {
+  template: "<div><slot /></div>",
+};
 config.global.stubs = {
-  "router-link": {
-    props: ["to"],
-    template: '<a :href="to"><slot /></a>',
-  },
+  "router-link": routerLinkStub,
+  RouterLink: routerLinkStub,
+  "router-view": routerViewStub,
+  RouterView: routerViewStub,
 };

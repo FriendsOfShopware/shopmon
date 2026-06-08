@@ -28,6 +28,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Node >=24 ships a native experimental localStorage that warns on access
+    // when no --localstorage-file is given. Disable it so jsdom provides its own.
+    execArgv: ["--no-experimental-webstorage"],
     include: ["src/**/*.{test,spec}.{js,mjs,ts,mts,jsx,tsx}"],
     exclude: ["node_modules", "dist", ".idea", ".git", ".cache"],
     coverage: {
