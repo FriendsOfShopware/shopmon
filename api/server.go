@@ -115,7 +115,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
-	r.Use(chimiddleware.RealIP)
+	if len(cfg.TrustedProxies) > 0 {
+		r.Use(chimiddleware.ClientIPFromXFF(cfg.TrustedProxies...))
+	} else {
+		r.Use(chimiddleware.ClientIPFromRemoteAddr)
+	}
 	r.Use(middleware.TraceIDHeader)
 
 	// Auth handler

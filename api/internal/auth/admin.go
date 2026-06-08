@@ -7,6 +7,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -137,8 +138,11 @@ func (h *AuthHandler) AdminImpersonate(w http.ResponseWriter, r *http.Request, u
 	token := generateToken()
 	sessionID := "imp-" + generateToken()[:16]
 
-	ipAddress := r.RemoteAddr
 	userAgent := r.UserAgent()
+	ipAddress := chimiddleware.GetClientIP(r.Context())
+	if ipAddress == "" {
+		ipAddress = r.RemoteAddr
+	}
 	adminID := su.User.ID
 
 	_, err = h.queries.AdminCreateImpersonationSession(r.Context(), queries.AdminCreateImpersonationSessionParams{
