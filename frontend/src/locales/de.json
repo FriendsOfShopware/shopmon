@@ -748,8 +748,7 @@
   },
   "extensionChangelog": {
     "title": "Änderungsprotokoll",
-    "noData": "Keine Änderungsprotokolldaten vorhanden",
-    "notCompatible": "nicht kompatibel mit Ihrer Version"
+    "noData": "Keine Änderungsprotokolldaten vorhanden"
   },
   "updateWizard": {
     "title": "Shopware Erweiterungs-Kompatibilitätsprüfung",

@@ -67,35 +67,36 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 			continue
 		}
 
-		upgradeVersion := extensions[i].LatestVersion
-
 		extensions[i].LatestVersion = strPtr(sp.Version)
 		extensions[i].RatingAverage = &sp.RatingAverage
 
 		storeLink := strings.ReplaceAll(sp.StoreLink, "http://store.shopware.com:80", "https://store.shopware.com")
 		extensions[i].StoreLink = &storeLink
 
-		// Generate changelog for versions newer than installed but within upgrade path
-		if sp.Version != extensions[i].Version {
-			var changelogs []extensionChangelog
-			for _, cl := range sp.Changelogs {
-				if versionCompare(cl.Version, extensions[i].Version) > 0 {
-					if upgradeVersion == nil || versionCompare(cl.Version, *upgradeVersion) <= 0 {
-						isCompatible := versionCompare(cl.Version, *extensions[i].LatestVersion) <= 0
-						changelogs = append(changelogs, extensionChangelog{
-							Version:      cl.Version,
-							Text:         cl.Text,
-							CreationDate: parseStoreDate(cl.CreationDate.Date),
-							IsCompatible: isCompatible,
-						})
-					}
-				}
-			}
-			if len(changelogs) > 0 {
-				extensions[i].Changelog = changelogs
-			}
+		if changelogs := buildCompatibleChangelogs(sp, extensions[i].Version); len(changelogs) > 0 {
+			extensions[i].Changelog = changelogs
 		}
 	}
+}
+
+// buildCompatibleChangelogs returns store changelog entries strictly newer than
+// the installed version and not exceeding sp.Version. sp.Version is the latest
+// extension version the store reports as compatible with the shop's Shopware
+// version (controlled by the shopwareVersion query param to the store API),
+// so capping at it excludes entries that require a newer Shopware.
+func buildCompatibleChangelogs(sp *storePlugin, installedVersion string) []extensionChangelog {
+	var changelogs []extensionChangelog
+	for _, cl := range sp.Changelogs {
+		if versionCompare(cl.Version, installedVersion) > 0 &&
+			versionCompare(cl.Version, sp.Version) <= 0 {
+			changelogs = append(changelogs, extensionChangelog{
+				Version:      cl.Version,
+				Text:         cl.Text,
+				CreationDate: parseStoreDate(cl.CreationDate.Date),
+			})
+		}
+	}
+	return changelogs
 }
 
 // calculateExtensionDiff compares old (from DB) and new (from scrape) extensions.
@@ -134,7 +135,16 @@ func calculateExtensionDiff(oldExtensions []queries.EnvironmentExtension, newExt
 					if state == "updated" && old.Changelog != nil {
 						var cl []extensionChangelog
 						if json.Unmarshal(old.Changelog, &cl) == nil {
-							diff.Changelog = cl
+							// Stored changelog was capped at the latest compatible version
+							// at scrape time, which may be ahead of the version the shop
+							// actually updated to. Keep only entries up to newExt.Version.
+							filtered := cl[:0]
+							for _, entry := range cl {
+								if versionCompare(entry.Version, newExt.Version) <= 0 {
+									filtered = append(filtered, entry)
+								}
+							}
+							diff.Changelog = filtered
 						}
 					}
 					diffs = append(diffs, diff)

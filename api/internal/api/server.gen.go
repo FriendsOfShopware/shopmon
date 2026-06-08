@@ -375,7 +375,6 @@ type ErrorResponse struct {
 // ExtensionChangelogEntry defines model for ExtensionChangelogEntry.
 type ExtensionChangelogEntry struct {
 	CreationDate time.Time `json:"creationDate"`
-	IsCompatible bool      `json:"isCompatible"`
 	Text         string    `json:"text"`
 	Version      string    `json:"version"`
 }

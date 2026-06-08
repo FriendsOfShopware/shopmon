@@ -93,7 +93,6 @@ type extensionChangelog struct {
 	Version      string    `json:"version"`
 	Text         string    `json:"text"`
 	CreationDate time.Time `json:"creationDate"`
-	IsCompatible bool      `json:"isCompatible"`
 }
 
 type extensionDiff struct {
