@@ -46,40 +46,6 @@ func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *co
 	return &EnvironmentScrapeHandler{pool: pool, queries: q, cfg: cfg, bus: bus, mail: mail}
 }
 
-// HandleScrapeAll scrapes all environments.
-func (h *EnvironmentScrapeHandler) HandleScrapeAll(ctx context.Context, _ EnvironmentScrapeAll) error {
-	ctx, span := tracer.Start(ctx, "environment.scrape_all")
-	defer span.End()
-
-	environments, err := h.queries.GetAllEnvironments(ctx)
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("get all environments: %w", err)
-	}
-
-	span.SetAttributes(attribute.Int("environment.count", len(environments)))
-
-	for _, env := range environments {
-		if env.ConnectionIssueCount >= 3 {
-			slog.Warn("skipping environment due to connection issues", "environmentId", env.ID, "count", env.ConnectionIssueCount)
-			continue
-		}
-
-		if err := h.scrapeEnvironment(ctx, env); err != nil {
-			slog.Error("failed to scrape environment", "environmentId", env.ID, "error", err)
-			if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-				LastScrapedError: strPtr(err.Error()),
-				ID:               env.ID,
-			}); err != nil {
-				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
-			}
-		}
-	}
-
-	return nil
-}
-
 // HandleScrape scrapes a single environment by ID from the message payload.
 func (h *EnvironmentScrapeHandler) HandleScrape(ctx context.Context, msg EnvironmentScrape) error {
 	ctx, span := tracer.Start(ctx, "environment.scrape")
@@ -130,8 +96,8 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	client := shopware.NewClient(env.Url, env.ClientID, clientSecret, env.EnvironmentToken)
 
 	{
-		_, authSpan := tracer.Start(ctx, "environment.scrape.authenticate")
-		err := client.Authenticate()
+		authCtx, authSpan := tracer.Start(ctx, "environment.scrape.authenticate")
+		err := client.Authenticate(authCtx)
 		if err != nil {
 			authSpan.RecordError(err)
 			authSpan.SetStatus(codes.Error, err.Error())
@@ -569,7 +535,7 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		LastScrapedError: nil,
 		Favicon:          favicon,
 		EnvironmentImage: nil,
-		LastChangelog:     lastChangelogJSON,
+		LastChangelog:    lastChangelogJSON,
 		ID:               env.ID,
 	}); err != nil {
 		persistSpan.RecordError(err)

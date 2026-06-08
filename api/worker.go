@@ -66,18 +66,44 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Cron scheduler for recurring tasks
+	// Cron scheduler for recurring tasks.
+	// Aggregate scrapes fan out into one per-environment queue task each so the
+	// queue can retry and parallelise individual environments independently.
 	c := cron.New()
 	if _, err := c.AddFunc("0 * * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.EnvironmentScrapeAll{}); err != nil {
-			slog.Error("failed to dispatch environment scrape all", "error", err)
+		ctx := context.Background()
+		environments, err := q.GetAllEnvironments(ctx)
+		if err != nil {
+			slog.Error("failed to list environments for scrape", "error", err)
+			return
+		}
+		for _, env := range environments {
+			// Skip environments that have failed to connect repeatedly so we
+			// back off instead of hammering an unreachable shop every hour.
+			if env.ConnectionIssueCount >= 3 {
+				continue
+			}
+			if err := goqueue.Dispatch(ctx, bus, jobs.EnvironmentScrape{EnvironmentID: env.ID}); err != nil {
+				slog.Error("failed to dispatch environment scrape", "environmentId", env.ID, "error", err)
+			}
 		}
 	}); err != nil {
 		slog.Error("failed to add environment scrape cron", "error", err)
 	}
 	if _, err := c.AddFunc("0 3 * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.SitespeedScrapeAll{}); err != nil {
-			slog.Error("failed to dispatch sitespeed scrape all", "error", err)
+		if cfg.SitespeedEndpoint == "" || cfg.SitespeedAPIKey == "" {
+			return
+		}
+		ctx := context.Background()
+		environments, err := q.GetEnvironmentsWithSitespeedEnabled(ctx)
+		if err != nil {
+			slog.Error("failed to list environments for sitespeed scrape", "error", err)
+			return
+		}
+		for _, env := range environments {
+			if err := goqueue.Dispatch(ctx, bus, jobs.SitespeedScrape{EnvironmentID: env.ID}); err != nil {
+				slog.Error("failed to dispatch sitespeed scrape", "environmentId", env.ID, "error", err)
+			}
 		}
 	}); err != nil {
 		slog.Error("failed to add sitespeed scrape cron", "error", err)
@@ -100,8 +126,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	// Worker
 	worker := goqueue.NewWorker(bus, goqueue.WorkerConfig{
-		Concurrency:    10,
-		HandlerTimeout: 10 * time.Minute,
+		Concurrency:     10,
+		HandlerTimeout:  10 * time.Minute,
+		ShutdownTimeout: 1 * time.Minute,
 		RetryStrategy: goqueue.RetryStrategy{
 			MaxRetries: 3,
 			Delay:      5 * time.Second,
@@ -119,7 +146,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		},
 	})
 
+	workerDone := make(chan struct{})
 	go func() {
+		defer close(workerDone)
 		slog.Info("starting worker")
 		if err := worker.Run(ctx); err != nil && err != context.Canceled {
 			slog.Error("worker error", "error", err)
@@ -127,8 +156,30 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}()
 
 	<-ctx.Done()
-	slog.Info("shutting down worker...")
-	c.Stop()
+	slog.Info("shutting down worker, draining in-flight jobs...")
+
+	// Stop scheduling new cron tasks and wait for any running cron job to finish.
+	cronCtx := c.Stop()
+
+	// worker.Run drains in-flight jobs (bounded by ShutdownTimeout) once ctx is
+	// cancelled. Wait for it to finish before deferred resources (pool, otel) are
+	// torn down, with an outer bound so shutdown cannot hang forever.
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer drainCancel()
+
+	select {
+	case <-workerDone:
+		slog.Info("worker drained")
+	case <-drainCtx.Done():
+		slog.Warn("worker drain timed out")
+	}
+
+	select {
+	case <-cronCtx.Done():
+	case <-drainCtx.Done():
+		slog.Warn("cron drain timed out")
+	}
+
 	slog.Info("worker stopped")
 
 	return nil

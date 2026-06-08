@@ -2,16 +2,40 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+// isS3NotFound reports whether err indicates the requested S3 object does not
+// exist (as opposed to a transport, permission, or other genuine failure).
+func isS3NotFound(err error) bool {
+	var noSuchKey *types.NoSuchKey
+	if errors.As(err, &noSuchKey) {
+		return true
+	}
+	var notFound *types.NotFound
+	if errors.As(err, &notFound) {
+		return true
+	}
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		switch apiErr.ErrorCode() {
+		case "NoSuchKey", "NotFound", "404":
+			return true
+		}
+	}
+	return false
+}
 
 // GetDeployments lists deployments for an environment.
 func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetDeploymentsParams) {
@@ -89,10 +113,15 @@ func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, environm
 	var output *string
 	if h.storage != nil {
 		o, err := h.storage.GetDeploymentOutput(r.Context(), int(row.ID))
-		if err == nil {
+		switch {
+		case err == nil:
 			output = &o
-		} else {
-			slog.Warn("failed to get deployment output from S3", "deploymentId", row.ID, "error", err)
+		case isS3NotFound(err):
+			// No output stored yet: legitimately absent, return null.
+		default:
+			slog.Error("failed to get deployment output from S3", "deploymentId", row.ID, "error", err)
+			httputil.WriteError(w, http.StatusBadGateway, "failed to get deployment output")
+			return
 		}
 	}
 
@@ -155,8 +184,8 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	// Look up the API key
-	apiKey, err := h.queries.GetApiKeyByToken(r.Context(), token)
+	// Look up the API key by its hashed-at-rest token.
+	apiKey, err := h.queries.GetApiKeyByToken(r.Context(), HashApiKeyToken(token))
 	if err != nil {
 		httputil.WriteError(w, http.StatusUnauthorized, "invalid api key")
 		return
@@ -187,6 +216,15 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 	var req api.CreateCliDeploymentRequest
 	if err := httputil.DecodeBody(r, &req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.EnvironmentId <= 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "environmentId is required")
+		return
+	}
+	if strings.TrimSpace(req.Command) == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "command is required")
 		return
 	}
 
@@ -241,10 +279,11 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 	if h.storage != nil {
 		url, err := h.storage.PresignUpload(r.Context(), int(deploymentID))
 		if err != nil {
-			slog.Error("failed to get presigned upload URL", "error", err)
-		} else {
-			uploadURL = url
+			slog.Error("failed to get presigned upload URL", "deploymentId", deploymentID, "error", err)
+			httputil.WriteError(w, http.StatusBadGateway, "failed to create upload url")
+			return
 		}
+		uploadURL = url
 	}
 
 	httputil.WriteJSON(w, http.StatusCreated, api.CreateCliDeploymentResponse{

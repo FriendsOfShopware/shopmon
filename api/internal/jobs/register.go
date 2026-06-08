@@ -17,11 +17,9 @@ const TransportName = "async"
 
 // Message types — plain structs for go-queue's generic dispatch.
 
-type EnvironmentScrapeAll struct{}
 type EnvironmentScrape struct {
 	EnvironmentID int32 `json:"environment_id"`
 }
-type SitespeedScrapeAll struct{}
 type SitespeedScrape struct {
 	EnvironmentID int32 `json:"environment_id"`
 }
@@ -48,9 +46,7 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 	sitespeed := NewSitespeedScrapeHandler(pool, q, cfg)
 	cleanup := NewCleanupHandler(q)
 
-	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrapeAll)
 	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrape)
-	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrapeAll)
 	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleLockCleanup)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleInvitationCleanup)

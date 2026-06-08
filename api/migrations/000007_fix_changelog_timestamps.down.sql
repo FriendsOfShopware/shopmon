@@ -1,1 +1,7 @@
--- No-op: we don't revert timestamp format fixes
+-- No-op (irreversible by design).
+--
+-- The up migration rewrites creationDate from "YYYY-MM-DD HH:MM:SS.ffffff" to
+-- the RFC3339 form "YYYY-MM-DDTHH:MM:SSZ", dropping the microsecond fraction.
+-- That information is lost, so a faithful revert is impossible. The RFC3339
+-- values remain valid for the application, so we intentionally leave the data
+-- as-is rather than approximate (which would fabricate zeroed microseconds).

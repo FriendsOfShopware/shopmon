@@ -2,7 +2,9 @@ package checker
 
 import (
 	"context"
+	"log/slog"
 	"sync"
+	"time"
 )
 
 type Status string
@@ -147,6 +149,9 @@ func (o *Output) Result() Result {
 
 // RunAll runs all checkers concurrently and returns the aggregated result.
 func RunAll(ctx context.Context, input Input) Result {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	output := NewOutput(input.Ignores)
 
 	var wg sync.WaitGroup
@@ -162,6 +167,11 @@ func RunAll(ctx context.Context, input Input) Result {
 	for _, fn := range checkers {
 		go func(check func(context.Context, Input, *Output)) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("checker panicked", "panic", r)
+				}
+			}()
 			check(ctx, input, output)
 		}(fn)
 	}

@@ -2419,7 +2419,7 @@ components:
       in: path
       required: true
       schema:
-        type: integer
+        type: string
       description: API key ID
 
     TokenId:
@@ -3251,7 +3251,7 @@ components:
         - lastUsedAt
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         scopes:
@@ -3288,7 +3288,7 @@ components:
         - scopes
       properties:
         id:
-          type: integer
+          type: string
         token:
           type: string
         name:

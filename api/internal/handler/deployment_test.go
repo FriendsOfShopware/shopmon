@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/handler"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -148,7 +149,7 @@ func TestCreateCliDeployment(t *testing.T) {
 	_, err := env.Pool.Exec(t.Context(), `
 		INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
 		VALUES ('apikey-1', $1, 'CI Key', $2, '["deployments"]'::jsonb, NOW())
-	`, shopID, apiKeyToken)
+	`, shopID, handler.HashApiKeyToken(apiKeyToken))
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -218,7 +219,7 @@ func TestCreateCliDeployment_WrongShop(t *testing.T) {
 	_, err := env.Pool.Exec(t.Context(), `
 		INSERT INTO shop_api_key (id, shop_id, name, token, scopes, created_at)
 		VALUES ('apikey-ws', $1, 'Wrong Shop Key', $2, '["deployments"]'::jsonb, NOW())
-	`, shopID1, apiKeyToken)
+	`, shopID1, handler.HashApiKeyToken(apiKeyToken))
 	require.NoError(t, err)
 
 	now := time.Now()

@@ -2,17 +2,25 @@ package handler
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/google/uuid"
 )
+
+// HashApiKeyToken returns the sha256 hex digest of an API key token. Tokens are
+// random 64-char hex (high entropy), so a plain sha256 is sufficient and allows
+// constant-time comparison by comparing the stored and computed hashes.
+func HashApiKeyToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
 
 // GetApiKeyScopes returns available API key scopes.
 func (h *Handler) GetApiKeyScopes(w http.ResponseWriter, r *http.Request) {
@@ -60,11 +68,8 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgId api.O
 			scopes = []string{}
 		}
 
-		// Parse ID string to int for openapi type
-		id, _ := strconv.Atoi(row.ID)
-
 		result = append(result, api.ApiKey{
-			Id:         id,
+			Id:         row.ID,
 			Name:       row.Name,
 			Scopes:     scopes,
 			CreatedAt:  pgtimeToTime(row.CreatedAt),
@@ -100,9 +105,11 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	// Generate a random token
+	// Generate a random token. This plaintext is returned to the user exactly
+	// once; only its hash is persisted.
 	tokenBytes := make([]byte, 32)
 	if _, err := rand.Read(tokenBytes); err != nil {
+		slog.Error("failed to generate api key token", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
@@ -110,6 +117,7 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 
 	scopesJSON, err := json.Marshal(req.Scopes)
 	if err != nil {
+		slog.Error("failed to marshal api key scopes", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to serialize scopes")
 		return
 	}
@@ -119,7 +127,7 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		ID:     id,
 		ShopID: int32(shopId),
 		Name:   req.Name,
-		Token:  token,
+		Token:  HashApiKeyToken(token),
 		Scopes: scopesJSON,
 	})
 	if err != nil {
@@ -128,9 +136,8 @@ func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgId api
 		return
 	}
 
-	idInt, _ := strconv.Atoi(id)
 	httputil.WriteJSON(w, http.StatusCreated, api.CreateApiKeyResponse{
-		Id:     idInt,
+		Id:     id,
 		Name:   req.Name,
 		Scopes: req.Scopes,
 		Token:  token,
@@ -152,7 +159,7 @@ func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgId api
 	}
 
 	if err := h.queries.DeleteApiKey(r.Context(), queries.DeleteApiKeyParams{
-		ID:     strconv.Itoa(keyId),
+		ID:     keyId,
 		ShopID: int32(shopId),
 	}); err != nil {
 		slog.Error("failed to delete api key", "error", err)

@@ -175,7 +175,7 @@ ALTER TABLE "deployment" ADD CONSTRAINT fk_deployment_environment
 
 CREATE TABLE "environment_sitespeed" (
   "id" serial PRIMARY KEY NOT NULL,
-  "environment_id" integer REFERENCES "environment"("id"),
+  "environment_id" integer REFERENCES "environment"("id") ON DELETE cascade,
   "deployment_id" integer REFERENCES "deployment"("id") ON DELETE set null,
   "created_at" timestamp NOT NULL,
   "ttfb" integer,
@@ -188,7 +188,7 @@ CREATE TABLE "environment_sitespeed" (
 
 CREATE TABLE "environment_changelog" (
   "id" serial PRIMARY KEY NOT NULL,
-  "environment_id" integer REFERENCES "environment"("id"),
+  "environment_id" integer REFERENCES "environment"("id") ON DELETE cascade,
   "extensions" jsonb NOT NULL,
   "old_shopware_version" text,
   "new_shopware_version" text,
@@ -269,3 +269,9 @@ CREATE TABLE "lock" (
   "expires" timestamp NOT NULL,
   "created_at" timestamp NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_passkey_credential_id ON passkey(credential_id);
+CREATE INDEX IF NOT EXISTS idx_verification_value ON verification(value);
+CREATE INDEX IF NOT EXISTS idx_sso_provider_domain ON sso_provider(domain);
+CREATE INDEX IF NOT EXISTS idx_account_provider_user ON account(provider_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_account_provider_account ON account(provider_id, account_id);

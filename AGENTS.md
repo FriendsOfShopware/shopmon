@@ -19,16 +19,17 @@ api/                          <-- Go API (single binary)
   migrate.go                  <-- Database migration command
   fixtures.go                 <-- Test fixture seeding
   internal/
+    api/                      <-- oapi-codegen generated server interface (DO NOT EDIT)
+    authapi/                  <-- oapi-codegen generated auth server interface (DO NOT EDIT)
     auth/                     <-- Authentication (credentials, OAuth, SSO, passkeys, orgs, admin)
     config/                   <-- Environment configuration
     crypto/                   <-- AES-GCM encryption
     database/queries/         <-- sqlc-generated data access (DO NOT EDIT)
     handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
     httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
-    jobs/                     <-- Background jobs (environment scrape, sitespeed, cleanup)
+    jobs/                     <-- Background job handlers + task types (environment scrape, sitespeed, cleanup)
     mail/                     <-- SMTP service + email templates
     middleware/               <-- HTTP middleware (auth, org membership, environment access)
-    queue/                    <-- Queue task type definitions
     shopware/                 <-- Shopware HTTP client
       checker/                <-- Environment health check system
     storage/                  <-- S3 storage for deployment outputs
@@ -38,7 +39,6 @@ api/                          <-- Go API (single binary)
   migrations/                 <-- SQL migration files (golang-migrate)
   openapi/
     spec.yaml                 <-- OpenAPI 3.0.3 specification (source of truth for API)
-    generated/                <-- oapi-codegen generated server interface (DO NOT EDIT)
   sql/
     schema.sql                <-- Full DDL for sqlc
     queries/                  <-- sqlc query definitions
@@ -115,7 +115,7 @@ Key rules:
 
 - All queries live in `sql/queries/*.sql` — one file per domain (shop.sql, user.sql, etc.)
 - Generated Go code is in `internal/database/queries/` — **never edit generated files**
-- To add/change a query: edit the `.sql` file, then run `make generate`
+- To add/change a query: edit the `.sql` file, then run `mise run generate`
 - Query naming convention: `-- name: VerbNoun :one|:many|:exec`
 
 ### Background Jobs
@@ -130,16 +130,16 @@ Key rules:
 - Integration tests using testcontainers (real Postgres + Redis)
 - Test helpers in `internal/testutil/` — `Setup(t)` returns a `TestEnv` with seeded DB
 - Seed data with `env.SeedUser()`, `env.SeedOrganization()`, `env.SeedShop()`, etc.
-- Run tests: `make test`
+- Run tests: `mise run test`
 
 ### API Changes
 
 When adding or modifying API endpoints:
 
 1. Edit `openapi/spec.yaml` (add paths, schemas, parameters)
-2. Run `make generate` (regenerates server interface)
+2. Run `mise run generate` (regenerates server interface)
 3. Implement the new method on `Handler` in `internal/handler/`
-4. Add sqlc queries if needed (`sql/queries/`, then `make generate`)
+4. Add sqlc queries if needed (`sql/queries/`, then `mise run generate`)
 
 ## CLI Commands
 
@@ -156,11 +156,11 @@ shopmon fixtures --skip-shop # Seed without shop data
 ## Development
 
 ```bash
-make up              # Start infrastructure (Postgres, Redis, demo shop, Mailpit)
-make migrate         # Apply migrations
-make load-fixtures   # Reset DB + migrate + seed fixtures
-make dev             # Run API server + frontend
-make dev-worker      # Run background worker
-make test            # Run integration tests
-make generate        # Regenerate sqlc + oapi-codegen
+mise run up              # Start infrastructure (Postgres, Redis, demo shop, Mailpit)
+mise run migrate         # Apply migrations
+mise run load-fixtures   # Reset DB + migrate + seed fixtures
+mise run dev             # Run API server + worker + frontend
+mise run dev:worker      # Run background worker only
+mise run test            # Run integration tests
+mise run generate        # Regenerate sqlc + oapi-codegen
 ```

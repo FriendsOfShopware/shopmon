@@ -120,11 +120,6 @@ func (h *Handler) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Enqueue scrape task
-	if err := goqueue.Dispatch(r.Context(), h.bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
-		slog.Error("failed to enqueue scrape task", "error", err)
-	}
-
 	httputil.WriteJSON(w, http.StatusCreated, map[string]interface{}{"id": environmentID})
 }
 

@@ -1,6 +1,10 @@
 package mail
 
-import "github.com/matcornic/hermes"
+import (
+	"log/slog"
+
+	"github.com/matcornic/hermes"
+)
 
 func newHermes() hermes.Hermes {
 	return hermes.Hermes{
@@ -98,8 +102,23 @@ func BuildShopAlertEmail(userName, shopName, alertMessage string) string {
 	})
 }
 
+// generate renders an email into a body that carries both the plain-text and
+// HTML representations. The two parts are packed around bodyPartSeparator so the
+// body can flow through the single-string Sender.Send signature; Send splits
+// them back apart to build a multipart/alternative message. On render errors it
+// logs and falls back to whatever was produced.
 func generate(email hermes.Email) string {
 	h := newHermes()
-	body, _ := h.GenerateHTML(email)
-	return body
+
+	html, err := h.GenerateHTML(email)
+	if err != nil {
+		slog.Error("generate html email", "error", err)
+	}
+
+	text, err := h.GeneratePlainText(email)
+	if err != nil {
+		slog.Error("generate plain text email", "error", err)
+	}
+
+	return text + bodyPartSeparator + html
 }

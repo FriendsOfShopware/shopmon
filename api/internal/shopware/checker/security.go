@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
@@ -31,7 +32,7 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		return
 	}
 
-	resp, err := httputil.NewHTTPClient().Do(req)
+	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(15 * time.Second)).Do(req)
 	if err != nil {
 		slog.Warn("failed to fetch security advisories", "error", err)
 		return

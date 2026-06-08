@@ -186,14 +186,20 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Handler: handler,
 	}
 
+	serverErr := make(chan error, 1)
 	go func() {
 		slog.Info("starting server", "addr", cfg.ListenAddr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("server error", "error", err)
+			serverErr <- err
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case err := <-serverErr:
+		return err
+	case <-ctx.Done():
+	}
+
 	slog.Info("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

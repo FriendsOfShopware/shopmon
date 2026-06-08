@@ -8,12 +8,22 @@ UPDATE "user" SET notifications = (
   ), '[]'::jsonb) FROM jsonb_array_elements(notifications) elem
 ) WHERE notifications::text LIKE '%environment-%';
 
--- Rename unique constraints back
-ALTER TABLE environment_cache RENAME CONSTRAINT environment_cache_environment_id_unique TO shop_cache_shop_id_unique;
-ALTER TABLE environment_check RENAME CONSTRAINT environment_check_environment_id_check_id_unique TO shop_check_shop_id_check_id_unique;
-ALTER TABLE environment_scheduled_task RENAME CONSTRAINT environment_scheduled_task_environment_id_task_id_unique TO shop_scheduled_task_shop_id_task_id_unique;
-ALTER TABLE environment_queue RENAME CONSTRAINT environment_queue_environment_id_name_unique TO shop_queue_shop_id_name_unique;
-ALTER TABLE environment_extension RENAME CONSTRAINT environment_extension_environment_id_name_unique TO shop_extension_shop_id_name_unique;
+-- Rename unique constraints back (reverse of the up: environment_*_key -> shop_*_key)
+DO $$ BEGIN
+  ALTER TABLE environment_cache RENAME CONSTRAINT environment_cache_environment_id_key TO shop_cache_shop_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_check RENAME CONSTRAINT environment_check_environment_id_check_id_key TO shop_check_shop_id_check_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_scheduled_task RENAME CONSTRAINT environment_scheduled_task_environment_id_task_id_key TO shop_scheduled_task_shop_id_task_id_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_queue RENAME CONSTRAINT environment_queue_environment_id_name_key TO shop_queue_shop_id_name_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE environment_extension RENAME CONSTRAINT environment_extension_environment_id_name_key TO shop_extension_shop_id_name_key;
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
 -- Rename indexes back
 ALTER INDEX idx_environment_extension_environment RENAME TO idx_shop_extension_shop;

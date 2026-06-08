@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -24,20 +25,6 @@ type SitespeedScrapeHandler struct {
 
 func NewSitespeedScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config) *SitespeedScrapeHandler {
 	return &SitespeedScrapeHandler{pool: pool, queries: q, cfg: cfg}
-}
-
-func (h *SitespeedScrapeHandler) HandleScrapeAll(ctx context.Context, _ SitespeedScrapeAll) error {
-	environments, err := h.queries.GetEnvironmentsWithSitespeedEnabled(ctx)
-	if err != nil {
-		return fmt.Errorf("get environments with sitespeed: %w", err)
-	}
-
-	for _, env := range environments {
-		if err := h.scrapeEnvironment(ctx, env); err != nil {
-			slog.Error("failed to scrape sitespeed", "environmentId", env.ID, "error", err)
-		}
-	}
-	return nil
 }
 
 func (h *SitespeedScrapeHandler) HandleScrape(ctx context.Context, msg SitespeedScrape) error {
@@ -58,13 +45,20 @@ func (h *SitespeedScrapeHandler) HandleScrape(ctx context.Context, msg Sitespeed
 func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) error {
 	log := slog.With("environmentId", env.ID)
 
+	if h.cfg.SitespeedEndpoint == "" || h.cfg.SitespeedAPIKey == "" {
+		log.Info("sitespeed not configured, skipping")
+		return nil
+	}
+
 	// Get URLs to test - default is the environment URL
 	var urls []string
 	if env.SitespeedUrls != nil {
 		if err := json.Unmarshal(env.SitespeedUrls, &urls); err != nil {
-			slog.Error("failed to unmarshal sitespeed urls", "environmentId", env.ID, "error", err)
-			return nil
+			return fmt.Errorf("unmarshal sitespeed urls for environment %d: %w", env.ID, err)
 		}
+	}
+	if len(urls) == 0 {
+		urls = []string{env.Url}
 	}
 	for i, u := range urls {
 		urls[i] = strings.Replace(u, "http://localhost:3889", "http://demoshop:8000", 1)
@@ -90,7 +84,7 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 	req.Header.Set("Authorization", "Bearer "+h.cfg.SitespeedAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httputil.NewHTTPClient().Do(req)
+	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(30 * time.Second)).Do(req)
 	if err != nil {
 		return fmt.Errorf("call sitespeed: %w", err)
 	}
@@ -112,7 +106,7 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 		TransferSize           *int32   `json:"transferSize"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		slog.Error("failed to unmarshal sitespeed result", "environmentId", env.ID, "error", err)
+		return fmt.Errorf("unmarshal sitespeed result for environment %d: %w", env.ID, err)
 	}
 
 	if err := h.queries.InsertEnvironmentSitespeed(ctx, queries.InsertEnvironmentSitespeedParams{
@@ -125,7 +119,7 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 		CumulativeLayoutShift:  result.CumulativeLayoutShift,
 		TransferSize:           result.TransferSize,
 	}); err != nil {
-		slog.Error("failed to insert environment sitespeed", "environmentId", env.ID, "error", err)
+		return fmt.Errorf("insert environment sitespeed for environment %d: %w", env.ID, err)
 	}
 
 	screenshotURL := fmt.Sprintf("%s/screenshot/%s", h.cfg.SitespeedEndpoint, recordID)
@@ -133,7 +127,7 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 		EnvironmentImage: &screenshotURL,
 		ID:               env.ID,
 	}); err != nil {
-		slog.Error("failed to update environment image", "environmentId", env.ID, "error", err)
+		return fmt.Errorf("update environment image for environment %d: %w", env.ID, err)
 	}
 
 	log.Info("sitespeed scrape completed")

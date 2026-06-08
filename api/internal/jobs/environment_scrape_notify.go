@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -10,8 +11,29 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+// acquireNotificationLock atomically acquires a dedup lock for the given key
+// and TTL. It returns true only when this caller obtained the lock (i.e. no
+// active lock existed). On a database error it returns false and logs so that
+// callers avoid spamming notifications when the lock state is unknown.
+func (h *EnvironmentScrapeHandler) acquireNotificationLock(ctx context.Context, key string, ttl time.Duration) bool {
+	_, err := h.queries.AcquireLockIfFree(ctx, queries.AcquireLockIfFreeParams{
+		Key:     key,
+		Expires: pgtype.Timestamp{Time: time.Now().Add(ttl), Valid: true},
+	})
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		// Lock is already held — deduped, skip sending.
+		return false
+	}
+	slog.Error("failed to acquire notification lock", "key", key, "error", err)
+	return false
+}
 
 // handleStatusChange detects degradation and sends notifications.
 func (h *EnvironmentScrapeHandler) handleStatusChange(ctx context.Context, env queries.GetAllEnvironmentsRow, newStatus string) {
@@ -40,20 +62,11 @@ func (h *EnvironmentScrapeHandler) handleStatusChange(ctx context.Context, env q
 
 	statusChangeKey := fmt.Sprintf("environment.change-status.%d", env.ID)
 
-	// Check alert dedup lock — don't send emails if already alerted within the last hour
+	// Atomically acquire the dedup lock for 1 hour. Emails are only sent when
+	// this caller obtained the lock, preventing duplicate alerts and spam when
+	// the lock state cannot be determined.
 	alertLockKey := fmt.Sprintf("alert_%s", statusChangeKey)
-	locked, _ := h.queries.IsLocked(ctx, alertLockKey)
-	sendEmails := !locked
-
-	if sendEmails {
-		// Acquire lock for 1 hour to prevent duplicate alerts
-		if err := h.queries.AcquireLock(ctx, queries.AcquireLockParams{
-			Key:     alertLockKey,
-			Expires: pgtype.Timestamp{Time: time.Now().Add(1 * time.Hour), Valid: true},
-		}); err != nil {
-			slog.Error("failed to acquire lock", "key", alertLockKey, "error", err)
-		}
-	}
+	sendEmails := h.acquireNotificationLock(ctx, alertLockKey, 1*time.Hour)
 
 	linkJSON, _ := json.Marshal(notificationLink{
 		Name: "account.environments.detail",
@@ -100,19 +113,9 @@ func (h *EnvironmentScrapeHandler) notifyAuthError(ctx context.Context, env quer
 
 	notifKey := fmt.Sprintf("environment.update-auth-error.%d", env.ID)
 
-	// Check alert dedup lock
+	// Atomically acquire the dedup lock; only send emails when acquired.
 	alertLockKey := fmt.Sprintf("alert_%s", notifKey)
-	locked, _ := h.queries.IsLocked(ctx, alertLockKey)
-	sendEmails := !locked
-
-	if sendEmails {
-		if err := h.queries.AcquireLock(ctx, queries.AcquireLockParams{
-			Key:     alertLockKey,
-			Expires: pgtype.Timestamp{Time: time.Now().Add(1 * time.Hour), Valid: true},
-		}); err != nil {
-			slog.Error("failed to acquire lock", "key", alertLockKey, "error", err)
-		}
-	}
+	sendEmails := h.acquireNotificationLock(ctx, alertLockKey, 1*time.Hour)
 
 	linkJSON, _ := json.Marshal(notificationLink{
 		Name: "account.environments.detail",
@@ -171,6 +174,9 @@ func (h *EnvironmentScrapeHandler) notifyDataFetchError(ctx context.Context, env
 		},
 	})
 
+	// The in-app notification is always (re)recorded — UpsertNotification is
+	// idempotent on notifKey, so there is no spam to dedup here (unlike the
+	// auth-error path, which also sends emails gated behind a lock).
 	for _, user := range subscribers {
 		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
 			UserID:  user.ID,

@@ -57,7 +57,7 @@ func NewClient(baseURL, clientID, clientSecret, shopToken string) *Client {
 	}
 }
 
-func (c *Client) getToken() (string, error) {
+func (c *Client) getToken(ctx context.Context) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -71,7 +71,7 @@ func (c *Client) getToken() (string, error) {
 		"client_secret": c.clientSecret,
 	})
 
-	req, err := http.NewRequest("POST", c.baseURL+"/api/oauth/token", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/oauth/token", bytes.NewReader(body))
 	if err != nil {
 		return "", err
 	}
@@ -103,9 +103,11 @@ func (c *Client) getToken() (string, error) {
 }
 
 // Authenticate tests the connection by fetching an access token.
-// Returns nil on success or an error if authentication fails.
-func (c *Client) Authenticate() error {
-	_, err := c.getToken()
+// Returns nil on success or an error if authentication fails. The provided
+// context bounds the token request so callers can cancel it (e.g. on shutdown
+// or a per-scrape deadline).
+func (c *Client) Authenticate(ctx context.Context) error {
+	_, err := c.getToken(ctx)
 	return err
 }
 
@@ -120,7 +122,7 @@ func (c *Client) request(ctx context.Context, method, path string, body interfac
 	)
 	defer span.End()
 
-	token, err := c.getToken()
+	token, err := c.getToken(ctx)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())

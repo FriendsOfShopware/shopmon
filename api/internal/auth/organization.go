@@ -124,8 +124,21 @@ func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organ
 	if req.Role == "" {
 		req.Role = "member"
 	}
+	if req.Role != "owner" && req.Role != "admin" && req.Role != "member" {
+		httputil.WriteError(w, http.StatusBadRequest, "role must be 'owner', 'admin', or 'member'")
+		return
+	}
 
-	if h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin") == "" {
+	callerRole := h.requireOrgRole(w, r, su.User.ID, organizationId, "owner", "admin")
+	if callerRole == "" {
+		return
+	}
+
+	// Prevent privilege escalation: an inviter cannot grant a role equal to or
+	// higher than their own unless they are an owner.
+	roleWeight := map[string]int{"member": 1, "admin": 2, "owner": 3}
+	if callerRole != "owner" && roleWeight[req.Role] >= roleWeight[callerRole] {
+		httputil.WriteError(w, http.StatusForbidden, "cannot invite a member with equal or higher role")
 		return
 	}
 

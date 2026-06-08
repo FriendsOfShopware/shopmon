@@ -3,12 +3,12 @@ go = "1.26"
 node = "26"
 sqlc = "1.31"
 golangci-lint = "2"
-"go:github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen" = "latest"
+"go:github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen" = "2.7.0"
 "go:github.com/air-verse/air" = "latest"
 
 [env]
 # Database
-DATABASE_URL = "postgres://shopmon:shopmon@localhost:5432/shopmon"
+DATABASE_URL = "postgres://shopmon:shopmon@localhost:5432/shopmon?sslmode=disable"
 REDIS_URL = "redis://localhost:6379"
 
 # Security (generate a proper secret for real deployments)
@@ -51,7 +51,6 @@ run = { tasks = ["setup:frontend", "setup:api"] }
 [tasks.up]
 description = "Start infrastructure (DB, Redis, Mailpit, demo shop, etc.)"
 run = "docker compose up -d"
-wait_for = ["docker"]
 
 [tasks.down]
 description = "Stop infrastructure"

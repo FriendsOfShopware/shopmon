@@ -2,12 +2,27 @@
 package mail
 
 import (
+	"crypto/rand"
 	"crypto/tls"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
+	"mime/multipart"
+	"net"
 	"net/smtp"
+	"net/textproto"
 	"strings"
+	"time"
 )
+
+// bodyPartSeparator delimits the plain-text and HTML parts inside the body
+// string handed to Send. It is intentionally unlikely to occur in rendered
+// email content.
+const bodyPartSeparator = "\x00--shopmon-body-part--\x00"
+
+// smtpTimeout bounds the entire SMTP exchange so a stalled server cannot hang
+// the caller indefinitely.
+const smtpTimeout = 30 * time.Second
 
 // Sender sends an HTML email to a recipient.
 type Sender interface {
@@ -45,71 +60,179 @@ func (NoopSender) Send(to, subject, body string) error {
 	return nil
 }
 
-// Send sends an HTML email.
+// Send sends an email with both a text/plain and a text/html part. The body may
+// carry the two parts packed around bodyPartSeparator (as produced by the
+// template builders); otherwise it is treated as HTML.
+// tlsClientConfig returns the TLS configuration for SMTP connections, defaulting
+// ServerName to the configured host when not otherwise pinned.
+func (s *Service) tlsClientConfig() *tls.Config {
+	var tlsConfig *tls.Config
+	if s.cfg.TLSConfig != nil {
+		tlsConfig = s.cfg.TLSConfig.Clone()
+	} else {
+		tlsConfig = &tls.Config{}
+	}
+	if tlsConfig.ServerName == "" && !tlsConfig.InsecureSkipVerify {
+		tlsConfig.ServerName = s.cfg.Host
+	}
+	return tlsConfig
+}
+
 func (s *Service) Send(to, subject, body string) error {
-	addr := fmt.Sprintf("%s:%s", s.cfg.Host, s.cfg.Port)
+	text, html := splitBody(body)
 
-	headers := make(map[string]string)
-	headers["From"] = s.cfg.From
-	headers["To"] = to
-	headers["Subject"] = subject
-	headers["MIME-Version"] = "1.0"
-	headers["Content-Type"] = "text/html; charset=UTF-8"
-	if s.cfg.ReplyTo != "" {
-		headers["Reply-To"] = s.cfg.ReplyTo
+	msg, err := s.buildMessage(to, subject, text, html)
+	if err != nil {
+		return fmt.Errorf("build message: %w", err)
 	}
-
-	var msg strings.Builder
-	for k, v := range headers {
-		fmt.Fprintf(&msg, "%s: %s\r\n", k, v)
-	}
-	msg.WriteString("\r\n")
-	msg.WriteString(body)
 
 	var auth smtp.Auth
 	if s.cfg.User != "" {
 		auth = smtp.PlainAuth("", s.cfg.User, s.cfg.Pass, s.cfg.Host)
 	}
 
-	if s.cfg.Secure {
-		tlsConfig := s.cfg.TLSConfig
-		if tlsConfig == nil {
-			tlsConfig = &tls.Config{ServerName: s.cfg.Host}
-		}
-		conn, err := tls.Dial("tcp", addr, tlsConfig)
-		if err != nil {
-			return fmt.Errorf("tls dial: %w", err)
-		}
-		defer func() { _ = conn.Close() }()
+	addr := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
+	conn, err := net.DialTimeout("tcp", addr, smtpTimeout)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
 
-		client, err := smtp.NewClient(conn, s.cfg.Host)
-		if err != nil {
-			return fmt.Errorf("smtp client: %w", err)
-		}
-		defer func() { _ = client.Close() }()
-
-		if auth != nil {
-			if err := client.Auth(auth); err != nil {
-				return fmt.Errorf("smtp auth: %w", err)
-			}
-		}
-
-		if err := client.Mail(s.cfg.From); err != nil {
-			return err
-		}
-		if err := client.Rcpt(to); err != nil {
-			return err
-		}
-
-		w, err := client.Data()
-		if err != nil {
-			return err
-		}
-		if _, err := w.Write([]byte(msg.String())); err != nil {
-			return err
-		}
-		return w.Close()
+	if err := conn.SetDeadline(time.Now().Add(smtpTimeout)); err != nil {
+		return fmt.Errorf("set deadline: %w", err)
 	}
 
-	return smtp.SendMail(addr, auth, s.cfg.From, []string{to}, []byte(msg.String()))
+	if s.cfg.Secure {
+		tlsConn := tls.Client(conn, s.tlsClientConfig())
+		if err := tlsConn.Handshake(); err != nil {
+			return fmt.Errorf("tls handshake: %w", err)
+		}
+		conn = tlsConn
+	}
+
+	client, err := smtp.NewClient(conn, s.cfg.Host)
+	if err != nil {
+		return fmt.Errorf("smtp client: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	// On a plain connection, upgrade to TLS via STARTTLS when the server
+	// advertises it. Submission relays (port 587) require this before AUTH,
+	// and smtp.PlainAuth refuses to send credentials over an unencrypted
+	// connection to a non-localhost host.
+	if !s.cfg.Secure {
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			tlsConfig := s.tlsClientConfig()
+			if err := client.StartTLS(tlsConfig); err != nil {
+				return fmt.Errorf("smtp starttls: %w", err)
+			}
+		}
+	}
+
+	if auth != nil {
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("smtp auth: %w", err)
+		}
+	}
+
+	if err := client.Mail(s.cfg.From); err != nil {
+		return fmt.Errorf("smtp mail from: %w", err)
+	}
+	if err := client.Rcpt(to); err != nil {
+		return fmt.Errorf("smtp rcpt to: %w", err)
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("smtp data: %w", err)
+	}
+	if _, err := w.Write(msg); err != nil {
+		return fmt.Errorf("smtp write: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("smtp close data: %w", err)
+	}
+
+	return client.Quit()
+}
+
+// buildMessage assembles an RFC 5322 multipart/alternative message with a
+// text/plain and a text/html part.
+func (s *Service) buildMessage(to, subject, text, html string) ([]byte, error) {
+	var msg strings.Builder
+	body := &strings.Builder{}
+	mw := multipart.NewWriter(body)
+
+	if text != "" {
+		part, err := mw.CreatePart(textproto.MIMEHeader{
+			"Content-Type":              {"text/plain; charset=UTF-8"},
+			"Content-Transfer-Encoding": {"8bit"},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if _, err := part.Write([]byte(text)); err != nil {
+			return nil, err
+		}
+	}
+
+	part, err := mw.CreatePart(textproto.MIMEHeader{
+		"Content-Type":              {"text/html; charset=UTF-8"},
+		"Content-Transfer-Encoding": {"8bit"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if _, err := part.Write([]byte(html)); err != nil {
+		return nil, err
+	}
+
+	if err := mw.Close(); err != nil {
+		return nil, err
+	}
+
+	headers := []struct{ k, v string }{
+		{"From", s.cfg.From},
+		{"To", to},
+		{"Subject", subject},
+		{"Date", time.Now().Format(time.RFC1123Z)},
+		{"Message-ID", s.messageID()},
+		{"MIME-Version", "1.0"},
+		{"Content-Type", fmt.Sprintf("multipart/alternative; boundary=%q", mw.Boundary())},
+	}
+	for _, h := range headers {
+		fmt.Fprintf(&msg, "%s: %s\r\n", h.k, h.v)
+	}
+	if s.cfg.ReplyTo != "" {
+		fmt.Fprintf(&msg, "Reply-To: %s\r\n", s.cfg.ReplyTo)
+	}
+	msg.WriteString("\r\n")
+	msg.WriteString(body.String())
+
+	return []byte(msg.String()), nil
+}
+
+// messageID returns a unique RFC 5322 Message-ID using the From domain.
+func (s *Service) messageID() string {
+	var buf [16]byte
+	_, _ = rand.Read(buf[:])
+
+	domain := s.cfg.Host
+	if at := strings.LastIndex(s.cfg.From, "@"); at != -1 {
+		domain = strings.Trim(s.cfg.From[at+1:], "<> ")
+	}
+	if domain == "" {
+		domain = "localhost"
+	}
+
+	return fmt.Sprintf("<%s.%d@%s>", hex.EncodeToString(buf[:]), time.Now().UnixNano(), domain)
+}
+
+// splitBody separates a packed body into its plain-text and HTML parts. A body
+// without the separator is treated as HTML only.
+func splitBody(body string) (text, html string) {
+	if idx := strings.Index(body, bodyPartSeparator); idx != -1 {
+		return body[:idx], body[idx+len(bodyPartSeparator):]
+	}
+	return "", body
 }

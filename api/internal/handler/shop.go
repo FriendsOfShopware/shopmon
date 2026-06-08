@@ -1,14 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/jobs"
-	goqueue "github.com/shyim/go-queue"
 )
 
 // GetOrganizationShops returns all shops in an organization.
@@ -64,48 +63,60 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		return
 	}
 
-	// Create the shop first (without default_environment_id — we'll set it after creating the env)
-	shopID, err := h.queries.CreateShop(r.Context(), queries.CreateShopParams{
-		OrganizationID: orgId,
-		Name:           req.Name,
-		Description:    req.Description,
-		GitUrl:         req.GitUrl,
-	})
+	// Validate the shop connection before opening a transaction so we never do
+	// network I/O while holding a DB transaction open. The discovered version is
+	// threaded into insertEnvironment so it does not re-validate inside the tx.
+	shopInfo, err := h.validateShopConnection(r.Context(), req.EnvironmentUrl, req.ClientId, req.ClientSecret, "")
 	if err != nil {
-		slog.Error("failed to create shop", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create shop")
-		return
-	}
-
-	// Create the first environment
-	environmentID, err := h.runCreateEnvironment(r.Context(), orgId, createEnvironmentCommand{
-		Name:         req.EnvironmentName,
-		ShopURL:      req.EnvironmentUrl,
-		ClientID:     req.ClientId,
-		ClientSecret: req.ClientSecret,
-		ShopID:       shopID,
-	})
-	if err != nil {
-		// Clean up the shop if environment creation fails
-		_ = h.queries.DeleteShop(r.Context(), queries.DeleteShopParams{ID: shopID, OrganizationID: orgId})
-		slog.Error("failed to create environment for new shop", "error", err)
+		slog.Error("failed to validate shop connection for new shop", "error", err)
 		httputil.WriteError(w, http.StatusBadRequest, "Cannot reach shop. Check your credentials and shop URL.")
 		return
 	}
 
-	// Set the new environment as the default
-	if err := h.queries.SetShopDefaultEnvironment(r.Context(), queries.SetShopDefaultEnvironmentParams{
-		DefaultEnvironmentID: &environmentID,
-		ID:                   shopID,
-		OrganizationID:       orgId,
+	// Shop insert, first environment insert and default-environment assignment must
+	// be atomic so a crash cannot leave an orphaned shop or an environment without
+	// a default. The initial scrape is enqueued only after the transaction commits.
+	var shopID, environmentID int32
+	if err := h.withTx(r.Context(), func(txq *queries.Queries) error {
+		var err error
+		shopID, err = txq.CreateShop(r.Context(), queries.CreateShopParams{
+			OrganizationID: orgId,
+			Name:           req.Name,
+			Description:    req.Description,
+			GitUrl:         req.GitUrl,
+		})
+		if err != nil {
+			return fmt.Errorf("create shop: %w", err)
+		}
+
+		environmentID, err = h.insertEnvironment(r.Context(), txq, orgId, createEnvironmentCommand{
+			Name:            req.EnvironmentName,
+			ShopURL:         req.EnvironmentUrl,
+			ClientID:        req.ClientId,
+			ClientSecret:    req.ClientSecret,
+			ShopID:          shopID,
+			ShopwareVersion: shopInfo.Version,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := txq.SetShopDefaultEnvironment(r.Context(), queries.SetShopDefaultEnvironmentParams{
+			DefaultEnvironmentID: &environmentID,
+			ID:                   shopID,
+			OrganizationID:       orgId,
+		}); err != nil {
+			return fmt.Errorf("set default environment: %w", err)
+		}
+
+		return nil
 	}); err != nil {
-		slog.Error("failed to set default environment", "error", err)
+		slog.Error("failed to create shop with environment", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create shop")
+		return
 	}
 
-	// Enqueue scrape task
-	if err := goqueue.Dispatch(r.Context(), h.bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
-		slog.Error("failed to enqueue scrape task", "error", err)
-	}
+	h.enqueueInitialScrape(r.Context(), environmentID)
 
 	httputil.WriteJSON(w, http.StatusCreated, api.Shop{
 		Id:                   int(shopID),
@@ -171,6 +182,17 @@ func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 
 	if req.DefaultEnvironmentId != nil {
 		v := int32(*req.DefaultEnvironmentId)
+
+		env, err := h.queries.GetEnvironmentByID(r.Context(), v)
+		if err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, "default environment not found")
+			return
+		}
+		if env.ShopID != int32(shopId) || env.OrganizationID != orgId {
+			httputil.WriteError(w, http.StatusForbidden, "default environment does not belong to this shop")
+			return
+		}
+
 		if err := h.queries.SetShopDefaultEnvironment(r.Context(), queries.SetShopDefaultEnvironmentParams{
 			DefaultEnvironmentID: &v,
 			ID:                   int32(shopId),

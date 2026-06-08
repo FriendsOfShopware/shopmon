@@ -3,12 +3,14 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5"
 )
 
 type environmentDetailAggregate struct {
@@ -74,6 +76,9 @@ func (h *Handler) loadEnvironmentQueues(ctx context.Context, environmentID int32
 func (h *Handler) loadEnvironmentCache(ctx context.Context, environmentID int32) *queries.EnvironmentCache {
 	row, err := h.queries.GetEnvironmentCache(ctx, environmentID)
 	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			slog.Error("failed to get environment cache", "error", err)
+		}
 		return nil
 	}
 

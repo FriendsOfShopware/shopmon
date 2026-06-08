@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 
@@ -116,7 +116,8 @@ func Load() *Config {
 	if cfg.AppSecret != "" {
 		keyLen := len(cfg.AppSecret)
 		if keyLen != 16 && keyLen != 24 && keyLen != 32 {
-			panic(fmt.Sprintf("APP_SECRET must be exactly 16, 24, or 32 bytes for AES encryption (got %d)", keyLen))
+			slog.Error("invalid APP_SECRET length: must be exactly 16, 24, or 32 bytes for AES encryption", "length", keyLen)
+			os.Exit(1)
 		}
 	}
 

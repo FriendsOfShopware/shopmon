@@ -11,6 +11,8 @@ RETURNING id;
 DELETE FROM shop_api_key WHERE id = $1 AND shop_id = $2;
 
 -- name: GetApiKeyByToken :one
+-- Looks up an API key by the sha256 hex hash of the plaintext token.
+-- Callers MUST pass HashApiKeyToken(plaintext), not the plaintext token.
 SELECT sak.id, sak.shop_id, sak.name, sak.token, sak.scopes, sak.created_at, sak.last_used_at,
        s.organization_id
 FROM shop_api_key sak

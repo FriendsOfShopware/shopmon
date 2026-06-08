@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -36,6 +37,9 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
+		return
+	}
 
 	if h.cfg.PackagesAPIURL == "" {
 		httputil.WriteError(w, http.StatusNotFound, "packages API not configured")
@@ -44,7 +48,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 
 	// Proxy to packages API
 	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
-	resp, err := h.packagesRequest("GET", url, nil)
+	resp, err := h.packagesRequest(r.Context(), "GET", url, nil)
 	if err != nil {
 		slog.Error("failed to fetch packages tokens", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to get packages tokens")
@@ -72,6 +76,9 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
+		return
+	}
 
 	if h.cfg.PackagesAPIURL == "" {
 		httputil.WriteError(w, http.StatusNotFound, "packages API not configured")
@@ -80,7 +87,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 
 	// Proxy the request body to packages API
 	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
-	resp, err := h.packagesRequest("POST", url, r.Body)
+	resp, err := h.packagesRequest(r.Context(), "POST", url, r.Body)
 	if err != nil {
 		slog.Error("failed to create packages token", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to create packages token")
@@ -108,6 +115,9 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
+		return
+	}
 
 	if h.cfg.PackagesAPIURL == "" {
 		httputil.WriteError(w, http.StatusNotFound, "packages API not configured")
@@ -115,7 +125,7 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 	}
 
 	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d", h.cfg.PackagesAPIURL, shopId, tokenId)
-	resp, err := h.packagesRequest("DELETE", url, nil)
+	resp, err := h.packagesRequest(r.Context(), "DELETE", url, nil)
 	if err != nil {
 		slog.Error("failed to delete packages token", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to delete packages token")
@@ -148,6 +158,9 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
+	if !h.requireShopInOrganization(w, r, int32(shopId), orgId) {
+		return
+	}
 
 	if h.cfg.PackagesAPIURL == "" {
 		httputil.WriteError(w, http.StatusNotFound, "packages API not configured")
@@ -155,7 +168,7 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 	}
 
 	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d/sync", h.cfg.PackagesAPIURL, shopId, tokenId)
-	resp, err := h.packagesRequest("POST", url, nil)
+	resp, err := h.packagesRequest(r.Context(), "POST", url, nil)
 	if err != nil {
 		slog.Error("failed to sync packages token", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to sync packages token")
@@ -180,8 +193,8 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 }
 
 // packagesRequest creates an authenticated request to the packages API.
-func (h *Handler) packagesRequest(method, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, body)
+func (h *Handler) packagesRequest(ctx context.Context, method, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
