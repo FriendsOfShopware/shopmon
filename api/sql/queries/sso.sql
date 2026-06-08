@@ -1,5 +1,5 @@
 -- name: ListSSOProviders :many
-SELECT id, issuer, oidc_config, saml_config, user_id, provider_id, organization_id, domain
+SELECT id, issuer, oidc_config, provider_id, organization_id, domain
 FROM sso_provider WHERE organization_id = $1;
 
 -- name: UpdateSSOProvider :exec
