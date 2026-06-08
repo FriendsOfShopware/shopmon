@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
@@ -200,8 +201,11 @@ func (h *AuthHandler) createSession(r *http.Request, userID string) (string, err
 	token := generateToken()
 	sessionID := uuid.New().String()
 
-	ipAddress := r.RemoteAddr
 	userAgent := r.UserAgent()
+	ipAddress := chimiddleware.GetClientIP(r.Context())
+	if ipAddress == "" {
+		ipAddress = r.RemoteAddr
+	}
 
 	_, err := h.queries.CreateSession(r.Context(), queries.CreateSessionParams{
 		ID:        sessionID,

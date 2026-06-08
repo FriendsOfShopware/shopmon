@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -52,7 +53,8 @@ type Config struct {
 	WebAuthnRPName    string
 	WebAuthnRPOrigins []string
 
-	ListenAddr string
+	ListenAddr     string
+	TrustedProxies []string
 }
 
 func loadDotEnv() {
@@ -102,7 +104,8 @@ func Load() *Config {
 		OtelLogEndpoint:   getEnv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),
 		OtelServiceName:   getEnv("OTEL_SERVICE_NAME", "shopmon"),
 
-		ListenAddr: getEnv("LISTEN_ADDR", ":8080"),
+		ListenAddr:     getEnv("LISTEN_ADDR", ":8080"),
+		TrustedProxies: parseCommaList(getEnv("TRUSTED_PROXIES", "")),
 	}
 
 	// Derive WebAuthn config from FrontendURL
@@ -129,4 +132,19 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parseCommaList(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			result = append(result, p)
+		}
+	}
+	return result
 }

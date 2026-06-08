@@ -1,6 +1,5 @@
 // NOTE: This rate limiter is in-memory and resets on restart.
 // For multi-instance deployments, replace with a Redis-backed rate limiter.
-// The X-Real-IP header should only be trusted when behind a reverse proxy.
 package auth
 
 import (
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 type rateLimiter struct {
@@ -88,10 +88,9 @@ func (rl *rateLimiter) allow(key string) bool {
 func RateLimitMiddleware(rl *rateLimiter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := r.RemoteAddr
-			// Use X-Real-IP if available (set by RealIP middleware)
-			if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
-				ip = realIP
+			ip := chimiddleware.GetClientIP(r.Context())
+			if ip == "" {
+				ip = r.RemoteAddr
 			}
 
 			if !rl.allow(ip) {
