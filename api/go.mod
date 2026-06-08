@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.2
 	github.com/aws/smithy-go v1.27.2
 	github.com/coreos/go-oidc/v3 v3.18.0
-	github.com/descope/virtualwebauthn v1.0.4
+	github.com/descope/virtualwebauthn v1.0.5
 	github.com/exaring/otelpgx v0.11.1
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-webauthn/webauthn v0.17.4
