@@ -45,7 +45,7 @@
     "vue-i18n": "11",
     "vue-router": "5.1.0",
     "vue-sonner": "^2.0.9",
-    "zod": "^4.4.3"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@iconify-json/bxs": "^1.2.3",
@@ -66,13 +66,13 @@
     "@vitejs/plugin-vue": "6.0.7",
     "@vitest/ui": "^4.1.8",
     "@vue/test-utils": "^2.4.11",
-    "beasties": "^0.4.2",
+    "beasties": "^0.3.5",
     "jsdom": "^29.1.1",
     "openapi-typescript": "^7.13.0",
     "oxfmt": "^0.53.0",
     "oxlint": "^1.68.0",
     "oxlint-tsgolint": "^0.23.0",
-    "typescript": "6.0.3",
+    "typescript": "5.9.3",
     "vite": "8.0.16",
     "vite-ssg": "^28.3.0",
     "vitest": "^4.1.7",
