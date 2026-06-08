@@ -2769,7 +2769,6 @@ components:
         - version
         - text
         - creationDate
-        - isCompatible
       properties:
         version:
           type: string
@@ -2778,8 +2777,6 @@ components:
         creationDate:
           type: string
           format: date-time
-        isCompatible:
-          type: boolean
 
     SubscribedEnvironment:
       type: object

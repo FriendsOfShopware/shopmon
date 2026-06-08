@@ -1651,7 +1651,6 @@ export interface components {
       text: string;
       /** Format: date-time */
       creationDate: string;
-      isCompatible: boolean;
     };
     SubscribedEnvironment: {
       id: number;

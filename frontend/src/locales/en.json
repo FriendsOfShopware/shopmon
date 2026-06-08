@@ -748,8 +748,7 @@
   },
   "extensionChangelog": {
     "title": "Changelog",
-    "noData": "No Changelog data provided",
-    "notCompatible": "not compatible with your version"
+    "noData": "No Changelog data provided"
   },
   "updateWizard": {
     "title": "Shopware Extension Compatibility Check",
