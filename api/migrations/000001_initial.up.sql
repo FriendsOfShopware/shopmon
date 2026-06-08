@@ -70,8 +70,7 @@ CREATE TABLE IF NOT EXISTS "organization" (
   "name" text NOT NULL,
   "slug" text NOT NULL UNIQUE,
   "logo" text,
-  "created_at" timestamp NOT NULL,
-  "metadata" text
+  "created_at" timestamp NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "member" (
@@ -97,8 +96,6 @@ CREATE TABLE IF NOT EXISTS "sso_provider" (
   "id" text PRIMARY KEY NOT NULL,
   "issuer" text NOT NULL,
   "oidc_config" text,
-  "saml_config" text,
-  "user_id" text REFERENCES "user"("id") ON DELETE cascade,
   "provider_id" text NOT NULL UNIQUE,
   "organization_id" text,
   "domain" text NOT NULL

@@ -564,18 +564,9 @@ SELECT id, issuer, oidc_config, provider_id, organization_id, domain
 FROM sso_provider WHERE domain = $1
 `
 
-type GetSSOProviderByDomainRow struct {
-	ID             string  `json:"id"`
-	Issuer         string  `json:"issuer"`
-	OidcConfig     *string `json:"oidc_config"`
-	ProviderID     string  `json:"provider_id"`
-	OrganizationID *string `json:"organization_id"`
-	Domain         string  `json:"domain"`
-}
-
-func (q *Queries) GetSSOProviderByDomain(ctx context.Context, domain string) (GetSSOProviderByDomainRow, error) {
+func (q *Queries) GetSSOProviderByDomain(ctx context.Context, domain string) (SsoProvider, error) {
 	row := q.db.QueryRow(ctx, getSSOProviderByDomain, domain)
-	var i GetSSOProviderByDomainRow
+	var i SsoProvider
 	err := row.Scan(
 		&i.ID,
 		&i.Issuer,
@@ -592,18 +583,9 @@ SELECT id, issuer, oidc_config, provider_id, organization_id, domain
 FROM sso_provider WHERE provider_id = $1
 `
 
-type GetSSOProviderByProviderIDRow struct {
-	ID             string  `json:"id"`
-	Issuer         string  `json:"issuer"`
-	OidcConfig     *string `json:"oidc_config"`
-	ProviderID     string  `json:"provider_id"`
-	OrganizationID *string `json:"organization_id"`
-	Domain         string  `json:"domain"`
-}
-
-func (q *Queries) GetSSOProviderByProviderID(ctx context.Context, providerID string) (GetSSOProviderByProviderIDRow, error) {
+func (q *Queries) GetSSOProviderByProviderID(ctx context.Context, providerID string) (SsoProvider, error) {
 	row := q.db.QueryRow(ctx, getSSOProviderByProviderID, providerID)
-	var i GetSSOProviderByProviderIDRow
+	var i SsoProvider
 	err := row.Scan(
 		&i.ID,
 		&i.Issuer,

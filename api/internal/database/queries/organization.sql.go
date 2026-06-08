@@ -194,17 +194,9 @@ const getOrganizationByID = `-- name: GetOrganizationByID :one
 SELECT id, name, slug, logo, created_at FROM organization WHERE id = $1
 `
 
-type GetOrganizationByIDRow struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	Slug      string           `json:"slug"`
-	Logo      *string          `json:"logo"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-}
-
-func (q *Queries) GetOrganizationByID(ctx context.Context, id string) (GetOrganizationByIDRow, error) {
+func (q *Queries) GetOrganizationByID(ctx context.Context, id string) (Organization, error) {
 	row := q.db.QueryRow(ctx, getOrganizationByID, id)
-	var i GetOrganizationByIDRow
+	var i Organization
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

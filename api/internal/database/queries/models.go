@@ -169,7 +169,6 @@ type Organization struct {
 	Slug      string           `json:"slug"`
 	Logo      *string          `json:"logo"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
-	Metadata  *string          `json:"metadata"`
 }
 
 type Passkey struct {
@@ -224,8 +223,6 @@ type SsoProvider struct {
 	ID             string  `json:"id"`
 	Issuer         string  `json:"issuer"`
 	OidcConfig     *string `json:"oidc_config"`
-	SamlConfig     *string `json:"saml_config"`
-	UserID         *string `json:"user_id"`
 	ProviderID     string  `json:"provider_id"`
 	OrganizationID *string `json:"organization_id"`
 	Domain         string  `json:"domain"`

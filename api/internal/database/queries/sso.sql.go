@@ -24,7 +24,7 @@ func (q *Queries) DeleteSSOProvider(ctx context.Context, arg DeleteSSOProviderPa
 }
 
 const listSSOProviders = `-- name: ListSSOProviders :many
-SELECT id, issuer, oidc_config, saml_config, user_id, provider_id, organization_id, domain
+SELECT id, issuer, oidc_config, provider_id, organization_id, domain
 FROM sso_provider WHERE organization_id = $1
 `
 
@@ -41,8 +41,6 @@ func (q *Queries) ListSSOProviders(ctx context.Context, organizationID *string) 
 			&i.ID,
 			&i.Issuer,
 			&i.OidcConfig,
-			&i.SamlConfig,
-			&i.UserID,
 			&i.ProviderID,
 			&i.OrganizationID,
 			&i.Domain,
