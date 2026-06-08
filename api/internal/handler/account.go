@@ -82,10 +82,14 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 				ratingAvg = &v
 			}
 
-			var changelogStr *string
+			var changelog *[]api.ExtensionChangelogEntry
 			if len(row.Changelog) > 0 {
-				s := string(row.Changelog)
-				changelogStr = &s
+				var entries []api.ExtensionChangelogEntry
+				if err := json.Unmarshal(row.Changelog, &entries); err != nil {
+					slog.Warn("failed to unmarshal extension changelog", "extension", row.Name, "error", err)
+				} else if len(entries) > 0 {
+					changelog = &entries
+				}
 			}
 
 			var installedAt *time.Time
@@ -104,7 +108,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 				Installed:     row.Installed,
 				StoreLink:     row.StoreLink,
 				RatingAverage: ratingAvg,
-				Changelog:     changelogStr,
+				Changelog:     changelog,
 				InstalledAt:   installedAt,
 				Environments:  []api.AccountExtensionEnvironment{},
 			}

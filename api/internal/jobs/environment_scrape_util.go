@@ -76,7 +76,7 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 		extensions[i].StoreLink = &storeLink
 
 		// Generate changelog for versions newer than installed but within upgrade path
-		if sp.LatestVersion != extensions[i].Version {
+		if sp.Version != extensions[i].Version {
 			var changelogs []extensionChangelog
 			for _, cl := range sp.Changelogs {
 				if versionCompare(cl.Version, extensions[i].Version) > 0 {

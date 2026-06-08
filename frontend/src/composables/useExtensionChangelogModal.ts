@@ -10,7 +10,7 @@ interface ExtensionChangelog {
 export interface ExtensionWithChangelog {
   name: string;
   label: string;
-  changelog?: ExtensionChangelog[] | string | null;
+  changelog?: ExtensionChangelog[] | null;
 }
 
 export function useExtensionChangelogModal() {

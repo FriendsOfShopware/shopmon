@@ -188,10 +188,14 @@ func mapEnvironmentExtensions(rows []queries.EnvironmentExtension) []api.Environ
 			ratingAvg = &v
 		}
 
-		var changelog *string
+		var changelog *[]api.ExtensionChangelogEntry
 		if len(row.Changelog) > 0 {
-			value := string(row.Changelog)
-			changelog = &value
+			var entries []api.ExtensionChangelogEntry
+			if err := json.Unmarshal(row.Changelog, &entries); err != nil {
+				slog.Warn("failed to unmarshal extension changelog", "extension", row.Name, "error", err)
+			} else if len(entries) > 0 {
+				changelog = &entries
+			}
 		}
 
 		var installedAt *time.Time

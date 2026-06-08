@@ -2556,8 +2556,10 @@ components:
           nullable: true
           format: date-time
         changelog:
-          type: string
+          type: array
           nullable: true
+          items:
+            $ref: '#/components/schemas/ExtensionChangelogEntry'
         environments:
           type: array
           items:
@@ -3038,8 +3040,10 @@ components:
           nullable: true
           format: date-time
         changelog:
-          type: string
+          type: array
           nullable: true
+          items:
+            $ref: '#/components/schemas/ExtensionChangelogEntry'
 
     ScheduledTask:
       type: object

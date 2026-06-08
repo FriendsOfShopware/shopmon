@@ -113,7 +113,7 @@ type AccountEnvironment struct {
 // AccountExtension defines model for AccountExtension.
 type AccountExtension struct {
 	Active        bool                          `json:"active"`
-	Changelog     *string                       `json:"changelog"`
+	Changelog     *[]ExtensionChangelogEntry    `json:"changelog"`
 	Environments  []AccountExtensionEnvironment `json:"environments"`
 	Installed     bool                          `json:"installed"`
 	InstalledAt   *time.Time                    `json:"installedAt"`
@@ -355,16 +355,16 @@ type EnvironmentDetail struct {
 
 // EnvironmentExtension defines model for EnvironmentExtension.
 type EnvironmentExtension struct {
-	Active        bool       `json:"active"`
-	Changelog     *string    `json:"changelog,omitempty"`
-	Installed     bool       `json:"installed"`
-	InstalledAt   *time.Time `json:"installedAt,omitempty"`
-	Label         string     `json:"label"`
-	LatestVersion string     `json:"latestVersion"`
-	Name          string     `json:"name"`
-	RatingAverage *float32   `json:"ratingAverage,omitempty"`
-	StoreLink     *string    `json:"storeLink,omitempty"`
-	Version       string     `json:"version"`
+	Active        bool                       `json:"active"`
+	Changelog     *[]ExtensionChangelogEntry `json:"changelog,omitempty"`
+	Installed     bool                       `json:"installed"`
+	InstalledAt   *time.Time                 `json:"installedAt,omitempty"`
+	Label         string                     `json:"label"`
+	LatestVersion string                     `json:"latestVersion"`
+	Name          string                     `json:"name"`
+	RatingAverage *float32                   `json:"ratingAverage,omitempty"`
+	StoreLink     *string                    `json:"storeLink,omitempty"`
+	Version       string                     `json:"version"`
 }
 
 // ErrorResponse defines model for ErrorResponse.

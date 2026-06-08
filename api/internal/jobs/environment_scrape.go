@@ -94,7 +94,6 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	}
 
 	client := shopware.NewClient(env.Url, env.ClientID, clientSecret, env.EnvironmentToken)
-
 	{
 		authCtx, authSpan := tracer.Start(ctx, "environment.scrape.authenticate")
 		err := client.Authenticate(authCtx)

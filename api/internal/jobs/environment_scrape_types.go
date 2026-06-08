@@ -62,7 +62,6 @@ type storePlugin struct {
 	Name          string           `json:"name"`
 	Label         string           `json:"label"`
 	Version       string           `json:"version"`
-	LatestVersion string           `json:"latestVersion"`
 	RatingAverage float64          `json:"ratingAverage"`
 	StoreLink     string           `json:"link"`
 	Changelogs    []storeChangelog `json:"changelog"`
