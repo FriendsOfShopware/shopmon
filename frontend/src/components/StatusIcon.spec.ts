@@ -19,8 +19,8 @@ describe("StatusIcon", () => {
         tooltip: true,
       },
     });
-    expect(wrapper.find(".has-tooltip").exists()).toBe(true);
-    expect(wrapper.find('[data-tooltip="green"]').exists()).toBe(true);
+    // When tooltip is true, the component wraps in a <span> with title attribute
+    expect(wrapper.find('[title="green"]').exists()).toBe(true);
   });
 
   it("renders without tooltip when tooltip prop is false", () => {
@@ -30,51 +30,51 @@ describe("StatusIcon", () => {
         tooltip: false,
       },
     });
-    expect(wrapper.find(".has-tooltip").exists()).toBe(false);
+    expect(wrapper.find("[title]").exists()).toBe(false);
   });
 
-  it("applies icon-success class for green status", () => {
+  it("applies text-success class for green status", () => {
     const wrapper = mount(StatusIcon, {
       props: {
         status: "green",
       },
     });
-    expect(wrapper.find(".icon-success").exists()).toBe(true);
+    expect(wrapper.find(".text-success").exists()).toBe(true);
   });
 
-  it("applies icon-error class for red status", () => {
+  it("applies text-destructive class for red status", () => {
     const wrapper = mount(StatusIcon, {
       props: {
         status: "red",
       },
     });
-    expect(wrapper.find(".icon-error").exists()).toBe(true);
+    expect(wrapper.find(".text-destructive").exists()).toBe(true);
   });
 
-  it("applies icon-warning class for yellow status", () => {
+  it("applies text-warning class for yellow status", () => {
     const wrapper = mount(StatusIcon, {
       props: {
         status: "yellow",
       },
     });
-    expect(wrapper.find(".icon-warning").exists()).toBe(true);
+    expect(wrapper.find(".text-warning").exists()).toBe(true);
   });
 
-  it("applies icon-muted class for inactive status", () => {
+  it("applies text-muted-foreground class for inactive status", () => {
     const wrapper = mount(StatusIcon, {
       props: {
         status: "inactive",
       },
     });
-    expect(wrapper.find(".icon-muted").exists()).toBe(true);
+    expect(wrapper.find(".text-muted-foreground").exists()).toBe(true);
   });
 
-  it("applies icon-muted class for not installed status", () => {
+  it("applies text-muted-foreground class for not installed status", () => {
     const wrapper = mount(StatusIcon, {
       props: {
         status: "not installed",
       },
     });
-    expect(wrapper.find(".icon-muted").exists()).toBe(true);
+    expect(wrapper.find(".text-muted-foreground").exists()).toBe(true);
   });
 });

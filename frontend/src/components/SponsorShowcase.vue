@@ -1,30 +1,49 @@
 <template>
-  <section v-if="sponsors.length" class="sponsor-showcase" :class="{ compact }">
-    <div v-if="title || description" class="sponsor-showcase-header">
-      <component :is="titleTag" v-if="title" class="sponsor-showcase-title">
+  <section v-if="sponsors.length" :class="['flex w-full flex-col', compact ? 'gap-4' : 'gap-8']">
+    <div v-if="title || description" :class="compact ? '' : 'text-center'">
+      <component
+        :is="titleTag"
+        v-if="title"
+        :class="compact ? 'text-sm font-semibold' : 'text-2xl font-bold tracking-tight'"
+      >
         {{ title }}
       </component>
-      <p v-if="description" class="sponsor-showcase-description">
+      <p
+        v-if="description"
+        :class="[
+          'text-muted-foreground',
+          compact ? 'mt-1 text-xs' : 'mx-auto mt-2 max-w-2xl text-sm',
+        ]"
+      >
         {{ description }}
       </p>
     </div>
 
-    <div class="sponsor-showcase-grid">
+    <div :class="['grid gap-3', compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2']">
       <a
         v-for="sponsor in sponsors"
         :key="sponsor.name"
         :href="sponsor.url"
-        class="sponsor-showcase-card"
+        class="group flex items-start gap-4 rounded-xl border bg-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
         target="_blank"
         rel="noreferrer noopener"
       >
-        <div class="sponsor-showcase-name">
-          {{ sponsor.name }}
+        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <icon-fa6-solid:heart class="size-4 text-primary" />
         </div>
-
-        <p v-if="sponsor.description" class="sponsor-showcase-copy">
-          {{ sponsor.description }}
-        </p>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5">
+            <span class="font-semibold group-hover:text-primary transition-colors">{{
+              sponsor.name
+            }}</span>
+            <icon-fa6-solid:arrow-up-right-from-square
+              class="size-2.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+            />
+          </div>
+          <p v-if="sponsor.description" class="mt-1 text-sm leading-relaxed text-muted-foreground">
+            {{ sponsor.description }}
+          </p>
+        </div>
       </a>
     </div>
   </section>
@@ -49,80 +68,3 @@ withDefaults(
   },
 );
 </script>
-
-<style scoped>
-.sponsor-showcase {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-}
-
-.sponsor-showcase-header {
-  text-align: center;
-}
-
-.sponsor-showcase-title {
-  color: var(--home-heading-color);
-  font-size: 32px;
-  margin-bottom: 1rem;
-}
-
-.sponsor-showcase-description {
-  margin: 0 auto;
-  max-width: 48rem;
-}
-
-.sponsor-showcase-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.sponsor-showcase-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem 1.5rem;
-  color: inherit;
-  text-align: center;
-  text-decoration: none;
-  background-color: var(--panel-background);
-  border-radius: 0.375rem;
-  box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.1),
-    0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.sponsor-showcase-name {
-  color: var(--primary-color);
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.sponsor-showcase-copy {
-  margin: 0;
-  color: var(--text-color-muted);
-}
-
-.compact {
-  gap: 1.5rem;
-
-  .sponsor-showcase-card {
-    padding: 1.5rem 1rem;
-  }
-}
-
-.dark .sponsor-showcase-card:hover {
-  box-shadow: none;
-}
-</style>

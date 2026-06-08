@@ -1,19 +1,45 @@
 <template>
-  <footer class="app-footer">
-    <div class="container">
-      <div class="footer-links">
-        <button v-if="session.data" type="button" class="footer-link" @click="open">
+  <footer class="mt-auto border-t">
+    <div
+      class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 max-sm:flex-col max-sm:text-center"
+    >
+      <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Logo class="size-4" />
+        <span>Shopmon</span>
+        <span class="text-border">·</span>
+        <span>{{ $t("footer.tagline") }}</span>
+      </div>
+
+      <nav class="flex items-center gap-4 text-xs">
+        <button
+          v-if="session"
+          type="button"
+          class="text-muted-foreground transition-colors hover:text-foreground"
+          @click="open"
+        >
           {{ $t("footer.whatsNew") }}
         </button>
-        <span v-if="session.data" class="footer-separator">|</span>
-        <router-link :to="{ name: 'privacy' }" class="footer-link">
+        <RouterLink
+          :to="{ name: 'privacy' }"
+          class="text-muted-foreground transition-colors hover:text-foreground"
+        >
           {{ $t("footer.privacy") }}
-        </router-link>
-        <span class="footer-separator">|</span>
-        <router-link :to="{ name: 'imprint' }" class="footer-link">
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'imprint' }"
+          class="text-muted-foreground transition-colors hover:text-foreground"
+        >
           {{ $t("footer.legalNotice") }}
-        </router-link>
-      </div>
+        </RouterLink>
+        <a
+          href="https://github.com/FriendsOfShopware/shopmon/"
+          target="_blank"
+          rel="noopener"
+          class="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <icon-mdi:github class="size-4" />
+        </a>
+      </nav>
     </div>
 
     <WhatsNewModal :show="showWhatsNew" @close="dismiss" />
@@ -22,50 +48,15 @@
 
 <script setup lang="ts">
 import WhatsNewModal from "@/components/modal/WhatsNewModal.vue";
+import Logo from "@/components/Logo.vue";
 import { useWhatsNew } from "@/composables/useWhatsNew";
-import { authClient } from "@/helpers/auth-client";
+import { useSession } from "@/composables/useSession";
 import { computed } from "vue";
 
-const session = authClient.useSession();
+const { session } = useSession();
 const { isOpen, open, dismiss } = useWhatsNew();
 
 const showWhatsNew = computed(() => {
-  return !!session.value.data && isOpen.value;
+  return !!session.value && isOpen.value;
 });
 </script>
-
-<style scoped>
-.app-footer {
-  margin-top: auto;
-  padding: 2rem 0;
-  border-top: 1px solid var(--panel-border-color);
-  background-color: var(--panel-background);
-}
-
-.footer-links {
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-}
-
-.footer-link {
-  color: var(--text-color-muted);
-  text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s ease;
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.footer-link:hover {
-  color: var(--primary-color);
-}
-
-.footer-separator {
-  color: var(--text-color-muted);
-  font-size: 0.875rem;
-}
-</style>

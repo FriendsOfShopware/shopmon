@@ -1,123 +1,89 @@
 <template>
-  <header-container :title="$t('organization.newOrganization')" />
-  <main-container v-if="session.data?.user">
-    <Panel>
-      <vee-form
-        v-slot="{ errors, isSubmitting, setFieldValue }"
-        :validation-schema="schema"
-        @submit="onCreateOrganization"
-      >
-        <form-group :title="$t('organization.orgInfo')">
-          <div>
-            <label for="Name">{{ $t("common.name") }}</label>
-            <field
-              id="name"
-              type="text"
-              name="name"
-              autocomplete="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-              @input="(e) => onNameChange(e, setFieldValue)"
-            />
-            <div class="field-error-message">
-              {{ errors.name }}
-            </div>
+  <header class="flex items-start justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">{{ $t("organization.newOrganization") }}</h1>
+    </div>
+    <div class="flex gap-2 items-start" />
+  </header>
+
+  <div v-if="session?.user">
+    <Card>
+      <CardHeader>
+        <CardTitle>{{ $t("organization.orgInfo") }}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form @submit="onSubmit">
+          <div class="space-y-4">
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ $t("common.name") }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" autocomplete="name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
           </div>
 
-          <div>
-            <label for="slug">{{ $t("common.slug") }}</label>
-            <field
-              id="slug"
-              type="text"
-              name="slug"
-              autocomplete="slug"
-              class="field"
-              :class="{ 'has-error': errors.slug }"
-              @input="onSlugManualEdit"
-            />
-            <div class="field-error-message">
-              {{ errors.slug }}
-            </div>
+          <div class="flex justify-end pt-6">
+            <Button :disabled="isSubmitting" type="submit">
+              <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="size-4" aria-hidden="true" />
+              <icon-line-md:loading-twotone-loop v-else class="size-4" />
+              {{ $t("common.save") }}
+            </Button>
           </div>
-        </form-group>
-
-        <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </button>
-        </div>
-      </vee-form>
-    </Panel>
-  </main-container>
+        </form>
+      </CardContent>
+    </Card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
-
-import { Field, Form as VeeForm } from "vee-validate";
+import { useSession, fetchSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
 import { useI18n } from "vue-i18n";
-import { ref } from "vue";
 import { useRouter } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
-const session = authClient.useSession();
+const { session } = useSession();
 
 const { error } = useAlert();
 const router = useRouter();
 
-// Track if slug has been manually edited
-const slugManuallyEdited = ref(false);
+const schema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.orgNameRequired")),
+  }),
+);
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.orgNameRequired")),
-  slug: Yup.string()
-    .required(t("validation.orgSlugRequired"))
-    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, t("validation.slugFormat")),
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema: schema,
 });
 
-function generateSlug(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "") // Remove special characters
-    .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
-}
-
-function onNameChange(
-  event: Event,
-
-  setFieldValue: (_field: string, _value: unknown) => void,
-) {
-  if (!slugManuallyEdited.value) {
-    const target = event.target as HTMLInputElement;
-    const slug = generateSlug(target.value);
-    setFieldValue("slug", slug);
-  }
-}
-
-function onSlugManualEdit() {
-  slugManuallyEdited.value = true;
-}
-
-async function onCreateOrganization(values: Record<string, unknown>) {
-  const typedValues = values as Yup.InferType<typeof schema>;
+const onSubmit = handleSubmit(async (values) => {
   try {
-    const resp = await authClient.organization.create({
-      name: typedValues.name,
-      slug: typedValues.slug,
+    const { error: respError } = await api.POST("/auth/organizations", {
+      body: {
+        name: values.name,
+      },
     });
-    if (resp.error) {
-      error(resp.error.message ?? "Failed to create organization");
+
+    if (respError) {
+      error((respError as { message?: string }).message ?? "Failed to create organization");
       return;
     }
-    await router.push({ name: "account.organizations.list" });
+    await fetchSession();
+    await router.push({ name: "account.dashboard" });
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
-}
+});
 </script>

@@ -1,3 +1,6 @@
-node_modules
-shopmon.db
+.git
 .env
+shopmon.db
+frontend/node_modules
+frontend/dist
+api/tmp

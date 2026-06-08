@@ -1,94 +1,83 @@
 <template>
-  <div class="app-layout">
-    <div class="background-mask" />
-    <div class="top-bar">
-      <div class="top-bar-container container">
-        <div class="top-bar-logo">
-          <router-link :to="{ name: 'home' }">
-            <logo class="nav-logo-img" />
-          </router-link>
-        </div>
+  <div class="flex min-h-screen flex-col overflow-x-hidden">
+    <!-- Transparent nav — floats over hero -->
+    <nav class="absolute inset-x-0 top-0 z-20">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2">
+          <Logo class="h-8 w-auto" />
+          <span class="text-lg font-bold text-white">Shopmon</span>
+        </RouterLink>
 
-        <div class="top-bar-actions">
-          <router-link
-            v-if="session.data"
-            :to="{ name: 'account.dashboard' }"
-            class="btn btn-primary btn-sm"
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="session"
+            as-child
+            size="sm"
+            class="rounded-full bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white border-white/20 border"
           >
-            <icon-ri:dashboard-fill class="icon" />
-            {{ $t("nav.dashboard") }}
-          </router-link>
+            <RouterLink :to="{ name: 'account.dashboard' }">
+              <icon-ri:dashboard-fill class="mr-1.5 size-3.5" />
+              {{ $t("nav.dashboard") }}
+            </RouterLink>
+          </Button>
           <template v-else>
-            <router-link :to="{ name: 'account.login' }" class="btn btn-primary btn-sm">
-              <icon-fa6-solid:right-to-bracket class="icon" />
-              {{ $t("nav.login") }}
-            </router-link>
-            <router-link :to="{ name: 'account.register' }" class="btn btn-primary btn-sm">
-              <icon-fa6-solid:user-plus class="icon" />
-              {{ $t("nav.register") }}
-            </router-link>
+            <Button
+              as-child
+              size="sm"
+              variant="ghost"
+              class="text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <RouterLink :to="{ name: 'account.login' }">
+                {{ $t("nav.login") }}
+              </RouterLink>
+            </Button>
+            <Button
+              as-child
+              size="sm"
+              class="rounded-full bg-white px-5 text-[#0c4a6e] hover:bg-white/90"
+            >
+              <RouterLink :to="{ name: 'account.register' }">
+                {{ $t("nav.register") }}
+              </RouterLink>
+            </Button>
           </template>
 
-          <button class="action action-dark-mode" type="button" @click="toggleDarkMode">
-            <icon-fa6-regular:moon v-if="darkMode" class="icon" />
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-8 text-white/60 hover:bg-white/10 hover:text-white"
+            @click="toggleDarkMode"
+          >
+            <icon-fa6-regular:moon v-if="darkMode" class="size-4" />
+            <icon-octicon:sun-16 v-else class="size-4" />
+          </Button>
 
-            <icon-octicon:sun-16 v-else class="icon" />
-          </button>
-
-          <button class="action action-locale" type="button" @click="toggleLocale">
+          <button
+            class="text-xs font-bold tracking-wide text-white/50 hover:text-white"
+            type="button"
+            @click="toggleLocale"
+          >
             {{ String(locale) === "en" ? "DE" : "EN" }}
           </button>
         </div>
       </div>
-    </div>
+    </nav>
 
-    <router-view />
+    <RouterView />
 
-    <layout-footer />
+    <LayoutFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useSession } from "@/composables/useSession";
 import { useLocale } from "@/composables/useLocale";
-import { authClient } from "@/helpers/auth-client";
+import { Button } from "@/components/ui/button";
+import LayoutFooter from "@/components/layout/LayoutFooter.vue";
+import Logo from "@/components/Logo.vue";
 
-const session = authClient.useSession();
+const { session } = useSession();
 const { darkMode, toggleDarkMode } = useDarkMode();
 const { locale, toggleLocale } = useLocale();
 </script>
-
-<style scoped>
-.app-layout {
-  min-height: calc(100vh + 1px);
-  display: flex;
-  flex-direction: column;
-}
-
-.background-mask {
-  &:after {
-    height: 500px;
-  }
-}
-
-.top-bar-actions {
-  margin-left: auto;
-  gap: 0;
-
-  .icon {
-    margin-left: 0.5rem;
-  }
-
-  .action-locale {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: #bae6fd;
-    margin-left: 0.5rem;
-
-    &:hover {
-      color: #ffffff;
-    }
-  }
-}
-</style>

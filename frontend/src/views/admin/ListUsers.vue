@@ -1,111 +1,192 @@
 <template>
-  <HeaderContainer :title="$t('admin.userManagement')" />
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.userManagement") }}</h1>
 
-  <Panel>
-    <Alert v-if="error" type="danger">
-      {{ error }}
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
-    <div class="users-filter">
-      <div class="search-container">
-        <input
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
+      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          v-for="f in roleFilters"
+          :key="f.value"
+          :class="[
+            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+            roleFilter === f.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          ]"
+          @click="
+            roleFilter = f.value;
+            loadUsers();
+          "
+        >
+          {{ f.label }}
+        </button>
+      </div>
+
+      <div class="relative">
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
           v-model="searchQuery"
-          type="text"
           :placeholder="$t('admin.searchUsers')"
-          class="field search-input"
+          class="h-8 w-full pl-8 text-sm sm:w-56"
           @input="debouncedSearch"
         />
       </div>
-
-      <div class="filter-container">
-        <select v-model="roleFilter" class="field" @change="loadUsers">
-          <option value="">{{ $t("admin.allRoles") }}</option>
-          <option value="admin">{{ $t("admin.roleAdmin") }}</option>
-          <option value="user">{{ $t("admin.roleUser") }}</option>
-        </select>
-      </div>
     </div>
 
-    <DataTable v-if="!loading && users.length > 0" :columns="tableColumns" :data="users">
-      <template #cell-role="{ row }">
-        <span class="badge" :class="`badge-${row.role || 'user'}`">
-          {{ row.role || "user" }}
-        </span>
-      </template>
-
-      <template #cell-status="{ row }">
-        <span v-if="row.banned" class="badge badge-danger"> {{ $t("admin.banned") }} </span>
-
-        <span v-else-if="!row.emailVerified" class="badge badge-warning">
-          {{ $t("admin.unverified") }}
-        </span>
-
-        <span v-else class="badge badge-success"> {{ $t("admin.active") }} </span>
-      </template>
-
-      <template #cell-createdAt="{ row }">
-        {{ formatUserDate(row.createdAt) }}
-      </template>
-
-      <template #cell-actions="{ row }">
-        <div class="actions-group">
-          <button
-            v-if="row.id != session?.data?.user?.id"
-            class="btn btn-sm btn-primary"
-            @click="impersonateUser(row.id)"
-          >
-            <icon-fa6-solid:user-secret class="icon" />
-            {{ $t("admin.impersonate") }}
-          </button>
-
-          <button
-            v-if="!row.banned && row.id != session?.data?.user?.id"
-            class="btn btn-sm btn-danger"
-            @click="banUser(row.id)"
-          >
-            {{ $t("admin.ban") }}
-          </button>
-
-          <button v-else-if="row.banned" class="btn btn-sm" @click="unbanUser(row.id)">
-            {{ $t("admin.unban") }}
-          </button>
-        </div>
-      </template>
-    </DataTable>
-
-    <div v-if="loading" class="loading-container">
-      <icon-line-md:loading-twotone-loop class="loading-icon" />
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
       {{ $t("admin.loadingUsers") }}
     </div>
 
-    <div v-if="totalPages > 1" class="pagination">
-      <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+    <!-- User list -->
+    <div v-else-if="users.length > 0" class="space-y-2">
+      <div
+        v-for="user in users"
+        :key="user.id"
+        class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3"
+      >
+        <!-- Avatar -->
+        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <icon-fa6-solid:user class="size-3.5 text-primary" />
+        </div>
+
+        <!-- Info -->
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="truncate font-medium">{{ user.name }}</span>
+            <Badge
+              v-if="user.role === 'admin'"
+              class="bg-primary/10 text-primary border-primary/20 text-[10px]"
+              >admin</Badge
+            >
+          </div>
+          <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span class="truncate">{{ user.email }}</span>
+            <span class="hidden shrink-0 tabular-nums sm:inline">{{
+              formatDate(user.createdAt)
+            }}</span>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="hidden shrink-0 sm:block">
+          <Badge
+            v-if="user.banned"
+            class="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+          >
+            {{ $t("admin.banned") }}
+          </Badge>
+          <Badge
+            v-else-if="!user.emailVerified"
+            class="bg-warning/10 text-warning border-warning/20 text-xs"
+          >
+            {{ $t("admin.unverified") }}
+          </Badge>
+          <Badge v-else class="bg-success/10 text-success border-success/20 text-xs">
+            {{ $t("admin.active") }}
+          </Badge>
+        </div>
+
+        <!-- Actions -->
+        <div v-if="user.id !== sessionData?.user?.id" class="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-7"
+            :title="$t('admin.impersonateTitle')"
+            @click="impersonateUser(user.id)"
+          >
+            <icon-fa6-solid:user-secret class="size-3.5" />
+          </Button>
+          <Button
+            v-if="!user.banned"
+            variant="ghost"
+            size="icon"
+            class="size-7 text-muted-foreground hover:text-destructive"
+            :title="$t('admin.banUser')"
+            @click="banUser(user.id)"
+          >
+            <icon-fa6-solid:ban class="size-3.5" />
+          </Button>
+          <Button
+            v-else
+            variant="ghost"
+            size="icon"
+            class="size-7"
+            :title="$t('admin.unbanUser')"
+            @click="unbanUser(user.id)"
+          >
+            <icon-fa6-solid:rotate class="size-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
+      <icon-fa6-solid:users class="size-10 text-muted-foreground" />
+      <h3 class="text-lg font-semibold">{{ $t("admin.noUsersFound") }}</h3>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">
+        {{ $t("admin.noUsersMatch", { query: searchQuery }) }}
+      </p>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
         {{ $t("common.previous") }}
-      </button>
-      <span class="page-info">{{
+      </Button>
+      <span class="text-sm text-muted-foreground tabular-nums">{{
         $t("common.pageOf", { current: currentPage, total: totalPages })
       }}</span>
-      <button
-        class="btn btn-sm"
+      <Button
+        size="sm"
+        variant="outline"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
         {{ $t("common.next") }}
-      </button>
+      </Button>
     </div>
-  </Panel>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Alert from "@/components/layout/Alert.vue";
-import DataTable from "@/components/layout/DataTable.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import { authClient } from "@/helpers/auth-client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useSession } from "@/composables/useSession";
+import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
-type User = Awaited<ReturnType<typeof authClient.admin.listUsers>>["data"]["users"][number];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  banned: boolean;
+  emailVerified: boolean;
+  createdAt: string;
+}
 
 const users = ref<User[]>([]);
 const loading = ref(true);
@@ -116,51 +197,30 @@ const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
 
-const session = authClient.useSession();
-
+const { session: sessionData } = useSession();
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
-
 const { t } = useI18n();
 
-const tableColumns = computed(() => [
-  { key: "name", name: t("common.name"), sortable: true, searchable: true },
-  { key: "email", name: t("common.email"), sortable: true, searchable: true },
-  { key: "role", name: t("common.role"), sortable: true },
-  { key: "status", name: t("common.status") },
-  { key: "createdAt", name: t("admin.created"), sortable: true },
-]);
+const roleFilters = [
+  { label: t("admin.allRoles"), value: "" },
+  { label: t("admin.roleAdmin"), value: "admin" },
+  { label: t("admin.roleUser"), value: "user" },
+];
 
 async function loadUsers() {
   loading.value = true;
   error.value = "";
 
   try {
-    const query: { [key: string]: unknown } = {
-      limit: pageSize.value,
-      offset: (currentPage.value - 1) * pageSize.value,
-      sortBy: "createdAt",
-      sortDirection: "desc" as const,
-    };
+    const { data, error: respError } = await api.GET("/auth/admin/users");
 
-    if (searchQuery.value) {
-      query.searchField = "email";
-      query.searchOperator = "contains";
-      query.searchValue = searchQuery.value;
-    }
-
-    if (roleFilter.value) {
-      query.filterField = "role";
-      query.filterOperator = "eq";
-      query.filterValue = roleFilter.value;
-    }
-
-    const response = await authClient.admin.listUsers({ query });
-
-    if (!response.error) {
-      users.value = response.data?.users ?? [];
-      totalUsers.value = response.data?.total ?? 0;
+    if (!respError && data) {
+      const userData = data as unknown as { users?: User[]; total?: number };
+      users.value = userData.users ?? (Array.isArray(data) ? (data as User[]) : []);
+      totalUsers.value = userData.total ?? users.value.length;
     } else {
-      error.value = response.error.message ?? "Failed to load users";
+      error.value =
+        (respError as unknown as { message?: string })?.message ?? "Failed to load users";
     }
   } catch (err) {
     error.value = `Failed to load users: ${err instanceof Error ? err.message : String(err)}`;
@@ -171,13 +231,13 @@ async function loadUsers() {
 
 async function impersonateUser(userId: string) {
   try {
-    const response = await authClient.admin.impersonateUser({ userId });
-
-    if (!response.error) {
-      // Reload the page to apply the new session
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
+      params: { path: { userId } },
+    });
+    if (!respError) {
       window.location.href = "/";
     } else {
-      error.value = response.error.message ?? "Failed to impersonate user";
+      error.value = (respError as { message?: string }).message ?? "Failed to impersonate user";
     }
   } catch (err) {
     error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
@@ -189,15 +249,14 @@ async function banUser(userId: string) {
   if (!reason) return;
 
   try {
-    const response = await authClient.admin.banUser({
-      userId,
-      banReason: reason,
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
+      params: { path: { userId } },
+      body: { banReason: reason },
     });
-
-    if (!response.error) {
+    if (!respError) {
       await loadUsers();
     } else {
-      error.value = response.error.message ?? "Failed to ban user";
+      error.value = (respError as { message?: string }).message ?? "Failed to ban user";
     }
   } catch (err) {
     error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
@@ -206,12 +265,13 @@ async function banUser(userId: string) {
 
 async function unbanUser(userId: string) {
   try {
-    const response = await authClient.admin.unbanUser({ userId });
-
-    if (!response.error) {
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
+      params: { path: { userId } },
+    });
+    if (!respError) {
       await loadUsers();
     } else {
-      error.value = response.error.message ?? "Failed to unban user";
+      error.value = (respError as { message?: string }).message ?? "Failed to unban user";
     }
   } catch (err) {
     error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;
@@ -221,10 +281,6 @@ async function unbanUser(userId: string) {
 function changePage(page: number) {
   currentPage.value = page;
   loadUsers();
-}
-
-function formatUserDate(date: string | Date) {
-  return formatDate(date);
 }
 
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -240,68 +296,3 @@ onMounted(() => {
   loadUsers();
 });
 </script>
-
-<style scoped>
-.users-filter {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-}
-
-.search-container {
-  flex: 1;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 400px;
-}
-
-.filter-container select {
-  min-width: 150px;
-}
-
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-color-muted);
-  gap: 0.5rem;
-}
-
-.loading-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.actions-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.badge-admin {
-  background-color: #7c3aed;
-  color: white;
-}
-
-.badge-user {
-  background-color: #6b7280;
-  color: white;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.page-info {
-  color: var(--text-color-muted);
-}
-</style>

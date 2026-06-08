@@ -41,9 +41,8 @@ describe("Home", () => {
 
   it("displays main heading", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find("h1").text()).toBe(
-      "Shopmon - The Open-Source Dashboard for Shopware Developers",
-    );
+    expect(wrapper.find("h1").text()).toContain("The monitoring dashboard");
+    expect(wrapper.find("h1").text()).toContain("your Shopware shops deserve");
   });
 
   it("displays subheading about dashboard overview", () => {
@@ -58,9 +57,10 @@ describe("Home", () => {
     expect(wrapper.text()).toContain("Performance monitoring");
   });
 
-  it("displays Shopware versions section", () => {
+  it("displays Health Checks showcase section", () => {
     const wrapper = mount(Home);
-    expect(wrapper.text()).toContain("Shopware versions & environment state dashboard");
+    expect(wrapper.text()).toContain("Health Checks");
+    expect(wrapper.text()).toContain("Frosh Tools performance checks");
   });
 
   it("displays Frosh Tools section", () => {
@@ -68,9 +68,10 @@ describe("Home", () => {
     expect(wrapper.text()).toContain("Frosh Tools performance checks");
   });
 
-  it("displays Extensions section", () => {
+  it("displays Performance showcase section", () => {
     const wrapper = mount(Home);
-    expect(wrapper.text()).toContain("Extensions and updates");
+    expect(wrapper.text()).toContain("Performance");
+    expect(wrapper.text()).toContain("Automatic sitespeed.io checks");
   });
 
   it("displays Sitespeed section", () => {
@@ -86,7 +87,7 @@ describe("Home", () => {
 
   it("displays value propositions", () => {
     const wrapper = mount(Home);
-    expect(wrapper.text()).toContain("Forever Free");
+    expect(wrapper.text()).toContain("Free");
     expect(wrapper.text()).toContain("Community Driven");
     expect(wrapper.text()).toContain("Open Source");
   });
@@ -104,31 +105,39 @@ describe("Home", () => {
 
   it("uses theme-aware images", () => {
     mount(Home);
-    // Verify that getThemeImage was called for theme-aware images
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-dashboard.png");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-performance-checks.png");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-extensions.png");
-    expect(mockGetThemeImage).toHaveBeenCalledWith("/home/shopmon-sitespeed.png");
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-dashboard.webp",
+      dark: "/src/assets/home/shopmon-dashboard-dark.webp",
+    });
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-performance-checks.webp",
+      dark: "/src/assets/home/shopmon-performance-checks-dark.webp",
+    });
+    expect(mockGetThemeImage).toHaveBeenCalledWith({
+      light: "/src/assets/home/shopmon-sitespeed.webp",
+      dark: "/src/assets/home/shopmon-sitespeed-dark.webp",
+    });
   });
 
-  it("has header section", () => {
+  it("has main heading in h1", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".header").exists()).toBe(true);
+    expect(wrapper.find("h1").exists()).toBe(true);
   });
 
-  it("has panel-intro section", () => {
+  it("has feature cards for bento features", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".panel-intro").exists()).toBe(true);
+    expect(wrapper.findAll(".bg-card").length).toBeGreaterThan(0);
   });
 
-  it("has multiple row sections", () => {
+  it("has feature images", () => {
     const wrapper = mount(Home);
-    const rows = wrapper.findAll(".row");
-    expect(rows.length).toBeGreaterThan(0);
+    const images = wrapper.findAll("img");
+    expect(images.length).toBeGreaterThan(0);
   });
 
-  it("has primary CTA section", () => {
+  it("has primary CTA section with gradient background", () => {
     const wrapper = mount(Home);
-    expect(wrapper.find(".section-primary").exists()).toBe(true);
+    // CTA section uses a gradient with primary color
+    expect(wrapper.find(".bg-gradient-to-br").exists()).toBe(true);
   });
 });

@@ -1,5 +1,5 @@
-import { authClient } from "@/helpers/auth-client";
 import { type Ref, ref, watch } from "vue";
+import { api } from "@/helpers/api";
 
 // Cache for permission results
 const permissionCache = new Map<string, { allowed: boolean; timestamp: number }>();
@@ -9,7 +9,7 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 interface PermissionCheck {
   organizationId?: string | null;
-  permissions: Parameters<typeof authClient.organization.hasPermission>[0]["permissions"];
+  permissions: Record<string, string[]>;
 }
 
 export function usePermissions(permissionCheck: Ref<PermissionCheck> | PermissionCheck) {
@@ -69,12 +69,16 @@ export function usePermissions(permissionCheck: Ref<PermissionCheck> | Permissio
     isLoading.value = true;
 
     try {
-      const response = await authClient.organization.hasPermission({
-        organizationId: currentCheck.organizationId,
-        permissions: currentCheck.permissions,
+      const { data } = await api.POST("/auth/has-permission", {
+        body: {
+          organizationId: currentCheck.organizationId,
+        },
       });
 
-      const result = response.data?.success ?? false;
+      let result = false;
+      if (data) {
+        result = data.success ?? false;
+      }
       allowed.value = result;
 
       // Cache the result

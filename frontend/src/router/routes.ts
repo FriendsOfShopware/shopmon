@@ -3,7 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import LoginLayout from "@/layouts/LoginLayout.vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
-import ShopDetailLayout from "@/layouts/ShopDetailLayout.vue";
+import EnvironmentDetailLayout from "@/layouts/EnvironmentDetailLayout.vue";
 import adminRoutes from "@/router/admin";
 
 import FaShop from "~icons/fa6-solid/shop";
@@ -39,6 +39,16 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("@/views/Imprint.vue"),
       },
     ],
+  },
+  {
+    path: "/auth/callback",
+    name: "auth.callback",
+    component: () => import("@/views/auth/OAuthCallback.vue"),
+  },
+  {
+    path: "/auth/sso/callback/:providerId",
+    name: "auth.sso.callback",
+    component: () => import("@/views/auth/SSOCallback.vue"),
   },
   {
     path: "/account",
@@ -94,13 +104,18 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        name: "account.project.list",
-        path: "projects",
-        component: () => import("@/views/shop/ListProjects.vue"),
+        name: "account.shop.list",
+        path: "shops",
+        component: () => import("@/views/shop/ListShops.vue"),
         meta: {
-          titleKey: "nav.myProjects",
+          titleKey: "nav.myShops",
           icon: FaFolder,
         },
+      },
+      {
+        name: "account.environments.new",
+        path: "environments/new",
+        component: () => import("@/views/environment/AddEnvironment.vue"),
       },
       {
         name: "account.shops.new",
@@ -108,103 +123,98 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("@/views/shop/AddShop.vue"),
       },
       {
-        name: "account.projects.new",
-        path: "projects/new",
-        component: () => import("@/views/shop/AddProject.vue"),
-      },
-      {
-        name: "account.projects.edit",
-        path: "projects/:projectId(\\d+)/edit",
-        component: () => import("@/views/shop/EditProject.vue"),
+        name: "account.shops.edit",
+        path: "shops/:shopId(\\d+)/edit",
+        component: () => import("@/views/shop/EditShop.vue"),
         meta: {
-          titleKey: "nav.editProject",
+          titleKey: "nav.editShop",
         },
       },
       {
-        name: "account.shops.edit",
-        path: "organizations/:slug/shops/:shopId(\\d+)/edit",
-        component: () => import("@/views/shop/EditShop.vue"),
+        name: "account.environments.edit",
+        path: "environments/:environmentId(\\d+)/edit",
+        component: () => import("@/views/environment/EditEnvironment.vue"),
       },
       {
-        path: "organizations/:slug/shops/:shopId(\\d+)",
-        component: ShopDetailLayout,
+        path: "environments/:environmentId(\\d+)",
+        component: EnvironmentDetailLayout,
         children: [
           {
-            name: "account.shops.detail",
+            name: "account.environments.detail",
             path: "",
-            component: () => import("@/views/shop/detail/DetailShop.vue"),
+            component: () => import("@/views/environment/detail/DetailEnvironment.vue"),
             meta: {
-              titleKey: "nav.shopInformation",
+              titleKey: "nav.environmentInformation",
               icon: FaShop,
             },
           },
           {
-            name: "account.shops.detail.checks",
+            name: "account.environments.detail.checks",
             path: "checks",
-            component: () => import("@/views/shop/detail/DetailChecks.vue"),
+            component: () => import("@/views/environment/detail/DetailChecks.vue"),
             meta: {
               titleKey: "nav.checks",
               icon: FaCircleCheck,
             },
           },
           {
-            name: "account.shops.detail.extensions",
+            name: "account.environments.detail.extensions",
             path: "extensions",
-            component: () => import("@/views/shop/detail/DetailExtensions.vue"),
+            component: () => import("@/views/environment/detail/DetailExtensions.vue"),
             meta: {
               titleKey: "nav.extensions",
               icon: FaPlug,
             },
           },
           {
-            name: "account.shops.detail.tasks",
+            name: "account.environments.detail.tasks",
             path: "tasks",
-            component: () => import("@/views/shop/detail/DetailScheduledTasks.vue"),
+            component: () => import("@/views/environment/detail/DetailScheduledTasks.vue"),
             meta: {
               titleKey: "nav.scheduledTasks",
               icon: FaListCheck,
             },
           },
           {
-            name: "account.shops.detail.queue",
+            name: "account.environments.detail.queue",
             path: "queue",
-            component: () => import("@/views/shop/detail/DetailQueue.vue"),
+            component: () => import("@/views/environment/detail/DetailQueue.vue"),
             meta: {
               titleKey: "nav.queue",
               icon: FaCircleCheck,
             },
           },
           {
-            name: "account.shops.detail.sitespeed",
+            name: "account.environments.detail.sitespeed",
             path: "sitespeed",
-            component: () => import("@/views/shop/detail/DetailSitespeed.vue"),
+            component: () => import("@/views/environment/detail/DetailSitespeed.vue"),
             meta: {
               titleKey: "nav.sitespeed",
               icon: FaRocket,
             },
           },
           {
-            name: "account.shops.detail.changelog",
+            name: "account.environments.detail.changelog",
             path: "changelog",
-            component: () => import("@/views/shop/detail/DetailChangelog.vue"),
+            component: () => import("@/views/environment/detail/DetailChangelog.vue"),
             meta: {
               titleKey: "nav.changelog",
               icon: FaFileWaveform,
             },
           },
           {
-            name: "account.shops.detail.deployments",
+            name: "account.environments.detail.deployments",
             path: "deployments",
-            component: () => import("@/views/shop/detail/DetailDeployments.vue"),
+            component: () => import("@/views/environment/detail/DetailDeployments.vue"),
             meta: {
               titleKey: "nav.deployments",
               icon: FaCodeBranch,
             },
           },
           {
-            name: "account.shops.detail.deployment",
+            name: "account.environments.detail.deployment",
             path: "deployments/:deploymentId(\\d+)",
-            component: () => import("@/views/shop/detail/DetailDeployment.vue"),
+            component: () => import("@/views/environment/detail/DetailDeployment.vue"),
             meta: {
               titleKey: "nav.deploymentDetails",
             },
@@ -216,7 +226,7 @@ export const routes: RouteRecordRaw[] = [
         path: "organizations",
         component: () => import("@/views/organization/ListOrganizations.vue"),
         meta: {
-          titleKey: "nav.myOrganizations",
+          titleKey: "nav.myOrganization",
           icon: FaBuilding,
         },
       },
@@ -226,18 +236,27 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("@/views/organization/AddOrganization.vue"),
       },
       {
+        name: "account.onboarding",
+        path: "onboarding",
+        component: () => import("@/views/organization/OnboardingOrganization.vue"),
+      },
+      {
         name: "account.organizations.detail",
-        path: "organizations/:slug",
+        path: "organization",
         component: () => import("@/views/organization/DetailOrganization.vue"),
+        meta: {
+          titleKey: "nav.myOrganization",
+          icon: FaBuilding,
+        },
       },
       {
         name: "account.organizations.edit",
-        path: "organizations/edit/:slug",
+        path: "organization/edit",
         component: () => import("@/views/organization/EditOrganization.vue"),
       },
       {
         name: "account.organizations.sso",
-        path: "organizations/:slug/sso",
+        path: "organization/sso",
         component: () => import("@/views/organization/ManageSSO.vue"),
       },
       {
@@ -281,6 +300,6 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
-    redirect: { name: "home" },
+    redirect: () => ({ name: "home" }),
   },
 ];

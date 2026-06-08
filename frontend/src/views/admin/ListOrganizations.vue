@@ -1,137 +1,159 @@
 <template>
-  <HeaderContainer :title="$t('admin.orgManagement')" />
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.orgManagement") }}</h1>
 
-  <Panel>
-    <Alert v-if="error" type="danger">
-      {{ error }}
+    <Alert v-if="error" variant="destructive">
+      <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
-    <div class="organizations-filter">
-      <div class="search-container">
-        <input
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
+      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+        <button
+          v-for="s in sortOptions"
+          :key="s.value"
+          :class="[
+            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+            sortBy === s.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          ]"
+          @click="
+            sortBy = s.value;
+            loadOrganizations();
+          "
+        >
+          {{ s.label }}
+        </button>
+      </div>
+
+      <div class="relative">
+        <icon-fa6-solid:magnifying-glass
+          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
           v-model="searchQuery"
-          type="text"
           :placeholder="$t('admin.searchOrgs')"
-          class="field search-input"
+          class="h-8 w-full pl-8 text-sm sm:w-56"
           @input="debouncedSearch"
         />
       </div>
-
-      <div class="filter-container">
-        <select v-model="sortBy" class="field" @change="loadOrganizations">
-          <option value="createdAt">{{ $t("admin.sortByCreated") }}</option>
-          <option value="name">{{ $t("admin.sortByName") }}</option>
-          <option value="slug">{{ $t("admin.sortBySlug") }}</option>
-          <option value="shopCount">{{ $t("admin.sortByShops") }}</option>
-          <option value="memberCount">{{ $t("admin.sortByMembers") }}</option>
-        </select>
-      </div>
-
-      <div class="filter-container">
-        <select v-model="sortDirection" class="field" @change="loadOrganizations">
-          <option value="desc">{{ $t("common.descending") }}</option>
-          <option value="asc">{{ $t("common.ascending") }}</option>
-        </select>
-      </div>
     </div>
 
-    <DataTable
-      v-if="!loading && organizations.length > 0"
-      :columns="tableColumns"
-      :data="organizations"
-    >
-      <template #cell-logo="{ row }">
-        <div class="logo-container">
-          <img v-if="row.logo" :src="row.logo" :alt="row.name" class="organization-logo" />
-          <div v-else class="logo-placeholder">
-            <icon-fa6-solid:building class="icon" />
-          </div>
-        </div>
-      </template>
-
-      <template #cell-name="{ row }">
-        <router-link :to="{ name: 'account.organizations.detail', params: { slug: row.slug } }">
-          {{ row.name }}
-        </router-link>
-      </template>
-
-      <template #cell-slug="{ row }">
-        <code class="slug">{{ row.slug }}</code>
-      </template>
-
-      <template #cell-shopCount="{ row }">
-        <span class="badge badge-info"> {{ $t("admin.nShops", { count: row.shopCount }) }} </span>
-      </template>
-
-      <template #cell-memberCount="{ row }">
-        <span class="badge badge-secondary">
-          {{ $t("admin.nMembers", { count: row.memberCount }) }}
-        </span>
-      </template>
-
-      <template #cell-createdAt="{ row }">
-        {{ formatDate(row.createdAt) }}
-      </template>
-    </DataTable>
-
-    <div v-if="loading" class="loading-container">
-      <icon-line-md:loading-twotone-loop class="loading-icon" />
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-5" />
       {{ $t("admin.loadingOrgs") }}
     </div>
 
-    <div v-if="totalPages > 1" class="pagination">
-      <button class="btn btn-sm" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+    <!-- Org list -->
+    <div v-else-if="organizations.length > 0" class="space-y-2">
+      <RouterLink
+        v-for="org in organizations"
+        :key="org.id"
+        :to="{ name: 'account.organizations.detail' }"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
+      >
+        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
+          <img
+            v-if="org.logo"
+            :src="org.logo"
+            :alt="org.name"
+            class="size-7 rounded object-cover"
+          />
+          <icon-fa6-solid:building v-else class="size-4 text-muted-foreground" />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="truncate font-medium transition-colors group-hover:text-primary">
+            {{ org.name }}
+          </div>
+          <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span class="flex items-center gap-1">
+              <icon-fa6-solid:earth-americas class="size-2.5" />
+              {{ org.environmentCount }}
+            </span>
+            <span class="flex items-center gap-1">
+              <icon-fa6-solid:users class="size-2.5" />
+              {{ org.memberCount }}
+            </span>
+            <span class="hidden tabular-nums sm:inline">{{ formatDate(org.createdAt) }}</span>
+          </div>
+        </div>
+
+        <icon-fa6-solid:chevron-right
+          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </RouterLink>
+    </div>
+
+    <!-- Empty -->
+    <div
+      v-else
+      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
+    >
+      <icon-fa6-solid:building class="size-10 text-muted-foreground" />
+      <h3 class="text-lg font-semibold">No organizations found</h3>
+      <p v-if="searchQuery" class="text-sm text-muted-foreground">
+        No organizations match "{{ searchQuery }}"
+      </p>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === 1"
+        @click="changePage(currentPage - 1)"
+      >
         {{ $t("common.previous") }}
-      </button>
-      <span class="page-info">{{
+      </Button>
+      <span class="text-sm tabular-nums text-muted-foreground">{{
         $t("common.pageOf", { current: currentPage, total: totalPages })
       }}</span>
-      <button
-        class="btn btn-sm"
+      <Button
+        size="sm"
+        variant="outline"
         :disabled="currentPage === totalPages"
         @click="changePage(currentPage + 1)"
       >
         {{ $t("common.next") }}
-      </button>
+      </Button>
     </div>
-  </Panel>
+  </div>
 </template>
 
 <script setup lang="ts">
-import Alert from "@/components/layout/Alert.vue";
-import DataTable from "@/components/layout/DataTable.vue";
-import HeaderContainer from "@/components/layout/HeaderContainer.vue";
-import { trpcClient } from "@/helpers/trpc";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
-type Organization = Awaited<
-  ReturnType<typeof trpcClient.admin.listOrganizations.query>
->["organizations"][number];
+type Organization = components["schemas"]["AccountOrganization"];
 
 const organizations = ref<Organization[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const sortBy = ref<"createdAt" | "name" | "slug" | "shopCount" | "memberCount">("createdAt");
+const sortBy = ref<"createdAt" | "name" | "shopCount" | "memberCount">("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalOrganizations = ref(0);
 
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
-
 const { t } = useI18n();
 
-const tableColumns = computed(() => [
-  { key: "logo", name: t("admin.logo") },
-  { key: "name", name: t("common.name"), sortable: true, searchable: true },
-  { key: "slug", name: t("common.slug"), sortable: true, searchable: true },
-  { key: "shopCount", name: t("common.shops"), sortable: true },
-  { key: "memberCount", name: t("common.members"), sortable: true },
-  { key: "createdAt", name: t("admin.created"), sortable: true },
-]);
+const sortOptions = [
+  { label: t("admin.sortByCreated"), value: "createdAt" as const },
+  { label: t("admin.sortByName"), value: "name" as const },
+  { label: t("admin.sortByMembers"), value: "memberCount" as const },
+];
 
 async function loadOrganizations() {
   loading.value = true;
@@ -141,9 +163,9 @@ async function loadOrganizations() {
     const query: {
       limit: number;
       offset: number;
-      sortBy: "createdAt" | "name" | "slug" | "shopCount" | "memberCount";
+      sortBy: "createdAt" | "name" | "shopCount" | "memberCount";
       sortDirection: "asc" | "desc";
-      searchField?: "name" | "slug";
+      searchField?: "name";
       searchOperator?: "contains";
       searchValue?: string;
     } = {
@@ -154,21 +176,14 @@ async function loadOrganizations() {
     };
 
     if (searchQuery.value) {
-      // Search by name if it contains letters, otherwise by slug
-      const isNameSearch = /[a-zA-Z]/.test(searchQuery.value);
-      query.searchField = isNameSearch ? "name" : "slug";
+      query.searchField = "name";
       query.searchOperator = "contains";
       query.searchValue = searchQuery.value;
     }
 
-    const response = await trpcClient.admin.listOrganizations.query(query);
+    const { data: response } = await api.GET("/admin/organizations", { params: { query } });
 
-    if (Array.isArray(response)) {
-      // When no input provided, response is an array
-      organizations.value = response;
-      totalOrganizations.value = response.length;
-    } else {
-      // When input provided, response is an object with organizations and total
+    if (response) {
       organizations.value = response.organizations;
       totalOrganizations.value = response.total;
     }
@@ -197,109 +212,3 @@ onMounted(() => {
   loadOrganizations();
 });
 </script>
-
-<style scoped>
-.organizations-filter {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-container {
-  flex: 1;
-  min-width: 250px;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 400px;
-}
-
-.filter-container select {
-  min-width: 150px;
-}
-
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: var(--text-color-muted);
-  gap: 0.5rem;
-}
-
-.loading-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.actions-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-}
-
-.organization-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.logo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background-color: var(--bg-color-muted);
-  border-radius: 4px;
-  color: var(--text-color-muted);
-}
-
-.logo-placeholder .icon {
-  width: 16px;
-  height: 16px;
-}
-
-.slug {
-  background-color: var(--bg-color-muted);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-family: monospace;
-}
-
-.badge-info {
-  background-color: #0ea5e9;
-  color: white;
-}
-
-.badge-secondary {
-  background-color: #6b7280;
-  color: white;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.page-info {
-  color: var(--text-color-muted);
-}
-</style>

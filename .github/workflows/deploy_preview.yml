@@ -35,26 +35,17 @@ jobs:
       - name: Login Registry
         run: nsc docker login
 
-      - name: Build and push (frontend)
+      - name: Build and push
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.issue.number }}
+          tags: nscr.io/pnssv1a0ofq1e/shopmon:pr-${{ github.event.issue.number }}
           platforms: linux/amd64
-          file: Dockerfile.frontend
-
-      - name: Build and push (api)
-        uses: docker/build-push-action@v7
-        with:
-          push: true
-          tags: nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.issue.number }}
-          platforms: linux/amd64
-          file: Dockerfile.api
+          file: Dockerfile
 
       - name: Set image expiration (24h)
         run: |
-          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-frontend:pr-${{ github.event.issue.number }} --ensure-minimum 24h
-          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon-api:pr-${{ github.event.issue.number }} --ensure-minimum 24h
+          nsc registry update-image-expiration nscr.io/pnssv1a0ofq1e/shopmon:pr-${{ github.event.issue.number }} --ensure-minimum 24h
 
       - name: Create ephemeral Kubernetes cluster
         id: cluster
@@ -79,7 +70,7 @@ jobs:
           kubectl rollout status deployment/db --timeout=120s
           kubectl rollout status deployment/redis --timeout=60s
           kubectl rollout status deployment/api --timeout=120s
-          kubectl rollout status deployment/frontend --timeout=60s
+          kubectl rollout status deployment/worker --timeout=120s
 
       - name: Expose frontend
         id: expose-frontend

@@ -1,48 +1,23 @@
 <template>
-  <div class="container">
-    <header-container :title="$t('imprint.title')" />
+  <!-- Page header -->
+  <div class="bg-gradient-to-b from-[#0a3d5c] via-primary to-primary/30 pb-12 pt-28 sm:pt-32">
+    <div class="mx-auto max-w-3xl px-6 text-center">
+      <h1 class="text-3xl font-bold text-white">{{ $t("imprint.title") }}</h1>
+    </div>
+  </div>
 
-    <Panel>
-      <section>
-        <h2>{{ $t("imprint.contact") }}</h2>
-        <div class="contact-info">
-          <p>{{ $t("imprint.description") }}</p>
-          <p>{{ $t("imprint.email") }}</p>
-        </div>
-      </section>
-    </Panel>
+  <!-- Content -->
+  <div class="mx-auto -mt-6 max-w-3xl px-6 pb-16">
+    <Card>
+      <CardContent class="py-8">
+        <h2 class="mb-3 text-xl font-semibold text-primary">{{ $t("imprint.contact") }}</h2>
+        <p class="mb-4 text-muted-foreground">{{ $t("imprint.description") }}</p>
+        <p class="text-muted-foreground">{{ $t("imprint.email") }}</p>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
-<script setup lang="ts"></script>
-<style scoped>
-section {
-  margin-bottom: 2rem;
-}
-
-h2 {
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-p {
-  margin-bottom: 1rem;
-  color: var(--text-color);
-}
-
-.contact-info p:last-child {
-  margin-bottom: 0;
-}
-
-a {
-  color: var(--primary-color);
-  text-decoration: underline;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: var(--primary-color-dark, #2563eb);
-}
-</style>
+<script setup lang="ts">
+import { Card, CardContent } from "@/components/ui/card";
+</script>

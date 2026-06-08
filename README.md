@@ -1,153 +1,95 @@
-# Shop Monitoring
+# Shopmon
 
-Shopmon is an application from FriendsOfShopware to manage multiple Shopware instances.
+Shopmon is an application from FriendsOfShopware to manage multiple Shopware instances. It tracks versions, extensions, scheduled tasks, queue health, and performance trends across all your shops.
 
-- Credentials are saved in a SQLite database
-  - Client secrets are encrypted using [web crypto api](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) outside the database
-- API runs on Bun runtime
-- Mails are sent via SMTP
+## Tech Stack
+
+- **API**: Go (chi router, sqlc, oapi-codegen)
+- **Frontend**: Vue 3 + TypeScript + Tailwind CSS
+- **Database**: PostgreSQL
+- **Queue**: PostgreSQL (go-queue)
+- **Storage**: S3-compatible
+- **Observability**: OpenTelemetry (traces + logs via OTLP)
 
 ## Features
 
-Overview of all your Shopware instances to see:
-
-- Shopware Version and Security Updates
-- Show all installed extension and extension updates
-- Show info on scheduled tasks and queue
-- Run a daily check with sitespeed to see decreasing performance
-- Clear shop cache
-
-## Requirements (self hosted)
-
-> [!NOTE]  
-> It's not recommended to self-host this application, we don't give any support for self-hosted installations. Please use the managed version at https://shopmon.fos.gg
-
-- Bun runtime (v1.0 or higher)
-- SQLite 3
-- Node.js 20+ and PNPM (for building frontend)
+- Overview of all your Shopware instances
+- Shopware version and security update tracking
+- Installed extensions and available updates
+- Scheduled task and queue monitoring
+- Daily sitespeed checks to catch performance regressions
+- Cache clearing
 
 ## Managed / SaaS
 
 https://shopmon.fos.gg
 
-## Local Installation
+## Local Development
 
 ### Prerequisites
 
-- Bun
-- Node.js 22 or higher
+- [mise](https://mise.jdx.dev) — manages Go, Node.js, and tool versions
+- [Docker](https://www.docker.com/) — for PostgreSQL, Redis, Mailpit, and demo shop
 
-### Step 1: Clone the repository
+All other tools (Go 1.26, Node 26, sqlc, golangci-lint, air, oapi-codegen) are installed automatically by mise.
+
+### Quick Start
 
 ```bash
 git clone https://github.com/FriendsOfShopware/shopmon.git
 cd shopmon
+
+mise trust              # trust the mise config
+mise install            # install all tools
+mise run setup          # install dependencies (Go modules + npm)
+mise run up             # start Docker services
+mise run load-fixtures  # migrate DB + seed test data
+mise run dev            # start API, worker, and frontend
 ```
 
-### Step 2: Install dependencies
+Open http://localhost:3000 in your browser.
+
+### Useful Commands
 
 ```bash
-make setup
+mise run up              # Start infrastructure (DB, Redis, Mailpit, demo shop)
+mise run down            # Stop infrastructure
+mise run migrate         # Apply database migrations
+mise run fixtures        # Seed test fixtures
+mise run load-fixtures   # Drop DB → migrate → seed (full reset)
+mise run test            # Run Go integration tests
+mise run lint            # Run all linters + type checks + tests
+mise run lint-fix        # Auto-fix lint and formatting issues
+mise run generate        # Regenerate sqlc + oapi-codegen + frontend API types
+mise run build           # Build the API binary
 ```
 
-This will install dependencies for both the API and frontend.
+Run `mise tasks` to see all available tasks.
 
-### Step 3: Configure environment
+### Dev Services
 
-Copy the example environment file and configure it:
+| Service | URL | Notes |
+|---|---|---|
+| Shopmon Frontend | http://localhost:3000 | |
+| Shopmon API | http://localhost:5789 | |
+| Mailpit | http://localhost:8025 | Catches all outgoing mail |
+| Demo Shop Frontend | http://localhost:3889 | |
+| Demo Shop Admin | http://localhost:3889/admin | `admin` / `shopware` |
+| Jaeger (traces) | http://localhost:16686 | OpenTelemetry traces |
 
-```bash
-cp api/.env.example api/.env
-```
+### Environment Variables
 
-Edit `api/.env` with your configuration:
+Local dev defaults are in [`.mise.toml`](.mise.toml) under `[env]`. They point to the Docker Compose services. No `.env` file needed for local development.
 
-```env
-# Database
-# Security (generate a secure random string)
-APP_SECRET=your-secure-random-string-here
+For production/staging, see [`.env.production`](.env.production) and [`.env.staging`](.env.staging).
 
-# Email configuration
-SMTP_SERVER=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-password
-SMTP_FROM=noreply@yourdomain.com
+## Production Deployment
 
-# Application
-FRONTEND_URL=http://localhost:3000
-APP_FILES_DIR=./files
-
-# Monitoring (optional)
-SENTRY_DSN=
-```
-
-### Step 4: Run database migrations
-
-```bash
-make migrate
-```
-
-### Step 5: Start the application
-
-For development:
-
-```bash
-make dev
-```
-
-This will start:
-
-- API server on http://localhost:5789 (proxied by the frontend, not accessed directly)
-- Frontend dev server on http://localhost:3000 (open this in your browser)
-
-### Additional services
-
-To develop Shopmon easier, you can start a local mail catcher and a local Shopware installation with:
-
-```
-make up
-```
-
-### Endpoints:
-
-| Application        | Link                        | Info                                                                                                          |
-| ------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Shopmon Frontend   | http://localhost:3000       |                                                                                                               |
-| Shopmon API        | http://localhost:5789       | Accessed via proxy                                                                                            |
-| Mailpit            | http://localhost:8025       | For mails                                                                                                     |
-| Demo Shop Frontend | http://localhost:3889       |                                                                                                               |
-| Demo Shop Admin    | http://localhost:3889/admin | Username: `admin`, Password: `shopware`                                                                       |
-| Demo Shop Api      | http://localhost:3889/api   | Client Id: `SWIAUZL4OXRKEG1RR3PMCEVNMG`, Client Secret: `aXhNQ3NoRHZONmxPYktHT0c2c09rNkR0UHI0elZHOFIycjBzWks` |
-
-## Configuration
-
-### Production Deployment
-
-For production deployment, you can use the provided Docker setup:
-
-1. Build the Docker image:
-
-```bash
-docker build -t shopmon .
-```
-
-2. Run with docker compose:
-
-```bash
-docker compose -f compose.deploy.yml up -d
-```
-
-Make sure to:
-
-- Use a strong APP_SECRET
-- Configure proper email settings
-- Set up persistent volumes for database and uploads
-- Configure a reverse proxy (nginx, traefik, etc.) for HTTPS
+See [SELF_HOSTING.md](SELF_HOSTING.md) for a complete self-hosting guide with Docker Compose, environment variables, and reverse proxy examples.
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](./CONTRIBUTING.md) for details on how to get started.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and development workflow.
 
 ## License
 

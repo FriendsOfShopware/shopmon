@@ -1,51 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { defineComponent, h } from "vue";
 import ForgotPassword from "./ForgotPassword.vue";
 
-// Stubs
-const AlertStub = defineComponent({
-  name: "Alert",
-  props: ["type", "dismissible"],
-  setup(props, { slots }) {
-    return () => h("div", { class: `alert alert-${props.type}` }, slots.default?.());
+// Mock vue-router for RouterLink
+vi.mock("vue-router", () => ({
+  RouterLink: {
+    name: "RouterLink",
+    props: ["to"],
+    template: '<a :href="to"><slot /></a>',
   },
-});
+}));
 
-const RouterLinkStub = defineComponent({
-  name: "RouterLink",
-  props: ["to"],
-  setup(props, { slots }) {
-    return () => h("a", { href: props.to }, slots.default?.());
+// Mock api client
+vi.mock("@/helpers/api", () => ({
+  api: {
+    GET: vi.fn(),
+    POST: vi.fn(),
+    PATCH: vi.fn(),
+    DELETE: vi.fn(),
+    PUT: vi.fn(),
   },
-});
-
-// Field stub that renders an actual input
-const FieldStub = defineComponent({
-  name: "Field",
-  props: ["name", "type", "placeholder", "class", "id", "autocomplete"],
-  emits: ["update:modelValue"],
-  setup(props, { emit }) {
-    return () =>
-      h("input", {
-        name: props.name,
-        type: props.type ?? "text",
-        placeholder: props.placeholder,
-        class: props.class,
-        id: props.id,
-        autocomplete: props.autocomplete,
-        onInput: (e: Event) => {
-          emit("update:modelValue", (e.target as HTMLInputElement).value);
-        },
-      });
-  },
-});
-
-// Mock auth client
-vi.mock("@/helpers/auth-client", () => ({
-  authClient: {
-    forgetPassword: vi.fn(),
-  },
+  setToken: vi.fn(),
+  getToken: vi.fn(),
 }));
 
 // Mock useAlert composable
@@ -65,9 +41,10 @@ describe("ForgotPassword", () => {
     return mount(ForgotPassword, {
       global: {
         stubs: {
-          Alert: AlertStub,
-          RouterLink: RouterLinkStub,
-          Field: FieldStub,
+          RouterLink: {
+            props: ["to"],
+            template: "<a :href=\"typeof to === 'string' ? to : to?.name\"><slot /></a>",
+          },
         },
       },
     });
@@ -80,7 +57,7 @@ describe("ForgotPassword", () => {
 
   it("displays page title", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h2").text()).toBe("Forgot password");
+    expect(wrapper.find("h3").text()).toBe("Forgot password");
   });
 
   it("displays instructions", () => {
@@ -90,7 +67,7 @@ describe("ForgotPassword", () => {
 
   it("has email input field", () => {
     const wrapper = mountComponent();
-    const emailInput = wrapper.find('input[name="email"]');
+    const emailInput = wrapper.find('input[type="email"]');
     expect(emailInput.exists()).toBe(true);
   });
 
@@ -103,9 +80,9 @@ describe("ForgotPassword", () => {
 
   it("has cancel link to login", () => {
     const wrapper = mountComponent();
-    const cancelLink = wrapper.find('a[href="login"]');
-    expect(cancelLink.exists()).toBe(true);
-    expect(cancelLink.text()).toBe("Cancel");
+    const link = wrapper.find("a");
+    expect(link.exists()).toBe(true);
+    expect(link.text()).toBe("Back to sign in");
   });
 
   it("has form element with submit handler", () => {
@@ -116,7 +93,9 @@ describe("ForgotPassword", () => {
 
   it("has email input with correct attributes", () => {
     const wrapper = mountComponent();
-    const emailInput = wrapper.find('input[name="email"]');
-    expect(emailInput.attributes("placeholder")).toBe("Email address");
+    const emailInput = wrapper.find('input[type="email"]');
+    expect(emailInput.exists()).toBe(true);
+    // The component uses FormLabel instead of a placeholder attribute
+    expect(wrapper.text()).toContain("Email address");
   });
 });

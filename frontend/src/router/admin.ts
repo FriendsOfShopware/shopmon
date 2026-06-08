@@ -27,9 +27,9 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/admin/ListOrganizations.vue"),
       },
       {
-        path: "shops",
-        name: "admin.shops",
-        component: () => import("@/views/admin/ListShops.vue"),
+        path: "environments",
+        name: "admin.environments",
+        component: () => import("@/views/admin/ListEnvironments.vue"),
       },
     ],
   },

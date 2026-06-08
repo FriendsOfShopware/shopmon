@@ -1,0 +1,4 @@
+-- No-op: hashing is one-way. The original plaintext API key tokens cannot be
+-- recovered from their sha256 digests, so this migration is irreversible.
+-- Rolling back leaves the tokens hashed; affected keys would need to be
+-- re-issued to obtain usable plaintext tokens again.

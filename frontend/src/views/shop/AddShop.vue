@@ -1,240 +1,316 @@
 <template>
-  <header-container :title="$t('shop.newShop')" />
-  <main-container>
-    <Panel>
-      <vee-form
-        ref="formRef"
-        v-slot="{ errors, isSubmitting }"
-        :validation-schema="schema"
-        :initial-values="shops"
-        @submit="onSubmit"
-      >
-        <form-group :title="$t('shop.shopInfo')">
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("shop.newShop") }}</h1>
+
+    <form v-if="!isLoadingOrgs" @submit="onSubmit" class="space-y-6">
+      <!-- Shop details card -->
+      <Card>
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:folder class="size-4 text-muted-foreground" />
+            {{ $t("shop.shopInfo") }}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <FormField v-slot="{ componentField }" name="name">
+              <FormItem>
+                <FormLabel>{{ $t("common.name") }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="organizationId">
+              <FormItem>
+                <FormLabel>{{ $t("settings.organization") }}</FormLabel>
+                <Select v-bind="componentField">
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue :placeholder="$t('shop.selectOrganization')" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem v-for="org in organizations" :key="org.id" :value="org.id">
+                      {{ org.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="description">
+              <FormItem class="sm:col-span-2">
+                <FormLabel>{{ $t("common.description") }}</FormLabel>
+                <FormControl>
+                  <Textarea v-bind="componentField" :placeholder="$t('shop.optionalDescription')" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="gitUrl">
+              <FormItem class="sm:col-span-2">
+                <FormLabel>{{ $t("shop.gitRepoUrl") }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://github.com/org/repo"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+        </CardContent>
+      </Card>
+
+      <!-- First environment card -->
+      <Card>
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <icon-fa6-solid:earth-americas class="size-4 text-muted-foreground" />
+            {{ $t("shop.firstEnvironment") }}
+          </CardTitle>
+          <p class="text-sm text-muted-foreground">
+            {{ $t("shop.firstEnvironmentDesc") }}
+          </p>
+        </CardHeader>
+        <CardContent class="space-y-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <FormField v-slot="{ componentField }" name="environmentName">
+              <FormItem>
+                <FormLabel>{{ $t("environment.environmentName") }}</FormLabel>
+                <FormControl>
+                  <Input v-bind="componentField" placeholder="Production" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="environmentUrl">
+              <FormItem>
+                <FormLabel>{{ $t("common.url") }}</FormLabel>
+                <FormControl>
+                  <Input
+                    v-bind="componentField"
+                    type="url"
+                    placeholder="https://my-shop.example.com"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+
+          <Separator />
+
+          <!-- Integration -->
           <div>
-            <label for="Name">{{ $t("common.name") }}</label>
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold">{{ $t("environment.integration") }}</h3>
+                <p class="mt-0.5 text-xs text-muted-foreground">
+                  <i18n-t keypath="environment.integrationDesc" tag="span">
+                    <template #pluginLink>
+                      <a
+                        href="https://github.com/FriendsOfShopware/FroshShopmon"
+                        target="_blank"
+                        class="text-primary hover:underline"
+                        >{{ $t("environment.pluginName") }}</a
+                      >
+                    </template>
+                  </i18n-t>
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" @click="openPluginModal">
+                <icon-fa6-solid:plug class="mr-1.5 size-3" />
+                {{ $t("environment.connectPlugin") }}
+              </Button>
+            </div>
 
-            <field
-              id="name"
-              type="text"
-              name="name"
-              class="field"
-              :class="{ 'has-error': errors.name }"
-            />
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <FormField v-slot="{ componentField }" name="clientId">
+                <FormItem>
+                  <FormLabel>{{ $t("environment.clientId") }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-            <div class="field-error-message">
-              {{ errors.name }}
+              <FormField v-slot="{ componentField }" name="clientSecret">
+                <FormItem>
+                  <FormLabel>{{ $t("environment.clientSecret") }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" type="password" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div>
-            <label for="projectId">{{ $t("shop.project") }}</label>
-
-            <field id="projectId" name="projectId">
-              <select v-model="selectedProjectId" class="field" required>
-                <option v-for="project in projects" :key="project.id" :value="project.id">
-                  {{ project.nameCombined }}
-                </option>
-              </select>
-            </field>
-
-            <div class="field-error-message">
-              {{ errors.projectId }}
-            </div>
-          </div>
-
-          <div>
-            <label for="shopUrl">{{ $t("common.url") }}</label>
-
-            <field
-              id="shopUrl"
-              type="text"
-              name="shopUrl"
-              autocomplete="url"
-              class="field"
-              :class="{ 'has-error': errors.shop_url }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.shopUrl }}
-            </div>
-          </div>
-        </form-group>
-
-        <form-group :title="$t('shop.bypassAuthHeader')">
-          <template #info>
-            {{ $t("shop.bypassAuthHeaderDesc") }}
-          </template>
-
-          <div class="shop-token-display">
-            <code>{{ shopToken }}</code>
-
-            <button type="button" class="btn btn-sm btn-icon" @click="copyToken">
-              <icon-fa6-solid:copy />
-            </button>
-          </div>
-        </form-group>
-
-        <form-group :title="$t('shop.integration')">
-          <template #info>
-            <i18n-t keypath="shop.integrationDesc" tag="span">
-              <template #pluginLink>
-                <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">{{
-                  $t("shop.pluginName")
-                }}</a>
-              </template>
-            </i18n-t>
-            <a
-              href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions"
-            >
-              {{ $t("shop.permissions") }}
-            </a>
-          </template>
-
-          <button type="button" class="btn btn-secondary" @click="openPluginModal">
-            {{ $t("shop.connectPlugin") }}
-          </button>
-
-          <div>
-            <label for="clientId">{{ $t("shop.clientId") }}</label>
-
-            <field
-              id="clientId"
-              type="text"
-              name="clientId"
-              class="field"
-              :class="{ 'has-error': errors.clientId }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.clientId }}
-            </div>
-          </div>
-
-          <div>
-            <label for="clientSecret">{{ $t("shop.clientSecret") }}</label>
-
-            <field
-              id="clientSecret"
-              type="text"
-              name="clientSecret"
-              class="field"
-              :class="{ 'has-error': errors.clientSecret }"
-            />
-
-            <div class="field-error-message">
-              {{ errors.clientSecret }}
-            </div>
-          </div>
-        </form-group>
-
-        <div class="form-submit">
-          <button :disabled="isSubmitting" type="submit" class="btn btn-primary">
-            <icon-fa6-solid:floppy-disk v-if="!isSubmitting" class="icon" aria-hidden="true" />
-            <icon-line-md:loading-twotone-loop v-else class="icon" />
-            {{ $t("common.save") }}
-          </button>
-        </div>
-      </vee-form>
-    </Panel>
+      <!-- Submit -->
+      <div class="flex justify-end">
+        <Button :disabled="isSubmitting" type="submit">
+          <icon-fa6-solid:floppy-disk
+            v-if="!isSubmitting"
+            class="mr-1.5 size-3.5"
+            aria-hidden="true"
+          />
+          <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
+          {{ $t("shop.createShop") }}
+        </Button>
+      </div>
+    </form>
 
     <!-- Plugin Connection Modal -->
-    <plugin-connection-modal
+    <PluginConnectionModal
       v-model:base64="pluginBase64"
       :show="showPluginModal"
       :error="pluginError"
       @close="closePluginModal"
       @import="processPluginData"
     />
-  </main-container>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-
-import { type RouterInput, type RouterOutput, trpcClient } from "@/helpers/trpc";
-import { Field, Form as VeeForm } from "vee-validate";
-import { ref } from "vue";
+import { api } from "@/helpers/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import PluginConnectionModal from "@/components/modal/PluginConnectionModal.vue";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+import { z } from "zod";
+import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-
 import { useRoute, useRouter } from "vue-router";
-import * as Yup from "yup";
 
 const { t } = useI18n();
-const { error, success } = useAlert();
+const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-function generateShopToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+interface Organization {
+  id: string;
+  name: string;
 }
 
-const shopToken = generateShopToken();
-
-async function copyToken() {
-  await navigator.clipboard.writeText(shopToken);
-  success(t("shop.tokenCopied"));
-}
-
-const projects = ref<RouterOutput["account"]["currentUserProjects"]>([]);
-const selectedProjectId = ref<number>(route.query.projectId ? Number(route.query.projectId) : 0);
+const organizations = ref<Organization[]>([]);
+const isLoadingOrgs = ref(true);
 
 const showPluginModal = ref(false);
 const pluginBase64 = ref("");
 const pluginError = ref("");
 
-const formRef = ref();
-
-trpcClient.account.currentUserProjects.query().then((data) => {
-  projects.value = data;
-  if (!selectedProjectId.value && data.length > 0) {
-    selectedProjectId.value = data[0].id;
+async function loadOrganizations() {
+  isLoadingOrgs.value = true;
+  try {
+    const { data } = await api.GET("/auth/list-organizations");
+    if (data) {
+      organizations.value = data;
+    }
+  } catch {
+    // silently ignore
+  } finally {
+    isLoadingOrgs.value = false;
   }
-});
+}
 
 const isValidUrl = (url: string) => {
   try {
-    const parsedUrl = new URL(url);
-    return !!parsedUrl;
-  } catch (_e) {
+    return !!new URL(url);
+  } catch {
     return false;
   }
 };
 
-const schema = Yup.object().shape({
-  name: Yup.string().required(t("validation.shopNameRequired")),
-  shopUrl: Yup.string()
-    .required(t("validation.shopUrlRequired"))
-    .test("is-url-valid", t("validation.shopUrlInvalid"), (value) => isValidUrl(value)),
-  projectId: Yup.number().required(t("validation.projectRequired")),
-  clientId: Yup.string().required(t("validation.clientIdRequired")),
-  clientSecret: Yup.string().required(t("validation.clientSecretRequired")),
+const validationSchema = toTypedSchema(
+  z.object({
+    name: z.string().min(1, t("validation.shopNameRequired")),
+    description: z.string().optional(),
+    gitUrl: z.string().url(t("validation.urlInvalid")).optional().or(z.literal("")),
+    organizationId: z.string().min(1, t("validation.orgRequired")),
+    environmentName: z.string().min(1, t("validation.environmentNameRequired")),
+    environmentUrl: z
+      .string()
+      .min(1, t("validation.environmentUrlRequired"))
+      .refine((val) => isValidUrl(val), t("validation.environmentUrlInvalid")),
+    clientId: z.string().min(1, t("validation.clientIdRequired")),
+    clientSecret: z.string().min(1, t("validation.clientSecretRequired")),
+  }),
+);
+
+const { handleSubmit, isSubmitting, setFieldValue } = useForm({
+  validationSchema,
+  initialValues: {
+    name: "",
+    description: "",
+    gitUrl: "",
+    organizationId: "",
+    environmentName: "",
+    environmentUrl: "",
+    clientId: "",
+    clientSecret: "",
+  },
 });
 
-const shops = {
-  projectId: selectedProjectId.value,
-};
+watch(organizations, (orgs) => {
+  if (orgs.length > 0) {
+    setFieldValue("organizationId", orgs[0].id);
+  }
+});
 
-const onSubmit = async (values: Record<string, unknown>) => {
+const onSubmit = handleSubmit(async (values) => {
   try {
-    const typedValues = values as Yup.InferType<typeof schema>;
-    const input: RouterInput["organization"]["shop"]["create"] = {
-      name: typedValues.name,
-      shopUrl: typedValues.shopUrl.replace(/\/+$/, ""),
-      clientId: typedValues.clientId,
-      clientSecret: typedValues.clientSecret,
-      projectId: selectedProjectId.value,
-      shopToken,
-    };
-    await trpcClient.organization.shop.create.mutate(input);
+    const { error: apiError } = await api.POST("/organizations/{orgId}/shops", {
+      params: { path: { orgId: values.organizationId } },
+      body: {
+        name: values.name,
+        description: values.description ?? undefined,
+        gitUrl: values.gitUrl || undefined,
+        environmentName: values.environmentName,
+        environmentUrl: values.environmentUrl.replace(/\/+$/, ""),
+        clientId: values.clientId,
+        clientSecret: values.clientSecret,
+      },
+    });
 
-    router.push({ name: "account.project.list" });
+    if (apiError) {
+      error(apiError.message);
+      return;
+    }
+
+    if (route.query.redirect) {
+      router.push(route.query.redirect as string);
+    } else {
+      router.push({ name: "account.shop.list" });
+    }
   } catch (e) {
     error(e instanceof Error ? e.message : String(e));
   }
-};
+});
 
 function openPluginModal() {
   showPluginModal.value = true;
@@ -242,18 +318,18 @@ function openPluginModal() {
   pluginError.value = "";
 }
 
-const closePluginModal = () => {
+function closePluginModal() {
   showPluginModal.value = false;
   pluginBase64.value = "";
   pluginError.value = "";
-};
+}
 
 function processPluginData() {
   try {
     pluginError.value = "";
 
     if (!pluginBase64.value.trim()) {
-      pluginError.value = t("shop.base64Error");
+      pluginError.value = t("environment.base64Error");
       return;
     }
 
@@ -261,30 +337,21 @@ function processPluginData() {
     const data = JSON.parse(decodedString);
 
     if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t("shop.base64InvalidData");
+      pluginError.value = t("environment.base64InvalidData");
       return;
     }
 
-    formRef.value.setFieldValue("shopUrl", data.url);
-    formRef.value.setFieldValue("clientId", data.clientId);
-    formRef.value.setFieldValue("clientSecret", data.clientSecret);
+    setFieldValue("environmentUrl", data.url);
+    setFieldValue("clientId", data.clientId);
+    setFieldValue("clientSecret", data.clientSecret);
 
     closePluginModal();
   } catch (_e) {
-    pluginError.value = t("shop.base64InvalidFormat");
+    pluginError.value = t("environment.base64InvalidFormat");
   }
 }
+
+onMounted(() => {
+  loadOrganizations();
+});
 </script>
-
-<style scoped>
-.shop-token-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  code {
-    font-size: 0.8rem;
-    word-break: break-all;
-  }
-}
-</style>

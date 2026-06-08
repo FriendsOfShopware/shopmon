@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "types": ["node", "vite/client", "vite-ssg"]
+  },
+  "include": ["vite.config.ts", "vitest.config.ts"]
+}

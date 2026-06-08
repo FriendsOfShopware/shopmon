@@ -1,98 +1,114 @@
 <template>
-  <div class="login-header">
-    <h2>{{ $t("auth.createAccountTitle") }}</h2>
-  </div>
+  <Card class="border-0 shadow-none sm:border sm:shadow-sm">
+    <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
+      <CardTitle class="text-2xl font-semibold tracking-tight">
+        {{ $t("auth.createAccountTitle") }}
+      </CardTitle>
+      <CardDescription>
+        {{ $t("auth.alreadyHaveAccount", "Already have an account?") }}
+        {{ " " }}
+        <RouterLink
+          :to="{ name: 'account.login' }"
+          class="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {{ $t("auth.signIn") }}
+        </RouterLink>
+      </CardDescription>
+    </CardHeader>
 
-  <vee-form
-    v-slot="{ errors, isSubmitting }"
-    class="login-form-container"
-    :validation-schema="schema"
-    @submit="onSubmit"
-  >
-    <div class="login-form-group">
-      <div>
-        <field
-          name="displayName"
-          :placeholder="$t('auth.displayName')"
-          type="text"
-          class="field"
-          :class="{ 'has-error': errors.displayName }"
-        />
-        <div class="field-error-message">
-          {{ errors.displayName }}
-        </div>
-      </div>
+    <CardContent class="px-6 pb-6">
+      <form class="flex flex-col gap-4" @submit="onSubmit">
+        <FormField v-slot="{ componentField }" name="displayName">
+          <FormItem>
+            <FormLabel>{{ $t("auth.displayName") }}</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <div>
-        <field
-          name="email"
-          :placeholder="$t('common.emailAddress')"
-          type="text"
-          class="field"
-          :class="{ 'has-error': errors.email }"
-        />
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>{{ $t("common.emailAddress") }}</FormLabel>
+            <FormControl>
+              <Input type="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-        <div class="field-error-message">
-          {{ errors.email }}
-        </div>
-      </div>
+        <FormField v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>{{ $t("common.password") }}</FormLabel>
+            <FormControl>
+              <PasswordInput v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-      <PasswordField
-        name="password"
-        :placeholder="$t('common.password')"
-        :error="errors.password"
-      />
-    </div>
-
-    <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
-      <icon-fa6-solid:user-plus v-if="!isSubmitting" class="icon" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
-      {{ $t("auth.registerButton") }}
-    </button>
-
-    <div>
-      <router-link :to="{ name: 'account.login' }"> {{ $t("common.cancel") }} </router-link>
-    </div>
-  </vee-form>
+        <Button type="submit" class="mt-2 w-full" :disabled="isSubmitting">
+          <icon-line-md:loading-twotone-loop v-if="isSubmitting" class="size-5" />
+          {{ $t("auth.registerButton") }}
+        </Button>
+      </form>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import { Field, Form as VeeForm } from "vee-validate";
 import { useI18n } from "vue-i18n";
-import * as Yup from "yup";
+import { z } from "zod";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
 
 import { useRouter } from "vue-router";
-
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api, setToken } from "@/helpers/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
+import PasswordInput from "@/components/PasswordInput.vue";
 
 const { t } = useI18n();
 const router = useRouter();
 const alert = useAlert();
-
-const schema = Yup.object().shape({
-  displayName: Yup.string().required(t("validation.displayNameRequired")),
-  email: Yup.string().required(t("validation.emailRequired")),
-  password: Yup.string()
-    .required(t("validation.passwordRequired"))
+const schema = z.object({
+  displayName: z.string().min(1, t("validation.displayNameRequired")),
+  email: z.string().min(1, t("validation.emailRequired")),
+  password: z
+    .string()
+    .min(1, t("validation.passwordRequired"))
     .min(8, t("validation.passwordMinLength"))
-    .matches(/^(?=.*[0-9])/, t("validation.passwordNumber"))
-    .matches(/^(?=.*[!@#$%^&*])/, t("validation.passwordSpecial")),
+    .regex(/^(?=.*[0-9])/, t("validation.passwordNumber"))
+    .regex(/^(?=.*[!@#$%^&*])/, t("validation.passwordSpecial")),
 });
 
-async function onSubmit(values: { email: string; password: string; displayName: string }) {
-  const resp = await authClient.signUp.email({
-    email: values.email,
-    password: values.password,
-    name: values.displayName,
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema: toTypedSchema(schema),
+});
+
+const onSubmit = handleSubmit(async (values) => {
+  const { data, error } = await api.POST("/auth/sign-up/email", {
+    body: {
+      email: values.email,
+      password: values.password,
+      name: values.displayName,
+    },
   });
 
-  if (resp.error) {
-    alert.error(resp.error.message ?? t("auth.failedRegister"));
+  if (error) {
+    alert.error((error as unknown as { message?: string }).message ?? t("auth.failedRegister"));
     return;
+  }
+
+  if ((data as { token?: string })?.token) {
+    setToken((data as { token: string }).token);
   }
 
   await router.push({ name: "account.login" });
   alert.success(t("auth.registrationSuccess"));
-}
+});
 </script>

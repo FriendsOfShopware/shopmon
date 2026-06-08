@@ -1,72 +1,77 @@
 <template>
-  <div class="login-header">
-    <h2>{{ $t("auth.forgotPasswordTitle") }}</h2>
-    <p>{{ $t("auth.forgotPasswordDesc") }}</p>
-  </div>
+  <Card class="border-0 shadow-none sm:border sm:shadow-sm">
+    <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
+      <CardTitle class="text-2xl font-semibold tracking-tight">
+        {{ $t("auth.forgotPasswordTitle") }}
+      </CardTitle>
+      <CardDescription>
+        {{ $t("auth.forgotPasswordDesc") }}
+      </CardDescription>
+    </CardHeader>
 
-  <vee-form
-    v-slot="{ errors, isSubmitting }"
-    class="login-form-container"
-    :validation-schema="schema"
-    @submit="onSubmit"
-  >
-    <div>
-      <field
-        name="email"
-        :placeholder="$t('common.emailAddress')"
-        type="text"
-        class="field"
-        :class="{ 'has-error': errors.email }"
-      />
-      <div class="field-error-message">
-        {{ errors.email }}
-      </div>
-    </div>
+    <CardContent class="px-6 pb-6">
+      <form class="flex flex-col gap-4" @submit="onSubmit">
+        <FormField v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>{{ $t("common.emailAddress") }}</FormLabel>
+            <FormControl>
+              <Input type="email" autocomplete="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </FormField>
 
-    <button class="btn btn-primary btn-block" :disabled="isSubmitting" type="submit">
-      <icon-fa6-solid:envelope v-if="!isSubmitting" class="icon" aria-hidden="true" />
-      <icon-line-md:loading-twotone-loop v-else class="icon" />
-      {{ $t("auth.sendEmail") }}
-    </button>
+        <Button type="submit" class="mt-2 w-full" :disabled="isSubmitting">
+          <icon-line-md:loading-twotone-loop v-if="isSubmitting" class="size-5" />
+          {{ $t("auth.sendEmail") }}
+        </Button>
+      </form>
 
-    <div>
-      <router-link to="login"> {{ $t("common.cancel") }} </router-link>
-    </div>
-  </vee-form>
+      <p class="mt-4 text-center text-sm text-muted-foreground">
+        <RouterLink
+          :to="{ name: 'account.login' }"
+          class="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {{ $t("auth.backToSignIn", "Back to sign in") }}
+        </RouterLink>
+      </p>
+    </CardContent>
+  </Card>
 </template>
 
 <script setup lang="ts">
-import { Field, Form as VeeForm } from "vee-validate";
 import { useI18n } from "vue-i18n";
-import * as Yup from "yup";
+import { z } from "zod";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
 
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from "@/components/ui/form";
 
 const { t } = useI18n();
 
-const schema = Yup.object().shape({
-  email: Yup.string().required(t("validation.emailRequired")),
+const schema = z.object({
+  email: z.string().min(1, t("validation.emailRequired")),
 });
 
-async function onSubmit(values: { email: string }): Promise<void> {
+const { handleSubmit, isSubmitting } = useForm({
+  validationSchema: toTypedSchema(schema),
+});
+
+const onSubmit = handleSubmit(async (values) => {
   const { success, error } = useAlert();
 
-  const resp = await authClient.forgetPassword({ email: values.email });
-
-  if (resp.error) {
-    error(resp.error.message ?? t("auth.failedSendReset"));
-    return;
+  try {
+    await api.POST("/auth/forget-password", {
+      body: { email: values.email },
+    });
+    success(t("auth.resetEmailSent"));
+  } catch (e) {
+    error(e instanceof Error ? e.message : t("auth.failedSendReset"));
   }
-
-  success(t("auth.resetEmailSent"));
-}
+});
 </script>
-
-<style scoped>
-.login-header {
-  p {
-    text-align: left;
-  }
-}
-</style>

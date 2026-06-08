@@ -1,0 +1,10 @@
+package: authapi
+output: internal/authapi/server.gen.go
+generate:
+  chi-server: true
+  models: true
+output-options:
+  include-tags:
+    - Auth
+    - Organizations
+    - AuthAdmin

@@ -1,109 +1,164 @@
 <template>
-  <header-container :title="$t('nav.myExtensions')" />
+  <div class="space-y-6">
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("nav.myExtensions") }}</h1>
 
-  <main-container v-if="extensions">
-    <Panel v-if="extensions.length === 0">
-      <element-empty
-        :title="$t('shopDetail.extensions')"
-        :button="$t('shop.addShop')"
-        :route="{ name: 'account.shops.new' }"
-      >
-        {{ $t("common.getStartedElement") }}
-      </element-empty>
-    </Panel>
+    <!-- Empty state -->
+    <EmptyState
+      v-if="extensions && extensions.length === 0"
+      :icon="IconPuzzlePiece"
+      :title="$t('shopDetail.extensions')"
+      :description="$t('common.getStartedElement')"
+    >
+      <Button as-child>
+        <RouterLink :to="{ name: 'account.environments.new' }">
+          <icon-fa6-solid:plus class="mr-1.5 size-3" />
+          {{ $t("environment.addEnvironment") }}
+        </RouterLink>
+      </Button>
+    </EmptyState>
 
-    <template v-else>
-      <Panel>
-        <input v-model="term" class="field field-search" :placeholder="$t('common.search')" />
-      </Panel>
-
-      <Panel variant="table">
-        <data-table
-          :columns="[
-            {
-              key: 'label',
-              name: $t('common.name'),
-              class: 'extension-label',
-              sortable: true,
-              searchable: true,
-            },
-            { key: 'shops', name: $t('dashboard.shop') },
-            { key: 'version', name: $t('common.version') },
-            { key: 'latestVersion', name: $t('shopDetail.latest') },
-            { key: 'ratingAverage', name: $t('shopDetail.rating'), sortable: true },
-            { key: 'installedAt', name: $t('shopDetail.installedAt'), sortable: true },
-          ]"
-          :data="extensions"
-          :default-sort="{ key: 'label', desc: false }"
-          :search-term="term"
-        >
-          <template #cell-label="{ row }">
-            <component
-              :is="row.storeLink ? 'a' : 'span'"
-              v-bind="row.storeLink ? { href: row.storeLink, target: '_blank' } : {}"
+    <template v-else-if="extensions && extensions.length > 0">
+      <!-- Summary + search -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-4 text-sm text-muted-foreground">
+          <span
+            ><strong class="text-foreground tabular-nums">{{ extensions.length }}</strong>
+            extensions</span
+          >
+          <span
+            ><strong
+              class="tabular-nums"
+              :class="outdatedCount > 0 ? 'text-warning' : 'text-foreground'"
+              >{{ outdatedCount }}</strong
             >
-              <div class="extension-name">{{ row.label }}</div>
-              <span class="extension-technical-name">{{ row.name }}</span>
-            </component>
-          </template>
+            updates</span
+          >
+        </div>
+        <div class="relative">
+          <icon-fa6-solid:magnifying-glass
+            class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            v-model="term"
+            :placeholder="$t('common.search')"
+            class="h-8 w-full sm:w-56 pl-8 text-sm"
+          />
+        </div>
+      </div>
 
-          <template #cell-shops="{ row }">
-            <div v-for="(shop, rowIndex) in row.shops" :key="rowIndex" class="shops-row">
-              <router-link
+      <!-- Extension list -->
+      <div class="space-y-2">
+        <div
+          v-for="ext in filteredExtensions"
+          :key="ext.name"
+          :class="[
+            'rounded-xl border transition-colors',
+            hasUpdate(ext) ? 'border-warning/20 bg-warning/5' : '',
+            !ext.active && ext.installed ? 'opacity-60' : '',
+            !ext.installed ? 'opacity-40' : '',
+          ]"
+        >
+          <!-- Main row -->
+          <div class="flex items-center gap-4 px-4 py-3">
+            <StatusIcon :status="getExtensionState(ext)" class="shrink-0" />
+
+            <!-- Name -->
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <component
+                  :is="ext.storeLink ? 'a' : 'span'"
+                  v-bind="
+                    ext.storeLink
+                      ? {
+                          href: ext.storeLink,
+                          target: '_blank',
+                          class: 'hover:text-primary transition-colors',
+                        }
+                      : {}
+                  "
+                  class="truncate font-medium"
+                >
+                  {{ ext.label }}
+                  <icon-fa6-solid:arrow-up-right-from-square
+                    v-if="ext.storeLink"
+                    class="ml-1 inline size-2.5 text-muted-foreground"
+                  />
+                </component>
+              </div>
+              <div class="text-xs text-muted-foreground">{{ ext.name }}</div>
+            </div>
+
+            <!-- Version -->
+            <div class="hidden shrink-0 items-center gap-2 sm:flex">
+              <Badge variant="secondary" class="font-mono text-xs">{{
+                ext.latestVersion || ext.version
+              }}</Badge>
+              <template v-if="hasUpdate(ext)">
+                <button
+                  class="text-xs text-warning hover:underline"
+                  @click="openExtensionChangelog(ext)"
+                >
+                  update available
+                </button>
+              </template>
+            </div>
+
+            <!-- Rating -->
+            <div class="hidden shrink-0 lg:block">
+              <RatingStars :rating="ext.ratingAverage" />
+            </div>
+
+            <!-- Expand -->
+            <button
+              class="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+              @click="toggle(ext.name)"
+            >
+              <icon-fa6-solid:chevron-down
+                :class="[
+                  'size-2.5 transition-transform',
+                  expanded.has(ext.name) ? 'rotate-180' : '',
+                ]"
+              />
+            </button>
+          </div>
+
+          <!-- Expanded: environments using this extension -->
+          <div v-if="expanded.has(ext.name)" class="border-t px-4 py-3">
+            <div class="mb-2 text-xs font-medium text-muted-foreground">
+              Installed in {{ ext.environments.length }} environment{{
+                ext.environments.length !== 1 ? "s" : ""
+              }}
+            </div>
+            <div class="space-y-1.5">
+              <RouterLink
+                v-for="env in ext.environments"
+                :key="env.environmentId"
                 :to="{
-                  name: 'account.shops.detail',
+                  name: 'account.environments.detail',
                   params: {
-                    slug: shop.organizationSlug,
-                    shopId: shop.id,
+                    organizationId: env.environmentOrganizationId,
+                    environmentId: env.environmentId,
                   },
                 }"
+                class="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-accent"
               >
-                <status-icon :status="getExtensionState(row)" :tooltip="true" />
-                {{ shop.name }}
-              </router-link>
+                <StatusIcon :status="getEnvExtensionState(env)" class="shrink-0" />
+                <span class="min-w-0 flex-1 truncate">{{ env.environmentName }}</span>
+                <Badge variant="secondary" class="font-mono text-[10px]">{{ env.version }}</Badge>
+                <icon-fa6-solid:arrow-up
+                  v-if="env.version !== env.latestVersion && env.latestVersion"
+                  class="size-3 text-warning"
+                  :title="'Update to ' + env.latestVersion"
+                />
+              </RouterLink>
             </div>
-          </template>
-
-          <template #cell-version="{ row }">
-            <div v-for="(shop, rowIndex) in row.shops" :key="rowIndex" class="shops-row">
-              <span :data-tooltip="shop.version.length > 6 ? shop.version : ''">{{
-                shop.version.replace(/(.{6})..+/, "$1&hellip;")
-              }}</span>
-              <span
-                v-if="row.latestVersion && shop.version < row.latestVersion"
-                :data-tooltip="$t('shopDetail.updateAvailableClick')"
-                class="extension-update-available"
-                @click="openExtensionChangelog(row)"
-              >
-                <icon-fa6-solid:rotate class="icon icon-warning icon-update" />
-              </span>
-            </div>
-          </template>
-
-          <template #cell-latestVersion="{ row }">
-            <span
-              v-if="row.latestVersion"
-              :data-tooltip="row.latestVersion.length > 6 ? row.latestVersion : ''"
-              >{{ row.latestVersion.replace(/(.{6})..+/, "$1&hellip;") }}</span
-            >
-          </template>
-
-          <template #cell-ratingAverage="{ row }">
-            <RatingStars :rating="row.ratingAverage" />
-          </template>
-
-          <template #cell-installedAt="{ row }">
-            <template v-if="row.installedAt">
-              {{ formatDateTime(row.installedAt) }}
-            </template>
-          </template>
-        </data-table>
-      </Panel>
+          </div>
+        </div>
+      </div>
     </template>
-  </main-container>
+  </div>
 
-  <!-- Extension Changelog Modal -->
-  <extension-changelog
+  <ExtensionChangelog
     :show="viewExtensionChangelogDialog"
     :extension="dialogExtension"
     @close="closeExtensionChangelog"
@@ -111,17 +166,25 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-import ElementEmpty from "@/components/layout/ElementEmpty.vue";
-import { formatDateTime } from "@/helpers/formatter";
-import { type RouterOutput, trpcClient } from "@/helpers/trpc";
+import { ref, computed, reactive } from "vue";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import StatusIcon from "@/components/StatusIcon.vue";
+import RatingStars from "@/components/RatingStars.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
+import { api } from "@/helpers/api";
+import type { components } from "@/types/api";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
-import { ref } from "vue";
 
-const { t } = useI18n();
+type AccountExtension = components["schemas"]["AccountExtension"];
+type AccountExtensionEnvironment = components["schemas"]["AccountExtensionEnvironment"];
+
 const term = ref("");
-const extensions = ref<RouterOutput["account"]["currentUserExtensions"]>([]);
+const extensions = ref<AccountExtension[]>([]);
+const expanded = reactive(new Set<string>());
 
 const {
   viewExtensionChangelogDialog,
@@ -130,58 +193,52 @@ const {
   closeExtensionChangelog,
 } = useExtensionChangelogModal();
 
-trpcClient.account.currentUserExtensions.query().then((data) => {
-  extensions.value = data;
+api.GET("/account/extensions").then(({ data }) => {
+  if (data) extensions.value = data;
 });
 
-function getExtensionState(extension: RouterOutput["account"]["currentUserExtensions"][number]) {
-  if (!extension.installed) {
-    return "not installed";
-  }
-  if (extension.active) {
-    return "active";
-  }
+function hasUpdate(ext: AccountExtension): boolean {
+  return !!(ext.installed && ext.latestVersion && ext.version !== ext.latestVersion);
+}
 
+function getExtensionState(ext: AccountExtension) {
+  if (!ext.installed) return "not installed";
+  if (ext.active) return "active";
   return "inactive";
 }
+
+function getEnvExtensionState(env: AccountExtensionEnvironment) {
+  if (!env.installed) return "not installed";
+  if (env.active) return "active";
+  return "inactive";
+}
+
+function toggle(name: string) {
+  if (expanded.has(name)) {
+    expanded.delete(name);
+  } else {
+    expanded.add(name);
+  }
+}
+
+const outdatedCount = computed(() => extensions.value.filter((e) => hasUpdate(e)).length);
+
+const filteredExtensions = computed(() => {
+  let list = [...extensions.value];
+
+  list.sort((a, b) => {
+    if (a.active !== b.active) return a.active ? -1 : 1;
+    if (a.installed !== b.installed) return a.installed ? -1 : 1;
+    return a.label.localeCompare(b.label);
+  });
+
+  if (term.value.length >= 2) {
+    const q = term.value.toLowerCase();
+    list = list.filter(
+      (e) => e.label.toLowerCase().includes(q) || e.name.toLowerCase().includes(q),
+    );
+  }
+
+  return list;
+});
 </script>
-
-<style scoped>
-.extension-label {
-  .extension-name {
-    font-weight: bold;
-    white-space: normal;
-  }
-
-  .extension-technical-name {
-    font-weight: normal;
-    opacity: 0.6;
-  }
-}
-
-.extension-update-available {
-  cursor: pointer;
-}
-
-.shops-row {
-  white-space: nowrap;
-  line-height: 1.2rem;
-
-  &:not(:last-child) {
-    margin-bottom: 0.35rem;
-  }
-
-  .icon-update {
-    vertical-align: -0.1em;
-    margin-left: 0.3rem;
-  }
-}
-</style>
-
-<style>
-.shops-row {
-  .icon-status {
-    vertical-align: -0.2em;
-  }
-}
-</style>

@@ -2,22 +2,6 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import Privacy from "./Privacy.vue";
 
-// Mock components
-vi.mock("@/components/layout/HeaderContainer.vue", () => ({
-  default: {
-    name: "HeaderContainer",
-    props: ["title"],
-    template: "<header>{{ title }}</header>",
-  },
-}));
-
-vi.mock("@/components/layout/Panel.vue", () => ({
-  default: {
-    name: "Panel",
-    template: "<div class='panel'><slot /></div>",
-  },
-}));
-
 describe("Privacy", () => {
   it("renders successfully", () => {
     const wrapper = mount(Privacy);
@@ -26,7 +10,7 @@ describe("Privacy", () => {
 
   it("displays the correct page title", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.find("header").text()).toBe("Privacy Policy");
+    expect(wrapper.find("h1").text()).toBe("Privacy Policy");
   });
 
   it("contains Data We Collect section", () => {
@@ -41,9 +25,9 @@ describe("Privacy", () => {
     expect(wrapper.text()).toContain("Password (hashed using bcrypt)");
   });
 
-  it("contains Shop Monitoring Data subsection", () => {
+  it("contains Environment Monitoring Data subsection", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.text()).toContain("Shop Monitoring Data");
+    expect(wrapper.text()).toContain("Environment Monitoring Data");
     expect(wrapper.text()).toContain("Shopware instance URLs");
   });
 
@@ -55,7 +39,7 @@ describe("Privacy", () => {
   it("contains How We Use Your Data section", () => {
     const wrapper = mount(Privacy);
     expect(wrapper.text()).toContain("How We Use Your Data");
-    expect(wrapper.text()).toContain("To provide shop monitoring services");
+    expect(wrapper.text()).toContain("To provide environment monitoring services");
   });
 
   it("contains Data Storage and Security section", () => {
@@ -75,8 +59,8 @@ describe("Privacy", () => {
     expect(wrapper.text()).toContain("shopmon at fos.gg");
   });
 
-  it("uses Panel component", () => {
+  it("uses Card component", () => {
     const wrapper = mount(Privacy);
-    expect(wrapper.find(".panel").exists()).toBe(true);
+    expect(wrapper.find('[data-slot="card"]').exists()).toBe(true);
   });
 });

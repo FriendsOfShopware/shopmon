@@ -1,8 +1,21 @@
-<template>YAYYY</template>
+<template>
+  <div class="flex items-center justify-center min-h-[50vh]">
+    <div class="text-center text-muted-foreground">
+      <icon-line-md:loading-twotone-loop class="size-8 mx-auto mb-2" />
+      <p>
+        {{
+          action === "accept"
+            ? $t("organization.acceptingInvitation")
+            : $t("organization.rejectingInvitation")
+        }}
+      </p>
+    </div>
+  </div>
+</template>
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { authClient } from "@/helpers/auth-client";
+import { api } from "@/helpers/api";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -17,13 +30,15 @@ const router = useRouter();
 const { error, success } = useAlert();
 
 if (props.action === "accept") {
-  authClient.organization
-    .acceptInvitation({
-      invitationId: route.params.token as string,
+  api
+    .POST("/auth/invitations/{invitationId}/accept", {
+      params: { path: { invitationId: route.params.token as string } },
     })
-    .then((resp) => {
-      if (resp.error) {
-        error(resp.error.message ?? t("organization.failedAcceptInvitation"));
+    .then(({ error: respError }) => {
+      if (respError) {
+        error(
+          (respError as { message?: string }).message ?? t("organization.failedAcceptInvitation"),
+        );
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });
@@ -31,13 +46,15 @@ if (props.action === "accept") {
       }
     });
 } else {
-  authClient.organization
-    .rejectInvitation({
-      invitationId: route.params.token as string,
+  api
+    .POST("/auth/invitations/{invitationId}/reject", {
+      params: { path: { invitationId: route.params.token as string } },
     })
-    .then((resp) => {
-      if (resp.error) {
-        error(resp.error.message ?? t("organization.failedRejectInvitation"));
+    .then(({ error: respError }) => {
+      if (respError) {
+        error(
+          (respError as { message?: string }).message ?? t("organization.failedRejectInvitation"),
+        );
         router.push({ name: "account.organizations.list" });
       } else {
         router.push({ name: "account.organizations.list" });

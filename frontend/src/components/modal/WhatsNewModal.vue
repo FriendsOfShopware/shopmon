@@ -1,173 +1,86 @@
 <template>
-  <modal :show="show" close-x-mark @close="$emit('close')">
-    <template #icon>
-      <div class="whats-new-icon">
-        <icon-fa6-solid:rocket class="icon" />
-      </div>
-    </template>
-
-    <template #title>{{ $t("whatsNew.title") }}</template>
-
-    <template #content>
-      <div class="whats-new-hero">
-        <span class="whats-new-badge">{{ $t("whatsNew.badge") }}</span>
-        <h4>{{ $t("whatsNew.heroTitle") }}</h4>
-        <p>
-          {{ $t("whatsNew.heroDesc") }}
-        </p>
-      </div>
-
-      <ul class="whats-new-list">
-        <li>
-          <icon-fa6-solid:bolt class="icon" />
-          {{ $t("whatsNew.featureCdn") }}
-        </li>
-        <li>
-          <icon-fa6-solid:arrows-rotate class="icon" />
-          {{ $t("whatsNew.featureSync") }}
-        </li>
-        <li>
-          <icon-fa6-solid:shield-halved class="icon" />
-          {{ $t("whatsNew.featureValidation") }}
-        </li>
-      </ul>
-
-      <div class="whats-new-setup">
-        <p class="whats-new-setup-title">{{ $t("whatsNew.quickSetup") }}</p>
-        <p>
-          {{ $t("whatsNew.quickSetupDesc") }}
-        </p>
+  <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
+    <DialogContent class="max-w-lg gap-0 p-0">
+      <!-- Header with gradient -->
+      <div
+        class="rounded-t-lg bg-gradient-to-br from-primary to-primary/80 px-6 pb-6 pt-8 text-white"
+      >
+        <div class="mb-3 flex items-center gap-2">
+          <div class="flex size-8 items-center justify-center rounded-full bg-white/15">
+            <icon-fa6-solid:rocket class="size-3.5" />
+          </div>
+          <Badge class="border-white/20 bg-white/15 text-xs text-white">
+            {{ $t("whatsNew.badge") }}
+          </Badge>
+        </div>
+        <h2 class="text-xl font-bold leading-tight">{{ $t("whatsNew.heroTitle") }}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-white/70">{{ $t("whatsNew.heroDesc") }}</p>
       </div>
 
-      <div v-if="sponsors.length" class="whats-new-sponsors">
-        <p class="whats-new-setup-title">{{ $t("whatsNew.sponsors") }}</p>
-        <p class="whats-new-sponsors-copy">
-          {{ $t("whatsNew.sponsorsDesc") }}
-        </p>
+      <!-- Content -->
+      <div class="space-y-4 px-6 py-5">
+        <!-- Feature list -->
+        <div class="space-y-2">
+          <div
+            v-for="feature in features"
+            :key="feature.text"
+            class="flex items-start gap-3 rounded-lg border px-3 py-2.5"
+          >
+            <div
+              class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10"
+            >
+              <component :is="feature.icon" class="size-3 text-primary" />
+            </div>
+            <span class="text-sm">{{ feature.text }}</span>
+          </div>
+        </div>
 
-        <sponsor-showcase :sponsors="sponsors" compact />
+        <!-- Quick setup -->
+        <div class="rounded-lg bg-muted/50 p-4">
+          <h4 class="mb-1 text-sm font-semibold">{{ $t("whatsNew.quickSetup") }}</h4>
+          <p class="text-xs leading-relaxed text-muted-foreground">
+            {{ $t("whatsNew.quickSetupDesc") }}
+          </p>
+        </div>
+
+        <!-- Sponsors -->
+        <div v-if="sponsors.length">
+          <h4 class="mb-1 text-sm font-semibold">{{ $t("whatsNew.sponsors") }}</h4>
+          <p class="mb-3 text-xs text-muted-foreground">{{ $t("whatsNew.sponsorsDesc") }}</p>
+          <SponsorShowcase :sponsors="sponsors" compact />
+        </div>
       </div>
-    </template>
 
-    <template #footer>
-      <router-link :to="{ name: 'account.project.list' }" class="btn" @click="$emit('close')">
-        <icon-fa6-solid:folder-open class="icon" />
-        {{ $t("whatsNew.openProjects") }}
-      </router-link>
-
-      <router-link :to="{ name: 'account.docs' }" class="btn" @click="$emit('close')">
-        <icon-fa6-solid:book class="icon" />
-        {{ $t("nav.documentation") }}
-      </router-link>
-
-      <button type="button" class="btn btn-primary" @click="$emit('close')">
-        {{ $t("whatsNew.close") }}
-      </button>
-    </template>
-  </modal>
+      <!-- Footer -->
+      <div class="flex justify-end border-t px-6 py-4">
+        <Button size="sm" @click="$emit('close')">
+          {{ $t("whatsNew.close") }}
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import Modal from "@/components/layout/Modal.vue";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import SponsorShowcase from "@/components/SponsorShowcase.vue";
 import { sponsors } from "@/data/sponsors";
+import { useI18n } from "vue-i18n";
+
+import FaBolt from "~icons/fa6-solid/bolt";
+import FaArrowsRotate from "~icons/fa6-solid/arrows-rotate";
+import FaShieldHalved from "~icons/fa6-solid/shield-halved";
+
+const { t } = useI18n();
 
 defineProps<{ show: boolean }>();
-
 defineEmits<{ close: [] }>();
+
+const features = [
+  { icon: FaBolt, text: t("whatsNew.featureCdn") },
+  { icon: FaArrowsRotate, text: t("whatsNew.featureSync") },
+  { icon: FaShieldHalved, text: t("whatsNew.featureValidation") },
+];
 </script>
-
-<style scoped>
-.whats-new-icon {
-  width: 3rem;
-  height: 3rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary-color) 92%, white 8%),
-    #0369a1
-  );
-}
-
-.whats-new-hero {
-  margin-bottom: 1rem;
-
-  h4 {
-    margin: 0.75rem 0 0.5rem;
-    font-size: 1.25rem;
-    color: var(--item-title-color);
-  }
-
-  p {
-    margin: 0;
-    color: var(--text-color-muted);
-  }
-}
-
-.whats-new-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
-  color: var(--link-color);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.whats-new-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1rem;
-  display: grid;
-  gap: 0.75rem;
-
-  li {
-    display: grid;
-    grid-template-columns: 1.25rem 1fr;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--panel-border-color);
-    border-radius: 0.75rem;
-    background: var(--item-background);
-  }
-
-  .icon {
-    width: 1rem;
-    height: 1rem;
-    margin-top: 0.2rem;
-    color: var(--primary-color);
-  }
-}
-
-.whats-new-setup {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--panel-background));
-  border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--panel-border-color));
-
-  p {
-    margin: 0;
-  }
-}
-
-.whats-new-setup-title {
-  font-weight: 700;
-  color: var(--item-title-color);
-  margin-bottom: 0.35rem !important;
-}
-
-.whats-new-sponsors {
-  margin-top: 1rem;
-}
-
-.whats-new-sponsors-copy {
-  margin: 0 0 1rem;
-}
-</style>

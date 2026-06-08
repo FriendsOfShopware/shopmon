@@ -1,8 +1,8 @@
 <template>
   <span
     v-if="rating !== null"
-    :data-tooltip="`${rating / 2} from 5`"
-    class="tooltip-top-center rating-stars"
+    :title="`${rating / 2} from 5`"
+    class="inline-flex whitespace-nowrap"
   >
     <template v-for="n in 5" :key="n">
       <icon-fa6-regular:star v-if="rating / 2 - n < -0.5" />
@@ -15,9 +15,3 @@
 <script lang="ts" setup>
 defineProps<{ rating: number | null }>();
 </script>
-
-<style scoped>
-.rating-stars {
-  white-space: nowrap;
-}
-</style>

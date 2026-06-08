@@ -1,70 +1,166 @@
 # Project Architecture & Development Guidelines
 
-This project follows a **Domain-Driven Modular Architecture**.
-This structure groups related functionality by **Domain (Feature)** rather than by Technical Layer.
+## Tech Stack
+
+- **API**: Go (chi router, sqlc, oapi-codegen, go-queue)
+- **Frontend**: Vue.js + TypeScript
+- **Database**: PostgreSQL (pgx)
+- **Queue**: PostgreSQL (go-queue)
+- **Storage**: S3-compatible (deployment outputs)
+- **Observability**: OpenTelemetry (traces + logs via OTLP)
 
 ## Directory Structure
 
 ```
-api/src/
-  ├── helpers/                  <-- Shared utility functions
-  ├── modules/
-  │   ├── shop/                 <-- Domain Module
-  │   │   ├── shop.repository.ts   (Data Access)
-  │   │   ├── shop.service.ts      (Business Logic)
-  │   │   ├── shop.router.ts       (API / Transport)
-  │   │   └── shop.types.ts        (Domain Types)
-  │   ├── user/
-  │   └── ...
-  ├── trpc/                     <-- Shared tRPC infrastructure (context, middleware, root router)
-  └── types/                    <-- Shared type definitions
+api/                          <-- Go API (single binary)
+  main.go                     <-- Cobra CLI entry point
+  server.go                   <-- HTTP server command
+  worker.go                   <-- Background worker command
+  migrate.go                  <-- Database migration command
+  fixtures.go                 <-- Test fixture seeding
+  internal/
+    api/                      <-- oapi-codegen generated server interface (DO NOT EDIT)
+    authapi/                  <-- oapi-codegen generated auth server interface (DO NOT EDIT)
+    auth/                     <-- Authentication (credentials, OAuth, SSO, passkeys, orgs, admin)
+    config/                   <-- Environment configuration
+    crypto/                   <-- AES-GCM encryption
+    database/queries/         <-- sqlc-generated data access (DO NOT EDIT)
+    handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
+    httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
+    jobs/                     <-- Background job handlers + task types (environment scrape, sitespeed, cleanup)
+    mail/                     <-- SMTP service + email templates
+    middleware/               <-- HTTP middleware (auth, org membership, environment access)
+    shopware/                 <-- Shopware HTTP client
+      checker/                <-- Environment health check system
+    storage/                  <-- S3 storage for deployment outputs
+    telemetry/                <-- OpenTelemetry tracing + logging setup
+    testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)
+    webui/                    <-- Embedded frontend serving
+  migrations/                 <-- SQL migration files (golang-migrate)
+  openapi/
+    spec.yaml                 <-- OpenAPI 3.0.3 specification (source of truth for API)
+  sql/
+    schema.sql                <-- Full DDL for sqlc
+    queries/                  <-- sqlc query definitions
+frontend/                     <-- Vue.js frontend
 ```
 
-## The 3-Layer Pattern (Applied per Module)
+## Code Conventions
 
-Within each module, we strictly enforce the 3-Layer Pattern:
+### Error Handling
 
-### 1. Router (`*.router.ts`)
+- Wrap errors with context: `fmt.Errorf("create shop: %w", err)`
+- In handlers, log with `slog.Error` then respond with `httputil.WriteError`
+- In background jobs, record errors on the OTel span AND return them
+- **Never** silently discard errors — at minimum use `_ =` for intentional ignoring (e.g. `defer func() { _ = resp.Body.Close() }()`)
 
-- **Responsibility:**
-  - Handle HTTP/tRPC requests.
-  - Validate inputs (Zod schemas).
-  - Check permissions/middleware.
-  - **DELEGATE** work to the Service.
-- **Rules:**
-  - ❌ **NO** direct database queries.
-  - ❌ **NO** complex business logic.
-  - ✅ **ONLY** call Services.
+### Logging
 
-### 2. Service (`*.service.ts`)
+- Use `log/slog` exclusively (no `log`, no `fmt.Println`)
+- Always include structured context: `slog.Error("msg", "shopId", id, "error", err)`
+- Logs are automatically exported to OTLP when telemetry is enabled (dual stderr + OTLP output)
 
-- **Responsibility:**
-  - Contain **ALL** business logic.
-  - Orchestrate workflows.
-  - Handle third-party integrations (Stripe, Mailer, etc.).
-- **Rules:**
-  - ✅ Can call Repositories.
-  - ✅ Can call other Services.
-  - ❌ Should not deal with HTTP-specifics.
+### Observability (OpenTelemetry)
 
-### 3. Repository (`*.repository.ts`)
+- HTTP server traces are handled by `otelhttp` middleware (automatic)
+- Background jobs get traces via `go-queue` OTel middleware (automatic)
+- For **manual spans** in jobs or complex operations:
+  ```go
+  var tracer = otel.Tracer("shopmon/jobs")
 
-- **Responsibility:**
-  - Pure Data Access Object (DAO).
-  - Handle **CRUD** operations.
-- **Rules:**
-  - ✅ **ONLY** interact with the database.
-  - ❌ **NO** business logic.
-  - ❌ **NO** side effects (sending emails).
-  - ❌ **NEVER** call Services.
+  func (h *Handler) DoWork(ctx context.Context) error {
+      ctx, span := tracer.Start(ctx, "operation.name")
+      defer span.End()
 
----
+      span.SetAttributes(attribute.Int("key", value))
 
-## Refactoring Checklist
+      if err != nil {
+          span.RecordError(err)
+          span.SetStatus(codes.Error, err.Error())
+          return fmt.Errorf("operation: %w", err)
+      }
+      return nil
+  }
+  ```
+- **Errors that are logged with `slog.Error` automatically appear in OTel** — no extra work needed
 
-When working on existing code:
+### Handler Pattern
 
-1.  **Identify the Domain:** Does this belong to `Shop`, `User`, `Project`, etc.?
-2.  **Create/Update Module:** Move files to `api/src/modules/<domain>/`.
-3.  **Rename Files:** Use the `entity.layer.ts` convention (e.g., `user.service.ts`).
-4.  **Refactor Logic:** Ensure logic is in the Service, DB calls in the Repository, and Validation in the Router.
+Handlers implement the generated `openapi.ServerInterface`:
+
+```go
+func (h *Handler) GetThing(w http.ResponseWriter, r *http.Request, id string) {
+    user := h.requireUser(w, r)       // returns nil + writes 401 if unauthenticated
+    if user == nil {
+        return
+    }
+
+    thing, err := h.queries.GetThing(r.Context(), id)
+    if err != nil {
+        slog.Error("failed to get thing", "id", id, "error", err)
+        httputil.WriteError(w, http.StatusInternalServerError, "failed to get thing")
+        return
+    }
+
+    httputil.WriteJSON(w, http.StatusOK, mapToResponse(thing))
+}
+```
+
+Key rules:
+- Use `h.requireUser()` / `h.requireOrgMembership()` for auth — they handle writing error responses
+- Use `httputil.WriteJSON()` and `httputil.WriteError()` for all responses
+- Use `r.Context()` for all database calls (propagates traces)
+
+### Database Access (sqlc)
+
+- All queries live in `sql/queries/*.sql` — one file per domain (shop.sql, user.sql, etc.)
+- Generated Go code is in `internal/database/queries/` — **never edit generated files**
+- To add/change a query: edit the `.sql` file, then run `mise run generate`
+- Query naming convention: `-- name: VerbNoun :one|:many|:exec`
+
+### Background Jobs
+
+- Job message types are plain structs (serialized as JSON by go-queue)
+- Handlers follow: `func (h *Handler) HandleX(ctx context.Context, msg MsgType) error`
+- Always create OTel spans for top-level job handlers
+- Register handlers in `internal/jobs/register.go`
+
+### Testing
+
+- Integration tests using testcontainers (real Postgres + Redis)
+- Test helpers in `internal/testutil/` — `Setup(t)` returns a `TestEnv` with seeded DB
+- Seed data with `env.SeedUser()`, `env.SeedOrganization()`, `env.SeedShop()`, etc.
+- Run tests: `mise run test`
+
+### API Changes
+
+When adding or modifying API endpoints:
+
+1. Edit `openapi/spec.yaml` (add paths, schemas, parameters)
+2. Run `mise run generate` (regenerates server interface)
+3. Implement the new method on `Handler` in `internal/handler/`
+4. Add sqlc queries if needed (`sql/queries/`, then `mise run generate`)
+
+## CLI Commands
+
+```
+shopmon server              # Start HTTP API server
+shopmon worker              # Start background worker
+shopmon migrate up          # Apply database migrations
+shopmon migrate down        # Rollback last migration
+shopmon migrate status      # Show current migration version
+shopmon fixtures            # Seed test data
+shopmon fixtures --skip-shop # Seed without shop data
+```
+
+## Development
+
+```bash
+mise run up              # Start infrastructure (Postgres, Redis, demo shop, Mailpit)
+mise run migrate         # Apply migrations
+mise run load-fixtures   # Reset DB + migrate + seed fixtures
+mise run dev             # Run API server + worker + frontend
+mise run dev:worker      # Run background worker only
+mise run test            # Run integration tests
+mise run generate        # Regenerate sqlc + oapi-codegen
+```

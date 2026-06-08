@@ -9,7 +9,7 @@ let initialized = false;
 export function useDarkMode(): {
   darkMode: Ref<boolean>;
   toggleDarkMode: () => void;
-  getThemeImage: () => Ref<string>;
+  getThemeImage: (imagePath: string | { light: string; dark: string }) => string;
 } {
   // Initialize only once
   if (!initialized) {
@@ -21,8 +21,12 @@ export function useDarkMode(): {
     isDarkMode.value = !isDarkMode.value;
   }
 
-  function getThemeImage(imagePath: string) {
+  function getThemeImage(imagePath: string | { light: string; dark: string }) {
     const computedImg = computed(() => {
+      if (typeof imagePath === "object") {
+        return isDarkMode.value ? imagePath.dark : imagePath.light;
+      }
+
       if (!isDarkMode.value) {
         return imagePath;
       }

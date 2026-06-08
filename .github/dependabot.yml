@@ -1,0 +1,53 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      all:
+        patterns: ["*"]
+    commit-message:
+      prefix: "fix(deps)"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "gomod"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      all:
+        patterns: ["*"]
+    commit-message:
+      prefix: "fix(deps)"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      all:
+        patterns: ["*"]
+    commit-message:
+      prefix: "fix(deps)"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      all:
+        patterns: ["*"]
+    commit-message:
+      prefix: "fix(deps)"
+    labels:
+      - "dependencies"
