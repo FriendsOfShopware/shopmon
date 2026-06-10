@@ -15,6 +15,9 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type SitespeedScrapeHandler struct {
@@ -28,8 +31,14 @@ func NewSitespeedScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *conf
 }
 
 func (h *SitespeedScrapeHandler) HandleScrape(ctx context.Context, msg SitespeedScrape) error {
+	ctx, span := tracer.Start(ctx, "sitespeed.scrape")
+	defer span.End()
+	span.SetAttributes(attribute.Int("environment.id", int(msg.EnvironmentID)))
+
 	environments, err := h.queries.GetEnvironmentsWithSitespeedEnabled(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
@@ -42,7 +51,21 @@ func (h *SitespeedScrapeHandler) HandleScrape(ctx context.Context, msg Sitespeed
 	return fmt.Errorf("environment %d not found or sitespeed not enabled", msg.EnvironmentID)
 }
 
-func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) error {
+func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) (err error) {
+	ctx, span := tracer.Start(ctx, "sitespeed.scrape.environment",
+		trace.WithAttributes(
+			attribute.Int("environment.id", int(env.ID)),
+			attribute.String("environment.url", env.Url),
+		),
+	)
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.End()
+	}()
+
 	log := slog.With("environmentId", env.ID)
 
 	if h.cfg.SitespeedEndpoint == "" || h.cfg.SitespeedAPIKey == "" {
@@ -60,6 +83,8 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 	if len(urls) == 0 {
 		urls = []string{env.Url}
 	}
+	// Rewrite the host-facing demoshop URL to its in-cluster address so the
+	// worker (running inside the Docker network) can reach it for local dev.
 	for i, u := range urls {
 		urls[i] = strings.Replace(u, "http://localhost:3889", "http://demoshop:8000", 1)
 	}

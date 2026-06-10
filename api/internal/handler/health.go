@@ -14,5 +14,8 @@ func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	// Respond with text/plain "ok" to match the OpenAPI spec.
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
 }

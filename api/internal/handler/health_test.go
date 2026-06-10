@@ -1,8 +1,9 @@
 package handler_test
 
 import (
-	"encoding/json"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
@@ -18,8 +19,9 @@ func TestGetHealth(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.True(t, strings.HasPrefix(resp.Header.Get("Content-Type"), "text/plain"))
 
-	var body map[string]string
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
-	assert.Equal(t, "ok", body["status"])
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, "ok", string(body))
 }
