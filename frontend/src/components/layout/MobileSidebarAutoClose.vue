@@ -18,6 +18,4 @@ watch(
 );
 </script>
 
-<template>
-  <span class="hidden" aria-hidden="true" />
-</template>
+<template></template>
