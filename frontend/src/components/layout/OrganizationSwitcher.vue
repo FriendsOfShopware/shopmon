@@ -13,7 +13,7 @@
         @mousedown.prevent="$router.push({ name: 'account.organizations.new' })"
       >
         <icon-fa6-solid:plus class="size-3" />
-        New organization
+        {{ $t("organization.newOrganization") }}
       </button>
     </SelectContent>
   </Select>

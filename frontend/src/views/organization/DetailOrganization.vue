@@ -18,7 +18,11 @@
         :value="invitations.filter((i) => i.status === 'pending').length"
         :label="$t('organization.invitations')"
       />
-      <StatCard :icon="IconShieldHalved" :value="ssoProviders.length" label="SSO providers" />
+      <StatCard
+        :icon="IconShieldHalved"
+        :value="ssoProviders.length"
+        :label="$t('organization.ssoProviders')"
+      />
     </div>
 
     <!-- Members -->

@@ -237,7 +237,7 @@
     <DeleteConfirmationModal
       :show="showDeleteModal"
       :title="$t('sso.deleteProviderTitle')"
-      :entity-name="`the SSO provider for ${deletingProvider?.domain}`"
+      :entity-name="$t('organization.ssoProviderEntity', { domain: deletingProvider?.domain })"
       :custom-consequence="$t('sso.deleteProviderWarning')"
       :is-loading="isDeleting"
       :confirm-button-text="$t('sso.deleteProviderConfirm')"

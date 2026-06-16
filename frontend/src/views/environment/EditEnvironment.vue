@@ -237,7 +237,7 @@
     <DeleteConfirmationModal
       :show="showEnvironmentDeletionModal"
       :title="$t('environment.deleteEnvironment')"
-      :entity-name="environment?.name || 'this environment'"
+      :entity-name="environment?.name || $t('environment.thisEnvironment')"
       @close="showEnvironmentDeletionModal = false"
       @confirm="deleteEnvironment"
     />

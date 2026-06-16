@@ -22,14 +22,14 @@
         class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 py-1.5 text-sm text-white/80 backdrop-blur-sm"
       >
         <icon-fa6-solid:lock-open class="size-3" />
-        Open-Source
+        {{ $t("home.openSource") }}
       </div>
 
       <h1
         class="mx-auto max-w-4xl text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]"
       >
-        The monitoring dashboard<br class="hidden sm:block" />
-        <span class="text-white/60">your Shopware shops deserve</span>
+        {{ $t("home.heroTitle") }}<br class="hidden sm:block" />
+        <span class="text-white/60">{{ $t("home.heroTitleHighlight") }}</span>
       </h1>
 
       <p class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
@@ -55,7 +55,7 @@
         >
           <a href="https://github.com/FriendsOfShopware/shopmon/" target="_blank" rel="noopener">
             <icon-mdi:github class="mr-2 size-5" />
-            GitHub
+            {{ $t("home.openSourceGithub") }}
           </a>
         </Button>
       </div>
@@ -86,8 +86,7 @@
       <div class="mb-12 text-center md:mb-16">
         <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("home.subtitle") }}</h2>
         <p class="mx-auto mt-3 max-w-lg text-muted-foreground">
-          One dashboard to monitor status, performance, extensions, and deployments across all your
-          environments.
+          {{ $t("home.featureIntro") }}
         </p>
       </div>
 
@@ -152,7 +151,7 @@
   <section class="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
     <h2 class="mb-2 text-2xl font-bold tracking-tight">{{ $t("home.andMore") }}</h2>
     <p class="mb-6 text-sm text-muted-foreground">
-      Everything you need to keep your Shopware environments healthy.
+      {{ $t("home.moreFeaturesDesc") }}
     </p>
     <div class="flex flex-wrap items-center justify-center gap-2">
       <Badge
@@ -171,8 +170,8 @@
     <div class="mx-auto max-w-5xl px-6">
       <SponsorShowcase
         :sponsors="sponsors"
-        title="Sponsors"
-        description="Shopmon is supported by companies that help keep the project free and moving forward for the Shopware community."
+        :title="$t('home.sponsorsTitle')"
+        :description="$t('home.sponsorsDesc')"
         title-tag="h2"
       />
     </div>
@@ -276,7 +275,7 @@ const features = computed(() => [
 
 const showcaseSections = computed(() => [
   {
-    badge: "Health Checks",
+    badge: t("home.healthChecksBadge"),
     icon: FaShieldHalved,
     title: t("home.froshToolsTitle"),
     description: t("home.froshToolsDesc"),
@@ -284,7 +283,7 @@ const showcaseSections = computed(() => [
     alt: t("home.altPerformanceChecks"),
   },
   {
-    badge: "Performance",
+    badge: t("home.performanceBadge"),
     icon: FaChartLine,
     title: t("home.sitespeedTitle"),
     description: t("home.sitespeedDesc"),

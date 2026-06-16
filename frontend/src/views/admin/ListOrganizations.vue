@@ -93,9 +93,9 @@
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:building class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No organizations found</h3>
+      <h3 class="text-lg font-semibold">{{ $t("admin.noOrganizationsFound") }}</h3>
       <p v-if="searchQuery" class="text-sm text-muted-foreground">
-        No organizations match "{{ searchQuery }}"
+        {{ $t("admin.noOrganizationsMatch", { query: searchQuery }) }}
       </p>
     </div>
 

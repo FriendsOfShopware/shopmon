@@ -85,7 +85,7 @@ export function useEnvironmentDetail() {
         });
         isRefreshing.value = false;
         await loadEnvironment();
-        success("Your Environment will refresh soon!");
+        success(t("environment.refreshQueued"));
       } catch (e) {
         isRefreshing.value = false;
         error(e instanceof Error ? e.message : String(e));
@@ -102,7 +102,7 @@ export function useEnvironmentDetail() {
         });
         isCacheClearing.value = false;
         await loadEnvironment();
-        success("Your Environment cache was cleared successfully");
+        success(t("environment.cacheCleared"));
       } catch (e) {
         isCacheClearing.value = false;
         error(e instanceof Error ? e.message : String(e));
@@ -121,13 +121,13 @@ export function useEnvironmentDetail() {
           params: { path: { environmentId: environment.value.id } },
         });
         isSubscribed.value = false;
-        success("You have unsubscribed from notifications for this environment");
+        success(t("environment.unsubscribed"));
       } else {
         await api.POST("/environments/{environmentId}/subscribe", {
           params: { path: { environmentId: environment.value.id } },
         });
         isSubscribed.value = true;
-        success("You have subscribed to notifications for this environment");
+        success(t("environment.subscribed"));
       }
     } catch (e) {
       error(e instanceof Error ? e.message : String(e));

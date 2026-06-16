@@ -71,7 +71,7 @@
             </Badge>
             <Badge v-else variant="destructive" class="inline-flex gap-1 text-[10px]">
               <icon-fa6-solid:xmark class="size-2" />
-              exit {{ dep.returnCode }}
+              {{ $t("deployments.failed", { code: dep.returnCode }) }}
             </Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -158,17 +158,21 @@
       </button>
 
       <div v-if="showSetup" class="border-t px-6 pb-5 pt-4 space-y-4">
-        <p class="text-sm text-muted-foreground leading-relaxed">
-          Use the
-          <a
-            href="https://github.com/FriendsOfShopware/shopmon-cli"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-primary hover:underline"
-            >shopmon-cli</a
-          >
-          to report deployments.
-        </p>
+        <i18n-t
+          keypath="deployments.cliIntro"
+          tag="p"
+          class="text-sm text-muted-foreground leading-relaxed"
+        >
+          <template #cliLink>
+            <a
+              href="https://github.com/FriendsOfShopware/shopmon-cli"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary hover:underline"
+              >shopmon-cli</a
+            >
+          </template>
+        </i18n-t>
 
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap">
@@ -199,18 +203,25 @@
           }}</code>
         </div>
 
-        <p class="text-xs text-muted-foreground leading-relaxed">
-          The CLI uses the local
-          <code class="rounded bg-muted px-1.5 py-0.5 text-xs">git HEAD</code> commit SHA. Set
-          <code class="rounded bg-muted px-1.5 py-0.5 text-xs"
-            >SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code
-          >
-          to override. Configure the git URL in
-          <RouterLink :to="{ name: 'account.shop.list' }" class="text-primary hover:underline">{{
-            $t("deployments.shopSettings")
-          }}</RouterLink
-          >.
-        </p>
+        <i18n-t
+          keypath="deployments.cliGitHint"
+          tag="p"
+          class="text-xs text-muted-foreground leading-relaxed"
+        >
+          <template #gitHead>
+            <code class="rounded bg-muted px-1.5 py-0.5 text-xs">git HEAD</code>
+          </template>
+          <template #referenceVariable>
+            <code class="rounded bg-muted px-1.5 py-0.5 text-xs"
+              >SHOPMON_DEPLOYMENT_VERSION_REFERENCE</code
+            >
+          </template>
+          <template #shopSettings>
+            <RouterLink :to="{ name: 'account.shop.list' }" class="text-primary hover:underline">{{
+              $t("deployments.shopSettings")
+            }}</RouterLink>
+          </template>
+        </i18n-t>
       </div>
     </Card>
 

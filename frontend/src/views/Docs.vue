@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Card, CardContent } from "@/components/ui/card";
+import { useI18n } from "vue-i18n";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 
 import FaRocket from "~icons/fa6-solid/rocket";
@@ -102,159 +103,128 @@ import FaRotate from "~icons/fa6-solid/rotate";
 
 const mobileTocOpen = ref(false);
 const activeSection = ref("getting-started");
+const { t } = useI18n();
 const { config: instanceConfig } = useInstanceConfig();
 
-const allSections = [
+const sectionDefinitions = [
   {
     id: "getting-started",
-    title: "Getting Started",
+    titleKey: "docs.sections.gettingStarted.title",
+    contentKey: "docs.sections.gettingStarted.content",
     icon: FaRocket,
-    content: `<p>Shopmon is an open-source monitoring dashboard for Shopware 6 shops. It lets you monitor all your Shopware environments from one central place — shop status, performance metrics, extension updates, and security alerts in real-time.</p>
-<p>To start monitoring, you need to:</p>
-<ol><li>Create an <a href="#organizations">Organization</a> to group your team and shops</li><li>Create a <a href="#projects">Project</a> within that organization</li><li><a href="#connecting-shop">Connect a Shop</a> by providing API credentials</li></ol>`,
   },
   {
     id: "connecting-shop",
-    title: "Connecting a Shop",
+    titleKey: "docs.sections.connectingShop.title",
+    contentKey: "docs.sections.connectingShop.content",
     icon: FaPlug,
-    content: `<p>There are two ways to connect your Shopware shop to Shopmon:</p>
-<h4>Option 1: Using the Shopmon Plugin (Recommended)</h4>
-<p>Install the <a href="https://github.com/FriendsOfShopware/FroshShopmon" target="_blank">FroshShopmon Plugin</a> in your Shopware shop. The plugin automatically creates the required integration and provides a base64-encoded connection string.</p>
-<ol><li>Install and activate the FroshShopmon plugin in your Shopware Administration</li><li>Copy the base64 connection string from the plugin configuration</li><li>In Shopmon, click "Connect using Shopmon Plugin" when adding a shop</li><li>Paste the connection string — credentials are filled automatically</li></ol>
-<h4>Option 2: Manual Integration</h4>
-<p>Create an integration in your Shopware Administration under <strong>Settings → System → Integrations</strong>. The integration needs read access to system info, plugins, scheduled tasks, and message queue stats; and write access for cache operations and task rescheduling.</p>
-<p>See the <a href="https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions" target="_blank">plugin documentation</a> for the exact permission list.</p>
-<div class="callout">Your Client-Secret is encrypted before being stored. Shopmon uses it exclusively to authenticate with your Shopware API.</div>`,
   },
   {
     id: "organizations",
-    title: "Organizations",
+    titleKey: "docs.sections.organizations.title",
+    contentKey: "docs.sections.organizations.content",
     icon: FaBuilding,
-    content: `<p>Organizations are the top-level grouping entity. Every shop belongs to an organization, and organizations can have multiple members.</p>
-<h4>Managing Members</h4>
-<p>Organization owners can invite new members by email. Invitees receive an email with accept/reject links. Expired invitations are automatically cleaned up.</p>
-<h4>Creating an Organization</h4>
-<p>Go to My Organizations and click "New Organization". Give it a name to get started.</p>`,
   },
   {
     id: "projects",
-    title: "Projects",
+    titleKey: "docs.sections.projects.title",
+    contentKey: "docs.sections.projects.content",
     icon: FaFolder,
-    content: `<p>Projects sit within an organization and group related shops together — for example, a client project with staging and production environments.</p>
-<ul><li>Each project has a name, description, and optional Git repository URL</li><li>The Git URL is used to link commits in the <a href="#deployments">Deployments</a> view</li><li>Projects can have <strong>API Keys</strong> with specific scopes for CI/CD integration</li><li>Projects can manage <a href="#packages-mirror">Packages Mirror</a> tokens</li></ul>`,
   },
   {
     id: "dashboard-overview",
-    title: "Dashboard Overview",
+    titleKey: "docs.sections.dashboardOverview.title",
+    contentKey: "docs.sections.dashboardOverview.content",
     icon: FaDashboard,
-    content: `<p>The Dashboard gives you a quick overview of all your shops and organizations. Each shop card shows:</p>
-<ul><li><strong>Shop name</strong> and favicon</li><li><strong>Project</strong> it belongs to</li><li><strong>Shopware version</strong></li><li><strong>Status indicator</strong> (green, yellow, or red) based on health checks</li></ul>
-<p>The dashboard also shows recent changes across all your shops.</p>`,
   },
   {
     id: "health-checks",
-    title: "Health Checks",
+    titleKey: "docs.sections.healthChecks.title",
+    contentKey: "docs.sections.healthChecks.content",
     icon: FaCircleCheck,
-    content: `<p>After each scrape, Shopmon runs automated health checks and assigns a status (green, yellow, or red) to your shop.</p>
-<h4>Built-in Checks</h4>
-<ul><li><strong>Security</strong> — Cross-references your Shopware version against known CVE advisories</li><li><strong>Environment</strong> — Verifies production/staging mode (not dev)</li><li><strong>Scheduled Tasks</strong> — Flags overdue tasks</li><li><strong>Admin Worker</strong> — Warns if still enabled in production</li><li><strong>Frosh Tools</strong> — Additional checks for PHP, MySQL, opcache, memory limits, queue storage, and mail config</li></ul>
-<div class="callout">You can suppress individual checks per shop using the ignore feature.</div>`,
   },
   {
     id: "extensions",
-    title: "Extensions",
+    titleKey: "docs.sections.extensions.title",
+    contentKey: "docs.sections.extensions.content",
     icon: FaPlugExt,
-    content: `<p>Shopmon tracks all installed plugins and apps:</p>
-<ul><li>View installed versions and available updates</li><li>See Shopware Store ratings and links</li><li>Get notified when updates are available</li><li>View extension changelogs for available updates</li></ul>
-<h4>Cross-Shop Extension View</h4>
-<p>The My Extensions page aggregates all extensions across all your shops to identify outdated or inconsistent versions.</p>
-<h4>Compatibility Check</h4>
-<p>When a new Shopware version is available, use the built-in Compatibility Check to verify extension support before upgrading.</p>`,
   },
   {
     id: "scheduled-tasks",
-    title: "Scheduled Tasks",
+    titleKey: "docs.sections.scheduledTasks.title",
+    contentKey: "docs.sections.scheduledTasks.content",
     icon: FaListCheck,
-    content: `<p>Monitor all registered scheduled tasks. The overview shows each task's name, status, interval, and execution times.</p>
-<ul><li>Overdue tasks are highlighted with a warning</li><li>You can <strong>reschedule stuck tasks</strong> directly from Shopmon</li></ul>`,
   },
   {
     id: "queue",
-    title: "Queue Monitoring",
+    titleKey: "docs.sections.queue.title",
+    contentKey: "docs.sections.queue.content",
     icon: FaBars,
-    content: `<p>View the message queue sizes of your Shopware shop. This helps you identify if messages are piling up and workers aren't keeping up.</p>`,
   },
   {
     id: "sitespeed",
-    title: "Performance Monitoring",
+    titleKey: "docs.sections.sitespeed.title",
+    contentKey: "docs.sections.sitespeed.content",
     icon: FaChartLine,
     feature: "sitespeedEnabled" as const,
-    content: `<p>Shopmon can perform daily automated page speed checks using <a href="https://www.sitespeed.io" target="_blank">sitespeed.io</a>.</p>
-<h4>What's Measured</h4>
-<ul><li><strong>TTFB</strong> — Time to First Byte</li><li><strong>Fully Loaded</strong> — Total page load time</li><li><strong>LCP</strong> — Largest Contentful Paint</li><li><strong>FCP</strong> — First Contentful Paint</li><li><strong>CLS</strong> — Cumulative Layout Shift</li><li><strong>Transfer Size</strong> — Total bytes transferred</li></ul>
-<p>Configure up to 5 URLs per shop. When linked with <a href="#deployments">Deployments</a>, performance changes can be correlated with specific releases.</p>`,
   },
   {
     id: "deployments",
-    title: "Deployments",
+    titleKey: "docs.sections.deployments.title",
+    contentKey: "docs.sections.deployments.content",
     icon: FaCodeBranch,
-    content: `<p>Track deployment history using <a href="https://github.com/FriendsOfShopware/shopmon-cli" target="_blank">shopmon-cli</a> from your CI/CD pipeline.</p>
-<ol><li>Create an API key with the <code>deployments</code> scope in Project Settings</li><li>Install <code>shopmon-cli</code> in your pipeline</li><li>The CLI reports deployment details, git reference, composer packages, and log output</li></ol>
-<div class="callout">Sitespeed measurements are automatically tagged with deployments for performance correlation.</div>`,
   },
   {
     id: "changelog",
-    title: "Changelog",
+    titleKey: "docs.sections.changelog.title",
+    contentKey: "docs.sections.changelog.content",
     icon: FaFileWaveform,
-    content: `<p>Shopmon automatically detects and records changes on each scrape:</p>
-<ul><li>Shopware version upgrades or downgrades</li><li>Extension installations, updates, removals</li><li>Extension activations and deactivations</li></ul>`,
   },
   {
     id: "notifications",
-    title: "Notifications",
+    titleKey: "docs.sections.notifications.title",
+    contentKey: "docs.sections.notifications.content",
     icon: FaBell,
-    content: `<h4>In-App Notifications</h4>
-<p>Notifications appear in the sidebar when a shop's status worsens or authentication errors occur.</p>
-<h4>Email Alerts</h4>
-<p>Subscribe per shop to receive emails on status changes. Duplicate alerts are prevented.</p>`,
   },
   {
     id: "shop-token",
-    title: "Bypass Authentication",
+    titleKey: "docs.sections.shopToken.title",
+    contentKey: "docs.sections.shopToken.content",
     icon: FaKey,
-    content: `<p>If your shop is behind HTTP authentication, configure your web server to allow requests with the header <code>shopmon-shop-token</code> matching your shop's token value. The token is shown on the shop information page.</p>`,
   },
   {
     id: "packages-mirror",
-    title: "Packages Mirror",
+    titleKey: "docs.sections.packagesMirror.title",
+    contentKey: "docs.sections.packagesMirror.content",
     icon: FaCube,
     feature: "packageMirrorEnabled" as const,
-    content: `<p>Serve Shopware store packages through a Global CDN — ~80ms instead of ~6s from <code>packages.shopware.com</code>.</p>
-<ol><li>Add your Shopware store token in the project settings</li><li>Replace <code>packages.shopware.com</code> with the mirror URL in <code>composer.json</code></li><li>Authenticate with <code>composer config --auth</code></li></ol>
-<div class="callout">Tokens are validated against the Shopware store and synced automatically every hour.</div>`,
   },
   {
     id: "sso",
-    title: "Single Sign-On (SSO)",
+    titleKey: "docs.sections.sso.title",
+    contentKey: "docs.sections.sso.content",
     icon: FaSignIn,
-    content: `<p>Organizations can configure OIDC-based SSO. Auto-discovery via <code>/.well-known/openid-configuration</code> is supported — just provide the issuer URL. Users with matching email domains are automatically redirected.</p>`,
   },
   {
     id: "scraping",
-    title: "How Scraping Works",
+    titleKey: "docs.sections.scraping.title",
+    contentKey: "docs.sections.scraping.content",
     icon: FaRotate,
-    content: `<p>Shopmon scrapes your shop once per hour, collecting Shopware version, plugins, scheduled tasks, message queues, cache config, and favicon. After scraping, health checks run and notifications trigger on status changes.</p>
-<h4>Remote Actions</h4>
-<ul><li><strong>Clear Cache</strong> — Remotely clears HTTP and application cache</li><li><strong>Reschedule Tasks</strong> — Resets stuck tasks back to "scheduled"</li></ul>`,
   },
 ];
 
 const sections = computed(() =>
-  allSections.filter(
-    (s) =>
-      !("feature" in s) ||
-      instanceConfig.value?.[s.feature as keyof typeof instanceConfig.value] !== false,
-  ),
+  sectionDefinitions
+    .filter(
+      (s) =>
+        !("feature" in s) ||
+        instanceConfig.value?.[s.feature as keyof typeof instanceConfig.value] !== false,
+    )
+    .map((s) => ({
+      ...s,
+      title: t(s.titleKey),
+      content: t(s.contentKey),
+    })),
 );
 
 const tocItems = computed(() => sections.value.map((s) => ({ href: `#${s.id}`, label: s.title })));

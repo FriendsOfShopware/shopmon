@@ -5,7 +5,7 @@
       <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2">
           <Logo class="h-8 w-auto" />
-          <span class="text-lg font-bold text-white">Shopmon</span>
+          <span class="text-lg font-bold text-white">{{ $t("common.appName") }}</span>
         </RouterLink>
 
         <div class="flex items-center gap-2">

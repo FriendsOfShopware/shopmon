@@ -67,7 +67,7 @@
     <DeleteConfirmationModal
       :show="showOrganizationDeletionModal"
       :title="$t('organization.deleteOrganization')"
-      :entity-name="organization?.name || 'this organization'"
+      :entity-name="organization?.name || $t('organization.thisOrganization')"
       @close="showOrganizationDeletionModal = false"
       @confirm="deleteOrganization"
     />

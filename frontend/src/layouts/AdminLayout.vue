@@ -25,7 +25,7 @@
                   : 'text-white/80 hover:bg-white/20 hover:text-white',
               ]"
             >
-              {{ link.label }}
+              {{ $t(link.labelKey) }}
             </RouterLink>
           </div>
         </div>
@@ -33,7 +33,7 @@
         <Button as-child variant="secondary" size="sm">
           <RouterLink to="/">
             <icon-fa6-solid:house class="mr-1 size-4" />
-            Back to Dashboard
+            {{ $t("admin.backToDashboard") }}
           </RouterLink>
         </Button>
       </div>
@@ -56,10 +56,10 @@ import { Button } from "@/components/ui/button";
 const route = useRoute();
 
 const navLinks = [
-  { to: "/admin/dashboard", label: "Dashboard", match: "admin.dashboard" },
-  { to: "/admin/users", label: "Users", match: "admin.users" },
-  { to: "/admin/organizations", label: "Organizations", match: "admin.organizations" },
-  { to: "/admin/environments", label: "Environments", match: "admin.environments" },
+  { to: "/admin/dashboard", labelKey: "admin.dashboard", match: "admin.dashboard" },
+  { to: "/admin/users", labelKey: "common.users", match: "admin.users" },
+  { to: "/admin/organizations", labelKey: "common.organizations", match: "admin.organizations" },
+  { to: "/admin/environments", labelKey: "common.environments", match: "admin.environments" },
 ];
 
 function isLinkActive(match: string) {

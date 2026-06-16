@@ -8,14 +8,14 @@
             <StatusIcon :status="environment.status" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-medium text-muted-foreground">Status</div>
+            <div class="text-xs font-medium text-muted-foreground">{{ $t("common.status") }}</div>
             <div class="truncate font-semibold capitalize">
               {{
                 environment.status === "green"
-                  ? "Healthy"
+                  ? $t("common.healthy")
                   : environment.status === "yellow"
-                    ? "Warning"
-                    : "Error"
+                    ? $t("common.warning")
+                    : $t("common.error")
               }}
             </div>
           </div>
@@ -62,9 +62,9 @@
             </div>
             <div class="font-semibold tabular-nums">
               {{ environment.extensions?.length ?? 0 }}
-              <span v-if="outdatedExtensions.length > 0" class="text-sm font-normal text-warning"
-                >({{ outdatedExtensions.length }} outdated)</span
-              >
+              <span v-if="outdatedExtensions.length > 0" class="text-sm font-normal text-warning">{{
+                $t("shopDetail.outdatedCount", { count: outdatedExtensions.length })
+              }}</span>
             </div>
           </div>
         </CardContent>
@@ -200,7 +200,11 @@
             <div class="min-w-0 text-sm">
               <div class="font-medium">{{ task.name }}</div>
               <div class="text-xs text-muted-foreground">
-                {{ getOverdueTime(task.nextExecutionTime ?? "") }} overdue
+                {{
+                  $t("shopDetail.overdueSince", {
+                    time: getOverdueTime(task.nextExecutionTime ?? ""),
+                  })
+                }}
               </div>
             </div>
           </div>
@@ -266,10 +270,8 @@
 
         <div class="sm:col-span-2 lg:col-span-3">
           <dt class="text-xs font-medium text-muted-foreground">
-            Bypass Authentication Header
-            <span
-              title="If your website is protected by authentication, configure the header 'shopmon-shop-token' with this value to be excluded"
-            >
+            {{ $t("environment.bypassAuthHeader") }}
+            <span :title="$t('environment.bypassAuthHeaderTooltip')">
               <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
             </span>
           </dt>
@@ -282,7 +284,7 @@
               variant="ghost"
               size="icon"
               class="size-7 shrink-0"
-              title="Copy token"
+              :title="$t('common.copyToken')"
               @click="copyToken"
             >
               <icon-fa6-solid:copy class="size-3" />
@@ -405,7 +407,7 @@ const infoItems = computed(() => {
       label: t("shopDetail.lastDeployment"),
       value:
         environment.value.deploymentsCount > 0
-          ? `${environment.value.deploymentsCount} deployment${environment.value.deploymentsCount !== 1 ? "s" : ""}`
+          ? t("deployments.count", { count: environment.value.deploymentsCount })
           : t("common.never"),
     },
     { label: t("shopDetail.environment"), value: environment.value.cache?.environment ?? "-" },
@@ -414,15 +416,15 @@ const infoItems = computed(() => {
       label: t("shopDetail.httpCache"),
       value: environment.value.cache?.httpCache ? t("common.enabled") : t("common.disabled"),
     },
-    { label: "Organization", value: environment.value.organizationName },
-    { label: "Project", value: environment.value.shopName ?? "-" },
+    { label: t("common.organization"), value: environment.value.organizationName },
+    { label: t("common.project"), value: environment.value.shopName ?? "-" },
   ];
 });
 
 async function copyToken() {
   if (environment.value?.environmentToken) {
     await navigator.clipboard.writeText(environment.value.environmentToken);
-    success("Token copied to clipboard");
+    success(t("environment.tokenCopied"));
   }
 }
 

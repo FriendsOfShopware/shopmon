@@ -63,7 +63,20 @@
     "noTaskSearchMatch": "Keine Aufgaben entsprechen \"{query}\".",
     "noTaskFilterMatch": "Keine geplanten Aufgaben entsprechen dem aktuellen Filter.",
     "users": "Benutzer",
-    "organizations": "Organisationen"
+    "organizations": "Organisationen",
+    "appName": "Shopmon",
+    "close": "Schließen",
+    "yes": "Ja",
+    "no": "Nein",
+    "refresh": "Aktualisieren",
+    "warning": "Warnung",
+    "error": "Fehler",
+    "sidebar": "Seitenleiste",
+    "mobileSidebarDescription": "Zeigt die mobile Seitenleiste an.",
+    "toggleSidebar": "Seitenleiste umschalten",
+    "ratingOutOfFive": "{rating} von 5",
+    "organization": "Organisation",
+    "project": "Projekt"
   },
   "alert": {
     "successTitle": "Aktion erfolgreich",
@@ -93,7 +106,8 @@
     "documentation": "Dokumentation",
     "navigation": "Navigation",
     "shops": "Shops",
-    "onThisPage": "Auf dieser Seite"
+    "onThisPage": "Auf dieser Seite",
+    "breadcrumb": "Breadcrumb"
   },
   "home": {
     "title": "Shopmon - Das Open-Source-Dashboard für Shopware-Entwickler",
@@ -131,7 +145,15 @@
     "altExtensions": "Shopmon Erweiterungen",
     "altSitespeed": "Shopmon Sitespeed",
     "altAutoChecks": "Automatische Performance-Prüfungen",
-    "altSitespeedLogo": "Sitespeed.io Logo"
+    "altSitespeedLogo": "Sitespeed.io Logo",
+    "heroTitle": "Das Monitoring-Dashboard",
+    "heroTitleHighlight": "das Ihre Shopware-Shops verdienen",
+    "featureIntro": "Ein Dashboard zur Überwachung von Status, Performance, Erweiterungen und Deployments in all Ihren Umgebungen.",
+    "moreFeaturesDesc": "Alles, was Sie brauchen, um Ihre Shopware-Umgebungen gesund zu halten.",
+    "sponsorsTitle": "Sponsoren",
+    "sponsorsDesc": "Shopmon wird von Unternehmen unterstützt, die dabei helfen, das Projekt kostenlos zu halten und für die Shopware-Community weiterzuentwickeln.",
+    "healthChecksBadge": "Health Checks",
+    "performanceBadge": "Performance"
   },
   "auth": {
     "signIn": "Bei Ihrem Konto anmelden",
@@ -167,7 +189,9 @@
     "changePassword": "Passwort ändern",
     "changePasswordButton": "Passwort ändern",
     "failedResetPassword": "Passwort konnte nicht zurückgesetzt werden",
-    "passwordResetSuccess": "Passwort wurde zurückgesetzt. Sie werden in 2 Sekunden zur Anmeldeseite weitergeleitet."
+    "passwordResetSuccess": "Passwort wurde zurückgesetzt. Sie werden in 2 Sekunden zur Anmeldeseite weitergeleitet.",
+    "backToSignIn": "Zurück zur Anmeldung",
+    "alreadyHaveAccount": "Sie haben bereits ein Konto?"
   },
   "validation": {
     "required": "{field} ist erforderlich",
@@ -330,7 +354,24 @@
     "exampleShopName": "Spielzeug Shop X",
     "exampleProduction": "Produktion",
     "exampleStaging": "Staging",
-    "createShop": "Shop erstellen"
+    "createShop": "Shop erstellen",
+    "switchEnvironment": "Umgebung wechseln",
+    "storefront": "Storefront",
+    "admin": "Administration",
+    "watchEnvironment": "Umgebung beobachten",
+    "unwatchEnvironment": "Umgebung nicht mehr beobachten",
+    "clearCache": "Umgebungs-Cache leeren",
+    "refreshData": "Umgebungsdaten aktualisieren",
+    "autoUpdateDisabled": "Diese Umgebung wird nicht mehr automatisch aktualisiert. Bitte aktualisieren Sie die API-Zugangsdaten oder die URL, um dieses Problem zu beheben.",
+    "refreshTitle": "{name} aktualisieren",
+    "pagespeedQuestion": "Möchten Sie auch einen neuen Pagespeed-Test ausführen?",
+    "refreshDescription": "Dadurch werden die Umgebungsdaten aktualisiert.",
+    "thisEnvironment": "diese Umgebung",
+    "bypassAuthHeaderTooltip": "Wenn Ihre Website durch Authentifizierung geschützt ist, konfigurieren Sie den Header 'shopmon-shop-token' mit diesem Wert, damit er ausgenommen wird",
+    "refreshQueued": "Ihre Umgebung wird in Kürze aktualisiert!",
+    "cacheCleared": "Der Cache Ihrer Umgebung wurde erfolgreich geleert",
+    "subscribed": "Sie haben Benachrichtigungen für diese Umgebung abonniert",
+    "unsubscribed": "Sie haben Benachrichtigungen für diese Umgebung abbestellt"
   },
   "shop": {
     "newShop": "Neues Shop",
@@ -395,7 +436,9 @@
     "noEnvironmentsYet": "Noch keine Umgebungen in diesem Shop.",
     "addToShop": "Zu diesem Shop hinzufügen",
     "visitEnvironment": "Shop besuchen",
-    "selectOrganization": "Organisation auswählen"
+    "selectOrganization": "Organisation auswählen",
+    "apiKeyEntity": "der API-Schlüssel '{name}'",
+    "thisShop": "dieser Shop"
   },
   "organization": {
     "title": "Meine Organisation",
@@ -437,7 +480,13 @@
     "failedRejectInvitation": "Einladung konnte nicht abgelehnt werden",
     "failedDeleteOrg": "Organisation konnte nicht gelöscht werden",
     "failedUpdateMemberRole": "Mitgliedsrolle konnte nicht aktualisiert werden",
-    "memberRoleUpdated": "Mitgliedsrolle erfolgreich aktualisiert"
+    "memberRoleUpdated": "Mitgliedsrolle erfolgreich aktualisiert",
+    "ssoProviders": "SSO-Anbieter",
+    "thisOrganization": "diese Organisation",
+    "ssoProviderEntity": "der SSO-Anbieter für {domain}",
+    "failedLeaveOrg": "Organisation konnte nicht verlassen werden",
+    "acceptingInvitation": "Einladung wird angenommen...",
+    "rejectingInvitation": "Einladung wird abgelehnt..."
   },
   "sso": {
     "title": "SSO-Konfiguration",
@@ -541,7 +590,15 @@
     "noQueues": "Keine Warteschlangen",
     "noQueueDescription": "Diese Umgebung hat keine Nachrichtenwarteschlangen.",
     "searchTasks": "Aufgaben suchen...",
-    "noTasksFound": "Keine Aufgaben gefunden"
+    "noTasksFound": "Keine Aufgaben gefunden",
+    "installedInEnvironments": "In {count} Umgebung installiert | In {count} Umgebungen installiert",
+    "updateToVersion": "Auf {version} aktualisieren",
+    "outdatedCount": "({count} veraltet)",
+    "overdueSince": "{time} überfällig",
+    "runsEverySeconds": "Läuft alle {seconds} Sekunden",
+    "everyInterval": "alle {interval}",
+    "lastExecution": "letzte Ausführung: {time}",
+    "nextExecutionShort": "nächste Ausführung: {time}"
   },
   "sitespeed": {
     "checkedAt": "Geprüft am",
@@ -584,7 +641,10 @@
     "reference": "Referenz",
     "composerPackages": "Composer-Pakete",
     "package": "Paket",
-    "output": "Ausgabe"
+    "output": "Ausgabe",
+    "cliIntro": "Verwenden Sie die {cliLink}, um Deployments zu melden.",
+    "cliGitHint": "Die CLI verwendet die lokale {gitHead} Commit-SHA. Setzen Sie {referenceVariable}, um sie zu überschreiben. Konfigurieren Sie die Git-URL in den {shopSettings}.",
+    "count": "{count} Deployment | {count} Deployments"
   },
   "deleteModal": {
     "confirmText": "Sind Sie sicher, dass Sie **{name}** löschen möchten?",
@@ -691,7 +751,12 @@
     "recentEnvironments": "Letzte Umgebungen",
     "noRecentSignups": "Keine aktuellen Registrierungen",
     "noRecentEnvironments": "Keine aktuellen Umgebungen",
-    "environmentHealth": "Umgebungs-Zustand:"
+    "environmentHealth": "Umgebungs-Zustand:",
+    "backToDashboard": "Zurück zum Dashboard",
+    "noEnvironmentsFound": "Keine Umgebungen gefunden",
+    "noEnvironmentsMatch": "Keine Umgebungen entsprechen \"{query}\"",
+    "noOrganizationsFound": "Keine Organisationen gefunden",
+    "noOrganizationsMatch": "Keine Organisationen entsprechen \"{query}\""
   },
   "privacy": {
     "title": "Datenschutzerklärung",
@@ -800,7 +865,9 @@
     "tokenDeleted": "Packages Token erfolgreich gelöscht",
     "failedDelete": "Packages Token konnte nicht gelöscht werden",
     "syncTriggered": "Token-Synchronisierung erfolgreich ausgelöst",
-    "failedSync": "Packages Token konnte nicht synchronisiert werden"
+    "failedSync": "Packages Token konnte nicht synchronisiert werden",
+    "tokenNumber": "Token #{id}",
+    "yourToken": "ihr-token"
   },
   "orgSwitcher": {
     "switchOrganization": "Organisation wechseln"
@@ -815,5 +882,81 @@
     "createButton": "Organisation erstellen",
     "inviteTitle": "Bestehender Organisation beitreten",
     "inviteDescription": "Wenn Ihr Team bereits Shopmon nutzt, bitten Sie es, Ihnen eine Einladung zu senden. Sie erhalten eine E-Mail mit einem Link zum Beitreten."
+  },
+  "docs": {
+    "sections": {
+      "gettingStarted": {
+        "title": "Erste Schritte",
+        "content": "<p>Shopmon ist ein Open-Source-Monitoring-Dashboard für Shopware-6-Shops. Damit überwachen Sie alle Ihre Shopware-Umgebungen an einem zentralen Ort – Shop-Status, Performance-Metriken, Erweiterungs-Updates und Sicherheitswarnungen in Echtzeit.</p>\n<p>Um mit dem Monitoring zu starten, müssen Sie:</p>\n<ol><li>Eine <a href=\"#organizations\">Organisation</a> erstellen, um Team und Shops zu gruppieren</li><li>Ein <a href=\"#projects\">Projekt</a> innerhalb dieser Organisation erstellen</li><li>Einen <a href=\"#connecting-shop\">Shop verbinden</a>, indem Sie API-Zugangsdaten hinterlegen</li></ol>"
+      },
+      "connectingShop": {
+        "title": "Shop verbinden",
+        "content": "<p>Es gibt zwei Möglichkeiten, Ihren Shopware-Shop mit Shopmon zu verbinden:</p>\n<h4>Option 1: Shopmon Plugin verwenden (empfohlen)</h4>\n<p>Installieren Sie das <a href=\"https://github.com/FriendsOfShopware/FroshShopmon\" target=\"_blank\">FroshShopmon Plugin</a> in Ihrem Shopware-Shop. Das Plugin erstellt automatisch die benötigte Integration und stellt eine base64-kodierte Verbindungszeichenfolge bereit.</p>\n<ol><li>Installieren und aktivieren Sie das FroshShopmon Plugin in Ihrer Shopware Administration</li><li>Kopieren Sie die base64-Verbindungszeichenfolge aus der Plugin-Konfiguration</li><li>Klicken Sie in Shopmon beim Hinzufügen eines Shops auf „Mit Shopmon Plugin verbinden“</li><li>Fügen Sie die Verbindungszeichenfolge ein – die Zugangsdaten werden automatisch ausgefüllt</li></ol>\n<h4>Option 2: Manuelle Integration</h4>\n<p>Erstellen Sie in Ihrer Shopware Administration unter <strong>Einstellungen → System → Integrationen</strong> eine Integration. Die Integration benötigt Lesezugriff auf Systeminformationen, Plugins, geplante Aufgaben und Message-Queue-Statistiken sowie Schreibzugriff für Cache-Operationen und das Neuplanen von Aufgaben.</p>\n<p>Die genaue Berechtigungsliste finden Sie in der <a href=\"https://github.com/FriendsOfShopware/FroshShopmon?tab=readme-ov-file#permissions\" target=\"_blank\">Plugin-Dokumentation</a>.</p>\n<div class=\"callout\">Ihr Client-Secret wird vor dem Speichern verschlüsselt. Shopmon verwendet es ausschließlich zur Authentifizierung gegenüber Ihrer Shopware API.</div>"
+      },
+      "organizations": {
+        "title": "Organisationen",
+        "content": "<p>Organisationen sind die oberste Gruppierungsebene. Jeder Shop gehört zu einer Organisation, und Organisationen können mehrere Mitglieder haben.</p>\n<h4>Mitglieder verwalten</h4>\n<p>Organisationsinhaber können neue Mitglieder per E-Mail einladen. Eingeladene Personen erhalten eine E-Mail mit Links zum Annehmen oder Ablehnen. Abgelaufene Einladungen werden automatisch bereinigt.</p>\n<h4>Organisation erstellen</h4>\n<p>Öffnen Sie „Meine Organisationen“ und klicken Sie auf „Neue Organisation“. Vergeben Sie einen Namen, um loszulegen.</p>"
+      },
+      "projects": {
+        "title": "Projekte",
+        "content": "<p>Projekte liegen innerhalb einer Organisation und gruppieren zusammengehörige Shops – zum Beispiel ein Kundenprojekt mit Staging- und Produktionsumgebungen.</p>\n<ul><li>Jedes Projekt hat einen Namen, eine Beschreibung und optional eine Git-Repository-URL</li><li>Die Git-URL wird verwendet, um Commits in der Ansicht <a href=\"#deployments\">Deployments</a> zu verlinken</li><li>Projekte können <strong>API-Schlüssel</strong> mit spezifischen Scopes für CI/CD-Integrationen haben</li><li>Projekte können Tokens für den <a href=\"#packages-mirror\">Packages Mirror</a> verwalten</li></ul>"
+      },
+      "dashboardOverview": {
+        "title": "Dashboard-Übersicht",
+        "content": "<p>Das Dashboard gibt Ihnen einen schnellen Überblick über alle Shops und Organisationen. Jede Shop-Karte zeigt:</p>\n<ul><li><strong>Shop-Name</strong> und Favicon</li><li><strong>Projekt</strong>, zu dem der Shop gehört</li><li><strong>Shopware-Version</strong></li><li><strong>Statusanzeige</strong> (grün, gelb oder rot) basierend auf Health Checks</li></ul>\n<p>Außerdem zeigt das Dashboard aktuelle Änderungen in allen Shops.</p>"
+      },
+      "healthChecks": {
+        "title": "Health Checks",
+        "content": "<p>Nach jedem Scrape führt Shopmon automatisierte Health Checks aus und weist Ihrem Shop einen Status (grün, gelb oder rot) zu.</p>\n<h4>Integrierte Prüfungen</h4>\n<ul><li><strong>Sicherheit</strong> – gleicht Ihre Shopware-Version mit bekannten CVE-Hinweisen ab</li><li><strong>Umgebung</strong> – prüft Produktions-/Staging-Modus (nicht dev)</li><li><strong>Geplante Aufgaben</strong> – markiert überfällige Aufgaben</li><li><strong>Admin Worker</strong> – warnt, wenn er in Produktion noch aktiviert ist</li><li><strong>Frosh Tools</strong> – zusätzliche Prüfungen für PHP, MySQL, Opcache, Speicherlimits, Queue-Speicher und Mail-Konfiguration</li></ul>\n<div class=\"callout\">Sie können einzelne Prüfungen pro Shop über die Ignorieren-Funktion ausblenden.</div>"
+      },
+      "extensions": {
+        "title": "Erweiterungen",
+        "content": "<p>Shopmon verfolgt alle installierten Plugins und Apps:</p>\n<ul><li>Installierte Versionen und verfügbare Updates anzeigen</li><li>Shopware-Store-Bewertungen und Links ansehen</li><li>Benachrichtigungen erhalten, wenn Updates verfügbar sind</li><li>Änderungsprotokolle für verfügbare Erweiterungs-Updates anzeigen</li></ul>\n<h4>Shopübergreifende Erweiterungsansicht</h4>\n<p>Die Seite „Meine Erweiterungen“ bündelt alle Erweiterungen aus allen Shops, um veraltete oder uneinheitliche Versionen zu erkennen.</p>\n<h4>Kompatibilitätsprüfung</h4>\n<p>Wenn eine neue Shopware-Version verfügbar ist, können Sie mit der integrierten Kompatibilitätsprüfung die Unterstützung Ihrer Erweiterungen vor dem Upgrade prüfen.</p>"
+      },
+      "scheduledTasks": {
+        "title": "Geplante Aufgaben",
+        "content": "<p>Überwachen Sie alle registrierten geplanten Aufgaben. Die Übersicht zeigt Name, Status, Intervall und Ausführungszeiten jeder Aufgabe.</p>\n<ul><li>Überfällige Aufgaben werden mit einer Warnung hervorgehoben</li><li>Sie können <strong>hängende Aufgaben neu planen</strong> – direkt aus Shopmon heraus</li></ul>"
+      },
+      "queue": {
+        "title": "Queue-Monitoring",
+        "content": "<p>Sehen Sie die Größen der Message Queues Ihres Shopware-Shops. So erkennen Sie, ob Nachrichten auflaufen und Worker nicht nachkommen.</p>"
+      },
+      "sitespeed": {
+        "title": "Performance-Monitoring",
+        "content": "<p>Shopmon kann tägliche automatisierte Seitengeschwindigkeitsprüfungen mit <a href=\"https://www.sitespeed.io\" target=\"_blank\">sitespeed.io</a> ausführen.</p>\n<h4>Was gemessen wird</h4>\n<ul><li><strong>TTFB</strong> – Time to First Byte</li><li><strong>Fully Loaded</strong> – gesamte Ladezeit der Seite</li><li><strong>LCP</strong> – Largest Contentful Paint</li><li><strong>FCP</strong> – First Contentful Paint</li><li><strong>CLS</strong> – Cumulative Layout Shift</li><li><strong>Transfer Size</strong> – insgesamt übertragene Bytes</li></ul>\n<p>Konfigurieren Sie bis zu 5 URLs pro Shop. In Verbindung mit <a href=\"#deployments\">Deployments</a> lassen sich Performance-Änderungen bestimmten Releases zuordnen.</p>"
+      },
+      "deployments": {
+        "title": "Deployments",
+        "content": "<p>Verfolgen Sie die Deployment-Historie mit der <a href=\"https://github.com/FriendsOfShopware/shopmon-cli\" target=\"_blank\">shopmon-cli</a> aus Ihrer CI/CD-Pipeline.</p>\n<ol><li>Erstellen Sie in den Projekteinstellungen einen API-Schlüssel mit dem Scope <code>deployments</code></li><li>Installieren Sie <code>shopmon-cli</code> in Ihrer Pipeline</li><li>Die CLI meldet Deployment-Details, Git-Referenz, Composer-Pakete und Log-Ausgabe</li></ol>\n<div class=\"callout\">Sitespeed-Messungen werden automatisch mit Deployments markiert, um Performance-Korrelationen zu ermöglichen.</div>"
+      },
+      "changelog": {
+        "title": "Änderungsprotokoll",
+        "content": "<p>Shopmon erkennt und protokolliert automatisch Änderungen bei jedem Scrape:</p>\n<ul><li>Shopware-Versions-Upgrades oder -Downgrades</li><li>Installationen, Updates und Entfernungen von Erweiterungen</li><li>Aktivierungen und Deaktivierungen von Erweiterungen</li></ul>"
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "content": "<h4>In-App-Benachrichtigungen</h4>\n<p>Benachrichtigungen erscheinen in der Seitenleiste, wenn sich der Status eines Shops verschlechtert oder Authentifizierungsfehler auftreten.</p>\n<h4>E-Mail-Benachrichtigungen</h4>\n<p>Abonnieren Sie einzelne Shops, um E-Mails bei Statusänderungen zu erhalten. Doppelte Benachrichtigungen werden verhindert.</p>"
+      },
+      "shopToken": {
+        "title": "Authentifizierung umgehen",
+        "content": "<p>Wenn Ihr Shop hinter HTTP-Authentifizierung liegt, konfigurieren Sie Ihren Webserver so, dass Anfragen mit dem Header <code>shopmon-shop-token</code> und dem Token-Wert Ihres Shops erlaubt werden. Das Token wird auf der Shop-Informationsseite angezeigt.</p>"
+      },
+      "packagesMirror": {
+        "title": "Packages Mirror",
+        "content": "<p>Liefern Sie Shopware-Store-Pakete über ein globales CDN aus – etwa 80 ms statt etwa 6 s von <code>packages.shopware.com</code>.</p>\n<ol><li>Fügen Sie Ihren Shopware-Store-Token in den Projekteinstellungen hinzu</li><li>Ersetzen Sie <code>packages.shopware.com</code> in der <code>composer.json</code> durch die Mirror-URL</li><li>Authentifizieren Sie sich mit <code>composer config --auth</code></li></ol>\n<div class=\"callout\">Tokens werden gegen den Shopware Store validiert und automatisch stündlich synchronisiert.</div>"
+      },
+      "sso": {
+        "title": "Single Sign-On (SSO)",
+        "content": "<p>Organisationen können OIDC-basiertes SSO konfigurieren. Auto-Discovery über <code>/.well-known/openid-configuration</code> wird unterstützt – geben Sie einfach die Aussteller-URL an. Benutzer mit passenden E-Mail-Domains werden automatisch weitergeleitet.</p>"
+      },
+      "scraping": {
+        "title": "So funktioniert Scraping",
+        "content": "<p>Shopmon scraped Ihren Shop einmal pro Stunde und sammelt Shopware-Version, Plugins, geplante Aufgaben, Message Queues, Cache-Konfiguration und Favicon. Nach dem Scraping laufen Health Checks und bei Statusänderungen werden Benachrichtigungen ausgelöst.</p>\n<h4>Remote-Aktionen</h4>\n<ul><li><strong>Cache leeren</strong> – leert HTTP- und Anwendungscache aus der Ferne</li><li><strong>Aufgaben neu planen</strong> – setzt hängende Aufgaben zurück auf „scheduled“</li></ul>"
+      }
+    }
+  },
+  "command": {
+    "title": "Befehlspalette",
+    "description": "Nach einem auszuführenden Befehl suchen..."
   }
 }

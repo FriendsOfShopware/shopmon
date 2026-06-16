@@ -314,7 +314,7 @@
                 class="flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
               >
                 <div class="min-w-0">
-                  <div class="font-medium">Token #{{ pt.id }}</div>
+                  <div class="font-medium">{{ $t("packages.tokenNumber", { id: pt.id }) }}</div>
                   <div class="mt-0.5 text-xs text-muted-foreground">
                     <template v-if="pt.lastSyncedAt">{{
                       $t("packages.lastSynced", {
@@ -386,7 +386,7 @@
               <div class="overflow-hidden rounded-md border bg-muted">
                 <pre
                   class="overflow-x-auto p-4"
-                ><code class="font-mono text-sm">composer config --auth bearer.{{ packagesComposerHost }} &lt;your-token&gt;</code></pre>
+                ><code class="font-mono text-sm">composer config --auth bearer.{{ packagesComposerHost }} &lt;{{ $t("packages.yourToken") }}&gt;</code></pre>
               </div>
             </div>
           </template>
@@ -503,7 +503,7 @@
     <DeleteConfirmationModal
       :show="showDeleteApiKeyModal"
       :title="$t('shop.deleteApiKeyTitle')"
-      :entity-name="`the API key '${deletingApiKey?.name}'`"
+      :entity-name="$t('shop.apiKeyEntity', { name: deletingApiKey?.name })"
       :custom-consequence="$t('shop.deleteApiKeyWarning')"
       :is-loading="isDeletingApiKey"
       :confirm-button-text="$t('shop.deleteApiKeyConfirm')"
@@ -515,7 +515,7 @@
     <DeleteConfirmationModal
       :show="showDeleteShopModal"
       :title="$t('shop.deleteShopTitle')"
-      :entity-name="shop?.name || 'this shop'"
+      :entity-name="shop?.name || $t('shop.thisShop')"
       @close="showDeleteShopModal = false"
       @confirm="deleteShop"
     />
@@ -558,7 +558,7 @@
     <DeleteConfirmationModal
       :show="showDeletePackagesTokenModal"
       :title="$t('packages.deleteTokenTitle')"
-      :entity-name="`Token #${deletingPackagesToken?.id}`"
+      :entity-name="$t('packages.tokenNumber', { id: deletingPackagesToken?.id })"
       :custom-consequence="$t('packages.deleteTokenWarning')"
       :is-loading="isDeletingPackagesToken"
       :confirm-button-text="$t('packages.deleteTokenConfirm')"
@@ -844,7 +844,7 @@ function closeTokenModal() {
 const onSubmitApiKey = handleApiKeySubmit(async (values) => {
   if (!shop.value) return;
   if (selectedScopes.value.length === 0) {
-    scopeError.value = t("validation.required", { field: "Scope" });
+    scopeError.value = t("validation.required", { field: t("shop.scopes") });
     return;
   }
   isCreatingApiKey.value = true;

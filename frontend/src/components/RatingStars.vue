@@ -1,7 +1,7 @@
 <template>
   <span
     v-if="rating !== null"
-    :title="`${rating / 2} from 5`"
+    :title="$t('common.ratingOutOfFive', { rating: rating / 2 })"
     class="inline-flex whitespace-nowrap"
   >
     <template v-for="n in 5" :key="n">

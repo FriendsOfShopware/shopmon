@@ -45,7 +45,7 @@
         <!-- Status badge -->
         <Badge :class="statusClass(task)" class="shrink-0 gap-1 capitalize">
           <component :is="statusIcon(task)" class="size-2.5" />
-          {{ task.overdue && task.status !== "inactive" ? "overdue" : task.status }}
+          {{ taskStatusLabel(task) }}
         </Badge>
 
         <!-- Task name -->
@@ -56,15 +56,19 @@
         <!-- Interval -->
         <div
           class="hidden shrink-0 text-xs text-muted-foreground sm:block"
-          :title="`Runs every ${task.runInterval} seconds`"
+          :title="$t('shopDetail.runsEverySeconds', { seconds: task.runInterval })"
         >
-          every {{ formatInterval(task.runInterval) }}
+          {{ $t("shopDetail.everyInterval", { interval: formatInterval(task.runInterval) }) }}
         </div>
 
         <!-- Timing info -->
         <div class="hidden shrink-0 text-right text-xs tabular-nums lg:block">
           <div class="text-muted-foreground">
-            last: {{ task.lastExecutionTime ? formatDateTime(task.lastExecutionTime) : "—" }}
+            {{
+              $t("shopDetail.lastExecution", {
+                time: task.lastExecutionTime ? formatDateTime(task.lastExecutionTime) : "—",
+              })
+            }}
           </div>
           <div
             :class="
@@ -73,7 +77,11 @@
                 : 'text-muted-foreground'
             "
           >
-            next: {{ task.nextExecutionTime ? formatDateTime(task.nextExecutionTime) : "—" }}
+            {{
+              $t("shopDetail.nextExecutionShort", {
+                time: task.nextExecutionTime ? formatDateTime(task.nextExecutionTime) : "—",
+              })
+            }}
           </div>
         </div>
 
@@ -166,6 +174,15 @@ function statusIcon(task: ScheduledTask) {
   if (task.status === "queued" || task.status === "running") return FaRotate;
   if (task.status === "failed") return FaXmark;
   return FaCheck;
+}
+
+function taskStatusLabel(task: ScheduledTask): string {
+  if (task.overdue && task.status !== "inactive") return t("common.overdue");
+  if (task.status === "inactive") return t("common.inactive");
+  if (task.status === "queued") return t("shopDetail.queued");
+  if (task.status === "running") return t("shopDetail.running");
+  if (task.status === "failed") return t("common.failed");
+  return t("common.healthy");
 }
 
 function formatInterval(seconds: number): string {

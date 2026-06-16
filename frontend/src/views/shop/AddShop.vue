@@ -86,7 +86,10 @@
               <FormItem>
                 <FormLabel>{{ $t("environment.environmentName") }}</FormLabel>
                 <FormControl>
-                  <Input v-bind="componentField" placeholder="Production" />
+                  <Input
+                    v-bind="componentField"
+                    :placeholder="$t('environment.exampleProduction')"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

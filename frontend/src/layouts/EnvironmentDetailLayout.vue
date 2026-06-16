@@ -31,7 +31,7 @@
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-64">
-                <DropdownMenuLabel>Switch environment</DropdownMenuLabel>
+                <DropdownMenuLabel>{{ $t("environment.switchEnvironment") }}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   v-for="env in siblingEnvironments"
@@ -87,13 +87,13 @@
         <Button variant="outline" size="sm" class="max-sm:hidden" as-child>
           <a :href="environment.url" target="_blank" rel="noopener noreferrer">
             <icon-fa6-solid:store class="mr-1.5 size-3" />
-            Storefront
+            {{ $t("environment.storefront") }}
           </a>
         </Button>
         <Button variant="outline" size="sm" class="max-sm:hidden" as-child>
           <a :href="(environment.url ?? '') + '/admin'" target="_blank" rel="noopener noreferrer">
             <icon-fa6-solid:user-gear class="mr-1.5 size-3" />
-            Admin
+            {{ $t("environment.admin") }}
           </a>
         </Button>
 
@@ -103,7 +103,9 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          :title="isSubscribed ? 'Unwatch environment' : 'Watch environment'"
+          :title="
+            isSubscribed ? $t('environment.unwatchEnvironment') : $t('environment.watchEnvironment')
+          "
           :disabled="isSubscribing"
           @click="toggleNotificationSubscription"
         >
@@ -118,7 +120,7 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          title="Clear environment cache"
+          :title="$t('environment.clearCache')"
           :disabled="isCacheClearing"
           @click="onCacheClear"
         >
@@ -131,7 +133,7 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          title="Refresh environment data"
+          :title="$t('environment.refreshData')"
           :disabled="isRefreshing"
           @click="showEnvironmentRefreshModal = true"
         >
@@ -148,7 +150,7 @@
             }"
           >
             <icon-fa6-solid:pencil class="mr-1.5 size-3" />
-            Edit
+            {{ $t("common.edit") }}
           </RouterLink>
         </Button>
       </div>
@@ -162,8 +164,7 @@
     >
       <CircleX class="size-4" />
       <AlertDescription>
-        This environment will be not automatically updated anymore. Please update the API
-        credentials or URL to fix this issue.
+        {{ $t("environment.autoUpdateDisabled") }}
       </AlertDescription>
     </Alert>
 
@@ -235,21 +236,25 @@
         <DialogHeader>
           <div class="flex items-start gap-3">
             <FaRotate class="mt-0.5 size-5 shrink-0 text-info" aria-hidden="true" />
-            <DialogTitle>Refresh {{ environment.name }}</DialogTitle>
+            <DialogTitle>{{
+              $t("environment.refreshTitle", { name: environment.name })
+            }}</DialogTitle>
           </div>
         </DialogHeader>
         <template v-if="instanceConfig?.sitespeedEnabled !== false">
-          <p>Do you also want to have a new pagespeed test?</p>
+          <p>{{ $t("environment.pagespeedQuestion") }}</p>
           <DialogFooter>
-            <Button variant="destructive" @click="onRefresh(false)">No</Button>
-            <Button @click="onRefresh(true)">Yes</Button>
+            <Button variant="destructive" @click="onRefresh(false)">{{ $t("common.no") }}</Button>
+            <Button @click="onRefresh(true)">{{ $t("common.yes") }}</Button>
           </DialogFooter>
         </template>
         <template v-else>
-          <p>This will refresh the environment data.</p>
+          <p>{{ $t("environment.refreshDescription") }}</p>
           <DialogFooter>
-            <Button variant="outline" @click="showEnvironmentRefreshModal = false">Cancel</Button>
-            <Button @click="onRefresh(false)">Refresh</Button>
+            <Button variant="outline" @click="showEnvironmentRefreshModal = false">{{
+              $t("common.cancel")
+            }}</Button>
+            <Button @click="onRefresh(false)">{{ $t("common.refresh") }}</Button>
           </DialogFooter>
         </template>
       </DialogContent>

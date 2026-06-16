@@ -23,7 +23,7 @@
         <div class="flex items-center gap-4 text-sm text-muted-foreground">
           <span
             ><strong class="text-foreground tabular-nums">{{ extensions.length }}</strong>
-            extensions</span
+            {{ $t("nav.extensions") }}</span
           >
           <span
             ><strong
@@ -31,7 +31,7 @@
               :class="outdatedCount > 0 ? 'text-warning' : 'text-foreground'"
               >{{ outdatedCount }}</strong
             >
-            updates</span
+            {{ $t("common.updates") }}</span
           >
         </div>
         <div class="relative">
@@ -125,9 +125,7 @@
           <!-- Expanded: environments using this extension -->
           <div v-if="expanded.has(ext.name)" class="border-t px-4 py-3">
             <div class="mb-2 text-xs font-medium text-muted-foreground">
-              Installed in {{ ext.environments.length }} environment{{
-                ext.environments.length !== 1 ? "s" : ""
-              }}
+              {{ $t("shopDetail.installedInEnvironments", { count: ext.environments.length }) }}
             </div>
             <div class="space-y-1.5">
               <RouterLink
@@ -148,7 +146,7 @@
                 <icon-fa6-solid:arrow-up
                   v-if="env.version !== env.latestVersion && env.latestVersion"
                   class="size-3 text-warning"
-                  :title="'Update to ' + env.latestVersion"
+                  :title="$t('shopDetail.updateToVersion', { version: env.latestVersion })"
                 />
               </RouterLink>
             </div>

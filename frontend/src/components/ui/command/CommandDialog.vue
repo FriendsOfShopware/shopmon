@@ -10,18 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import Command from "./Command.vue";
 
-const props = withDefaults(
-  defineProps<
-    DialogRootProps & {
-      title?: string;
-      description?: string;
-    }
-  >(),
-  {
-    title: "Command Palette",
-    description: "Search for a command to run...",
-  },
-);
+const props = defineProps<
+  DialogRootProps & {
+    title?: string;
+    description?: string;
+  }
+>();
 const emits = defineEmits<DialogRootEmits>();
 
 const forwarded = useForwardPropsEmits(props, emits);
@@ -31,8 +25,8 @@ const forwarded = useForwardPropsEmits(props, emits);
   <Dialog v-slot="slotProps" v-bind="forwarded">
     <DialogContent class="overflow-hidden p-0">
       <DialogHeader class="sr-only">
-        <DialogTitle>{{ title }}</DialogTitle>
-        <DialogDescription>{{ description }}</DialogDescription>
+        <DialogTitle>{{ title ?? $t("command.title") }}</DialogTitle>
+        <DialogDescription>{{ description ?? $t("command.description") }}</DialogDescription>
       </DialogHeader>
       <Command>
         <slot v-bind="slotProps" />

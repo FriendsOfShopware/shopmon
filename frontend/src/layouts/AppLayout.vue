@@ -9,7 +9,7 @@
             <SidebarMenuButton as-child class="h-10 hover:bg-transparent active:bg-transparent">
               <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2.5">
                 <Logo class="size-7 shrink-0" />
-                <span class="text-base font-bold tracking-tight">Shopmon</span>
+                <span class="text-base font-bold tracking-tight">{{ $t("common.appName") }}</span>
               </RouterLink>
             </SidebarMenuButton>
           </SidebarMenuItem>

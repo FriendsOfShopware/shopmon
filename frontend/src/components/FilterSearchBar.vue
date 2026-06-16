@@ -35,7 +35,7 @@ const search = defineModel<string>("search", { required: true });
       <Input
         v-model="search"
         type="search"
-        :placeholder="searchPlaceholder ?? 'Search...'"
+        :placeholder="searchPlaceholder ?? $t('common.search')"
         class="h-8 w-full pl-8 text-sm sm:w-56"
       />
     </div>

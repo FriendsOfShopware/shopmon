@@ -65,7 +65,7 @@
             <Badge
               v-if="user.role === 'admin'"
               class="bg-primary/10 text-primary border-primary/20 text-[10px]"
-              >admin</Badge
+              >{{ $t("admin.roleAdmin") }}</Badge
             >
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">

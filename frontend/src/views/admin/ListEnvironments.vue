@@ -97,9 +97,9 @@
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:earth-americas class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">No environments found</h3>
+      <h3 class="text-lg font-semibold">{{ $t("admin.noEnvironmentsFound") }}</h3>
       <p v-if="searchQuery" class="text-sm text-muted-foreground">
-        No environments match "{{ searchQuery }}"
+        {{ $t("admin.noEnvironmentsMatch", { query: searchQuery }) }}
       </p>
     </div>
 
