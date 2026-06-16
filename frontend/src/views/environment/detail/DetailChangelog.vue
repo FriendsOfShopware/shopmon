@@ -19,7 +19,7 @@
       >
         <!-- Header row — always visible -->
         <button
-          class="flex w-full items-start gap-4 px-4 py-3 text-left sm:items-center"
+          class="flex w-full cursor-pointer items-start gap-4 px-4 py-3 text-left sm:items-center"
           @click="toggle(entry.id)"
         >
           <!-- Date -->
