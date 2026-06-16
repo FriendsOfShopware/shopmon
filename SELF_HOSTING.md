@@ -167,6 +167,12 @@ Required only if you use the deployment tracking feature.
 | `APP_S3_BUCKET` | `shopmon` | Bucket name |
 | `APP_S3_REGION` | `auto` | Region |
 
+### Deployments
+
+| Variable | Default | Description |
+|---|---|---|
+| `DEPLOYMENT_SCRAPE_DELAY` | `5m` | How long to wait after a deployment is recorded before re-scraping the environment. Accepts a Go duration (e.g. `30s`, `5m`, `2m30s`). Gives post-deploy tasks (theme compile, indexing, cache warming) time to settle. Set to `0` to scrape immediately. |
+
 ### Observability (OpenTelemetry)
 
 | Variable | Default | Description |

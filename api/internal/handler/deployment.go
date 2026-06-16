@@ -13,7 +13,9 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	"github.com/jackc/pgx/v5/pgtype"
+	goqueue "github.com/shyim/go-queue"
 )
 
 // isS3NotFound reports whether err indicates the requested S3 object does not
@@ -273,6 +275,14 @@ func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
 		ActiveDeploymentID: &deployID,
 		ID:                 int32(req.EnvironmentId),
 	})
+
+	// Refresh the shop data after the deployment so Shopmon reflects the new
+	// state. The scrape is delayed to give post-deploy tasks (theme compile,
+	// indexing, cache warming) time to settle; the delay is configurable via
+	// DEPLOYMENT_SCRAPE_DELAY.
+	if err := goqueue.Dispatch(r.Context(), h.bus, jobs.EnvironmentScrape{EnvironmentID: int32(req.EnvironmentId)}, goqueue.WithDelay(h.cfg.DeploymentScrapeDelay)); err != nil {
+		slog.Error("failed to enqueue post-deployment scrape", "environmentId", req.EnvironmentId, "error", err)
+	}
 
 	// Get presigned upload URL from S3
 	var uploadURL string
