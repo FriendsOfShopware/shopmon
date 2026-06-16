@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -40,6 +41,11 @@ type Config struct {
 	PackagesAPIToken string
 
 	DisableRegistration bool
+
+	// DeploymentScrapeDelay is how long to wait after a CLI deployment is
+	// recorded before re-scraping the environment, giving post-deploy tasks
+	// (theme compile, indexing, cache warming) time to settle.
+	DeploymentScrapeDelay time.Duration
 
 	ShopwareAPIURL      string
 	ShopwareVersionsURL string
@@ -106,6 +112,17 @@ func Load() *Config {
 
 		ListenAddr:     getEnv("LISTEN_ADDR", ":8080"),
 		TrustedProxies: parseCommaList(getEnv("TRUSTED_PROXIES", "")),
+	}
+
+	// Parse the post-deployment scrape delay, falling back to 5m on an
+	// empty or invalid value.
+	cfg.DeploymentScrapeDelay = 5 * time.Minute
+	if raw := getEnv("DEPLOYMENT_SCRAPE_DELAY", ""); raw != "" {
+		if d, err := time.ParseDuration(raw); err == nil && d >= 0 {
+			cfg.DeploymentScrapeDelay = d
+		} else {
+			slog.Warn("invalid DEPLOYMENT_SCRAPE_DELAY, using default", "value", raw, "default", cfg.DeploymentScrapeDelay)
+		}
 	}
 
 	// Derive WebAuthn config from FrontendURL
