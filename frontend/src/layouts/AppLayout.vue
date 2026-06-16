@@ -1,5 +1,6 @@
 <template>
   <SidebarProvider>
+    <MobileSidebarAutoClose />
     <Sidebar collapsible="icon">
       <!-- Logo + brand -->
       <SidebarHeader class="border-b">
@@ -261,6 +262,7 @@ import ImpersonationBanner from "@/components/ImpersonationBanner.vue";
 import Notification from "@/components/Notification.vue";
 import LayoutFooter from "@/components/layout/LayoutFooter.vue";
 import OrganizationSwitcher from "@/components/layout/OrganizationSwitcher.vue";
+import MobileSidebarAutoClose from "@/components/layout/MobileSidebarAutoClose.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
 import Logo from "@/components/Logo.vue";
 
