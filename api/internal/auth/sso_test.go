@@ -386,10 +386,8 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	assert.Equal(t, "ssouser@testcorp.com", user["email"])
 
 	var userCount int
-	if err := env.Pool.QueryRow(t.Context(),
-		`SELECT COUNT(*) FROM "user" WHERE email = 'ssouser@testcorp.com'`).Scan(&userCount); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT COUNT(*) FROM "user" WHERE email = 'ssouser@testcorp.com'`).Scan(&userCount))
 	assert.Equal(t, 1, userCount)
 }
 

@@ -3,13 +3,15 @@ package shopware
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // newTestServer returns an httptest server that issues OAuth tokens and serves
@@ -82,16 +84,11 @@ func TestGetTokenCaches(t *testing.T) {
 	c := newTestClient(ts.URL)
 
 	for i := 0; i < 3; i++ {
-		if _, err := c.Get(context.Background(), "/_info/config"); err != nil {
-			t.Fatalf("Get: %v", err)
-		}
+		_, err := c.Get(context.Background(), "/_info/config")
+		require.NoError(t, err)
 	}
-	if got := ts.tokenHits.Load(); got != 1 {
-		t.Fatalf("expected token to be fetched once, got %d fetches", got)
-	}
-	if got := ts.apiHits.Load(); got != 3 {
-		t.Fatalf("expected 3 API hits, got %d", got)
-	}
+	assert.Equal(t, int32(1), ts.tokenHits.Load(), "expected token to be fetched once")
+	assert.Equal(t, int32(3), ts.apiHits.Load(), "expected 3 API hits")
 }
 
 func TestGetTokenExpiryMargin(t *testing.T) {
@@ -104,9 +101,8 @@ func TestGetTokenExpiryMargin(t *testing.T) {
 	ts.mu.Lock()
 	ts.expiresIn = 3600
 	ts.mu.Unlock()
-	if _, err := c.Get(context.Background(), "/a"); err != nil {
-		t.Fatalf("Get: %v", err)
-	}
+	_, err := c.Get(context.Background(), "/a")
+	require.NoError(t, err)
 
 	c.mu.Lock()
 	expiresAt := c.cachedToken.expiresAt
@@ -114,10 +110,9 @@ func TestGetTokenExpiryMargin(t *testing.T) {
 
 	rawExpiry := time.Now().Add(3600 * time.Second)
 	// Expiry must be earlier than the raw lifetime by roughly the margin.
-	if !expiresAt.Before(rawExpiry.Add(-tokenExpiryMargin + 5*time.Second)) {
-		t.Fatalf("expected expiry to be reduced by ~%s margin, got expiresAt=%v rawExpiry=%v",
-			tokenExpiryMargin, expiresAt, rawExpiry)
-	}
+	assert.True(t, expiresAt.Before(rawExpiry.Add(-tokenExpiryMargin+5*time.Second)),
+		"expected expiry to be reduced by ~%s margin, got expiresAt=%v rawExpiry=%v",
+		tokenExpiryMargin, expiresAt, rawExpiry)
 }
 
 func TestGetTokenShortLifetimeNotPushedIntoPast(t *testing.T) {
@@ -131,18 +126,12 @@ func TestGetTokenShortLifetimeNotPushedIntoPast(t *testing.T) {
 	ts.mu.Unlock()
 	c := newTestClient(ts.URL)
 
-	if _, err := c.Get(context.Background(), "/a"); err != nil {
-		t.Fatalf("first Get: %v", err)
-	}
-	if tok := c.cachedAccessToken(); tok == "" {
-		t.Fatal("expected sub-margin token to remain cached for its real lifetime")
-	}
-	if _, err := c.Get(context.Background(), "/b"); err != nil {
-		t.Fatalf("second Get: %v", err)
-	}
-	if got := ts.tokenHits.Load(); got != 1 {
-		t.Fatalf("expected sub-margin token to be reused, got %d fetches", got)
-	}
+	_, err := c.Get(context.Background(), "/a")
+	require.NoError(t, err, "first Get")
+	assert.NotEmpty(t, c.cachedAccessToken(), "expected sub-margin token to remain cached for its real lifetime")
+	_, err = c.Get(context.Background(), "/b")
+	require.NoError(t, err, "second Get")
+	assert.Equal(t, int32(1), ts.tokenHits.Load(), "expected sub-margin token to be reused")
 }
 
 func TestGetTokenSingleflight(t *testing.T) {
@@ -163,16 +152,10 @@ func TestGetTokenSingleflight(t *testing.T) {
 	wg.Wait()
 
 	for i, err := range errs {
-		if err != nil {
-			t.Fatalf("concurrent Get %d: %v", i, err)
-		}
+		require.NoError(t, err, "concurrent Get %d", i)
 	}
-	if got := ts.tokenHits.Load(); got != 1 {
-		t.Fatalf("expected concurrent token fetches to collapse to 1, got %d", got)
-	}
-	if got := ts.apiHits.Load(); got != n {
-		t.Fatalf("expected %d API hits, got %d", n, got)
-	}
+	assert.Equal(t, int32(1), ts.tokenHits.Load(), "expected concurrent token fetches to collapse to 1")
+	assert.Equal(t, int32(n), ts.apiHits.Load(), "expected %d API hits", n)
 }
 
 func TestRequestReauthorizesOn401(t *testing.T) {
@@ -184,20 +167,12 @@ func TestRequestReauthorizesOn401(t *testing.T) {
 	c := newTestClient(ts.URL)
 
 	body, err := c.Get(context.Background(), "/_info/config")
-	if err != nil {
-		t.Fatalf("Get: %v", err)
-	}
-	if string(body) != `{"ok":true}` {
-		t.Fatalf("unexpected body: %s", body)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, `{"ok":true}`, string(body))
 	// One initial token, one re-auth after the 401.
-	if got := ts.tokenHits.Load(); got != 2 {
-		t.Fatalf("expected 2 token fetches (initial + re-auth), got %d", got)
-	}
+	assert.Equal(t, int32(2), ts.tokenHits.Load(), "expected 2 token fetches (initial + re-auth)")
 	// First API call 401s, retry succeeds.
-	if got := ts.apiHits.Load(); got != 2 {
-		t.Fatalf("expected 2 API hits, got %d", got)
-	}
+	assert.Equal(t, int32(2), ts.apiHits.Load(), "expected 2 API hits")
 }
 
 func TestRequestDoesNotRetryTwiceOn401(t *testing.T) {
@@ -210,16 +185,10 @@ func TestRequestDoesNotRetryTwiceOn401(t *testing.T) {
 
 	_, err := c.Get(context.Background(), "/_info/config")
 	var apiErr *ApiError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("expected ApiError, got %v", err)
-	}
-	if apiErr.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", apiErr.StatusCode)
-	}
+	require.ErrorAs(t, err, &apiErr, "expected ApiError")
+	assert.Equal(t, http.StatusUnauthorized, apiErr.StatusCode, "expected 401")
 	// Exactly one retry: 2 API hits, not an infinite loop.
-	if got := ts.apiHits.Load(); got != 2 {
-		t.Fatalf("expected exactly 2 API hits (one retry), got %d", got)
-	}
+	assert.Equal(t, int32(2), ts.apiHits.Load(), "expected exactly 2 API hits (one retry)")
 }
 
 func TestRequestReturnsApiErrorOn4xx(t *testing.T) {
@@ -233,15 +202,9 @@ func TestRequestReturnsApiErrorOn4xx(t *testing.T) {
 
 	_, err := c.Get(context.Background(), "/x")
 	var apiErr *ApiError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("expected ApiError, got %v", err)
-	}
-	if apiErr.StatusCode != http.StatusUnprocessableEntity {
-		t.Fatalf("expected 422, got %d", apiErr.StatusCode)
-	}
-	if apiErr.Body != `{"errors":["bad"]}` {
-		t.Fatalf("unexpected error body: %s", apiErr.Body)
-	}
+	require.ErrorAs(t, err, &apiErr, "expected ApiError")
+	assert.Equal(t, http.StatusUnprocessableEntity, apiErr.StatusCode, "expected 422")
+	assert.Equal(t, `{"errors":["bad"]}`, apiErr.Body)
 }
 
 func TestRequestDetectsRedirect(t *testing.T) {
@@ -255,12 +218,8 @@ func TestRequestDetectsRedirect(t *testing.T) {
 
 	_, err := c.Get(context.Background(), "/x")
 	var apiErr *ApiError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("expected ApiError for redirect, got %v", err)
-	}
-	if apiErr.StatusCode != http.StatusFound {
-		t.Fatalf("expected 302, got %d", apiErr.StatusCode)
-	}
+	require.ErrorAs(t, err, &apiErr, "expected ApiError for redirect")
+	assert.Equal(t, http.StatusFound, apiErr.StatusCode, "expected 302")
 }
 
 func TestAuthenticatePropagatesError(t *testing.T) {
@@ -268,9 +227,7 @@ func TestAuthenticatePropagatesError(t *testing.T) {
 	c := newTestClient(ts.URL)
 	ts.Close() // server down: token request must fail
 
-	if err := c.Authenticate(context.Background()); err == nil {
-		t.Fatal("expected error when token endpoint is unreachable")
-	}
+	require.Error(t, c.Authenticate(context.Background()), "expected error when token endpoint is unreachable")
 }
 
 func TestRequestHonorsContextCancellation(t *testing.T) {
@@ -286,7 +243,5 @@ func TestRequestHonorsContextCancellation(t *testing.T) {
 	defer cancel()
 
 	_, err := c.Get(ctx, "/_info/config")
-	if err == nil {
-		t.Fatal("expected error from cancelled context")
-	}
+	require.Error(t, err, "expected error from cancelled context")
 }

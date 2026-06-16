@@ -3,6 +3,9 @@ package checker
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckEnv(t *testing.T) {
@@ -28,20 +31,12 @@ func TestCheckEnv(t *testing.T) {
 			checkEnv(context.Background(), Input{CacheInfo: CacheInfo{Environment: tt.env}}, output)
 
 			checks := output.Result().Checks
-			if len(checks) != 1 {
-				t.Fatalf("expected 1 check, got %d", len(checks))
-			}
+			require.Len(t, checks, 1)
 
 			check := checks[0]
-			if check.ID != "shopware.env" {
-				t.Errorf("ID = %q, want %q", check.ID, "shopware.env")
-			}
-			if check.Level != tt.wantLevel {
-				t.Errorf("Level = %q, want %q", check.Level, tt.wantLevel)
-			}
-			if check.Source != "Shopware" {
-				t.Errorf("Source = %q, want %q", check.Source, "Shopware")
-			}
+			assert.Equal(t, "shopware.env", check.ID)
+			assert.Equal(t, tt.wantLevel, check.Level)
+			assert.Equal(t, "Shopware", check.Source)
 		})
 	}
 }

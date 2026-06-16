@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockHTTPClient implements HTTPClient for testing checkFroshTools.
@@ -48,9 +51,7 @@ func TestGetFroshMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.snippet, func(t *testing.T) {
-			if got := getFroshMessage(tt.snippet); got != tt.want {
-				t.Errorf("getFroshMessage(%q) = %q, want %q", tt.snippet, got, tt.want)
-			}
+			assert.Equal(t, tt.want, getFroshMessage(tt.snippet))
 		})
 	}
 }
@@ -139,28 +140,16 @@ func TestMapFroshChecks(t *testing.T) {
 
 			checks := output.Result().Checks
 			if !tt.wantEmitted {
-				if len(checks) != 0 {
-					t.Fatalf("expected no checks, got %d (%+v)", len(checks), checks)
-				}
+				assert.Empty(t, checks, "expected no checks")
 				return
 			}
 
-			if len(checks) != 1 {
-				t.Fatalf("expected 1 check, got %d (%+v)", len(checks), checks)
-			}
+			require.Len(t, checks, 1)
 			check := checks[0]
-			if check.ID != tt.wantID {
-				t.Errorf("ID = %q, want %q", check.ID, tt.wantID)
-			}
-			if check.Level != tt.wantLevel {
-				t.Errorf("Level = %q, want %q", check.Level, tt.wantLevel)
-			}
-			if check.Message != tt.wantMessage {
-				t.Errorf("Message = %q, want %q", check.Message, tt.wantMessage)
-			}
-			if check.Source != "FroshTools" {
-				t.Errorf("Source = %q, want %q", check.Source, "FroshTools")
-			}
+			assert.Equal(t, tt.wantID, check.ID)
+			assert.Equal(t, tt.wantLevel, check.Level)
+			assert.Equal(t, tt.wantMessage, check.Message)
+			assert.Equal(t, "FroshTools", check.Source)
 		})
 	}
 }
@@ -174,9 +163,7 @@ func TestCheckFroshTools_ExtensionNotPresent(t *testing.T) {
 		Client:     client,
 	}, output)
 
-	if len(output.Result().Checks) != 0 {
-		t.Errorf("expected no checks when FroshTools not installed, got %d", len(output.Result().Checks))
-	}
+	assert.Empty(t, output.Result().Checks, "expected no checks when FroshTools not installed")
 }
 
 func TestCheckFroshTools_ExtensionInactive(t *testing.T) {
@@ -186,9 +173,7 @@ func TestCheckFroshTools_ExtensionInactive(t *testing.T) {
 		Client:     &mockHTTPClient{},
 	}, output)
 
-	if len(output.Result().Checks) != 0 {
-		t.Errorf("expected no checks when FroshTools inactive, got %d", len(output.Result().Checks))
-	}
+	assert.Empty(t, output.Result().Checks, "expected no checks when FroshTools inactive")
 }
 
 func TestCheckFroshTools_NilClient(t *testing.T) {
@@ -198,9 +183,7 @@ func TestCheckFroshTools_NilClient(t *testing.T) {
 		Client:     nil,
 	}, output)
 
-	if len(output.Result().Checks) != 0 {
-		t.Errorf("expected no checks when client is nil, got %d", len(output.Result().Checks))
-	}
+	assert.Empty(t, output.Result().Checks, "expected no checks when client is nil")
 }
 
 func TestCheckFroshTools_HealthAndPerformance(t *testing.T) {
@@ -218,18 +201,14 @@ func TestCheckFroshTools_HealthAndPerformance(t *testing.T) {
 	}, output)
 
 	checks := output.Result().Checks
-	if len(checks) != 2 {
-		t.Fatalf("expected 2 checks, got %d (%+v)", len(checks), checks)
-	}
+	require.Len(t, checks, 2)
 
 	php, ok := findCheck(checks, "frosh.phpGood")
-	if !ok || php.Level != StatusGreen {
-		t.Errorf("expected frosh.phpGood success, got %+v (found=%v)", php, ok)
-	}
+	require.True(t, ok, "expected to find frosh.phpGood")
+	assert.Equal(t, StatusGreen, php.Level)
 	cache, ok := findCheck(checks, "frosh.cacheWarning")
-	if !ok || cache.Level != StatusYellow {
-		t.Errorf("expected frosh.cacheWarning warning, got %+v (found=%v)", cache, ok)
-	}
+	require.True(t, ok, "expected to find frosh.cacheWarning")
+	assert.Equal(t, StatusYellow, cache.Level)
 }
 
 func TestCheckFroshTools_HealthError(t *testing.T) {
@@ -245,9 +224,7 @@ func TestCheckFroshTools_HealthError(t *testing.T) {
 		Client:     client,
 	}, output)
 
-	if len(output.Result().Checks) != 0 {
-		t.Errorf("expected no checks when health request errors, got %d", len(output.Result().Checks))
-	}
+	assert.Empty(t, output.Result().Checks, "expected no checks when health request errors")
 }
 
 func TestCheckFroshTools_InvalidHealthJSON(t *testing.T) {
@@ -263,7 +240,5 @@ func TestCheckFroshTools_InvalidHealthJSON(t *testing.T) {
 		Client:     client,
 	}, output)
 
-	if len(output.Result().Checks) != 0 {
-		t.Errorf("expected no checks when health JSON invalid, got %d", len(output.Result().Checks))
-	}
+	assert.Empty(t, output.Result().Checks, "expected no checks when health JSON invalid")
 }

@@ -206,7 +206,7 @@ func TestSyncPackagesToken_WithMockAPI(t *testing.T) {
 
 func TestGetPackagesTokens_NotMember(t *testing.T) {
 	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("should not reach the packages API")
+		assert.Fail(t, "should not reach the packages API")
 	}))
 	defer mockAPI.Close()
 

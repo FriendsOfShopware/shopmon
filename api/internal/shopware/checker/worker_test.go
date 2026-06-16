@@ -3,6 +3,9 @@ package checker
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckWorker(t *testing.T) {
@@ -35,23 +38,13 @@ func TestCheckWorker(t *testing.T) {
 			checkWorker(context.Background(), Input{Config: config}, output)
 
 			checks := output.Result().Checks
-			if len(checks) != 1 {
-				t.Fatalf("expected 1 check, got %d", len(checks))
-			}
+			require.Len(t, checks, 1)
 
 			check := checks[0]
-			if check.ID != "admin.worker" {
-				t.Errorf("ID = %q, want %q", check.ID, "admin.worker")
-			}
-			if check.Level != tt.wantLevel {
-				t.Errorf("Level = %q, want %q", check.Level, tt.wantLevel)
-			}
-			if check.Message != tt.wantMessage {
-				t.Errorf("Message = %q, want %q", check.Message, tt.wantMessage)
-			}
-			if check.Source != "Shopware" {
-				t.Errorf("Source = %q, want %q", check.Source, "Shopware")
-			}
+			assert.Equal(t, "admin.worker", check.ID)
+			assert.Equal(t, tt.wantLevel, check.Level)
+			assert.Equal(t, tt.wantMessage, check.Message)
+			assert.Equal(t, "Shopware", check.Source)
 		})
 	}
 }

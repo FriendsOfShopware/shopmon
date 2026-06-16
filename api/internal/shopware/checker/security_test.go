@@ -3,6 +3,9 @@ package checker
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // checkSecurity itself fetches https://raw.githubusercontent.com/... directly via
@@ -24,26 +27,18 @@ func TestSecurityDataUnmarshal(t *testing.T) {
 	}`
 
 	var data securityData
-	if err := json.Unmarshal([]byte(raw), &data); err != nil {
-		t.Fatalf("unmarshal failed: %v", err)
-	}
+	require.NoError(t, json.Unmarshal([]byte(raw), &data))
 
-	if data.LatestPluginVersion != "2.0.10" {
-		t.Errorf("LatestPluginVersion = %q, want %q", data.LatestPluginVersion, "2.0.10")
-	}
-	if len(data.Advisories) != 2 {
-		t.Fatalf("expected 2 advisories, got %d", len(data.Advisories))
-	}
+	assert.Equal(t, "2.0.10", data.LatestPluginVersion)
+	require.Len(t, data.Advisories, 2)
 
 	adv := data.Advisories["adv-1"]
-	if adv.Title != "XSS in admin" || adv.CVE != "CVE-2024-0001" || adv.Link != "http://example.com/adv-1" {
-		t.Errorf("adv-1 = %+v, unexpected fields", adv)
-	}
+	assert.Equal(t, "XSS in admin", adv.Title)
+	assert.Equal(t, "CVE-2024-0001", adv.CVE)
+	assert.Equal(t, "http://example.com/adv-1", adv.Link)
 
 	ids := data.VersionToAdvisories["6.5.0.0"]
-	if len(ids) != 2 || ids[0] != "adv-1" || ids[1] != "adv-2" {
-		t.Errorf("versionToAdvisories[6.5.0.0] = %v, want [adv-1 adv-2]", ids)
-	}
+	assert.Equal(t, []string{"adv-1", "adv-2"}, ids)
 }
 
 // TestSecurityVersionLookup documents the lookup semantics checkSecurity uses:
@@ -70,9 +65,7 @@ func TestSecurityVersionLookup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ids, ok := data.VersionToAdvisories[tt.version]
 			flagged := ok && len(ids) > 0
-			if flagged != tt.wantFlagged {
-				t.Errorf("flagged = %v, want %v", flagged, tt.wantFlagged)
-			}
+			assert.Equal(t, tt.wantFlagged, flagged)
 		})
 	}
 }

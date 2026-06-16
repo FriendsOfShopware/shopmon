@@ -55,9 +55,11 @@ func TestDeleteDeploymentOutputTimesOut(t *testing.T) {
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 	assert.Less(t, elapsed, 2*time.Second)
 
+	var requestReceived bool
 	select {
 	case <-requestStarted:
+		requestReceived = true
 	default:
-		t.Fatal("S3 server did not receive delete request")
 	}
+	assert.True(t, requestReceived, "S3 server did not receive delete request")
 }

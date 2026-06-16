@@ -3,6 +3,9 @@ package httputil
 import (
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsPublicIP(t *testing.T) {
@@ -28,12 +31,8 @@ func TestIsPublicIP(t *testing.T) {
 
 	for _, c := range cases {
 		ip := net.ParseIP(c.ip)
-		if ip == nil {
-			t.Fatalf("failed to parse IP %q", c.ip)
-		}
-		if got := isPublicIP(ip); got != c.public {
-			t.Errorf("isPublicIP(%s) = %v, want %v", c.ip, got, c.public)
-		}
+		require.NotNil(t, ip, "failed to parse IP %q", c.ip)
+		assert.Equal(t, c.public, isPublicIP(ip), "isPublicIP(%s)", c.ip)
 	}
 }
 
@@ -59,11 +58,10 @@ func TestValidateHTTPSEndpoint(t *testing.T) {
 
 	for _, c := range cases {
 		err := ValidateHTTPSEndpoint(c.url)
-		if c.ok && err != nil {
-			t.Errorf("ValidateHTTPSEndpoint(%q) = %v, want nil", c.url, err)
-		}
-		if !c.ok && err == nil {
-			t.Errorf("ValidateHTTPSEndpoint(%q) = nil, want error", c.url)
+		if c.ok {
+			assert.NoError(t, err, "ValidateHTTPSEndpoint(%q)", c.url)
+		} else {
+			assert.Error(t, err, "ValidateHTTPSEndpoint(%q)", c.url)
 		}
 	}
 }
@@ -85,13 +83,8 @@ func TestClientForURL_PerURLSelection(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := IsLoopbackURL(c.url)
-		if got != c.loopback {
-			t.Errorf("IsLoopbackURL(%q) = %v, want %v", c.url, got, c.loopback)
-		}
+		assert.Equal(t, c.loopback, IsLoopbackURL(c.url), "IsLoopbackURL(%q)", c.url)
 		// ClientForURL must return a non-nil client for every URL.
-		if ClientForURL(c.url, 0) == nil {
-			t.Errorf("ClientForURL(%q) returned nil", c.url)
-		}
+		assert.NotNil(t, ClientForURL(c.url, 0), "ClientForURL(%q) returned nil", c.url)
 	}
 }

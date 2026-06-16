@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testFS() fs.FS {
@@ -28,13 +31,9 @@ func TestNewHandlerServesIndexForSPARoutes(t *testing.T) {
 
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", rec.Code)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
 
-	if !strings.Contains(rec.Body.String(), "frontend") {
-		t.Fatalf("expected frontend index, got %q", rec.Body.String())
-	}
+	assert.Contains(t, rec.Body.String(), "frontend")
 }
 
 func TestNewHandlerServesStaticAssets(t *testing.T) {
@@ -45,13 +44,9 @@ func TestNewHandlerServesStaticAssets(t *testing.T) {
 
 	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", rec.Code)
-	}
+	require.Equal(t, http.StatusOK, rec.Code)
 
-	if cacheControl := rec.Header().Get("Cache-Control"); !strings.Contains(cacheControl, "immutable") {
-		t.Fatalf("expected immutable cache header, got %q", cacheControl)
-	}
+	assert.Contains(t, rec.Header().Get("Cache-Control"), "immutable")
 }
 
 func TestNewHandlerCompressesAssets(t *testing.T) {
@@ -64,17 +59,11 @@ func TestNewHandlerCompressesAssets(t *testing.T) {
 
 		handler.ServeHTTP(rec, req)
 
-		if rec.Code != http.StatusOK {
-			t.Fatalf("%s: expected 200, got %d", encoding, rec.Code)
-		}
+		require.Equal(t, http.StatusOK, rec.Code, encoding)
 
-		if got := rec.Header().Get("Content-Encoding"); got != encoding {
-			t.Fatalf("%s: expected Content-Encoding %q, got %q", encoding, encoding, got)
-		}
+		assert.Equal(t, encoding, rec.Header().Get("Content-Encoding"), encoding)
 
-		if rec.Header().Get("Cache-Control") == "" {
-			t.Fatalf("%s: expected cache headers to survive compression", encoding)
-		}
+		assert.NotEmpty(t, rec.Header().Get("Cache-Control"), "%s: expected cache headers to survive compression", encoding)
 	}
 }
 
@@ -88,9 +77,7 @@ func TestNewHandlerSkipsTinyAssets(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	// app.js is below MinSize, so it must be served uncompressed.
-	if got := rec.Header().Get("Content-Encoding"); got != "" {
-		t.Fatalf("expected no Content-Encoding for tiny asset, got %q", got)
-	}
+	assert.Empty(t, rec.Header().Get("Content-Encoding"), "expected no Content-Encoding for tiny asset")
 }
 
 func TestNewHandlerDoesNotHijackAPIOrMissingAssets(t *testing.T) {
@@ -102,8 +89,6 @@ func TestNewHandlerDoesNotHijackAPIOrMissingAssets(t *testing.T) {
 
 		handler.ServeHTTP(rec, req)
 
-		if rec.Code != http.StatusNotFound {
-			t.Fatalf("%s: expected 404, got %d", requestPath, rec.Code)
-		}
+		assert.Equal(t, http.StatusNotFound, rec.Code, requestPath)
 	}
 }

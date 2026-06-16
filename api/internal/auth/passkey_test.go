@@ -114,9 +114,8 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("register failed: status=%d body=%s", resp.StatusCode, string(body))
+		require.Equal(t, http.StatusOK, resp.StatusCode, "register failed: body=%s", string(body))
 	}
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var regResult map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&regResult))
@@ -165,9 +164,8 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("login failed: status=%d body=%s", resp.StatusCode, string(body))
+		require.Equal(t, http.StatusOK, resp.StatusCode, "login failed: body=%s", string(body))
 	}
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var loginResult map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&loginResult))
@@ -249,9 +247,7 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 			Options      json.RawMessage `json:"options"`
 			ChallengeKey string          `json:"challengeKey"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&opts); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&opts))
 		_ = resp.Body.Close()
 
 		// Create attestation
@@ -259,9 +255,7 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 		attResp := virtualwebauthn.CreateAttestationResponse(rp, authenticator, cred, *attOpts)
 
 		var attJSON map[string]interface{}
-		if err := json.Unmarshal([]byte(attResp), &attJSON); err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, json.Unmarshal([]byte(attResp), &attJSON))
 		attJSON["challengeKey"] = opts.ChallengeKey
 		attJSON["name"] = name
 		body, _ := json.Marshal(attJSON)
@@ -278,8 +272,6 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 
 	// Verify two passkeys stored
 	var count int
-	if err := env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&count); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&count))
 	assert.Equal(t, 2, count)
 }

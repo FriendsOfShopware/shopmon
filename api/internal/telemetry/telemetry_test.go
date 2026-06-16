@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEnsurePath(t *testing.T) {
@@ -43,9 +46,7 @@ func TestEnsurePath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ensurePath(tt.endpoint, tt.defaultPath); got != tt.want {
-				t.Errorf("ensurePath(%q, %q) = %q, want %q", tt.endpoint, tt.defaultPath, got, tt.want)
-			}
+			assert.Equal(t, tt.want, ensurePath(tt.endpoint, tt.defaultPath))
 		})
 	}
 }
@@ -71,12 +72,10 @@ func TestParseSamplerRatio(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.set {
 				t.Setenv("OTEL_TRACES_SAMPLER_RATIO", tt.env)
-			} else if err := os.Unsetenv("OTEL_TRACES_SAMPLER_RATIO"); err != nil {
-				t.Fatalf("unset env: %v", err)
+			} else {
+				require.NoError(t, os.Unsetenv("OTEL_TRACES_SAMPLER_RATIO"))
 			}
-			if got := parseSamplerRatio(); got != tt.want {
-				t.Errorf("parseSamplerRatio() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, parseSamplerRatio())
 		})
 	}
 }
@@ -107,15 +106,9 @@ func TestMultiHandlerHandle(t *testing.T) {
 		mh := newMultiHandler(h1, h2)
 		err := mh.Handle(context.Background(), slog.Record{})
 
-		if h1.calls != 1 {
-			t.Errorf("h1 called %d times, want 1", h1.calls)
-		}
-		if h2.calls != 1 {
-			t.Errorf("h2 called %d times, want 1", h2.calls)
-		}
-		if !errors.Is(err, errFirst) {
-			t.Errorf("expected joined error to contain %v, got %v", errFirst, err)
-		}
+		assert.Equal(t, 1, h1.calls)
+		assert.Equal(t, 1, h2.calls)
+		assert.ErrorIs(t, err, errFirst)
 	})
 
 	t.Run("joins multiple errors", func(t *testing.T) {
@@ -127,9 +120,8 @@ func TestMultiHandlerHandle(t *testing.T) {
 		mh := newMultiHandler(h1, h2)
 		err := mh.Handle(context.Background(), slog.Record{})
 
-		if !errors.Is(err, err1) || !errors.Is(err, err2) {
-			t.Errorf("expected joined error to contain both %v and %v, got %v", err1, err2, err)
-		}
+		assert.ErrorIs(t, err, err1)
+		assert.ErrorIs(t, err, err2)
 	})
 
 	t.Run("nil when all succeed", func(t *testing.T) {
@@ -137,12 +129,9 @@ func TestMultiHandlerHandle(t *testing.T) {
 		h2 := &fakeHandler{enabled: true}
 
 		mh := newMultiHandler(h1, h2)
-		if err := mh.Handle(context.Background(), slog.Record{}); err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-		if h1.calls != 1 || h2.calls != 1 {
-			t.Errorf("expected both handlers called once, got h1=%d h2=%d", h1.calls, h2.calls)
-		}
+		assert.NoError(t, mh.Handle(context.Background(), slog.Record{}))
+		assert.Equal(t, 1, h1.calls)
+		assert.Equal(t, 1, h2.calls)
 	})
 
 	t.Run("disabled handler skipped", func(t *testing.T) {
@@ -150,14 +139,8 @@ func TestMultiHandlerHandle(t *testing.T) {
 		h2 := &fakeHandler{enabled: true}
 
 		mh := newMultiHandler(h1, h2)
-		if err := mh.Handle(context.Background(), slog.Record{}); err != nil {
-			t.Errorf("expected nil error, got %v", err)
-		}
-		if h1.calls != 0 {
-			t.Errorf("disabled handler called %d times, want 0", h1.calls)
-		}
-		if h2.calls != 1 {
-			t.Errorf("h2 called %d times, want 1", h2.calls)
-		}
+		assert.NoError(t, mh.Handle(context.Background(), slog.Record{}))
+		assert.Equal(t, 0, h1.calls)
+		assert.Equal(t, 1, h2.calls)
 	})
 }

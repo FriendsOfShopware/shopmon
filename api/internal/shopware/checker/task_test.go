@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckTasks(t *testing.T) {
@@ -87,11 +89,9 @@ func TestCheckTasks(t *testing.T) {
 				}
 			}
 
-			if hasSuccess != tt.wantSuccess {
-				t.Errorf("success emitted = %v, want %v", hasSuccess, tt.wantSuccess)
-			}
-			if tt.wantWarningID != "" && !hasWarning {
-				t.Errorf("expected warning %q not emitted", tt.wantWarningID)
+			assert.Equal(t, tt.wantSuccess, hasSuccess)
+			if tt.wantWarningID != "" {
+				assert.True(t, hasWarning, "expected warning %q not emitted", tt.wantWarningID)
 			}
 		})
 	}
