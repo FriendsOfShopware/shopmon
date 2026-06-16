@@ -47,7 +47,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	defer stop()
 
 	// OpenTelemetry
-	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName, cfg.OtelServiceVersion, cfg.OtelDeploymentEnv, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)
@@ -103,15 +103,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 				otelhttp.WithFilter(func(r *http.Request) bool {
 					return r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/")
 				}),
-				otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
-					rctx := chi.RouteContext(r.Context())
-					if rctx != nil && rctx.RoutePattern() != "" {
-						return r.Method + " " + rctx.RoutePattern()
-					}
-					return r.Method + " " + r.URL.Path
-				}),
 			)(next)
 		})
+		// Must run after otelhttp so it can decorate the span, but the route
+		// pattern is only known once chi has matched (i.e. after next returns).
+		r.Use(middleware.RouteTag)
 	}
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)

@@ -12,6 +12,7 @@ import (
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
@@ -25,7 +26,7 @@ import (
 // It sets slog's default logger to a handler that sends logs via OTLP and also
 // writes to stderr. Returns a shutdown function that should be called on application exit.
 // If endpoint is empty, telemetry is disabled and a no-op shutdown is returned.
-func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) (shutdown func(context.Context) error) {
+func Setup(ctx context.Context, serviceName, version, deploymentEnv, traceEndpoint, logEndpoint string) (shutdown func(context.Context) error) {
 	if traceEndpoint == "" && logEndpoint == "" {
 		return func(context.Context) error { return nil }
 	}
@@ -34,10 +35,19 @@ func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) 
 	setupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Datadog unified service tagging relies on service/env/version. Without
+	// env and version everything lands in the default env and version-based
+	// comparisons are unavailable.
+	attrs := []attribute.KeyValue{semconv.ServiceName(serviceName)}
+	if version != "" {
+		attrs = append(attrs, semconv.ServiceVersion(version))
+	}
+	if deploymentEnv != "" {
+		attrs = append(attrs, semconv.DeploymentEnvironment(deploymentEnv))
+	}
+
 	res, err := resource.New(setupCtx,
-		resource.WithAttributes(
-			semconv.ServiceName(serviceName),
-		),
+		resource.WithAttributes(attrs...),
 	)
 	if err != nil {
 		slog.Error("failed to create OTel resource", "error", err)

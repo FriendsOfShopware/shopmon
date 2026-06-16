@@ -20,7 +20,10 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	config.MaxConnLifetime = time.Hour
 	config.MaxConnIdleTime = 30 * time.Minute
 	config.ConnConfig.ConnectTimeout = 10 * time.Second
-	config.ConnConfig.Tracer = otelpgx.NewTracer()
+	// WithTrimSQLInSpanName keeps the full statement in span attributes (for
+	// Datadog's SQL obfuscation) but trims it out of the span name, so the
+	// trace resource column shows the operation instead of the whole query.
+	config.ConnConfig.Tracer = otelpgx.NewTracer(otelpgx.WithTrimSQLInSpanName())
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

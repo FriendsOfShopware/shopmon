@@ -33,7 +33,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName+"-worker", cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName+"-worker", cfg.OtelServiceVersion, cfg.OtelDeploymentEnv, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)

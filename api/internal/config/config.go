@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -50,10 +51,12 @@ type Config struct {
 	ShopwareAPIURL      string
 	ShopwareVersionsURL string
 
-	OtelEnabled       bool
-	OtelTraceEndpoint string
-	OtelLogEndpoint   string
-	OtelServiceName   string
+	OtelEnabled        bool
+	OtelTraceEndpoint  string
+	OtelLogEndpoint    string
+	OtelServiceName    string
+	OtelDeploymentEnv  string
+	OtelServiceVersion string
 
 	WebAuthnRPID      string
 	WebAuthnRPName    string
@@ -105,10 +108,12 @@ func Load() *Config {
 		ShopwareAPIURL:      getEnv("SHOPWARE_API_URL", "https://api.shopware.com"),
 		ShopwareVersionsURL: getEnv("SHOPWARE_VERSIONS_URL", "https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/all-supported-php-versions-by-shopware-version.json"),
 
-		OtelEnabled:       getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")) != "",
-		OtelTraceEndpoint: getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),
-		OtelLogEndpoint:   getEnv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),
-		OtelServiceName:   getEnv("OTEL_SERVICE_NAME", "shopmon"),
+		OtelEnabled:        getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")) != "",
+		OtelTraceEndpoint:  getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),
+		OtelLogEndpoint:    getEnv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),
+		OtelServiceName:    getEnv("OTEL_SERVICE_NAME", "shopmon"),
+		OtelDeploymentEnv:  getEnv("OTEL_DEPLOYMENT_ENVIRONMENT", getEnv("DD_ENV", "")),
+		OtelServiceVersion: getEnv("OTEL_SERVICE_VERSION", getEnv("DD_VERSION", buildVersion())),
 
 		ListenAddr:     getEnv("LISTEN_ADDR", ":8080"),
 		TrustedProxies: parseCommaList(getEnv("TRUSTED_PROXIES", "")),
@@ -142,6 +147,38 @@ func Load() *Config {
 	}
 
 	return cfg
+}
+
+// buildVersion returns the VCS revision the binary was built from, embedded by
+// the Go toolchain at build time (no -ldflags needed). It returns the short
+// commit hash, suffixed with "-dirty" when the working tree had uncommitted
+// changes, or an empty string when build info is unavailable (e.g. go run).
+func buildVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+
+	var revision string
+	var modified bool
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+		case "vcs.modified":
+			modified = s.Value == "true"
+		}
+	}
+	if revision == "" {
+		return ""
+	}
+	if len(revision) > 12 {
+		revision = revision[:12]
+	}
+	if modified {
+		revision += "-dirty"
+	}
+	return revision
 }
 
 func getEnv(key, fallback string) string {
