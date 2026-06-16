@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,45 +15,25 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
 
 // enrichExtensionsFromStore queries the Shopware Store API and updates extensions
 // with latestVersion, ratingAverage, storeLink, and changelog information.
 func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) {
-	storeURL, _ := url.Parse("https://api.shopware.com/pluginStore/pluginsByName")
-
-	q := storeURL.Query()
-	q.Set("locale", "en-GB")
-	q.Set("shopwareVersion", shopwareVersion)
+	technicalNames := make([]string, 0, len(extensions))
 	for _, ext := range extensions {
-		q.Add("technicalNames[]", ext.Name)
+		technicalNames = append(technicalNames, ext.Name)
 	}
-	storeURL.RawQuery = q.Encode()
 
-	httpClient := httputil.NewHTTPClient(httputil.WithTimeout(30 * time.Second))
-	resp, err := httpClient.Get(storeURL.String())
+	client := shopwareaccount.NewClient("", nil)
+	storePlugins, err := client.PluginsByName(context.Background(), "en-GB", shopwareVersion, technicalNames)
 	if err != nil {
 		slog.Warn("failed to fetch store plugins", "error", err)
 		return
 	}
-	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	var storePlugins []storePlugin
-	if err := json.Unmarshal(body, &storePlugins); err != nil {
-		slog.Warn("failed to parse store plugins response", "error", err)
-		return
-	}
-
-	storeMap := make(map[string]*storePlugin, len(storePlugins))
+	storeMap := make(map[string]*shopwareaccount.StorePlugin, len(storePlugins))
 	for i := range storePlugins {
 		storeMap[storePlugins[i].Name] = &storePlugins[i]
 	}
@@ -80,7 +61,7 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 // extension version the store reports as compatible with the shop's Shopware
 // version (controlled by the shopwareVersion query param to the store API),
 // so capping at it excludes entries that require a newer Shopware.
-func buildCompatibleChangelogs(sp *storePlugin, installedVersion string) []extensionChangelog {
+func buildCompatibleChangelogs(sp *shopwareaccount.StorePlugin, installedVersion string) []extensionChangelog {
 	var changelogs []extensionChangelog
 	for _, cl := range sp.Changelogs {
 		if versionCompare(cl.Version, installedVersion) > 0 &&

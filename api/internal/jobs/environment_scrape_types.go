@@ -57,24 +57,6 @@ type shopwareCacheInfo struct {
 	CacheAdapter string `json:"cacheAdapter"`
 }
 
-// Store API response types
-type storePlugin struct {
-	Name          string           `json:"name"`
-	Label         string           `json:"label"`
-	Version       string           `json:"version"`
-	RatingAverage float64          `json:"ratingAverage"`
-	StoreLink     string           `json:"link"`
-	Changelogs    []storeChangelog `json:"changelog"`
-}
-
-type storeChangelog struct {
-	Version      string `json:"version"`
-	Text         string `json:"text"`
-	CreationDate struct {
-		Date string `json:"date"`
-	} `json:"creationDate"`
-}
-
 // extensionEntry is a combined representation of plugins and apps.
 type extensionEntry struct {
 	Name          string               `json:"name"`

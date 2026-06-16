@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -9,14 +8,15 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
 
 // GetInstanceConfig returns the feature configuration for this instance.
 func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, api.InstanceConfig{
-		RegistrationEnabled: !h.cfg.DisableRegistration,
-		GithubAuthEnabled:   h.cfg.GithubClientID != "" && h.cfg.GithubClientSecret != "",
-		SitespeedEnabled:    h.cfg.SitespeedEndpoint != "",
+		RegistrationEnabled:  !h.cfg.DisableRegistration,
+		GithubAuthEnabled:    h.cfg.GithubClientID != "" && h.cfg.GithubClientSecret != "",
+		SitespeedEnabled:     h.cfg.SitespeedEndpoint != "",
 		PackageMirrorEnabled: h.cfg.PackagesAPIURL != "" && h.cfg.PackagesAPIToken != "",
 	})
 }
@@ -29,74 +29,34 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Build the request to Shopware's auto-update API
-	type swExtension struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
-	}
-
-	type swRequest struct {
-		CurrentVersion string        `json:"shopwareVersion"`
-		FutureVersion  string        `json:"futureShopwareVersion"`
-		Plugins        []swExtension `json:"plugins"`
-	}
-
-	plugins := make([]swExtension, 0, len(req.Extensions))
+	extensions := make([]shopwareaccount.CompatibilityExtension, 0, len(req.Extensions))
 	for _, ext := range req.Extensions {
-		plugins = append(plugins, swExtension{
+		extensions = append(extensions, shopwareaccount.CompatibilityExtension{
 			Name:    ext.Name,
 			Version: ext.Version,
 		})
 	}
 
-	swReq := swRequest{
-		CurrentVersion: req.CurrentVersion,
-		FutureVersion:  req.FutureVersion,
-		Plugins:        plugins,
-	}
-
-	reqBody, err := json.Marshal(swReq)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to build request")
-		return
-	}
-
-	// Proxy to Shopware API
-	httpReq, err := http.NewRequestWithContext(r.Context(), "POST",
-		h.cfg.ShopwareAPIURL+"/swplatform/autoupdate", bytes.NewReader(reqBody))
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create request")
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	client := httputil.NewHTTPClient()
-	resp, err := client.Do(httpReq)
+	client := shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, httputil.NewHTTPClient())
+	resp, err := client.CheckExtensionCompatibility(r.Context(), req.CurrentVersion, req.FutureVersion, extensions)
 	if err != nil {
 		slog.Error("failed to check extension compatibility", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to check extension compatibility")
 		return
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to read response")
-		return
-	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("shopware API returned non-200", "status", resp.StatusCode, "body", string(body))
-		httputil.WriteError(w, http.StatusBadGateway, "shopware API returned an error")
+		slog.Error("shopware account API returned non-200", "status", resp.StatusCode, "body", string(resp.Body))
+		httputil.WriteError(w, http.StatusBadGateway, "shopware account API returned an error")
 		return
 	}
 
 	var results []api.ExtensionCompatibilityResult
-	if err := json.Unmarshal(body, &results); err != nil {
+	if err := json.Unmarshal(resp.Body, &results); err != nil {
 		// Pass through raw response if it doesn't match our type
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(body)
+		_, _ = w.Write(resp.Body)
 		return
 	}
 

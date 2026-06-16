@@ -7,6 +7,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,16 +67,16 @@ func TestExtensionDiffRoundTrip(t *testing.T) {
 }
 
 func TestBuildCompatibleChangelogs(t *testing.T) {
-	mkEntry := func(v string) storeChangelog {
-		cl := storeChangelog{Version: v, Text: "notes " + v}
+	mkEntry := func(v string) shopwareaccount.StoreChangelog {
+		cl := shopwareaccount.StoreChangelog{Version: v, Text: "notes " + v}
 		cl.CreationDate.Date = "2024-01-15 08:30:00"
 		return cl
 	}
 
-	sp := &storePlugin{
+	sp := &shopwareaccount.StorePlugin{
 		Name:    "AcmeExt",
 		Version: "2.1.0", // latest version compatible with shop's Shopware version
-		Changelogs: []storeChangelog{
+		Changelogs: []shopwareaccount.StoreChangelog{
 			mkEntry("1.9.0"), // older than installed -> excluded
 			mkEntry("2.0.0"), // == installed       -> excluded
 			mkEntry("2.0.5"), // in range            -> included
