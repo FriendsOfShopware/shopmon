@@ -155,7 +155,7 @@
             <div class="min-w-0 flex-1 text-sm">
               <span class="font-medium">{{ ext.label }}</span>
               <button
-                class="ml-1 text-primary hover:underline"
+                class="ml-1 cursor-pointer text-primary hover:underline"
                 @click="openExtensionChangelog(ext)"
               >
                 {{ ext.version }} → {{ ext.latestVersion }}
