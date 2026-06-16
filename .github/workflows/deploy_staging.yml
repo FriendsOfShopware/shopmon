@@ -1,0 +1,65 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  KUBE_API_SERVER: https://mochi.shyim.de:6443
+  OIDC_AUDIENCE: https://mochi.shyim.de
+  K3S_CA_CERT: ${{ vars.K3S_CA_CERT }}
+
+jobs:
+  build:
+    uses: docker/github-builder/.github/workflows/build.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      output: image
+      push: true
+      file: Dockerfile
+      platforms: linux/amd64
+      cache: true
+      meta-images: ghcr.io/friendsofshopware/shopmon
+      meta-tags: |
+        type=raw,value=staging
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Authenticate to k3s via OIDC
+        run: |
+          TOKEN=$(curl -sSf \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$OIDC_AUDIENCE" \
+            | jq -r '.value')
+
+          echo "$K3S_CA_CERT" > /tmp/k3s-ca.crt
+          export KUBECONFIG=/tmp/kubeconfig
+          kubectl config set-cluster mochi \
+            --server="$KUBE_API_SERVER" \
+            --certificate-authority=/tmp/k3s-ca.crt \
+            --embed-certs=true
+          kubectl config set-credentials github-oidc --token="$TOKEN"
+          kubectl config set-context mochi --cluster=mochi --user=github-oidc
+          kubectl config use-context mochi
+          echo "KUBECONFIG=/tmp/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Restart staging deployment
+        run: |
+          kubectl rollout restart deployment/api -n shopmon-staging
+          kubectl rollout status deployment/api -n shopmon-staging --timeout=120s
