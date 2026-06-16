@@ -98,7 +98,7 @@
                   class="cursor-pointer text-xs text-warning hover:underline"
                   @click="openExtensionChangelog(ext)"
                 >
-                  update available
+                  {{ $t("shopDetail.updateAvailable") }}
                 </button>
               </template>
             </div>
