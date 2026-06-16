@@ -134,7 +134,7 @@
                 v-for="env in ext.environments"
                 :key="env.environmentId"
                 :to="{
-                  name: 'account.environments.detail',
+                  name: 'account.environments.detail.extensions',
                   params: {
                     organizationId: env.environmentOrganizationId,
                     environmentId: env.environmentId,
