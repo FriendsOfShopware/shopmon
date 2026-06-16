@@ -17,7 +17,7 @@ const search = defineModel<string>("search", { required: true });
         v-for="f in filters"
         :key="f.value"
         :class="[
-          'flex-1 rounded-md px-3 py-1 text-sm font-medium transition-colors sm:flex-none',
+          'flex-1 cursor-pointer rounded-md px-3 py-1 text-sm font-medium transition-colors sm:flex-none',
           filter === f.value
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground',
