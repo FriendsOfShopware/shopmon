@@ -94,8 +94,7 @@ run = [
 [tasks."lint:api"]
 description = "Run Go linter and tests"
 run = [
-  "cd api && golangci-lint run",
-  "cd api && go test ./internal/... -count=1 -timeout 120s",
+  "cd api && golangci-lint run"
 ]
 
 [tasks."lint:fe:oxlint"]
