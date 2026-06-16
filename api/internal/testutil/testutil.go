@@ -3,6 +3,7 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/handler"
+	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/go-chi/chi/v5"
@@ -142,6 +144,15 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	mailSender := mail.NoopSender{}
 
 	bus := goqueue.NewBus()
+	// Register an in-memory transport and route the dispatchable job types to it
+	// so handlers that enqueue work (e.g. RefreshEnvironment) succeed without a
+	// real broker. No worker is run, so dispatched messages are simply recorded.
+	bus.AddTransport(jobs.TransportName, &noopTransport{})
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.EnvironmentScrape) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.SitespeedScrape) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.LockCleanup) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.InvitationCleanup) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.OldDataCleanup) error { return nil })
 	h := handler.New(pool, q, nil, cfg, mailSender, bus)
 
 	// Build chi router matching production setup
@@ -337,10 +348,56 @@ func NewMockShopwareServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
+// noopTransport is an in-memory goqueue.Transport that accepts sends and never
+// delivers. It lets handlers dispatch jobs in tests without a real broker.
+type noopTransport struct{}
+
+func (noopTransport) Send(context.Context, *goqueue.Envelope) error { return nil }
+func (noopTransport) Receive(context.Context) (<-chan *goqueue.Envelope, error) {
+	ch := make(chan *goqueue.Envelope)
+	close(ch)
+	return ch, nil
+}
+func (noopTransport) Ack(context.Context, *goqueue.Envelope) error        { return nil }
+func (noopTransport) Nack(context.Context, *goqueue.Envelope, bool) error { return nil }
+func (noopTransport) Retry(context.Context, *goqueue.Envelope) error      { return nil }
+
+// Get performs a context-aware GET, replacing http.Get in tests so requests
+// carry the test's context (and satisfy the noctx linter).
+func Get(t *testing.T, url string) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return http.DefaultClient.Do(req)
+}
+
+// Post performs a context-aware POST, replacing http.Post in tests.
+func Post(t *testing.T, url, contentType string, body io.Reader) (*http.Response, error) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return http.DefaultClient.Do(req)
+}
+
+// NewRequest builds a context-aware request, replacing http.NewRequest in tests.
+func NewRequest(t *testing.T, method, url string, body io.Reader) *http.Request {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), method, url, body)
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	return req
+}
+
 // AuthRequest creates a new HTTP request with the session token set.
 func (e *TestEnv) AuthRequest(t *testing.T, method, path, token string) *http.Request {
 	t.Helper()
-	req, err := http.NewRequest(method, e.Server.URL+path, nil)
+	req, err := http.NewRequestWithContext(t.Context(), method, e.Server.URL+path, nil)
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}

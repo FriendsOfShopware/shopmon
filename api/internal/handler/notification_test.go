@@ -18,7 +18,7 @@ func TestGetNotifications(t *testing.T) {
 	env.SeedNotification(t, "user-1", "test-key-1", "warning", "Test Alert", "Something happened")
 	env.SeedNotification(t, "user-1", "test-key-2", "error", "Critical Alert", "Something broke")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/notifications", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/notifications", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -35,7 +35,7 @@ func TestGetNotifications(t *testing.T) {
 func TestGetNotifications_Unauthenticated(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(env.Server.URL + "/api/notifications")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/notifications")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -47,7 +47,7 @@ func TestDeleteNotification(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	notifID := env.SeedNotification(t, "user-1", "test-key-1", "warning", "Test Alert", "Something happened")
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/notifications/%d", env.Server.URL, notifID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/notifications/%d", env.Server.URL, notifID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -57,7 +57,7 @@ func TestDeleteNotification(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify it's gone
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/notifications", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/notifications", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -75,7 +75,7 @@ func TestDeleteAllNotifications(t *testing.T) {
 	env.SeedNotification(t, "user-1", "test-key-1", "warning", "Alert 1", "Message 1")
 	env.SeedNotification(t, "user-1", "test-key-2", "error", "Alert 2", "Message 2")
 
-	req, _ := http.NewRequest("DELETE", env.Server.URL+"/api/notifications", nil)
+	req := testutil.NewRequest(t, "DELETE", env.Server.URL+"/api/notifications", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -85,7 +85,7 @@ func TestDeleteAllNotifications(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify all gone
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/notifications", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/notifications", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -102,7 +102,7 @@ func TestMarkNotificationsRead(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedNotification(t, "user-1", "test-key-1", "warning", "Alert 1", "Message 1")
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/notifications/mark-read", nil)
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/notifications/mark-read", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -112,7 +112,7 @@ func TestMarkNotificationsRead(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify all are read
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/notifications", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/notifications", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)

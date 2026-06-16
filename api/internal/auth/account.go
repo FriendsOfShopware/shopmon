@@ -271,6 +271,8 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.recordAudit(r, su.User.ID, AuditActionPasswordChange, su.User.ID, "")
+
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 

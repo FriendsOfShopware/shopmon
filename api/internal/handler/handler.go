@@ -102,7 +102,7 @@ func (h *Handler) requireOrgRole(w http.ResponseWriter, r *http.Request, user *a
 		UserID:         user.ID,
 	})
 	if err != nil {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+		httputil.WriteForbidden(w)
 		return false
 	}
 	for _, allowed := range allowedRoles {
@@ -110,7 +110,7 @@ func (h *Handler) requireOrgRole(w http.ResponseWriter, r *http.Request, user *a
 			return true
 		}
 	}
-	httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	httputil.WriteForbidden(w)
 	return false
 }
 

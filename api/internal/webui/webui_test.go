@@ -23,7 +23,7 @@ func testFS() fs.FS {
 func TestNewHandlerServesIndexForSPARoutes(t *testing.T) {
 	handler := NewHandler(testFS())
 
-	req := httptest.NewRequest(http.MethodGet, "/app/dashboard", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/app/dashboard", nil)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -40,7 +40,7 @@ func TestNewHandlerServesIndexForSPARoutes(t *testing.T) {
 func TestNewHandlerServesStaticAssets(t *testing.T) {
 	handler := NewHandler(testFS())
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/assets/app.js", nil)
 	rec := httptest.NewRecorder()
 
 	handler.ServeHTTP(rec, req)
@@ -58,7 +58,7 @@ func TestNewHandlerCompressesAssets(t *testing.T) {
 	handler := NewHandler(testFS())
 
 	for _, encoding := range []string{"zstd", "gzip"} {
-		req := httptest.NewRequest(http.MethodGet, "/assets/large.js", nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/assets/large.js", nil)
 		req.Header.Set("Accept-Encoding", encoding)
 		rec := httptest.NewRecorder()
 
@@ -81,7 +81,7 @@ func TestNewHandlerCompressesAssets(t *testing.T) {
 func TestNewHandlerSkipsTinyAssets(t *testing.T) {
 	handler := NewHandler(testFS())
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/assets/app.js", nil)
 	req.Header.Set("Accept-Encoding", "gzip, zstd")
 	rec := httptest.NewRecorder()
 
@@ -97,7 +97,7 @@ func TestNewHandlerDoesNotHijackAPIOrMissingAssets(t *testing.T) {
 	handler := NewHandler(testFS())
 
 	for _, requestPath := range []string{"/api/health", "/assets/missing.js"} {
-		req := httptest.NewRequest(http.MethodGet, requestPath, nil)
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, requestPath, nil)
 		rec := httptest.NewRecorder()
 
 		handler.ServeHTTP(rec, req)

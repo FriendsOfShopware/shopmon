@@ -19,7 +19,7 @@ func TestGetPackagesTokenConfiguration_NotConfigured(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/packages-token/configuration", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/packages-token/configuration", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -41,7 +41,7 @@ func TestGetPackagesTokenConfiguration_Configured(t *testing.T) {
 	})
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/packages-token/configuration", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/packages-token/configuration", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -63,7 +63,7 @@ func TestGetPackagesTokens_NotConfigured(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -95,7 +95,7 @@ func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -139,7 +139,7 @@ func TestCreatePackagesToken_WithMockAPI(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
 	body, _ := json.Marshal(map[string]string{"token": "my-shopware-token"})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -167,7 +167,7 @@ func TestDeletePackagesToken_WithMockAPI(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens/42", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens/42", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -194,7 +194,7 @@ func TestSyncPackagesToken_WithMockAPI(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens/42/sync", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens/42/sync", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -220,7 +220,7 @@ func TestGetPackagesTokens_NotMember(t *testing.T) {
 	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
 	shopID := env.SeedShop(t, "org-2", "Other Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-2/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-2/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

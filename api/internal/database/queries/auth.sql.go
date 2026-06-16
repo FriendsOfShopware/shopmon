@@ -822,6 +822,20 @@ func (q *Queries) ListUserSessions(ctx context.Context, userID string) ([]ListUs
 	return items, nil
 }
 
+const refreshSessionExpiry = `-- name: RefreshSessionExpiry :exec
+UPDATE session SET expires_at = $2, updated_at = NOW() WHERE id = $1
+`
+
+type RefreshSessionExpiryParams struct {
+	ID        string           `json:"id"`
+	ExpiresAt pgtype.Timestamp `json:"expires_at"`
+}
+
+func (q *Queries) RefreshSessionExpiry(ctx context.Context, arg RefreshSessionExpiryParams) error {
+	_, err := q.db.Exec(ctx, refreshSessionExpiry, arg.ID, arg.ExpiresAt)
+	return err
+}
+
 const setActiveOrganization = `-- name: SetActiveOrganization :exec
 UPDATE session SET active_organization_id = $1, updated_at = NOW() WHERE token = $2
 `

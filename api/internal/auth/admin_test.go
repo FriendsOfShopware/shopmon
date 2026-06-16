@@ -88,6 +88,30 @@ func TestAdminSetRole(t *testing.T) {
 	assert.Equal(t, "admin", role)
 }
 
+func TestAdminSetRole_WritesAuditLog(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+	signUp(t, env.Server.URL, "user@example.com", "password123", "User")
+
+	adminID := getUserIDByEmail(t, env, "admin@example.com")
+	userID := getUserIDByEmail(t, env, "user@example.com")
+
+	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/role", userID), adminCookie, map[string]string{
+		"role": "admin",
+	})
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var action, actor, target string
+	err := env.Pool.QueryRow(t.Context(),
+		`SELECT action, actor_user_id, target_user_id FROM audit_log WHERE action = 'admin.set_role'`).
+		Scan(&action, &actor, &target)
+	require.NoError(t, err, "an audit log entry should be recorded")
+	assert.Equal(t, "admin.set_role", action)
+	assert.Equal(t, adminID, actor)
+	assert.Equal(t, userID, target)
+}
+
 func TestAdminSetRole_Self(t *testing.T) {
 	env := testutil.Setup(t)
 	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
@@ -184,7 +208,7 @@ func TestAdminImpersonate(t *testing.T) {
 	assert.NotEmpty(t, session["impersonatedBy"])
 
 	// Use the impersonation token to access the session endpoint and verify it belongs to the target user
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+impersonationToken)
 	resp2, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)

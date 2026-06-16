@@ -74,7 +74,7 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 		},
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -114,7 +114,7 @@ func TestCheckExtensionCompatibility_APIError(t *testing.T) {
 		},
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -138,7 +138,7 @@ func TestGetShopwareVersions(t *testing.T) {
 		cfg.ShopwareVersionsURL = mockVersionsAPI.URL
 	})
 
-	resp, err := http.Get(env.Server.URL + "/api/info/shopware-versions")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/info/shopware-versions")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -155,7 +155,7 @@ func TestGetShopwareVersions(t *testing.T) {
 func TestCheckExtensionCompatibility_InvalidBody(t *testing.T) {
 	env := testutil.Setup(t)
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader([]byte("invalid")))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/info/extension-compatibility", bytes.NewReader([]byte("invalid")))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)

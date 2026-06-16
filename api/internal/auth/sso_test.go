@@ -165,7 +165,7 @@ func initiateSSO(t *testing.T, serverURL, email string) (state, nonce string) {
 		"email":       email,
 		"callbackURL": "http://localhost:3000/dashboard",
 	})
-	resp, err := http.Post(serverURL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, serverURL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	var initResult map[string]string
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
@@ -203,7 +203,7 @@ func TestSignInSSO(t *testing.T) {
 		"email":       "user@testcorp.com",
 		"callbackURL": "http://localhost:3000/dashboard",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -224,7 +224,7 @@ func TestSignInSSO_UnknownDomain(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "user@unknown-domain.com",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -237,7 +237,7 @@ func TestSignInSSO_InvalidEmail(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "not-an-email",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -259,7 +259,7 @@ func TestSSOCallback(t *testing.T) {
 	callbackURL := fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state))
 
-	resp, err := http.Get(callbackURL)
+	resp, err := testutil.Get(t, callbackURL)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -271,7 +271,7 @@ func TestSSOCallback(t *testing.T) {
 	require.NotEmpty(t, code, "code must be in JSON response")
 
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
-	resp, err = http.Post(env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -281,7 +281,7 @@ func TestSSOCallback(t *testing.T) {
 	ssoToken := exchangeResult["token"]
 	require.NotEmpty(t, ssoToken)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+ssoToken)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -306,7 +306,7 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, _ := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, _ := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	_ = resp.Body.Close()
 
@@ -320,7 +320,7 @@ func TestSSOCallback_OrgAutoProvisioning(t *testing.T) {
 func TestSSOCallback_InvalidState(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/some-provider?code=abc&state=invalid",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/some-provider?code=abc&state=invalid",
 		env.Server.URL))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -337,7 +337,7 @@ func TestSSOCallback_InvalidCode(t *testing.T) {
 
 	state, _ := initiateSSO(t, env.Server.URL, "user@testcorp.com")
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=invalid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=invalid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -358,7 +358,7 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, _ := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, _ := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 
 	var callbackResult map[string]string
@@ -368,14 +368,14 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	require.NotEmpty(t, code)
 
 	exchangeBody, _ := json.Marshal(map[string]string{"code": code})
-	resp, _ = http.Post(env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
+	resp, _ = testutil.Post(t, env.Server.URL+"/api/auth/exchange-code", "application/json", bytes.NewReader(exchangeBody))
 	var exchangeResult map[string]string
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&exchangeResult))
 	_ = resp.Body.Close()
 	ssoToken := exchangeResult["token"]
 	require.NotEmpty(t, ssoToken)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+ssoToken)
 	resp, _ = http.DefaultClient.Do(req)
 
@@ -410,7 +410,7 @@ func TestSSOCallback_ForgedToken(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -440,7 +440,7 @@ func TestSSOCallback_AudienceMismatch(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -461,7 +461,7 @@ func TestSSOCallback_NonceMismatch(t *testing.T) {
 	// Deliberately embed a nonce that does not match the one issued.
 	idp.currentNonce = "attacker-controlled-nonce"
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -485,7 +485,7 @@ func TestSSOCallback_ExpiredToken(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -509,7 +509,7 @@ func TestSSOCallback_MissingSub(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -542,7 +542,7 @@ func TestSSOCallback_UserinfoSubMismatch(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -572,7 +572,7 @@ func TestSSOCallback_UserinfoEmailFallback(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -600,7 +600,7 @@ func TestSSOCallback_UserinfoEmailUnverified(t *testing.T) {
 	state, nonce := initiateSSO(t, env.Server.URL, "ssouser@testcorp.com")
 	idp.currentNonce = nonce
 
-	resp, err := http.Get(fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
+	resp, err := testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/testcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -651,7 +651,7 @@ func TestSSOCallback_RejectsInsecureStoredEndpoint(t *testing.T) {
 		"email":       "user@evilcorp.com",
 		"callbackURL": "http://localhost:3000/dashboard",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/sso", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	var initResult map[string]string
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&initResult))
@@ -660,7 +660,7 @@ func TestSSOCallback_RejectsInsecureStoredEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	state := authURL.Query().Get("state")
 
-	resp, err = http.Get(fmt.Sprintf("%s/api/auth/sso/callback/evilcorp-oidc?code=valid-code&state=%s",
+	resp, err = testutil.Get(t, fmt.Sprintf("%s/api/auth/sso/callback/evilcorp-oidc?code=valid-code&state=%s",
 		env.Server.URL, url.QueryEscape(state)))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()

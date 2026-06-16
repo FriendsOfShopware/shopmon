@@ -26,6 +26,16 @@ type Account struct {
 	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
 }
 
+type AuditLog struct {
+	ID           int64            `json:"id"`
+	ActorUserID  *string          `json:"actor_user_id"`
+	Action       string           `json:"action"`
+	TargetUserID *string          `json:"target_user_id"`
+	Detail       *string          `json:"detail"`
+	IpAddress    *string          `json:"ip_address"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+}
+
 type Deployment struct {
 	ID            int32            `json:"id"`
 	EnvironmentID int32            `json:"environment_id"`

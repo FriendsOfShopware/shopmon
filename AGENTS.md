@@ -30,8 +30,9 @@ api/                          <-- Go API (single binary)
     jobs/                     <-- Background job handlers + task types (environment scrape, sitespeed, cleanup)
     mail/                     <-- SMTP service + email templates
     middleware/               <-- HTTP middleware (auth, org membership, environment access)
-    shopware/                 <-- Shopware HTTP client
+    shopware/                 <-- Shopware admin API client (per-shop)
       checker/                <-- Environment health check system
+    shopwareaccount/          <-- Shopware account/store API client (api.shopware.com)
     storage/                  <-- S3 storage for deployment outputs
     telemetry/                <-- OpenTelemetry tracing + logging setup
     testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)

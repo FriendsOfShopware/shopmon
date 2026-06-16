@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
@@ -18,6 +19,13 @@ import (
 type oauthState struct {
 	CallbackURL string `json:"callbackURL"`
 }
+
+// GitHub OAuth/API base URLs. Declared as vars (not consts) so tests can point
+// the flow at a mock server; production always uses the real GitHub endpoints.
+var (
+	githubOAuthBaseURL = "https://github.com"
+	githubAPIBaseURL   = "https://api.github.com"
+)
 
 func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 	var req socialSignInRequest
@@ -49,8 +57,8 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authURL := fmt.Sprintf("https://github.com/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
-		url.QueryEscape(h.cfg.GithubClientID), url.QueryEscape(state))
+	authURL := fmt.Sprintf("%s/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
+		githubOAuthBaseURL, url.QueryEscape(h.cfg.GithubClientID), url.QueryEscape(state))
 
 	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
@@ -64,11 +72,20 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 	}
 
 	// Exchange code for access token
-	tokenResp, err := httputil.NewHTTPClient().PostForm("https://github.com/login/oauth/access_token", url.Values{
+	tokenForm := url.Values{
 		"client_id":     {h.cfg.GithubClientID},
 		"client_secret": {h.cfg.GithubClientSecret},
 		"code":          {params.Code},
-	})
+	}
+	tokenReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
+		githubOAuthBaseURL+"/login/oauth/access_token", strings.NewReader(tokenForm.Encode()))
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to build token request")
+		return
+	}
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	tokenResp, err := httputil.NewHTTPClient().Do(tokenReq)
 	if err != nil {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code")
 		return
@@ -84,7 +101,7 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 	}
 
 	// Fetch GitHub user info
-	ghReq, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
+	ghReq, _ := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user", nil)
 	ghReq.Header.Set("Authorization", "Bearer "+accessToken)
 	ghReq.Header.Set("Accept", "application/json")
 
@@ -109,7 +126,7 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 
 	// If no public email, fetch from emails API
 	if ghUser.Email == "" {
-		emailReq, _ := http.NewRequest("GET", "https://api.github.com/user/emails", nil)
+		emailReq, _ := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user/emails", nil)
 		emailReq.Header.Set("Authorization", "Bearer "+accessToken)
 		emailReq.Header.Set("Accept", "application/json")
 

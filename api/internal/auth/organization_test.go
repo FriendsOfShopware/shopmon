@@ -18,7 +18,7 @@ func signUp(t *testing.T, serverURL, email, password, name string) string {
 	body, _ := json.Marshal(map[string]string{
 		"email": email, "password": password, "name": name,
 	})
-	resp, err := http.Post(serverURL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, serverURL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -41,7 +41,7 @@ func authRequest(t *testing.T, method, url string, token string, body interface{
 	} else {
 		reqBody = bytes.NewReader(nil)
 	}
-	req, _ := http.NewRequest(method, url, reqBody)
+	req := testutil.NewRequest(t, method, url, reqBody)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err := http.DefaultClient.Do(req)
@@ -127,7 +127,7 @@ func TestOrgCreate_Unauthenticated(t *testing.T) {
 	env := testutil.Setup(t)
 
 	body, _ := json.Marshal(map[string]string{"name": "Test Org"})
-	resp, err := http.Post(env.Server.URL+"/api/auth/organizations", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/organizations", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 

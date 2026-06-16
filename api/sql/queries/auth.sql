@@ -41,6 +41,9 @@ RETURNING id, token;
 -- name: DeleteSession :exec
 DELETE FROM session WHERE token = $1;
 
+-- name: RefreshSessionExpiry :exec
+UPDATE session SET expires_at = $2, updated_at = NOW() WHERE id = $1;
+
 -- name: DeleteUserSessions :exec
 DELETE FROM session WHERE user_id = $1;
 

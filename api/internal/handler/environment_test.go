@@ -5,13 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// encryptEnvironmentSecret replaces an environment's stored client_secret with an
+// AES-GCM encrypted value so that newShopwareClientFromCredentials can decrypt it.
+// SeedEnvironment stores a plaintext secret, which the Shopware-calling handlers
+// cannot decrypt, so tests that actually reach Shopware must call this.
+func encryptEnvironmentSecret(t *testing.T, env *testutil.TestEnv, environmentID int, secret string) {
+	t.Helper()
+	encrypted, err := crypto.Encrypt(secret, env.Cfg.AppSecret)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(t.Context(),
+		`UPDATE environment SET client_secret = $1 WHERE id = $2`, encrypted, environmentID)
+	require.NoError(t, err)
+}
 
 func TestGetOrganizationEnvironments(t *testing.T) {
 	env := testutil.Setup(t)
@@ -21,7 +36,7 @@ func TestGetOrganizationEnvironments(t *testing.T) {
 	env.SeedEnvironment(t, "org-1", shopID, "Environment A", "https://a.example.com")
 	env.SeedEnvironment(t, "org-1", shopID, "Environment B", "https://b.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/environments", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/environments", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -42,7 +57,7 @@ func TestGetEnvironment(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -73,7 +88,7 @@ func TestGetEnvironment_NotMember(t *testing.T) {
 	shopID := env.SeedShop(t, "org-2", "Other Shop")
 	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -90,7 +105,7 @@ func TestDeleteEnvironment(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "To Delete", "https://del.example.com")
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -100,7 +115,7 @@ func TestDeleteEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify it's gone
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -119,7 +134,7 @@ func TestGetEnvironmentSubscription(t *testing.T) {
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	// Initially not subscribed
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -146,7 +161,7 @@ func TestUpdateEnvironment(t *testing.T) {
 		ShopId: shopID,
 	})
 
-	req, _ := http.NewRequest("PATCH", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PATCH", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -157,7 +172,7 @@ func TestUpdateEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify the name changed by fetching the environment
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -179,7 +194,7 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
 	// Initially not subscribed
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -191,7 +206,7 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	assert.False(t, result["subscribed"])
 
 	// Subscribe
-	req, _ = http.NewRequest("POST", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -201,7 +216,7 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify subscribed
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -212,7 +227,7 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	assert.True(t, result["subscribed"])
 
 	// Unsubscribe
-	req, _ = http.NewRequest("DELETE", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -222,7 +237,7 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify unsubscribed
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -246,7 +261,7 @@ func TestUpdateSitespeedSettings(t *testing.T) {
 		Urls:    &urls,
 	})
 
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("%s/api/environments/%d/sitespeed-settings", env.Server.URL, environmentID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PUT", fmt.Sprintf("%s/api/environments/%d/sitespeed-settings", env.Server.URL, environmentID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -257,7 +272,7 @@ func TestUpdateSitespeedSettings(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify settings by fetching the environment
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -290,7 +305,7 @@ func TestGetAccountExtensions_WithData(t *testing.T) {
 	`, environmentID)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/extensions", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/extensions", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -320,4 +335,244 @@ func TestGetAccountExtensions_WithData(t *testing.T) {
 	require.Len(t, paypal.Environments, 1)
 	assert.Equal(t, environmentID, paypal.Environments[0].EnvironmentId)
 	assert.Equal(t, "My Environment", paypal.Environments[0].EnvironmentName)
+}
+
+func TestRefreshEnvironment(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/refresh", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	// Only enqueues a job on the in-memory bus; does not call Shopware.
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+}
+
+func TestRefreshEnvironment_WithSitespeed(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	sitespeed := true
+	body, _ := json.Marshal(api.RefreshEnvironmentJSONRequestBody{Sitespeed: &sitespeed})
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/refresh", env.Server.URL, environmentID), bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+}
+
+func TestRefreshEnvironment_NotMember(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
+	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
+	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/refresh", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestRefreshEnvironment_Unauthenticated(t *testing.T) {
+	env := testutil.Setup(t)
+	env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/refresh", env.Server.URL, environmentID), nil)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+func TestClearEnvironmentCache(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token":"mock-token","expires_in":600}`))
+	})
+	var cacheCleared bool
+	mux.HandleFunc("/api/_action/cache", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "DELETE", r.Method)
+		cacheCleared = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	shopware := httptest.NewServer(mux)
+	defer shopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", shopware.URL)
+	encryptEnvironmentSecret(t, env, environmentID, "test-secret")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/clear-cache", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.True(t, cacheCleared, "expected DELETE /_action/cache to be called on Shopware")
+}
+
+func TestClearEnvironmentCache_ShopwareError(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token":"mock-token","expires_in":600}`))
+	})
+	mux.HandleFunc("/api/_action/cache", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	shopware := httptest.NewServer(mux)
+	defer shopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", shopware.URL)
+	encryptEnvironmentSecret(t, env, environmentID, "test-secret")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/clear-cache", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	// Shopware failure is surfaced as a bad gateway.
+	assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
+}
+
+func TestClearEnvironmentCache_NotMember(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
+	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
+	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/clear-cache", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestRescheduleTask(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token":"mock-token","expires_in":600}`))
+	})
+	var patched, runTriggered bool
+	mux.HandleFunc("/api/scheduled-task/task-123", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "PATCH", r.Method)
+		patched = true
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("/api/_action/scheduled-task/run", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "POST", r.Method)
+		runTriggered = true
+		w.WriteHeader(http.StatusOK)
+	})
+	shopware := httptest.NewServer(mux)
+	defer shopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", shopware.URL)
+	encryptEnvironmentSecret(t, env, environmentID, "test-secret")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/tasks/task-123/reschedule", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.True(t, patched, "expected PATCH /scheduled-task/task-123 to be called")
+	assert.True(t, runTriggered, "expected POST /_action/scheduled-task/run to be called")
+}
+
+func TestRescheduleTask_ShopwareError(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token":"mock-token","expires_in":600}`))
+	})
+	mux.HandleFunc("/api/scheduled-task/task-123", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	shopware := httptest.NewServer(mux)
+	defer shopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", shopware.URL)
+	encryptEnvironmentSecret(t, env, environmentID, "test-secret")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/tasks/task-123/reschedule", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusBadGateway, resp.StatusCode)
+}
+
+func TestRescheduleTask_NotMember(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
+	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
+	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
+
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/tasks/task-123/reschedule", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 }

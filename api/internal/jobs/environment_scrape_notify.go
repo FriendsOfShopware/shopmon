@@ -93,7 +93,7 @@ func (h *EnvironmentScrapeHandler) handleStatusChange(ctx context.Context, env q
 		if sendEmails && h.mail != nil {
 			subject := fmt.Sprintf("Environment %s status changed to %s", env.Name, newStatus)
 			body := mail.BuildShopAlertEmail(user.Name, env.Name, alertMessage)
-			if err := h.mail.Send(user.Email, subject, body); err != nil {
+			if err := h.mail.Send(ctx, user.Email, subject, body); err != nil {
 				slog.Warn("failed to send status change email", "userId", user.ID, "email", user.Email, "error", err)
 			}
 		}
@@ -147,7 +147,7 @@ func (h *EnvironmentScrapeHandler) notifyAuthError(ctx context.Context, env quer
 		if sendEmails && h.mail != nil {
 			subject := fmt.Sprintf("Environment %s connection failed", env.Name)
 			body := mail.BuildShopAlertEmail(user.Name, env.Name, alertMessage)
-			if err := h.mail.Send(user.Email, subject, body); err != nil {
+			if err := h.mail.Send(ctx, user.Email, subject, body); err != nil {
 				slog.Warn("failed to send auth error email", "userId", user.ID, "error", err)
 			}
 		}

@@ -526,7 +526,7 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		}
 	}
 
-	favicon := getFavicon(env.Url)
+	favicon := getFavicon(ctx, env.Url)
 
 	if err := txQueries.UpdateEnvironmentAfterScrape(ctx, queries.UpdateEnvironmentAfterScrapeParams{
 		Status:           newStatus,

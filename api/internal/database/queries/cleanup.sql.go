@@ -9,6 +9,16 @@ import (
 	"context"
 )
 
+const cleanupExpiredBans = `-- name: CleanupExpiredBans :exec
+UPDATE "user" SET banned = false, ban_reason = NULL, ban_expires = NULL
+WHERE banned = true AND ban_expires IS NOT NULL AND ban_expires < NOW()
+`
+
+func (q *Queries) CleanupExpiredBans(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, cleanupExpiredBans)
+	return err
+}
+
 const cleanupExpiredSessions = `-- name: CleanupExpiredSessions :exec
 DELETE FROM session WHERE expires_at < NOW()
 `

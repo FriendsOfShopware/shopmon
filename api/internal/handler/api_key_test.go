@@ -17,7 +17,7 @@ func TestGetApiKeyScopes(t *testing.T) {
 	env := testutil.Setup(t)
 
 	// This is a public endpoint, no auth needed
-	resp, err := http.Get(env.Server.URL + "/api/api-key-scopes")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/api-key-scopes")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -35,7 +35,7 @@ func TestGetApiKeys_Empty(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -60,7 +60,7 @@ func TestCreateApiKey(t *testing.T) {
 		Scopes: []string{"deployments"},
 	})
 
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -88,7 +88,7 @@ func TestCreateAndListApiKeys(t *testing.T) {
 		Name:   "Key 1",
 		Scopes: []string{"deployments"},
 	})
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
@@ -97,7 +97,7 @@ func TestCreateAndListApiKeys(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	// List keys
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -124,7 +124,7 @@ func TestDeleteApiKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test with a numeric-ish key ID via the URL - just verify the endpoint responds
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys/999", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/api-keys/999", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -141,7 +141,7 @@ func TestGetApiKeys_NotMember(t *testing.T) {
 	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
 	shopID := env.SeedShop(t, "org-2", "Other Shop")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/organizations/org-2/shops/%d/api-keys", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-2/shops/%d/api-keys", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

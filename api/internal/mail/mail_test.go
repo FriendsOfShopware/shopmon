@@ -30,7 +30,8 @@ type smtpServer struct {
 
 func newSMTPServer(t *testing.T) *smtpServer {
 	t.Helper()
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	var lc net.ListenConfig
+	ln, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
 	s := &smtpServer{
@@ -194,7 +195,7 @@ func TestSendNonSecure(t *testing.T) {
 		ReplyTo: "reply@example.com",
 	})
 
-	err := svc.Send("recipient@example.com", "Test Subject", "<p>Hello</p>")
+	err := svc.Send(t.Context(), "recipient@example.com", "Test Subject", "<p>Hello</p>")
 	require.NoError(t, err)
 
 	require.Len(t, srv.msgs, 1)
@@ -220,7 +221,7 @@ func TestSendNonSecureNoReplyTo(t *testing.T) {
 		From: "sender@example.com",
 	})
 
-	err := svc.Send("recipient@example.com", "Test Subject", "<p>Hello</p>")
+	err := svc.Send(t.Context(), "recipient@example.com", "Test Subject", "<p>Hello</p>")
 	require.NoError(t, err)
 
 	require.Len(t, srv.msgs, 1)
@@ -241,7 +242,7 @@ func TestSendWithAuth(t *testing.T) {
 		From: "sender@example.com",
 	})
 
-	err := svc.Send("recipient@example.com", "Subject", "body")
+	err := svc.Send(t.Context(), "recipient@example.com", "Subject", "body")
 	require.NoError(t, err)
 	require.Len(t, srv.msgs, 1)
 }
@@ -319,7 +320,7 @@ func TestSendSecure(t *testing.T) {
 		},
 	})
 
-	err = svc.Send("recipient@example.com", "Secure Subject", "<p>Secure body</p>")
+	err = svc.Send(t.Context(), "recipient@example.com", "Secure Subject", "<p>Secure body</p>")
 	require.NoError(t, err)
 
 	<-done
@@ -337,6 +338,6 @@ func TestSendConnectionError(t *testing.T) {
 		From:   "sender@example.com",
 	})
 
-	err := svc.Send("recipient@example.com", "Subject", "body")
+	err := svc.Send(t.Context(), "recipient@example.com", "Subject", "body")
 	assert.Error(t, err)
 }

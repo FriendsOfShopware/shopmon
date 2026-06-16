@@ -14,7 +14,7 @@ import (
 func TestGetAccountMe_Unauthenticated(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(env.Server.URL + "/api/account/me")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/account/me")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -25,7 +25,7 @@ func TestGetAccountMe(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/me", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/me", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -46,7 +46,7 @@ func TestGetAccountOrganizations(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/organizations", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/organizations", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -70,7 +70,7 @@ func TestGetAccountEnvironments(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/environments", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/environments", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -93,7 +93,7 @@ func TestGetAccountShops(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	env.SeedShop(t, "org-1", "My Shop")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/shops", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/shops", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -113,7 +113,7 @@ func TestGetAccountChangelogs_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/changelogs", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/changelogs", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -131,7 +131,7 @@ func TestGetAccountSubscribedEnvironments_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/account/subscribed-environments", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/subscribed-environments", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

@@ -196,7 +196,7 @@ func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verifyURL := h.cfg.FrontendURL + "/account/confirm/" + verificationToken
-	if err := h.mail.Send(req.Email, "Confirm your email address",
+	if err := h.mail.Send(r.Context(), req.Email, "Confirm your email address",
 		mail.BuildConfirmationEmail(req.Name, verifyURL)); err != nil {
 		slog.Error("failed to send confirmation email", "error", err, "email", req.Email)
 	}
@@ -393,7 +393,7 @@ func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL := h.cfg.FrontendURL + "/account/forgot-password/" + resetToken
-	if err := h.mail.Send(req.Email, "Reset your password",
+	if err := h.mail.Send(r.Context(), req.Email, "Reset your password",
 		mail.BuildPasswordResetEmail(user.Name, resetURL)); err != nil {
 		slog.Error("failed to send password reset email", "error", err, "email", req.Email)
 	}
@@ -450,6 +450,8 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to reset password")
 		return
 	}
+
+	h.recordAudit(r, verification.Identifier, AuditActionPasswordReset, verification.Identifier, "")
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }

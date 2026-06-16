@@ -13,7 +13,7 @@ import (
 func TestGetHealth(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(env.Server.URL + "/api/health")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/health")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 

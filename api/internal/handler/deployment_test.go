@@ -22,7 +22,7 @@ func TestGetDeployments_Empty(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -51,7 +51,7 @@ func TestGetDeployments_WithData(t *testing.T) {
 	`, environmentID, now)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -83,7 +83,7 @@ func TestGetDeployment(t *testing.T) {
 	`, environmentID, now).Scan(&deploymentID)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -116,7 +116,7 @@ func TestDeleteDeployment(t *testing.T) {
 	`, environmentID, now).Scan(&deploymentID)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -126,7 +126,7 @@ func TestDeleteDeployment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify deleted
-	req, _ = http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
+	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/deployments/%d", env.Server.URL, environmentID, deploymentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -164,7 +164,7 @@ func TestCreateCliDeployment(t *testing.T) {
 		Name:          &name,
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+apiKeyToken)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -194,7 +194,7 @@ func TestCreateCliDeployment_InvalidToken(t *testing.T) {
 		ExecutionTime: 1.0,
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer invalid-token")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -232,7 +232,7 @@ func TestCreateCliDeployment_WrongShop(t *testing.T) {
 		ExecutionTime: 1.0,
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/cli/deployments", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+apiKeyToken)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -251,7 +251,7 @@ func TestGetDeployments_NotMember(t *testing.T) {
 	shopID := env.SeedShop(t, "org-2", "Other Shop")
 	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/deployments", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

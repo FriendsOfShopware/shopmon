@@ -2,6 +2,7 @@
 package mail
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/hex"
@@ -26,7 +27,7 @@ const smtpTimeout = 30 * time.Second
 
 // Sender sends an HTML email to a recipient.
 type Sender interface {
-	Send(to, subject, body string) error
+	Send(ctx context.Context, to, subject, body string) error
 }
 
 // SMTPConfig holds SMTP connection settings.
@@ -55,7 +56,7 @@ func NewService(cfg SMTPConfig) *Service {
 type NoopSender struct{}
 
 // Send implements Sender.
-func (NoopSender) Send(to, subject, body string) error {
+func (NoopSender) Send(_ context.Context, to, subject, body string) error {
 	slog.Debug("noop mail send", "to", to, "subject", subject)
 	return nil
 }
@@ -78,7 +79,7 @@ func (s *Service) tlsClientConfig() *tls.Config {
 	return tlsConfig
 }
 
-func (s *Service) Send(to, subject, body string) error {
+func (s *Service) Send(ctx context.Context, to, subject, body string) error {
 	text, html := splitBody(body)
 
 	msg, err := s.buildMessage(to, subject, text, html)
@@ -92,7 +93,8 @@ func (s *Service) Send(to, subject, body string) error {
 	}
 
 	addr := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
-	conn, err := net.DialTimeout("tcp", addr, smtpTimeout)
+	dialer := net.Dialer{Timeout: smtpTimeout}
+	conn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
@@ -104,7 +106,7 @@ func (s *Service) Send(to, subject, body string) error {
 
 	if s.cfg.Secure {
 		tlsConn := tls.Client(conn, s.tlsClientConfig())
-		if err := tlsConn.Handshake(); err != nil {
+		if err := tlsConn.HandshakeContext(ctx); err != nil {
 			return fmt.Errorf("tls handshake: %w", err)
 		}
 		conn = tlsConn

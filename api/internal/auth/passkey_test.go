@@ -17,7 +17,7 @@ func TestPasskeyRegisterOptions(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -38,7 +38,7 @@ func TestPasskeyRegisterOptions(t *testing.T) {
 func TestPasskeyRegisterOptions_Unauthenticated(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/register-options", "application/json", nil)
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/passkey/register-options", "application/json", nil)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -48,7 +48,7 @@ func TestPasskeyRegisterOptions_Unauthenticated(t *testing.T) {
 func TestPasskeyLoginOptions(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/login-options", "application/json", nil)
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/passkey/login-options", "application/json", nil)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -76,7 +76,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	credential := virtualwebauthn.NewCredential(virtualwebauthn.KeyTypeEC2)
 
 	// === Step 1: Get registration options ===
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -104,7 +104,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	mergedBody, _ := json.Marshal(attJSON)
 
 	// === Step 3: Complete registration ===
-	req, _ = http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(mergedBody))
+	req = testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(mergedBody))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -135,7 +135,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	authenticator.AddCredential(credential)
 
 	// Get login options
-	resp, err = http.Post(env.Server.URL+"/api/auth/passkey/login-options", "application/json", nil)
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/passkey/login-options", "application/json", nil)
 	require.NoError(t, err)
 
 	var loginOptions struct {
@@ -159,7 +159,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	loginBody, _ := json.Marshal(assJSON)
 
 	// Complete login
-	resp, err = http.Post(env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(loginBody))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(loginBody))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -182,7 +182,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	assert.NotEmpty(t, loginToken)
 
 	// Verify session works
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+loginToken)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -198,7 +198,7 @@ func TestPasskeyRegister_InvalidChallenge(t *testing.T) {
 		"challengeKey": "invalid-key",
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -216,7 +216,7 @@ func TestPasskeyLogin_InvalidChallenge(t *testing.T) {
 		"challengeKey": "invalid-key",
 	})
 
-	resp, err := http.Post(env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/passkey/login", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -240,7 +240,7 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 		cred := virtualwebauthn.NewCredential(virtualwebauthn.KeyTypeEC2)
 
 		// Get options
-		req, _ := http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
+		req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register-options", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -267,7 +267,7 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 		body, _ := json.Marshal(attJSON)
 
 		// Register
-		req, _ = http.NewRequest("POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(body))
+		req = testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/passkey/register", bytes.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err = http.DefaultClient.Do(req)

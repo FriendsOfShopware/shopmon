@@ -13,6 +13,21 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+// Standard 403 messages. Use these for generic authorization failures so the
+// API returns consistent wording; reserve bespoke messages for cases that
+// convey a distinct, actionable reason (e.g. role-hierarchy or tenancy rules).
+const (
+	// MsgForbidden is the generic insufficient-permissions message.
+	MsgForbidden = "insufficient permissions"
+	// MsgAdminRequired is returned when an action requires the admin role.
+	MsgAdminRequired = "admin access required"
+)
+
+// WriteForbidden writes a 403 with the standard insufficient-permissions message.
+func WriteForbidden(w http.ResponseWriter) {
+	WriteError(w, http.StatusForbidden, MsgForbidden)
+}
+
 // WriteJSON writes a JSON response with the given status code.
 func WriteJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")

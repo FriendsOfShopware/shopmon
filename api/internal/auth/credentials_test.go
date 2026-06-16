@@ -20,7 +20,7 @@ func TestSignUpEmail(t *testing.T) {
 		"name":     "New User",
 	})
 
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -46,7 +46,7 @@ func TestSignUpEmail_DuplicateEmail(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "dupe@example.com", "password": "password123!", "name": "User 1",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -55,7 +55,7 @@ func TestSignUpEmail_DuplicateEmail(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"email": "dupe@example.com", "password": "password456!", "name": "User 2",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
@@ -67,7 +67,7 @@ func TestSignUpEmail_ShortPassword(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "test@example.com", "password": "short", "name": "Test",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -77,7 +77,7 @@ func TestSignUpEmail_MissingFields(t *testing.T) {
 	env := testutil.Setup(t)
 
 	body, _ := json.Marshal(map[string]string{"email": "test@example.com"})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -90,7 +90,7 @@ func TestSignInEmail(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "login@example.com", "password": "password123!", "name": "Login User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
@@ -98,7 +98,7 @@ func TestSignInEmail(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"email": "login@example.com", "password": "password123!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -150,7 +150,7 @@ func TestSignInEmail_Ban(t *testing.T) {
 			body, _ := json.Marshal(map[string]string{
 				"email": tt.email, "password": "password123!", "name": "Ban User",
 			})
-			resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+			resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 			require.NoError(t, err)
 			_ = resp.Body.Close()
 
@@ -160,7 +160,7 @@ func TestSignInEmail_Ban(t *testing.T) {
 			body, _ = json.Marshal(map[string]string{
 				"email": tt.email, "password": "password123!",
 			})
-			resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+			resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 			require.NoError(t, err)
 			defer func() { _ = resp.Body.Close() }()
 
@@ -175,14 +175,14 @@ func TestSignInEmail_WrongPassword(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "wrong@example.com", "password": "password123!", "name": "User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
 	body, _ = json.Marshal(map[string]string{
 		"email": "wrong@example.com", "password": "wrongpassword!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -194,7 +194,7 @@ func TestSignInEmail_NonexistentUser(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "nobody@example.com", "password": "password123!",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -207,7 +207,7 @@ func TestGetSession(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "session@example.com", "password": "password123!", "name": "Session User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
 	var signUpResult map[string]interface{}
@@ -217,7 +217,7 @@ func TestGetSession(t *testing.T) {
 	require.NotEmpty(t, token)
 
 	// Get session using the Bearer token
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -237,7 +237,7 @@ func TestGetSession(t *testing.T) {
 func TestGetSession_NoToken(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(env.Server.URL + "/api/auth/session")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/auth/session")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -250,7 +250,7 @@ func TestSignOut(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "signout@example.com", "password": "password123!", "name": "Signout User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
 	var signUpResult map[string]interface{}
@@ -260,7 +260,7 @@ func TestSignOut(t *testing.T) {
 	require.NotEmpty(t, token)
 
 	// Sign out
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/auth/sign-out", nil)
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/auth/sign-out", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -268,7 +268,7 @@ func TestSignOut(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Session should be invalid now
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/auth/session", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/auth/session", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -283,7 +283,7 @@ func TestVerifyEmail(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "verify@example.com", "password": "password123!", "name": "Verify User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
@@ -294,7 +294,7 @@ func TestVerifyEmail(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify email
-	resp, err = http.Get(env.Server.URL + "/api/auth/verify-email?token=" + verificationToken)
+	resp, err = testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token="+verificationToken)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -310,7 +310,7 @@ func TestVerifyEmail(t *testing.T) {
 func TestVerifyEmail_InvalidToken(t *testing.T) {
 	env := testutil.Setup(t)
 
-	resp, err := http.Get(env.Server.URL + "/api/auth/verify-email?token=invalid-token")
+	resp, err := testutil.Get(t, env.Server.URL+"/api/auth/verify-email?token=invalid-token")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -323,13 +323,13 @@ func TestForgetPassword(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "forgot@example.com", "password": "password123!", "name": "Forgot User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
 	// Request password reset
 	body, _ = json.Marshal(map[string]string{"email": "forgot@example.com"})
-	resp, err = http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -347,7 +347,7 @@ func TestForgetPassword_NonexistentEmail(t *testing.T) {
 
 	// Should return 200 even for non-existent email (anti-enumeration)
 	body, _ := json.Marshal(map[string]string{"email": "nobody@example.com"})
-	resp, err := http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -360,13 +360,13 @@ func TestResetPassword(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "reset@example.com", "password": "oldpassword1!", "name": "Reset User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
 	// Request reset
 	body, _ = json.Marshal(map[string]string{"email": "reset@example.com"})
-	resp, err = http.Post(env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/forget-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
@@ -383,7 +383,7 @@ func TestResetPassword(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"token": resetToken, "newPassword": "newpassword1!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -392,7 +392,7 @@ func TestResetPassword(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"email": "reset@example.com", "password": "newpassword1!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -401,7 +401,7 @@ func TestResetPassword(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"email": "reset@example.com", "password": "oldpassword1!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -413,7 +413,7 @@ func TestResetPassword_InvalidToken(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"token": "invalid", "newPassword": "newpassword1!",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/reset-password", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -426,7 +426,7 @@ func TestSignInEmail_BannedUser(t *testing.T) {
 	body, _ := json.Marshal(map[string]string{
 		"email": "banned@example.com", "password": "password123!", "name": "Banned User",
 	})
-	resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	_ = resp.Body.Close()
 
@@ -439,7 +439,7 @@ func TestSignInEmail_BannedUser(t *testing.T) {
 	body, _ = json.Marshal(map[string]string{
 		"email": "banned@example.com", "password": "password123!",
 	})
-	resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+	resp, err = testutil.Post(t, env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)

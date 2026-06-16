@@ -73,6 +73,8 @@ func (h *AuthHandler) AdminSetUserRole(w http.ResponseWriter, r *http.Request, u
 		return
 	}
 
+	h.recordAudit(r, su.User.ID, AuditActionSetRole, userId, "role="+req.Role)
+
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
@@ -103,6 +105,12 @@ func (h *AuthHandler) AdminBanUser(w http.ResponseWriter, r *http.Request, userI
 		return
 	}
 
+	banReason := ""
+	if req.BanReason != nil {
+		banReason = *req.BanReason
+	}
+	h.recordAudit(r, su.User.ID, AuditActionBanUser, userId, banReason)
+
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
 
@@ -117,6 +125,8 @@ func (h *AuthHandler) AdminUnbanUser(w http.ResponseWriter, r *http.Request, use
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to unban user")
 		return
 	}
+
+	h.recordAudit(r, su.User.ID, AuditActionUnbanUser, userId, "")
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
@@ -158,6 +168,8 @@ func (h *AuthHandler) AdminImpersonate(w http.ResponseWriter, r *http.Request, u
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create impersonation session")
 		return
 	}
+
+	h.recordAudit(r, su.User.ID, AuditActionImpersonate, userId, "")
 
 	httputil.WriteJSON(w, http.StatusOK, impersonationResponse{
 		Token: token,

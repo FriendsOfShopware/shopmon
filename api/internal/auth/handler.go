@@ -13,8 +13,8 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -83,7 +83,7 @@ func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *Sess
 		return nil
 	}
 	if su.User.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "admin access required")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return nil
 	}
 	return su
@@ -95,7 +95,7 @@ func (h *AuthHandler) requireOrgRole(w http.ResponseWriter, r *http.Request, use
 		UserID:         userID,
 	})
 	if err != nil {
-		httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+		httputil.WriteForbidden(w)
 		return ""
 	}
 
@@ -105,7 +105,7 @@ func (h *AuthHandler) requireOrgRole(w http.ResponseWriter, r *http.Request, use
 		}
 	}
 
-	httputil.WriteError(w, http.StatusForbidden, "insufficient permissions")
+	httputil.WriteForbidden(w)
 	return ""
 }
 
@@ -195,8 +195,9 @@ func (h *AuthHandler) ExchangeCode(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, exchangeCodeResponse{Token: sessionToken})
 }
 
-// createSession creates a new session with a 30-day expiry.
-// TODO: Session tokens currently have a fixed 30-day expiry with no rotation.
+// createSession creates a new session. Its expiry slides forward on use via
+// ValidateSession (see sessionLifetime), so an actively used session stays
+// valid while an abandoned one still lapses.
 func (h *AuthHandler) createSession(r *http.Request, userID string) (string, error) {
 	token := generateToken()
 	sessionID := uuid.New().String()
@@ -209,7 +210,7 @@ func (h *AuthHandler) createSession(r *http.Request, userID string) (string, err
 
 	_, err := h.queries.CreateSession(r.Context(), queries.CreateSessionParams{
 		ID:        sessionID,
-		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(sessionLifetime), Valid: true},
 		Token:     token,
 		IpAddress: &ipAddress,
 		UserAgent: &userAgent,

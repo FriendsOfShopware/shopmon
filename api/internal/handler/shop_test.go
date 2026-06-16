@@ -20,7 +20,7 @@ func TestListShops(t *testing.T) {
 	env.SeedShop(t, "org-1", "Shop A")
 	env.SeedShop(t, "org-1", "Shop B")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/shops", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/shops", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -41,7 +41,7 @@ func TestListShops_NotMember(t *testing.T) {
 	_, err := env.Pool.Exec(t.Context(), `INSERT INTO organization (id, name, slug, created_at) VALUES ('org-other', 'Other Org', 'other-org', NOW())`)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-other/shops", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-other/shops", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -69,7 +69,7 @@ func TestCreateShop(t *testing.T) {
 		ClientSecret:    "test-client-secret",
 	})
 
-	req, _ := http.NewRequest("POST", env.Server.URL+"/api/organizations/org-1/shops", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/organizations/org-1/shops", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -95,7 +95,7 @@ func TestUpdateShop(t *testing.T) {
 		Name: &newName,
 	})
 
-	req, _ := http.NewRequest("PATCH", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PATCH", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -112,7 +112,7 @@ func TestDeleteShop(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "To Delete")
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -122,7 +122,7 @@ func TestDeleteShop(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify it's gone
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/shops", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/shops", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -141,7 +141,7 @@ func TestDeleteShop_WithEnvironments_Fails(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Has Environments")
 	env.SeedEnvironment(t, "org-1", shopID, "Environment", "https://env.example.com")
 
-	req, _ := http.NewRequest("DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), nil)
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)

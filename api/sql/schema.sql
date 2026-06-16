@@ -267,8 +267,20 @@ CREATE TABLE "lock" (
   "created_at" timestamp NOT NULL
 );
 
+CREATE TABLE "audit_log" (
+  "id" bigserial PRIMARY KEY,
+  "actor_user_id" text REFERENCES "user"("id") ON DELETE SET NULL,
+  "action" text NOT NULL,
+  "target_user_id" text REFERENCES "user"("id") ON DELETE SET NULL,
+  "detail" text,
+  "ip_address" text,
+  "created_at" timestamp NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_passkey_credential_id ON passkey(credential_id);
 CREATE INDEX IF NOT EXISTS idx_verification_value ON verification(value);
 CREATE INDEX IF NOT EXISTS idx_sso_provider_domain ON sso_provider(domain);
 CREATE INDEX IF NOT EXISTS idx_account_provider_user ON account(provider_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_account_provider_account ON account(provider_id, account_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log (actor_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at);

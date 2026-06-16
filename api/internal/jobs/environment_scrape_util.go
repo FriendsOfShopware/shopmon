@@ -218,7 +218,7 @@ func versionCompare(a, b string) int {
 }
 
 // getFavicon fetches the shop URL and parses the HTML for a favicon link.
-func getFavicon(shopURL string) *string {
+func getFavicon(ctx context.Context, shopURL string) *string {
 	httpClient := httputil.NewHTTPClient(httputil.WithTimeout(10*time.Second), func(c *http.Client) {
 		c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 10 {
@@ -228,7 +228,12 @@ func getFavicon(shopURL string) *string {
 		}
 	})
 
-	resp, err := httpClient.Get(shopURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, shopURL, nil)
+	if err != nil {
+		return nil
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil
 	}

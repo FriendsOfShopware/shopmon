@@ -17,7 +17,7 @@ func (h *Handler) AdminGetStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h *Handler) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 
@@ -163,7 +163,7 @@ func (h *Handler) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 
@@ -210,7 +210,7 @@ func (h *Handler) AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 
@@ -261,7 +261,7 @@ func (h *Handler) AdminGetShopwareVersions(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if user.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, "forbidden")
+		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
 		return
 	}
 

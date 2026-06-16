@@ -19,7 +19,7 @@ func TestGetSsoProviders_Empty(t *testing.T) {
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -46,7 +46,7 @@ func TestGetSsoProviders_WithData(t *testing.T) {
 	`, oidcConfig)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -84,7 +84,7 @@ func TestUpdateSsoProvider(t *testing.T) {
 		JwksEndpoint:          "https://new.example.com/jwks",
 	})
 
-	req, _ := http.NewRequest("PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/provider-1", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/provider-1", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -106,7 +106,7 @@ func TestDeleteSsoProvider(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	req, _ := http.NewRequest("DELETE", env.Server.URL+"/api/organizations/org-1/sso-providers/provider-1", nil)
+	req := testutil.NewRequest(t, "DELETE", env.Server.URL+"/api/organizations/org-1/sso-providers/provider-1", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -116,7 +116,7 @@ func TestDeleteSsoProvider(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify deleted
-	req, _ = http.NewRequest("GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
+	req = testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-1/sso-providers", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err = http.DefaultClient.Do(req)
@@ -134,7 +134,7 @@ func TestGetSsoProviders_NotMember(t *testing.T) {
 	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
 	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/organizations/org-2/sso-providers", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/organizations/org-2/sso-providers", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -168,7 +168,7 @@ func TestDiscoverSso(t *testing.T) {
 	// Use the mock server URL (127.0.0.1) as the issuer; discovery against a
 	// local address is allowed for dev workflows.
 	issuerURL := mockServer.URL
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/sso/discover?issuer=%s", env.Server.URL, issuerURL), nil)
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/sso/discover?issuer=%s", env.Server.URL, issuerURL), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -190,7 +190,7 @@ func TestDiscoverSso(t *testing.T) {
 func TestDiscoverSso_Unauthenticated(t *testing.T) {
 	env := testutil.Setup(t)
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/sso/discover?issuer=https://idp.example.com", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/sso/discover?issuer=https://idp.example.com", nil)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
@@ -204,7 +204,7 @@ func TestDiscoverSso_RejectsNonHTTPS(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/sso/discover?issuer=http://idp.example.com", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/sso/discover?issuer=http://idp.example.com", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -241,7 +241,7 @@ func TestUpdateSsoProvider_MemberDenied(t *testing.T) {
 		JwksEndpoint:          "https://idp.example.com/jwks",
 	})
 
-	req, _ := http.NewRequest("PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+memberToken)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -258,7 +258,7 @@ func TestDeleteSsoProvider_MemberDenied(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "owner-1")
 	memberToken := seedOrgMember(t, env, "member-1", "org-1", "member")
 
-	req, _ := http.NewRequest("DELETE", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", nil)
+	req := testutil.NewRequest(t, "DELETE", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", nil)
 	req.Header.Set("Authorization", "Bearer "+memberToken)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -283,7 +283,7 @@ func TestUpdateSsoProvider_AdminAllowed(t *testing.T) {
 		JwksEndpoint:          "https://idp.example.com/jwks",
 	})
 
-	req, _ := http.NewRequest("PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
+	req := testutil.NewRequest(t, "PUT", env.Server.URL+"/api/organizations/org-1/sso-providers/some-provider", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	req.Header.Set("Content-Type", "application/json")
 

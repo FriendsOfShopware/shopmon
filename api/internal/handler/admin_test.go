@@ -20,7 +20,7 @@ func TestAdminGetStats(t *testing.T) {
 	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
 	env.SeedEnvironment(t, "org-1", shopID, "Environment 2", "https://env2.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/stats", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/stats", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -41,7 +41,7 @@ func TestAdminGetStats_NonAdmin(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Regular User", "user@example.com", "user")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/stats", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/stats", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -57,7 +57,7 @@ func TestAdminGetOrganizations(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Alpha Org", "alpha-org", "admin-1")
 	env.SeedOrganization(t, "org-2", "Beta Org", "beta-org", "admin-1")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/organizations?limit=10&offset=0", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/organizations?limit=10&offset=0", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -79,7 +79,7 @@ func TestAdminGetEnvironments(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/environments?limit=10", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/environments?limit=10", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -98,7 +98,7 @@ func TestAdminGetGrowth(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/growth", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/growth", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -120,7 +120,7 @@ func TestAdminGetShopwareVersions(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	env.SeedEnvironment(t, "org-1", shopID, "Environment 1", "https://env1.example.com")
 
-	req, _ := http.NewRequest("GET", env.Server.URL+"/api/admin/shopware-versions", nil)
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/shopware-versions", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
