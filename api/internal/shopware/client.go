@@ -11,11 +11,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sync/singleflight"
 )
+
+// tokenExpiryMargin is subtracted from the OAuth token lifetime so a token is
+// treated as expired slightly before the server would reject it, avoiding 401s
+// from a token that lapses mid-request.
+const tokenExpiryMargin = 30 * time.Second
 
 type Client struct {
 	baseURL      string
@@ -23,6 +30,10 @@ type Client struct {
 	clientSecret string
 	shopToken    string
 	httpClient   *http.Client
+
+	// tokenGroup collapses concurrent token fetches (cold cache or post-401
+	// re-auth) into a single in-flight request that all callers share.
+	tokenGroup singleflight.Group
 
 	mu          sync.Mutex
 	cachedToken *tokenCache
@@ -53,23 +64,61 @@ func NewClient(baseURL, clientID, clientSecret, shopToken string) *Client {
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		shopToken:    shopToken,
-		httpClient:   &http.Client{Timeout: 30 * time.Second},
+		httpClient:   httputil.NewHTTPClient(httputil.WithTimeout(30 * time.Second)),
+	}
+}
+
+// cachedAccessToken returns a still-valid cached token, or "" if none.
+func (c *Client) cachedAccessToken() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cachedToken != nil && c.cachedToken.expiresAt.After(time.Now()) {
+		return c.cachedToken.accessToken
+	}
+	return ""
+}
+
+// invalidateToken clears the cache only if it still holds stale, the token the
+// caller observed. This prevents a 401 from one goroutine discarding a fresh
+// token that another goroutine has already obtained.
+func (c *Client) invalidateToken(stale string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cachedToken != nil && c.cachedToken.accessToken == stale {
+		c.cachedToken = nil
 	}
 }
 
 func (c *Client) getToken(ctx context.Context) (string, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.cachedToken != nil && c.cachedToken.expiresAt.After(time.Now()) {
-		return c.cachedToken.accessToken, nil
+	if token := c.cachedAccessToken(); token != "" {
+		return token, nil
 	}
 
-	body, _ := json.Marshal(map[string]string{
+	// Collapse concurrent fetches: only one goroutine performs the network
+	// round-trip; the rest wait and share its result. The HTTP call runs
+	// outside c.mu so a slow token endpoint never blocks cache reads.
+	token, err, _ := c.tokenGroup.Do("token", func() (interface{}, error) {
+		// Another goroutine may have populated the cache while we waited.
+		if token := c.cachedAccessToken(); token != "" {
+			return token, nil
+		}
+		return c.fetchToken(ctx)
+	})
+	if err != nil {
+		return "", err
+	}
+	return token.(string), nil
+}
+
+func (c *Client) fetchToken(ctx context.Context) (string, error) {
+	body, err := json.Marshal(map[string]string{
 		"grant_type":    "client_credentials",
 		"client_id":     c.clientID,
 		"client_secret": c.clientSecret,
 	})
+	if err != nil {
+		return "", fmt.Errorf("marshal token request: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/oauth/token", bytes.NewReader(body))
 	if err != nil {
@@ -94,12 +143,21 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("decode token response: %w", err)
 	}
 
-	c.cachedToken = &tokenCache{
-		accessToken: tokenResp.AccessToken,
-		expiresAt:   time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+	// Apply a safety margin, but never let it push expiry into the past for
+	// short-lived tokens.
+	lifetime := time.Duration(tokenResp.ExpiresIn) * time.Second
+	if lifetime > tokenExpiryMargin {
+		lifetime -= tokenExpiryMargin
 	}
 
-	return c.cachedToken.accessToken, nil
+	c.mu.Lock()
+	c.cachedToken = &tokenCache{
+		accessToken: tokenResp.AccessToken,
+		expiresAt:   time.Now().Add(lifetime),
+	}
+	c.mu.Unlock()
+
+	return tokenResp.AccessToken, nil
 }
 
 // Authenticate tests the connection by fetching an access token.
@@ -166,9 +224,7 @@ func (c *Client) request(ctx context.Context, method, path string, body interfac
 	}
 
 	if resp.StatusCode == 401 && retry {
-		c.mu.Lock()
-		c.cachedToken = nil
-		c.mu.Unlock()
+		c.invalidateToken(token)
 		return c.request(ctx, method, path, body, false)
 	}
 

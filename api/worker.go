@@ -122,6 +122,13 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}); err != nil {
 		slog.Error("failed to add invitation cleanup cron", "error", err)
 	}
+	if _, err := c.AddFunc("30 4 * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.OldDataCleanup{}); err != nil {
+			slog.Error("failed to dispatch old data cleanup", "error", err)
+		}
+	}); err != nil {
+		slog.Error("failed to add old data cleanup cron", "error", err)
+	}
 	c.Start()
 
 	// Worker

@@ -43,7 +43,6 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 		return
 	}
 
-	// Fetch health status
 	healthData, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools health status", "error", err)
@@ -58,7 +57,6 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 
 	mapFroshChecks(healthChecks, output)
 
-	// Fetch performance status
 	perfData, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools performance status", "error", err)
@@ -94,15 +92,8 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 			message += " (Current: " + *c.Current + ", Recommended: " + *c.Recommended + ")"
 		}
 
-		// Skip checks that shouldn't escalate status
 		if ignoredFroshChecks[c.Snippet] {
-			switch c.State {
-			case "STATE_OK":
-				output.Success(id, message, "FroshTools", c.URL)
-			default:
-				// Add the check but don't let it escalate
-				output.Success(id, message, "FroshTools", c.URL)
-			}
+			output.Success(id, message, "FroshTools", c.URL)
 			continue
 		}
 

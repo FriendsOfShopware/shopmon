@@ -7,6 +7,7 @@ import (
 )
 
 func checkTasks(_ context.Context, input Input, output *Output) {
+	hasWarning := false
 	for _, task := range input.ScheduledTasks {
 		if task.Status == "inactive" {
 			continue
@@ -15,6 +16,7 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 			continue
 		}
 		if isTaskOverdue(task) {
+			hasWarning = true
 			output.Warning(
 				fmt.Sprintf("task.%s", task.Name),
 				fmt.Sprintf("Scheduled task '%s' is overdue", task.Name),
@@ -22,7 +24,9 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 		}
 	}
 
-	output.Success("task.all", "All scheduled tasks are running correctly.", "Shopware", "")
+	if !hasWarning {
+		output.Success("task.all", "All scheduled tasks are running correctly.", "Shopware", "")
+	}
 }
 
 func isTaskOverdue(task ScheduledTask) bool {

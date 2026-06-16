@@ -19,10 +19,7 @@ import (
 // enrichExtensionsFromStore queries the Shopware Store API and updates extensions
 // with latestVersion, ratingAverage, storeLink, and changelog information.
 func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) {
-	storeURL, err := url.Parse("https://api.shopware.com/pluginStore/pluginsByName")
-	if err != nil {
-		return
-	}
+	storeURL, _ := url.Parse("https://api.shopware.com/pluginStore/pluginsByName")
 
 	q := storeURL.Query()
 	q.Set("locale", "en-GB")
@@ -55,7 +52,6 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 		return
 	}
 
-	// Build a map for quick lookup
 	storeMap := make(map[string]*storePlugin, len(storePlugins))
 	for i := range storePlugins {
 		storeMap[storePlugins[i].Name] = &storePlugins[i]
@@ -261,7 +257,7 @@ func getFavicon(shopURL string) *string {
 		return nil
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024)) // Limit to 1MB
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
 	if err != nil {
 		return nil
 	}

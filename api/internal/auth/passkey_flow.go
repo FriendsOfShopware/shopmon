@@ -168,7 +168,7 @@ func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (
 			return nil, err
 		}
 
-		if dbUser.Banned != nil && *dbUser.Banned {
+		if isBanActive(dbUser.Banned, dbUser.BanExpires) {
 			return nil, errBanned
 		}
 

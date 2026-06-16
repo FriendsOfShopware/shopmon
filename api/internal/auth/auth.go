@@ -8,7 +8,20 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+// isBanActive reports whether a ban should still block access. A ban with a
+// ban_expires timestamp in the past is treated as expired and no longer blocks.
+func isBanActive(banned *bool, banExpires pgtype.Timestamp) bool {
+	if banned == nil || !*banned {
+		return false
+	}
+	if banExpires.Valid && banExpires.Time.Before(time.Now()) {
+		return false
+	}
+	return true
+}
 
 type User struct {
 	ID            string   `json:"id"`
@@ -57,7 +70,7 @@ func ValidateSession(ctx context.Context, q *queries.Queries, token string) (*Se
 		},
 	}
 
-	if su.User.Banned != nil && *su.User.Banned {
+	if isBanActive(su.User.Banned, row.UserBanExpires) {
 		return nil, fmt.Errorf("user is banned")
 	}
 

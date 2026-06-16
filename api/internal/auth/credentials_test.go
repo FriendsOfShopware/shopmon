@@ -116,6 +116,59 @@ func TestSignInEmail(t *testing.T) {
 	assert.NotEmpty(t, token)
 }
 
+func TestSignInEmail_Ban(t *testing.T) {
+	tests := []struct {
+		name       string
+		email      string
+		banSQL     string
+		wantStatus int
+	}{
+		{
+			name:       "active ban without expiry blocks login",
+			email:      "active-ban@example.com",
+			banSQL:     `UPDATE "user" SET banned = true, ban_reason = 'test ban' WHERE email = $1`,
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "active ban with future expiry blocks login",
+			email:      "future-ban@example.com",
+			banSQL:     `UPDATE "user" SET banned = true, ban_reason = 'test ban', ban_expires = NOW() + INTERVAL '1 hour' WHERE email = $1`,
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "expired ban allows login",
+			email:      "expired-ban@example.com",
+			banSQL:     `UPDATE "user" SET banned = true, ban_reason = 'test ban', ban_expires = NOW() - INTERVAL '1 hour' WHERE email = $1`,
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := testutil.Setup(t)
+
+			body, _ := json.Marshal(map[string]string{
+				"email": tt.email, "password": "password123!", "name": "Ban User",
+			})
+			resp, err := http.Post(env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+			require.NoError(t, err)
+			_ = resp.Body.Close()
+
+			_, err = env.Pool.Exec(t.Context(), tt.banSQL, tt.email)
+			require.NoError(t, err)
+
+			body, _ = json.Marshal(map[string]string{
+				"email": tt.email, "password": "password123!",
+			})
+			resp, err = http.Post(env.Server.URL+"/api/auth/sign-in/email", "application/json", bytes.NewReader(body))
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			assert.Equal(t, tt.wantStatus, resp.StatusCode)
+		})
+	}
+}
+
 func TestSignInEmail_WrongPassword(t *testing.T) {
 	env := testutil.Setup(t)
 

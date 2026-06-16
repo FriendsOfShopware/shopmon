@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -27,18 +28,46 @@ type environmentDetailAggregate struct {
 func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmentID int32) environmentDetailAggregate {
 	aggregate := environmentDetailAggregate{}
 
-	aggregate.extensions = h.loadEnvironmentExtensions(ctx, environmentID)
-	aggregate.tasks = h.loadEnvironmentScheduledTasks(ctx, environmentID)
-	aggregate.queues = h.loadEnvironmentQueues(ctx, environmentID)
-	aggregate.cache = h.loadEnvironmentCache(ctx, environmentID)
-	aggregate.checks = h.loadEnvironmentChecks(ctx, environmentID)
-	aggregate.sitespeeds = h.loadEnvironmentSitespeeds(ctx, environmentID)
-	aggregate.changelogs = h.loadEnvironmentChangelogs(ctx, environmentID)
+	var wg sync.WaitGroup
+	wg.Add(8)
 
-	deployCount, err := h.queries.CountEnvironmentDeployments(ctx, environmentID)
-	if err == nil {
-		aggregate.deployCount = deployCount
-	}
+	go func() {
+		defer wg.Done()
+		aggregate.extensions = h.loadEnvironmentExtensions(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.tasks = h.loadEnvironmentScheduledTasks(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.queues = h.loadEnvironmentQueues(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.cache = h.loadEnvironmentCache(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.checks = h.loadEnvironmentChecks(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.sitespeeds = h.loadEnvironmentSitespeeds(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		aggregate.changelogs = h.loadEnvironmentChangelogs(ctx, environmentID)
+	}()
+	go func() {
+		defer wg.Done()
+		deployCount, err := h.queries.CountEnvironmentDeployments(ctx, environmentID)
+		if err == nil {
+			aggregate.deployCount = deployCount
+		}
+	}()
+
+	wg.Wait()
 
 	return aggregate
 }

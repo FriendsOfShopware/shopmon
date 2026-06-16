@@ -3,9 +3,11 @@ package telemetry
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -55,6 +57,7 @@ func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) 
 			tp := sdktrace.NewTracerProvider(
 				sdktrace.WithBatcher(traceExporter),
 				sdktrace.WithResource(res),
+				sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(parseSamplerRatio()))),
 			)
 			otel.SetTracerProvider(tp)
 			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
@@ -97,6 +100,26 @@ func Setup(ctx context.Context, serviceName, traceEndpoint, logEndpoint string) 
 	}
 }
 
+// parseSamplerRatio reads OTEL_TRACES_SAMPLER_RATIO and returns it clamped to
+// [0, 1]. It defaults to 1.0 (sample everything) when unset or unparseable.
+func parseSamplerRatio() float64 {
+	raw := os.Getenv("OTEL_TRACES_SAMPLER_RATIO")
+	if raw == "" {
+		return 1.0
+	}
+	ratio, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return 1.0
+	}
+	if ratio < 0 {
+		return 0
+	}
+	if ratio > 1 {
+		return 1
+	}
+	return ratio
+}
+
 // ensurePath appends defaultPath to the endpoint URL if it has no path set.
 func ensurePath(endpoint, defaultPath string) string {
 	u, err := url.Parse(endpoint)
@@ -126,14 +149,15 @@ func (h *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *multiHandler) Handle(ctx context.Context, record slog.Record) error {
+	var errs []error
 	for _, handler := range h.handlers {
 		if handler.Enabled(ctx, record.Level) {
 			if err := handler.Handle(ctx, record); err != nil {
-				return err
+				errs = append(errs, err)
 			}
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func (h *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {

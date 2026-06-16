@@ -34,7 +34,7 @@ config.global.plugins.push(i18n as any);
 // and Vue resolves stub keys case-sensitively, so register every variant.
 const routerLinkStub = {
   props: ["to"],
-  template: '<a :href="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>',
+  template: "<a :href=\"typeof to === 'string' ? to : JSON.stringify(to)\"><slot /></a>",
 };
 const routerViewStub = {
   template: "<div><slot /></div>",

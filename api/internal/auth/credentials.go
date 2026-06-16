@@ -239,7 +239,7 @@ func (h *AuthHandler) SignInEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Banned != nil && *user.Banned {
+	if isBanActive(user.Banned, user.BanExpires) {
 		httputil.WriteError(w, http.StatusForbidden, "account is banned")
 		return
 	}

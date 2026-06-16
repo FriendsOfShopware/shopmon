@@ -184,10 +184,8 @@ func isPublicIP(ip net.IP) bool {
 		ip.IsMulticast() || ip.IsUnspecified() || ip.IsPrivate() {
 		return false
 	}
-	// Block IPv6 unique local addresses (fc00::/7), already covered by IsPrivate
-	// in recent Go, kept here for clarity and older behaviour.
 	if ip4 := ip.To4(); ip4 != nil {
-		// 100.64.0.0/10 (carrier-grade NAT)
+		// 100.64.0.0/10 (carrier-grade NAT) not covered by IsPrivate on all Go versions.
 		if ip4[0] == 100 && ip4[1] >= 64 && ip4[1] <= 127 {
 			return false
 		}

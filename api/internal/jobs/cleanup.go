@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -30,5 +31,22 @@ func (h *CleanupHandler) HandleInvitationCleanup(ctx context.Context, _ Invitati
 		return err
 	}
 	slog.Info("cleaned up expired invitations")
+	return nil
+}
+
+func (h *CleanupHandler) HandleOldDataCleanup(ctx context.Context, _ OldDataCleanup) error {
+	if err := h.queries.CleanupExpiredSessions(ctx); err != nil {
+		return fmt.Errorf("cleanup expired sessions: %w", err)
+	}
+	if err := h.queries.CleanupOldNotifications(ctx); err != nil {
+		return fmt.Errorf("cleanup old notifications: %w", err)
+	}
+	if err := h.queries.CleanupOldSitespeedData(ctx); err != nil {
+		return fmt.Errorf("cleanup old sitespeed data: %w", err)
+	}
+	if err := h.queries.CleanupOldChangelogData(ctx); err != nil {
+		return fmt.Errorf("cleanup old changelog data: %w", err)
+	}
+	slog.Info("cleaned up old data: sessions, notifications, sitespeed, changelog")
 	return nil
 }
