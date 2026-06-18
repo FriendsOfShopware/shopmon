@@ -401,28 +401,6 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /environments/{environmentId}/subscribe:
-    get:
-      operationId: getEnvironmentSubscription
-      tags: [Environments]
-      summary: Check notification subscription status
-      parameters:
-        - $ref: "#/components/parameters/EnvironmentId"
-      responses:
-        "200":
-          description: Subscription status
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - subscribed
-                properties:
-                  subscribed:
-                    type: boolean
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
     post:
       operationId: subscribeToEnvironment
       tags: [Environments]
@@ -2912,6 +2890,7 @@ components:
         - sitespeeds
         - changelogs
         - deploymentsCount
+        - subscribed
       properties:
         id:
           type: integer
@@ -3003,6 +2982,8 @@ components:
             $ref: "#/components/schemas/AccountChangelog"
         deploymentsCount:
           type: integer
+        subscribed:
+          type: boolean
 
     EnvironmentExtension:
       type: object

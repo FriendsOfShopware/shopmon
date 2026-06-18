@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
@@ -70,6 +71,7 @@ func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environ
 	}
 
 	aggregate := h.loadEnvironmentDetailAggregate(r.Context(), int32(environmentId))
+	aggregate.subscribed = userSubscribedToEnvironment(user, environmentId)
 	httputil.WriteJSON(w, http.StatusOK, h.buildEnvironmentDetail(environment, aggregate))
 }
 
@@ -297,27 +299,17 @@ func (h *Handler) RescheduleTask(w http.ResponseWriter, r *http.Request, environ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GetEnvironmentSubscription checks if the user is subscribed to environment notifications.
-func (h *Handler) GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	if _, ok := h.loadAuthorizedEnvironment(w, r, user, int32(environmentId)); !ok {
-		return
-	}
-
-	key := environmentNotificationKey(environmentId)
-	subscribed := false
+// userSubscribedToEnvironment reports whether the user is subscribed to the
+// environment's notifications. user.Notifications is already loaded on every
+// authenticated request, so this is an in-memory check with no extra DB query.
+func userSubscribedToEnvironment(user *auth.User, environmentID int) bool {
+	key := environmentNotificationKey(environmentID)
 	for _, n := range user.Notifications {
 		if n == key {
-			subscribed = true
-			break
+			return true
 		}
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, map[string]bool{"subscribed": subscribed})
+	return false
 }
 
 // SubscribeToEnvironment subscribes the user to environment notifications.

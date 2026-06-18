@@ -23,6 +23,7 @@ type environmentDetailAggregate struct {
 	sitespeeds  []queries.EnvironmentSitespeed
 	changelogs  []queries.EnvironmentChangelog
 	deployCount int32
+	subscribed  bool
 }
 
 func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmentID int32) environmentDetailAggregate {
@@ -205,6 +206,7 @@ func (h *Handler) buildEnvironmentDetail(environment *queries.GetEnvironmentByID
 		Changelogs:         mapEnvironmentChangelogs(environment, aggregate.changelogs),
 		DeploymentsCount:   int(aggregate.deployCount),
 		LastChangelog:      lastChangelog,
+		Subscribed:         aggregate.subscribed,
 	}
 }
 

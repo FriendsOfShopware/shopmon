@@ -58,12 +58,8 @@ export function useEnvironmentDetail() {
         params: { path: { environmentId: id } },
       });
       environment.value = data ?? null;
-
-      // Check notification subscription status
-      const { data: subData } = await api.GET("/environments/{environmentId}/subscribe", {
-        params: { path: { environmentId: id } },
-      });
-      isSubscribed.value = subData?.subscribed ?? false;
+      // Subscription status ships with the environment payload, no extra request.
+      isSubscribed.value = data?.subscribed ?? false;
 
       const { data: shopwareVersionsData } = await api.GET("/info/shopware-versions");
       if (shopwareVersionsData) {

@@ -350,6 +350,7 @@ type EnvironmentDetail struct {
 	SitespeedUrls      *[]string              `json:"sitespeedUrls"`
 	Sitespeeds         []Sitespeed            `json:"sitespeeds"`
 	Status             string                 `json:"status"`
+	Subscribed         bool                   `json:"subscribed"`
 	Url                string                 `json:"url"`
 }
 
@@ -788,9 +789,6 @@ type ServerInterface interface {
 	// Unsubscribe from environment notifications
 	// (DELETE /environments/{environmentId}/subscribe)
 	UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
-	// Check notification subscription status
-	// (GET /environments/{environmentId}/subscribe)
-	GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
 	// Subscribe to environment notifications
 	// (POST /environments/{environmentId}/subscribe)
 	SubscribeToEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
@@ -1031,12 +1029,6 @@ func (_ Unimplemented) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Re
 // Unsubscribe from environment notifications
 // (DELETE /environments/{environmentId}/subscribe)
 func (_ Unimplemented) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Check notification subscription status
-// (GET /environments/{environmentId}/subscribe)
-func (_ Unimplemented) GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2164,38 +2156,6 @@ func (siw *ServerInterfaceWrapper) UnsubscribeFromEnvironment(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
-// GetEnvironmentSubscription operation middleware
-func (siw *ServerInterfaceWrapper) GetEnvironmentSubscription(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "environmentId" -------------
-	var environmentId EnvironmentId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
-		return
-	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEnvironmentSubscription(w, r, environmentId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // SubscribeToEnvironment operation middleware
 func (siw *ServerInterfaceWrapper) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request) {
 
@@ -3272,9 +3232,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.UnsubscribeFromEnvironment)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.GetEnvironmentSubscription)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.SubscribeToEnvironment)

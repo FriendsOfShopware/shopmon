@@ -303,8 +303,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Check notification subscription status */
-    get: operations["getEnvironmentSubscription"];
+    get?: never;
     put?: never;
     /** Subscribe to environment notifications */
     post: operations["subscribeToEnvironment"];
@@ -1720,6 +1719,7 @@ export interface components {
       sitespeeds: components["schemas"]["Sitespeed"][];
       changelogs: components["schemas"]["AccountChangelog"][];
       deploymentsCount: number;
+      subscribed: boolean;
     };
     EnvironmentExtension: {
       name: string;
@@ -2500,33 +2500,6 @@ export interface operations {
       401: components["responses"]["Unauthorized"];
       403: components["responses"]["Forbidden"];
       404: components["responses"]["NotFound"];
-    };
-  };
-  getEnvironmentSubscription: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        /** @description Environment ID */
-        environmentId: components["parameters"]["EnvironmentId"];
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Subscription status */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": {
-            subscribed: boolean;
-          };
-        };
-      };
-      401: components["responses"]["Unauthorized"];
-      403: components["responses"]["Forbidden"];
     };
   };
   subscribeToEnvironment: {

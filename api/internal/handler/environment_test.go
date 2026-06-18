@@ -133,19 +133,9 @@ func TestGetEnvironmentSubscription(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	// Initially not subscribed
-	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var result map[string]bool
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	assert.False(t, result["subscribed"])
+	// Subscription status is exposed on the environment detail payload, and a
+	// freshly seeded environment is not subscribed.
+	assert.False(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
 }
 
 func TestUpdateEnvironment(t *testing.T) {
@@ -226,6 +216,10 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.True(t, result["subscribed"])
 
+	// The environment detail payload reflects the subscription too, so the
+	// frontend doesn't need a separate request.
+	assert.True(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
+
 	// Unsubscribe
 	req = testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -246,6 +240,27 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.False(t, result["subscribed"])
+
+	assert.False(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
+}
+
+// getEnvironmentDetail fetches the full environment detail payload for the given
+// environment as the authenticated user.
+func getEnvironmentDetail(t *testing.T, serverURL, token string, environmentID int) api.EnvironmentDetail {
+	t.Helper()
+
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", serverURL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var environment api.EnvironmentDetail
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environment))
+	return environment
 }
 
 func TestUpdateSitespeedSettings(t *testing.T) {
