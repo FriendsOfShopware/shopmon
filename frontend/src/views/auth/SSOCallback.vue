@@ -5,13 +5,17 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+import { useAlert } from "@/composables/useAlert";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
 import { api, setToken } from "@/helpers/api";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const alert = useAlert();
 const { returnUrl, clearReturnUrl } = useReturnUrl();
 
 const params = new URLSearchParams(window.location.search);
@@ -29,29 +33,38 @@ async function handleCallback() {
   }
 
   try {
-    const { data: callbackData } = await api.GET("/auth/sso/callback/{providerId}", {
-      params: { path: { providerId }, query: { code, state } },
-    });
+    const { data: callbackData, error: callbackError } = await api.GET(
+      "/auth/sso/callback/{providerId}",
+      {
+        params: { path: { providerId }, query: { code, state } },
+      },
+    );
 
-    if (!callbackData?.code) {
+    if (callbackError || !callbackData?.code) {
+      alert.error(
+        (callbackError as unknown as { message?: string })?.message ?? t("auth.failedSignIn"),
+      );
       router.replace({ name: "account.login" });
       return;
     }
 
-    const { data } = await api.POST("/auth/exchange-code", {
+    const { data, error } = await api.POST("/auth/exchange-code", {
       body: { code: callbackData.code },
     });
 
-    if (data?.token) {
-      setToken(data.token);
-      await fetchSession();
-      const redirectUrl = returnUrl.value ?? "/app/dashboard";
-      clearReturnUrl();
-      router.replace(redirectUrl);
-    } else {
+    if (error || !data?.token) {
+      alert.error((error as unknown as { message?: string })?.message ?? t("auth.failedSignIn"));
       router.replace({ name: "account.login" });
+      return;
     }
-  } catch {
+
+    setToken(data.token);
+    await fetchSession();
+    const redirectUrl = returnUrl.value ?? "/app/dashboard";
+    clearReturnUrl();
+    router.replace(redirectUrl);
+  } catch (e: unknown) {
+    alert.error(e instanceof Error ? e.message : t("auth.failedSignIn"));
     router.replace({ name: "account.login" });
   }
 }

@@ -292,7 +292,8 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 	// unverified address, regardless of whether it came from the ID token or the
 	// userinfo endpoint.
 	if !emailVerified {
-		slog.Error("SSO provider returned unverified email", "provider", providerId)
+		slog.Error("SSO provider returned unverified email", "provider", providerId,
+			"emailVerifiedClaim", fmt.Sprintf("%#v", claims.EmailVerified))
 		httputil.WriteError(w, http.StatusBadRequest, "SSO provider returned an unverified email")
 		return
 	}
