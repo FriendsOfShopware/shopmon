@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -7,22 +7,31 @@ import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 
+// Shared state across all callers. The composable is used by both the
+// environment detail layout and the route child views; without a single shared
+// instance each caller would fetch the same endpoints independently, firing
+// every request (e.g. /info/shopware-versions) once per consumer.
+const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);
+const isLoading = ref(false);
+const isRefreshing = ref(false);
+const isCacheClearing = ref(false);
+const isSubscribed = ref(false);
+const isSubscribing = ref(false);
+const showEnvironmentRefreshModal = ref(false);
+const shopwareVersions = ref<string[] | null>(null);
+const latestShopwareVersion = ref<string | null>(null);
+
+// shopwareVersions and latestShopwareVersion are still needed for the update wizard in DetailEnvironment.vue
+
+// The environment id the shared state currently reflects, plus an in-flight
+// promise so concurrent callers reuse the same load instead of duplicating it.
+let loadedEnvironmentId: number | null = null;
+let loadPromise: Promise<void> | null = null;
+
 export function useEnvironmentDetail() {
   const route = useRoute();
   const { t } = useI18n();
   const { success, error } = useAlert();
-
-  const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);
-  const isLoading = ref(false);
-  const isRefreshing = ref(false);
-  const isCacheClearing = ref(false);
-  const isSubscribed = ref(false);
-  const isSubscribing = ref(false);
-  const showEnvironmentRefreshModal = ref(false);
-  const shopwareVersions = ref<string[] | null>(null);
-  const latestShopwareVersion = ref<string | null>(null);
-
-  // shopwareVersions and latestShopwareVersion are still needed for the update wizard in DetailEnvironment.vue
 
   const environmentId = computed(() => Number.parseInt(route.params.environmentId as string, 10));
   const pageTitle = computed(() => {
@@ -42,17 +51,17 @@ export function useEnvironmentDetail() {
     }),
   });
 
-  async function loadEnvironment() {
+  async function fetchEnvironment(id: number) {
     isLoading.value = true;
     try {
       const { data } = await api.GET("/environments/{environmentId}", {
-        params: { path: { environmentId: environmentId.value } },
+        params: { path: { environmentId: id } },
       });
       environment.value = data ?? null;
 
       // Check notification subscription status
       const { data: subData } = await api.GET("/environments/{environmentId}/subscribe", {
-        params: { path: { environmentId: environmentId.value } },
+        params: { path: { environmentId: id } },
       });
       isSubscribed.value = subData?.subscribed ?? false;
 
@@ -74,6 +83,23 @@ export function useEnvironmentDetail() {
     }
   }
 
+  // Load the current environment, deduplicating concurrent callers. Passing
+  // force re-fetches the same id (used after refresh/cache-clear actions).
+  function loadEnvironment(force = false) {
+    const id = environmentId.value;
+    if (Number.isNaN(id)) return Promise.resolve();
+
+    if (!force && loadedEnvironmentId === id && loadPromise) {
+      return loadPromise;
+    }
+
+    loadedEnvironmentId = id;
+    loadPromise = fetchEnvironment(id).finally(() => {
+      loadPromise = null;
+    });
+    return loadPromise;
+  }
+
   async function onRefresh(sitespeed: boolean) {
     showEnvironmentRefreshModal.value = false;
     if (environment.value?.organizationId && environment.value?.id) {
@@ -84,7 +110,7 @@ export function useEnvironmentDetail() {
           body: { sitespeed },
         });
         isRefreshing.value = false;
-        await loadEnvironment();
+        await loadEnvironment(true);
         success(t("environment.refreshQueued"));
       } catch (e) {
         isRefreshing.value = false;
@@ -101,7 +127,7 @@ export function useEnvironmentDetail() {
           params: { path: { environmentId: environment.value.id } },
         });
         isCacheClearing.value = false;
-        await loadEnvironment();
+        await loadEnvironment(true);
         success(t("environment.cacheCleared"));
       } catch (e) {
         isCacheClearing.value = false;
@@ -136,16 +162,15 @@ export function useEnvironmentDetail() {
     }
   }
 
-  onMounted(() => {
-    loadEnvironment();
-  });
-
-  // Watch for changes to the environment ID and reload the environment data when it changes
+  // Load on mount and reload whenever the environment ID changes. A single
+  // immediate watch covers both cases; loadEnvironment() dedupes so multiple
+  // consumers mounting together still trigger only one fetch per id.
   watch(
     () => route.params.environmentId,
     () => {
-      loadEnvironment();
+      void loadEnvironment();
     },
+    { immediate: true },
   );
 
   return {
