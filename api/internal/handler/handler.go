@@ -15,6 +15,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/storage"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	goqueue "github.com/shyim/go-queue"
 )
 
@@ -28,9 +29,15 @@ type Handler struct {
 	cfg     *config.Config
 	mail    mail.Sender
 	bus     *goqueue.Bus
+	redis   *redis.Client
 }
 
 func New(pool *pgxpool.Pool, q *queries.Queries, s *storage.S3Storage, cfg *config.Config, mail mail.Sender, bus *goqueue.Bus) *Handler {
+	opts, err := redis.ParseURL(cfg.RedisURL)
+	if err != nil {
+		opts = &redis.Options{Addr: "localhost:6379"}
+	}
+
 	return &Handler{
 		pool:    pool,
 		queries: q,
@@ -38,6 +45,7 @@ func New(pool *pgxpool.Pool, q *queries.Queries, s *storage.S3Storage, cfg *conf
 		cfg:     cfg,
 		mail:    mail,
 		bus:     bus,
+		redis:   redis.NewClient(opts),
 	}
 }
 

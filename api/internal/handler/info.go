@@ -5,11 +5,18 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
+
+// shopwareVersionsCacheKey is the Redis key for the cached versions response.
+const shopwareVersionsCacheKey = "shopmon:shopware-versions"
+
+// shopwareVersionsCacheTTL is how long the versions response is cached.
+const shopwareVersionsCacheTTL = time.Hour
 
 // GetInstanceConfig returns the feature configuration for this instance.
 func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +71,17 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 }
 
 // GetShopwareVersions returns the latest Shopware version information.
+// The upstream response is cached in Redis to avoid hitting it on every request.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
+	if h.redis != nil {
+		if cached, err := h.redis.Get(r.Context(), shopwareVersionsCacheKey).Bytes(); err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(cached)
+			return
+		}
+	}
+
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, h.cfg.ShopwareVersionsURL, nil)
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create versions request")
@@ -83,6 +100,12 @@ func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to read versions response")
 		return
+	}
+
+	if h.redis != nil && resp.StatusCode == http.StatusOK {
+		if err := h.redis.Set(r.Context(), shopwareVersionsCacheKey, body, shopwareVersionsCacheTTL).Err(); err != nil {
+			slog.Warn("failed to cache shopware versions", "error", err)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

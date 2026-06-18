@@ -24,6 +24,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	goredis "github.com/redis/go-redis/v9"
 	goqueue "github.com/shyim/go-queue"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -124,6 +125,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 
 	// Truncate all data for a clean slate
 	truncateAll(t, pool)
+	flushRedis(t, shared.redisURL)
 
 	q := queries.New(pool)
 
@@ -209,6 +211,23 @@ func truncateAll(t *testing.T, pool *pgxpool.Pool) {
 	`)
 	if err != nil {
 		t.Fatalf("failed to truncate tables: %v", err)
+	}
+}
+
+// flushRedis clears the shared Redis instance so each test starts with an empty cache.
+func flushRedis(t *testing.T, redisURL string) {
+	t.Helper()
+
+	opts, err := goredis.ParseURL(redisURL)
+	if err != nil {
+		t.Fatalf("failed to parse redis url: %v", err)
+	}
+
+	client := goredis.NewClient(opts)
+	defer func() { _ = client.Close() }()
+
+	if err := client.FlushAll(context.Background()).Err(); err != nil {
+		t.Fatalf("failed to flush redis: %v", err)
 	}
 }
 

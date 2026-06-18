@@ -152,6 +152,31 @@ func TestGetShopwareVersions(t *testing.T) {
 	assert.Equal(t, []string{"8.2", "8.3"}, versions["6.6.0.0"])
 }
 
+func TestGetShopwareVersions_CachesUpstream(t *testing.T) {
+	var upstreamCalls int
+	mockVersionsAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upstreamCalls++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"6.6.0.0": []string{"8.2", "8.3"},
+		})
+	}))
+	defer mockVersionsAPI.Close()
+
+	env := testutil.Setup(t, func(cfg *config.Config) {
+		cfg.ShopwareVersionsURL = mockVersionsAPI.URL
+	})
+
+	for range 3 {
+		resp, err := testutil.Get(t, env.Server.URL+"/api/info/shopware-versions")
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		_ = resp.Body.Close()
+	}
+
+	assert.Equal(t, 1, upstreamCalls, "upstream should only be hit once; subsequent requests served from cache")
+}
+
 func TestCheckExtensionCompatibility_InvalidBody(t *testing.T) {
 	env := testutil.Setup(t)
 
