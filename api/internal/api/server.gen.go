@@ -312,6 +312,12 @@ type DeploymentDetail struct {
 	StartDate     time.Time `json:"startDate"`
 }
 
+// EcosystemStats defines model for EcosystemStats.
+type EcosystemStats struct {
+	Growth           AdminGrowth            `json:"growth"`
+	ShopwareVersions []ShopwareVersionCount `json:"shopwareVersions"`
+}
+
 // EnvironmentCheck defines model for EnvironmentCheck.
 type EnvironmentCheck struct {
 	Id      string  `json:"id"`
@@ -801,6 +807,9 @@ type ServerInterface interface {
 	// Get instance feature configuration
 	// (GET /info/config)
 	GetInstanceConfig(w http.ResponseWriter, r *http.Request)
+	// Get public ecosystem statistics
+	// (GET /info/ecosystem)
+	GetEcosystemStats(w http.ResponseWriter, r *http.Request)
 	// Check extension compatibility between Shopware versions
 	// (POST /info/extension-compatibility)
 	CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request)
@@ -1053,6 +1062,12 @@ func (_ Unimplemented) GetHealth(w http.ResponseWriter, r *http.Request) {
 // Get instance feature configuration
 // (GET /info/config)
 func (_ Unimplemented) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get public ecosystem statistics
+// (GET /info/ecosystem)
+func (_ Unimplemented) GetEcosystemStats(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2257,6 +2272,26 @@ func (siw *ServerInterfaceWrapper) GetInstanceConfig(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetEcosystemStats operation middleware
+func (siw *ServerInterfaceWrapper) GetEcosystemStats(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEcosystemStats(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CheckExtensionCompatibility operation middleware
 func (siw *ServerInterfaceWrapper) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
 
@@ -3244,6 +3279,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/info/config", wrapper.GetInstanceConfig)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/info/ecosystem", wrapper.GetEcosystemStats)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/info/extension-compatibility", wrapper.CheckExtensionCompatibility)

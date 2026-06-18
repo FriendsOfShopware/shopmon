@@ -17,6 +17,7 @@ import Dashboard from "~icons/ri/dashboard-fill";
 import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
 import FaBook from "~icons/fa6-solid/book";
+import FaChartLine from "~icons/fa6-solid/chart-line";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -266,6 +267,15 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           titleKey: "nav.myExtensions",
           icon: FaPlug,
+        },
+      },
+      {
+        name: "account.ecosystem",
+        path: "ecosystem",
+        component: () => import("@/views/account/Ecosystem.vue"),
+        meta: {
+          titleKey: "nav.ecosystem",
+          icon: FaChartLine,
         },
       },
       {

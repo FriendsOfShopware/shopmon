@@ -1163,6 +1163,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/InstanceConfig"
 
+  /info/ecosystem:
+    get:
+      operationId: getEcosystemStats
+      tags: [Info]
+      summary: Get public ecosystem statistics
+      description: >-
+        Aggregate, non-identifying ecosystem statistics (user growth,
+        environment growth and Shopware version distribution) visible to any
+        authenticated user.
+      responses:
+        "200":
+          description: Ecosystem statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EcosystemStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ──────────────────────────────────────────────
   # Auth – Authentication
   # ──────────────────────────────────────────────
@@ -3602,6 +3621,19 @@ components:
           type: string
         count:
           type: integer
+
+    EcosystemStats:
+      type: object
+      required:
+        - growth
+        - shopwareVersions
+      properties:
+        growth:
+          $ref: "#/components/schemas/AdminGrowth"
+        shopwareVersions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopwareVersionCount"
 
     # ── Info ─────────────────────────────────────
     ExtensionCompatibilityRequest:

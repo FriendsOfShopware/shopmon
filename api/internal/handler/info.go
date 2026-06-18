@@ -28,6 +28,69 @@ func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetEcosystemStats returns aggregate ecosystem statistics (user and environment
+// growth over time plus Shopware version distribution) for any authenticated user.
+// The underlying data is aggregate-only and contains no per-user information.
+func (h *Handler) GetEcosystemStats(w http.ResponseWriter, r *http.Request) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	environmentRows, err := h.queries.AdminGetGrowthEnvironments(r.Context())
+	if err != nil {
+		slog.Error("failed to get environment growth", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
+		return
+	}
+
+	userRows, err := h.queries.AdminGetGrowthUsers(r.Context())
+	if err != nil {
+		slog.Error("failed to get user growth", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
+		return
+	}
+
+	versionRows, err := h.queries.AdminGetShopwareVersions(r.Context())
+	if err != nil {
+		slog.Error("failed to get shopware versions", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
+		return
+	}
+
+	environmentGrowth := make([]api.GrowthDataPoint, 0, len(environmentRows))
+	for _, row := range environmentRows {
+		environmentGrowth = append(environmentGrowth, api.GrowthDataPoint{
+			Month: row.Month,
+			Count: int(row.Count),
+		})
+	}
+
+	userGrowth := make([]api.GrowthDataPoint, 0, len(userRows))
+	for _, row := range userRows {
+		userGrowth = append(userGrowth, api.GrowthDataPoint{
+			Month: row.Month,
+			Count: int(row.Count),
+		})
+	}
+
+	versions := make([]api.ShopwareVersionCount, 0, len(versionRows))
+	for _, row := range versionRows {
+		versions = append(versions, api.ShopwareVersionCount{
+			Version: row.Version,
+			Count:   int(row.Count),
+		})
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, api.EcosystemStats{
+		Growth: api.AdminGrowth{
+			Environments: environmentGrowth,
+			Users:        userGrowth,
+		},
+		ShopwareVersions: versions,
+	})
+}
+
 // CheckExtensionCompatibility checks extension compatibility between Shopware versions.
 func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
 	var req api.ExtensionCompatibilityRequest

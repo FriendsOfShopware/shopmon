@@ -358,6 +358,7 @@ const navigation = computed(() => [
   { route: "account.dashboard" },
   { route: "account.shop.list", active: "shop" },
   { route: "account.extension.list" },
+  { route: "account.ecosystem" },
   ...(activeOrganizationId.value
     ? [
         {

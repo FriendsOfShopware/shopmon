@@ -104,10 +104,17 @@
     "environmentInformation": "Umgebungs-Informationen",
     "editShop": "Shop bearbeiten",
     "documentation": "Dokumentation",
+    "ecosystem": "Ökosystem",
     "navigation": "Navigation",
     "shops": "Shops",
     "onThisPage": "Auf dieser Seite",
     "breadcrumb": "Breadcrumb"
+  },
+  "ecosystem": {
+    "title": "Ökosystem",
+    "description": "Aggregierte Wachstums- und Shopware-Versionsstatistiken über ganz Shopmon hinweg.",
+    "loading": "Ökosystem-Statistiken werden geladen...",
+    "groupByMinor": "Nach Minor-Version gruppieren"
   },
   "home": {
     "title": "Shopmon - Das Open-Source-Dashboard für Shopware-Entwickler",
