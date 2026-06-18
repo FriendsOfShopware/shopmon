@@ -183,41 +183,21 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	// Initially not subscribed
-	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
+	// Subscription status is exposed on the environment detail payload, so the
+	// frontend doesn't need a separate request. Initially not subscribed.
+	assert.False(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
+
+	// Subscribe
+	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
-	var result map[string]bool
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	assert.False(t, result["subscribed"])
-
-	// Subscribe
-	req = testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify subscribed
-	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	assert.True(t, result["subscribed"])
-
-	// The environment detail payload reflects the subscription too, so the
-	// frontend doesn't need a separate request.
 	assert.True(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
 
 	// Unsubscribe
@@ -231,16 +211,6 @@ func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	// Verify unsubscribed
-	req = testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d/subscribe", env.Server.URL, environmentID), nil)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err = http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
-
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	assert.False(t, result["subscribed"])
-
 	assert.False(t, getEnvironmentDetail(t, env.Server.URL, token, environmentID).Subscribed)
 }
 
