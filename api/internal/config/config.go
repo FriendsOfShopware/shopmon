@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"net"
 	"net/url"
 	"os"
 	"runtime/debug"
@@ -17,11 +18,7 @@ type Config struct {
 	RedisURL    string
 	FrontendURL string
 
-	SMTPHost    string
-	SMTPPort    string
-	SMTPSecure  bool
-	SMTPUser    string
-	SMTPPass    string
+	MailDSN     string
 	MailFrom    string
 	SMTPReplyTo string
 
@@ -79,11 +76,7 @@ func Load() *Config {
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 
-		SMTPHost:    getEnv("SMTP_HOST", "localhost"),
-		SMTPPort:    getEnv("SMTP_PORT", "1025"),
-		SMTPSecure:  getEnv("SMTP_SECURE", "false") == "true",
-		SMTPUser:    getEnv("SMTP_USER", ""),
-		SMTPPass:    getEnv("SMTP_PASS", ""),
+		MailDSN:     mailDSN(),
 		MailFrom:    getEnv("MAIL_FROM", "noreply@shopmon.io"),
 		SMTPReplyTo: getEnv("SMTP_REPLY_TO", ""),
 
@@ -179,6 +172,32 @@ func buildVersion() string {
 		revision += "-dirty"
 	}
 	return revision
+}
+
+// mailDSN returns the go-mailer SMTP DSN. It prefers the MAIL_DSN env var; when
+// unset it assembles a DSN from the legacy SMTP_* vars so existing deployments
+// keep working. SMTP_SECURE=true selects the smtps scheme (implicit TLS).
+func mailDSN() string {
+	if dsn := getEnv("MAIL_DSN", ""); dsn != "" {
+		return dsn
+	}
+
+	scheme := "smtp"
+	if getEnv("SMTP_SECURE", "false") == "true" {
+		scheme = "smtps"
+	}
+
+	host := getEnv("SMTP_HOST", "localhost")
+	port := getEnv("SMTP_PORT", "1025")
+
+	u := url.URL{
+		Scheme: scheme,
+		Host:   net.JoinHostPort(host, port),
+	}
+	if user := getEnv("SMTP_USER", ""); user != "" {
+		u.User = url.UserPassword(user, getEnv("SMTP_PASS", ""))
+	}
+	return u.String()
 }
 
 func getEnv(key, fallback string) string {

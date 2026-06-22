@@ -321,10 +321,14 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 // dispatchEnvironmentScrapes enqueues an initial scrape for each environment so
 // the worker populates them immediately.
 func (s *seeder) dispatchEnvironmentScrapes(environmentIDs []int32) error {
-	mailSvc := mail.NewService(mail.SMTPConfig{
-		Host: s.cfg.SMTPHost, Port: s.cfg.SMTPPort, Secure: s.cfg.SMTPSecure,
-		User: s.cfg.SMTPUser, Pass: s.cfg.SMTPPass, From: s.cfg.MailFrom, ReplyTo: s.cfg.SMTPReplyTo,
+	mailSvc, err := mail.NewService(mail.Config{
+		DSN: s.cfg.MailDSN, From: s.cfg.MailFrom, ReplyTo: s.cfg.SMTPReplyTo,
+		FrontendURL: s.cfg.FrontendURL,
 	})
+	if err != nil {
+		return fmt.Errorf("create mail service: %w", err)
+	}
+	defer func() { _ = mailSvc.Close() }()
 	bus, err := jobs.NewBus(s.ctx, s.pool, s.q, s.cfg, mailSvc)
 	if err != nil {
 		return fmt.Errorf("create queue bus: %w", err)

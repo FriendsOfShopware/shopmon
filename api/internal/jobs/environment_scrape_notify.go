@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -91,9 +90,8 @@ func (h *EnvironmentScrapeHandler) handleStatusChange(ctx context.Context, env q
 
 		// Send email alert (only if not deduped)
 		if sendEmails && h.mail != nil {
-			subject := fmt.Sprintf("Environment %s status changed to %s", env.Name, newStatus)
-			body := mail.BuildShopAlertEmail(user.Name, env.Name, alertMessage)
-			if err := h.mail.Send(ctx, user.Email, subject, body); err != nil {
+			body := h.mail.BuildStatusChangeEmail(user.Name, env.Name, newStatus, alertMessage)
+			if err := h.mail.Send(ctx, user.Email, body); err != nil {
 				slog.Warn("failed to send status change email", "userId", user.ID, "email", user.Email, "error", err)
 			}
 		}
@@ -145,9 +143,8 @@ func (h *EnvironmentScrapeHandler) notifyAuthError(ctx context.Context, env quer
 
 		// Send email alert (only if not deduped)
 		if sendEmails && h.mail != nil {
-			subject := fmt.Sprintf("Environment %s connection failed", env.Name)
-			body := mail.BuildShopAlertEmail(user.Name, env.Name, alertMessage)
-			if err := h.mail.Send(ctx, user.Email, subject, body); err != nil {
+			body := h.mail.BuildConnectionFailedEmail(user.Name, env.Name, alertMessage)
+			if err := h.mail.Send(ctx, user.Email, body); err != nil {
 				slog.Warn("failed to send auth error email", "userId", user.ID, "error", err)
 			}
 		}

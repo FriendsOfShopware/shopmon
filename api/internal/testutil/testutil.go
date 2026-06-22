@@ -24,6 +24,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
+	"github.com/shyim/go-mailer/mailertest"
 	goqueue "github.com/shyim/go-queue"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -38,6 +39,9 @@ type TestEnv struct {
 	Handler *handler.Handler
 	Server  *httptest.Server
 	Cfg     *config.Config
+	// Mail captures every email sent during the test, in place of real
+	// delivery. Use the mailertest assertion helpers against it.
+	Mail *mailertest.RecordingTransport
 }
 
 // shared holds the singleton containers shared across tests.
@@ -142,7 +146,11 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		fn(cfg)
 	}
 
-	mailSender := mail.NoopSender{}
+	mailRecorder := mailertest.NewRecordingTransport("")
+	mailSender, err := mail.NewServiceWithTransport(mailRecorder, "noreply@shopmon.test", "", cfg.FrontendURL)
+	if err != nil {
+		t.Fatalf("create mail service: %v", err)
+	}
 
 	bus := goqueue.NewBus()
 	// Register an in-memory transport and route the dispatchable job types to it
@@ -179,6 +187,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Handler: h,
 		Server:  srv,
 		Cfg:     cfg,
+		Mail:    mailRecorder,
 	}
 }
 

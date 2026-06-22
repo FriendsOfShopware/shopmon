@@ -1,343 +1,124 @@
 package mail
 
 import (
-	"bufio"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"fmt"
-	"math/big"
-	"net"
-	"strings"
-	"sync"
+	"errors"
 	"testing"
-	"time"
 
+	"github.com/shyim/go-mailer/mailertest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type smtpServer struct {
-	ln     net.Listener
-	wg     sync.WaitGroup
-	msgs   []string
-	closed chan struct{}
-}
-
-func newSMTPServer(t *testing.T) *smtpServer {
-	t.Helper()
-	var lc net.ListenConfig
-	ln, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	s := &smtpServer{
-		ln:     ln,
-		closed: make(chan struct{}),
-	}
-
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
-		defer close(s.closed)
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				return
-			}
-			s.handleConn(conn)
-		}
-	}()
-
-	return s
-}
-
-func (s *smtpServer) handleConn(conn net.Conn) {
-	defer func() { _ = conn.Close() }()
-	scanner := bufio.NewScanner(conn)
-
-	write := func(msg string) {
-		_, _ = fmt.Fprint(conn, msg+"\r\n")
-	}
-
-	write("220 localhost ESMTP Test")
-
-	var dataMode bool
-	var data strings.Builder
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if dataMode {
-			if line == "." {
-				dataMode = false
-				s.msgs = append(s.msgs, data.String())
-				data.Reset()
-				write("250 OK")
-			} else {
-				data.WriteString(line + "\r\n")
-			}
-			continue
-		}
-
-		cmd := strings.ToUpper(line)
-
-		switch {
-		case strings.HasPrefix(cmd, "EHLO") || strings.HasPrefix(cmd, "HELO"):
-			write("250-localhost")
-			write("250 AUTH LOGIN PLAIN")
-		case strings.HasPrefix(cmd, "AUTH"):
-			write("235 Authentication successful")
-		case strings.HasPrefix(cmd, "MAIL FROM"):
-			write("250 OK")
-		case strings.HasPrefix(cmd, "RCPT TO"):
-			write("250 OK")
-		case strings.HasPrefix(cmd, "DATA"):
-			write("354 Start mail input")
-			dataMode = true
-		case cmd == "QUIT":
-			write("221 Bye")
-			return
-		default:
-			write("500 Unknown command")
-		}
-	}
-}
-
-func (s *smtpServer) close() {
-	_ = s.ln.Close()
-	<-s.closed
-	s.wg.Wait()
-}
-
-func (s *smtpServer) addr() string {
-	return s.ln.Addr().String()
-}
-
-// generateTLSCert creates a CA and a server certificate signed by it for the given host.
-// Returns the server certificate and the CA cert pool (for client-side verification).
-func generateTLSCert(t *testing.T, host string) (tls.Certificate, *x509.CertPool) {
-	t.Helper()
-
-	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
-
-	caTemplate := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{Organization: []string{"Test CA"}},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().Add(time.Hour),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-	}
-
-	caCertDER, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, &caKey.PublicKey, caKey)
-	require.NoError(t, err)
-
-	caCert, err := x509.ParseCertificate(caCertDER)
-	require.NoError(t, err)
-
-	serverKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
-
-	serverTemplate := &x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject:      pkix.Name{Organization: []string{"Test"}},
-		NotBefore:    time.Now().Add(-time.Hour),
-		NotAfter:     time.Now().Add(time.Hour),
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		IPAddresses:  []net.IP{net.ParseIP(host)},
-	}
-
-	serverCertDER, err := x509.CreateCertificate(rand.Reader, serverTemplate, caCert, &serverKey.PublicKey, caKey)
-	require.NoError(t, err)
-
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCertDER})
-	keyDER, err := x509.MarshalECPrivateKey(serverKey)
-	require.NoError(t, err)
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
-
-	cert, err := tls.X509KeyPair(certPEM, keyPEM)
-	require.NoError(t, err)
-
-	pool := x509.NewCertPool()
-	pool.AddCert(caCert)
-
-	return cert, pool
-}
-
 func TestNewService(t *testing.T) {
-	cfg := SMTPConfig{
-		Host: "smtp.example.com",
-		Port: "587",
+	svc, err := NewService(Config{
+		DSN:  "smtp://localhost:587",
 		From: "noreply@example.com",
-	}
-	svc := NewService(cfg)
+	})
+	require.NoError(t, err)
 	assert.NotNil(t, svc)
-	assert.Equal(t, cfg, svc.cfg)
+	assert.Equal(t, "noreply@example.com", svc.from.Email())
 }
 
-func TestSendNonSecure(t *testing.T) {
-	srv := newSMTPServer(t)
-	defer srv.close()
+func TestNewServiceInvalidDSN(t *testing.T) {
+	_, err := NewService(Config{DSN: "://nope", From: "noreply@example.com"})
+	assert.Error(t, err)
+}
 
-	host, port, _ := net.SplitHostPort(srv.addr())
+func TestNewServiceInvalidFrom(t *testing.T) {
+	_, err := NewService(Config{DSN: "smtp://localhost:587", From: "not an address"})
+	assert.Error(t, err)
+}
 
-	svc := NewService(SMTPConfig{
-		Host:    host,
-		Port:    port,
-		From:    "sender@example.com",
-		ReplyTo: "reply@example.com",
-	})
-
-	err := svc.Send(t.Context(), "recipient@example.com", "Test Subject", "<p>Hello</p>")
+func TestSend(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "reply@example.com", "")
 	require.NoError(t, err)
 
-	require.Len(t, srv.msgs, 1)
-	msg := srv.msgs[0]
+	err = svc.Send(t.Context(), "recipient@example.com",
+		Email{Subject: "Test Subject", HTML: "<p>Hello</p>"})
+	require.NoError(t, err)
+
+	mailertest.AssertEmailCount(t, rec, 1)
+	sent, ok := rec.Last()
+	require.True(t, ok)
+	msg := string(sent.Bytes())
 	assert.Contains(t, msg, "From: sender@example.com")
 	assert.Contains(t, msg, "To: recipient@example.com")
 	assert.Contains(t, msg, "Subject: Test Subject")
 	assert.Contains(t, msg, "Reply-To: reply@example.com")
 	assert.Contains(t, msg, "MIME-Version: 1.0")
-	assert.Contains(t, msg, "Content-Type: text/html; charset=UTF-8")
+	assert.Contains(t, msg, "text/html")
 	assert.Contains(t, msg, "<p>Hello</p>")
 }
 
-func TestSendNonSecureNoReplyTo(t *testing.T) {
-	srv := newSMTPServer(t)
-	defer srv.close()
-
-	host, port, _ := net.SplitHostPort(srv.addr())
-
-	svc := NewService(SMTPConfig{
-		Host: host,
-		Port: port,
-		From: "sender@example.com",
-	})
-
-	err := svc.Send(t.Context(), "recipient@example.com", "Test Subject", "<p>Hello</p>")
+func TestSendNoReplyTo(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
 	require.NoError(t, err)
 
-	require.Len(t, srv.msgs, 1)
-	assert.NotContains(t, srv.msgs[0], "Reply-To:")
+	err = svc.Send(t.Context(), "recipient@example.com",
+		Email{Subject: "Test Subject", HTML: "<p>Hello</p>"})
+	require.NoError(t, err)
+
+	sent, ok := rec.Last()
+	require.True(t, ok)
+	assert.NotContains(t, string(sent.Bytes()), "Reply-To:")
 }
 
-func TestSendWithAuth(t *testing.T) {
-	srv := newSMTPServer(t)
-	defer srv.close()
-
-	host, port, _ := net.SplitHostPort(srv.addr())
-
-	svc := NewService(SMTPConfig{
-		Host: host,
-		Port: port,
-		User: "user",
-		Pass: "pass",
-		From: "sender@example.com",
-	})
-
-	err := svc.Send(t.Context(), "recipient@example.com", "Subject", "body")
+func TestSendTextAndHTML(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
 	require.NoError(t, err)
-	require.Len(t, srv.msgs, 1)
+
+	err = svc.Send(t.Context(), "recipient@example.com",
+		Email{Subject: "Subject", Text: "plain body", HTML: "<p>rich body</p>"})
+	require.NoError(t, err)
+
+	sent, ok := rec.Last()
+	require.True(t, ok)
+	msg := string(sent.Bytes())
+	assert.Contains(t, msg, "text/plain")
+	assert.Contains(t, msg, "plain body")
+	assert.Contains(t, msg, "text/html")
+	assert.Contains(t, msg, "<p>rich body</p>")
 }
 
-func TestSendSecure(t *testing.T) {
-	host := "127.0.0.1"
-	serverCert, caPool := generateTLSCert(t, host)
-
-	ln, err := tls.Listen("tcp", host+":0", &tls.Config{
-		Certificates: []tls.Certificate{serverCert},
-	})
-	require.NoError(t, err)
-	defer func() { _ = ln.Close() }()
-
-	var msgs []string
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		conn, err := ln.Accept()
-		if err != nil {
-			return
-		}
-		defer func() { _ = conn.Close() }()
-
-		scanner := bufio.NewScanner(conn)
-		write := func(msg string) { _, _ = fmt.Fprint(conn, msg+"\r\n") }
-
-		write("220 localhost ESMTP Test")
-
-		var dataMode bool
-		var data strings.Builder
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			if dataMode {
-				if line == "." {
-					dataMode = false
-					msgs = append(msgs, data.String())
-					data.Reset()
-					write("250 OK")
-				} else {
-					data.WriteString(line + "\r\n")
-				}
-				continue
-			}
-
-			cmd := strings.ToUpper(line)
-			switch {
-			case strings.HasPrefix(cmd, "EHLO") || strings.HasPrefix(cmd, "HELO"):
-				write("250 OK")
-			case strings.HasPrefix(cmd, "MAIL FROM"), strings.HasPrefix(cmd, "RCPT TO"):
-				write("250 OK")
-			case strings.HasPrefix(cmd, "DATA"):
-				write("354 Start mail input")
-				dataMode = true
-			case cmd == "QUIT":
-				write("221 Bye")
-				return
-			default:
-				write("500 Unknown command")
-			}
-		}
-	}()
-
-	_, port, _ := net.SplitHostPort(ln.Addr().String())
-
-	svc := NewService(SMTPConfig{
-		Host:   host,
-		Port:   port,
-		Secure: true,
-		From:   "sender@example.com",
-		TLSConfig: &tls.Config{
-			RootCAs: caPool,
-		},
-	})
-
-	err = svc.Send(t.Context(), "recipient@example.com", "Secure Subject", "<p>Secure body</p>")
+func TestSendInvalidRecipient(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
 	require.NoError(t, err)
 
-	<-done
-
-	require.Len(t, msgs, 1)
-	assert.Contains(t, msgs[0], "Subject: Secure Subject")
-	assert.Contains(t, msgs[0], "<p>Secure body</p>")
-}
-
-func TestSendConnectionError(t *testing.T) {
-	svc := NewService(SMTPConfig{
-		Host:   "127.0.0.1",
-		Port:   "1",
-		Secure: false,
-		From:   "sender@example.com",
-	})
-
-	err := svc.Send(t.Context(), "recipient@example.com", "Subject", "body")
+	err = svc.Send(t.Context(), "not an address", Email{Subject: "Subject", Text: "body"})
 	assert.Error(t, err)
+	mailertest.AssertNotSent(t, rec)
+}
+
+func TestSendTransportError(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
+	require.NoError(t, err)
+
+	rec.FailNext(errors.New("relay unavailable"))
+	err = svc.Send(t.Context(), "recipient@example.com", Email{Subject: "Subject", Text: "body"})
+	assert.Error(t, err)
+	mailertest.AssertNotSent(t, rec)
+}
+
+func TestBuildEmailUsesFrontendURL(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "https://app.example.test")
+	require.NoError(t, err)
+
+	email := svc.BuildConfirmationEmail("Alice", "https://app.example.test/account/confirm/tok")
+	assert.Equal(t, "Confirm your email address", email.Subject)
+	assert.Contains(t, email.HTML, "https://app.example.test")
+}
+
+func TestBuildEmailDefaultProductLink(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
+	require.NoError(t, err)
+
+	email := svc.BuildPasswordResetEmail("Bob", "https://app.example.test/reset/tok")
+	assert.Contains(t, email.HTML, defaultProductLink)
 }

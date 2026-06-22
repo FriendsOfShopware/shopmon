@@ -12,7 +12,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
@@ -196,8 +195,8 @@ func (h *AuthHandler) SignUpEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verifyURL := h.cfg.FrontendURL + "/account/confirm/" + verificationToken
-	if err := h.mail.Send(r.Context(), req.Email, "Confirm your email address",
-		mail.BuildConfirmationEmail(req.Name, verifyURL)); err != nil {
+	if err := h.mail.Send(r.Context(), req.Email,
+		h.mail.BuildConfirmationEmail(req.Name, verifyURL)); err != nil {
 		slog.Error("failed to send confirmation email", "error", err, "email", req.Email)
 	}
 
@@ -393,8 +392,8 @@ func (h *AuthHandler) ForgetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL := h.cfg.FrontendURL + "/account/forgot-password/" + resetToken
-	if err := h.mail.Send(r.Context(), req.Email, "Reset your password",
-		mail.BuildPasswordResetEmail(user.Name, resetURL)); err != nil {
+	if err := h.mail.Send(r.Context(), req.Email,
+		h.mail.BuildPasswordResetEmail(user.Name, resetURL)); err != nil {
 		slog.Error("failed to send password reset email", "error", err, "email", req.Email)
 	}
 

@@ -6,19 +6,28 @@ import (
 	"github.com/matcornic/hermes"
 )
 
-func newHermes() hermes.Hermes {
+// defaultProductLink is used as the email product link when the service has no
+// configured frontend URL (e.g. zero-value services in tests). It mirrors the
+// FRONTEND_URL config default.
+const defaultProductLink = "http://localhost:3000"
+
+func (s *Service) newHermes() hermes.Hermes {
+	link := s.frontendURL
+	if link == "" {
+		link = defaultProductLink
+	}
 	return hermes.Hermes{
 		Product: hermes.Product{
 			Name:      "Shopmon",
-			Link:      "https://shopmon.shop",
+			Link:      link,
 			Copyright: "Best Regards, FriendsOfShopware",
 		},
 	}
 }
 
-// BuildConfirmationEmail returns HTML for the email verification email.
-func BuildConfirmationEmail(name, verifyURL string) string {
-	return generate(hermes.Email{
+// BuildConfirmationEmail returns the email verification email.
+func (s *Service) BuildConfirmationEmail(name, verifyURL string) Email {
+	return s.generate("Confirm your email address", hermes.Email{
 		Body: hermes.Body{
 			Name: name,
 			Intros: []string{
@@ -40,9 +49,9 @@ func BuildConfirmationEmail(name, verifyURL string) string {
 	})
 }
 
-// BuildPasswordResetEmail returns HTML for the password reset email.
-func BuildPasswordResetEmail(name, resetURL string) string {
-	return generate(hermes.Email{
+// BuildPasswordResetEmail returns the password reset email.
+func (s *Service) BuildPasswordResetEmail(name, resetURL string) Email {
+	return s.generate("Reset your password", hermes.Email{
 		Body: hermes.Body{
 			Name: name,
 			Intros: []string{
@@ -64,9 +73,9 @@ func BuildPasswordResetEmail(name, resetURL string) string {
 	})
 }
 
-// BuildOrgInviteEmail returns HTML for the organization invitation email.
-func BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) string {
-	return generate(hermes.Email{
+// BuildOrgInviteEmail returns the organization invitation email.
+func (s *Service) BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) Email {
+	return s.generate("You have been invited to join "+orgName+" at Shopmon", hermes.Email{
 		Body: hermes.Body{
 			Intros: []string{inviterName + " has invited you to join **" + orgName + "** on Shopmon."},
 			Actions: []hermes.Action{
@@ -89,9 +98,27 @@ func BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) stri
 	})
 }
 
-// BuildShopAlertEmail returns HTML for the shop alert email.
-func BuildShopAlertEmail(userName, shopName, alertMessage string) string {
-	return generate(hermes.Email{
+// BuildStatusChangeEmail returns the alert email sent when an environment's
+// status changes.
+func (s *Service) BuildStatusChangeEmail(userName, envName, newStatus, alertMessage string) Email {
+	return s.generate(
+		"Environment "+envName+" status changed to "+newStatus,
+		shopAlertBody(userName, envName, alertMessage),
+	)
+}
+
+// BuildConnectionFailedEmail returns the alert email sent when an environment
+// cannot be reached.
+func (s *Service) BuildConnectionFailedEmail(userName, envName, alertMessage string) Email {
+	return s.generate(
+		"Environment "+envName+" connection failed",
+		shopAlertBody(userName, envName, alertMessage),
+	)
+}
+
+// shopAlertBody builds the shared body for environment alert emails.
+func shopAlertBody(userName, shopName, alertMessage string) hermes.Email {
+	return hermes.Email{
 		Body: hermes.Body{
 			Name: userName,
 			Intros: []string{
@@ -99,16 +126,14 @@ func BuildShopAlertEmail(userName, shopName, alertMessage string) string {
 				alertMessage,
 			},
 		},
-	})
+	}
 }
 
-// generate renders an email into a body that carries both the plain-text and
-// HTML representations. The two parts are packed around bodyPartSeparator so the
-// body can flow through the single-string Sender.Send signature; Send splits
-// them back apart to build a multipart/alternative message. On render errors it
-// logs and falls back to whatever was produced.
-func generate(email hermes.Email) string {
-	h := newHermes()
+// generate renders an email with the given subject into its plain-text and HTML
+// representations. On render errors it logs and falls back to whatever was
+// produced.
+func (s *Service) generate(subject string, email hermes.Email) Email {
+	h := s.newHermes()
 
 	html, err := h.GenerateHTML(email)
 	if err != nil {
@@ -120,5 +145,5 @@ func generate(email hermes.Email) string {
 		slog.Error("generate plain text email", "error", err)
 	}
 
-	return text + bodyPartSeparator + html
+	return Email{Subject: subject, Text: text, HTML: html}
 }

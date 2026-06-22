@@ -50,15 +50,16 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	q := queries.New(pool)
 
 	// Mail
-	mailSvc := mail.NewService(mail.SMTPConfig{
-		Host:    cfg.SMTPHost,
-		Port:    cfg.SMTPPort,
-		Secure:  cfg.SMTPSecure,
-		User:    cfg.SMTPUser,
-		Pass:    cfg.SMTPPass,
-		From:    cfg.MailFrom,
-		ReplyTo: cfg.SMTPReplyTo,
+	mailSvc, err := mail.NewService(mail.Config{
+		DSN:         cfg.MailDSN,
+		From:        cfg.MailFrom,
+		ReplyTo:     cfg.SMTPReplyTo,
+		FrontendURL: cfg.FrontendURL,
 	})
+	if err != nil {
+		return err
+	}
+	defer func() { _ = mailSvc.Close() }()
 
 	// Queue bus with all handlers registered
 	bus, err := jobs.NewBus(ctx, pool, q, cfg, mailSvc)

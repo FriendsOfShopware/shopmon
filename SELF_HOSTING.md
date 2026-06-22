@@ -105,9 +105,10 @@ The Docker image runs three different commands:
 
 | Variable | Default | Description |
 |---|---|---|
-| `SMTP_HOST` | `localhost` | SMTP server hostname |
+| `MAIL_DSN` | | Full SMTP connection string, e.g. `smtp://user:pass@host:587` or `smtps://user:pass@host:465` (implicit TLS). Supported query options: `verify_peer`, `require_tls`, `auto_tls`. When set, it takes precedence over the `SMTP_*` variables below. |
+| `SMTP_HOST` | `localhost` | SMTP server hostname (used to build the DSN when `MAIL_DSN` is unset) |
 | `SMTP_PORT` | `1025` | SMTP server port |
-| `SMTP_SECURE` | `false` | Use TLS (`true`/`false`) |
+| `SMTP_SECURE` | `false` | Use implicit TLS (`true`/`false`); selects the `smtps` scheme |
 | `SMTP_USER` | | SMTP username |
 | `SMTP_PASS` | | SMTP password |
 | `MAIL_FROM` | `noreply@shopmon.io` | Sender address |

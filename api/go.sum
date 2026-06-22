@@ -252,6 +252,14 @@ github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/shirou/gopsutil/v4 v4.26.5 h1:RPcBXkpz7kOj9PqGFQOlBPZHsyaPvPVQc098y9RmCNM=
 github.com/shirou/gopsutil/v4 v4.26.5/go.mod h1:LZ6ewCSkBqUpvSOf+LsTGnRinC6iaNUNMGBtDkJBaLQ=
+github.com/shyim/go-mailer v0.1.0 h1:je50kIrHk2IAvVrz99pwZSNMIW+l9ZNGPwVPrSBt2s4=
+github.com/shyim/go-mailer v0.1.0/go.mod h1:XdMOEImXpUjCIGO+TPH3jELmIHAYLeprkkVaM1PjCXA=
+github.com/shyim/go-mailer/middleware/otelmw v0.1.0 h1:4/YegdksPWXOA6ipSb8Ay3FyBVbE8fHHxIuxHjH9EO8=
+github.com/shyim/go-mailer/middleware/otelmw v0.1.0/go.mod h1:eb0JR9ZEhOu2Kfopu0I4dtIzn0Pif5a9P8EXIC4hLLU=
+github.com/shyim/go-mailer/transport/sendmail v0.1.0 h1:OeV5Yq63ibUqByR9MXgqSoWWUbenf2fNJro+lon8QrA=
+github.com/shyim/go-mailer/transport/sendmail v0.1.0/go.mod h1:sajMdVzJifN0rejTZeCFaEOSsQQUyIygNTiWCmm0kJI=
+github.com/shyim/go-mailer/transport/smtp v0.1.0 h1:WIVDl2TZ+yGPT63kF+CgtP9R5RS0TY2yP+18XyW2Krs=
+github.com/shyim/go-mailer/transport/smtp v0.1.0/go.mod h1:0zhAZAudCho2eNmqCd3JXXu7oQ+MVLuwvMMHlpiAvAo=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9 h1:8ypmSyLMJUO53fqLAmNKwO8lhyJnMCqTsj6GHLLUI0E=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9/go.mod h1:fzclyVXELfyyBh6oX+apcYdduL/nHbzeBcMkAJbo0UA=
 github.com/sirupsen/logrus v1.9.4 h1:TsZE7l11zFCLZnZ+teH4Umoq5BhEIfIzfRDZ1Uzql2w=

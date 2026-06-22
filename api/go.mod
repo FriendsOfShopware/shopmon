@@ -23,6 +23,9 @@ require (
 	github.com/oapi-codegen/runtime v1.4.2
 	github.com/redis/go-redis/v9 v9.20.1
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/shyim/go-mailer v0.1.0
+	github.com/shyim/go-mailer/middleware/otelmw v0.1.0
+	github.com/shyim/go-mailer/transport/smtp v0.1.0
 	github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
