@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/config"
-	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
-	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goqueue "github.com/shyim/go-queue"
@@ -86,14 +85,12 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	log := slog.With("environmentId", env.ID, "name", env.Name)
 
 	log.Info("decrypting client secret")
-	clientSecret, err := crypto.Decrypt(env.ClientSecret, h.cfg.AppSecret)
+	client, err := environment.NewClientFromEncrypted(env.Url, env.ClientID, env.ClientSecret, env.EnvironmentToken, h.cfg.AppSecret)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("decrypt client secret: %w", err)
+		return err
 	}
-
-	client := shopware.NewClient(env.Url, env.ClientID, clientSecret, env.EnvironmentToken)
 	{
 		authCtx, authSpan := tracer.Start(ctx, "environment.scrape.authenticate")
 		err := client.Authenticate(authCtx)

@@ -3,15 +3,32 @@ package httputil
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ErrorResponse is the standard error response shape for all endpoints.
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
+
+// Sentinel errors that handlers can return (optionally wrapped via fmt.Errorf
+// with %w) so that WriteErrorAuto can map them to the appropriate HTTP status
+// code centrally.
+var (
+	// ErrNotFound maps to 404 Not Found.
+	ErrNotFound = errors.New("not found")
+	// ErrForbidden maps to 403 Forbidden.
+	ErrForbidden = errors.New("forbidden")
+	// ErrBadRequest maps to 400 Bad Request.
+	ErrBadRequest = errors.New("bad request")
+	// ErrConflict maps to 409 Conflict.
+	ErrConflict = errors.New("conflict")
+)
 
 // Standard 403 messages. Use these for generic authorization failures so the
 // API returns consistent wording; reserve bespoke messages for cases that
@@ -40,6 +57,28 @@ func WriteJSON(w http.ResponseWriter, status int, v interface{}) {
 // WriteError writes a standardized JSON error response.
 func WriteError(w http.ResponseWriter, status int, message string) {
 	WriteJSON(w, status, ErrorResponse{Message: message})
+}
+
+// WriteErrorAuto inspects err and writes an appropriate HTTP error response.
+//
+// It maps well-known sentinel errors (and pgx.ErrNoRows) to specific status
+// codes. For any unrecognized error it logs the real error via slog and returns
+// a generic 500 response so that internal details are never leaked to the
+// client.
+func WriteErrorAuto(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, pgx.ErrNoRows), errors.Is(err, ErrNotFound):
+		WriteError(w, http.StatusNotFound, "not found")
+	case errors.Is(err, ErrForbidden):
+		WriteError(w, http.StatusForbidden, MsgForbidden)
+	case errors.Is(err, ErrBadRequest):
+		WriteError(w, http.StatusBadRequest, "bad request")
+	case errors.Is(err, ErrConflict):
+		WriteError(w, http.StatusConflict, "conflict")
+	default:
+		slog.Error("unhandled error", "error", err)
+		WriteError(w, http.StatusInternalServerError, "internal server error")
+	}
 }
 
 // DecodeBody decodes a JSON request body into the given value.

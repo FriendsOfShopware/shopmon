@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	apiserver "github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/apirouter"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
@@ -110,7 +110,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 		r.Use(middleware.RouteTag)
 	}
 	r.Use(chimiddleware.Logger)
-	r.Use(chimiddleware.Recoverer)
+	// Use our own recoverer so panics on API routes return the standard JSON
+	// error shape instead of chi's plain-text 500.
+	r.Use(middleware.Recoverer)
 	if len(cfg.TrustedProxies) > 0 {
 		r.Use(chimiddleware.ClientIPFromXFF(cfg.TrustedProxies...))
 	} else {
@@ -152,16 +154,29 @@ func runServer(cmd *cobra.Command, args []string) error {
 </html>`))
 		})
 
-		// Auth routes (generated from OpenAPI spec)
-		authapi.HandlerWithOptions(authHandler, authapi.ChiServerOptions{
-			BaseRouter: apiRouter,
-			Middlewares: []authapi.MiddlewareFunc{
+		// Register the generated auth + API handlers with consistent JSON error
+		// handling (param-binding 400s, 404/405 for unmatched routes). The wiring
+		// lives in internal/apirouter so the production server and the test
+		// harness share one source of truth.
+		//
+		// RequireAuth is intentionally NOT applied to the API routes: this
+		// sub-router also serves intentionally public endpoints
+		// (/api/openapi.yaml, /api/docs, the auth routes and health), so a
+		// blanket guard would break them. OptionalAuthMiddleware above populates
+		// the user context, and each handler enforces auth via h.requireUser
+		// (see internal/handler).
+		//
+		// To enforce authentication declaratively for an authenticated-only set
+		// of endpoints, register them on a dedicated sub-router and pass
+		// middleware.RequireAuth through the generated Middlewares option. Note:
+		// oapi-codegen's ChiServerOptions.Middlewares applies the same chain to
+		// *every* route in that generated handler set (no per-route support), so
+		// mixing public and protected endpoints requires splitting into separate
+		// generated handlers / sub-routers rather than guarding individual ops.
+		apirouter.Mount(apiRouter, h, authHandler, apirouter.Options{
+			AuthMiddlewares: []authapi.MiddlewareFunc{
 				auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, 20)),
 			},
-		})
-		// Generated API routes
-		apiserver.HandlerWithOptions(h, apiserver.ChiServerOptions{
-			BaseRouter: apiRouter,
 		})
 	})
 

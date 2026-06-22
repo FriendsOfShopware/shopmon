@@ -68,6 +68,13 @@ func sitespeedDetailUrl(cfg *config.Config, environmentID int32, enabled bool) *
 	return &url
 }
 
+// requireUser, requireOrgMembership and the related require* helpers below are
+// the per-handler authorization guards: each handler calls them at the top to
+// enforce authentication/authorization imperatively. For route-group-level
+// enforcement of "must be authenticated", middleware.RequireAuth can be
+// attached to a sub-router instead. requireUser is still needed even with that
+// middleware because it also returns the *auth.User the handler operates on.
+//
 // requireUser extracts the authenticated user from context.
 // Returns nil and writes a 401 response if not authenticated.
 func (h *Handler) requireUser(w http.ResponseWriter, r *http.Request) *auth.User {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 )
 
@@ -39,10 +40,5 @@ func (h *Handler) validateShopConnection(ctx context.Context, shopURL, clientID,
 }
 
 func (h *Handler) newShopwareClientFromCredentials(creds *queries.GetEnvironmentCredentialsRow) (*shopware.Client, error) {
-	decryptedSecret, err := crypto.Decrypt(creds.ClientSecret, h.cfg.AppSecret)
-	if err != nil {
-		return nil, fmt.Errorf("decrypt client secret: %w", err)
-	}
-
-	return shopware.NewClient(creds.Url, creds.ClientID, decryptedSecret, creds.EnvironmentToken), nil
+	return environment.NewClientFromEncrypted(creds.Url, creds.ClientID, creds.ClientSecret, creds.EnvironmentToken, h.cfg.AppSecret)
 }

@@ -60,3 +60,19 @@ func OptionalAuthMiddleware(q *queries.Queries) func(http.Handler) http.Handler 
 		})
 	}
 }
+
+// RequireAuth rejects requests with 401 when no authenticated user is present
+// in the request context. It complements OptionalAuthMiddleware: place
+// OptionalAuthMiddleware first to populate the user (and session) context, then
+// RequireAuth on a route group to declaratively enforce that authentication is
+// mandatory for those routes, removing the need for per-handler requireUser
+// checks.
+func RequireAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if GetUser(r.Context()) == nil {
+			httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

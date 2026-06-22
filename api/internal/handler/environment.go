@@ -27,35 +27,11 @@ func (h *Handler) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Req
 
 	rows, err := h.queries.ListEnvironmentsByOrganization(r.Context(), orgId)
 	if err != nil {
-		slog.Error("failed to list environments by organization", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get environments")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
-	result := make([]api.AccountEnvironment, 0, len(rows))
-	for _, row := range rows {
-		var shopID *int
-		if row.ShopID > 0 {
-			v := int(row.ShopID)
-			shopID = &v
-		}
-		result = append(result, api.AccountEnvironment{
-			Id:               int(row.ID),
-			Name:             row.Name,
-			Url:              row.Url,
-			Favicon:          row.Favicon,
-			Status:           row.Status,
-			ShopwareVersion:  row.ShopwareVersion,
-			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
-			LastScrapedError: row.LastScrapedError,
-			OrganizationId:   row.OrganizationID,
-			OrganizationName: row.OrganizationName,
-			ShopId:           shopID,
-			ShopName:         row.ShopName,
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, result)
+	httputil.WriteJSON(w, http.StatusOK, toAccountEnvironments(rows))
 }
 
 // GetEnvironment returns full environment details.
@@ -151,8 +127,7 @@ func (h *Handler) UpdateEnvironment(w http.ResponseWriter, r *http.Request, envi
 	}
 
 	if err := h.runUpdateEnvironment(r.Context(), int32(environmentId), cmd); err != nil {
-		slog.Error("failed to update environment", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update environment")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
@@ -194,8 +169,7 @@ func (h *Handler) DeleteEnvironment(w http.ResponseWriter, r *http.Request, envi
 	}
 
 	if err := h.queries.DeleteEnvironment(r.Context(), int32(environmentId)); err != nil {
-		slog.Error("failed to delete environment", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete environment")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
@@ -343,8 +317,7 @@ func (h *Handler) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request,
 		Notifications: notificationsJSON,
 		ID:            user.ID,
 	}); err != nil {
-		slog.Error("failed to update user notifications", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to subscribe")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
@@ -380,8 +353,7 @@ func (h *Handler) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Requ
 		Notifications: notificationsJSON,
 		ID:            user.ID,
 	}); err != nil {
-		slog.Error("failed to update user notifications", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to unsubscribe")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
@@ -417,8 +389,7 @@ func (h *Handler) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request
 		SitespeedUrls:    urlsJSON,
 		ID:               int32(environmentId),
 	}); err != nil {
-		slog.Error("failed to update sitespeed settings", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update sitespeed settings")
+		httputil.WriteErrorAuto(w, err)
 		return
 	}
 

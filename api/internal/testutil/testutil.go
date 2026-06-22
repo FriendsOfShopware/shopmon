@@ -13,9 +13,8 @@ import (
 	"testing"
 	"time"
 
-	apiserver "github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/apirouter"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/handler"
@@ -164,14 +163,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	r.Route("/api", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.OptionalAuthMiddleware(q))
 
-		// Auth routes (generated from OpenAPI spec)
-		authapi.HandlerWithOptions(authHandler, authapi.ChiServerOptions{
-			BaseRouter: apiRouter,
-		})
-		// Generated API routes
-		apiserver.HandlerWithOptions(h, apiserver.ChiServerOptions{
-			BaseRouter: apiRouter,
-		})
+		apirouter.Mount(apiRouter, h, authHandler, apirouter.Options{})
 	})
 
 	srv := httptest.NewServer(r)
