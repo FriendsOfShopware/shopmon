@@ -6,9 +6,9 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.24
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.3
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.104.0
 	github.com/aws/smithy-go v1.27.2
-	github.com/coreos/go-oidc/v3 v3.18.0
+	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/descope/virtualwebauthn v1.0.5
 	github.com/exaring/otelpgx v0.11.1
 	github.com/go-chi/chi/v5 v5.3.0
@@ -20,15 +20,15 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.18.6
 	github.com/matcornic/hermes v1.3.0
-	github.com/oapi-codegen/runtime v1.4.1
+	github.com/oapi-codegen/runtime v1.4.2
 	github.com/redis/go-redis/v9 v9.20.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.42.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
-	github.com/testcontainers/testcontainers-go/modules/redis v0.42.0
+	github.com/testcontainers/testcontainers-go v0.43.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
+	github.com/testcontainers/testcontainers-go/modules/redis v0.43.0
 	go.opentelemetry.io/contrib/bridges/otelslog v0.19.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0
 	go.opentelemetry.io/otel v1.44.0
