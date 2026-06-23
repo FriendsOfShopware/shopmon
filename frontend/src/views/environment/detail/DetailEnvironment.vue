@@ -269,11 +269,16 @@
         </div>
 
         <div class="sm:col-span-2 lg:col-span-3">
-          <dt class="text-xs font-medium text-muted-foreground">
+          <dt class="flex items-center text-xs font-medium text-muted-foreground">
             {{ $t("environment.bypassAuthHeader") }}
-            <span :title="$t('environment.bypassAuthHeaderTooltip')">
-              <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
-            </span>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <icon-fa6-solid:circle-info class="ml-0.5 inline size-3 text-info" />
+              </TooltipTrigger>
+              <TooltipContent class="max-w-xs">
+                {{ $t("environment.bypassAuthHeaderTooltip") }}
+              </TooltipContent>
+            </Tooltip>
           </dt>
           <dd class="mt-1 flex items-start gap-2">
             <code class="min-w-0 flex-1 rounded bg-muted px-2 py-1 font-mono text-xs break-all">{{
@@ -334,6 +339,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import StatusIcon from "@/components/StatusIcon.vue";
 import CardSection from "@/components/CardSection.vue";
 
