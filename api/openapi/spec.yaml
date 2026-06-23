@@ -3324,9 +3324,10 @@ components:
         source:
           type: string
         lastSyncedAt:
-          type: string
+          type: integer
+          format: int64
           nullable: true
-          format: date-time
+          description: Unix timestamp in seconds of the last successful sync, or null if never synced.
 
     CreatePackagesTokenRequest:
       type: object

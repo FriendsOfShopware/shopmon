@@ -45,7 +45,7 @@
               <div class="mt-0.5 text-xs text-muted-foreground">
                 <template v-if="pt.lastSyncedAt">{{
                   $t("packages.lastSynced", {
-                    time: timeAgo(new Date(pt.lastSyncedAt).getTime() / 1000),
+                    time: timeAgo(pt.lastSyncedAt),
                   })
                 }}</template>
                 <template v-else>{{ $t("packages.notSyncedYet") }}</template>

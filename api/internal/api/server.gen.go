@@ -454,9 +454,11 @@ type NotificationLink struct {
 
 // PackagesToken defines model for PackagesToken.
 type PackagesToken struct {
-	Id           int        `json:"id"`
-	LastSyncedAt *time.Time `json:"lastSyncedAt"`
-	Source       string     `json:"source"`
+	Id int `json:"id"`
+
+	// LastSyncedAt Unix timestamp in seconds of the last successful sync, or null if never synced.
+	LastSyncedAt *int64 `json:"lastSyncedAt"`
+	Source       string `json:"source"`
 }
 
 // PackagesTokenConfiguration defines model for PackagesTokenConfiguration.
