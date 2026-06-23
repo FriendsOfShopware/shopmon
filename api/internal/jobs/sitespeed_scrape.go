@@ -84,7 +84,7 @@ func (h *SitespeedScrapeHandler) scrapeEnvironment(ctx context.Context, env quer
 	req.Header.Set("Authorization", "Bearer "+h.cfg.SitespeedAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(30 * time.Second)).Do(req)
+	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(300 * time.Second)).Do(req)
 	if err != nil {
 		return fmt.Errorf("call sitespeed: %w", err)
 	}
