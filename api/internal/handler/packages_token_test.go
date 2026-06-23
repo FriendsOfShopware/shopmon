@@ -152,6 +152,13 @@ func TestCreatePackagesToken_WithMockAPI(t *testing.T) {
 
 func TestDeletePackagesToken_WithMockAPI(t *testing.T) {
 	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ownership check: list tokens scoped to the shop.
+		if r.Method == "GET" {
+			assert.Equal(t, "/api/tokens", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]map[string]interface{}{{"id": 42, "source": r.URL.Query().Get("source")}})
+			return
+		}
 		assert.Equal(t, "DELETE", r.Method)
 		assert.Contains(t, r.URL.Path, "/tokens/42")
 		w.WriteHeader(http.StatusNoContent)
@@ -177,8 +184,46 @@ func TestDeletePackagesToken_WithMockAPI(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
+func TestDeletePackagesToken_CrossShopForbidden(t *testing.T) {
+	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ownership check returns no tokens for this shop; the DELETE must never fire.
+		if r.Method == "GET" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]map[string]interface{}{})
+			return
+		}
+		assert.Fail(t, "must not proxy a mutation for a token not owned by the shop")
+	}))
+	defer mockAPI.Close()
+
+	env := testutil.Setup(t, func(cfg *config.Config) {
+		cfg.PackagesAPIURL = mockAPI.URL
+		cfg.PackagesAPIToken = "mock-packages-token"
+	})
+
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens/42", env.Server.URL, shopID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
 func TestSyncPackagesToken_WithMockAPI(t *testing.T) {
 	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ownership check: list tokens scoped to the shop.
+		if r.Method == "GET" {
+			assert.Equal(t, "/api/tokens", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]map[string]interface{}{{"id": 42, "source": r.URL.Query().Get("source")}})
+			return
+		}
 		assert.Equal(t, "POST", r.Method)
 		assert.Contains(t, r.URL.Path, "/tokens/42/sync")
 		w.WriteHeader(http.StatusOK)

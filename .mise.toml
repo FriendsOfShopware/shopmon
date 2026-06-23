@@ -36,6 +36,10 @@ APP_SITESPEED_API_KEY = "secret"
 # Observability
 OTEL_ENABLED = "false"
 
+# Packages service
+PACKAGES_API_URL = "http://localhost:8787"
+PACKAGES_API_TOKEN = "shopmon"
+
 [tasks."setup:frontend"]
 description = "Install frontend dependencies"
 run = "cd frontend && npm install"

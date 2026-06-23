@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -46,8 +49,8 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 		return
 	}
 
-	// Proxy to packages API
-	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
+	// Proxy to packages API. Tokens are scoped per shop via the "source" field.
+	url := fmt.Sprintf("%s/api/tokens?source=%d", h.cfg.PackagesAPIURL, shopId)
 	resp, err := h.packagesRequest(r.Context(), "GET", url, nil)
 	if err != nil {
 		slog.Error("failed to fetch packages tokens", "error", err)
@@ -85,9 +88,27 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 		return
 	}
 
-	// Proxy the request body to packages API
-	url := fmt.Sprintf("%s/api/shops/%d/tokens", h.cfg.PackagesAPIURL, shopId)
-	resp, err := h.packagesRequest(r.Context(), "POST", url, r.Body)
+	// Decode the incoming token so we can scope it to this shop via "source".
+	var reqBody struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil || reqBody.Token == "" {
+		httputil.WriteError(w, http.StatusBadRequest, "token is required")
+		return
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"token":  reqBody.Token,
+		"source": strconv.Itoa(int(shopId)),
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to encode request")
+		return
+	}
+
+	// Proxy to packages API.
+	url := fmt.Sprintf("%s/api/tokens", h.cfg.PackagesAPIURL)
+	resp, err := h.packagesRequest(r.Context(), "POST", url, bytes.NewReader(payload))
 	if err != nil {
 		slog.Error("failed to create packages token", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to create packages token")
@@ -124,7 +145,18 @@ func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, or
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d", h.cfg.PackagesAPIURL, shopId, tokenId)
+	owned, err := h.tokenBelongsToShop(r.Context(), shopId, tokenId)
+	if err != nil {
+		slog.Error("failed to verify packages token ownership", "error", err)
+		httputil.WriteError(w, http.StatusBadGateway, "failed to delete packages token")
+		return
+	}
+	if !owned {
+		httputil.WriteError(w, http.StatusNotFound, "token not found")
+		return
+	}
+
+	url := fmt.Sprintf("%s/api/tokens/%d", h.cfg.PackagesAPIURL, tokenId)
 	resp, err := h.packagesRequest(r.Context(), "DELETE", url, nil)
 	if err != nil {
 		slog.Error("failed to delete packages token", "error", err)
@@ -167,7 +199,18 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/shops/%d/tokens/%d/sync", h.cfg.PackagesAPIURL, shopId, tokenId)
+	owned, err := h.tokenBelongsToShop(r.Context(), shopId, tokenId)
+	if err != nil {
+		slog.Error("failed to verify packages token ownership", "error", err)
+		httputil.WriteError(w, http.StatusBadGateway, "failed to sync packages token")
+		return
+	}
+	if !owned {
+		httputil.WriteError(w, http.StatusNotFound, "token not found")
+		return
+	}
+
+	url := fmt.Sprintf("%s/api/tokens/%d/sync", h.cfg.PackagesAPIURL, tokenId)
 	resp, err := h.packagesRequest(r.Context(), "POST", url, nil)
 	if err != nil {
 		slog.Error("failed to sync packages token", "error", err)
@@ -190,6 +233,37 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	_, _ = w.Write(body)
+}
+
+// tokenBelongsToShop checks that tokenId is scoped to shopId on the packages
+// API. Tokens are isolated per shop via the "source" field, but the upstream
+// delete/sync routes operate on the global token id, so we must verify ownership
+// before proxying those mutations to prevent cross-shop access (IDOR).
+func (h *Handler) tokenBelongsToShop(ctx context.Context, shopId api.ShopId, tokenId api.TokenId) (bool, error) {
+	url := fmt.Sprintf("%s/api/tokens?source=%d", h.cfg.PackagesAPIURL, shopId)
+	resp, err := h.packagesRequest(ctx, "GET", url, nil)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("packages API returned status %d", resp.StatusCode)
+	}
+
+	var tokens []struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+		return false, err
+	}
+
+	for _, t := range tokens {
+		if t.ID == int(tokenId) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // packagesRequest creates an authenticated request to the packages API.

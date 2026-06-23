@@ -1,4 +1,11 @@
 services:
+  packages:
+    image: ghcr.io/friendsofshopware/shopmon-packages:latest
+    ports:
+      - "8787:8787"
+    environment:
+      API_TOKEN: shopmon
+
   redis:
     image: redis:8-alpine
     ports:
