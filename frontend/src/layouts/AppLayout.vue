@@ -94,13 +94,17 @@
                     :src="userAvatar"
                     alt=""
                   />
-                  <div class="flex min-w-0 flex-1 flex-col leading-tight">
+                  <div
+                    class="flex min-w-0 flex-1 flex-col leading-tight group-data-[collapsible=icon]:hidden"
+                  >
                     <span class="truncate text-sm font-medium">{{ session?.user.name }}</span>
                     <span class="truncate text-xs text-muted-foreground">{{
                       session?.user.email
                     }}</span>
                   </div>
-                  <icon-fa6-solid:ellipsis-vertical class="ml-auto size-3 text-muted-foreground" />
+                  <icon-fa6-solid:ellipsis-vertical
+                    class="ml-auto size-3 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                  />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" class="w-56">

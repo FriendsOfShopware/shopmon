@@ -1,7 +1,7 @@
 <template>
   <footer class="mt-auto border-t">
     <div
-      class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 max-sm:flex-col max-sm:text-center"
+      class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5 max-sm:flex-col max-sm:text-center"
     >
       <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Logo class="size-4" />
