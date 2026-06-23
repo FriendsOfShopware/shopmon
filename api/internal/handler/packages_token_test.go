@@ -74,9 +74,13 @@ func TestGetPackagesTokens_NotConfigured(t *testing.T) {
 }
 
 func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
+	var shopID int
 	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify auth header
 		assert.Equal(t, "Bearer mock-packages-token", r.Header.Get("Authorization"))
+		// Verify the request is scoped to this shop via the "source" filter.
+		assert.Equal(t, "/api/tokens", r.URL.Path)
+		assert.Equal(t, fmt.Sprintf("shopmon-project-%d", shopID), r.URL.Query().Get("source"))
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
@@ -93,7 +97,7 @@ func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
 
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	shopID = env.SeedShop(t, "org-1", "Test Shop")
 
 	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -110,14 +114,16 @@ func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
 }
 
 func TestCreatePackagesToken_WithMockAPI(t *testing.T) {
+	var shopID int
 	mockAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "Bearer mock-packages-token", r.Header.Get("Authorization"))
 
-		// Verify request body was proxied
+		// Verify request body was proxied and scoped to the shop via "source".
 		var body map[string]string
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		assert.Equal(t, "my-shopware-token", body["token"])
+		assert.Equal(t, fmt.Sprintf("shopmon-project-%d", shopID), body["source"])
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -136,7 +142,7 @@ func TestCreatePackagesToken_WithMockAPI(t *testing.T) {
 
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
-	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	shopID = env.SeedShop(t, "org-1", "Test Shop")
 
 	body, _ := json.Marshal(map[string]string{"token": "my-shopware-token"})
 	req := testutil.NewRequest(t, "POST", fmt.Sprintf("%s/api/organizations/org-1/shops/%d/packages-tokens", env.Server.URL, shopID), bytes.NewReader(body))

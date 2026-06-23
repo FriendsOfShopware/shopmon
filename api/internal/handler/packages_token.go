@@ -8,7 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strconv"
+	neturl "net/url"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -31,6 +31,13 @@ func (h *Handler) GetPackagesTokenConfiguration(w http.ResponseWriter, r *http.R
 	})
 }
 
+// packagesSource builds the "source" identifier used to scope tokens to a shop
+// on the packages API. The "shopmon-project-" prefix is kept for compatibility
+// with tokens registered by the previous implementation.
+func packagesSource(shopId api.ShopId) string {
+	return fmt.Sprintf("shopmon-project-%d", shopId)
+}
+
 // GetPackagesTokens lists packages tokens for a shop.
 func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
 	user := h.requireUser(w, r)
@@ -50,7 +57,7 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 	}
 
 	// Proxy to packages API. Tokens are scoped per shop via the "source" field.
-	url := fmt.Sprintf("%s/api/tokens?source=%d", h.cfg.PackagesAPIURL, shopId)
+	url := fmt.Sprintf("%s/api/tokens?source=%s", h.cfg.PackagesAPIURL, neturl.QueryEscape(packagesSource(shopId)))
 	resp, err := h.packagesRequest(r.Context(), "GET", url, nil)
 	if err != nil {
 		slog.Error("failed to fetch packages tokens", "error", err)
@@ -99,7 +106,7 @@ func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, or
 
 	payload, err := json.Marshal(map[string]string{
 		"token":  reqBody.Token,
-		"source": strconv.Itoa(int(shopId)),
+		"source": packagesSource(shopId),
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to encode request")
@@ -240,7 +247,7 @@ func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgI
 // delete/sync routes operate on the global token id, so we must verify ownership
 // before proxying those mutations to prevent cross-shop access (IDOR).
 func (h *Handler) tokenBelongsToShop(ctx context.Context, shopId api.ShopId, tokenId api.TokenId) (bool, error) {
-	url := fmt.Sprintf("%s/api/tokens?source=%d", h.cfg.PackagesAPIURL, shopId)
+	url := fmt.Sprintf("%s/api/tokens?source=%s", h.cfg.PackagesAPIURL, neturl.QueryEscape(packagesSource(shopId)))
 	resp, err := h.packagesRequest(ctx, "GET", url, nil)
 	if err != nil {
 		return false, err
