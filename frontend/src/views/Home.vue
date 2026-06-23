@@ -1,7 +1,7 @@
 <template>
   <!-- ═══════ HERO ═══════ -->
   <section
-    class="relative flex flex-col overflow-visible bg-gradient-to-b from-[#0a3d5c] via-[#0c6ea6] to-primary/50 pt-24 sm:pt-28 lg:h-dvh"
+    class="relative flex flex-col overflow-visible bg-linear-to-b from-[#0a3d5c] via-[#0c6ea6] to-primary/50 pt-24 sm:pt-28 lg:min-h-dvh"
   >
     <!-- Subtle pattern -->
     <div
