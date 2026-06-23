@@ -1,0 +1,19 @@
+diff --git a/node_modules/vite-ssg/dist/index.mjs b/node_modules/vite-ssg/dist/index.mjs
+index 6fec988..fc1b760 100644
+--- a/node_modules/vite-ssg/dist/index.mjs
++++ b/node_modules/vite-ssg/dist/index.mjs
+@@ -51,13 +51,12 @@ function ViteSSG(App, routerOptions, fn, options) {
+     app.use(router);
+     let entryRoutePath;
+     let isFirstRoute = true;
+-    router.beforeEach((to, from, next) => {
++    router.beforeEach((to) => {
+       if (isFirstRoute || entryRoutePath && entryRoutePath === to.path) {
+         isFirstRoute = false;
+         entryRoutePath = to.path;
+         to.meta.state = context.initialState;
+       }
+-      next();
+     });
+     if (import.meta.env.SSR) {
+       const route = context.routePath ?? "/";

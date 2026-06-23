@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "SHOPMON_API_URL=http://127.0.0.1:5789 vite --port 3000 --host",
     "build": "vite-ssg build",
     "preview": "vite preview",
@@ -72,6 +73,7 @@
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",
     "oxlint-tsgolint": "^0.23.0",
+    "patch-package": "^8.0.1",
     "typescript": "5.9.3",
     "vite": "8.0.16",
     "vite-ssg": "^28.3.0",
