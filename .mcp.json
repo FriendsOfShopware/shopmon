@@ -2,7 +2,18 @@
   "mcpServers": {
     "shadcn": {
       "command": "npx",
-      "args": ["shadcn-vue@latest", "mcp"]
+      "args": [
+        "shadcn-vue@latest",
+        "mcp"
+      ]
+    },
+    "opensafari": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "opensafari-mcp",
+        "serve"
+      ]
     }
   }
 }

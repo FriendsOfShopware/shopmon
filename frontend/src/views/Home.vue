@@ -28,7 +28,7 @@
       <h1
         class="mx-auto max-w-4xl text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]"
       >
-        {{ $t("home.heroTitle") }}<br class="hidden sm:block" />
+        {{ $t("home.heroTitle") }} <br class="hidden sm:block" />
         <span class="text-white/60">{{ $t("home.heroTitleHighlight") }}</span>
       </h1>
 

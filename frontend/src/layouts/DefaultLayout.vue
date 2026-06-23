@@ -2,13 +2,13 @@
   <div class="flex min-h-screen flex-col overflow-x-hidden">
     <!-- Transparent nav — floats over hero -->
     <nav class="absolute inset-x-0 top-0 z-20">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <RouterLink :to="{ name: 'home' }" class="flex items-center gap-2">
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
+        <RouterLink :to="{ name: 'home' }" class="flex shrink-0 items-center gap-2">
           <Logo class="h-8 w-auto" />
           <span class="text-lg font-bold text-white">{{ $t("common.appName") }}</span>
         </RouterLink>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 sm:gap-2">
           <Button
             v-if="session"
             as-child
@@ -21,11 +21,23 @@
             </RouterLink>
           </Button>
           <template v-else>
+            <!-- Mobile: single combined CTA to keep the nav from overflowing -->
+            <Button
+              as-child
+              size="sm"
+              class="rounded-full bg-white px-4 text-[#0c4a6e] hover:bg-white/90 sm:hidden"
+            >
+              <RouterLink :to="{ name: 'account.login' }">
+                {{ $t("nav.goToApp") }}
+              </RouterLink>
+            </Button>
+
+            <!-- Desktop: separate Login + Register -->
             <Button
               as-child
               size="sm"
               variant="ghost"
-              class="text-white/80 hover:bg-white/10 hover:text-white"
+              class="hidden text-white/80 hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               <RouterLink :to="{ name: 'account.login' }">
                 {{ $t("nav.login") }}
@@ -34,7 +46,7 @@
             <Button
               as-child
               size="sm"
-              class="rounded-full bg-white px-5 text-[#0c4a6e] hover:bg-white/90"
+              class="hidden rounded-full bg-white px-5 text-[#0c4a6e] hover:bg-white/90 sm:inline-flex"
             >
               <RouterLink :to="{ name: 'account.register' }">
                 {{ $t("nav.register") }}

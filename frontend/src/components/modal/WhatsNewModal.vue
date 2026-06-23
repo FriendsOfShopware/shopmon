@@ -1,9 +1,9 @@
 <template>
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
-    <DialogContent class="max-w-lg gap-0 p-0">
+    <DialogContent class="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
       <!-- Header with gradient -->
       <div
-        class="rounded-t-lg bg-gradient-to-br from-primary to-primary/80 px-6 pb-6 pt-8 text-white"
+        class="shrink-0 rounded-t-lg bg-gradient-to-br from-primary to-primary/80 px-6 pb-6 pt-8 text-white"
       >
         <div class="mb-3 flex items-center gap-2">
           <div class="flex size-8 items-center justify-center rounded-full bg-white/15">
@@ -18,7 +18,7 @@
       </div>
 
       <!-- Content -->
-      <div class="space-y-4 px-6 py-5">
+      <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
         <!-- Feature list -->
         <div class="space-y-2">
           <div
@@ -52,7 +52,7 @@
       </div>
 
       <!-- Footer -->
-      <div class="flex justify-end border-t px-6 py-4">
+      <div class="flex shrink-0 justify-end border-t px-6 py-4">
         <Button size="sm" @click="$emit('close')">
           {{ $t("whatsNew.close") }}
         </Button>

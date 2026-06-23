@@ -93,6 +93,7 @@
     "logout": "Logout",
     "login": "Login",
     "register": "Register",
+    "goToApp": "Go to app",
     "checks": "Checks",
     "extensions": "Extensions",
     "scheduledTasks": "Scheduled tasks",
