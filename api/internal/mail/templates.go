@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/matcornic/hermes"
@@ -21,6 +22,7 @@ func (s *Service) newHermes() hermes.Hermes {
 			Name:      "Shopmon",
 			Link:      link,
 			Copyright: "Best Regards, FriendsOfShopware",
+			Logo:      fmt.Sprintf("%s/shopmon-logo.svg", link),
 		},
 	}
 }
