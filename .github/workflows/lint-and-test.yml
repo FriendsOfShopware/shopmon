@@ -48,4 +48,4 @@ jobs:
         uses: DataDog/coverage-upload-github-action@v1
         with:
           api_key: ${{ secrets.DD_API_KEY }}
-          files: api/coverage.out,frontend/coverage/lcov.info
+          files: api/coverage.out frontend/coverage/lcov.info
