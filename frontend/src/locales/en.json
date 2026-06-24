@@ -814,6 +814,7 @@
     "noDeployment": "No deployment recorded",
     "outdated": "Outdated",
     "connectionIssues": "Connection issues",
+    "lastScrapedError": "Last scrape error",
     "returnCode": "Return code",
     "overdue": "Overdue",
     "allActions": "All Actions",

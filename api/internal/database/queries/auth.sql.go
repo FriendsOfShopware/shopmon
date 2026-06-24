@@ -31,9 +31,9 @@ WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 
   AND ($2::text IS NULL OR role = $2)
   AND (
     $3::text IS NULL
-    OR ($3 = 'active' AND banned = false AND email_verified = true)
-    OR ($3 = 'banned' AND banned = true)
-    OR ($3 = 'unverified' AND email_verified = false AND banned = false)
+    OR ($3 = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR ($3 = 'banned' AND COALESCE(banned, false) = true)
+    OR ($3 = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
   )
 `
 
@@ -251,9 +251,9 @@ WHERE ($3::text IS NULL OR email ILIKE '%' || $3 || '%' OR name ILIKE '%' || $3 
   AND ($4::text IS NULL OR role = $4)
   AND (
     $5::text IS NULL
-    OR ($5 = 'active' AND banned = false AND email_verified = true)
-    OR ($5 = 'banned' AND banned = true)
-    OR ($5 = 'unverified' AND email_verified = false AND banned = false)
+    OR ($5 = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR ($5 = 'banned' AND COALESCE(banned, false) = true)
+    OR ($5 = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
   )
 ORDER BY
   CASE WHEN $6::text = 'name' AND $7::text = 'asc' THEN name END ASC,

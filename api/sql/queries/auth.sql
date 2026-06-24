@@ -99,9 +99,9 @@ WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search
   AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'))
   AND (
     sqlc.narg('status')::text IS NULL
-    OR (sqlc.narg('status') = 'active' AND banned = false AND email_verified = true)
-    OR (sqlc.narg('status') = 'banned' AND banned = true)
-    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND banned = false)
+    OR (sqlc.narg('status') = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR (sqlc.narg('status') = 'banned' AND COALESCE(banned, false) = true)
+    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
   )
 ORDER BY
   CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN name END ASC,
@@ -118,9 +118,9 @@ WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search
   AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'))
   AND (
     sqlc.narg('status')::text IS NULL
-    OR (sqlc.narg('status') = 'active' AND banned = false AND email_verified = true)
-    OR (sqlc.narg('status') = 'banned' AND banned = true)
-    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND banned = false)
+    OR (sqlc.narg('status') = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR (sqlc.narg('status') = 'banned' AND COALESCE(banned, false) = true)
+    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
   );
 
 -- name: AdminGetUserDetail :one

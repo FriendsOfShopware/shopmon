@@ -814,6 +814,7 @@
     "noDeployment": "Kein Deployment aufgezeichnet",
     "outdated": "Veraltet",
     "connectionIssues": "Verbindungsprobleme",
+    "lastScrapedError": "Letzter Scrape-Fehler",
     "returnCode": "Rückgabecode",
     "overdue": "Überfällig",
     "allActions": "Alle Aktionen",
