@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
-    <DialogContent class="max-w-2xl">
+    <DialogContent class="flex max-h-[calc(100vh-4rem)] max-w-2xl flex-col">
       <DialogHeader>
         <DialogTitle>
           {{ $t("extensionChangelog.title") }} -
@@ -8,7 +8,10 @@
         </DialogTitle>
       </DialogHeader>
 
-      <ul v-if="changelogEntries.length > 0" class="list-none space-y-6 p-0">
+      <ul
+        v-if="changelogEntries.length > 0"
+        class="-mx-6 min-h-0 list-none space-y-6 overflow-y-auto px-6 py-0"
+      >
         <li v-for="changeLog in changelogEntries" :key="changeLog.version">
           <div class="mb-2 flex items-center gap-2 font-semibold">
             {{ changeLog.version }} -

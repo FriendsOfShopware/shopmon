@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
-    <DialogContent class="max-w-2xl">
+    <DialogContent class="flex max-h-[calc(100vh-4rem)] max-w-2xl flex-col">
       <DialogHeader>
         <DialogTitle>
           {{
@@ -11,7 +11,7 @@
         </DialogTitle>
       </DialogHeader>
 
-      <div>
+      <div class="-mx-6 min-h-0 overflow-y-auto px-6">
         <template v-if="changelog?.oldShopwareVersion && changelog?.newShopwareVersion">
           <span
             v-html="
