@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -23,18 +24,62 @@ type webauthnUser struct {
 	name        string
 	email       string
 	credentials []webauthn.Credential
+
+	// handle, when set, overrides the WebAuthn user handle. During discoverable
+	// login go-webauthn requires WebAuthnID() to equal the userHandle the
+	// authenticator returns. Passkeys registered by the legacy better-auth stack
+	// carry a random handle that is not the user ID, so we echo the asserted
+	// handle here while still resolving the real user via the credential ID.
+	handle []byte
 }
 
-func (u *webauthnUser) WebAuthnID() []byte                         { return []byte(u.id) }
+func (u *webauthnUser) WebAuthnID() []byte {
+	if u.handle != nil {
+		return u.handle
+	}
+	return []byte(u.id)
+}
 func (u *webauthnUser) WebAuthnName() string                       { return u.email }
 func (u *webauthnUser) WebAuthnDisplayName() string                { return u.name }
 func (u *webauthnUser) WebAuthnCredentials() []webauthn.Credential { return u.credentials }
 
 // --- DB <-> library conversion ---
 
-func dbPasskeyToCredential(p queries.Passkey) webauthn.Credential {
-	credID, _ := base64.RawURLEncoding.DecodeString(p.CredentialID)
-	pubKey, _ := base64.RawURLEncoding.DecodeString(p.PublicKey)
+// decodeBase64Any decodes a base64 string that may be in either standard or
+// URL-safe alphabet, with or without padding. Passkeys registered by the legacy
+// better-auth stack stored public keys with standard base64, while passkeys
+// registered by this service use raw URL-safe base64; both must decode here.
+func decodeBase64Any(s string) ([]byte, error) {
+	for _, enc := range []*base64.Encoding{
+		base64.RawURLEncoding,
+		base64.RawStdEncoding,
+		base64.URLEncoding,
+		base64.StdEncoding,
+	} {
+		if b, err := enc.DecodeString(s); err == nil {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("decode base64: no supported encoding matched")
+}
+
+// isMultiDeviceCredential reports whether the stored device_type marks a
+// multi-device (backup-eligible) credential. The legacy better-auth stack
+// stored SimpleWebAuthn's "multiDevice"/"singleDevice" values, while this
+// service stores "multi_device"/"single_device".
+func isMultiDeviceCredential(deviceType string) bool {
+	return deviceType == "multi_device" || deviceType == "multiDevice"
+}
+
+func dbPasskeyToCredential(p queries.Passkey) (webauthn.Credential, error) {
+	credID, err := decodeBase64Any(p.CredentialID)
+	if err != nil {
+		return webauthn.Credential{}, fmt.Errorf("decode credential id for passkey %s: %w", p.ID, err)
+	}
+	pubKey, err := decodeBase64Any(p.PublicKey)
+	if err != nil {
+		return webauthn.Credential{}, fmt.Errorf("decode public key for passkey %s: %w", p.ID, err)
+	}
 
 	var aaguid []byte
 	if p.Aaguid != nil {
@@ -53,7 +98,7 @@ func dbPasskeyToCredential(p queries.Passkey) webauthn.Credential {
 		PublicKey: pubKey,
 		Transport: transports,
 		Flags: webauthn.CredentialFlags{
-			BackupEligible: p.DeviceType == "multi_device",
+			BackupEligible: isMultiDeviceCredential(p.DeviceType),
 			BackupState:    p.BackedUp,
 			UserPresent:    true,
 			UserVerified:   true,
@@ -62,7 +107,7 @@ func dbPasskeyToCredential(p queries.Passkey) webauthn.Credential {
 			AAGUID:    aaguid,
 			SignCount: uint32(p.Counter),
 		},
-	}
+	}, nil
 }
 
 func credentialToDBFields(cred *webauthn.Credential) (credentialID, publicKey, deviceType string, counter int32, backedUp bool, transports, aaguid *string) {
