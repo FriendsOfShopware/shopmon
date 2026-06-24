@@ -804,6 +804,8 @@
     "invitations": "Einladungen",
     "ssoProviders": "SSO-Anbieter",
     "shops": "Shops",
+    "shopsAndEnvironments": "Shops & Umgebungen",
+    "nEnvironments": "{count} Umgebungen",
     "noMembers": "Keine Mitglieder",
     "noEnvironments": "Keine Umgebungen",
     "noInvitations": "Keine ausstehenden Einladungen",

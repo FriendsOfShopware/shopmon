@@ -79,31 +79,62 @@
           </div>
         </CardSection>
 
-        <!-- Environments -->
-        <CardSection :icon="IconEarthAmericas" :title="t('common.environments')">
+        <!-- Shops & Environments -->
+        <CardSection
+          :icon="IconStore"
+          :title="t('admin.shopsAndEnvironments')"
+          class="lg:col-span-2"
+        >
           <EmptyState
-            v-if="organization.environments.length === 0"
-            :icon="IconEarthAmericas"
-            :title="t('admin.noEnvironments')"
+            v-if="shopGroups.length === 0"
+            :icon="IconStore"
+            :title="t('admin.noShops')"
             size="sm"
           />
-          <div v-else class="space-y-2">
-            <RouterLink
-              v-for="env in organization.environments"
-              :key="env.id"
-              :to="{ name: 'admin.environments.detail', params: { id: env.id } }"
-              class="group flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
-            >
-              <StatusIcon :status="env.status" />
-              <div class="min-w-0 flex-1">
-                <div class="truncate font-medium transition-colors group-hover:text-primary">
-                  {{ env.name }}
+          <div v-else class="space-y-4">
+            <div v-for="shop in shopGroups" :key="shop.id" class="rounded-xl border bg-card">
+              <!-- Shop header -->
+              <div class="flex items-center gap-3 border-b px-4 py-3">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <IconStore class="size-3.5 text-muted-foreground" />
                 </div>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate font-medium">{{ shop.name }}</div>
+                  <div v-if="shop.description" class="truncate text-xs text-muted-foreground">
+                    {{ shop.description }}
+                  </div>
+                </div>
+                <Badge variant="secondary" class="shrink-0 text-xs">
+                  {{ t("admin.nEnvironments", { count: shop.environments.length }) }}
+                </Badge>
               </div>
-              <Badge variant="secondary" class="shrink-0 font-mono text-[10px]">
-                {{ env.shopwareVersion }}
-              </Badge>
-            </RouterLink>
+
+              <!-- Shop's environments -->
+              <p
+                v-if="shop.environments.length === 0"
+                class="px-4 py-3 text-xs text-muted-foreground"
+              >
+                {{ t("admin.noEnvironments") }}
+              </p>
+              <div v-else class="divide-y">
+                <RouterLink
+                  v-for="env in shop.environments"
+                  :key="env.id"
+                  :to="{ name: 'admin.environments.detail', params: { id: env.id } }"
+                  class="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent/50"
+                >
+                  <StatusIcon :status="env.status" />
+                  <span
+                    class="min-w-0 flex-1 truncate text-sm transition-colors group-hover:text-primary"
+                  >
+                    {{ env.name }}
+                  </span>
+                  <Badge variant="secondary" class="shrink-0 font-mono text-[10px]">
+                    {{ env.shopwareVersion }}
+                  </Badge>
+                </RouterLink>
+              </div>
+            </div>
           </div>
         </CardSection>
 
@@ -158,37 +189,13 @@
             </div>
           </div>
         </CardSection>
-
-        <!-- Shops -->
-        <CardSection :icon="IconStore" :title="t('admin.shops')">
-          <EmptyState
-            v-if="organization.shops.length === 0"
-            :icon="IconStore"
-            :title="t('admin.noShops')"
-            size="sm"
-          />
-          <div v-else class="space-y-2">
-            <div
-              v-for="shop in organization.shops"
-              :key="shop.id"
-              class="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
-            >
-              <div class="min-w-0 flex-1">
-                <div class="truncate font-medium">{{ shop.name }}</div>
-                <div v-if="shop.description" class="truncate text-xs text-muted-foreground">
-                  {{ shop.description }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardSection>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -217,9 +224,33 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
-const organization = ref<components["schemas"]["AdminOrganizationDetail"] | null>(null);
+type OrgDetail = components["schemas"]["AdminOrganizationDetail"];
+type OrgEnvironment = OrgDetail["environments"][number];
+
+const organization = ref<OrgDetail | null>(null);
 const loading = ref(true);
 const error = ref("");
+
+// Group environments under their shop, preserving the shop ordering from the
+// API (shops without environments still appear).
+const shopGroups = computed(() => {
+  const org = organization.value;
+  if (!org) return [];
+
+  const envsByShop = new Map<number, OrgEnvironment[]>();
+  for (const env of org.environments) {
+    const list = envsByShop.get(env.shopId) ?? [];
+    list.push(env);
+    envsByShop.set(env.shopId, list);
+  }
+
+  return org.shops.map((shop) => ({
+    id: shop.id,
+    name: shop.name,
+    description: shop.description,
+    environments: envsByShop.get(shop.id) ?? [],
+  }));
+});
 
 async function loadOrganization() {
   loading.value = true;

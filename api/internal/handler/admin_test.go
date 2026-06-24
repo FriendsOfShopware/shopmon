@@ -232,6 +232,7 @@ func TestAdminGetOrganizationDetail(t *testing.T) {
 	assert.Equal(t, "admin@example.com", detail.Members[0].Email)
 	require.Len(t, detail.Environments, 1)
 	assert.Equal(t, "Production", detail.Environments[0].Name)
+	assert.Equal(t, "Acme Shop", detail.Environments[0].ShopName)
 }
 
 func TestAdminGetOrganizationDetail_NotFound(t *testing.T) {

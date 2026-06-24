@@ -426,6 +426,8 @@ func (h *Handler) AdminGetOrganizationDetail(w http.ResponseWriter, r *http.Requ
 			Status:          e.Status,
 			ShopwareVersion: e.ShopwareVersion,
 			LastScrapedAt:   pgtimeToTimePtr(e.LastScrapedAt),
+			ShopId:          int(e.ShopID),
+			ShopName:        e.ShopName,
 		})
 	}
 	for _, i := range invitations {

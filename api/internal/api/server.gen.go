@@ -279,6 +279,8 @@ type AdminOrganizationEnvironment struct {
 	Id              int        `json:"id"`
 	LastScrapedAt   *time.Time `json:"lastScrapedAt,omitempty"`
 	Name            string     `json:"name"`
+	ShopId          int        `json:"shopId"`
+	ShopName        string     `json:"shopName"`
 	ShopwareVersion string     `json:"shopwareVersion"`
 	Status          string     `json:"status"`
 	Url             string     `json:"url"`

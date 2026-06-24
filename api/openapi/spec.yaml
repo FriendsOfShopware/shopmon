@@ -3948,6 +3948,8 @@ components:
         - url
         - status
         - shopwareVersion
+        - shopId
+        - shopName
       properties:
         id:
           type: integer
@@ -3958,6 +3960,10 @@ components:
         status:
           type: string
         shopwareVersion:
+          type: string
+        shopId:
+          type: integer
+        shopName:
           type: string
         lastScrapedAt:
           type: string

@@ -87,10 +87,12 @@ WHERE m.organization_id = $1
 ORDER BY m.created_at;
 
 -- name: AdminGetOrganizationEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at,
+       e.shop_id, s.name AS shop_name
 FROM environment e
+JOIN shop s ON s.id = e.shop_id
 WHERE e.organization_id = $1
-ORDER BY e.name;
+ORDER BY s.name, e.name;
 
 -- name: AdminGetOrganizationInvitations :many
 SELECT i.id, i.email, i.role, i.status, i.expires_at, i.created_at,

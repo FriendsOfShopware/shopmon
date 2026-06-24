@@ -351,10 +351,12 @@ func (q *Queries) AdminGetOrganizationDetail(ctx context.Context, id string) (Ad
 }
 
 const adminGetOrganizationEnvironments = `-- name: AdminGetOrganizationEnvironments :many
-SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at,
+       e.shop_id, s.name AS shop_name
 FROM environment e
+JOIN shop s ON s.id = e.shop_id
 WHERE e.organization_id = $1
-ORDER BY e.name
+ORDER BY s.name, e.name
 `
 
 type AdminGetOrganizationEnvironmentsRow struct {
@@ -364,6 +366,8 @@ type AdminGetOrganizationEnvironmentsRow struct {
 	Status          string           `json:"status"`
 	ShopwareVersion string           `json:"shopware_version"`
 	LastScrapedAt   pgtype.Timestamp `json:"last_scraped_at"`
+	ShopID          int32            `json:"shop_id"`
+	ShopName        string           `json:"shop_name"`
 }
 
 func (q *Queries) AdminGetOrganizationEnvironments(ctx context.Context, organizationID string) ([]AdminGetOrganizationEnvironmentsRow, error) {
@@ -382,6 +386,8 @@ func (q *Queries) AdminGetOrganizationEnvironments(ctx context.Context, organiza
 			&i.Status,
 			&i.ShopwareVersion,
 			&i.LastScrapedAt,
+			&i.ShopID,
+			&i.ShopName,
 		); err != nil {
 			return nil, err
 		}

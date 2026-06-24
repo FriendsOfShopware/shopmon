@@ -2094,6 +2094,8 @@ export interface components {
       url: string;
       status: string;
       shopwareVersion: string;
+      shopId: number;
+      shopName: string;
       /** Format: date-time */
       lastScrapedAt?: string | null;
     };
