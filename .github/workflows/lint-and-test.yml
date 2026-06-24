@@ -37,5 +37,15 @@ jobs:
       - name: Install Dependencies
         run: mise run setup
 
-      - name: Run Tests
-        run: mise run test
+      - name: Run Go Tests
+        run: cd api && go test ./internal/... -count=1 -timeout 120s -coverprofile=coverage.out -covermode=atomic
+
+      - name: Run Frontend Tests
+        run: cd frontend && npm run test:coverage
+
+      - name: Upload Coverage to Datadog
+        if: ${{ !cancelled() }}
+        uses: DataDog/coverage-upload-github-action@v1
+        with:
+          api_key: ${{ secrets.DD_API_KEY }}
+          files: api/coverage.out frontend/coverage/lcov.info
