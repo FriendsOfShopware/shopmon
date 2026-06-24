@@ -35,7 +35,7 @@ func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, o
 			Description:          row.Description,
 			GitUrl:               row.GitUrl,
 			OrganizationId:       row.OrganizationID,
-			DefaultEnvironmentId: derefInt32(row.DefaultEnvironmentID),
+			DefaultEnvironmentId: int32PtrToIntPtr(row.DefaultEnvironmentID),
 		})
 	}
 
@@ -124,7 +124,7 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		Description:          req.Description,
 		GitUrl:               req.GitUrl,
 		OrganizationId:       orgId,
-		DefaultEnvironmentId: int(environmentID),
+		DefaultEnvironmentId: int32PtrToIntPtr(&environmentID),
 	})
 }
 

@@ -163,11 +163,15 @@ func (h *Handler) loadAuthorizedEnvironmentCredentials(w http.ResponseWriter, r 
 	return &creds, true
 }
 
-func derefInt32(v *int32) int {
+// int32PtrToIntPtr converts a nullable database int32 into a nullable int,
+// preserving nil so a shop without a default environment serializes as JSON null
+// instead of a misleading environment id of 0.
+func int32PtrToIntPtr(v *int32) *int {
 	if v == nil {
-		return 0
+		return nil
 	}
-	return int(*v)
+	i := int(*v)
+	return &i
 }
 
 func (h *Handler) requireShopInOrganization(w http.ResponseWriter, r *http.Request, shopID int32, orgID string) bool {
