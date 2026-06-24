@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,6 +62,10 @@ type Config struct {
 
 	ListenAddr     string
 	TrustedProxies []string
+
+	// AuthRateLimitMax is the number of auth requests allowed per IP per minute.
+	// Raise it (e.g. for E2E tests) via AUTH_RATE_LIMIT_MAX.
+	AuthRateLimitMax int
 }
 
 func loadDotEnv() {
@@ -120,6 +125,17 @@ func Load() *Config {
 			cfg.DeploymentScrapeDelay = d
 		} else {
 			slog.Warn("invalid DEPLOYMENT_SCRAPE_DELAY, using default", "value", raw, "default", cfg.DeploymentScrapeDelay)
+		}
+	}
+
+	// Parse the auth rate-limit budget (requests per IP per minute), falling
+	// back to 20 on an empty or invalid value.
+	cfg.AuthRateLimitMax = 20
+	if raw := getEnv("AUTH_RATE_LIMIT_MAX", ""); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+			cfg.AuthRateLimitMax = n
+		} else {
+			slog.Warn("invalid AUTH_RATE_LIMIT_MAX, using default", "value", raw, "default", cfg.AuthRateLimitMax)
 		}
 	}
 

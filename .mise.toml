@@ -40,6 +40,11 @@ OTEL_ENABLED = "false"
 PACKAGES_API_URL = "http://localhost:8787"
 PACKAGES_API_TOKEN = "shopmon"
 
+# Auth rate limit raised for local dev so Playwright E2E runs (many parallel
+# auth-touching requests from one IP) don't trip the limiter. Production keeps
+# the default of 20/min unless AUTH_RATE_LIMIT_MAX is set.
+AUTH_RATE_LIMIT_MAX = "1000"
+
 [tasks."setup:frontend"]
 description = "Install frontend dependencies"
 run = "cd frontend && npm install"

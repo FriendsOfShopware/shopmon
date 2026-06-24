@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-if="isImpersonating"
-    class="sticky top-0 z-10 bg-warning text-warning-foreground shadow"
-  >
+  <div v-if="isImpersonating" class="sticky top-0 z-10 bg-warning text-warning-foreground shadow">
     <div
       class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 max-sm:flex-col max-sm:text-center"
     >

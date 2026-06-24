@@ -176,7 +176,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		// generated handlers / sub-routers rather than guarding individual ops.
 		apirouter.Mount(apiRouter, h, authHandler, apirouter.Options{
 			AuthMiddlewares: []authapi.MiddlewareFunc{
-				auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, 20)),
+				auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, cfg.AuthRateLimitMax)),
 			},
 		})
 	})

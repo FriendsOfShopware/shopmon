@@ -13,10 +13,7 @@
       </Alert>
 
       <template v-else>
-        <Alert
-          v-if="confirmSuccess"
-          class="border-success/30 bg-success/10 text-success"
-        >
+        <Alert v-if="confirmSuccess" class="border-success/30 bg-success/10 text-success">
           <icon-fa6-solid:circle-check class="size-4" />
           <AlertDescription>
             {{ $t("auth.emailConfirmed") }}
