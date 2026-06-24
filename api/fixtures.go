@@ -301,6 +301,12 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 		if err != nil {
 			return 0, nil, fmt.Errorf("create environment %s: %w", ed.name, err)
 		}
+		// Enable sitespeed so the seeded sitespeed samples are actually shown in
+		// the UI; CreateEnvironment leaves sitespeed_enabled at its false default.
+		if _, err := s.pool.Exec(s.ctx, `UPDATE environment SET sitespeed_enabled = true WHERE id = $1`, envID); err != nil {
+			slog.Error("failed to enable sitespeed", "environmentId", envID, "error", err)
+		}
+
 		environmentIDs = append(environmentIDs, envID)
 		slog.Info("created environment", "name", ed.name, "id", envID, "url", envURL)
 	}
