@@ -1,44 +1,20 @@
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.orgManagement") }}</h1>
+  <AdminListLayout :title="$t('admin.orgManagement')" :active-count="activeCount">
+    <template #filters>
+      <AdminFilterSidebar
+        v-model="filters"
+        v-model:search="searchQuery"
+        :groups="filterGroups"
+        searchable
+        :search-placeholder="$t('admin.searchOrgs')"
+        @update:search="debouncedSearch"
+        @change="onFilterChange"
+      />
+    </template>
 
-    <Alert v-if="error" variant="destructive">
+    <Alert v-if="error" variant="destructive" class="mb-4">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
-
-    <!-- Filter bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-        <button
-          v-for="s in sortOptions"
-          :key="s.value"
-          :class="[
-            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            sortBy === s.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="
-            sortBy = s.value;
-            loadOrganizations();
-          "
-        >
-          {{ s.label }}
-        </button>
-      </div>
-
-      <div class="relative">
-        <icon-fa6-solid:magnifying-glass
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          v-model="searchQuery"
-          :placeholder="$t('admin.searchOrgs')"
-          class="h-8 w-full pl-8 text-sm sm:w-56"
-          @input="debouncedSearch"
-        />
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
@@ -121,13 +97,14 @@
         {{ $t("common.next") }}
       </Button>
     </div>
-  </div>
+  </AdminListLayout>
 </template>
 
 <script setup lang="ts">
+import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFilterSidebar.vue";
+import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { formatDate } from "@/helpers/formatter";
@@ -140,26 +117,47 @@ const organizations = ref<Organization[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const sortBy = ref<"createdAt" | "name" | "shopCount" | "memberCount">("createdAt");
 const sortDirection = ref<"asc" | "desc">("desc");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalOrganizations = ref(0);
 
+const filters = ref<Record<string, string>>({
+  sortBy: "createdAt",
+});
+
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
 const { t } = useI18n();
 
-const sortOptions = [
-  { label: t("admin.sortByCreated"), value: "createdAt" as const },
-  { label: t("admin.sortByName"), value: "name" as const },
-  { label: t("admin.sortByMembers"), value: "memberCount" as const },
-];
+const filterGroups = computed<FilterGroup[]>(() => [
+  {
+    key: "sortBy",
+    label: t("admin.filterSortBy"),
+    defaultValue: "createdAt",
+    options: [
+      { label: t("admin.sortByCreated"), value: "createdAt" },
+      { label: t("admin.sortByName"), value: "name" },
+      { label: t("admin.sortByMembers"), value: "memberCount" },
+    ],
+  },
+]);
+
+const activeCount = computed(() => {
+  let count = 0;
+  for (const g of filterGroups.value) {
+    if (filters.value[g.key] !== g.defaultValue) count++;
+  }
+  if (searchQuery.value) count++;
+  return count;
+});
 
 async function loadOrganizations() {
   loading.value = true;
   error.value = "";
 
   try {
+    const sortBy = filters.value.sortBy as "createdAt" | "name" | "shopCount" | "memberCount";
+
     const query: {
       limit: number;
       offset: number;
@@ -171,7 +169,7 @@ async function loadOrganizations() {
     } = {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
-      sortBy: sortBy.value,
+      sortBy,
       sortDirection: sortDirection.value,
     };
 
@@ -192,6 +190,11 @@ async function loadOrganizations() {
   } finally {
     loading.value = false;
   }
+}
+
+function onFilterChange() {
+  currentPage.value = 1;
+  loadOrganizations();
 }
 
 function changePage(page: number) {

@@ -1,35 +1,12 @@
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.auditLog") }}</h1>
+  <AdminListLayout :title="$t('admin.auditLog')" :active-count="activeCount">
+    <template #filters>
+      <AdminFilterSidebar v-model="filters" :groups="filterGroups" @change="onFilterChange" />
+    </template>
 
-    <Alert v-if="error" variant="destructive">
+    <Alert v-if="error" variant="destructive" class="mb-4">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
-
-    <!-- Filter bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="flex flex-wrap gap-1 rounded-lg border bg-muted/50 p-1">
-          <button
-            v-for="f in actionFilters"
-            :key="f.value"
-            :class="[
-              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-              actionFilter === f.value
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ]"
-            @click="
-              actionFilter = f.value;
-              currentPage = 1;
-              loadEntries();
-            "
-          >
-            {{ f.label }}
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
@@ -117,10 +94,12 @@
         {{ $t("common.next") }}
       </Button>
     </div>
-  </div>
+  </AdminListLayout>
 </template>
 
 <script setup lang="ts">
+import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFilterSidebar.vue";
+import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -140,22 +119,40 @@ const { t } = useI18n();
 const entries = ref<AuditLogEntry[]>([]);
 const loading = ref(true);
 const error = ref("");
-const actionFilter = ref("");
 const currentPage = ref(1);
 const pageSize = 50;
 const total = ref(0);
 
+const filters = ref<Record<string, string>>({
+  action: "",
+});
+
 const totalPages = computed(() => Math.ceil(total.value / pageSize));
 
-const actionFilters = [
-  { label: t("admin.allActions"), value: "" },
-  { label: t("admin.actionSetRole"), value: "admin.set_role" },
-  { label: t("admin.actionBanUser"), value: "admin.ban_user" },
-  { label: t("admin.actionUnbanUser"), value: "admin.unban_user" },
-  { label: t("admin.actionImpersonate"), value: "admin.impersonate" },
-  { label: t("admin.actionPasswordChange"), value: "user.password_change" },
-  { label: t("admin.actionPasswordReset"), value: "user.password_reset" },
-];
+const filterGroups = computed<FilterGroup[]>(() => [
+  {
+    key: "action",
+    label: t("admin.filterAction"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allActions"), value: "" },
+      { label: t("admin.actionSetRole"), value: "admin.set_role" },
+      { label: t("admin.actionBanUser"), value: "admin.ban_user" },
+      { label: t("admin.actionUnbanUser"), value: "admin.unban_user" },
+      { label: t("admin.actionImpersonate"), value: "admin.impersonate" },
+      { label: t("admin.actionPasswordChange"), value: "user.password_change" },
+      { label: t("admin.actionPasswordReset"), value: "user.password_reset" },
+    ],
+  },
+]);
+
+const activeCount = computed(() => {
+  let count = 0;
+  for (const g of filterGroups.value) {
+    if (filters.value[g.key] !== g.defaultValue) count++;
+  }
+  return count;
+});
 
 function actionLabel(a: string): string {
   switch (a) {
@@ -184,8 +181,8 @@ async function loadEntries() {
     limit: pageSize,
     offset: (currentPage.value - 1) * pageSize,
   };
-  if (actionFilter.value) {
-    query.action = actionFilter.value;
+  if (filters.value.action) {
+    query.action = filters.value.action;
   }
 
   const { data, error: respError } = await api.GET("/admin/audit-log", {
@@ -203,6 +200,11 @@ async function loadEntries() {
   entries.value = data.entries;
   total.value = data.total;
   loading.value = false;
+}
+
+function onFilterChange() {
+  currentPage.value = 1;
+  loadEntries();
 }
 
 function changePage(page: number) {

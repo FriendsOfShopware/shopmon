@@ -137,7 +137,9 @@ func TestAdminGetEnvironments(t *testing.T) {
 	var result api.AdminEnvironmentsResponse
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.Equal(t, 1, result.Total)
-	assert.Len(t, result.Environments, 1)
+	require.Len(t, result.Environments, 1)
+	require.NotNil(t, result.Environments[0].ShopName)
+	assert.Equal(t, "Test Shop", *result.Environments[0].ShopName)
 }
 
 func TestAdminGetEnvironments_Search(t *testing.T) {

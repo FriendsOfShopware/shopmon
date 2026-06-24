@@ -1,90 +1,20 @@
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.userManagement") }}</h1>
+  <AdminListLayout :title="$t('admin.userManagement')" :active-count="activeCount">
+    <template #filters>
+      <AdminFilterSidebar
+        v-model="filters"
+        v-model:search="searchQuery"
+        :groups="filterGroups"
+        searchable
+        :search-placeholder="$t('admin.searchUsers')"
+        @update:search="debouncedSearch"
+        @change="onFilterChange"
+      />
+    </template>
 
-    <Alert v-if="error" variant="destructive">
+    <Alert v-if="error" variant="destructive" class="mb-4">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
-
-    <!-- Filter bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- Role filter -->
-        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-          <button
-            v-for="f in roleFilters"
-            :key="f.value"
-            :class="[
-              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-              roleFilter === f.value
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ]"
-            @click="
-              roleFilter = f.value;
-              currentPage = 1;
-              loadUsers();
-            "
-          >
-            {{ f.label }}
-          </button>
-        </div>
-
-        <!-- Status filter -->
-        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-          <button
-            v-for="f in statusFilters"
-            :key="f.value"
-            :class="[
-              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-              statusFilter === f.value
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ]"
-            @click="
-              statusFilter = f.value;
-              currentPage = 1;
-              loadUsers();
-            "
-          >
-            {{ f.label }}
-          </button>
-        </div>
-
-        <!-- Sort -->
-        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-          <button
-            v-for="s in sortOptions"
-            :key="s.value"
-            :class="[
-              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-              sortBy === s.value
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ]"
-            @click="
-              sortBy = s.value;
-              currentPage = 1;
-              loadUsers();
-            "
-          >
-            {{ s.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="relative">
-        <icon-fa6-solid:magnifying-glass
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          v-model="searchQuery"
-          :placeholder="$t('admin.searchUsers')"
-          class="h-8 w-full pl-8 text-sm sm:w-56"
-          @input="debouncedSearch"
-        />
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
@@ -185,14 +115,15 @@
         {{ $t("common.next") }}
       </Button>
     </div>
-  </div>
+  </AdminListLayout>
 </template>
 
 <script setup lang="ts">
+import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFilterSidebar.vue";
+import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
 import type { components } from "@/types/api";
@@ -201,54 +132,82 @@ import { computed, onMounted, ref } from "vue";
 
 type User = components["schemas"]["AdminUser"];
 
-type StatusFilter = "" | "active" | "banned" | "unverified";
-type SortBy = "createdAt" | "name" | "email";
-
 const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const roleFilter = ref("");
-const statusFilter = ref<StatusFilter>("");
-const sortBy = ref<SortBy>("createdAt");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
 
+const filters = ref<Record<string, string>>({
+  role: "",
+  status: "",
+  sortBy: "createdAt",
+});
+
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 const { t } = useI18n();
 
-const roleFilters = [
-  { label: t("admin.allRoles"), value: "" },
-  { label: t("admin.roleAdmin"), value: "admin" },
-  { label: t("admin.roleUser"), value: "user" },
-];
+const filterGroups = computed<FilterGroup[]>(() => [
+  {
+    key: "role",
+    label: t("admin.filterRole"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allRoles"), value: "" },
+      { label: t("admin.roleAdmin"), value: "admin" },
+      { label: t("admin.roleUser"), value: "user" },
+    ],
+  },
+  {
+    key: "status",
+    label: t("admin.filterStatus"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allStatuses"), value: "" },
+      { label: t("admin.active"), value: "active" },
+      { label: t("admin.banned"), value: "banned" },
+      { label: t("admin.unverified"), value: "unverified" },
+    ],
+  },
+  {
+    key: "sortBy",
+    label: t("admin.filterSortBy"),
+    defaultValue: "createdAt",
+    options: [
+      { label: t("admin.sortByCreated"), value: "createdAt" },
+      { label: t("admin.sortByName"), value: "name" },
+      { label: t("admin.sortByEmail"), value: "email" },
+    ],
+  },
+]);
 
-const statusFilters: { label: string; value: StatusFilter }[] = [
-  { label: t("admin.allStatuses"), value: "" },
-  { label: t("admin.active"), value: "active" },
-  { label: t("admin.banned"), value: "banned" },
-  { label: t("admin.unverified"), value: "unverified" },
-];
-
-const sortOptions: { label: string; value: SortBy }[] = [
-  { label: t("admin.sortByCreated"), value: "createdAt" },
-  { label: t("admin.sortByName"), value: "name" },
-  { label: t("admin.sortByEmail"), value: "email" },
-];
+const activeCount = computed(() => {
+  let count = 0;
+  for (const g of filterGroups.value) {
+    if (filters.value[g.key] !== g.defaultValue) count++;
+  }
+  if (searchQuery.value) count++;
+  return count;
+});
 
 async function loadUsers() {
   loading.value = true;
   error.value = "";
 
   try {
+    const role = filters.value.role;
+    const status = filters.value.status;
+    const sortBy = filters.value.sortBy;
+
     const query: {
       limit: number;
       offset: number;
       search?: string;
       role?: "user" | "admin";
       status?: "active" | "banned" | "unverified";
-      sortBy?: SortBy;
+      sortBy?: "createdAt" | "name" | "email";
       sortDirection?: "asc" | "desc";
     } = {
       limit: pageSize.value,
@@ -258,14 +217,14 @@ async function loadUsers() {
     if (searchQuery.value) {
       query.search = searchQuery.value;
     }
-    if (roleFilter.value === "admin" || roleFilter.value === "user") {
-      query.role = roleFilter.value;
+    if (role === "admin" || role === "user") {
+      query.role = role;
     }
-    if (statusFilter.value) {
-      query.status = statusFilter.value;
+    if (status === "active" || status === "banned" || status === "unverified") {
+      query.status = status;
     }
-    if (sortBy.value !== "createdAt") {
-      query.sortBy = sortBy.value;
+    if (sortBy === "name" || sortBy === "email") {
+      query.sortBy = sortBy;
       query.sortDirection = "asc";
     }
 
@@ -285,6 +244,11 @@ async function loadUsers() {
   } finally {
     loading.value = false;
   }
+}
+
+function onFilterChange() {
+  currentPage.value = 1;
+  loadUsers();
 }
 
 function changePage(page: number) {

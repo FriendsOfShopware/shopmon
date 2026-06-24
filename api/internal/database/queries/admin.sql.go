@@ -708,9 +708,11 @@ func (q *Queries) AdminGetStats(ctx context.Context) (AdminGetStatsRow, error) {
 
 const adminListEnvironments = `-- name: AdminListEnvironments :many
 SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
-       e.organization_id, o.name AS organization_name
+       e.organization_id, o.name AS organization_name,
+       e.shop_id, s.name AS shop_name
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
+JOIN shop s ON s.id = e.shop_id
 WHERE ($3::text IS NULL OR e.name ILIKE '%' || $3 || '%' OR e.url ILIKE '%' || $3 || '%')
 ORDER BY
   CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN e.name END ASC,
@@ -742,6 +744,8 @@ type AdminListEnvironmentsRow struct {
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	OrganizationID   string           `json:"organization_id"`
 	OrganizationName string           `json:"organization_name"`
+	ShopID           int32            `json:"shop_id"`
+	ShopName         string           `json:"shop_name"`
 }
 
 func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnvironmentsParams) ([]AdminListEnvironmentsRow, error) {
@@ -769,6 +773,8 @@ func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnviro
 			&i.CreatedAt,
 			&i.OrganizationID,
 			&i.OrganizationName,
+			&i.ShopID,
+			&i.ShopName,
 		); err != nil {
 			return nil, err
 		}

@@ -28,9 +28,11 @@ WHERE (sqlc.narg('search')::text IS NULL OR o.name ILIKE '%' || sqlc.narg('searc
 
 -- name: AdminListEnvironments :many
 SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
-       e.organization_id, o.name AS organization_name
+       e.organization_id, o.name AS organization_name,
+       e.shop_id, s.name AS shop_name
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
+JOIN shop s ON s.id = e.shop_id
 WHERE (sqlc.narg('search')::text IS NULL OR e.name ILIKE '%' || sqlc.narg('search') || '%' OR e.url ILIKE '%' || sqlc.narg('search') || '%')
 ORDER BY
   CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.name END ASC,

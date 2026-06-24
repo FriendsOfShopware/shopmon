@@ -153,6 +153,8 @@ func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, p
 
 	environments := make([]api.AccountEnvironment, 0, len(rows))
 	for _, row := range rows {
+		shopID := int(row.ShopID)
+		shopName := row.ShopName
 		environments = append(environments, api.AccountEnvironment{
 			Id:               int(row.ID),
 			Name:             row.Name,
@@ -162,6 +164,8 @@ func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, p
 			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
 			OrganizationId:   row.OrganizationID,
 			OrganizationName: row.OrganizationName,
+			ShopId:           &shopID,
+			ShopName:         &shopName,
 		})
 	}
 
