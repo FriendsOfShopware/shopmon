@@ -1,6 +1,9 @@
 package jobs
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // ---- Shopware API response types ----
 
@@ -38,8 +41,8 @@ type shopwareSearchResponse[T any] struct {
 }
 
 type shopwareQueueEntry struct {
-	Name string `json:"name"`
-	Size int32  `json:"size"`
+	Name string      `json:"name"`
+	Size json.Number `json:"size"`
 }
 
 type shopwareScheduledTask struct {
