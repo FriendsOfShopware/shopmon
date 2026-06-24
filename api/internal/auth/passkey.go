@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -48,7 +49,7 @@ func (u *webauthnUser) WebAuthnCredentials() []webauthn.Credential { return u.cr
 // URL-safe alphabet, with or without padding. Passkeys registered by the legacy
 // better-auth stack stored public keys with standard base64, while passkeys
 // registered by this service use raw URL-safe base64; both must decode here.
-func decodeBase64Any(s string) []byte {
+func decodeBase64Any(s string) ([]byte, error) {
 	for _, enc := range []*base64.Encoding{
 		base64.RawURLEncoding,
 		base64.RawStdEncoding,
@@ -56,10 +57,10 @@ func decodeBase64Any(s string) []byte {
 		base64.StdEncoding,
 	} {
 		if b, err := enc.DecodeString(s); err == nil {
-			return b
+			return b, nil
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("decode base64: no supported encoding matched")
 }
 
 // isMultiDeviceCredential reports whether the stored device_type marks a
@@ -70,9 +71,15 @@ func isMultiDeviceCredential(deviceType string) bool {
 	return deviceType == "multi_device" || deviceType == "multiDevice"
 }
 
-func dbPasskeyToCredential(p queries.Passkey) webauthn.Credential {
-	credID := decodeBase64Any(p.CredentialID)
-	pubKey := decodeBase64Any(p.PublicKey)
+func dbPasskeyToCredential(p queries.Passkey) (webauthn.Credential, error) {
+	credID, err := decodeBase64Any(p.CredentialID)
+	if err != nil {
+		return webauthn.Credential{}, fmt.Errorf("decode credential id for passkey %s: %w", p.ID, err)
+	}
+	pubKey, err := decodeBase64Any(p.PublicKey)
+	if err != nil {
+		return webauthn.Credential{}, fmt.Errorf("decode public key for passkey %s: %w", p.ID, err)
+	}
 
 	var aaguid []byte
 	if p.Aaguid != nil {
@@ -100,7 +107,7 @@ func dbPasskeyToCredential(p queries.Passkey) webauthn.Credential {
 			AAGUID:    aaguid,
 			SignCount: uint32(p.Counter),
 		},
-	}
+	}, nil
 }
 
 func credentialToDBFields(cred *webauthn.Credential) (credentialID, publicKey, deviceType string, counter int32, backedUp bool, transports, aaguid *string) {

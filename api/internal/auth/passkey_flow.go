@@ -51,7 +51,11 @@ func (h *AuthHandler) loadWebauthnUser(ctx context.Context, userID string) (*web
 
 	creds := make([]webauthn.Credential, 0, len(dbPasskeys))
 	for _, passkey := range dbPasskeys {
-		creds = append(creds, dbPasskeyToCredential(passkey))
+		cred, err := dbPasskeyToCredential(passkey)
+		if err != nil {
+			return nil, err
+		}
+		creds = append(creds, cred)
 	}
 
 	return &webauthnUser{
@@ -151,6 +155,23 @@ func (h *AuthHandler) beginPasskeyLogin(ctx context.Context) (*passkeyOptionsRes
 	}, nil
 }
 
+// findPasskeyByRawCredentialID looks up a stored passkey for the raw credential
+// ID bytes from an assertion. Credential IDs are stored as raw URL-safe base64
+// (the format this service and the legacy better-auth stack both use), but we
+// also fall back to standard base64 in case any legacy row was stored that way.
+func (h *AuthHandler) findPasskeyByRawCredentialID(ctx context.Context, rawID []byte) (queries.GetPasskeyByCredentialIDRow, error) {
+	encodings := []*base64.Encoding{base64.RawURLEncoding, base64.RawStdEncoding}
+	var lastErr error
+	for _, enc := range encodings {
+		dbPasskey, err := h.queries.GetPasskeyByCredentialID(ctx, enc.EncodeToString(rawID))
+		if err == nil {
+			return dbPasskey, nil
+		}
+		lastErr = err
+	}
+	return queries.GetPasskeyByCredentialIDRow{}, lastErr
+}
+
 func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (*tokenUserResponse, error) {
 	ctx := r.Context()
 	var entry webauthnSessionEntry
@@ -164,8 +185,7 @@ func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (
 		// userHandle is an opaque per-credential value (the legacy better-auth
 		// stack stored a random string there, not the user ID), so it cannot be
 		// used to look up the user.
-		credIDEncoded := base64.RawURLEncoding.EncodeToString(rawID)
-		dbPasskey, err := h.queries.GetPasskeyByCredentialID(ctx, credIDEncoded)
+		dbPasskey, err := h.findPasskeyByRawCredentialID(ctx, rawID)
 		if err != nil {
 			return nil, errNoPasskeys
 		}
@@ -197,8 +217,7 @@ func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (
 		return nil, err
 	}
 
-	credIDEncoded := base64.RawURLEncoding.EncodeToString(credential.ID)
-	dbPasskey, err := h.queries.GetPasskeyByCredentialID(ctx, credIDEncoded)
+	dbPasskey, err := h.findPasskeyByRawCredentialID(ctx, credential.ID)
 	if err == nil {
 		if err := h.queries.UpdatePasskeyCounter(ctx, queries.UpdatePasskeyCounterParams{
 			Counter: int32(credential.Authenticator.SignCount),
