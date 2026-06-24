@@ -69,7 +69,7 @@ export async function setActiveOrganization(organizationId: string): Promise<voi
 
 export function useSession() {
   if (!_fetched.value) {
-    fetchSession();
+    void fetchSession();
   }
 
   const activeOrganizationId = computed(() => session.value?.session.activeOrganizationId ?? null);

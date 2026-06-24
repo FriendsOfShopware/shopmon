@@ -194,6 +194,8 @@ const ansiToHtml = (text: string) => {
   let html = "";
   let currentColor = "";
 
+  // Splitting on the ANSI escape sequence (ESC[) requires matching a control character.
+  // oxlint-disable-next-line no-control-regex
   const parts = text.split(/\x1b\[/);
 
   for (let i = 0; i < parts.length; i++) {

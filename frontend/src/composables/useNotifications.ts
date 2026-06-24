@@ -11,7 +11,7 @@ export function useNotifications() {
   const { session } = useSession();
 
   if (session.value?.user && notifications.value.length === 0) {
-    loadNotifications();
+    void loadNotifications();
   }
 
   const unreadNotificationCount = computed(() => {
