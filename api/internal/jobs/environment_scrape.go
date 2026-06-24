@@ -228,7 +228,7 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	var queueEntries []shopwareQueueEntry
 	if fr.queueErr == nil {
 		if err := json.Unmarshal(fr.queueData, &queueEntries); err != nil {
-			slog.Warn("failed to parse queue data", "environmentId", env.ID, "error", err)
+			slog.Error("failed to parse queue data", "environmentId", env.ID, "error", err)
 		}
 	}
 
@@ -288,9 +288,13 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 
 	checkerQueues := make([]checker.QueueInfo, len(queueEntries))
 	for i, q := range queueEntries {
+		size, err := q.Size.Int64()
+		if err != nil {
+			slog.Error("failed to parse queue size", "environmentId", env.ID, "queue", q.Name, "size", q.Size.String(), "error", err)
+		}
 		checkerQueues[i] = checker.QueueInfo{
 			Name: q.Name,
-			Size: int(q.Size),
+			Size: int(size),
 		}
 	}
 
@@ -429,10 +433,11 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	queueNames := make([]string, 0, len(queueEntries))
 	for _, q := range queueEntries {
 		queueNames = append(queueNames, q.Name)
+		size, _ := q.Size.Int64()
 		if err := txQueries.UpsertEnvironmentQueue(ctx, queries.UpsertEnvironmentQueueParams{
 			EnvironmentID: env.ID,
 			Name:          q.Name,
-			Size:          q.Size,
+			Size:          int32(size),
 		}); err != nil {
 			persistSpan.RecordError(err)
 			persistSpan.SetStatus(codes.Error, err.Error())
