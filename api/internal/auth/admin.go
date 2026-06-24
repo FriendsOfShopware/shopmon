@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -30,9 +31,21 @@ func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var search *string
+	if s := strings.TrimSpace(r.URL.Query().Get("search")); s != "" {
+		search = &s
+	}
+
+	var role *string
+	if rl := r.URL.Query().Get("role"); rl == "admin" || rl == "user" {
+		role = &rl
+	}
+
 	rows, err := h.queries.AdminListUsers(r.Context(), queries.AdminListUsersParams{
 		Limit:  limit,
 		Offset: offset,
+		Search: search,
+		Role:   role,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list users")

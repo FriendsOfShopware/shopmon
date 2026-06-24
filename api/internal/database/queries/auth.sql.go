@@ -25,6 +25,24 @@ func (q *Queries) AdminBanUser(ctx context.Context, arg AdminBanUserParams) erro
 	return err
 }
 
+const adminCountUsers = `-- name: AdminCountUsers :one
+SELECT COUNT(*)::int FROM "user"
+WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 || '%')
+  AND ($2::text IS NULL OR role = $2)
+`
+
+type AdminCountUsersParams struct {
+	Search *string `json:"search"`
+	Role   *string `json:"role"`
+}
+
+func (q *Queries) AdminCountUsers(ctx context.Context, arg AdminCountUsersParams) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountUsers, arg.Search, arg.Role)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const adminCreateImpersonationSession = `-- name: AdminCreateImpersonationSession :one
 INSERT INTO session (id, expires_at, token, created_at, updated_at, ip_address, user_agent, user_id, impersonated_by)
 VALUES ($1, $2, $3, NOW(), NOW(), $4, $5, $6, $7)
@@ -63,12 +81,17 @@ func (q *Queries) AdminCreateImpersonationSession(ctx context.Context, arg Admin
 
 const adminListUsers = `-- name: AdminListUsers :many
 SELECT id, name, email, email_verified, image, role, banned, ban_reason, created_at
-FROM "user" ORDER BY created_at DESC LIMIT $1 OFFSET $2
+FROM "user"
+WHERE ($3::text IS NULL OR email ILIKE '%' || $3 || '%' OR name ILIKE '%' || $3 || '%')
+  AND ($4::text IS NULL OR role = $4)
+ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type AdminListUsersParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int32   `json:"limit"`
+	Offset int32   `json:"offset"`
+	Search *string `json:"search"`
+	Role   *string `json:"role"`
 }
 
 type AdminListUsersRow struct {
@@ -84,7 +107,12 @@ type AdminListUsersRow struct {
 }
 
 func (q *Queries) AdminListUsers(ctx context.Context, arg AdminListUsersParams) ([]AdminListUsersRow, error) {
-	rows, err := q.db.Query(ctx, adminListUsers, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, adminListUsers,
+		arg.Limit,
+		arg.Offset,
+		arg.Search,
+		arg.Role,
+	)
 	if err != nil {
 		return nil, err
 	}

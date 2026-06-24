@@ -3,6 +3,7 @@ package handler
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -66,9 +67,15 @@ func (h *Handler) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, 
 		offset = int32(*params.Offset)
 	}
 
+	search := searchValue(params.SearchValue)
+	sortBy, sortDir := adminSort((*string)(params.SortBy), (*string)(params.SortDirection), "createdAt")
+
 	rows, err := h.queries.AdminListOrganizations(r.Context(), queries.AdminListOrganizationsParams{
-		Limit:  limit,
-		Offset: offset,
+		Limit:   limit,
+		Offset:  offset,
+		Search:  search,
+		SortBy:  sortBy,
+		SortDir: sortDir,
 	})
 	if err != nil {
 		slog.Error("failed to list organizations", "error", err)
@@ -76,7 +83,7 @@ func (h *Handler) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	total, err := h.queries.AdminCountOrganizations(r.Context())
+	total, err := h.queries.AdminCountOrganizations(r.Context(), search)
 	if err != nil {
 		slog.Error("failed to count organizations", "error", err)
 		total = 0
@@ -120,9 +127,15 @@ func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, p
 		offset = int32(*params.Offset)
 	}
 
+	search := searchValue(params.SearchValue)
+	sortBy, sortDir := adminSort(params.SortBy, (*string)(params.SortDirection), "createdAt")
+
 	rows, err := h.queries.AdminListEnvironments(r.Context(), queries.AdminListEnvironmentsParams{
-		Limit:  limit,
-		Offset: offset,
+		Limit:   limit,
+		Offset:  offset,
+		Search:  search,
+		SortBy:  sortBy,
+		SortDir: sortDir,
 	})
 	if err != nil {
 		slog.Error("failed to list environments", "error", err)
@@ -130,7 +143,7 @@ func (h *Handler) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	total, err := h.queries.AdminCountEnvironments(r.Context())
+	total, err := h.queries.AdminCountEnvironments(r.Context(), search)
 	if err != nil {
 		slog.Error("failed to count environments", "error", err)
 		total = 0
@@ -201,6 +214,34 @@ func (h *Handler) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 		Environments: environmentGrowth,
 		Users:        userGrowth,
 	})
+}
+
+// searchValue trims the optional search parameter and returns nil when it is
+// empty so the list/count queries skip filtering.
+func searchValue(v *string) *string {
+	if v == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*v)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+// adminSort normalises the sort column and direction. The column is passed
+// through to the query's whitelisted CASE expressions (an unknown value falls
+// back to the default ordering), and the direction defaults to descending.
+func adminSort(sortBy, sortDir *string, fallback string) (string, string) {
+	by := fallback
+	if sortBy != nil && *sortBy != "" {
+		by = *sortBy
+	}
+	dir := "desc"
+	if sortDir != nil && strings.ToLower(*sortDir) == "asc" {
+		dir = "asc"
+	}
+	return by, dir
 }
 
 // AdminGetRecentActivity returns recent user and environment activity.

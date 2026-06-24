@@ -1794,6 +1794,26 @@ paths:
       operationId: adminListUsers
       tags: [AuthAdmin]
       summary: List all users (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Filter users by email or name (case-insensitive substring)
+          schema:
+            type: string
+        - name: role
+          in: query
+          description: Filter users by role
+          schema:
+            type: string
+            enum: [user, admin]
       responses:
         "200":
           description: List of users

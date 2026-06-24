@@ -12,22 +12,40 @@ SELECT o.id, o.name, o.slug, o.logo, o.created_at,
        (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
        (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
 FROM organization o
-ORDER BY o.created_at DESC
+WHERE (sqlc.narg('search')::text IS NULL OR o.name ILIKE '%' || sqlc.narg('search') || '%' OR o.slug ILIKE '%' || sqlc.narg('search') || '%')
+ORDER BY
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN o.name END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'desc' THEN o.name END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'memberCount' AND sqlc.arg('sort_dir')::text = 'asc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'memberCount' AND sqlc.arg('sort_dir')::text = 'desc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'createdAt' AND sqlc.arg('sort_dir')::text = 'asc' THEN o.created_at END ASC,
+  o.created_at DESC
 LIMIT $1 OFFSET $2;
 
 -- name: AdminCountOrganizations :one
-SELECT COUNT(*)::int FROM organization;
+SELECT COUNT(*)::int FROM organization o
+WHERE (sqlc.narg('search')::text IS NULL OR o.name ILIKE '%' || sqlc.narg('search') || '%' OR o.slug ILIKE '%' || sqlc.narg('search') || '%');
 
 -- name: AdminListEnvironments :many
 SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
        e.organization_id, o.name AS organization_name
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
-ORDER BY e.name
+WHERE (sqlc.narg('search')::text IS NULL OR e.name ILIKE '%' || sqlc.narg('search') || '%' OR e.url ILIKE '%' || sqlc.narg('search') || '%')
+ORDER BY
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.name END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.name END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'status' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.status END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'status' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.status END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'asc' THEN o.name END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'desc' THEN o.name END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'createdAt' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.created_at END ASC,
+  e.created_at DESC
 LIMIT $1 OFFSET $2;
 
 -- name: AdminCountEnvironments :one
-SELECT COUNT(*)::int FROM environment;
+SELECT COUNT(*)::int FROM environment e
+WHERE (sqlc.narg('search')::text IS NULL OR e.name ILIKE '%' || sqlc.narg('search') || '%' OR e.url ILIKE '%' || sqlc.narg('search') || '%');
 
 -- name: AdminGetGrowthUsers :many
 SELECT to_char(created_at, 'YYYY-MM') AS month, COUNT(*)::int AS count

@@ -212,7 +212,26 @@ async function loadUsers() {
   error.value = "";
 
   try {
-    const { data, error: respError } = await api.GET("/auth/admin/users");
+    const query: {
+      limit: number;
+      offset: number;
+      search?: string;
+      role?: "user" | "admin";
+    } = {
+      limit: pageSize.value,
+      offset: (currentPage.value - 1) * pageSize.value,
+    };
+
+    if (searchQuery.value) {
+      query.search = searchQuery.value;
+    }
+    if (roleFilter.value === "admin" || roleFilter.value === "user") {
+      query.role = roleFilter.value;
+    }
+
+    const { data, error: respError } = await api.GET("/auth/admin/users", {
+      params: { query },
+    });
 
     if (!respError && data) {
       const userData = data as unknown as { users?: User[]; total?: number };

@@ -94,7 +94,15 @@ SELECT COUNT(*) > 0 AS is_member FROM member WHERE organization_id = $1 AND user
 
 -- name: AdminListUsers :many
 SELECT id, name, email, email_verified, image, role, banned, ban_reason, created_at
-FROM "user" ORDER BY created_at DESC LIMIT $1 OFFSET $2;
+FROM "user"
+WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search') || '%' OR name ILIKE '%' || sqlc.narg('search') || '%')
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'))
+ORDER BY created_at DESC LIMIT $1 OFFSET $2;
+
+-- name: AdminCountUsers :one
+SELECT COUNT(*)::int FROM "user"
+WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search') || '%' OR name ILIKE '%' || sqlc.narg('search') || '%')
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'));
 
 -- name: AdminSetUserRole :exec
 UPDATE "user" SET role = $1, updated_at = NOW() WHERE id = $2;

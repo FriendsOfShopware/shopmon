@@ -4126,7 +4126,14 @@ export interface operations {
   };
   adminListUsers: {
     parameters: {
-      query?: never;
+      query?: {
+        limit?: number;
+        offset?: number;
+        /** @description Filter users by email or name (case-insensitive substring) */
+        search?: string;
+        /** @description Filter users by role */
+        role?: "user" | "admin";
+      };
       header?: never;
       path?: never;
       cookie?: never;

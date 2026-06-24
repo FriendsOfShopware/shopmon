@@ -12,22 +12,24 @@ import (
 )
 
 const adminCountEnvironments = `-- name: AdminCountEnvironments :one
-SELECT COUNT(*)::int FROM environment
+SELECT COUNT(*)::int FROM environment e
+WHERE ($1::text IS NULL OR e.name ILIKE '%' || $1 || '%' OR e.url ILIKE '%' || $1 || '%')
 `
 
-func (q *Queries) AdminCountEnvironments(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountEnvironments)
+func (q *Queries) AdminCountEnvironments(ctx context.Context, search *string) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountEnvironments, search)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
 const adminCountOrganizations = `-- name: AdminCountOrganizations :one
-SELECT COUNT(*)::int FROM organization
+SELECT COUNT(*)::int FROM organization o
+WHERE ($1::text IS NULL OR o.name ILIKE '%' || $1 || '%' OR o.slug ILIKE '%' || $1 || '%')
 `
 
-func (q *Queries) AdminCountOrganizations(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountOrganizations)
+func (q *Queries) AdminCountOrganizations(ctx context.Context, search *string) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountOrganizations, search)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -238,13 +240,25 @@ SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.c
        e.organization_id, o.name AS organization_name
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
-ORDER BY e.name
+WHERE ($3::text IS NULL OR e.name ILIKE '%' || $3 || '%' OR e.url ILIKE '%' || $3 || '%')
+ORDER BY
+  CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN e.name END ASC,
+  CASE WHEN $4::text = 'name' AND $5::text = 'desc' THEN e.name END DESC,
+  CASE WHEN $4::text = 'status' AND $5::text = 'asc' THEN e.status END ASC,
+  CASE WHEN $4::text = 'status' AND $5::text = 'desc' THEN e.status END DESC,
+  CASE WHEN $4::text = 'organizationName' AND $5::text = 'asc' THEN o.name END ASC,
+  CASE WHEN $4::text = 'organizationName' AND $5::text = 'desc' THEN o.name END DESC,
+  CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN e.created_at END ASC,
+  e.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type AdminListEnvironmentsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+	Search  *string `json:"search"`
+	SortBy  string  `json:"sort_by"`
+	SortDir string  `json:"sort_dir"`
 }
 
 type AdminListEnvironmentsRow struct {
@@ -260,7 +274,13 @@ type AdminListEnvironmentsRow struct {
 }
 
 func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnvironmentsParams) ([]AdminListEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, adminListEnvironments, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, adminListEnvironments,
+		arg.Limit,
+		arg.Offset,
+		arg.Search,
+		arg.SortBy,
+		arg.SortDir,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -294,13 +314,23 @@ SELECT o.id, o.name, o.slug, o.logo, o.created_at,
        (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
        (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
 FROM organization o
-ORDER BY o.created_at DESC
+WHERE ($3::text IS NULL OR o.name ILIKE '%' || $3 || '%' OR o.slug ILIKE '%' || $3 || '%')
+ORDER BY
+  CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN o.name END ASC,
+  CASE WHEN $4::text = 'name' AND $5::text = 'desc' THEN o.name END DESC,
+  CASE WHEN $4::text = 'memberCount' AND $5::text = 'asc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END ASC,
+  CASE WHEN $4::text = 'memberCount' AND $5::text = 'desc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END DESC,
+  CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN o.created_at END ASC,
+  o.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type AdminListOrganizationsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+	Search  *string `json:"search"`
+	SortBy  string  `json:"sort_by"`
+	SortDir string  `json:"sort_dir"`
 }
 
 type AdminListOrganizationsRow struct {
@@ -314,7 +344,13 @@ type AdminListOrganizationsRow struct {
 }
 
 func (q *Queries) AdminListOrganizations(ctx context.Context, arg AdminListOrganizationsParams) ([]AdminListOrganizationsRow, error) {
-	rows, err := q.db.Query(ctx, adminListOrganizations, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, adminListOrganizations,
+		arg.Limit,
+		arg.Offset,
+		arg.Search,
+		arg.SortBy,
+		arg.SortDir,
+	)
 	if err != nil {
 		return nil, err
 	}

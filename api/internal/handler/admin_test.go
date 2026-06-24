@@ -72,6 +72,50 @@ func TestAdminGetOrganizations(t *testing.T) {
 	assert.Len(t, result.Organizations, 2)
 }
 
+func TestAdminGetOrganizations_Search(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
+	env.SeedOrganization(t, "org-1", "Alpha Org", "alpha-org", "admin-1")
+	env.SeedOrganization(t, "org-2", "Beta Org", "beta-org", "admin-1")
+
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/organizations?searchValue=alpha", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result api.AdminOrganizationsResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	assert.Equal(t, 1, result.Total)
+	require.Len(t, result.Organizations, 1)
+	assert.Equal(t, "Alpha Org", result.Organizations[0].Name)
+}
+
+func TestAdminGetOrganizations_SortByName(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
+	env.SeedOrganization(t, "org-1", "Beta Org", "beta-org", "admin-1")
+	env.SeedOrganization(t, "org-2", "Alpha Org", "alpha-org", "admin-1")
+
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/organizations?sortBy=name&sortDirection=asc", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result api.AdminOrganizationsResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.Len(t, result.Organizations, 2)
+	assert.Equal(t, "Alpha Org", result.Organizations[0].Name)
+	assert.Equal(t, "Beta Org", result.Organizations[1].Name)
+}
+
 func TestAdminGetEnvironments(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
@@ -92,6 +136,30 @@ func TestAdminGetEnvironments(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.Equal(t, 1, result.Total)
 	assert.Len(t, result.Environments, 1)
+}
+
+func TestAdminGetEnvironments_Search(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "admin-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	env.SeedEnvironment(t, "org-1", shopID, "Production", "https://prod.example.com")
+	env.SeedEnvironment(t, "org-1", shopID, "Staging", "https://staging.example.com")
+
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/environments?searchValue=staging", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result api.AdminEnvironmentsResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	assert.Equal(t, 1, result.Total)
+	require.Len(t, result.Environments, 1)
+	assert.Equal(t, "Staging", result.Environments[0].Name)
 }
 
 func TestAdminGetGrowth(t *testing.T) {
