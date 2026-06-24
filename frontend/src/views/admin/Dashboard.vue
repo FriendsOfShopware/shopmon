@@ -171,7 +171,7 @@
       <!-- Quick actions -->
       <div class="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" as-child>
-          <RouterLink to="/admin/users">
+          <RouterLink to="/admin/organizations">
             <icon-fa6-solid:users class="mr-1.5 size-3" />
             {{ $t("admin.manageOrgs") }}
           </RouterLink>

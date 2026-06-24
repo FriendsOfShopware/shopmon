@@ -1,44 +1,20 @@
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t("admin.userManagement") }}</h1>
+  <AdminListLayout :title="$t('admin.userManagement')" :active-count="activeCount">
+    <template #filters>
+      <AdminFilterSidebar
+        v-model="filters"
+        v-model:search="searchQuery"
+        :groups="filterGroups"
+        searchable
+        :search-placeholder="$t('admin.searchUsers')"
+        @update:search="debouncedSearch"
+        @change="onFilterChange"
+      />
+    </template>
 
-    <Alert v-if="error" variant="destructive">
+    <Alert v-if="error" variant="destructive" class="mb-4">
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
-
-    <!-- Filter bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-        <button
-          v-for="f in roleFilters"
-          :key="f.value"
-          :class="[
-            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            roleFilter === f.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="
-            roleFilter = f.value;
-            loadUsers();
-          "
-        >
-          {{ f.label }}
-        </button>
-      </div>
-
-      <div class="relative">
-        <icon-fa6-solid:magnifying-glass
-          class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          v-model="searchQuery"
-          :placeholder="$t('admin.searchUsers')"
-          class="h-8 w-full pl-8 text-sm sm:w-56"
-          @input="debouncedSearch"
-        />
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
@@ -48,10 +24,11 @@
 
     <!-- User list -->
     <div v-else-if="users.length > 0" class="space-y-2">
-      <div
+      <RouterLink
         v-for="user in users"
         :key="user.id"
-        class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3"
+        :to="{ name: 'admin.users.detail', params: { id: user.id } }"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
         <!-- Avatar -->
         <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -61,7 +38,9 @@
         <!-- Info -->
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <span class="truncate font-medium">{{ user.name }}</span>
+            <span class="truncate font-medium transition-colors group-hover:text-primary">{{
+              user.name
+            }}</span>
             <Badge
               v-if="user.role === 'admin'"
               class="bg-primary/10 text-primary border-primary/20 text-[10px]"
@@ -95,39 +74,11 @@
           </Badge>
         </div>
 
-        <!-- Actions -->
-        <div v-if="user.id !== sessionData?.user?.id" class="flex shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            :title="$t('admin.impersonateTitle')"
-            @click="impersonateUser(user.id)"
-          >
-            <icon-fa6-solid:user-secret class="size-3.5" />
-          </Button>
-          <Button
-            v-if="!user.banned"
-            variant="ghost"
-            size="icon"
-            class="size-7 text-muted-foreground hover:text-destructive"
-            :title="$t('admin.banUser')"
-            @click="banUser(user.id)"
-          >
-            <icon-fa6-solid:ban class="size-3.5" />
-          </Button>
-          <Button
-            v-else
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            :title="$t('admin.unbanUser')"
-            @click="unbanUser(user.id)"
-          >
-            <icon-fa6-solid:rotate class="size-3.5" />
-          </Button>
-        </div>
-      </div>
+        <!-- Chevron -->
+        <icon-fa6-solid:chevron-right
+          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </RouterLink>
     </div>
 
     <!-- Empty state -->
@@ -164,60 +115,126 @@
         {{ $t("common.next") }}
       </Button>
     </div>
-  </div>
+  </AdminListLayout>
 </template>
 
 <script setup lang="ts">
+import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFilterSidebar.vue";
+import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
+import type { components } from "@/types/api";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  banned: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-}
+type User = components["schemas"]["AdminUser"];
 
 const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
-const roleFilter = ref("");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
 
-const { session: sessionData } = useSession();
+const filters = ref<Record<string, string>>({
+  role: "",
+  status: "",
+  sortBy: "createdAt",
+});
+
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 const { t } = useI18n();
 
-const roleFilters = [
-  { label: t("admin.allRoles"), value: "" },
-  { label: t("admin.roleAdmin"), value: "admin" },
-  { label: t("admin.roleUser"), value: "user" },
-];
+const filterGroups = computed<FilterGroup[]>(() => [
+  {
+    key: "role",
+    label: t("admin.filterRole"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allRoles"), value: "" },
+      { label: t("admin.roleAdmin"), value: "admin" },
+      { label: t("admin.roleUser"), value: "user" },
+    ],
+  },
+  {
+    key: "status",
+    label: t("admin.filterStatus"),
+    defaultValue: "",
+    options: [
+      { label: t("admin.allStatuses"), value: "" },
+      { label: t("admin.active"), value: "active" },
+      { label: t("admin.banned"), value: "banned" },
+      { label: t("admin.unverified"), value: "unverified" },
+    ],
+  },
+  {
+    key: "sortBy",
+    label: t("admin.filterSortBy"),
+    defaultValue: "createdAt",
+    options: [
+      { label: t("admin.sortByCreated"), value: "createdAt" },
+      { label: t("admin.sortByName"), value: "name" },
+      { label: t("admin.sortByEmail"), value: "email" },
+    ],
+  },
+]);
+
+const activeCount = computed(() => {
+  let count = 0;
+  for (const g of filterGroups.value) {
+    if (filters.value[g.key] !== g.defaultValue) count++;
+  }
+  if (searchQuery.value) count++;
+  return count;
+});
 
 async function loadUsers() {
   loading.value = true;
   error.value = "";
 
   try {
-    const { data, error: respError } = await api.GET("/auth/admin/users");
+    const role = filters.value.role;
+    const status = filters.value.status;
+    const sortBy = filters.value.sortBy;
+
+    const query: {
+      limit: number;
+      offset: number;
+      search?: string;
+      role?: "user" | "admin";
+      status?: "active" | "banned" | "unverified";
+      sortBy?: "createdAt" | "name" | "email";
+      sortDirection?: "asc" | "desc";
+    } = {
+      limit: pageSize.value,
+      offset: (currentPage.value - 1) * pageSize.value,
+    };
+
+    if (searchQuery.value) {
+      query.search = searchQuery.value;
+    }
+    if (role === "admin" || role === "user") {
+      query.role = role;
+    }
+    if (status === "active" || status === "banned" || status === "unverified") {
+      query.status = status;
+    }
+    if (sortBy === "name" || sortBy === "email") {
+      query.sortBy = sortBy;
+      query.sortDirection = "asc";
+    }
+
+    const { data, error: respError } = await api.GET("/auth/admin/users", {
+      params: { query },
+    });
 
     if (!respError && data) {
-      const userData = data as unknown as { users?: User[]; total?: number };
-      users.value = userData.users ?? (Array.isArray(data) ? (data as User[]) : []);
-      totalUsers.value = userData.total ?? users.value.length;
+      users.value = data.users ?? [];
+      totalUsers.value = data.total ?? users.value.length;
     } else {
       error.value =
         (respError as unknown as { message?: string })?.message ?? "Failed to load users";
@@ -229,53 +246,9 @@ async function loadUsers() {
   }
 }
 
-async function impersonateUser(userId: string) {
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
-      params: { path: { userId } },
-    });
-    if (!respError) {
-      window.location.href = "/";
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to impersonate user";
-    }
-  } catch (err) {
-    error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
-  }
-}
-
-async function banUser(userId: string) {
-  const reason = window.prompt("Ban reason:");
-  if (!reason) return;
-
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
-      params: { path: { userId } },
-      body: { banReason: reason },
-    });
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to ban user";
-    }
-  } catch (err) {
-    error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
-  }
-}
-
-async function unbanUser(userId: string) {
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
-      params: { path: { userId } },
-    });
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to unban user";
-    }
-  } catch (err) {
-    error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;
-  }
+function onFilterChange() {
+  currentPage.value = 1;
+  loadUsers();
 }
 
 function changePage(page: number) {

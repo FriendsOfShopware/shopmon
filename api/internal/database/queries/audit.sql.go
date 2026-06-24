@@ -7,7 +7,166 @@ package queries
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const adminCountAuditLog = `-- name: AdminCountAuditLog :one
+SELECT COUNT(*)::int FROM audit_log a
+WHERE ($1::text IS NULL OR a.action = $1)
+  AND ($2::text IS NULL OR a.actor_user_id = $2)
+  AND ($3::text IS NULL OR a.target_user_id = $3)
+`
+
+type AdminCountAuditLogParams struct {
+	Action       *string `json:"action"`
+	ActorUserID  *string `json:"actor_user_id"`
+	TargetUserID *string `json:"target_user_id"`
+}
+
+func (q *Queries) AdminCountAuditLog(ctx context.Context, arg AdminCountAuditLogParams) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountAuditLog, arg.Action, arg.ActorUserID, arg.TargetUserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const adminListAuditLog = `-- name: AdminListAuditLog :many
+SELECT a.id, a.actor_user_id, actor.name AS actor_name, actor.email AS actor_email,
+       a.action, a.target_user_id, target.name AS target_name, target.email AS target_email,
+       a.detail, a.ip_address, a.created_at
+FROM audit_log a
+LEFT JOIN "user" actor ON actor.id = a.actor_user_id
+LEFT JOIN "user" target ON target.id = a.target_user_id
+WHERE ($3::text IS NULL OR a.action = $3)
+  AND ($4::text IS NULL OR a.actor_user_id = $4)
+  AND ($5::text IS NULL OR a.target_user_id = $5)
+ORDER BY a.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type AdminListAuditLogParams struct {
+	Limit        int32   `json:"limit"`
+	Offset       int32   `json:"offset"`
+	Action       *string `json:"action"`
+	ActorUserID  *string `json:"actor_user_id"`
+	TargetUserID *string `json:"target_user_id"`
+}
+
+type AdminListAuditLogRow struct {
+	ID           int64            `json:"id"`
+	ActorUserID  *string          `json:"actor_user_id"`
+	ActorName    *string          `json:"actor_name"`
+	ActorEmail   *string          `json:"actor_email"`
+	Action       string           `json:"action"`
+	TargetUserID *string          `json:"target_user_id"`
+	TargetName   *string          `json:"target_name"`
+	TargetEmail  *string          `json:"target_email"`
+	Detail       *string          `json:"detail"`
+	IpAddress    *string          `json:"ip_address"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminListAuditLog(ctx context.Context, arg AdminListAuditLogParams) ([]AdminListAuditLogRow, error) {
+	rows, err := q.db.Query(ctx, adminListAuditLog,
+		arg.Limit,
+		arg.Offset,
+		arg.Action,
+		arg.ActorUserID,
+		arg.TargetUserID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListAuditLogRow{}
+	for rows.Next() {
+		var i AdminListAuditLogRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorUserID,
+			&i.ActorName,
+			&i.ActorEmail,
+			&i.Action,
+			&i.TargetUserID,
+			&i.TargetName,
+			&i.TargetEmail,
+			&i.Detail,
+			&i.IpAddress,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListUserAuditLog = `-- name: AdminListUserAuditLog :many
+SELECT a.id, a.actor_user_id, actor.name AS actor_name, actor.email AS actor_email,
+       a.action, a.target_user_id, target.name AS target_name, target.email AS target_email,
+       a.detail, a.ip_address, a.created_at
+FROM audit_log a
+LEFT JOIN "user" actor ON actor.id = a.actor_user_id
+LEFT JOIN "user" target ON target.id = a.target_user_id
+WHERE a.actor_user_id = $1 OR a.target_user_id = $1
+ORDER BY a.created_at DESC
+LIMIT $2
+`
+
+type AdminListUserAuditLogParams struct {
+	ActorUserID *string `json:"actor_user_id"`
+	Limit       int32   `json:"limit"`
+}
+
+type AdminListUserAuditLogRow struct {
+	ID           int64            `json:"id"`
+	ActorUserID  *string          `json:"actor_user_id"`
+	ActorName    *string          `json:"actor_name"`
+	ActorEmail   *string          `json:"actor_email"`
+	Action       string           `json:"action"`
+	TargetUserID *string          `json:"target_user_id"`
+	TargetName   *string          `json:"target_name"`
+	TargetEmail  *string          `json:"target_email"`
+	Detail       *string          `json:"detail"`
+	IpAddress    *string          `json:"ip_address"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminListUserAuditLog(ctx context.Context, arg AdminListUserAuditLogParams) ([]AdminListUserAuditLogRow, error) {
+	rows, err := q.db.Query(ctx, adminListUserAuditLog, arg.ActorUserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListUserAuditLogRow{}
+	for rows.Next() {
+		var i AdminListUserAuditLogRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActorUserID,
+			&i.ActorName,
+			&i.ActorEmail,
+			&i.Action,
+			&i.TargetUserID,
+			&i.TargetName,
+			&i.TargetEmail,
+			&i.Detail,
+			&i.IpAddress,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const createAuditLog = `-- name: CreateAuditLog :exec
 INSERT INTO audit_log (actor_user_id, action, target_user_id, detail, ip_address)

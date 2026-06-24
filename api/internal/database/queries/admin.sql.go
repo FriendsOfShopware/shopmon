@@ -12,25 +12,247 @@ import (
 )
 
 const adminCountEnvironments = `-- name: AdminCountEnvironments :one
-SELECT COUNT(*)::int FROM environment
+SELECT COUNT(*)::int FROM environment e
+WHERE ($1::text IS NULL OR e.name ILIKE '%' || $1 || '%' OR e.url ILIKE '%' || $1 || '%')
 `
 
-func (q *Queries) AdminCountEnvironments(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountEnvironments)
+func (q *Queries) AdminCountEnvironments(ctx context.Context, search *string) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountEnvironments, search)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
 const adminCountOrganizations = `-- name: AdminCountOrganizations :one
-SELECT COUNT(*)::int FROM organization
+SELECT COUNT(*)::int FROM organization o
+WHERE ($1::text IS NULL OR o.name ILIKE '%' || $1 || '%' OR o.slug ILIKE '%' || $1 || '%')
 `
 
-func (q *Queries) AdminCountOrganizations(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountOrganizations)
+func (q *Queries) AdminCountOrganizations(ctx context.Context, search *string) (int32, error) {
+	row := q.db.QueryRow(ctx, adminCountOrganizations, search)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const adminGetEnvironmentChecks = `-- name: AdminGetEnvironmentChecks :many
+SELECT id, check_id, level, message, source, link
+FROM environment_check
+WHERE environment_id = $1
+ORDER BY level, check_id
+`
+
+type AdminGetEnvironmentChecksRow struct {
+	ID      int32   `json:"id"`
+	CheckID string  `json:"check_id"`
+	Level   string  `json:"level"`
+	Message string  `json:"message"`
+	Source  string  `json:"source"`
+	Link    *string `json:"link"`
+}
+
+func (q *Queries) AdminGetEnvironmentChecks(ctx context.Context, environmentID int32) ([]AdminGetEnvironmentChecksRow, error) {
+	rows, err := q.db.Query(ctx, adminGetEnvironmentChecks, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetEnvironmentChecksRow{}
+	for rows.Next() {
+		var i AdminGetEnvironmentChecksRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CheckID,
+			&i.Level,
+			&i.Message,
+			&i.Source,
+			&i.Link,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetEnvironmentDetail = `-- name: AdminGetEnvironmentDetail :one
+
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.created_at,
+       e.last_scraped_at, e.last_scraped_error, e.connection_issue_count,
+       e.organization_id, o.name AS organization_name,
+       e.shop_id, s.name AS shop_name
+FROM environment e
+JOIN organization o ON o.id = e.organization_id
+JOIN shop s ON s.id = e.shop_id
+WHERE e.id = $1
+`
+
+type AdminGetEnvironmentDetailRow struct {
+	ID                   int32            `json:"id"`
+	Name                 string           `json:"name"`
+	Url                  string           `json:"url"`
+	Status               string           `json:"status"`
+	ShopwareVersion      string           `json:"shopware_version"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+	LastScrapedAt        pgtype.Timestamp `json:"last_scraped_at"`
+	LastScrapedError     *string          `json:"last_scraped_error"`
+	ConnectionIssueCount int32            `json:"connection_issue_count"`
+	OrganizationID       string           `json:"organization_id"`
+	OrganizationName     string           `json:"organization_name"`
+	ShopID               int32            `json:"shop_id"`
+	ShopName             string           `json:"shop_name"`
+}
+
+// Phase 4: Environment detail ---------------------------------------------
+func (q *Queries) AdminGetEnvironmentDetail(ctx context.Context, id int32) (AdminGetEnvironmentDetailRow, error) {
+	row := q.db.QueryRow(ctx, adminGetEnvironmentDetail, id)
+	var i AdminGetEnvironmentDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Url,
+		&i.Status,
+		&i.ShopwareVersion,
+		&i.CreatedAt,
+		&i.LastScrapedAt,
+		&i.LastScrapedError,
+		&i.ConnectionIssueCount,
+		&i.OrganizationID,
+		&i.OrganizationName,
+		&i.ShopID,
+		&i.ShopName,
+	)
+	return i, err
+}
+
+const adminGetEnvironmentExtensions = `-- name: AdminGetEnvironmentExtensions :many
+SELECT id, name, label, active, version, latest_version, installed, store_link
+FROM environment_extension
+WHERE environment_id = $1
+ORDER BY name
+`
+
+type AdminGetEnvironmentExtensionsRow struct {
+	ID            int32   `json:"id"`
+	Name          string  `json:"name"`
+	Label         string  `json:"label"`
+	Active        bool    `json:"active"`
+	Version       string  `json:"version"`
+	LatestVersion *string `json:"latest_version"`
+	Installed     bool    `json:"installed"`
+	StoreLink     *string `json:"store_link"`
+}
+
+func (q *Queries) AdminGetEnvironmentExtensions(ctx context.Context, environmentID int32) ([]AdminGetEnvironmentExtensionsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetEnvironmentExtensions, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetEnvironmentExtensionsRow{}
+	for rows.Next() {
+		var i AdminGetEnvironmentExtensionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Label,
+			&i.Active,
+			&i.Version,
+			&i.LatestVersion,
+			&i.Installed,
+			&i.StoreLink,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetEnvironmentLastDeployment = `-- name: AdminGetEnvironmentLastDeployment :one
+SELECT id, name, command, return_code, execution_time, reference, created_at
+FROM deployment
+WHERE environment_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type AdminGetEnvironmentLastDeploymentRow struct {
+	ID            int32            `json:"id"`
+	Name          string           `json:"name"`
+	Command       string           `json:"command"`
+	ReturnCode    int32            `json:"return_code"`
+	ExecutionTime float32          `json:"execution_time"`
+	Reference     *string          `json:"reference"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminGetEnvironmentLastDeployment(ctx context.Context, environmentID int32) (AdminGetEnvironmentLastDeploymentRow, error) {
+	row := q.db.QueryRow(ctx, adminGetEnvironmentLastDeployment, environmentID)
+	var i AdminGetEnvironmentLastDeploymentRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Command,
+		&i.ReturnCode,
+		&i.ExecutionTime,
+		&i.Reference,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const adminGetEnvironmentTasks = `-- name: AdminGetEnvironmentTasks :many
+SELECT id, task_id, name, status, "interval", overdue, last_execution_time, next_execution_time
+FROM environment_scheduled_task
+WHERE environment_id = $1
+ORDER BY overdue DESC, name
+`
+
+type AdminGetEnvironmentTasksRow struct {
+	ID                int32   `json:"id"`
+	TaskID            string  `json:"task_id"`
+	Name              string  `json:"name"`
+	Status            string  `json:"status"`
+	Interval          int32   `json:"interval"`
+	Overdue           bool    `json:"overdue"`
+	LastExecutionTime *string `json:"last_execution_time"`
+	NextExecutionTime *string `json:"next_execution_time"`
+}
+
+func (q *Queries) AdminGetEnvironmentTasks(ctx context.Context, environmentID int32) ([]AdminGetEnvironmentTasksRow, error) {
+	rows, err := q.db.Query(ctx, adminGetEnvironmentTasks, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetEnvironmentTasksRow{}
+	for rows.Next() {
+		var i AdminGetEnvironmentTasksRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TaskID,
+			&i.Name,
+			&i.Status,
+			&i.Interval,
+			&i.Overdue,
+			&i.LastExecutionTime,
+			&i.NextExecutionTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const adminGetGrowthEnvironments = `-- name: AdminGetGrowthEnvironments :many
@@ -83,6 +305,263 @@ func (q *Queries) AdminGetGrowthUsers(ctx context.Context) ([]AdminGetGrowthUser
 	for rows.Next() {
 		var i AdminGetGrowthUsersRow
 		if err := rows.Scan(&i.Month, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetOrganizationDetail = `-- name: AdminGetOrganizationDetail :one
+
+SELECT o.id, o.name, o.slug, o.logo, o.created_at,
+       (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
+       (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
+FROM organization o
+WHERE o.id = $1
+`
+
+type AdminGetOrganizationDetailRow struct {
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	Slug             string           `json:"slug"`
+	Logo             *string          `json:"logo"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	EnvironmentCount int32            `json:"environment_count"`
+	MemberCount      int32            `json:"member_count"`
+}
+
+// Phase 3: Organization detail --------------------------------------------
+func (q *Queries) AdminGetOrganizationDetail(ctx context.Context, id string) (AdminGetOrganizationDetailRow, error) {
+	row := q.db.QueryRow(ctx, adminGetOrganizationDetail, id)
+	var i AdminGetOrganizationDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.Logo,
+		&i.CreatedAt,
+		&i.EnvironmentCount,
+		&i.MemberCount,
+	)
+	return i, err
+}
+
+const adminGetOrganizationEnvironments = `-- name: AdminGetOrganizationEnvironments :many
+SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at,
+       e.shop_id, s.name AS shop_name
+FROM environment e
+JOIN shop s ON s.id = e.shop_id
+WHERE e.organization_id = $1
+ORDER BY s.name, e.name
+`
+
+type AdminGetOrganizationEnvironmentsRow struct {
+	ID              int32            `json:"id"`
+	Name            string           `json:"name"`
+	Url             string           `json:"url"`
+	Status          string           `json:"status"`
+	ShopwareVersion string           `json:"shopware_version"`
+	LastScrapedAt   pgtype.Timestamp `json:"last_scraped_at"`
+	ShopID          int32            `json:"shop_id"`
+	ShopName        string           `json:"shop_name"`
+}
+
+func (q *Queries) AdminGetOrganizationEnvironments(ctx context.Context, organizationID string) ([]AdminGetOrganizationEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrganizationEnvironments, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetOrganizationEnvironmentsRow{}
+	for rows.Next() {
+		var i AdminGetOrganizationEnvironmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Status,
+			&i.ShopwareVersion,
+			&i.LastScrapedAt,
+			&i.ShopID,
+			&i.ShopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetOrganizationInvitations = `-- name: AdminGetOrganizationInvitations :many
+SELECT i.id, i.email, i.role, i.status, i.expires_at, i.created_at,
+       u.name AS inviter_name, u.email AS inviter_email
+FROM invitation i
+JOIN "user" u ON u.id = i.inviter_id
+WHERE i.organization_id = $1
+ORDER BY i.created_at DESC
+`
+
+type AdminGetOrganizationInvitationsRow struct {
+	ID           string           `json:"id"`
+	Email        string           `json:"email"`
+	Role         *string          `json:"role"`
+	Status       string           `json:"status"`
+	ExpiresAt    pgtype.Timestamp `json:"expires_at"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	InviterName  string           `json:"inviter_name"`
+	InviterEmail string           `json:"inviter_email"`
+}
+
+func (q *Queries) AdminGetOrganizationInvitations(ctx context.Context, organizationID string) ([]AdminGetOrganizationInvitationsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrganizationInvitations, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetOrganizationInvitationsRow{}
+	for rows.Next() {
+		var i AdminGetOrganizationInvitationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Role,
+			&i.Status,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			&i.InviterName,
+			&i.InviterEmail,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetOrganizationMembers = `-- name: AdminGetOrganizationMembers :many
+SELECT m.user_id, u.name, u.email, u.image, m.role, m.created_at
+FROM member m
+JOIN "user" u ON u.id = m.user_id
+WHERE m.organization_id = $1
+ORDER BY m.created_at
+`
+
+type AdminGetOrganizationMembersRow struct {
+	UserID    string           `json:"user_id"`
+	Name      string           `json:"name"`
+	Email     string           `json:"email"`
+	Image     *string          `json:"image"`
+	Role      string           `json:"role"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminGetOrganizationMembers(ctx context.Context, organizationID string) ([]AdminGetOrganizationMembersRow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrganizationMembers, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetOrganizationMembersRow{}
+	for rows.Next() {
+		var i AdminGetOrganizationMembersRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Name,
+			&i.Email,
+			&i.Image,
+			&i.Role,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetOrganizationSSO = `-- name: AdminGetOrganizationSSO :many
+SELECT id, issuer, provider_id, domain
+FROM sso_provider
+WHERE organization_id = $1
+ORDER BY domain
+`
+
+type AdminGetOrganizationSSORow struct {
+	ID         string `json:"id"`
+	Issuer     string `json:"issuer"`
+	ProviderID string `json:"provider_id"`
+	Domain     string `json:"domain"`
+}
+
+func (q *Queries) AdminGetOrganizationSSO(ctx context.Context, organizationID *string) ([]AdminGetOrganizationSSORow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrganizationSSO, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetOrganizationSSORow{}
+	for rows.Next() {
+		var i AdminGetOrganizationSSORow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Issuer,
+			&i.ProviderID,
+			&i.Domain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetOrganizationShops = `-- name: AdminGetOrganizationShops :many
+SELECT id, name, description, default_environment_id, created_at
+FROM shop
+WHERE organization_id = $1
+ORDER BY name
+`
+
+type AdminGetOrganizationShopsRow struct {
+	ID                   int32            `json:"id"`
+	Name                 string           `json:"name"`
+	Description          *string          `json:"description"`
+	DefaultEnvironmentID *int32           `json:"default_environment_id"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminGetOrganizationShops(ctx context.Context, organizationID string) ([]AdminGetOrganizationShopsRow, error) {
+	rows, err := q.db.Query(ctx, adminGetOrganizationShops, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminGetOrganizationShopsRow{}
+	for rows.Next() {
+		var i AdminGetOrganizationShopsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.DefaultEnvironmentID,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -235,16 +714,30 @@ func (q *Queries) AdminGetStats(ctx context.Context) (AdminGetStatsRow, error) {
 
 const adminListEnvironments = `-- name: AdminListEnvironments :many
 SELECT e.id, e.name, e.url, e.status, e.shopware_version, e.last_scraped_at, e.created_at,
-       e.organization_id, o.name AS organization_name
+       e.organization_id, o.name AS organization_name,
+       e.shop_id, s.name AS shop_name
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
-ORDER BY e.name
+JOIN shop s ON s.id = e.shop_id
+WHERE ($3::text IS NULL OR e.name ILIKE '%' || $3 || '%' OR e.url ILIKE '%' || $3 || '%')
+ORDER BY
+  CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN e.name END ASC,
+  CASE WHEN $4::text = 'name' AND $5::text = 'desc' THEN e.name END DESC,
+  CASE WHEN $4::text = 'status' AND $5::text = 'asc' THEN e.status END ASC,
+  CASE WHEN $4::text = 'status' AND $5::text = 'desc' THEN e.status END DESC,
+  CASE WHEN $4::text = 'organizationName' AND $5::text = 'asc' THEN o.name END ASC,
+  CASE WHEN $4::text = 'organizationName' AND $5::text = 'desc' THEN o.name END DESC,
+  CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN e.created_at END ASC,
+  e.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type AdminListEnvironmentsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+	Search  *string `json:"search"`
+	SortBy  string  `json:"sort_by"`
+	SortDir string  `json:"sort_dir"`
 }
 
 type AdminListEnvironmentsRow struct {
@@ -257,10 +750,18 @@ type AdminListEnvironmentsRow struct {
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	OrganizationID   string           `json:"organization_id"`
 	OrganizationName string           `json:"organization_name"`
+	ShopID           int32            `json:"shop_id"`
+	ShopName         string           `json:"shop_name"`
 }
 
 func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnvironmentsParams) ([]AdminListEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, adminListEnvironments, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, adminListEnvironments,
+		arg.Limit,
+		arg.Offset,
+		arg.Search,
+		arg.SortBy,
+		arg.SortDir,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -278,6 +779,8 @@ func (q *Queries) AdminListEnvironments(ctx context.Context, arg AdminListEnviro
 			&i.CreatedAt,
 			&i.OrganizationID,
 			&i.OrganizationName,
+			&i.ShopID,
+			&i.ShopName,
 		); err != nil {
 			return nil, err
 		}
@@ -294,13 +797,23 @@ SELECT o.id, o.name, o.slug, o.logo, o.created_at,
        (SELECT COUNT(*) FROM environment WHERE organization_id = o.id)::int AS environment_count,
        (SELECT COUNT(*) FROM member WHERE organization_id = o.id)::int AS member_count
 FROM organization o
-ORDER BY o.created_at DESC
+WHERE ($3::text IS NULL OR o.name ILIKE '%' || $3 || '%' OR o.slug ILIKE '%' || $3 || '%')
+ORDER BY
+  CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN o.name END ASC,
+  CASE WHEN $4::text = 'name' AND $5::text = 'desc' THEN o.name END DESC,
+  CASE WHEN $4::text = 'memberCount' AND $5::text = 'asc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END ASC,
+  CASE WHEN $4::text = 'memberCount' AND $5::text = 'desc' THEN (SELECT COUNT(*) FROM member WHERE organization_id = o.id) END DESC,
+  CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN o.created_at END ASC,
+  o.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
 type AdminListOrganizationsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+	Search  *string `json:"search"`
+	SortBy  string  `json:"sort_by"`
+	SortDir string  `json:"sort_dir"`
 }
 
 type AdminListOrganizationsRow struct {
@@ -314,7 +827,13 @@ type AdminListOrganizationsRow struct {
 }
 
 func (q *Queries) AdminListOrganizations(ctx context.Context, arg AdminListOrganizationsParams) ([]AdminListOrganizationsRow, error) {
-	rows, err := q.db.Query(ctx, adminListOrganizations, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, adminListOrganizations,
+		arg.Limit,
+		arg.Offset,
+		arg.Search,
+		arg.SortBy,
+		arg.SortDir,
+	)
 	if err != nil {
 		return nil, err
 	}

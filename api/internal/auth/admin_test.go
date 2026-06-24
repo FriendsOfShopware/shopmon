@@ -41,17 +41,121 @@ func TestAdminListUsers(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var users []map[string]interface{}
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&users))
-	assert.GreaterOrEqual(t, len(users), 2)
+	var result adminUsersListResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	assert.GreaterOrEqual(t, result.Total, 2)
+	assert.GreaterOrEqual(t, len(result.Users), 2)
 
 	// Check that both users are present
-	emails := make([]string, 0, len(users))
-	for _, u := range users {
-		emails = append(emails, u["email"].(string))
+	emails := make([]string, 0, len(result.Users))
+	for _, u := range result.Users {
+		emails = append(emails, u.Email)
 	}
 	assert.Contains(t, emails, "admin@example.com")
 	assert.Contains(t, emails, "regular@example.com")
+}
+
+// adminUsersListResponse mirrors the {users, total} shape returned by the admin
+// user-list endpoint.
+type adminUsersListResponse struct {
+	Users []struct {
+		ID            string `json:"id"`
+		Email         string `json:"email"`
+		Role          string `json:"role"`
+		Banned        *bool  `json:"banned"`
+		EmailVerified bool   `json:"emailVerified"`
+	} `json:"users"`
+	Total int `json:"total"`
+}
+
+func TestAdminListUsers_Search(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+
+	resp := authGet(t, env.Server.URL, "/api/auth/admin/users?search=regular", adminCookie)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result adminUsersListResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.Len(t, result.Users, 1)
+	assert.Equal(t, 1, result.Total)
+	assert.Equal(t, "regular@example.com", result.Users[0].Email)
+}
+
+func TestAdminListUsers_RoleFilter(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+
+	resp := authGet(t, env.Server.URL, "/api/auth/admin/users?role=admin", adminCookie)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result adminUsersListResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.Len(t, result.Users, 1)
+	assert.Equal(t, 1, result.Total)
+	assert.Equal(t, "admin@example.com", result.Users[0].Email)
+}
+
+func TestAdminListUsers_StatusFilter(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+
+	// Ban the regular user via the admin endpoint.
+	regularID := getUserIDByEmail(t, env, "regular@example.com")
+	banResp := authPost(t, env.Server.URL, fmt.Sprintf("/api/auth/admin/users/%s/ban", regularID), adminCookie, map[string]string{"banReason": "spam"})
+	_ = banResp.Body.Close()
+	require.Equal(t, http.StatusOK, banResp.StatusCode)
+
+	resp := authGet(t, env.Server.URL, "/api/auth/admin/users?status=banned", adminCookie)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result adminUsersListResponse
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.Len(t, result.Users, 1)
+	assert.Equal(t, "regular@example.com", result.Users[0].Email)
+}
+
+func TestAdminGetUserDetail(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+	signUp(t, env.Server.URL, "regular@example.com", "password123", "Regular")
+	regularID := getUserIDByEmail(t, env, "regular@example.com")
+
+	resp := authGet(t, env.Server.URL, "/api/auth/admin/users/"+regularID, adminCookie)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var detail map[string]interface{}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&detail))
+	assert.Equal(t, "regular@example.com", detail["email"])
+	// Sub-resources must be present (and never contain secrets).
+	assert.Contains(t, detail, "authProviders")
+	assert.Contains(t, detail, "sessions")
+	assert.Contains(t, detail, "memberships")
+	assert.Contains(t, detail, "auditLog")
+	body, _ := json.Marshal(detail)
+	assert.NotContains(t, string(body), "password")
+	assert.NotContains(t, string(body), "access_token")
+}
+
+func TestAdminGetUserDetail_NotFound(t *testing.T) {
+	env := testutil.Setup(t)
+	adminCookie := signUpAndMakeAdmin(t, env, "admin@example.com", "password123", "Admin")
+
+	resp := authGet(t, env.Server.URL, "/api/auth/admin/users/does-not-exist", adminCookie)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 }
 
 func TestAdminListUsers_NonAdmin(t *testing.T) {

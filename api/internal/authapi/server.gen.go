@@ -19,18 +19,96 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for AdminListUsersParamsRole.
+const (
+	AdminListUsersParamsRoleAdmin AdminListUsersParamsRole = "admin"
+	AdminListUsersParamsRoleUser  AdminListUsersParamsRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the AdminListUsersParamsRole enum.
+func (e AdminListUsersParamsRole) Valid() bool {
+	switch e {
+	case AdminListUsersParamsRoleAdmin:
+		return true
+	case AdminListUsersParamsRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminListUsersParamsStatus.
+const (
+	Active     AdminListUsersParamsStatus = "active"
+	Banned     AdminListUsersParamsStatus = "banned"
+	Unverified AdminListUsersParamsStatus = "unverified"
+)
+
+// Valid indicates whether the value is a known member of the AdminListUsersParamsStatus enum.
+func (e AdminListUsersParamsStatus) Valid() bool {
+	switch e {
+	case Active:
+		return true
+	case Banned:
+		return true
+	case Unverified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminListUsersParamsSortBy.
+const (
+	CreatedAt AdminListUsersParamsSortBy = "createdAt"
+	Email     AdminListUsersParamsSortBy = "email"
+	Name      AdminListUsersParamsSortBy = "name"
+)
+
+// Valid indicates whether the value is a known member of the AdminListUsersParamsSortBy enum.
+func (e AdminListUsersParamsSortBy) Valid() bool {
+	switch e {
+	case CreatedAt:
+		return true
+	case Email:
+		return true
+	case Name:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminListUsersParamsSortDirection.
+const (
+	Asc  AdminListUsersParamsSortDirection = "asc"
+	Desc AdminListUsersParamsSortDirection = "desc"
+)
+
+// Valid indicates whether the value is a known member of the AdminListUsersParamsSortDirection enum.
+func (e AdminListUsersParamsSortDirection) Valid() bool {
+	switch e {
+	case Asc:
+		return true
+	case Desc:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminSetUserRoleJSONBodyRole.
 const (
-	Admin AdminSetUserRoleJSONBodyRole = "admin"
-	User  AdminSetUserRoleJSONBodyRole = "user"
+	AdminSetUserRoleJSONBodyRoleAdmin AdminSetUserRoleJSONBodyRole = "admin"
+	AdminSetUserRoleJSONBodyRoleUser  AdminSetUserRoleJSONBodyRole = "user"
 )
 
 // Valid indicates whether the value is a known member of the AdminSetUserRoleJSONBodyRole enum.
 func (e AdminSetUserRoleJSONBodyRole) Valid() bool {
 	switch e {
-	case Admin:
+	case AdminSetUserRoleJSONBodyRoleAdmin:
 		return true
-	case User:
+	case AdminSetUserRoleJSONBodyRoleUser:
 		return true
 	default:
 		return false
@@ -50,6 +128,86 @@ func (e SignInSocialJSONBodyProvider) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// AdminAuditLogEntry defines model for AdminAuditLogEntry.
+type AdminAuditLogEntry struct {
+	Action       string    `json:"action"`
+	ActorEmail   *string   `json:"actorEmail,omitempty"`
+	ActorName    *string   `json:"actorName,omitempty"`
+	ActorUserId  *string   `json:"actorUserId,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	Detail       *string   `json:"detail,omitempty"`
+	Id           int64     `json:"id"`
+	IpAddress    *string   `json:"ipAddress,omitempty"`
+	TargetEmail  *string   `json:"targetEmail,omitempty"`
+	TargetName   *string   `json:"targetName,omitempty"`
+	TargetUserId *string   `json:"targetUserId,omitempty"`
+}
+
+// AdminUser defines model for AdminUser.
+type AdminUser struct {
+	BanReason     *string   `json:"banReason,omitempty"`
+	Banned        *bool     `json:"banned,omitempty"`
+	CreatedAt     time.Time `json:"createdAt"`
+	Email         string    `json:"email"`
+	EmailVerified bool      `json:"emailVerified"`
+	Id            string    `json:"id"`
+	Image         *string   `json:"image,omitempty"`
+	Name          string    `json:"name"`
+	Role          string    `json:"role"`
+}
+
+// AdminUserAuthProvider defines model for AdminUserAuthProvider.
+type AdminUserAuthProvider struct {
+	AccountId  *string   `json:"accountId,omitempty"`
+	CreatedAt  time.Time `json:"createdAt"`
+	Id         string    `json:"id"`
+	ProviderId string    `json:"providerId"`
+}
+
+// AdminUserDetail defines model for AdminUserDetail.
+type AdminUserDetail struct {
+	AuditLog      []AdminAuditLogEntry    `json:"auditLog"`
+	AuthProviders []AdminUserAuthProvider `json:"authProviders"`
+	BanExpires    *time.Time              `json:"banExpires,omitempty"`
+	BanReason     *string                 `json:"banReason,omitempty"`
+	Banned        bool                    `json:"banned"`
+	CreatedAt     time.Time               `json:"createdAt"`
+	Email         string                  `json:"email"`
+	EmailVerified bool                    `json:"emailVerified"`
+	Id            string                  `json:"id"`
+	Image         *string                 `json:"image,omitempty"`
+	Memberships   []AdminUserMembership   `json:"memberships"`
+	Name          string                  `json:"name"`
+	Role          string                  `json:"role"`
+	Sessions      []AdminUserSession      `json:"sessions"`
+	UpdatedAt     time.Time               `json:"updatedAt"`
+}
+
+// AdminUserMembership defines model for AdminUserMembership.
+type AdminUserMembership struct {
+	CreatedAt        time.Time `json:"createdAt"`
+	OrganizationId   string    `json:"organizationId"`
+	OrganizationName string    `json:"organizationName"`
+	OrganizationSlug string    `json:"organizationSlug"`
+	Role             string    `json:"role"`
+}
+
+// AdminUserSession defines model for AdminUserSession.
+type AdminUserSession struct {
+	CreatedAt    time.Time `json:"createdAt"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	Id           string    `json:"id"`
+	Impersonated bool      `json:"impersonated"`
+	IpAddress    *string   `json:"ipAddress,omitempty"`
+	UserAgent    *string   `json:"userAgent,omitempty"`
+}
+
+// AdminUsersResponse defines model for AdminUsersResponse.
+type AdminUsersResponse struct {
+	Total int         `json:"total"`
+	Users []AdminUser `json:"users"`
 }
 
 // AuthUser defines model for AuthUser.
@@ -76,6 +234,9 @@ type SessionInfo struct {
 	UserId               *string    `json:"userId,omitempty"`
 }
 
+// NotFound defines model for NotFound.
+type NotFound = ErrorResponse
+
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = ErrorResponse
 
@@ -84,6 +245,35 @@ type ValidationError = ErrorResponse
 
 // bearerAuthContextKey is the context key for bearerAuth security scheme
 type bearerAuthContextKey string
+
+// AdminListUsersParams defines parameters for AdminListUsers.
+type AdminListUsersParams struct {
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Search Filter users by email or name (case-insensitive substring)
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+
+	// Role Filter users by role
+	Role *AdminListUsersParamsRole `form:"role,omitempty" json:"role,omitempty"`
+
+	// Status Filter users by account status
+	Status        *AdminListUsersParamsStatus        `form:"status,omitempty" json:"status,omitempty"`
+	SortBy        *AdminListUsersParamsSortBy        `form:"sortBy,omitempty" json:"sortBy,omitempty"`
+	SortDirection *AdminListUsersParamsSortDirection `form:"sortDirection,omitempty" json:"sortDirection,omitempty"`
+}
+
+// AdminListUsersParamsRole defines parameters for AdminListUsers.
+type AdminListUsersParamsRole string
+
+// AdminListUsersParamsStatus defines parameters for AdminListUsers.
+type AdminListUsersParamsStatus string
+
+// AdminListUsersParamsSortBy defines parameters for AdminListUsers.
+type AdminListUsersParamsSortBy string
+
+// AdminListUsersParamsSortDirection defines parameters for AdminListUsers.
+type AdminListUsersParamsSortDirection string
 
 // AdminBanUserJSONBody defines parameters for AdminBanUser.
 type AdminBanUserJSONBody struct {
@@ -347,7 +537,10 @@ type ServerInterface interface {
 	AdminStopImpersonating(w http.ResponseWriter, r *http.Request)
 	// List all users (admin only)
 	// (GET /auth/admin/users)
-	AdminListUsers(w http.ResponseWriter, r *http.Request)
+	AdminListUsers(w http.ResponseWriter, r *http.Request, params AdminListUsersParams)
+	// Get a single user with detail (admin only)
+	// (GET /auth/admin/users/{userId})
+	AdminGetUserDetail(w http.ResponseWriter, r *http.Request, userId string)
 	// Ban a user
 	// (POST /auth/admin/users/{userId}/ban)
 	AdminBanUser(w http.ResponseWriter, r *http.Request, userId string)
@@ -506,7 +699,13 @@ func (_ Unimplemented) AdminStopImpersonating(w http.ResponseWriter, r *http.Req
 
 // List all users (admin only)
 // (GET /auth/admin/users)
-func (_ Unimplemented) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) AdminListUsers(w http.ResponseWriter, r *http.Request, params AdminListUsersParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a single user with detail (admin only)
+// (GET /auth/admin/users/{userId})
+func (_ Unimplemented) AdminGetUserDetail(w http.ResponseWriter, r *http.Request, userId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -830,6 +1029,135 @@ func (siw *ServerInterfaceWrapper) AdminStopImpersonating(w http.ResponseWriter,
 // AdminListUsers operation middleware
 func (siw *ServerInterfaceWrapper) AdminListUsers(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListUsersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "search"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "role" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "role", r.URL.Query(), &params.Role, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "role"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "role", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sortBy" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortBy", r.URL.Query(), &params.SortBy, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sortBy"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortBy", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sortDirection" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sortDirection", r.URL.Query(), &params.SortDirection, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sortDirection"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sortDirection", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListUsers(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetUserDetail operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetUserDetail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", chi.URLParam(r, "userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
@@ -837,7 +1165,7 @@ func (siw *ServerInterfaceWrapper) AdminListUsers(w http.ResponseWriter, r *http
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AdminListUsers(w, r)
+		siw.Handler.AdminGetUserDetail(w, r, userId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2150,6 +2478,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/admin/users", wrapper.AdminListUsers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/admin/users/{userId}", wrapper.AdminGetUserDetail)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/admin/users/{userId}/ban", wrapper.AdminBanUser)

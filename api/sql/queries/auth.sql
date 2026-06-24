@@ -94,7 +94,53 @@ SELECT COUNT(*) > 0 AS is_member FROM member WHERE organization_id = $1 AND user
 
 -- name: AdminListUsers :many
 SELECT id, name, email, email_verified, image, role, banned, ban_reason, created_at
-FROM "user" ORDER BY created_at DESC LIMIT $1 OFFSET $2;
+FROM "user"
+WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search') || '%' OR name ILIKE '%' || sqlc.narg('search') || '%')
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'))
+  AND (
+    sqlc.narg('status')::text IS NULL
+    OR (sqlc.narg('status') = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR (sqlc.narg('status') = 'banned' AND COALESCE(banned, false) = true)
+    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
+  )
+ORDER BY
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN name END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'desc' THEN name END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'email' AND sqlc.arg('sort_dir')::text = 'asc' THEN email END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'email' AND sqlc.arg('sort_dir')::text = 'desc' THEN email END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'createdAt' AND sqlc.arg('sort_dir')::text = 'asc' THEN created_at END ASC,
+  created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: AdminCountUsers :one
+SELECT COUNT(*)::int FROM "user"
+WHERE (sqlc.narg('search')::text IS NULL OR email ILIKE '%' || sqlc.narg('search') || '%' OR name ILIKE '%' || sqlc.narg('search') || '%')
+  AND (sqlc.narg('role')::text IS NULL OR role = sqlc.narg('role'))
+  AND (
+    sqlc.narg('status')::text IS NULL
+    OR (sqlc.narg('status') = 'active' AND COALESCE(banned, false) = false AND email_verified = true)
+    OR (sqlc.narg('status') = 'banned' AND COALESCE(banned, false) = true)
+    OR (sqlc.narg('status') = 'unverified' AND email_verified = false AND COALESCE(banned, false) = false)
+  );
+
+-- name: AdminGetUserDetail :one
+SELECT id, name, email, email_verified, image, role, banned, ban_reason, ban_expires, created_at, updated_at
+FROM "user" WHERE id = $1;
+
+-- name: AdminListUserAccounts :many
+SELECT id, provider_id, account_id, created_at
+FROM account WHERE user_id = $1 ORDER BY created_at;
+
+-- name: AdminListUserSessions :many
+SELECT id, ip_address, user_agent, impersonated_by, created_at, expires_at
+FROM session WHERE user_id = $1 ORDER BY created_at DESC;
+
+-- name: AdminListUserMemberships :many
+SELECT m.organization_id, o.name AS organization_name, o.slug AS organization_slug, m.role, m.created_at
+FROM member m
+JOIN organization o ON o.id = m.organization_id
+WHERE m.user_id = $1
+ORDER BY m.created_at;
 
 -- name: AdminSetUserRole :exec
 UPDATE "user" SET role = $1, updated_at = NOW() WHERE id = $2;

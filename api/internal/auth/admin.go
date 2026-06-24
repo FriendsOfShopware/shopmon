@@ -1,17 +1,20 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
-	"strconv"
+	"strings"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request, params authapi.AdminListUsersParams) {
 	su := h.requireAdmin(w, r)
 	if su == nil {
 		return
@@ -19,27 +22,185 @@ func (h *AuthHandler) AdminListUsers(w http.ResponseWriter, r *http.Request) {
 
 	limit := int32(100)
 	offset := int32(0)
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 500 {
-			limit = int32(v)
-		}
+	if params.Limit != nil && *params.Limit > 0 && *params.Limit <= 500 {
+		limit = int32(*params.Limit)
 	}
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if v, err := strconv.Atoi(o); err == nil && v >= 0 {
-			offset = int32(v)
+	if params.Offset != nil && *params.Offset >= 0 {
+		offset = int32(*params.Offset)
+	}
+
+	var search *string
+	if params.Search != nil {
+		if s := strings.TrimSpace(*params.Search); s != "" {
+			search = &s
 		}
 	}
 
+	var role *string
+	if params.Role != nil {
+		rl := string(*params.Role)
+		role = &rl
+	}
+
+	var status *string
+	if params.Status != nil {
+		st := string(*params.Status)
+		status = &st
+	}
+
+	sortBy := "createdAt"
+	if params.SortBy != nil {
+		sortBy = string(*params.SortBy)
+	}
+	sortDir := "desc"
+	if params.SortDirection != nil && string(*params.SortDirection) == "asc" {
+		sortDir = "asc"
+	}
+
 	rows, err := h.queries.AdminListUsers(r.Context(), queries.AdminListUsersParams{
-		Limit:  limit,
-		Offset: offset,
+		Limit:   limit,
+		Offset:  offset,
+		Search:  search,
+		Role:    role,
+		Status:  status,
+		SortBy:  sortBy,
+		SortDir: sortDir,
 	})
 	if err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to list users")
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, mapAdminUsers(rows))
+	total, err := h.queries.AdminCountUsers(r.Context(), queries.AdminCountUsersParams{
+		Search: search,
+		Role:   role,
+		Status: status,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to count users")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, map[string]any{
+		"users": mapAdminUsers(rows),
+		"total": total,
+	})
+}
+
+// AdminGetUserDetail returns a single user with sessions, auth providers,
+// organization memberships and recent audit-log entries (admin only). Secrets
+// (passwords, tokens) are never included.
+func (h *AuthHandler) AdminGetUserDetail(w http.ResponseWriter, r *http.Request, userID string) {
+	su := h.requireAdmin(w, r)
+	if su == nil {
+		return
+	}
+
+	user, err := h.queries.AdminGetUserDetail(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httputil.WriteError(w, http.StatusNotFound, "user not found")
+			return
+		}
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user")
+		return
+	}
+
+	accounts, err := h.queries.AdminListUserAccounts(r.Context(), userID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user accounts")
+		return
+	}
+	sessions, err := h.queries.AdminListUserSessions(r.Context(), userID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user sessions")
+		return
+	}
+	memberships, err := h.queries.AdminListUserMemberships(r.Context(), userID)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user memberships")
+		return
+	}
+	auditRows, err := h.queries.AdminListUserAuditLog(r.Context(), queries.AdminListUserAuditLogParams{
+		ActorUserID: &userID,
+		Limit:       50,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user audit log")
+		return
+	}
+
+	detail := authapi.AdminUserDetail{
+		Id:            user.ID,
+		Name:          user.Name,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		Image:         user.Image,
+		Role:          user.Role,
+		Banned:        user.Banned != nil && *user.Banned,
+		BanReason:     user.BanReason,
+		CreatedAt:     user.CreatedAt.Time,
+		UpdatedAt:     user.UpdatedAt.Time,
+		AuthProviders: make([]authapi.AdminUserAuthProvider, 0, len(accounts)),
+		Sessions:      make([]authapi.AdminUserSession, 0, len(sessions)),
+		Memberships:   make([]authapi.AdminUserMembership, 0, len(memberships)),
+		AuditLog:      make([]authapi.AdminAuditLogEntry, 0, len(auditRows)),
+	}
+	if user.BanExpires.Valid {
+		t := user.BanExpires.Time
+		detail.BanExpires = &t
+	}
+
+	for _, a := range accounts {
+		accID := a.AccountID
+		detail.AuthProviders = append(detail.AuthProviders, authapi.AdminUserAuthProvider{
+			Id:         a.ID,
+			ProviderId: a.ProviderID,
+			AccountId:  &accID,
+			CreatedAt:  a.CreatedAt.Time,
+		})
+	}
+	for _, s := range sessions {
+		detail.Sessions = append(detail.Sessions, authapi.AdminUserSession{
+			Id:           s.ID,
+			IpAddress:    s.IpAddress,
+			UserAgent:    s.UserAgent,
+			Impersonated: s.ImpersonatedBy != nil && *s.ImpersonatedBy != "",
+			CreatedAt:    s.CreatedAt.Time,
+			ExpiresAt:    s.ExpiresAt.Time,
+		})
+	}
+	for _, m := range memberships {
+		detail.Memberships = append(detail.Memberships, authapi.AdminUserMembership{
+			OrganizationId:   m.OrganizationID,
+			OrganizationName: m.OrganizationName,
+			OrganizationSlug: m.OrganizationSlug,
+			Role:             m.Role,
+			CreatedAt:        m.CreatedAt.Time,
+		})
+	}
+	for _, a := range auditRows {
+		detail.AuditLog = append(detail.AuditLog, mapAuthAuditEntry(a))
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, detail)
+}
+
+// mapAuthAuditEntry converts an audit row (auth package shape) to the API entry.
+func mapAuthAuditEntry(a queries.AdminListUserAuditLogRow) authapi.AdminAuditLogEntry {
+	return authapi.AdminAuditLogEntry{
+		Id:           a.ID,
+		ActorUserId:  a.ActorUserID,
+		ActorName:    a.ActorName,
+		ActorEmail:   a.ActorEmail,
+		Action:       a.Action,
+		TargetUserId: a.TargetUserID,
+		TargetName:   a.TargetName,
+		TargetEmail:  a.TargetEmail,
+		Detail:       a.Detail,
+		IpAddress:    a.IpAddress,
+		CreatedAt:    a.CreatedAt.Time,
+	}
 }
 
 func (h *AuthHandler) AdminSetUserRole(w http.ResponseWriter, r *http.Request, userId string) {

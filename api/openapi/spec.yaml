@@ -1075,6 +1075,94 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /admin/organizations/{orgId}:
+    get:
+      operationId: adminGetOrganizationDetail
+      tags: [Admin]
+      summary: Get an organization with detail (admin only)
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Organization detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganizationDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/environments/{envId}:
+    get:
+      operationId: adminGetEnvironmentDetail
+      tags: [Admin]
+      summary: Get an environment with detail (admin only)
+      parameters:
+        - name: envId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Environment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminEnvironmentDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/audit-log:
+    get:
+      operationId: adminGetAuditLog
+      tags: [Admin]
+      summary: List audit log entries (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: actorUserId
+          in: query
+          schema:
+            type: string
+        - name: targetUserId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuditLogResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /admin/recent-activity:
     get:
       operationId: adminGetRecentActivity
@@ -1794,9 +1882,70 @@ paths:
       operationId: adminListUsers
       tags: [AuthAdmin]
       summary: List all users (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Filter users by email or name (case-insensitive substring)
+          schema:
+            type: string
+        - name: role
+          in: query
+          description: Filter users by role
+          schema:
+            type: string
+            enum: [user, admin]
+        - name: status
+          in: query
+          description: Filter users by account status
+          schema:
+            type: string
+            enum: [active, banned, unverified]
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, name, email]
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
       responses:
         "200":
-          description: List of users
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+
+  /auth/admin/users/{userId}:
+    get:
+      operationId: adminGetUserDetail
+      tags: [AuthAdmin]
+      summary: Get a single user with detail (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /auth/admin/users/{userId}/role:
     patch:
@@ -3542,6 +3691,576 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AccountEnvironment"
+        total:
+          type: integer
+
+    AdminUser:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - emailVerified
+        - role
+        - createdAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+        banned:
+          type: boolean
+          nullable: true
+        banReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUsersResponse:
+      type: object
+      required:
+        - users
+        - total
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        total:
+          type: integer
+
+    AdminUserDetail:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - emailVerified
+        - role
+        - banned
+        - createdAt
+        - updatedAt
+        - authProviders
+        - sessions
+        - memberships
+        - auditLog
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+        banned:
+          type: boolean
+        banReason:
+          type: string
+          nullable: true
+        banExpires:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        authProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserAuthProvider"
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserSession"
+        memberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserMembership"
+        auditLog:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAuditLogEntry"
+
+    AdminUserAuthProvider:
+      type: object
+      required:
+        - id
+        - providerId
+        - createdAt
+      properties:
+        id:
+          type: string
+        providerId:
+          type: string
+        accountId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserSession:
+      type: object
+      required:
+        - id
+        - createdAt
+        - expiresAt
+        - impersonated
+      properties:
+        id:
+          type: string
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        impersonated:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    AdminUserMembership:
+      type: object
+      required:
+        - organizationId
+        - organizationName
+        - organizationSlug
+        - role
+        - createdAt
+      properties:
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        organizationSlug:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminOrganizationDetail:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - createdAt
+        - memberCount
+        - environmentCount
+        - members
+        - environments
+        - invitations
+        - ssoProviders
+        - shops
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        memberCount:
+          type: integer
+        environmentCount:
+          type: integer
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrganizationMember"
+        environments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrganizationEnvironment"
+        invitations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrganizationInvitation"
+        ssoProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrganizationSSO"
+        shops:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrganizationShop"
+
+    AdminOrganizationMember:
+      type: object
+      required:
+        - userId
+        - name
+        - email
+        - role
+        - createdAt
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminOrganizationEnvironment:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - status
+        - shopwareVersion
+        - shopId
+        - shopName
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+        status:
+          type: string
+        shopwareVersion:
+          type: string
+        shopId:
+          type: integer
+        shopName:
+          type: string
+        lastScrapedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AdminOrganizationInvitation:
+      type: object
+      required:
+        - id
+        - email
+        - status
+        - expiresAt
+        - createdAt
+        - inviterName
+        - inviterEmail
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          nullable: true
+        status:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        inviterName:
+          type: string
+        inviterEmail:
+          type: string
+
+    AdminOrganizationSSO:
+      type: object
+      required:
+        - id
+        - issuer
+        - providerId
+        - domain
+      properties:
+        id:
+          type: string
+        issuer:
+          type: string
+        providerId:
+          type: string
+        domain:
+          type: string
+
+    AdminOrganizationShop:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        defaultEnvironmentId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminEnvironmentDetail:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - status
+        - shopwareVersion
+        - createdAt
+        - connectionIssueCount
+        - organizationId
+        - organizationName
+        - shopId
+        - shopName
+        - checks
+        - extensions
+        - scheduledTasks
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+        status:
+          type: string
+        shopwareVersion:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastScrapedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastScrapedError:
+          type: string
+          nullable: true
+        connectionIssueCount:
+          type: integer
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        shopId:
+          type: integer
+        shopName:
+          type: string
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminEnvironmentCheck"
+        extensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminEnvironmentExtension"
+        scheduledTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminEnvironmentTask"
+        lastDeployment:
+          $ref: "#/components/schemas/AdminEnvironmentDeployment"
+
+    AdminEnvironmentCheck:
+      type: object
+      required:
+        - id
+        - checkId
+        - level
+        - message
+        - source
+      properties:
+        id:
+          type: integer
+        checkId:
+          type: string
+        level:
+          type: string
+        message:
+          type: string
+        source:
+          type: string
+        link:
+          type: string
+          nullable: true
+
+    AdminEnvironmentExtension:
+      type: object
+      required:
+        - id
+        - name
+        - label
+        - active
+        - version
+        - installed
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        label:
+          type: string
+        active:
+          type: boolean
+        version:
+          type: string
+        latestVersion:
+          type: string
+          nullable: true
+        installed:
+          type: boolean
+        storeLink:
+          type: string
+          nullable: true
+
+    AdminEnvironmentTask:
+      type: object
+      required:
+        - id
+        - taskId
+        - name
+        - status
+        - interval
+        - overdue
+      properties:
+        id:
+          type: integer
+        taskId:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        interval:
+          type: integer
+        overdue:
+          type: boolean
+        lastExecutionTime:
+          type: string
+          nullable: true
+        nextExecutionTime:
+          type: string
+          nullable: true
+
+    AdminEnvironmentDeployment:
+      type: object
+      required:
+        - id
+        - name
+        - command
+        - returnCode
+        - executionTime
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        command:
+          type: string
+        returnCode:
+          type: integer
+        executionTime:
+          type: number
+          format: float
+        reference:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminAuditLogEntry:
+      type: object
+      required:
+        - id
+        - action
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        actorUserId:
+          type: string
+          nullable: true
+        actorName:
+          type: string
+          nullable: true
+        actorEmail:
+          type: string
+          nullable: true
+        action:
+          type: string
+        targetUserId:
+          type: string
+          nullable: true
+        targetName:
+          type: string
+          nullable: true
+        targetEmail:
+          type: string
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminAuditLogResponse:
+      type: object
+      required:
+        - entries
+        - total
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAuditLogEntry"
         total:
           type: integer
 

@@ -660,6 +660,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/admin/organizations/{orgId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an organization with detail (admin only) */
+    get: operations["adminGetOrganizationDetail"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/environments/{envId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an environment with detail (admin only) */
+    get: operations["adminGetEnvironmentDetail"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/audit-log": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List audit log entries (admin only) */
+    get: operations["adminGetAuditLog"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/admin/recent-activity": {
     parameters: {
       query?: never;
@@ -1171,6 +1222,23 @@ export interface paths {
     };
     /** List all users (admin only) */
     get: operations["adminListUsers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/admin/users/{userId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single user with detail (admin only) */
+    get: operations["adminGetUserDetail"];
     put?: never;
     post?: never;
     delete?: never;
@@ -1933,6 +2001,207 @@ export interface components {
     };
     AdminEnvironmentsResponse: {
       environments: components["schemas"]["AccountEnvironment"][];
+      total: number;
+    };
+    AdminUser: {
+      id: string;
+      name: string;
+      email: string;
+      emailVerified: boolean;
+      image?: string | null;
+      role: string;
+      banned?: boolean | null;
+      banReason?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminUsersResponse: {
+      users: components["schemas"]["AdminUser"][];
+      total: number;
+    };
+    AdminUserDetail: {
+      id: string;
+      name: string;
+      email: string;
+      emailVerified: boolean;
+      image?: string | null;
+      role: string;
+      banned: boolean;
+      banReason?: string | null;
+      /** Format: date-time */
+      banExpires?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      authProviders: components["schemas"]["AdminUserAuthProvider"][];
+      sessions: components["schemas"]["AdminUserSession"][];
+      memberships: components["schemas"]["AdminUserMembership"][];
+      auditLog: components["schemas"]["AdminAuditLogEntry"][];
+    };
+    AdminUserAuthProvider: {
+      id: string;
+      providerId: string;
+      accountId?: string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminUserSession: {
+      id: string;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+      impersonated: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    AdminUserMembership: {
+      organizationId: string;
+      organizationName: string;
+      organizationSlug: string;
+      role: string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminOrganizationDetail: {
+      id: string;
+      name: string;
+      slug: string;
+      logo?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      memberCount: number;
+      environmentCount: number;
+      members: components["schemas"]["AdminOrganizationMember"][];
+      environments: components["schemas"]["AdminOrganizationEnvironment"][];
+      invitations: components["schemas"]["AdminOrganizationInvitation"][];
+      ssoProviders: components["schemas"]["AdminOrganizationSSO"][];
+      shops: components["schemas"]["AdminOrganizationShop"][];
+    };
+    AdminOrganizationMember: {
+      userId: string;
+      name: string;
+      email: string;
+      image?: string | null;
+      role: string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminOrganizationEnvironment: {
+      id: number;
+      name: string;
+      url: string;
+      status: string;
+      shopwareVersion: string;
+      shopId: number;
+      shopName: string;
+      /** Format: date-time */
+      lastScrapedAt?: string | null;
+    };
+    AdminOrganizationInvitation: {
+      id: string;
+      email: string;
+      role?: string | null;
+      status: string;
+      /** Format: date-time */
+      expiresAt: string;
+      /** Format: date-time */
+      createdAt: string;
+      inviterName: string;
+      inviterEmail: string;
+    };
+    AdminOrganizationSSO: {
+      id: string;
+      issuer: string;
+      providerId: string;
+      domain: string;
+    };
+    AdminOrganizationShop: {
+      id: number;
+      name: string;
+      description?: string | null;
+      defaultEnvironmentId?: number | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminEnvironmentDetail: {
+      id: number;
+      name: string;
+      url: string;
+      status: string;
+      shopwareVersion: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastScrapedAt?: string | null;
+      lastScrapedError?: string | null;
+      connectionIssueCount: number;
+      organizationId: string;
+      organizationName: string;
+      shopId: number;
+      shopName: string;
+      checks: components["schemas"]["AdminEnvironmentCheck"][];
+      extensions: components["schemas"]["AdminEnvironmentExtension"][];
+      scheduledTasks: components["schemas"]["AdminEnvironmentTask"][];
+      lastDeployment?: components["schemas"]["AdminEnvironmentDeployment"];
+    };
+    AdminEnvironmentCheck: {
+      id: number;
+      checkId: string;
+      level: string;
+      message: string;
+      source: string;
+      link?: string | null;
+    };
+    AdminEnvironmentExtension: {
+      id: number;
+      name: string;
+      label: string;
+      active: boolean;
+      version: string;
+      latestVersion?: string | null;
+      installed: boolean;
+      storeLink?: string | null;
+    };
+    AdminEnvironmentTask: {
+      id: number;
+      taskId: string;
+      name: string;
+      status: string;
+      interval: number;
+      overdue: boolean;
+      lastExecutionTime?: string | null;
+      nextExecutionTime?: string | null;
+    };
+    AdminEnvironmentDeployment: {
+      id: number;
+      name: string;
+      command: string;
+      returnCode: number;
+      /** Format: float */
+      executionTime: number;
+      reference?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminAuditLogEntry: {
+      /** Format: int64 */
+      id: number;
+      actorUserId?: string | null;
+      actorName?: string | null;
+      actorEmail?: string | null;
+      action: string;
+      targetUserId?: string | null;
+      targetName?: string | null;
+      targetEmail?: string | null;
+      detail?: string | null;
+      ipAddress?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminAuditLogResponse: {
+      entries: components["schemas"]["AdminAuditLogEntry"][];
       total: number;
     };
     AdminStats: {
@@ -3279,6 +3548,84 @@ export interface operations {
       403: components["responses"]["Forbidden"];
     };
   };
+  adminGetOrganizationDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Organization detail */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminOrganizationDetail"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  adminGetEnvironmentDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        envId: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Environment detail */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminEnvironmentDetail"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  adminGetAuditLog: {
+    parameters: {
+      query?: {
+        limit?: number;
+        offset?: number;
+        action?: string;
+        actorUserId?: string;
+        targetUserId?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated audit log */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminAuditLogResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
   adminGetRecentActivity: {
     parameters: {
       query?: never;
@@ -4126,20 +4473,56 @@ export interface operations {
   };
   adminListUsers: {
     parameters: {
-      query?: never;
+      query?: {
+        limit?: number;
+        offset?: number;
+        /** @description Filter users by email or name (case-insensitive substring) */
+        search?: string;
+        /** @description Filter users by role */
+        role?: "user" | "admin";
+        /** @description Filter users by account status */
+        status?: "active" | "banned" | "unverified";
+        sortBy?: "createdAt" | "name" | "email";
+        sortDirection?: "asc" | "desc";
+      };
       header?: never;
       path?: never;
       cookie?: never;
     };
     requestBody?: never;
     responses: {
-      /** @description List of users */
+      /** @description Paginated list of users */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": components["schemas"]["AdminUsersResponse"];
+        };
       };
+    };
+  };
+  adminGetUserDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User detail */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminUserDetail"];
+        };
+      };
+      404: components["responses"]["NotFound"];
     };
   };
   adminSetUserRole: {
