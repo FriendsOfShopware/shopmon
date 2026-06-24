@@ -7,9 +7,15 @@ const i18n = createI18n({
   locale: "en",
   fallbackLocale: "en",
   messages: { en },
+  // Some locale messages intentionally contain HTML (rendered via v-html in
+  // e.g. Docs.vue). Suppress vue-i18n's per-render HTML warning in tests.
+  warnHtmlMessage: false,
 });
 
-// jsdom does not implement HTMLDialogElement.showModal / .close
+// jsdom does not implement HTMLDialogElement.showModal / .close.
+// The `??=` reads the existing prototype method, which oxlint flags as an
+// unbound-method reference; that read is intentional here (polyfill guard).
+/* oxlint-disable typescript/unbound-method */
 if (typeof HTMLDialogElement !== "undefined") {
   HTMLDialogElement.prototype.showModal ??= function () {
     this.setAttribute("open", "");
@@ -24,6 +30,7 @@ if (typeof HTMLDialogElement !== "undefined") {
     this.setAttribute("open", "");
   };
 }
+/* oxlint-enable typescript/unbound-method */
 
 // Register i18n plugin globally for tests
 config.global.plugins = config.global.plugins || [];

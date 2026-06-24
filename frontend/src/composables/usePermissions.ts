@@ -98,7 +98,7 @@ export function usePermissions(permissionCheck: Ref<PermissionCheck> | Permissio
       // Always check permissions when organizationId changes from null to a value
       // or when permissions change
       if (!oldValues || newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1]) {
-        checkPermissions();
+        void checkPermissions();
       }
     },
     { immediate: true },

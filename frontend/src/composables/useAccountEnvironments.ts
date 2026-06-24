@@ -31,7 +31,7 @@ export function resetAccountEnvironments(): void {
 
 export function useAccountEnvironments() {
   if (!_fetched.value) {
-    fetchAccountEnvironments();
+    void fetchAccountEnvironments();
   }
   return { environments, fetchAccountEnvironments, resetAccountEnvironments };
 }
