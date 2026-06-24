@@ -29,15 +29,22 @@ const adminCountUsers = `-- name: AdminCountUsers :one
 SELECT COUNT(*)::int FROM "user"
 WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR name ILIKE '%' || $1 || '%')
   AND ($2::text IS NULL OR role = $2)
+  AND (
+    $3::text IS NULL
+    OR ($3 = 'active' AND banned = false AND email_verified = true)
+    OR ($3 = 'banned' AND banned = true)
+    OR ($3 = 'unverified' AND email_verified = false AND banned = false)
+  )
 `
 
 type AdminCountUsersParams struct {
 	Search *string `json:"search"`
 	Role   *string `json:"role"`
+	Status *string `json:"status"`
 }
 
 func (q *Queries) AdminCountUsers(ctx context.Context, arg AdminCountUsersParams) (int32, error) {
-	row := q.db.QueryRow(ctx, adminCountUsers, arg.Search, arg.Role)
+	row := q.db.QueryRow(ctx, adminCountUsers, arg.Search, arg.Role, arg.Status)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -79,19 +86,193 @@ func (q *Queries) AdminCreateImpersonationSession(ctx context.Context, arg Admin
 	return i, err
 }
 
+const adminGetUserDetail = `-- name: AdminGetUserDetail :one
+SELECT id, name, email, email_verified, image, role, banned, ban_reason, ban_expires, created_at, updated_at
+FROM "user" WHERE id = $1
+`
+
+type AdminGetUserDetailRow struct {
+	ID            string           `json:"id"`
+	Name          string           `json:"name"`
+	Email         string           `json:"email"`
+	EmailVerified bool             `json:"email_verified"`
+	Image         *string          `json:"image"`
+	Role          string           `json:"role"`
+	Banned        *bool            `json:"banned"`
+	BanReason     *string          `json:"ban_reason"`
+	BanExpires    pgtype.Timestamp `json:"ban_expires"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) AdminGetUserDetail(ctx context.Context, id string) (AdminGetUserDetailRow, error) {
+	row := q.db.QueryRow(ctx, adminGetUserDetail, id)
+	var i AdminGetUserDetailRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.EmailVerified,
+		&i.Image,
+		&i.Role,
+		&i.Banned,
+		&i.BanReason,
+		&i.BanExpires,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const adminListUserAccounts = `-- name: AdminListUserAccounts :many
+SELECT id, provider_id, account_id, created_at
+FROM account WHERE user_id = $1 ORDER BY created_at
+`
+
+type AdminListUserAccountsRow struct {
+	ID         string           `json:"id"`
+	ProviderID string           `json:"provider_id"`
+	AccountID  string           `json:"account_id"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminListUserAccounts(ctx context.Context, userID string) ([]AdminListUserAccountsRow, error) {
+	rows, err := q.db.Query(ctx, adminListUserAccounts, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListUserAccountsRow{}
+	for rows.Next() {
+		var i AdminListUserAccountsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProviderID,
+			&i.AccountID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListUserMemberships = `-- name: AdminListUserMemberships :many
+SELECT m.organization_id, o.name AS organization_name, o.slug AS organization_slug, m.role, m.created_at
+FROM member m
+JOIN organization o ON o.id = m.organization_id
+WHERE m.user_id = $1
+ORDER BY m.created_at
+`
+
+type AdminListUserMembershipsRow struct {
+	OrganizationID   string           `json:"organization_id"`
+	OrganizationName string           `json:"organization_name"`
+	OrganizationSlug string           `json:"organization_slug"`
+	Role             string           `json:"role"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminListUserMemberships(ctx context.Context, userID string) ([]AdminListUserMembershipsRow, error) {
+	rows, err := q.db.Query(ctx, adminListUserMemberships, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListUserMembershipsRow{}
+	for rows.Next() {
+		var i AdminListUserMembershipsRow
+		if err := rows.Scan(
+			&i.OrganizationID,
+			&i.OrganizationName,
+			&i.OrganizationSlug,
+			&i.Role,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListUserSessions = `-- name: AdminListUserSessions :many
+SELECT id, ip_address, user_agent, impersonated_by, created_at, expires_at
+FROM session WHERE user_id = $1 ORDER BY created_at DESC
+`
+
+type AdminListUserSessionsRow struct {
+	ID             string           `json:"id"`
+	IpAddress      *string          `json:"ip_address"`
+	UserAgent      *string          `json:"user_agent"`
+	ImpersonatedBy *string          `json:"impersonated_by"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	ExpiresAt      pgtype.Timestamp `json:"expires_at"`
+}
+
+func (q *Queries) AdminListUserSessions(ctx context.Context, userID string) ([]AdminListUserSessionsRow, error) {
+	rows, err := q.db.Query(ctx, adminListUserSessions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListUserSessionsRow{}
+	for rows.Next() {
+		var i AdminListUserSessionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.ImpersonatedBy,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminListUsers = `-- name: AdminListUsers :many
 SELECT id, name, email, email_verified, image, role, banned, ban_reason, created_at
 FROM "user"
 WHERE ($3::text IS NULL OR email ILIKE '%' || $3 || '%' OR name ILIKE '%' || $3 || '%')
   AND ($4::text IS NULL OR role = $4)
-ORDER BY created_at DESC LIMIT $1 OFFSET $2
+  AND (
+    $5::text IS NULL
+    OR ($5 = 'active' AND banned = false AND email_verified = true)
+    OR ($5 = 'banned' AND banned = true)
+    OR ($5 = 'unverified' AND email_verified = false AND banned = false)
+  )
+ORDER BY
+  CASE WHEN $6::text = 'name' AND $7::text = 'asc' THEN name END ASC,
+  CASE WHEN $6::text = 'name' AND $7::text = 'desc' THEN name END DESC,
+  CASE WHEN $6::text = 'email' AND $7::text = 'asc' THEN email END ASC,
+  CASE WHEN $6::text = 'email' AND $7::text = 'desc' THEN email END DESC,
+  CASE WHEN $6::text = 'createdAt' AND $7::text = 'asc' THEN created_at END ASC,
+  created_at DESC
+LIMIT $1 OFFSET $2
 `
 
 type AdminListUsersParams struct {
-	Limit  int32   `json:"limit"`
-	Offset int32   `json:"offset"`
-	Search *string `json:"search"`
-	Role   *string `json:"role"`
+	Limit   int32   `json:"limit"`
+	Offset  int32   `json:"offset"`
+	Search  *string `json:"search"`
+	Role    *string `json:"role"`
+	Status  *string `json:"status"`
+	SortBy  string  `json:"sort_by"`
+	SortDir string  `json:"sort_dir"`
 }
 
 type AdminListUsersRow struct {
@@ -112,6 +293,9 @@ func (q *Queries) AdminListUsers(ctx context.Context, arg AdminListUsersParams) 
 		arg.Offset,
 		arg.Search,
 		arg.Role,
+		arg.Status,
+		arg.SortBy,
+		arg.SortDir,
 	)
 	if err != nil {
 		return nil, err

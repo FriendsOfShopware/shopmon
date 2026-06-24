@@ -159,6 +159,93 @@ type AccountShop struct {
 	OrganizationName     string  `json:"organizationName"`
 }
 
+// AdminAuditLogEntry defines model for AdminAuditLogEntry.
+type AdminAuditLogEntry struct {
+	Action       string    `json:"action"`
+	ActorEmail   *string   `json:"actorEmail,omitempty"`
+	ActorName    *string   `json:"actorName,omitempty"`
+	ActorUserId  *string   `json:"actorUserId,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	Detail       *string   `json:"detail,omitempty"`
+	Id           int64     `json:"id"`
+	IpAddress    *string   `json:"ipAddress,omitempty"`
+	TargetEmail  *string   `json:"targetEmail,omitempty"`
+	TargetName   *string   `json:"targetName,omitempty"`
+	TargetUserId *string   `json:"targetUserId,omitempty"`
+}
+
+// AdminAuditLogResponse defines model for AdminAuditLogResponse.
+type AdminAuditLogResponse struct {
+	Entries []AdminAuditLogEntry `json:"entries"`
+	Total   int                  `json:"total"`
+}
+
+// AdminEnvironmentCheck defines model for AdminEnvironmentCheck.
+type AdminEnvironmentCheck struct {
+	CheckId string  `json:"checkId"`
+	Id      int     `json:"id"`
+	Level   string  `json:"level"`
+	Link    *string `json:"link,omitempty"`
+	Message string  `json:"message"`
+	Source  string  `json:"source"`
+}
+
+// AdminEnvironmentDeployment defines model for AdminEnvironmentDeployment.
+type AdminEnvironmentDeployment struct {
+	Command       string    `json:"command"`
+	CreatedAt     time.Time `json:"createdAt"`
+	ExecutionTime float32   `json:"executionTime"`
+	Id            int       `json:"id"`
+	Name          string    `json:"name"`
+	Reference     *string   `json:"reference,omitempty"`
+	ReturnCode    int       `json:"returnCode"`
+}
+
+// AdminEnvironmentDetail defines model for AdminEnvironmentDetail.
+type AdminEnvironmentDetail struct {
+	Checks               []AdminEnvironmentCheck     `json:"checks"`
+	ConnectionIssueCount int                         `json:"connectionIssueCount"`
+	CreatedAt            time.Time                   `json:"createdAt"`
+	Extensions           []AdminEnvironmentExtension `json:"extensions"`
+	Id                   int                         `json:"id"`
+	LastDeployment       *AdminEnvironmentDeployment `json:"lastDeployment,omitempty"`
+	LastScrapedAt        *time.Time                  `json:"lastScrapedAt,omitempty"`
+	LastScrapedError     *string                     `json:"lastScrapedError,omitempty"`
+	Name                 string                      `json:"name"`
+	OrganizationId       string                      `json:"organizationId"`
+	OrganizationName     string                      `json:"organizationName"`
+	ScheduledTasks       []AdminEnvironmentTask      `json:"scheduledTasks"`
+	ShopId               int                         `json:"shopId"`
+	ShopName             string                      `json:"shopName"`
+	ShopwareVersion      string                      `json:"shopwareVersion"`
+	Status               string                      `json:"status"`
+	Url                  string                      `json:"url"`
+}
+
+// AdminEnvironmentExtension defines model for AdminEnvironmentExtension.
+type AdminEnvironmentExtension struct {
+	Active        bool    `json:"active"`
+	Id            int     `json:"id"`
+	Installed     bool    `json:"installed"`
+	Label         string  `json:"label"`
+	LatestVersion *string `json:"latestVersion,omitempty"`
+	Name          string  `json:"name"`
+	StoreLink     *string `json:"storeLink,omitempty"`
+	Version       string  `json:"version"`
+}
+
+// AdminEnvironmentTask defines model for AdminEnvironmentTask.
+type AdminEnvironmentTask struct {
+	Id                int     `json:"id"`
+	Interval          int     `json:"interval"`
+	LastExecutionTime *string `json:"lastExecutionTime,omitempty"`
+	Name              string  `json:"name"`
+	NextExecutionTime *string `json:"nextExecutionTime,omitempty"`
+	Overdue           bool    `json:"overdue"`
+	Status            string  `json:"status"`
+	TaskId            string  `json:"taskId"`
+}
+
 // AdminEnvironmentsResponse defines model for AdminEnvironmentsResponse.
 type AdminEnvironmentsResponse struct {
 	Environments []AccountEnvironment `json:"environments"`
@@ -169,6 +256,71 @@ type AdminEnvironmentsResponse struct {
 type AdminGrowth struct {
 	Environments []GrowthDataPoint `json:"environments"`
 	Users        []GrowthDataPoint `json:"users"`
+}
+
+// AdminOrganizationDetail defines model for AdminOrganizationDetail.
+type AdminOrganizationDetail struct {
+	CreatedAt        time.Time                      `json:"createdAt"`
+	EnvironmentCount int                            `json:"environmentCount"`
+	Environments     []AdminOrganizationEnvironment `json:"environments"`
+	Id               string                         `json:"id"`
+	Invitations      []AdminOrganizationInvitation  `json:"invitations"`
+	Logo             *string                        `json:"logo,omitempty"`
+	MemberCount      int                            `json:"memberCount"`
+	Members          []AdminOrganizationMember      `json:"members"`
+	Name             string                         `json:"name"`
+	Shops            []AdminOrganizationShop        `json:"shops"`
+	Slug             string                         `json:"slug"`
+	SsoProviders     []AdminOrganizationSSO         `json:"ssoProviders"`
+}
+
+// AdminOrganizationEnvironment defines model for AdminOrganizationEnvironment.
+type AdminOrganizationEnvironment struct {
+	Id              int        `json:"id"`
+	LastScrapedAt   *time.Time `json:"lastScrapedAt,omitempty"`
+	Name            string     `json:"name"`
+	ShopwareVersion string     `json:"shopwareVersion"`
+	Status          string     `json:"status"`
+	Url             string     `json:"url"`
+}
+
+// AdminOrganizationInvitation defines model for AdminOrganizationInvitation.
+type AdminOrganizationInvitation struct {
+	CreatedAt    time.Time `json:"createdAt"`
+	Email        string    `json:"email"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	Id           string    `json:"id"`
+	InviterEmail string    `json:"inviterEmail"`
+	InviterName  string    `json:"inviterName"`
+	Role         *string   `json:"role,omitempty"`
+	Status       string    `json:"status"`
+}
+
+// AdminOrganizationMember defines model for AdminOrganizationMember.
+type AdminOrganizationMember struct {
+	CreatedAt time.Time `json:"createdAt"`
+	Email     string    `json:"email"`
+	Image     *string   `json:"image,omitempty"`
+	Name      string    `json:"name"`
+	Role      string    `json:"role"`
+	UserId    string    `json:"userId"`
+}
+
+// AdminOrganizationSSO defines model for AdminOrganizationSSO.
+type AdminOrganizationSSO struct {
+	Domain     string `json:"domain"`
+	Id         string `json:"id"`
+	Issuer     string `json:"issuer"`
+	ProviderId string `json:"providerId"`
+}
+
+// AdminOrganizationShop defines model for AdminOrganizationShop.
+type AdminOrganizationShop struct {
+	CreatedAt            time.Time `json:"createdAt"`
+	DefaultEnvironmentId *int      `json:"defaultEnvironmentId,omitempty"`
+	Description          *string   `json:"description,omitempty"`
+	Id                   int       `json:"id"`
+	Name                 string    `json:"name"`
 }
 
 // AdminOrganizationsResponse defines model for AdminOrganizationsResponse.
@@ -630,6 +782,15 @@ type ValidationError = ErrorResponse
 // bearerAuthContextKey is the context key for bearerAuth security scheme
 type bearerAuthContextKey string
 
+// AdminGetAuditLogParams defines parameters for AdminGetAuditLog.
+type AdminGetAuditLogParams struct {
+	Limit        *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset       *int    `form:"offset,omitempty" json:"offset,omitempty"`
+	Action       *string `form:"action,omitempty" json:"action,omitempty"`
+	ActorUserId  *string `form:"actorUserId,omitempty" json:"actorUserId,omitempty"`
+	TargetUserId *string `form:"targetUserId,omitempty" json:"targetUserId,omitempty"`
+}
+
 // AdminGetEnvironmentsParams defines parameters for AdminGetEnvironments.
 type AdminGetEnvironmentsParams struct {
 	Limit          *int                                     `form:"limit,omitempty" json:"limit,omitempty"`
@@ -740,15 +901,24 @@ type ServerInterface interface {
 	// Get environments the user is subscribed to for notifications
 	// (GET /account/subscribed-environments)
 	GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request)
+	// List audit log entries (admin only)
+	// (GET /admin/audit-log)
+	AdminGetAuditLog(w http.ResponseWriter, r *http.Request, params AdminGetAuditLogParams)
 	// List all environments (admin only)
 	// (GET /admin/environments)
 	AdminGetEnvironments(w http.ResponseWriter, r *http.Request, params AdminGetEnvironmentsParams)
+	// Get an environment with detail (admin only)
+	// (GET /admin/environments/{envId})
+	AdminGetEnvironmentDetail(w http.ResponseWriter, r *http.Request, envId int)
 	// Get growth data over time
 	// (GET /admin/growth)
 	AdminGetGrowth(w http.ResponseWriter, r *http.Request)
 	// List all organizations (admin only)
 	// (GET /admin/organizations)
 	AdminGetOrganizations(w http.ResponseWriter, r *http.Request, params AdminGetOrganizationsParams)
+	// Get an organization with detail (admin only)
+	// (GET /admin/organizations/{orgId})
+	AdminGetOrganizationDetail(w http.ResponseWriter, r *http.Request, orgId string)
 	// Get recent user and environment activity
 	// (GET /admin/recent-activity)
 	AdminGetRecentActivity(w http.ResponseWriter, r *http.Request)
@@ -929,9 +1099,21 @@ func (_ Unimplemented) GetAccountSubscribedEnvironments(w http.ResponseWriter, r
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List audit log entries (admin only)
+// (GET /admin/audit-log)
+func (_ Unimplemented) AdminGetAuditLog(w http.ResponseWriter, r *http.Request, params AdminGetAuditLogParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List all environments (admin only)
 // (GET /admin/environments)
 func (_ Unimplemented) AdminGetEnvironments(w http.ResponseWriter, r *http.Request, params AdminGetEnvironmentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get an environment with detail (admin only)
+// (GET /admin/environments/{envId})
+func (_ Unimplemented) AdminGetEnvironmentDetail(w http.ResponseWriter, r *http.Request, envId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -944,6 +1126,12 @@ func (_ Unimplemented) AdminGetGrowth(w http.ResponseWriter, r *http.Request) {
 // List all organizations (admin only)
 // (GET /admin/organizations)
 func (_ Unimplemented) AdminGetOrganizations(w http.ResponseWriter, r *http.Request, params AdminGetOrganizationsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get an organization with detail (admin only)
+// (GET /admin/organizations/{orgId})
+func (_ Unimplemented) AdminGetOrganizationDetail(w http.ResponseWriter, r *http.Request, orgId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1360,6 +1548,97 @@ func (siw *ServerInterfaceWrapper) GetAccountSubscribedEnvironments(w http.Respo
 	handler.ServeHTTP(w, r)
 }
 
+// AdminGetAuditLog operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetAuditLog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetAuditLogParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "action" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "action", r.URL.Query(), &params.Action, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "action"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "action", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "actorUserId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "actorUserId", r.URL.Query(), &params.ActorUserId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "actorUserId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "actorUserId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "targetUserId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "targetUserId", r.URL.Query(), &params.TargetUserId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "targetUserId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetUserId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetAuditLog(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AdminGetEnvironments operation middleware
 func (siw *ServerInterfaceWrapper) AdminGetEnvironments(w http.ResponseWriter, r *http.Request) {
 
@@ -1507,6 +1786,38 @@ func (siw *ServerInterfaceWrapper) AdminGetEnvironments(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminGetEnvironments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetEnvironmentDetail operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetEnvironmentDetail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "envId" -------------
+	var envId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "envId", chi.URLParam(r, "envId"), &envId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "envId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetEnvironmentDetail(w, r, envId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1683,6 +1994,38 @@ func (siw *ServerInterfaceWrapper) AdminGetOrganizations(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminGetOrganizations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetOrganizationDetail operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetOrganizationDetail(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "orgId" -------------
+	var orgId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "orgId", chi.URLParam(r, "orgId"), &orgId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "orgId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetOrganizationDetail(w, r, orgId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3214,13 +3557,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/subscribed-environments", wrapper.GetAccountSubscribedEnvironments)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/audit-log", wrapper.AdminGetAuditLog)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/environments", wrapper.AdminGetEnvironments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/environments/{envId}", wrapper.AdminGetEnvironmentDetail)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/growth", wrapper.AdminGetGrowth)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/organizations", wrapper.AdminGetOrganizations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/organizations/{orgId}", wrapper.AdminGetOrganizationDetail)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/recent-activity", wrapper.AdminGetRecentActivity)
