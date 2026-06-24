@@ -57,20 +57,19 @@
 
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <a
-              :href="env.url"
-              target="_blank"
+            <RouterLink
+              :to="{ name: 'admin.environments.detail', params: { id: env.id } }"
               class="truncate font-medium hover:text-primary transition-colors"
             >
               {{ env.name }}
-            </a>
+            </RouterLink>
             <Badge variant="secondary" class="font-mono text-[10px]">{{
               env.shopwareVersion
             }}</Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <RouterLink
-              :to="{ name: 'account.organizations.detail' }"
+              :to="{ name: 'admin.organizations.detail', params: { id: env.organizationId } }"
               class="hover:text-primary transition-colors"
             >
               {{ env.organizationName }}

@@ -8,23 +8,69 @@
 
     <!-- Filter bar -->
     <div class="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:w-full">
-      <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
-        <button
-          v-for="f in roleFilters"
-          :key="f.value"
-          :class="[
-            'rounded-md px-3 py-1 text-sm font-medium transition-colors',
-            roleFilter === f.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="
-            roleFilter = f.value;
-            loadUsers();
-          "
-        >
-          {{ f.label }}
-        </button>
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Role filter -->
+        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+          <button
+            v-for="f in roleFilters"
+            :key="f.value"
+            :class="[
+              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+              roleFilter === f.value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            ]"
+            @click="
+              roleFilter = f.value;
+              currentPage = 1;
+              loadUsers();
+            "
+          >
+            {{ f.label }}
+          </button>
+        </div>
+
+        <!-- Status filter -->
+        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+          <button
+            v-for="f in statusFilters"
+            :key="f.value"
+            :class="[
+              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+              statusFilter === f.value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            ]"
+            @click="
+              statusFilter = f.value;
+              currentPage = 1;
+              loadUsers();
+            "
+          >
+            {{ f.label }}
+          </button>
+        </div>
+
+        <!-- Sort -->
+        <div class="flex gap-1 rounded-lg border bg-muted/50 p-1">
+          <button
+            v-for="s in sortOptions"
+            :key="s.value"
+            :class="[
+              'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+              sortBy === s.value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            ]"
+            @click="
+              sortBy = s.value;
+              currentPage = 1;
+              loadUsers();
+            "
+          >
+            {{ s.label }}
+          </button>
+        </div>
       </div>
 
       <div class="relative">
@@ -48,10 +94,11 @@
 
     <!-- User list -->
     <div v-else-if="users.length > 0" class="space-y-2">
-      <div
+      <RouterLink
         v-for="user in users"
         :key="user.id"
-        class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3"
+        :to="{ name: 'admin.users.detail', params: { id: user.id } }"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
         <!-- Avatar -->
         <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -61,7 +108,9 @@
         <!-- Info -->
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <span class="truncate font-medium">{{ user.name }}</span>
+            <span class="truncate font-medium transition-colors group-hover:text-primary">{{
+              user.name
+            }}</span>
             <Badge
               v-if="user.role === 'admin'"
               class="bg-primary/10 text-primary border-primary/20 text-[10px]"
@@ -95,39 +144,11 @@
           </Badge>
         </div>
 
-        <!-- Actions -->
-        <div v-if="user.id !== sessionData?.user?.id" class="flex shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            :title="$t('admin.impersonateTitle')"
-            @click="impersonateUser(user.id)"
-          >
-            <icon-fa6-solid:user-secret class="size-3.5" />
-          </Button>
-          <Button
-            v-if="!user.banned"
-            variant="ghost"
-            size="icon"
-            class="size-7 text-muted-foreground hover:text-destructive"
-            :title="$t('admin.banUser')"
-            @click="banUser(user.id)"
-          >
-            <icon-fa6-solid:ban class="size-3.5" />
-          </Button>
-          <Button
-            v-else
-            variant="ghost"
-            size="icon"
-            class="size-7"
-            :title="$t('admin.unbanUser')"
-            @click="unbanUser(user.id)"
-          >
-            <icon-fa6-solid:rotate class="size-3.5" />
-          </Button>
-        </div>
-      </div>
+        <!-- Chevron -->
+        <icon-fa6-solid:chevron-right
+          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      </RouterLink>
     </div>
 
     <!-- Empty state -->
@@ -172,32 +193,28 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSession } from "@/composables/useSession";
 import { api } from "@/helpers/api";
 import { formatDate } from "@/helpers/formatter";
+import type { components } from "@/types/api";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  banned: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-}
+type User = components["schemas"]["AdminUser"];
+
+type StatusFilter = "" | "active" | "banned" | "unverified";
+type SortBy = "createdAt" | "name" | "email";
 
 const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
 const searchQuery = ref("");
 const roleFilter = ref("");
+const statusFilter = ref<StatusFilter>("");
+const sortBy = ref<SortBy>("createdAt");
 const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
 
-const { session: sessionData } = useSession();
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 const { t } = useI18n();
 
@@ -205,6 +222,19 @@ const roleFilters = [
   { label: t("admin.allRoles"), value: "" },
   { label: t("admin.roleAdmin"), value: "admin" },
   { label: t("admin.roleUser"), value: "user" },
+];
+
+const statusFilters: { label: string; value: StatusFilter }[] = [
+  { label: t("admin.allStatuses"), value: "" },
+  { label: t("admin.active"), value: "active" },
+  { label: t("admin.banned"), value: "banned" },
+  { label: t("admin.unverified"), value: "unverified" },
+];
+
+const sortOptions: { label: string; value: SortBy }[] = [
+  { label: t("admin.sortByCreated"), value: "createdAt" },
+  { label: t("admin.sortByName"), value: "name" },
+  { label: t("admin.sortByEmail"), value: "email" },
 ];
 
 async function loadUsers() {
@@ -217,6 +247,9 @@ async function loadUsers() {
       offset: number;
       search?: string;
       role?: "user" | "admin";
+      status?: "active" | "banned" | "unverified";
+      sortBy?: SortBy;
+      sortDirection?: "asc" | "desc";
     } = {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
@@ -228,15 +261,21 @@ async function loadUsers() {
     if (roleFilter.value === "admin" || roleFilter.value === "user") {
       query.role = roleFilter.value;
     }
+    if (statusFilter.value) {
+      query.status = statusFilter.value;
+    }
+    if (sortBy.value !== "createdAt") {
+      query.sortBy = sortBy.value;
+      query.sortDirection = "asc";
+    }
 
     const { data, error: respError } = await api.GET("/auth/admin/users", {
       params: { query },
     });
 
     if (!respError && data) {
-      const userData = data as unknown as { users?: User[]; total?: number };
-      users.value = userData.users ?? (Array.isArray(data) ? (data as User[]) : []);
-      totalUsers.value = userData.total ?? users.value.length;
+      users.value = data.users ?? [];
+      totalUsers.value = data.total ?? users.value.length;
     } else {
       error.value =
         (respError as unknown as { message?: string })?.message ?? "Failed to load users";
@@ -245,55 +284,6 @@ async function loadUsers() {
     error.value = `Failed to load users: ${err instanceof Error ? err.message : String(err)}`;
   } finally {
     loading.value = false;
-  }
-}
-
-async function impersonateUser(userId: string) {
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
-      params: { path: { userId } },
-    });
-    if (!respError) {
-      window.location.href = "/";
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to impersonate user";
-    }
-  } catch (err) {
-    error.value = `Failed to impersonate user: ${err instanceof Error ? err.message : String(err)}`;
-  }
-}
-
-async function banUser(userId: string) {
-  const reason = window.prompt("Ban reason:");
-  if (!reason) return;
-
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
-      params: { path: { userId } },
-      body: { banReason: reason },
-    });
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to ban user";
-    }
-  } catch (err) {
-    error.value = `Failed to ban user: ${err instanceof Error ? err.message : String(err)}`;
-  }
-}
-
-async function unbanUser(userId: string) {
-  try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
-      params: { path: { userId } },
-    });
-    if (!respError) {
-      await loadUsers();
-    } else {
-      error.value = (respError as { message?: string }).message ?? "Failed to unban user";
-    }
-  } catch (err) {
-    error.value = `Failed to unban user: ${err instanceof Error ? err.message : String(err)}`;
   }
 }
 

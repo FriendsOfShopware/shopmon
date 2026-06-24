@@ -55,6 +55,7 @@ const navLinks = [
   { to: "/admin/users", labelKey: "common.users", match: "admin.users" },
   { to: "/admin/organizations", labelKey: "common.organizations", match: "admin.organizations" },
   { to: "/admin/environments", labelKey: "common.environments", match: "admin.environments" },
+  { to: "/admin/audit-log", labelKey: "admin.auditLog", match: "admin.auditLog" },
 ];
 
 function isLinkActive(match: string) {

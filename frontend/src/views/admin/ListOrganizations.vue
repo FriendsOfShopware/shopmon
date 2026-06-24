@@ -51,7 +51,7 @@
       <RouterLink
         v-for="org in organizations"
         :key="org.id"
-        :to="{ name: 'account.organizations.detail' }"
+        :to="{ name: 'admin.organizations.detail', params: { id: org.id } }"
         class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
       >
         <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
