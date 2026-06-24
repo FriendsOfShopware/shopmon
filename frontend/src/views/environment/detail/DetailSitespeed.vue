@@ -437,6 +437,9 @@ function createChart(config: ChartConfig) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      // Draw synchronously: the entry animation could leave the data series
+      // unpainted when the chart was created just before layout settled.
+      animation: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
         annotation: { annotations },
@@ -469,10 +472,29 @@ function createAllCharts() {
   chartConfigs.forEach((c) => createChart(c));
 }
 
-onMounted(async () => {
+// Recreate the charts once the canvases are actually laid out. On a tab switch
+// the environment data is already loaded, so the data watch below never fires and
+// onMounted alone can run before the v-if'd canvases have a measured size. If a
+// chart is created before layout settles, Chart.js paints the axes but the data
+// series never appears (the bug this view had: blank charts until a reload).
+// Waiting for the canvas to report a real size before creating avoids that.
+async function renderCharts() {
+  if (!showSitespeedData.value) return;
   await nextTick();
-  if (environment.value?.sitespeeds) createAllCharts();
-});
+
+  const waitForLayout = (attempt = 0) => {
+    const el = timeChartCanvas.value;
+    // The canvas reports 0 until its parent (h-72/h-56) is laid out.
+    if (el && el.clientWidth > 0 && el.clientHeight > 0) {
+      createAllCharts();
+    } else if (attempt < 30) {
+      requestAnimationFrame(() => waitForLayout(attempt + 1));
+    }
+  };
+  requestAnimationFrame(() => waitForLayout());
+}
+
+onMounted(renderCharts);
 
 onUnmounted(() => {
   chartConfigs.forEach((c) => c.chartInstance.value?.destroy());
@@ -480,10 +502,7 @@ onUnmounted(() => {
 
 watch(
   () => environment.value?.sitespeeds,
-  async () => {
-    await nextTick();
-    createAllCharts();
-  },
+  () => void renderCharts(),
   { deep: true },
 );
 </script>
