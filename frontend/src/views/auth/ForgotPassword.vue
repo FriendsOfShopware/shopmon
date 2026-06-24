@@ -1,7 +1,7 @@
 <template>
   <Card class="border-0 shadow-none sm:border sm:shadow-sm">
     <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
-      <CardTitle class="text-2xl font-semibold tracking-tight">
+      <CardTitle as="h1" class="text-2xl font-semibold tracking-tight">
         {{ $t("auth.forgotPasswordTitle") }}
       </CardTitle>
       <CardDescription>

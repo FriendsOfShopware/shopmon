@@ -10,19 +10,20 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.623 0.17 237.69);
+  --primary: oklch(0.535 0.17 237.69);
   --primary-foreground: oklch(0.985 0 0);
+  --primary-text: oklch(0.52 0.17 237.69);
   --secondary: oklch(0.961 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.961 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.454 0 0);
   --accent: oklch(0.961 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.33);
+  --destructive: oklch(0.5 0.22 27.33);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.906 0 0);
   --input: oklch(0.906 0 0);
-  --ring: oklch(0.623 0.17 237.69);
+  --ring: oklch(0.535 0.17 237.69);
   --radius: 0.5rem;
 
   --chart-1: oklch(0.646 0.222 41.116);
@@ -33,41 +34,42 @@
 
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.623 0.17 237.69);
+  --sidebar-primary: oklch(0.535 0.17 237.69);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.961 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.906 0 0);
-  --sidebar-ring: oklch(0.623 0.17 237.69);
+  --sidebar-ring: oklch(0.535 0.17 237.69);
 
-  --success: oklch(0.697 0.164 142.5);
+  --success: oklch(0.52 0.15 142.5);
   --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.852 0.175 91.11);
-  --warning-foreground: oklch(0.205 0 0);
-  --info: oklch(0.623 0.214 259.13);
+  --warning: oklch(0.52 0.13 75);
+  --warning-foreground: oklch(0.985 0 0);
+  --info: oklch(0.5 0.21 259.13);
   --info-foreground: oklch(0.985 0 0);
 }
 
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.706 0 0);
+  --foreground: oklch(0.712 0 0);
   --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.706 0 0);
+  --card-foreground: oklch(0.712 0 0);
   --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.706 0 0);
-  --primary: oklch(0.623 0.17 237.69);
+  --popover-foreground: oklch(0.712 0 0);
+  --primary: oklch(0.535 0.17 237.69);
   --primary-foreground: oklch(0.985 0 0);
+  --primary-text: oklch(0.66 0.17 237.69);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.712 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.33);
+  --destructive: oklch(0.65 0.21 27.33);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.322 0 0);
   --input: oklch(0.322 0 0);
-  --ring: oklch(0.623 0.17 237.69);
+  --ring: oklch(0.535 0.17 237.69);
 
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -76,20 +78,20 @@
   --chart-5: oklch(0.645 0.246 16.439);
 
   --sidebar: oklch(0.175 0 0);
-  --sidebar-foreground: oklch(0.706 0 0);
-  --sidebar-primary: oklch(0.623 0.17 237.69);
+  --sidebar-foreground: oklch(0.712 0 0);
+  --sidebar-primary: oklch(0.535 0.17 237.69);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.322 0 0);
-  --sidebar-ring: oklch(0.623 0.17 237.69);
+  --sidebar-ring: oklch(0.535 0.17 237.69);
 
-  --success: oklch(0.697 0.164 142.5);
+  --success: oklch(0.8 0.16 142.5);
   --success-foreground: oklch(0.145 0 0);
   --warning: oklch(0.852 0.175 91.11);
   --warning-foreground: oklch(0.205 0 0);
-  --info: oklch(0.623 0.214 259.13);
-  --info-foreground: oklch(0.985 0 0);
+  --info: oklch(0.75 0.16 259.13);
+  --info-foreground: oklch(0.145 0 0);
 }
 
 @theme inline {
@@ -101,6 +103,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -147,5 +150,13 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Use the contrast-tuned primary for text so brand-blue links/labels meet
+   WCAG AA as small text, while bg-primary/border-primary keep the fill color. */
+@layer utilities {
+  .text-primary {
+    color: var(--color-primary-text);
   }
 }

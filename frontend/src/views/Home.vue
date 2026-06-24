@@ -32,7 +32,7 @@
         <span class="text-white/60">{{ $t("home.heroTitleHighlight") }}</span>
       </h1>
 
-      <p class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
+      <p class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/90 sm:text-lg">
         {{ $t("home.description") }}
       </p>
 
@@ -189,7 +189,7 @@
     >
       <div class="flex-1 md:text-right">
         <h2 class="mb-3 text-2xl font-bold text-white sm:text-3xl">{{ $t("home.readyTitle") }}</h2>
-        <p class="text-base leading-relaxed text-white/60">{{ $t("home.readyDesc") }}</p>
+        <p class="text-base leading-relaxed text-white/90">{{ $t("home.readyDesc") }}</p>
       </div>
       <div class="shrink-0">
         <Button

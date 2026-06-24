@@ -87,6 +87,7 @@
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <SidebarMenuButton
+                  :aria-label="$t('nav.userMenu')"
                   class="h-10 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:justify-center"
                 >
                   <img

@@ -6,7 +6,7 @@
       <!-- Shop details card -->
       <Card>
         <CardHeader class="pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
+          <CardTitle as="h2" class="flex items-center gap-2 text-base">
             <icon-fa6-solid:folder class="size-4 text-muted-foreground" />
             {{ $t("shop.shopInfo") }}
           </CardTitle>
@@ -72,7 +72,7 @@
       <!-- First environment card -->
       <Card>
         <CardHeader class="pb-3">
-          <CardTitle class="flex items-center gap-2 text-base">
+          <CardTitle as="h2" class="flex items-center gap-2 text-base">
             <icon-fa6-solid:earth-americas class="size-4 text-muted-foreground" />
             {{ $t("shop.firstEnvironment") }}
           </CardTitle>

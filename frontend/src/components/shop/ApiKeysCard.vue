@@ -2,7 +2,7 @@
   <Card id="api-keys">
     <CardHeader class="px-4 pb-3 sm:px-6">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle class="flex items-center gap-2 text-base">
+        <CardTitle as="h2" class="flex items-center gap-2 text-base">
           <icon-fa6-solid:key class="size-4 text-muted-foreground" />
           {{ $t("shop.apiKeys") }}
         </CardTitle>

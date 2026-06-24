@@ -57,7 +57,7 @@ describe("ForgotPassword", () => {
 
   it("displays page title", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h3").text()).toBe("Forgot password");
+    expect(wrapper.find("h1").text()).toBe("Forgot password");
   });
 
   it("displays instructions", () => {

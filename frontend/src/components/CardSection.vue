@@ -15,7 +15,7 @@ defineProps<{
   <Card :class="cn('min-w-0', $props.class)">
     <CardHeader class="pb-3">
       <div class="flex items-center justify-between">
-        <CardTitle class="flex items-center gap-2 text-base">
+        <CardTitle as="h2" class="flex items-center gap-2 text-base">
           <component :is="icon" class="size-4 text-muted-foreground" />
           {{ title }}
         </CardTitle>

@@ -1,5 +1,8 @@
 <template>
-  <div v-if="isImpersonating" class="sticky top-0 z-10 bg-amber-500 text-white shadow">
+  <div
+    v-if="isImpersonating"
+    class="sticky top-0 z-10 bg-warning text-warning-foreground shadow"
+  >
     <div
       class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 max-sm:flex-col max-sm:text-center"
     >
@@ -10,7 +13,7 @@
       <Button
         size="sm"
         variant="outline"
-        class="border-white/30 bg-white/20 text-white hover:bg-white/30"
+        class="border-warning-foreground/30 bg-warning-foreground/10 text-warning-foreground hover:bg-warning-foreground/20"
         @click="stopImpersonating"
       >
         {{ $t("impersonation.stop") }}

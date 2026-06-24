@@ -59,7 +59,7 @@ describe("Register", () => {
 
   it("displays page title", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h3").text()).toBe("Create account");
+    expect(wrapper.find("h1").text()).toBe("Create account");
   });
 
   it("has display name input field", () => {

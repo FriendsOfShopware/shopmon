@@ -57,6 +57,7 @@
           <Button
             variant="ghost"
             size="icon"
+            :aria-label="$t('nav.toggleTheme')"
             class="size-8 text-white/60 hover:bg-white/10 hover:text-white"
             @click="toggleDarkMode"
           >
@@ -75,7 +76,9 @@
       </div>
     </nav>
 
-    <RouterView />
+    <main class="contents">
+      <RouterView />
+    </main>
 
     <LayoutFooter />
   </div>

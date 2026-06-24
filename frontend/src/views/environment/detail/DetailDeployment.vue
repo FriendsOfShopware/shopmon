@@ -27,7 +27,7 @@
             <span class="text-muted-foreground">{{ $t("deployments.exitCode") }}:</span>
             <span
               class="inline-flex items-center gap-1.5 font-medium"
-              :class="deployment.returnCode === 0 ? 'text-green-500' : 'text-destructive'"
+              :class="deployment.returnCode === 0 ? 'text-success' : 'text-destructive'"
             >
               <icon-fa6-solid:check v-if="deployment.returnCode === 0" class="size-4" />
               <icon-fa6-solid:xmark v-else class="size-4" />

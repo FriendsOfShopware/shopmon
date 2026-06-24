@@ -1,7 +1,7 @@
 <template>
   <Card class="border-0 shadow-none sm:border sm:shadow-sm">
     <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
-      <CardTitle class="text-2xl font-semibold tracking-tight">
+      <CardTitle as="h1" class="text-2xl font-semibold tracking-tight">
         {{ $t("auth.signIn") }}
       </CardTitle>
       <CardDescription v-if="instanceConfig?.registrationEnabled !== false">
@@ -108,7 +108,13 @@
             :placeholder="$t('auth.enterWorkEmail')"
             @keyup.enter="ssoLogin"
           />
-          <Button type="button" size="icon" :disabled="isSSOLoading || !ssoEmail" @click="ssoLogin">
+          <Button
+            type="button"
+            size="icon"
+            :aria-label="$t('auth.ssoLogin')"
+            :disabled="isSSOLoading || !ssoEmail"
+            @click="ssoLogin"
+          >
             <icon-fa6-solid:arrow-right v-if="!isSSOLoading" class="size-4" aria-hidden="true" />
             <icon-line-md:loading-twotone-loop v-else class="size-4" />
           </Button>

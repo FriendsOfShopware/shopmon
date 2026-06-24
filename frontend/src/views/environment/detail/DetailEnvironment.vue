@@ -119,6 +119,8 @@
                 v-if="check.link"
                 :href="check.link"
                 target="_blank"
+                rel="noopener noreferrer"
+                :aria-label="$t('shopDetail.learnMore')"
                 class="ml-1 inline-flex items-center gap-0.5 text-primary hover:underline"
               >
                 <icon-fa6-solid:arrow-up-right-from-square class="size-2.5" />
@@ -165,6 +167,8 @@
               v-if="ext.storeLink"
               :href="ext.storeLink"
               target="_blank"
+              rel="noopener noreferrer"
+              :aria-label="$t('shopDetail.openInStore', { name: ext.label })"
               class="shrink-0 text-muted-foreground hover:text-foreground"
             >
               <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
@@ -260,7 +264,7 @@
           {{ $t("shopDetail.compatibilityCheck") }}
         </Button>
       </template>
-      <div class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+      <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
         <div v-for="item in infoItems" :key="item.label" class="min-w-0">
           <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
           <dd class="mt-0.5">
@@ -296,7 +300,7 @@
             </Button>
           </dd>
         </div>
-      </div>
+      </dl>
     </CardSection>
 
     <!-- Modals -->

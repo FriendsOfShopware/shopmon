@@ -28,6 +28,8 @@ const visible = ref(false);
     />
     <button
       type="button"
+      :aria-label="visible ? $t('auth.hidePassword') : $t('auth.showPassword')"
+      :aria-pressed="visible"
       class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground opacity-50 hover:opacity-100 transition-opacity"
       @click="visible = !visible"
     >

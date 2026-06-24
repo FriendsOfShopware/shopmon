@@ -2,7 +2,13 @@
   <div class="flex min-h-svh flex-col">
     <div class="relative flex flex-1 items-center justify-center p-4">
       <div class="absolute right-2 top-2 flex items-center gap-2">
-        <Button variant="ghost" size="icon" class="size-8" @click="toggleDarkMode">
+        <Button
+          variant="ghost"
+          size="icon"
+          :aria-label="$t('nav.toggleTheme')"
+          class="size-8"
+          @click="toggleDarkMode"
+        >
           <icon-fa6-regular:moon v-if="darkMode" class="size-4" />
           <icon-octicon:sun-16 v-else class="size-4" />
         </Button>
@@ -20,7 +26,9 @@
           <Logo class="mx-auto mb-8 h-24 w-auto" />
         </RouterLink>
         <Notification />
-        <RouterView />
+        <main>
+          <RouterView />
+        </main>
       </div>
     </div>
     <LayoutFooter />

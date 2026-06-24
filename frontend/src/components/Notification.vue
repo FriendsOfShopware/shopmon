@@ -16,6 +16,7 @@
         ]"
       >
         <button
+          :aria-label="$t('common.close')"
           class="absolute right-2 top-2 flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           type="button"
           @click="clear()"

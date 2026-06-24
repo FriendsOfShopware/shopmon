@@ -75,7 +75,7 @@
                 :href="environment.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="truncate hover:text-primary"
+                class="inline-flex min-h-6 items-center truncate hover:text-primary"
                 >{{ environmentHost }}</a
               >
             </template>

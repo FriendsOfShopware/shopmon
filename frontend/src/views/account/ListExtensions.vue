@@ -110,6 +110,8 @@
 
             <!-- Expand -->
             <button
+              :aria-label="$t('common.toggleDetails')"
+              :aria-expanded="expanded.has(ext.name)"
               class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
               @click="toggle(ext.name)"
             >

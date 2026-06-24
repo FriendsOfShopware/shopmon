@@ -70,7 +70,7 @@ describe("Login", () => {
 
   it("displays sign in heading", () => {
     const wrapper = mountComponent();
-    expect(wrapper.find("h3").text()).toBe("Sign in to your account");
+    expect(wrapper.find("h1").text()).toBe("Sign in to your account");
   });
 
   it("displays link to create account", () => {

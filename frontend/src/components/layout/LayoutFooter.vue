@@ -35,6 +35,7 @@
           href="https://github.com/FriendsOfShopware/shopmon/"
           target="_blank"
           rel="noopener"
+          aria-label="GitHub"
           class="text-muted-foreground transition-colors hover:text-foreground"
         >
           <icon-mdi:github class="size-4" />

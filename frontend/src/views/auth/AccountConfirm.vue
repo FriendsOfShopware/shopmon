@@ -1,7 +1,7 @@
 <template>
   <Card class="border-0 shadow-none sm:border sm:shadow-sm">
     <CardHeader class="space-y-1 px-6 pt-6 pb-2 text-center">
-      <CardTitle class="text-2xl font-semibold tracking-tight">
+      <CardTitle as="h1" class="text-2xl font-semibold tracking-tight">
         {{ $t("auth.confirmingAccount") }}
       </CardTitle>
     </CardHeader>
@@ -15,7 +15,7 @@
       <template v-else>
         <Alert
           v-if="confirmSuccess"
-          class="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
+          class="border-success/30 bg-success/10 text-success"
         >
           <icon-fa6-solid:circle-check class="size-4" />
           <AlertDescription>

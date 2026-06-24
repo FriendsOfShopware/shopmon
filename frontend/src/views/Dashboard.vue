@@ -10,18 +10,26 @@
       </div>
       <div v-if="shops.length > 0" class="hidden items-center gap-6 sm:flex">
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums">{{ shops.length }}</div>
+          <div class="text-2xl font-bold tabular-nums" data-testid="dashboard-stat-shops">
+            {{ shops.length }}
+          </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.shops") }}</div>
         </div>
         <Separator orientation="vertical" class="h-10" />
         <div class="text-right">
-          <div class="text-2xl font-bold tabular-nums text-success">{{ greenCount }}</div>
+          <div
+            class="text-2xl font-bold tabular-nums text-success"
+            data-testid="dashboard-stat-healthy"
+          >
+            {{ greenCount }}
+          </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.healthy") }}</div>
         </div>
         <div class="text-right">
           <div
             class="text-2xl font-bold tabular-nums"
             :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'"
+            data-testid="dashboard-stat-warnings"
           >
             {{ warnCount }}
           </div>
@@ -31,6 +39,7 @@
           <div
             class="text-2xl font-bold tabular-nums"
             :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'"
+            data-testid="dashboard-stat-errors"
           >
             {{ errorCount }}
           </div>

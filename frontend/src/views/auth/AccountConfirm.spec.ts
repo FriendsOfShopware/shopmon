@@ -83,9 +83,9 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    // Success state uses Alert with green border class
+    // Success state uses Alert with success border class
     const alerts = wrapper.findAll('[data-slot="alert"]');
-    const successAlert = alerts.find((a) => a.classes().some((c) => c.includes("green")));
+    const successAlert = alerts.find((a) => a.classes().some((c) => c.includes("success")));
     expect(successAlert).toBeTruthy();
     expect(wrapper.text()).toContain("Your email address has been confirmed");
     expect(wrapper.find("a").exists()).toBe(true);
