@@ -27,6 +27,17 @@ UPDATE environment SET name = $1, url = $2, client_id = $3, client_secret = $4, 
 -- name: UpdateEnvironmentName :exec
 UPDATE environment SET name = $1 WHERE id = $2;
 
+-- name: ReassignShopDefaultEnvironment :exec
+-- Before deleting an environment, move any shop that uses it as its default to
+-- another environment of the same shop (lowest id), or NULL if none remain. This
+-- avoids violating the RESTRICT foreign key shop.default_environment_id -> environment.
+UPDATE shop SET default_environment_id = (
+    SELECT e.id FROM environment e
+    WHERE e.shop_id = shop.id AND e.id != $1
+    ORDER BY e.id LIMIT 1
+), updated_at = NOW()
+WHERE default_environment_id = $1;
+
 -- name: DeleteEnvironment :exec
 DELETE FROM environment WHERE id = $1;
 

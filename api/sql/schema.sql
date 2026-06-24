@@ -170,6 +170,13 @@ CREATE TABLE "environment" (
 ALTER TABLE "deployment" ADD CONSTRAINT fk_deployment_environment
   FOREIGN KEY ("environment_id") REFERENCES "environment"("id") ON DELETE cascade;
 
+-- shop.default_environment_id references environment with ON DELETE RESTRICT, so an
+-- environment that is still a shop's default cannot be deleted. The application moves
+-- the default to another environment of the shop (or NULL) before deleting. Defined
+-- here via ALTER because shop is created before environment to resolve the cycle.
+ALTER TABLE "shop" ADD CONSTRAINT shop_default_environment_id_fkey
+  FOREIGN KEY ("default_environment_id") REFERENCES "environment"("id") ON DELETE RESTRICT;
+
 CREATE TABLE "environment_sitespeed" (
   "id" serial PRIMARY KEY NOT NULL,
   "environment_id" integer REFERENCES "environment"("id") ON DELETE cascade,

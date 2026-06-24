@@ -126,6 +126,62 @@ func TestDeleteEnvironment(t *testing.T) {
 	assert.True(t, resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusForbidden)
 }
 
+// TestDeleteDefaultEnvironment_Reassigns covers the case from issue #702: deleting an
+// environment that is its shop's default must not fail on the RESTRICT foreign key. The
+// shop's default is moved to another environment of the same shop.
+func TestDeleteDefaultEnvironment_Reassigns(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	// First environment becomes the shop default.
+	defaultEnvID := env.SeedEnvironment(t, "org-1", shopID, "Default", "https://default.example.com")
+	otherEnvID := env.SeedEnvironment(t, "org-1", shopID, "Other", "https://other.example.com")
+
+	var currentDefault int
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT default_environment_id FROM shop WHERE id = $1`, shopID).Scan(&currentDefault))
+	require.Equal(t, defaultEnvID, currentDefault)
+
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, defaultEnvID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	// The shop default is reassigned to the remaining environment.
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT default_environment_id FROM shop WHERE id = $1`, shopID).Scan(&currentDefault))
+	assert.Equal(t, otherEnvID, currentDefault)
+}
+
+// TestDeleteLastEnvironment_ClearsDefault covers deleting the only environment of a shop:
+// the shop's default is cleared to NULL instead of violating the RESTRICT foreign key.
+func TestDeleteLastEnvironment_ClearsDefault(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "Only", "https://only.example.com")
+
+	req := testutil.NewRequest(t, "DELETE", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	var defaultEnvID *int
+	require.NoError(t, env.Pool.QueryRow(t.Context(),
+		`SELECT default_environment_id FROM shop WHERE id = $1`, shopID).Scan(&defaultEnvID))
+	assert.Nil(t, defaultEnvID)
+}
+
 func TestGetEnvironmentSubscription(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")

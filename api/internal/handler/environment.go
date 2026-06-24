@@ -168,7 +168,15 @@ func (h *Handler) DeleteEnvironment(w http.ResponseWriter, r *http.Request, envi
 		}
 	}
 
-	if err := h.queries.DeleteEnvironment(r.Context(), int32(environmentId)); err != nil {
+	// Reassigning the shop's default environment and deleting the environment must
+	// be atomic: the shop.default_environment_id foreign key uses ON DELETE RESTRICT,
+	// so the environment cannot be removed while any shop still points at it.
+	if err := h.withTx(r.Context(), func(txq *queries.Queries) error {
+		if err := txq.ReassignShopDefaultEnvironment(r.Context(), int32(environmentId)); err != nil {
+			return err
+		}
+		return txq.DeleteEnvironment(r.Context(), int32(environmentId))
+	}); err != nil {
 		httputil.WriteErrorAuto(w, err)
 		return
 	}
