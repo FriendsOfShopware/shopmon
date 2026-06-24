@@ -180,6 +180,19 @@ func TestDeleteLastEnvironment_ClearsDefault(t *testing.T) {
 	require.NoError(t, env.Pool.QueryRow(t.Context(),
 		`SELECT default_environment_id FROM shop WHERE id = $1`, shopID).Scan(&defaultEnvID))
 	assert.Nil(t, defaultEnvID)
+
+	// The API must expose the missing default as null rather than coercing it to a
+	// bogus environment id of 0, which would render broken links in the shop lists.
+	shopsReq := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/shops", nil)
+	shopsReq.Header.Set("Authorization", "Bearer "+token)
+	shopsResp, err := http.DefaultClient.Do(shopsReq)
+	require.NoError(t, err)
+	defer func() { _ = shopsResp.Body.Close() }()
+
+	var shops []api.AccountShop
+	require.NoError(t, json.NewDecoder(shopsResp.Body).Decode(&shops))
+	require.Len(t, shops, 1)
+	assert.Nil(t, shops[0].DefaultEnvironmentId)
 }
 
 func TestGetEnvironmentSubscription(t *testing.T) {

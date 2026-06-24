@@ -2693,6 +2693,7 @@ components:
           type: string
         defaultEnvironmentId:
           type: integer
+          nullable: true
 
     AccountChangelog:
       type: object
@@ -3190,6 +3191,7 @@ components:
           type: string
         defaultEnvironmentId:
           type: integer
+          nullable: true
 
     CreateShopRequest:
       type: object

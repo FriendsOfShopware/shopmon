@@ -55,12 +55,7 @@
             <SidebarMenu>
               <SidebarMenuItem v-for="shop in shops" :key="shop.id">
                 <SidebarMenuButton as-child>
-                  <RouterLink
-                    :to="{
-                      name: 'account.environments.detail',
-                      params: { environmentId: shop.defaultEnvironmentId },
-                    }"
-                  >
+                  <RouterLink :to="shopLink(shop)">
                     <img
                       v-if="defaultEnvFavicon(shop)"
                       :src="defaultEnvFavicon(shop)!"
@@ -323,6 +318,18 @@ function loadShops() {
 }
 loadShops();
 watch(activeOrganizationId, () => loadShops());
+
+function shopLink(shop: AccountShop) {
+  // A shop without a default environment (e.g. its last environment was deleted)
+  // has nowhere to point an environment link, so send the user to the shop itself.
+  if (shop.defaultEnvironmentId == null) {
+    return { name: "account.shops.edit", params: { shopId: shop.id } };
+  }
+  return {
+    name: "account.environments.detail",
+    params: { environmentId: shop.defaultEnvironmentId },
+  };
+}
 
 function defaultEnvFavicon(shop: AccountShop): string | null {
   return environments.value.find((e) => e.id === shop.defaultEnvironmentId)?.favicon ?? null;

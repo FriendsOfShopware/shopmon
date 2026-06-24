@@ -150,7 +150,7 @@ type AccountOrganization struct {
 
 // AccountShop defines model for AccountShop.
 type AccountShop struct {
-	DefaultEnvironmentId int     `json:"defaultEnvironmentId"`
+	DefaultEnvironmentId *int    `json:"defaultEnvironmentId"`
 	Description          *string `json:"description"`
 	GitUrl               *string `json:"gitUrl"`
 	Id                   int     `json:"id"`
@@ -486,7 +486,7 @@ type ScheduledTask struct {
 
 // Shop defines model for Shop.
 type Shop struct {
-	DefaultEnvironmentId int     `json:"defaultEnvironmentId"`
+	DefaultEnvironmentId *int    `json:"defaultEnvironmentId"`
 	Description          *string `json:"description"`
 	GitUrl               *string `json:"gitUrl"`
 	Id                   int     `json:"id"`

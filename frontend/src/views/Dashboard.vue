@@ -296,6 +296,11 @@ function envCount(shop: AccountShop): number {
 }
 
 function shopLink(shop: AccountShop) {
+  // A shop without a default environment (e.g. its last environment was deleted)
+  // has nowhere to point an environment link, so send the user to the shop itself.
+  if (shop.defaultEnvironmentId == null) {
+    return { name: "account.shops.edit", params: { shopId: shop.id } };
+  }
   return {
     name: "account.environments.detail",
     params: { environmentId: shop.defaultEnvironmentId },

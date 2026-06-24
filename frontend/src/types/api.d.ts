@@ -1641,7 +1641,7 @@ export interface components {
       gitUrl: string | null;
       organizationId: string;
       organizationName: string;
-      defaultEnvironmentId: number;
+      defaultEnvironmentId: number | null;
     };
     AccountChangelog: {
       id: number;
@@ -1806,7 +1806,7 @@ export interface components {
       description: string | null;
       gitUrl: string | null;
       organizationId: string;
-      defaultEnvironmentId: number;
+      defaultEnvironmentId: number | null;
     };
     CreateShopRequest: {
       name: string;
