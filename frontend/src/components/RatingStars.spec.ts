@@ -1,14 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import { i18n } from "@/i18n";
 import RatingStars from "./RatingStars.vue";
 
+// i18n is registered globally for all tests in src/test-setup.ts; mounting
+// with the app's i18n instance here too would double-install the plugin.
 function mountRatingStars(rating: number | null) {
   return mount(RatingStars, {
     props: { rating },
-    global: {
-      plugins: [i18n],
-    },
   });
 }
 
