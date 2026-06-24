@@ -78,7 +78,7 @@
               <div class="min-w-0">
                 <h3 class="text-sm font-semibold">{{ $t("environment.integration") }}</h3>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                  <i18n-t keypath="environment.integrationDesc" tag="span">
+                  <i18n-t keypath="environment.integrationDesc" tag="span" scope="global">
                     <template #pluginLink>
                       <a
                         href="https://github.com/FriendsOfShopware/FroshShopmon"

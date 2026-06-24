@@ -161,6 +161,7 @@
         <i18n-t
           keypath="deployments.cliIntro"
           tag="p"
+          scope="global"
           class="text-sm text-muted-foreground leading-relaxed"
         >
           <template #cliLink>
@@ -206,6 +207,7 @@
         <i18n-t
           keypath="deployments.cliGitHint"
           tag="p"
+          scope="global"
           class="text-xs text-muted-foreground leading-relaxed"
         >
           <template #gitHead>

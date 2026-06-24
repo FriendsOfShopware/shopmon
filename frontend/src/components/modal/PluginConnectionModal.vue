@@ -24,7 +24,7 @@
           <div>
             <p class="font-medium">{{ $t("pluginModal.step1Title") }}</p>
             <p class="mt-0.5 text-xs text-muted-foreground">
-              <i18n-t keypath="pluginModal.step1Desc" tag="span">
+              <i18n-t keypath="pluginModal.step1Desc" tag="span" scope="global">
                 <template #link>
                   <a
                     href="https://store.shopware.com/en/frosh99285362831f/shopmon.html"
