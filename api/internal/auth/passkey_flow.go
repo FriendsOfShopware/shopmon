@@ -160,10 +160,18 @@ func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (
 
 	var resolvedUserID string
 	handler := func(rawID, userHandle []byte) (webauthn.User, error) {
-		userID := string(userHandle)
-		resolvedUserID = userID
+		// Resolve the user via the credential ID, not the userHandle. The
+		// userHandle is an opaque per-credential value (the legacy better-auth
+		// stack stored a random string there, not the user ID), so it cannot be
+		// used to look up the user.
+		credIDEncoded := base64.RawURLEncoding.EncodeToString(rawID)
+		dbPasskey, err := h.queries.GetPasskeyByCredentialID(ctx, credIDEncoded)
+		if err != nil {
+			return nil, errNoPasskeys
+		}
+		resolvedUserID = dbPasskey.UserID
 
-		dbUser, err := h.queries.GetUserByID(ctx, userID)
+		dbUser, err := h.queries.GetUserByID(ctx, resolvedUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -172,10 +180,14 @@ func (h *AuthHandler) finishPasskeyLogin(r *http.Request, challengeKey string) (
 			return nil, errBanned
 		}
 
-		webauthnUser, err := h.loadWebauthnUser(ctx, userID)
+		webauthnUser, err := h.loadWebauthnUser(ctx, resolvedUserID)
 		if err != nil || len(webauthnUser.credentials) == 0 {
 			return nil, errNoPasskeys
 		}
+
+		// Echo the asserted handle so go-webauthn's userHandle equality check
+		// passes for credentials whose handle is not the user ID.
+		webauthnUser.handle = userHandle
 
 		return webauthnUser, nil
 	}
