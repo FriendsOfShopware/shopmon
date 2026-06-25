@@ -161,6 +161,11 @@ run = "cd frontend && SHOPMON_API_URL=http://127.0.0.1:5789 npm run dev"
 description = "Run API, worker, and frontend in parallel"
 run = { tasks = ["dev:api", "dev:worker", "dev:frontend"] }
 
+[tasks."e2e:server"]
+description = "Run the API server for Playwright E2E (binds 127.0.0.1:5789 so the frontend dev proxy reaches it)"
+env = { LISTEN_ADDR = "127.0.0.1:5789" }
+run = "cd api && go run . server"
+
 [tasks.tidy]
 description = "Tidy Go modules"
 run = "cd api && go mod tidy"

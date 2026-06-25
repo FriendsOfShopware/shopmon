@@ -1,0 +1,103 @@
+name: E2E
+
+on:
+  schedule:
+    # Nightly at 03:00 UTC
+    - cron: "0 3 * * *"
+  # Allow manual runs (e.g. to validate the workflow on a branch).
+  workflow_dispatch:
+  # Also run on PRs to main so the suite can be validated before merge.
+  # Drop this trigger if you want the E2E suite to stay nightly-only.
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Mise
+        uses: jdx/mise-action@v4
+
+      # The E2E specs only read seeded data, so Postgres + Redis is all the API
+      # needs — no worker, S3, mail or demo shop required.
+      - name: Start infrastructure (Postgres + Redis)
+        run: docker compose up -d db redis
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T db pg_isready -U shopmon -d shopmon >/dev/null 2>&1; then
+              echo "Postgres is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Postgres did not become ready in time"
+          exit 1
+
+      - name: Install dependencies
+        run: mise run setup
+
+      # Run through mise so the [env] from .mise.toml (DATABASE_URL, APP_SECRET —
+      # fixtures encrypt shop secrets with it) is loaded.
+      - name: Migrate and seed fixtures
+        working-directory: api
+        run: |
+          mise exec -- go run . migrate up
+          mise exec -- go run . fixtures
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # Start the API in the background; it persists into the test step. Playwright
+      # itself starts the frontend dev server (see webServer in playwright.config.ts).
+      - name: Start API server
+        run: |
+          nohup mise run e2e:server > api-server.log 2>&1 &
+          echo "Waiting for the API to become healthy..."
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5789/api/health >/dev/null 2>&1; then
+              echo "API is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::API server did not become healthy in time"
+          cat api-server.log
+          exit 1
+
+      # CI is set by GitHub Actions, which flips playwright.config.ts into CI mode
+      # (1 worker, retries, github reporter, no server reuse).
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/e2e/.output/
+          retention-days: 7
+
+      - name: Upload API server log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-server-log
+          path: api-server.log
+          retention-days: 7

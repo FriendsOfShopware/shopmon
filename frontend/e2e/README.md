@@ -41,6 +41,14 @@ If the dev server isn't already running, Playwright starts one (see
 | `support/constants.ts` | Seeded fixture data (users, org, shop, environments). Keep in sync with `api/fixtures.go`.                                          |
 | `*.spec.ts`            | The test suites.                                                                                                                    |
 
+## CI
+
+A nightly GitHub Actions workflow (`.github/workflows/e2e.yml`, also runnable
+on demand via _workflow_dispatch_) runs this suite against a fresh stack: it
+boots Postgres + Redis, migrates, seeds fixtures, starts the API on
+`127.0.0.1:5789` (`mise run e2e:server`), and lets Playwright start the
+frontend. The HTML report is uploaded as a build artifact.
+
 ## Conventions
 
 - Prefer role/label/text locators (`getByRole`, `getByLabel`) — they double as

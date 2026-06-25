@@ -356,6 +356,16 @@ func (s *seeder) seedEnvironmentActivity(environmentID int32) {
 	s.seedSitespeed(environmentID, deployments)
 	s.seedChangelogs(environmentID)
 
+	// Mark the environment as scraped. A real scrape (run by the worker against a
+	// live shop) is what normally sets last_scraped_at, and the environment detail
+	// UI hides the tab bar and all content — including the deployments, sitespeed
+	// and changelog seeded above — until it is set. Stamping it here makes the
+	// seeded activity visible without a worker/live shop, which also lets the
+	// Playwright E2E suite cover the environment detail pages offline.
+	if _, err := s.pool.Exec(s.ctx, `UPDATE environment SET last_scraped_at = $1 WHERE id = $2`, s.now, environmentID); err != nil {
+		slog.Error("failed to set last_scraped_at", "environmentId", environmentID, "error", err)
+	}
+
 	if len(deployments) > 0 {
 		if err := s.q.UpdateEnvironmentActiveDeployment(s.ctx, queries.UpdateEnvironmentActiveDeploymentParams{
 			ActiveDeploymentID: &deployments[0].id,
