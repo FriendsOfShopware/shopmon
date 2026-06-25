@@ -171,95 +171,22 @@
     </Card>
 
     <!-- Add member dialog -->
-    <Dialog
+    <AddMemberDialog
       :open="showAddMemberModal"
-      @update:open="(v: boolean) => !v && (showAddMemberModal = false)"
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ $t("organization.addMember") }}</DialogTitle>
-        </DialogHeader>
-        <form id="addMemberForm" class="space-y-4" @submit="onAddMemberSubmit">
-          <FormField v-slot="{ componentField }" name="email">
-            <FormItem>
-              <FormLabel>{{ $t("common.email") }}</FormLabel>
-              <FormControl>
-                <Input v-bind="componentField" autocomplete="email" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <FormField v-slot="{ componentField }" name="role">
-            <FormItem>
-              <FormLabel>{{ $t("common.role") }}</FormLabel>
-              <Select v-bind="componentField">
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="member">{{ $t("organization.roleMember") }}</SelectItem>
-                  <SelectItem value="admin">{{ $t("organization.roleAdmin") }}</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-        </form>
-        <DialogFooter>
-          <Button variant="outline" @click="showAddMemberModal = false">{{
-            $t("common.cancel")
-          }}</Button>
-          <Button :disabled="isAddMemberSubmitting" type="submit" form="addMemberForm">
-            <icon-fa6-solid:plus v-if="!isAddMemberSubmitting" class="mr-1.5 size-3.5" />
-            <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
-            {{ $t("common.add") }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      :submitting="isAddMemberSubmitting"
+      @update:open="showAddMemberModal = $event"
+      @submit="onAddMember"
+    />
 
     <!-- Change role dialog -->
-    <Dialog
+    <ChangeRoleDialog
+      v-if="selectedMember"
       :open="showChangeRoleModal"
-      @update:open="(v: boolean) => !v && (showChangeRoleModal = false)"
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ $t("organization.changeMemberRole") }}</DialogTitle>
-        </DialogHeader>
-        <form id="changeRoleForm" class="space-y-4" @submit="onChangeRoleSubmit">
-          <FormField v-slot="{ componentField }" name="changeRole">
-            <FormItem>
-              <FormLabel>{{ $t("common.role") }}</FormLabel>
-              <Select v-bind="componentField">
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="member">{{ $t("organization.roleMember") }}</SelectItem>
-                  <SelectItem value="admin">{{ $t("organization.roleAdmin") }}</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-        </form>
-        <DialogFooter>
-          <Button variant="outline" @click="showChangeRoleModal = false">{{
-            $t("common.cancel")
-          }}</Button>
-          <Button :disabled="isChangingRole" type="submit" form="changeRoleForm">
-            <icon-fa6-solid:floppy-disk v-if="!isChangingRole" class="mr-1.5 size-3.5" />
-            <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
-            {{ $t("common.save") }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      :submitting="isChangingRole"
+      :role="selectedMember.role as 'member' | 'admin'"
+      @update:open="showChangeRoleModal = $event"
+      @submit="onChangeRole"
+    />
   </div>
 </template>
 
@@ -280,25 +207,8 @@ import IconUsers from "~icons/fa6-solid/users";
 import IconEnvelope from "~icons/fa6-solid/envelope";
 import IconShieldHalved from "~icons/fa6-solid/shield-halved";
 import IconKey from "~icons/fa6-solid/key";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useForm } from "vee-validate";
-import { toTypedSchema } from "@vee-validate/zod";
-import { z } from "zod";
+import AddMemberDialog from "./AddMemberDialog.vue";
+import ChangeRoleDialog from "./ChangeRoleDialog.vue";
 import { useI18n } from "vue-i18n";
 
 import { ref } from "vue";
@@ -394,51 +304,29 @@ const showChangeRoleModal = ref(false);
 const isChangingRole = ref(false);
 const selectedMember = ref<OrganizationMember | null>(null);
 
-const addMemberSchema = toTypedSchema(
-  z.object({
-    email: z.string().email(t("validation.emailInvalid")).min(1, t("validation.emailRequired")),
-    role: z.enum(["member", "admin"], { message: t("validation.roleInvalid") }),
-  }),
-);
-
-const changeRoleSchema = toTypedSchema(
-  z.object({
-    changeRole: z.enum(["member", "admin"], { message: t("validation.roleInvalid") }),
-  }),
-);
-
-const { handleSubmit: handleAddMember } = useForm({
-  validationSchema: addMemberSchema,
-  initialValues: { email: "", role: "member" as const },
-});
-const { handleSubmit: handleChangeRole, setValues: setChangeRoleValues } = useForm({
-  validationSchema: changeRoleSchema,
-  initialValues: { changeRole: "member" as const },
-});
-
-const onAddMemberSubmit = handleAddMember(async (values) => {
+async function onAddMember(values: { email: string; role: "member" | "admin" }) {
+  if (!organization.value) return;
   isAddMemberSubmitting.value = true;
-  if (organization.value) {
-    try {
-      const { error: respError } = await api.POST(
-        "/auth/organizations/{organizationId}/invitations",
-        {
-          params: { path: { organizationId: organization.value.id } },
-          body: { email: values.email, role: values.role },
-        },
-      );
-      if (respError) {
-        alert.error((respError as { message?: string }).message ?? "Failed to invite member");
-      } else {
-        showAddMemberModal.value = false;
-        await loadOrganization();
-      }
-    } catch (err) {
-      alert.error(err instanceof Error ? err.message : String(err));
+  try {
+    const { error: respError } = await api.POST(
+      "/auth/organizations/{organizationId}/invitations",
+      {
+        params: { path: { organizationId: organization.value.id } },
+        body: { email: values.email, role: values.role },
+      },
+    );
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to invite member");
+    } else {
+      showAddMemberModal.value = false;
+      await loadOrganization();
     }
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  } finally {
+    isAddMemberSubmitting.value = false;
   }
-  isAddMemberSubmitting.value = false;
-});
+}
 
 async function onRemoveMember(userId: string) {
   if (!organization.value) return;
@@ -464,36 +352,35 @@ async function cancelInvitation(invitationId: string) {
 
 function openChangeRoleModal(member: OrganizationMember) {
   selectedMember.value = member;
-  setChangeRoleValues({ changeRole: member.role as "member" | "admin" });
   showChangeRoleModal.value = true;
 }
 
-const onChangeRoleSubmit = handleChangeRole(async (values) => {
+async function onChangeRole(role: "member" | "admin") {
+  if (!organization.value || !selectedMember.value) return;
   isChangingRole.value = true;
-  if (organization.value && selectedMember.value) {
-    try {
-      const { error: respError } = await api.PATCH(
-        "/auth/organizations/{organizationId}/members/{userId}",
-        {
-          params: {
-            path: { organizationId: organization.value.id, userId: selectedMember.value.userId },
-          },
-          body: { role: values.changeRole },
+  try {
+    const { error: respError } = await api.PATCH(
+      "/auth/organizations/{organizationId}/members/{userId}",
+      {
+        params: {
+          path: { organizationId: organization.value.id, userId: selectedMember.value.userId },
         },
+        body: { role },
+      },
+    );
+    if (respError) {
+      alert.error(
+        (respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"),
       );
-      if (respError) {
-        alert.error(
-          (respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"),
-        );
-        return;
-      }
-      alert.success(t("organization.memberRoleUpdated"));
-      showChangeRoleModal.value = false;
-      await loadOrganization();
-    } catch (err) {
-      alert.error(err instanceof Error ? err.message : String(err));
+      return;
     }
+    alert.success(t("organization.memberRoleUpdated"));
+    showChangeRoleModal.value = false;
+    await loadOrganization();
+  } catch (err) {
+    alert.error(err instanceof Error ? err.message : String(err));
+  } finally {
+    isChangingRole.value = false;
   }
-  isChangingRole.value = false;
-});
+}
 </script>
