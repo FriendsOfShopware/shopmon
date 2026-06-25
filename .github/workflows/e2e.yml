@@ -6,6 +6,10 @@ on:
     - cron: "0 3 * * *"
   # Allow manual runs (e.g. to validate the workflow on a branch).
   workflow_dispatch:
+  # Also run on PRs to main so the suite can be validated before merge.
+  # Drop this trigger if you want the E2E suite to stay nightly-only.
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: e2e-${{ github.ref }}
