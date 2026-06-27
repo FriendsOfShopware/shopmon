@@ -124,7 +124,7 @@
           <div v-else class="space-y-2">
             <div
               v-for="ext in environment.extensions"
-              :key="ext.id"
+              :key="ext.name"
               class="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
             >
               <div class="min-w-0 flex-1">

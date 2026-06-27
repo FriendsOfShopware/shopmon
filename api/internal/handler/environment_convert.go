@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 // toAccountEnvironment maps a single organization environment row to its API DTO.
@@ -123,10 +122,10 @@ type changelogVersion struct {
 func buildCompatibleChangelog(versions []changelogVersion, installedVersion, latestVersion string) *[]api.ExtensionChangelogEntry {
 	entries := make([]api.ExtensionChangelogEntry, 0, len(versions))
 	for _, v := range versions {
-		if compareVersions(v.Version, installedVersion) <= 0 {
+		if version.Compare(v.Version, installedVersion) <= 0 {
 			continue
 		}
-		if latestVersion != "" && compareVersions(v.Version, latestVersion) > 0 {
+		if latestVersion != "" && version.Compare(v.Version, latestVersion) > 0 {
 			continue
 		}
 		entry := api.ExtensionChangelogEntry{
@@ -148,7 +147,7 @@ func buildCompatibleChangelog(versions []changelogVersion, installedVersion, lat
 		return nil
 	}
 	sort.Slice(entries, func(i, j int) bool {
-		return compareVersions(entries[i].Version, entries[j].Version) < 0
+		return version.Compare(entries[i].Version, entries[j].Version) < 0
 	})
 	return &entries
 }
@@ -170,33 +169,6 @@ func deref(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-// compareVersions compares two dot-separated numeric version strings.
-// Returns 1 if a > b, -1 if a < b, 0 if equal.
-func compareVersions(a, b string) int {
-	ap := strings.Split(a, ".")
-	bp := strings.Split(b, ".")
-	maxLen := len(ap)
-	if len(bp) > maxLen {
-		maxLen = len(bp)
-	}
-	for i := 0; i < maxLen; i++ {
-		var an, bn int
-		if i < len(ap) {
-			an, _ = strconv.Atoi(ap[i])
-		}
-		if i < len(bp) {
-			bn, _ = strconv.Atoi(bp[i])
-		}
-		if an > bn {
-			return 1
-		}
-		if bn > an {
-			return -1
-		}
-	}
-	return 0
 }
 
 func mapEnvironmentScheduledTasks(rows []queries.EnvironmentScheduledTask) []api.ScheduledTask {

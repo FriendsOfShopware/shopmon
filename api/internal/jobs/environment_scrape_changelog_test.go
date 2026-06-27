@@ -105,6 +105,31 @@ func TestStoreChangelogsBetween(t *testing.T) {
 	assert.Nil(t, sd.changelogsBetween("2.1.0", "2.1.0"))
 }
 
+func TestGlobalLatestVersion(t *testing.T) {
+	// The global latest is the newest changelog version (uncapped), not the
+	// Shopware-version-capped Version field.
+	sd := &storeExtensionData{
+		en: &shopwareaccount.StorePlugin{
+			Name:    "AcmeExt",
+			Version: "9.12.4", // compatible cap for this environment
+			Changelogs: []shopwareaccount.StoreChangelog{
+				{Version: "10.6.4"}, // newest, requires newer Shopware
+				{Version: "9.12.4"},
+				{Version: "9.10.0"},
+			},
+		},
+	}
+	if got := sd.globalLatestVersion(); got != "10.6.4" {
+		t.Fatalf("globalLatestVersion() = %q, want 10.6.4", got)
+	}
+
+	// Falls back to the compatible version when no changelog is available.
+	sd = &storeExtensionData{en: &shopwareaccount.StorePlugin{Name: "AcmeExt", Version: "1.2.3"}}
+	if got := sd.globalLatestVersion(); got != "1.2.3" {
+		t.Fatalf("globalLatestVersion() fallback = %q, want 1.2.3", got)
+	}
+}
+
 func TestCalculateExtensionDiffUsesStoreChangelog(t *testing.T) {
 	// Shop updates AcmeExt 2.1.0 -> 2.2.1; the diff changelog must contain the
 	// store entries strictly between the two versions, in both languages.

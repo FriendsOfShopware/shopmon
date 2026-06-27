@@ -9,13 +9,13 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 // enrichExtensionsFromStore fetches store metadata for the given extensions in
@@ -131,12 +131,31 @@ func (s *storeExtensionData) mergedChangelogs() []mergedChangelog {
 	return result
 }
 
+// globalLatestVersion returns the newest version known from the store changelog,
+// which (unlike the compatible Version field) is not capped to a specific
+// Shopware version and is therefore environment-independent. It falls back to the
+// compatible version when no changelog is available.
+func (s *storeExtensionData) globalLatestVersion() string {
+	latest := ""
+	for _, mc := range s.mergedChangelogs() {
+		if latest == "" || version.Compare(mc.Version, latest) > 0 {
+			latest = mc.Version
+		}
+	}
+	if latest == "" {
+		if p := s.primary(); p != nil {
+			latest = p.Version
+		}
+	}
+	return latest
+}
+
 // changelogsBetween returns store changelog entries (both languages) strictly
 // newer than oldVersion and not newer than newVersion, ordered oldest-first.
 func (s *storeExtensionData) changelogsBetween(oldVersion, newVersion string) []extensionChangelog {
 	var out []extensionChangelog
 	for _, mc := range s.mergedChangelogs() {
-		if versionCompare(mc.Version, oldVersion) > 0 && versionCompare(mc.Version, newVersion) <= 0 {
+		if version.Compare(mc.Version, oldVersion) > 0 && version.Compare(mc.Version, newVersion) <= 0 {
 			entry := extensionChangelog{Version: mc.Version, Text: mc.En, TextDe: mc.De}
 			if mc.ReleasedAt != "" {
 				if t, err := time.Parse(time.RFC3339, mc.ReleasedAt); err == nil {
@@ -147,7 +166,7 @@ func (s *storeExtensionData) changelogsBetween(oldVersion, newVersion string) []
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return versionCompare(out[i].Version, out[j].Version) < 0
+		return version.Compare(out[i].Version, out[j].Version) < 0
 	})
 	return out
 }
@@ -285,35 +304,6 @@ func isScheduledTaskOverdue(task shopwareScheduledTask) bool {
 		}
 	}
 	return false
-}
-
-// versionCompare compares two version strings.
-// Returns 1 if a > b, -1 if a < b, 0 if equal.
-func versionCompare(a, b string) int {
-	ap := strings.Split(a, ".")
-	bp := strings.Split(b, ".")
-
-	maxLen := len(ap)
-	if len(bp) > maxLen {
-		maxLen = len(bp)
-	}
-
-	for i := 0; i < maxLen; i++ {
-		var an, bn int
-		if i < len(ap) {
-			an, _ = strconv.Atoi(ap[i])
-		}
-		if i < len(bp) {
-			bn, _ = strconv.Atoi(bp[i])
-		}
-		if an > bn {
-			return 1
-		}
-		if bn > an {
-			return -1
-		}
-	}
-	return 0
 }
 
 // getFavicon fetches the shop URL and parses the HTML for a favicon link.

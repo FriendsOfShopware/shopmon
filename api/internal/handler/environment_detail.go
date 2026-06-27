@@ -72,14 +72,22 @@ func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmen
 }
 
 func (h *Handler) loadEnvironmentExtensions(ctx context.Context, environmentID int32) []api.EnvironmentExtension {
+	// The store and unknown queries together make up the full extension list, so
+	// a failure in either must not silently produce a partial list (which would
+	// look like a successful empty/short response). Bail out like the sibling
+	// load* helpers instead.
 	storeRows, err := h.queries.GetEnvironmentStoreExtensions(ctx, environmentID)
 	if err != nil {
 		slog.Error("failed to get environment store extensions", "error", err)
+		return nil
 	}
 	unknownRows, err := h.queries.GetEnvironmentExtensions(ctx, environmentID)
 	if err != nil {
 		slog.Error("failed to get environment extensions", "error", err)
+		return nil
 	}
+	// The changelog is supplementary; on failure we still return the extensions
+	// without it rather than dropping the whole list.
 	changelogRows, err := h.queries.GetEnvironmentStoreExtensionChangelogs(ctx, environmentID)
 	if err != nil {
 		slog.Error("failed to get environment store extension changelogs", "error", err)

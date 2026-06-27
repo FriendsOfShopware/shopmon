@@ -620,7 +620,10 @@ func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q 
 		DescriptionDe:        nilIfEmpty(deDesc),
 		InstallationManualEn: nilIfEmpty(enManual),
 		InstallationManualDe: nilIfEmpty(deManual),
-		LatestVersion:        nilIfEmpty(p.Version),
+		// The catalog row is shared across environments, so it stores the
+		// environment-independent global latest version rather than the
+		// Shopware-version-capped value (which lives on the link row).
+		LatestVersion: nilIfEmpty(sd.globalLatestVersion()),
 	}); err != nil {
 		return fmt.Errorf("upsert store extension %s: %w", ext.Name, err)
 	}
@@ -649,11 +652,16 @@ func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q 
 			return fmt.Errorf("upsert store extension image %s: %w", ext.Name, err)
 		}
 	}
-	if err := q.DeleteStoreExtensionImagesNotIn(ctx, queries.DeleteStoreExtensionImagesNotInParams{
-		ExtensionName: ext.Name,
-		Column2:       imageURLs,
-	}); err != nil {
-		return fmt.Errorf("delete stale store extension images %s: %w", ext.Name, err)
+	// Only prune when the store returned pictures: an empty list would make
+	// "url != ALL('{}')" match every row and wipe all stored images on a scrape
+	// that momentarily returned no pictures.
+	if len(imageURLs) > 0 {
+		if err := q.DeleteStoreExtensionImagesNotIn(ctx, queries.DeleteStoreExtensionImagesNotInParams{
+			ExtensionName: ext.Name,
+			Column2:       imageURLs,
+		}); err != nil {
+			return fmt.Errorf("delete stale store extension images %s: %w", ext.Name, err)
+		}
 	}
 
 	if err := q.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{

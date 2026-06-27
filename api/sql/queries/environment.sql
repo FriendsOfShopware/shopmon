@@ -123,6 +123,8 @@ ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, versio
 DELETE FROM environment_extension WHERE environment_id = $1 AND name != ALL($2::text[]);
 
 -- name: UpsertStoreExtension :exec
+-- Localized text fields use COALESCE so a failed locale fetch (NULL value) does
+-- not erase the previously stored translation.
 INSERT INTO store_extension (
   name, store_id, icon_url, producer_name, producer_website, rating_average, store_link,
   release_date, label_en, label_de, short_description_en, short_description_de,
@@ -131,16 +133,28 @@ INSERT INTO store_extension (
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
 ON CONFLICT (name) DO UPDATE SET
   store_id = $2, icon_url = $3, producer_name = $4, producer_website = $5, rating_average = $6,
-  store_link = $7, release_date = $8, label_en = $9, label_de = $10,
-  short_description_en = $11, short_description_de = $12, description_en = $13, description_de = $14,
-  installation_manual_en = $15, installation_manual_de = $16, latest_version = $17,
+  store_link = $7, release_date = $8,
+  label_en = COALESCE($9, store_extension.label_en),
+  label_de = COALESCE($10, store_extension.label_de),
+  short_description_en = COALESCE($11, store_extension.short_description_en),
+  short_description_de = COALESCE($12, store_extension.short_description_de),
+  description_en = COALESCE($13, store_extension.description_en),
+  description_de = COALESCE($14, store_extension.description_de),
+  installation_manual_en = COALESCE($15, store_extension.installation_manual_en),
+  installation_manual_de = COALESCE($16, store_extension.installation_manual_de),
+  latest_version = $17,
   last_refreshed_at = NOW();
 
 -- name: UpsertStoreExtensionVersion :exec
+-- COALESCE keeps the existing per-language changelog text and date when a locale
+-- fetch fails (NULL), so a transient single-locale store outage does not erase a
+-- previously stored translation.
 INSERT INTO store_extension_version (extension_name, version, changelog_en, changelog_de, released_at)
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (extension_name, version) DO UPDATE SET
-  changelog_en = $3, changelog_de = $4, released_at = $5;
+  changelog_en = COALESCE($3, store_extension_version.changelog_en),
+  changelog_de = COALESCE($4, store_extension_version.changelog_de),
+  released_at = COALESCE($5, store_extension_version.released_at);
 
 -- name: UpsertStoreExtensionImage :exec
 INSERT INTO store_extension_image (extension_name, url, preview, priority)
