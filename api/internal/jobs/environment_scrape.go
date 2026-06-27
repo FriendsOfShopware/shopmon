@@ -239,15 +239,28 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		}
 	}
 
+	// storeOK reports whether the store membership is known this scrape. It stays
+	// true when there are no extensions to enrich (nothing to misclassify).
+	storeOK := true
 	if len(extensions) > 0 {
 		_, enrichSpan := tracer.Start(ctx, "environment.scrape.enrich_extensions",
 			trace.WithAttributes(attribute.Int("extension.count", len(extensions))),
 		)
-		h.enrichExtensionsFromStore(extensions, shopConfig.Version)
+		storeOK = h.enrichExtensionsFromStore(extensions, shopConfig.Version)
 		enrichSpan.End()
 	}
 
 	oldExtensions := h.loadExistingExtensions(ctx, env.ID)
+
+	// oldStoreLatest maps the names of extensions that were store-known before this
+	// scrape to their prior compatible latest version. Used to preserve the store
+	// classification (and link data) when the store API is unreachable.
+	oldStoreLatest := make(map[string]*string)
+	for _, e := range oldExtensions {
+		if e.IsStore {
+			oldStoreLatest[e.Name] = e.LatestVersion
+		}
+	}
 
 	extensionsDiff := calculateExtensionDiff(oldExtensions, extensions)
 
@@ -356,7 +369,10 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		storeNames := make([]string, 0, len(extensions))
 		unknownNames := make([]string, 0, len(extensions))
 		for _, ext := range extensions {
-			if ext.Store != nil && ext.Store.primary() != nil {
+			oldLatest, wasStore := oldStoreLatest[ext.Name]
+			switch {
+			case ext.Store != nil && ext.Store.primary() != nil:
+				// Fresh store data: write the full catalog + link.
 				storeNames = append(storeNames, ext.Name)
 				if err := h.persistStoreExtension(ctx, txQueries, env.ID, ext); err != nil {
 					persistSpan.RecordError(err)
@@ -364,7 +380,30 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 					persistSpan.End()
 					return err
 				}
-			} else {
+			case !storeOK && wasStore:
+				// The store API is unreachable this scrape but this extension was
+				// store-known: keep it classified as store and update only the
+				// per-environment link from shop data (the catalog row already
+				// exists and its compatible latest version is preserved). This
+				// avoids wiping the catalog link or duplicating the row into the
+				// unknown table on a transient store outage.
+				storeNames = append(storeNames, ext.Name)
+				if err := txQueries.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
+					EnvironmentID: env.ID,
+					ExtensionName: ext.Name,
+					Label:         ext.Label,
+					Version:       ext.Version,
+					LatestVersion: oldLatest,
+					Active:        ext.Active,
+					Installed:     ext.Installed,
+					InstalledAt:   ext.InstalledAt,
+				}); err != nil {
+					persistSpan.RecordError(err)
+					persistSpan.SetStatus(codes.Error, err.Error())
+					persistSpan.End()
+					return fmt.Errorf("upsert environment store extension %s: %w", ext.Name, err)
+				}
+			default:
 				unknownNames = append(unknownNames, ext.Name)
 				if err := txQueries.UpsertEnvironmentExtension(ctx, queries.UpsertEnvironmentExtensionParams{
 					EnvironmentID: env.ID,

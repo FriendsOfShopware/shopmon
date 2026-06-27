@@ -26,7 +26,12 @@ import (
 // treated as unknown for this scrape and reclassified on the next successful one.
 // The store locale must use the underscore form ("en_GB"/"de_DE"); the
 // hyphenated form is silently ignored by the API.
-func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) {
+//
+// It returns whether the store membership is known for this scrape: true if at
+// least one locale call succeeded (the successful response authoritatively says
+// which extensions the store knows), false if both calls failed. Callers use
+// this to avoid reclassifying or pruning store extensions on a transient outage.
+func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) bool {
 	technicalNames := make([]string, 0, len(extensions))
 	for _, ext := range extensions {
 		technicalNames = append(technicalNames, ext.Name)
@@ -76,6 +81,8 @@ func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extens
 			extensions[i].LatestVersion = &v
 		}
 	}
+
+	return enErr == nil || deErr == nil
 }
 
 func indexStorePlugins(plugins []shopwareaccount.StorePlugin) map[string]*shopwareaccount.StorePlugin {
@@ -179,6 +186,11 @@ type existingExtension struct {
 	Version   string
 	Active    bool
 	Installed bool
+	// IsStore reports whether the prior row came from environment_store_extension.
+	IsStore bool
+	// LatestVersion is the prior link's compatible latest version (store only),
+	// preserved when the store API is unavailable for a scrape.
+	LatestVersion *string
 }
 
 // loadExistingExtensions returns the prior persisted state of all extensions of
@@ -204,6 +216,7 @@ func (h *EnvironmentScrapeHandler) loadExistingExtensions(ctx context.Context, e
 	for _, e := range store {
 		result = append(result, existingExtension{
 			Name: e.ExtensionName, Label: e.Label, Version: e.Version, Active: e.Active, Installed: e.Installed,
+			IsStore: true, LatestVersion: e.LatestVersion,
 		})
 	}
 
