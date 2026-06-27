@@ -129,9 +129,16 @@ func (q *Queries) AdminGetEnvironmentDetail(ctx context.Context, id int32) (Admi
 }
 
 const adminGetEnvironmentExtensions = `-- name: AdminGetEnvironmentExtensions :many
-SELECT id, name, label, active, version, latest_version, installed, store_link
-FROM environment_extension
-WHERE environment_id = $1
+SELECT ese.id, ese.extension_name AS name, ese.label, ese.active, ese.version,
+       ese.latest_version, ese.installed, se.store_link
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+WHERE ese.environment_id = $1
+UNION ALL
+SELECT ee.id, ee.name, ee.label, ee.active, ee.version,
+       ee.latest_version, ee.installed, NULL::text AS store_link
+FROM environment_extension ee
+WHERE ee.environment_id = $1
 ORDER BY name
 `
 

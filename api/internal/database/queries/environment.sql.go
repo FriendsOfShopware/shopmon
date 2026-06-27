@@ -116,6 +116,34 @@ func (q *Queries) DeleteEnvironmentScheduledTasksNotIn(ctx context.Context, arg 
 	return err
 }
 
+const deleteEnvironmentStoreExtensionsNotIn = `-- name: DeleteEnvironmentStoreExtensionsNotIn :exec
+DELETE FROM environment_store_extension WHERE environment_id = $1 AND extension_name != ALL($2::text[])
+`
+
+type DeleteEnvironmentStoreExtensionsNotInParams struct {
+	EnvironmentID int32    `json:"environment_id"`
+	Column2       []string `json:"column_2"`
+}
+
+func (q *Queries) DeleteEnvironmentStoreExtensionsNotIn(ctx context.Context, arg DeleteEnvironmentStoreExtensionsNotInParams) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentStoreExtensionsNotIn, arg.EnvironmentID, arg.Column2)
+	return err
+}
+
+const deleteStoreExtensionImagesNotIn = `-- name: DeleteStoreExtensionImagesNotIn :exec
+DELETE FROM store_extension_image WHERE extension_name = $1 AND url != ALL($2::text[])
+`
+
+type DeleteStoreExtensionImagesNotInParams struct {
+	ExtensionName string   `json:"extension_name"`
+	Column2       []string `json:"column_2"`
+}
+
+func (q *Queries) DeleteStoreExtensionImagesNotIn(ctx context.Context, arg DeleteStoreExtensionImagesNotInParams) error {
+	_, err := q.db.Exec(ctx, deleteStoreExtensionImagesNotIn, arg.ExtensionName, arg.Column2)
+	return err
+}
+
 const getAllEnvironments = `-- name: GetAllEnvironments :many
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
@@ -349,10 +377,12 @@ func (q *Queries) GetEnvironmentCredentials(ctx context.Context, id int32) (GetE
 }
 
 const getEnvironmentExtensions = `-- name: GetEnvironmentExtensions :many
-SELECT id, environment_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at
+SELECT id, environment_id, name, label, active, version, latest_version, installed, installed_at
 FROM environment_extension WHERE environment_id = $1 ORDER BY name
 `
 
+// Extensions unknown to the Shopware store (everything else lives in the
+// normalized store_extension* tables, linked via environment_store_extension).
 func (q *Queries) GetEnvironmentExtensions(ctx context.Context, environmentID int32) ([]EnvironmentExtension, error) {
 	rows, err := q.db.Query(ctx, getEnvironmentExtensions, environmentID)
 	if err != nil {
@@ -371,9 +401,6 @@ func (q *Queries) GetEnvironmentExtensions(ctx context.Context, environmentID in
 			&i.Version,
 			&i.LatestVersion,
 			&i.Installed,
-			&i.RatingAverage,
-			&i.StoreLink,
-			&i.Changelog,
 			&i.InstalledAt,
 		); err != nil {
 			return nil, err
@@ -560,6 +587,155 @@ func (q *Queries) GetEnvironmentSitespeeds(ctx context.Context, environmentID *i
 			&i.FirstContentfulPaint,
 			&i.CumulativeLayoutShift,
 			&i.TransferSize,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getEnvironmentStoreExtensionChangelogs = `-- name: GetEnvironmentStoreExtensionChangelogs :many
+SELECT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+FROM store_extension_version sev
+JOIN environment_store_extension ese ON ese.extension_name = sev.extension_name
+WHERE ese.environment_id = $1
+ORDER BY sev.extension_name, sev.version
+`
+
+type GetEnvironmentStoreExtensionChangelogsRow struct {
+	ExtensionName string  `json:"extension_name"`
+	Version       string  `json:"version"`
+	ChangelogEn   *string `json:"changelog_en"`
+	ChangelogDe   *string `json:"changelog_de"`
+	ReleasedAt    *string `json:"released_at"`
+}
+
+func (q *Queries) GetEnvironmentStoreExtensionChangelogs(ctx context.Context, environmentID int32) ([]GetEnvironmentStoreExtensionChangelogsRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensionChangelogs, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEnvironmentStoreExtensionChangelogsRow{}
+	for rows.Next() {
+		var i GetEnvironmentStoreExtensionChangelogsRow
+		if err := rows.Scan(
+			&i.ExtensionName,
+			&i.Version,
+			&i.ChangelogEn,
+			&i.ChangelogDe,
+			&i.ReleasedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getEnvironmentStoreExtensionImages = `-- name: GetEnvironmentStoreExtensionImages :many
+SELECT sei.extension_name, sei.url, sei.preview, sei.priority
+FROM store_extension_image sei
+JOIN environment_store_extension ese ON ese.extension_name = sei.extension_name
+WHERE ese.environment_id = $1
+ORDER BY sei.extension_name, sei.priority DESC
+`
+
+type GetEnvironmentStoreExtensionImagesRow struct {
+	ExtensionName string `json:"extension_name"`
+	Url           string `json:"url"`
+	Preview       bool   `json:"preview"`
+	Priority      int32  `json:"priority"`
+}
+
+func (q *Queries) GetEnvironmentStoreExtensionImages(ctx context.Context, environmentID int32) ([]GetEnvironmentStoreExtensionImagesRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensionImages, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEnvironmentStoreExtensionImagesRow{}
+	for rows.Next() {
+		var i GetEnvironmentStoreExtensionImagesRow
+		if err := rows.Scan(
+			&i.ExtensionName,
+			&i.Url,
+			&i.Preview,
+			&i.Priority,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getEnvironmentStoreExtensions = `-- name: GetEnvironmentStoreExtensions :many
+SELECT ese.id, ese.environment_id, ese.extension_name, ese.label, ese.active, ese.version,
+       ese.latest_version, ese.installed, ese.installed_at,
+       se.store_link, se.rating_average, se.icon_url,
+       se.label_en, se.label_de, se.short_description_en, se.short_description_de
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+WHERE ese.environment_id = $1
+ORDER BY ese.extension_name
+`
+
+type GetEnvironmentStoreExtensionsRow struct {
+	ID                 int32   `json:"id"`
+	EnvironmentID      int32   `json:"environment_id"`
+	ExtensionName      string  `json:"extension_name"`
+	Label              string  `json:"label"`
+	Active             bool    `json:"active"`
+	Version            string  `json:"version"`
+	LatestVersion      *string `json:"latest_version"`
+	Installed          bool    `json:"installed"`
+	InstalledAt        *string `json:"installed_at"`
+	StoreLink          *string `json:"store_link"`
+	RatingAverage      *int32  `json:"rating_average"`
+	IconUrl            *string `json:"icon_url"`
+	LabelEn            *string `json:"label_en"`
+	LabelDe            *string `json:"label_de"`
+	ShortDescriptionEn *string `json:"short_description_en"`
+	ShortDescriptionDe *string `json:"short_description_de"`
+}
+
+func (q *Queries) GetEnvironmentStoreExtensions(ctx context.Context, environmentID int32) ([]GetEnvironmentStoreExtensionsRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensions, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEnvironmentStoreExtensionsRow{}
+	for rows.Next() {
+		var i GetEnvironmentStoreExtensionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.ExtensionName,
+			&i.Label,
+			&i.Active,
+			&i.Version,
+			&i.LatestVersion,
+			&i.Installed,
+			&i.InstalledAt,
+			&i.StoreLink,
+			&i.RatingAverage,
+			&i.IconUrl,
+			&i.LabelEn,
+			&i.LabelDe,
+			&i.ShortDescriptionEn,
+			&i.ShortDescriptionDe,
 		); err != nil {
 			return nil, err
 		}
@@ -920,9 +1096,9 @@ func (q *Queries) UpsertEnvironmentCache(ctx context.Context, arg UpsertEnvironm
 }
 
 const upsertEnvironmentExtension = `-- name: UpsertEnvironmentExtension :exec
-INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, rating_average = $8, store_link = $9, changelog = $10, installed_at = $11
+INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, installed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, installed_at = $8
 `
 
 type UpsertEnvironmentExtensionParams struct {
@@ -933,9 +1109,6 @@ type UpsertEnvironmentExtensionParams struct {
 	Version       string  `json:"version"`
 	LatestVersion *string `json:"latest_version"`
 	Installed     bool    `json:"installed"`
-	RatingAverage *int32  `json:"rating_average"`
-	StoreLink     *string `json:"store_link"`
-	Changelog     []byte  `json:"changelog"`
 	InstalledAt   *string `json:"installed_at"`
 }
 
@@ -948,9 +1121,6 @@ func (q *Queries) UpsertEnvironmentExtension(ctx context.Context, arg UpsertEnvi
 		arg.Version,
 		arg.LatestVersion,
 		arg.Installed,
-		arg.RatingAverage,
-		arg.StoreLink,
-		arg.Changelog,
 		arg.InstalledAt,
 	)
 	return err
@@ -999,6 +1169,145 @@ func (q *Queries) UpsertEnvironmentScheduledTask(ctx context.Context, arg Upsert
 		arg.Overdue,
 		arg.LastExecutionTime,
 		arg.NextExecutionTime,
+	)
+	return err
+}
+
+const upsertEnvironmentStoreExtension = `-- name: UpsertEnvironmentStoreExtension :exec
+INSERT INTO environment_store_extension (environment_id, extension_name, label, version, latest_version, active, installed, installed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, extension_name) DO UPDATE SET
+  label = $3, version = $4, latest_version = $5, active = $6, installed = $7, installed_at = $8
+`
+
+type UpsertEnvironmentStoreExtensionParams struct {
+	EnvironmentID int32   `json:"environment_id"`
+	ExtensionName string  `json:"extension_name"`
+	Label         string  `json:"label"`
+	Version       string  `json:"version"`
+	LatestVersion *string `json:"latest_version"`
+	Active        bool    `json:"active"`
+	Installed     bool    `json:"installed"`
+	InstalledAt   *string `json:"installed_at"`
+}
+
+func (q *Queries) UpsertEnvironmentStoreExtension(ctx context.Context, arg UpsertEnvironmentStoreExtensionParams) error {
+	_, err := q.db.Exec(ctx, upsertEnvironmentStoreExtension,
+		arg.EnvironmentID,
+		arg.ExtensionName,
+		arg.Label,
+		arg.Version,
+		arg.LatestVersion,
+		arg.Active,
+		arg.Installed,
+		arg.InstalledAt,
+	)
+	return err
+}
+
+const upsertStoreExtension = `-- name: UpsertStoreExtension :exec
+INSERT INTO store_extension (
+  name, store_id, icon_url, producer_name, producer_website, rating_average, store_link,
+  release_date, label_en, label_de, short_description_en, short_description_de,
+  description_en, description_de, installation_manual_en, installation_manual_de,
+  latest_version, last_refreshed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+ON CONFLICT (name) DO UPDATE SET
+  store_id = $2, icon_url = $3, producer_name = $4, producer_website = $5, rating_average = $6,
+  store_link = $7, release_date = $8, label_en = $9, label_de = $10,
+  short_description_en = $11, short_description_de = $12, description_en = $13, description_de = $14,
+  installation_manual_en = $15, installation_manual_de = $16, latest_version = $17,
+  last_refreshed_at = NOW()
+`
+
+type UpsertStoreExtensionParams struct {
+	Name                 string  `json:"name"`
+	StoreID              *int32  `json:"store_id"`
+	IconUrl              *string `json:"icon_url"`
+	ProducerName         *string `json:"producer_name"`
+	ProducerWebsite      *string `json:"producer_website"`
+	RatingAverage        *int32  `json:"rating_average"`
+	StoreLink            *string `json:"store_link"`
+	ReleaseDate          *string `json:"release_date"`
+	LabelEn              *string `json:"label_en"`
+	LabelDe              *string `json:"label_de"`
+	ShortDescriptionEn   *string `json:"short_description_en"`
+	ShortDescriptionDe   *string `json:"short_description_de"`
+	DescriptionEn        *string `json:"description_en"`
+	DescriptionDe        *string `json:"description_de"`
+	InstallationManualEn *string `json:"installation_manual_en"`
+	InstallationManualDe *string `json:"installation_manual_de"`
+	LatestVersion        *string `json:"latest_version"`
+}
+
+func (q *Queries) UpsertStoreExtension(ctx context.Context, arg UpsertStoreExtensionParams) error {
+	_, err := q.db.Exec(ctx, upsertStoreExtension,
+		arg.Name,
+		arg.StoreID,
+		arg.IconUrl,
+		arg.ProducerName,
+		arg.ProducerWebsite,
+		arg.RatingAverage,
+		arg.StoreLink,
+		arg.ReleaseDate,
+		arg.LabelEn,
+		arg.LabelDe,
+		arg.ShortDescriptionEn,
+		arg.ShortDescriptionDe,
+		arg.DescriptionEn,
+		arg.DescriptionDe,
+		arg.InstallationManualEn,
+		arg.InstallationManualDe,
+		arg.LatestVersion,
+	)
+	return err
+}
+
+const upsertStoreExtensionImage = `-- name: UpsertStoreExtensionImage :exec
+INSERT INTO store_extension_image (extension_name, url, preview, priority)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (extension_name, url) DO UPDATE SET preview = $3, priority = $4
+`
+
+type UpsertStoreExtensionImageParams struct {
+	ExtensionName string `json:"extension_name"`
+	Url           string `json:"url"`
+	Preview       bool   `json:"preview"`
+	Priority      int32  `json:"priority"`
+}
+
+func (q *Queries) UpsertStoreExtensionImage(ctx context.Context, arg UpsertStoreExtensionImageParams) error {
+	_, err := q.db.Exec(ctx, upsertStoreExtensionImage,
+		arg.ExtensionName,
+		arg.Url,
+		arg.Preview,
+		arg.Priority,
+	)
+	return err
+}
+
+const upsertStoreExtensionVersion = `-- name: UpsertStoreExtensionVersion :exec
+INSERT INTO store_extension_version (extension_name, version, changelog_en, changelog_de, released_at)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (extension_name, version) DO UPDATE SET
+  changelog_en = $3, changelog_de = $4, released_at = $5
+`
+
+type UpsertStoreExtensionVersionParams struct {
+	ExtensionName string  `json:"extension_name"`
+	Version       string  `json:"version"`
+	ChangelogEn   *string `json:"changelog_en"`
+	ChangelogDe   *string `json:"changelog_de"`
+	ReleasedAt    *string `json:"released_at"`
+}
+
+func (q *Queries) UpsertStoreExtensionVersion(ctx context.Context, arg UpsertStoreExtensionVersionParams) error {
+	_, err := q.db.Exec(ctx, upsertStoreExtensionVersion,
+		arg.ExtensionName,
+		arg.Version,
+		arg.ChangelogEn,
+		arg.ChangelogDe,
+		arg.ReleasedAt,
 	)
 	return err
 }

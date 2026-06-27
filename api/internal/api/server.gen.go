@@ -536,8 +536,13 @@ type ErrorResponse struct {
 // ExtensionChangelogEntry defines model for ExtensionChangelogEntry.
 type ExtensionChangelogEntry struct {
 	CreationDate time.Time `json:"creationDate"`
-	Text         string    `json:"text"`
-	Version      string    `json:"version"`
+
+	// Text Changelog text in English (en_GB).
+	Text string `json:"text"`
+
+	// TextDe Changelog text in German (de_DE), when available.
+	TextDe  *string `json:"textDe,omitempty"`
+	Version string  `json:"version"`
 }
 
 // ExtensionCompatibilityRequest defines model for ExtensionCompatibilityRequest.

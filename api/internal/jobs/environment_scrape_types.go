@@ -3,6 +3,8 @@ package jobs
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
 
 // ---- Shopware API response types ----
@@ -60,23 +62,45 @@ type shopwareCacheInfo struct {
 	CacheAdapter string `json:"cacheAdapter"`
 }
 
-// extensionEntry is a combined representation of plugins and apps.
+// extensionEntry is a combined representation of plugins and apps. Store is set
+// when the extension is known to the Shopware store (api.shopware.com); such
+// extensions are persisted into the normalized store_extension* tables, while
+// the rest land in environment_extension.
 type extensionEntry struct {
-	Name          string               `json:"name"`
-	Label         string               `json:"label"`
-	Active        bool                 `json:"active"`
-	Version       string               `json:"version"`
-	LatestVersion *string              `json:"latestVersion"`
-	Installed     bool                 `json:"installed"`
-	RatingAverage *float64             `json:"ratingAverage"`
-	StoreLink     *string              `json:"storeLink"`
-	Changelog     []extensionChangelog `json:"changelog,omitempty"`
-	InstalledAt   *string              `json:"installedAt"`
+	Name          string              `json:"name"`
+	Label         string              `json:"label"`
+	Active        bool                `json:"active"`
+	Version       string              `json:"version"`
+	LatestVersion *string             `json:"latestVersion"`
+	Installed     bool                `json:"installed"`
+	InstalledAt   *string             `json:"installedAt"`
+	Store         *storeExtensionData `json:"-"`
+}
+
+// storeExtensionData holds the per-locale store metadata fetched for an
+// extension. en is the en_GB response, de the de_DE response; either may be nil
+// if that locale call failed.
+type storeExtensionData struct {
+	en *shopwareaccount.StorePlugin
+	de *shopwareaccount.StorePlugin
+}
+
+// primary returns the locale response to use for locale-independent fields,
+// preferring en_GB and falling back to de_DE.
+func (s *storeExtensionData) primary() *shopwareaccount.StorePlugin {
+	if s == nil {
+		return nil
+	}
+	if s.en != nil {
+		return s.en
+	}
+	return s.de
 }
 
 type extensionChangelog struct {
 	Version      string    `json:"version"`
 	Text         string    `json:"text"`
+	TextDe       string    `json:"textDe,omitempty"`
 	CreationDate time.Time `json:"creationDate"`
 }
 

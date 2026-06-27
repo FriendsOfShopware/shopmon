@@ -64,7 +64,10 @@
                     }}</span>
                   </div>
                   <!-- eslint-disable vue/no-v-html -->
-                  <div class="prose prose-sm dark:prose-invert max-w-none" v-html="entry.text" />
+                  <div
+                    class="prose prose-sm dark:prose-invert max-w-none"
+                    v-html="changelogText(entry)"
+                  />
                   <!-- eslint-enable vue/no-v-html -->
                 </li>
               </ul>
@@ -79,9 +82,12 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDateTime } from "@/helpers/formatter";
+import { useChangelogText } from "@/helpers/changelog";
 import type { components } from "@/types/api";
 
 type AccountChangelog = components["schemas"]["AccountChangelog"];
+
+const changelogText = useChangelogText();
 
 interface Props {
   show: boolean;

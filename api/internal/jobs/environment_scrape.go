@@ -247,11 +247,7 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		enrichSpan.End()
 	}
 
-	oldExtensions, err := h.queries.GetEnvironmentExtensions(ctx, env.ID)
-	if err != nil {
-		slog.Warn("failed to get old extensions", "environmentId", env.ID, "error", err)
-		oldExtensions = nil
-	}
+	oldExtensions := h.loadExistingExtensions(ctx, env.ID)
 
 	extensionsDiff := calculateExtensionDiff(oldExtensions, extensions)
 
@@ -352,44 +348,54 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		return fmt.Errorf("delete environment checks: %w", err)
 	}
 
-	extNames := make([]string, 0, len(extensions))
-	for _, ext := range extensions {
-		extNames = append(extNames, ext.Name)
-
-		var ratingAvg *int32
-		if ext.RatingAverage != nil {
-			v := int32(math.Round(*ext.RatingAverage))
-			ratingAvg = &v
+	// Split extensions into store-known (normalized store_extension* tables) and
+	// unknown (environment_extension), then prune rows no longer present. Skipped
+	// entirely when the shop returned no extensions (likely a fetch error) so a
+	// transient failure does not wipe stored extensions.
+	if len(extensions) > 0 {
+		storeNames := make([]string, 0, len(extensions))
+		unknownNames := make([]string, 0, len(extensions))
+		for _, ext := range extensions {
+			if ext.Store != nil && ext.Store.primary() != nil {
+				storeNames = append(storeNames, ext.Name)
+				if err := h.persistStoreExtension(ctx, txQueries, env.ID, ext); err != nil {
+					persistSpan.RecordError(err)
+					persistSpan.SetStatus(codes.Error, err.Error())
+					persistSpan.End()
+					return err
+				}
+			} else {
+				unknownNames = append(unknownNames, ext.Name)
+				if err := txQueries.UpsertEnvironmentExtension(ctx, queries.UpsertEnvironmentExtensionParams{
+					EnvironmentID: env.ID,
+					Name:          ext.Name,
+					Label:         ext.Label,
+					Active:        ext.Active,
+					Version:       ext.Version,
+					LatestVersion: ext.LatestVersion,
+					Installed:     ext.Installed,
+					InstalledAt:   ext.InstalledAt,
+				}); err != nil {
+					persistSpan.RecordError(err)
+					persistSpan.SetStatus(codes.Error, err.Error())
+					persistSpan.End()
+					return fmt.Errorf("upsert environment extension %s: %w", ext.Name, err)
+				}
+			}
 		}
 
-		var changelogJSON []byte
-		if ext.Changelog != nil {
-			changelogJSON, _ = json.Marshal(ext.Changelog)
-		}
-
-		if err := txQueries.UpsertEnvironmentExtension(ctx, queries.UpsertEnvironmentExtensionParams{
+		if err := txQueries.DeleteEnvironmentStoreExtensionsNotIn(ctx, queries.DeleteEnvironmentStoreExtensionsNotInParams{
 			EnvironmentID: env.ID,
-			Name:          ext.Name,
-			Label:         ext.Label,
-			Active:        ext.Active,
-			Version:       ext.Version,
-			LatestVersion: ext.LatestVersion,
-			Installed:     ext.Installed,
-			RatingAverage: ratingAvg,
-			StoreLink:     ext.StoreLink,
-			Changelog:     changelogJSON,
-			InstalledAt:   ext.InstalledAt,
+			Column2:       storeNames,
 		}); err != nil {
 			persistSpan.RecordError(err)
 			persistSpan.SetStatus(codes.Error, err.Error())
 			persistSpan.End()
-			return fmt.Errorf("upsert environment extension %s: %w", ext.Name, err)
+			return fmt.Errorf("delete stale store extensions: %w", err)
 		}
-	}
-	if len(extNames) > 0 {
 		if err := txQueries.DeleteEnvironmentExtensionsNotIn(ctx, queries.DeleteEnvironmentExtensionsNotInParams{
 			EnvironmentID: env.ID,
-			Column2:       extNames,
+			Column2:       unknownNames,
 		}); err != nil {
 			persistSpan.RecordError(err)
 			persistSpan.SetStatus(codes.Error, err.Error())
@@ -567,4 +573,108 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 
 	slog.Info("scraped environment", "environmentId", env.ID, "name", env.Name, "version", shopConfig.Version)
 	return nil
+}
+
+// persistStoreExtension writes a store-known extension into the normalized
+// catalog (store_extension), its per-version changelogs (store_extension_version),
+// its listing images (store_extension_image), and the per-environment link
+// (environment_store_extension).
+func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q *queries.Queries, envID int32, ext extensionEntry) error {
+	sd := ext.Store
+	p := sd.primary()
+
+	var storeID *int32
+	if p.ID != 0 {
+		v := int32(p.ID)
+		storeID = &v
+	}
+	var rating *int32
+	if p.RatingAverage != 0 {
+		v := int32(math.Round(p.RatingAverage))
+		rating = &v
+	}
+
+	var enLabel, enShort, enDesc, enManual string
+	if sd.en != nil {
+		enLabel, enShort, enDesc, enManual = sd.en.Label, sd.en.ShortDescription, sd.en.Description, sd.en.InstallationManual
+	}
+	var deLabel, deShort, deDesc, deManual string
+	if sd.de != nil {
+		deLabel, deShort, deDesc, deManual = sd.de.Label, sd.de.ShortDescription, sd.de.Description, sd.de.InstallationManual
+	}
+
+	if err := q.UpsertStoreExtension(ctx, queries.UpsertStoreExtensionParams{
+		Name:                 ext.Name,
+		StoreID:              storeID,
+		IconUrl:              nilIfEmpty(p.IconPath),
+		ProducerName:         nilIfEmpty(p.ProducerName),
+		ProducerWebsite:      nilIfEmpty(p.ProducerWebsite),
+		RatingAverage:        rating,
+		StoreLink:            nilIfEmpty(p.StoreLink),
+		ReleaseDate:          nilIfEmpty(p.ReleaseDate),
+		LabelEn:              nilIfEmpty(enLabel),
+		LabelDe:              nilIfEmpty(deLabel),
+		ShortDescriptionEn:   nilIfEmpty(enShort),
+		ShortDescriptionDe:   nilIfEmpty(deShort),
+		DescriptionEn:        nilIfEmpty(enDesc),
+		DescriptionDe:        nilIfEmpty(deDesc),
+		InstallationManualEn: nilIfEmpty(enManual),
+		InstallationManualDe: nilIfEmpty(deManual),
+		LatestVersion:        nilIfEmpty(p.Version),
+	}); err != nil {
+		return fmt.Errorf("upsert store extension %s: %w", ext.Name, err)
+	}
+
+	for _, mc := range sd.mergedChangelogs() {
+		if err := q.UpsertStoreExtensionVersion(ctx, queries.UpsertStoreExtensionVersionParams{
+			ExtensionName: ext.Name,
+			Version:       mc.Version,
+			ChangelogEn:   nilIfEmpty(mc.En),
+			ChangelogDe:   nilIfEmpty(mc.De),
+			ReleasedAt:    nilIfEmpty(mc.ReleasedAt),
+		}); err != nil {
+			return fmt.Errorf("upsert store extension version %s@%s: %w", ext.Name, mc.Version, err)
+		}
+	}
+
+	imageURLs := make([]string, 0, len(p.Pictures))
+	for _, pic := range p.Pictures {
+		imageURLs = append(imageURLs, pic.URL)
+		if err := q.UpsertStoreExtensionImage(ctx, queries.UpsertStoreExtensionImageParams{
+			ExtensionName: ext.Name,
+			Url:           pic.URL,
+			Preview:       pic.Preview,
+			Priority:      int32(pic.Priority),
+		}); err != nil {
+			return fmt.Errorf("upsert store extension image %s: %w", ext.Name, err)
+		}
+	}
+	if err := q.DeleteStoreExtensionImagesNotIn(ctx, queries.DeleteStoreExtensionImagesNotInParams{
+		ExtensionName: ext.Name,
+		Column2:       imageURLs,
+	}); err != nil {
+		return fmt.Errorf("delete stale store extension images %s: %w", ext.Name, err)
+	}
+
+	if err := q.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
+		EnvironmentID: envID,
+		ExtensionName: ext.Name,
+		Label:         ext.Label,
+		Version:       ext.Version,
+		LatestVersion: ext.LatestVersion,
+		Active:        ext.Active,
+		Installed:     ext.Installed,
+		InstalledAt:   ext.InstalledAt,
+	}); err != nil {
+		return fmt.Errorf("upsert environment store extension %s: %w", ext.Name, err)
+	}
+
+	return nil
+}
+
+func nilIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

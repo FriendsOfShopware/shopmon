@@ -330,143 +330,6 @@ func (q *Queries) GetUserEnvironmentsByOrg(ctx context.Context, arg GetUserEnvir
 	return items, nil
 }
 
-const getUserExtensions = `-- name: GetUserExtensions :many
-SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
-       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
-       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
-FROM environment_extension ee
-JOIN environment e ON e.id = ee.environment_id
-JOIN organization o ON o.id = e.organization_id
-JOIN member m ON m.organization_id = e.organization_id
-WHERE m.user_id = $1
-ORDER BY ee.name, e.name
-`
-
-type GetUserExtensionsRow struct {
-	Name                        string  `json:"name"`
-	Label                       string  `json:"label"`
-	Version                     string  `json:"version"`
-	LatestVersion               *string `json:"latest_version"`
-	Active                      bool    `json:"active"`
-	Installed                   bool    `json:"installed"`
-	StoreLink                   *string `json:"store_link"`
-	RatingAverage               *int32  `json:"rating_average"`
-	InstalledAt                 *string `json:"installed_at"`
-	Changelog                   []byte  `json:"changelog"`
-	EnvironmentID               int32   `json:"environment_id"`
-	EnvironmentName             string  `json:"environment_name"`
-	EnvironmentUrl              string  `json:"environment_url"`
-	EnvironmentOrganizationName string  `json:"environment_organization_name"`
-	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
-}
-
-func (q *Queries) GetUserExtensions(ctx context.Context, userID string) ([]GetUserExtensionsRow, error) {
-	rows, err := q.db.Query(ctx, getUserExtensions, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetUserExtensionsRow{}
-	for rows.Next() {
-		var i GetUserExtensionsRow
-		if err := rows.Scan(
-			&i.Name,
-			&i.Label,
-			&i.Version,
-			&i.LatestVersion,
-			&i.Active,
-			&i.Installed,
-			&i.StoreLink,
-			&i.RatingAverage,
-			&i.InstalledAt,
-			&i.Changelog,
-			&i.EnvironmentID,
-			&i.EnvironmentName,
-			&i.EnvironmentUrl,
-			&i.EnvironmentOrganizationName,
-			&i.EnvironmentOrganizationID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUserExtensionsByOrg = `-- name: GetUserExtensionsByOrg :many
-SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
-       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
-       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
-FROM environment_extension ee
-JOIN environment e ON e.id = ee.environment_id
-JOIN organization o ON o.id = e.organization_id
-JOIN member m ON m.organization_id = e.organization_id
-WHERE m.user_id = $1 AND e.organization_id = $2
-ORDER BY ee.name, e.name
-`
-
-type GetUserExtensionsByOrgParams struct {
-	UserID         string `json:"user_id"`
-	OrganizationID string `json:"organization_id"`
-}
-
-type GetUserExtensionsByOrgRow struct {
-	Name                        string  `json:"name"`
-	Label                       string  `json:"label"`
-	Version                     string  `json:"version"`
-	LatestVersion               *string `json:"latest_version"`
-	Active                      bool    `json:"active"`
-	Installed                   bool    `json:"installed"`
-	StoreLink                   *string `json:"store_link"`
-	RatingAverage               *int32  `json:"rating_average"`
-	InstalledAt                 *string `json:"installed_at"`
-	Changelog                   []byte  `json:"changelog"`
-	EnvironmentID               int32   `json:"environment_id"`
-	EnvironmentName             string  `json:"environment_name"`
-	EnvironmentUrl              string  `json:"environment_url"`
-	EnvironmentOrganizationName string  `json:"environment_organization_name"`
-	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
-}
-
-func (q *Queries) GetUserExtensionsByOrg(ctx context.Context, arg GetUserExtensionsByOrgParams) ([]GetUserExtensionsByOrgRow, error) {
-	rows, err := q.db.Query(ctx, getUserExtensionsByOrg, arg.UserID, arg.OrganizationID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetUserExtensionsByOrgRow{}
-	for rows.Next() {
-		var i GetUserExtensionsByOrgRow
-		if err := rows.Scan(
-			&i.Name,
-			&i.Label,
-			&i.Version,
-			&i.LatestVersion,
-			&i.Active,
-			&i.Installed,
-			&i.StoreLink,
-			&i.RatingAverage,
-			&i.InstalledAt,
-			&i.Changelog,
-			&i.EnvironmentID,
-			&i.EnvironmentName,
-			&i.EnvironmentUrl,
-			&i.EnvironmentOrganizationName,
-			&i.EnvironmentOrganizationID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getUserNotifications = `-- name: GetUserNotifications :one
 SELECT notifications FROM "user" WHERE id = $1
 `
@@ -612,6 +475,199 @@ func (q *Queries) GetUserShopsByOrg(ctx context.Context, arg GetUserShopsByOrgPa
 			&i.DefaultEnvironmentID,
 			&i.OrganizationID,
 			&i.OrganizationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserStoreExtensionChangelogsByOrg = `-- name: GetUserStoreExtensionChangelogsByOrg :many
+SELECT DISTINCT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+FROM store_extension_version sev
+WHERE sev.extension_name IN (
+  SELECT ese.extension_name
+  FROM environment_store_extension ese
+  JOIN environment e ON e.id = ese.environment_id
+  JOIN member m ON m.organization_id = e.organization_id
+  WHERE m.user_id = $1 AND e.organization_id = $2
+)
+ORDER BY sev.extension_name, sev.version
+`
+
+type GetUserStoreExtensionChangelogsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserStoreExtensionChangelogsByOrgRow struct {
+	ExtensionName string  `json:"extension_name"`
+	Version       string  `json:"version"`
+	ChangelogEn   *string `json:"changelog_en"`
+	ChangelogDe   *string `json:"changelog_de"`
+	ReleasedAt    *string `json:"released_at"`
+}
+
+func (q *Queries) GetUserStoreExtensionChangelogsByOrg(ctx context.Context, arg GetUserStoreExtensionChangelogsByOrgParams) ([]GetUserStoreExtensionChangelogsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserStoreExtensionChangelogsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserStoreExtensionChangelogsByOrgRow{}
+	for rows.Next() {
+		var i GetUserStoreExtensionChangelogsByOrgRow
+		if err := rows.Scan(
+			&i.ExtensionName,
+			&i.Version,
+			&i.ChangelogEn,
+			&i.ChangelogDe,
+			&i.ReleasedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserStoreExtensionsByOrg = `-- name: GetUserStoreExtensionsByOrg :many
+SELECT ese.extension_name AS name, ese.label, ese.version, ese.latest_version, ese.active, ese.installed,
+       se.store_link, se.rating_average, ese.installed_at,
+       ese.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+JOIN environment e ON e.id = ese.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY ese.extension_name, e.name
+`
+
+type GetUserStoreExtensionsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserStoreExtensionsByOrgRow struct {
+	Name                        string  `json:"name"`
+	Label                       string  `json:"label"`
+	Version                     string  `json:"version"`
+	LatestVersion               *string `json:"latest_version"`
+	Active                      bool    `json:"active"`
+	Installed                   bool    `json:"installed"`
+	StoreLink                   *string `json:"store_link"`
+	RatingAverage               *int32  `json:"rating_average"`
+	InstalledAt                 *string `json:"installed_at"`
+	EnvironmentID               int32   `json:"environment_id"`
+	EnvironmentName             string  `json:"environment_name"`
+	EnvironmentUrl              string  `json:"environment_url"`
+	EnvironmentOrganizationName string  `json:"environment_organization_name"`
+	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
+}
+
+func (q *Queries) GetUserStoreExtensionsByOrg(ctx context.Context, arg GetUserStoreExtensionsByOrgParams) ([]GetUserStoreExtensionsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserStoreExtensionsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserStoreExtensionsByOrgRow{}
+	for rows.Next() {
+		var i GetUserStoreExtensionsByOrgRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Label,
+			&i.Version,
+			&i.LatestVersion,
+			&i.Active,
+			&i.Installed,
+			&i.StoreLink,
+			&i.RatingAverage,
+			&i.InstalledAt,
+			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.EnvironmentUrl,
+			&i.EnvironmentOrganizationName,
+			&i.EnvironmentOrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserUnknownExtensionsByOrg = `-- name: GetUserUnknownExtensionsByOrg :many
+SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
+       NULL::text AS store_link, NULL::integer AS rating_average, ee.installed_at,
+       ee.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_extension ee
+JOIN environment e ON e.id = ee.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY ee.name, e.name
+`
+
+type GetUserUnknownExtensionsByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserUnknownExtensionsByOrgRow struct {
+	Name                        string  `json:"name"`
+	Label                       string  `json:"label"`
+	Version                     string  `json:"version"`
+	LatestVersion               *string `json:"latest_version"`
+	Active                      bool    `json:"active"`
+	Installed                   bool    `json:"installed"`
+	StoreLink                   *string `json:"store_link"`
+	RatingAverage               *int32  `json:"rating_average"`
+	InstalledAt                 *string `json:"installed_at"`
+	EnvironmentID               int32   `json:"environment_id"`
+	EnvironmentName             string  `json:"environment_name"`
+	EnvironmentUrl              string  `json:"environment_url"`
+	EnvironmentOrganizationName string  `json:"environment_organization_name"`
+	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
+}
+
+func (q *Queries) GetUserUnknownExtensionsByOrg(ctx context.Context, arg GetUserUnknownExtensionsByOrgParams) ([]GetUserUnknownExtensionsByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserUnknownExtensionsByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserUnknownExtensionsByOrgRow{}
+	for rows.Next() {
+		var i GetUserUnknownExtensionsByOrgRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Label,
+			&i.Version,
+			&i.LatestVersion,
+			&i.Active,
+			&i.Installed,
+			&i.StoreLink,
+			&i.RatingAverage,
+			&i.InstalledAt,
+			&i.EnvironmentID,
+			&i.EnvironmentName,
+			&i.EnvironmentUrl,
+			&i.EnvironmentOrganizationName,
+			&i.EnvironmentOrganizationID,
 		); err != nil {
 			return nil, err
 		}

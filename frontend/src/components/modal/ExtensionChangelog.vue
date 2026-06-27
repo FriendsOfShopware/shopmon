@@ -21,7 +21,10 @@
           </div>
 
           <!-- eslint-disable vue/no-v-html -->
-          <div class="prose prose-sm dark:prose-invert max-w-none" v-html="changeLog.text" />
+          <div
+            class="prose prose-sm dark:prose-invert max-w-none"
+            v-html="changelogText(changeLog)"
+          />
           <!-- eslint-enable vue/no-v-html -->
         </li>
       </ul>
@@ -40,7 +43,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CircleX } from "lucide-vue-next";
 import { formatDate } from "@/helpers/formatter";
+import { useChangelogText } from "@/helpers/changelog";
 import type { ExtensionWithChangelog } from "@/composables/useExtensionChangelogModal";
+
+const changelogText = useChangelogText();
 
 interface Props {
   show: boolean;

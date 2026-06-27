@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -52,15 +52,71 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := h.queries.GetUserExtensionsByOrg(r.Context(), queries.GetUserExtensionsByOrgParams{
+	storeRows, err := h.queries.GetUserStoreExtensionsByOrg(r.Context(), queries.GetUserStoreExtensionsByOrgParams{
 		UserID:         user.ID,
 		OrganizationID: *activeOrgID,
 	})
 	if err != nil {
-		slog.Error("failed to get user extensions", "error", err)
+		slog.Error("failed to get user store extensions", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extensions")
 		return
 	}
+	unknownRows, err := h.queries.GetUserUnknownExtensionsByOrg(r.Context(), queries.GetUserUnknownExtensionsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
+	if err != nil {
+		slog.Error("failed to get user unknown extensions", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extensions")
+		return
+	}
+	changelogRows, err := h.queries.GetUserStoreExtensionChangelogsByOrg(r.Context(), queries.GetUserStoreExtensionChangelogsByOrgParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+	})
+	if err != nil {
+		slog.Error("failed to get user store extension changelogs", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extensions")
+		return
+	}
+
+	changelogByExt := make(map[string][]changelogVersion)
+	for _, r := range changelogRows {
+		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
+			Version:    r.Version,
+			TextEn:     deref(r.ChangelogEn),
+			TextDe:     deref(r.ChangelogDe),
+			ReleasedAt: deref(r.ReleasedAt),
+		})
+	}
+
+	// Normalize both sources into a single iteration order (by name, then
+	// environment) so grouping is stable.
+	rows := make([]accountExtRow, 0, len(storeRows)+len(unknownRows))
+	for _, row := range storeRows {
+		rows = append(rows, accountExtRow{
+			Name: row.Name, Label: row.Label, Version: row.Version, LatestVersion: row.LatestVersion,
+			Active: row.Active, Installed: row.Installed, StoreLink: row.StoreLink, RatingAverage: row.RatingAverage,
+			InstalledAt: row.InstalledAt, EnvironmentID: row.EnvironmentID, EnvironmentName: row.EnvironmentName,
+			EnvironmentUrl: row.EnvironmentUrl, EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationID: row.EnvironmentOrganizationID, isStore: true,
+		})
+	}
+	for _, row := range unknownRows {
+		rows = append(rows, accountExtRow{
+			Name: row.Name, Label: row.Label, Version: row.Version, LatestVersion: row.LatestVersion,
+			Active: row.Active, Installed: row.Installed, StoreLink: row.StoreLink, RatingAverage: row.RatingAverage,
+			InstalledAt: row.InstalledAt, EnvironmentID: row.EnvironmentID, EnvironmentName: row.EnvironmentName,
+			EnvironmentUrl: row.EnvironmentUrl, EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationID: row.EnvironmentOrganizationID, isStore: false,
+		})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Name != rows[j].Name {
+			return rows[i].Name < rows[j].Name
+		}
+		return rows[i].EnvironmentName < rows[j].EnvironmentName
+	})
 
 	// Group extensions by name, aggregating environments
 	extMap := make(map[string]*api.AccountExtension)
@@ -71,11 +127,6 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 
 		ext, exists := extMap[key]
 		if !exists {
-			latestVersion := ""
-			if row.LatestVersion != nil {
-				latestVersion = *row.LatestVersion
-			}
-
 			var ratingAvg *float32
 			if row.RatingAverage != nil {
 				v := float32(*row.RatingAverage)
@@ -83,42 +134,25 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var changelog *[]api.ExtensionChangelogEntry
-			if len(row.Changelog) > 0 {
-				var entries []api.ExtensionChangelogEntry
-				if err := json.Unmarshal(row.Changelog, &entries); err != nil {
-					slog.Warn("failed to unmarshal extension changelog", "extension", row.Name, "error", err)
-				} else if len(entries) > 0 {
-					changelog = &entries
-				}
-			}
-
-			var installedAt *time.Time
-			if row.InstalledAt != nil {
-				if t, err := time.Parse(time.RFC3339, *row.InstalledAt); err == nil {
-					installedAt = &t
-				}
+			if row.isStore {
+				changelog = buildCompatibleChangelog(changelogByExt[row.Name], row.Version, deref(row.LatestVersion))
 			}
 
 			ext = &api.AccountExtension{
 				Name:          row.Name,
 				Label:         row.Label,
 				Version:       row.Version,
-				LatestVersion: latestVersion,
+				LatestVersion: deref(row.LatestVersion),
 				Active:        row.Active,
 				Installed:     row.Installed,
 				StoreLink:     row.StoreLink,
 				RatingAverage: ratingAvg,
 				Changelog:     changelog,
-				InstalledAt:   installedAt,
+				InstalledAt:   parseInstalledAt(row.InstalledAt),
 				Environments:  []api.AccountExtensionEnvironment{},
 			}
 			extMap[key] = ext
 			extOrder = append(extOrder, key)
-		}
-
-		latestVersion := ""
-		if row.LatestVersion != nil {
-			latestVersion = *row.LatestVersion
 		}
 
 		env := api.AccountExtensionEnvironment{
@@ -128,7 +162,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 			EnvironmentOrganizationName: row.EnvironmentOrganizationName,
 			EnvironmentOrganizationId:   row.EnvironmentOrganizationID,
 			Version:                     row.Version,
-			LatestVersion:               latestVersion,
+			LatestVersion:               deref(row.LatestVersion),
 			Active:                      row.Active,
 			Installed:                   row.Installed,
 		}
@@ -141,6 +175,26 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
+// accountExtRow is a unified row for aggregating account extensions from the
+// store and unknown sources.
+type accountExtRow struct {
+	Name                        string
+	Label                       string
+	Version                     string
+	LatestVersion               *string
+	Active                      bool
+	Installed                   bool
+	StoreLink                   *string
+	RatingAverage               *int32
+	InstalledAt                 *string
+	EnvironmentID               int32
+	EnvironmentName             string
+	EnvironmentUrl              string
+	EnvironmentOrganizationName string
+	EnvironmentOrganizationID   string
+	isStore                     bool
 }
 
 // GetAccountOrganizations returns the organizations the user belongs to.

@@ -3,7 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -42,39 +44,40 @@ func toAccountEnvironments(rows []queries.ListEnvironmentsByOrganizationRow) []a
 	return result
 }
 
-func mapEnvironmentExtensions(rows []queries.EnvironmentExtension) []api.EnvironmentExtension {
-	extensions := make([]api.EnvironmentExtension, 0, len(rows))
-	for _, row := range rows {
+// mergeEnvironmentExtensions assembles the unified extension list for an
+// environment from the normalized store tables and the unknown-extension table.
+// Store extensions carry catalog metadata (store link, rating) and a
+// compatibility-capped changelog (both languages) built from the version
+// catalog; unknown extensions carry only the shop-reported fields.
+func mergeEnvironmentExtensions(
+	storeRows []queries.GetEnvironmentStoreExtensionsRow,
+	unknownRows []queries.EnvironmentExtension,
+	changelogRows []queries.GetEnvironmentStoreExtensionChangelogsRow,
+) []api.EnvironmentExtension {
+	changelogByExt := make(map[string][]changelogVersion)
+	for _, r := range changelogRows {
+		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
+			Version:    r.Version,
+			TextEn:     deref(r.ChangelogEn),
+			TextDe:     deref(r.ChangelogDe),
+			ReleasedAt: deref(r.ReleasedAt),
+		})
+	}
+
+	extensions := make([]api.EnvironmentExtension, 0, len(storeRows)+len(unknownRows))
+
+	for _, row := range storeRows {
 		var ratingAvg *float32
 		if row.RatingAverage != nil {
 			v := float32(*row.RatingAverage)
 			ratingAvg = &v
 		}
 
-		var changelog *[]api.ExtensionChangelogEntry
-		if len(row.Changelog) > 0 {
-			var entries []api.ExtensionChangelogEntry
-			if err := json.Unmarshal(row.Changelog, &entries); err != nil {
-				slog.Warn("failed to unmarshal extension changelog", "extension", row.Name, "error", err)
-			} else if len(entries) > 0 {
-				changelog = &entries
-			}
-		}
-
-		var installedAt *time.Time
-		if row.InstalledAt != nil {
-			if parsed, err := time.Parse(time.RFC3339, *row.InstalledAt); err == nil {
-				installedAt = &parsed
-			}
-		}
-
-		latestVersion := ""
-		if row.LatestVersion != nil {
-			latestVersion = *row.LatestVersion
-		}
+		latestVersion := deref(row.LatestVersion)
+		changelog := buildCompatibleChangelog(changelogByExt[row.ExtensionName], row.Version, latestVersion)
 
 		extensions = append(extensions, api.EnvironmentExtension{
-			Name:          row.Name,
+			Name:          row.ExtensionName,
 			Label:         row.Label,
 			Version:       row.Version,
 			LatestVersion: latestVersion,
@@ -83,11 +86,117 @@ func mapEnvironmentExtensions(rows []queries.EnvironmentExtension) []api.Environ
 			StoreLink:     row.StoreLink,
 			RatingAverage: ratingAvg,
 			Changelog:     changelog,
-			InstalledAt:   installedAt,
+			InstalledAt:   parseInstalledAt(row.InstalledAt),
 		})
 	}
 
+	for _, row := range unknownRows {
+		extensions = append(extensions, api.EnvironmentExtension{
+			Name:          row.Name,
+			Label:         row.Label,
+			Version:       row.Version,
+			LatestVersion: deref(row.LatestVersion),
+			Active:        row.Active,
+			Installed:     row.Installed,
+			InstalledAt:   parseInstalledAt(row.InstalledAt),
+		})
+	}
+
+	sort.Slice(extensions, func(i, j int) bool {
+		return extensions[i].Name < extensions[j].Name
+	})
 	return extensions
+}
+
+// changelogVersion is an intermediate, language-agnostic store changelog entry.
+type changelogVersion struct {
+	Version    string
+	TextEn     string
+	TextDe     string
+	ReleasedAt string
+}
+
+// buildCompatibleChangelog returns changelog entries strictly newer than the
+// installed version and not newer than the latest compatible version (when
+// known), ordered oldest-first, with both language texts. Returns nil when there
+// is nothing to show.
+func buildCompatibleChangelog(versions []changelogVersion, installedVersion, latestVersion string) *[]api.ExtensionChangelogEntry {
+	entries := make([]api.ExtensionChangelogEntry, 0, len(versions))
+	for _, v := range versions {
+		if compareVersions(v.Version, installedVersion) <= 0 {
+			continue
+		}
+		if latestVersion != "" && compareVersions(v.Version, latestVersion) > 0 {
+			continue
+		}
+		entry := api.ExtensionChangelogEntry{
+			Version: v.Version,
+			Text:    v.TextEn,
+		}
+		if v.TextDe != "" {
+			textDe := v.TextDe
+			entry.TextDe = &textDe
+		}
+		if v.ReleasedAt != "" {
+			if t, err := time.Parse(time.RFC3339, v.ReleasedAt); err == nil {
+				entry.CreationDate = t
+			}
+		}
+		entries = append(entries, entry)
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return compareVersions(entries[i].Version, entries[j].Version) < 0
+	})
+	return &entries
+}
+
+// parseInstalledAt parses the RFC3339 installed-at timestamp, returning nil when
+// absent or unparseable.
+func parseInstalledAt(s *string) *time.Time {
+	if s == nil {
+		return nil
+	}
+	if t, err := time.Parse(time.RFC3339, *s); err == nil {
+		return &t
+	}
+	return nil
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// compareVersions compares two dot-separated numeric version strings.
+// Returns 1 if a > b, -1 if a < b, 0 if equal.
+func compareVersions(a, b string) int {
+	ap := strings.Split(a, ".")
+	bp := strings.Split(b, ".")
+	maxLen := len(ap)
+	if len(bp) > maxLen {
+		maxLen = len(bp)
+	}
+	for i := 0; i < maxLen; i++ {
+		var an, bn int
+		if i < len(ap) {
+			an, _ = strconv.Atoi(ap[i])
+		}
+		if i < len(bp) {
+			bn, _ = strconv.Atoi(bp[i])
+		}
+		if an > bn {
+			return 1
+		}
+		if bn > an {
+			return -1
+		}
+	}
+	return 0
 }
 
 func mapEnvironmentScheduledTasks(rows []queries.EnvironmentScheduledTask) []api.ScheduledTask {

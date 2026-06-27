@@ -42,8 +42,27 @@ WHERE default_environment_id = $1;
 DELETE FROM environment WHERE id = $1;
 
 -- name: GetEnvironmentExtensions :many
-SELECT id, environment_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at
+-- Extensions unknown to the Shopware store (everything else lives in the
+-- normalized store_extension* tables, linked via environment_store_extension).
+SELECT id, environment_id, name, label, active, version, latest_version, installed, installed_at
 FROM environment_extension WHERE environment_id = $1 ORDER BY name;
+
+-- name: GetEnvironmentStoreExtensions :many
+SELECT ese.id, ese.environment_id, ese.extension_name, ese.label, ese.active, ese.version,
+       ese.latest_version, ese.installed, ese.installed_at,
+       se.store_link, se.rating_average, se.icon_url,
+       se.label_en, se.label_de, se.short_description_en, se.short_description_de
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+WHERE ese.environment_id = $1
+ORDER BY ese.extension_name;
+
+-- name: GetEnvironmentStoreExtensionChangelogs :many
+SELECT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+FROM store_extension_version sev
+JOIN environment_store_extension ese ON ese.extension_name = sev.extension_name
+WHERE ese.environment_id = $1
+ORDER BY sev.extension_name, sev.version;
 
 -- name: GetEnvironmentScheduledTasks :many
 SELECT id, environment_id, task_id, name, status, interval, overdue, last_execution_time, next_execution_time
@@ -96,12 +115,56 @@ UPDATE environment SET environment_image = $1 WHERE id = $2;
 UPDATE environment SET last_scraped_error = $1, last_scraped_at = NOW(), connection_issue_count = connection_issue_count + 1 WHERE id = $2;
 
 -- name: UpsertEnvironmentExtension :exec
-INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, rating_average, store_link, changelog, installed_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, rating_average = $8, store_link = $9, changelog = $10, installed_at = $11;
+INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, installed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, installed_at = $8;
 
 -- name: DeleteEnvironmentExtensionsNotIn :exec
 DELETE FROM environment_extension WHERE environment_id = $1 AND name != ALL($2::text[]);
+
+-- name: UpsertStoreExtension :exec
+INSERT INTO store_extension (
+  name, store_id, icon_url, producer_name, producer_website, rating_average, store_link,
+  release_date, label_en, label_de, short_description_en, short_description_de,
+  description_en, description_de, installation_manual_en, installation_manual_de,
+  latest_version, last_refreshed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+ON CONFLICT (name) DO UPDATE SET
+  store_id = $2, icon_url = $3, producer_name = $4, producer_website = $5, rating_average = $6,
+  store_link = $7, release_date = $8, label_en = $9, label_de = $10,
+  short_description_en = $11, short_description_de = $12, description_en = $13, description_de = $14,
+  installation_manual_en = $15, installation_manual_de = $16, latest_version = $17,
+  last_refreshed_at = NOW();
+
+-- name: UpsertStoreExtensionVersion :exec
+INSERT INTO store_extension_version (extension_name, version, changelog_en, changelog_de, released_at)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (extension_name, version) DO UPDATE SET
+  changelog_en = $3, changelog_de = $4, released_at = $5;
+
+-- name: UpsertStoreExtensionImage :exec
+INSERT INTO store_extension_image (extension_name, url, preview, priority)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (extension_name, url) DO UPDATE SET preview = $3, priority = $4;
+
+-- name: DeleteStoreExtensionImagesNotIn :exec
+DELETE FROM store_extension_image WHERE extension_name = $1 AND url != ALL($2::text[]);
+
+-- name: UpsertEnvironmentStoreExtension :exec
+INSERT INTO environment_store_extension (environment_id, extension_name, label, version, latest_version, active, installed, installed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, extension_name) DO UPDATE SET
+  label = $3, version = $4, latest_version = $5, active = $6, installed = $7, installed_at = $8;
+
+-- name: DeleteEnvironmentStoreExtensionsNotIn :exec
+DELETE FROM environment_store_extension WHERE environment_id = $1 AND extension_name != ALL($2::text[]);
+
+-- name: GetEnvironmentStoreExtensionImages :many
+SELECT sei.extension_name, sei.url, sei.preview, sei.priority
+FROM store_extension_image sei
+JOIN environment_store_extension ese ON ese.extension_name = sei.extension_name
+WHERE ese.environment_id = $1
+ORDER BY sei.extension_name, sei.priority DESC;
 
 -- name: UpsertEnvironmentQueue :exec
 INSERT INTO environment_queue (environment_id, name, size) VALUES ($1, $2, $3)
