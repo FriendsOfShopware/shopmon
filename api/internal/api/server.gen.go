@@ -746,6 +746,24 @@ type ScheduledTask struct {
 	Status            string     `json:"status"`
 }
 
+// SecurityAdvisory defines model for SecurityAdvisory.
+type SecurityAdvisory struct {
+	AdvisoryId string `json:"advisoryId"`
+
+	// AffectedVersions Composer version constraint describing affected versions.
+	AffectedVersions string  `json:"affectedVersions"`
+	Cve              *string `json:"cve,omitempty"`
+	Link             *string `json:"link,omitempty"`
+
+	// Origin Source of the advisory, e.g. "packagist".
+	Origin      string     `json:"origin"`
+	PackageName string     `json:"packageName"`
+	ReportedAt  *time.Time `json:"reportedAt,omitempty"`
+	Severity    *string    `json:"severity,omitempty"`
+	Source      *string    `json:"source,omitempty"`
+	Title       string     `json:"title"`
+}
+
 // Shop defines model for Shop.
 type Shop struct {
 	DefaultEnvironmentId *int    `json:"defaultEnvironmentId"`
@@ -1128,6 +1146,9 @@ type ServerInterface interface {
 	// Check extension compatibility between Shopware versions
 	// (POST /info/extension-compatibility)
 	CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request)
+	// List security advisories
+	// (GET /info/security-advisories)
+	ListSecurityAdvisories(w http.ResponseWriter, r *http.Request)
 	// Get latest Shopware version information
 	// (GET /info/shopware-versions)
 	GetShopwareVersions(w http.ResponseWriter, r *http.Request)
@@ -1413,6 +1434,12 @@ func (_ Unimplemented) GetEcosystemStats(w http.ResponseWriter, r *http.Request)
 // Check extension compatibility between Shopware versions
 // (POST /info/extension-compatibility)
 func (_ Unimplemented) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List security advisories
+// (GET /info/security-advisories)
+func (_ Unimplemented) ListSecurityAdvisories(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2883,6 +2910,26 @@ func (siw *ServerInterfaceWrapper) CheckExtensionCompatibility(w http.ResponseWr
 	handler.ServeHTTP(w, r)
 }
 
+// ListSecurityAdvisories operation middleware
+func (siw *ServerInterfaceWrapper) ListSecurityAdvisories(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSecurityAdvisories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetShopwareVersions operation middleware
 func (siw *ServerInterfaceWrapper) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 
@@ -3874,6 +3921,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/info/extension-compatibility", wrapper.CheckExtensionCompatibility)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/info/security-advisories", wrapper.ListSecurityAdvisories)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/info/shopware-versions", wrapper.GetShopwareVersions)

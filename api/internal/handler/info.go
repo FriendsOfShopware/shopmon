@@ -91,6 +91,40 @@ func (h *Handler) GetEcosystemStats(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ListSecurityAdvisories returns the catalog of imported security advisories for
+// any authenticated user.
+func (h *Handler) ListSecurityAdvisories(w http.ResponseWriter, r *http.Request) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	rows, err := h.queries.ListSecurityAdvisories(r.Context())
+	if err != nil {
+		slog.Error("failed to list security advisories", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to list security advisories")
+		return
+	}
+
+	advisories := make([]api.SecurityAdvisory, 0, len(rows))
+	for _, row := range rows {
+		advisories = append(advisories, api.SecurityAdvisory{
+			AdvisoryId:       row.AdvisoryID,
+			Origin:           row.Origin,
+			PackageName:      row.PackageName,
+			Title:            row.Title,
+			Link:             row.Link,
+			Cve:              row.Cve,
+			AffectedVersions: row.AffectedVersions,
+			Severity:         row.Severity,
+			Source:           row.SourceName,
+			ReportedAt:       pgtimeToTimePtr(row.ReportedAt),
+		})
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, advisories)
+}
+
 // CheckExtensionCompatibility checks extension compatibility between Shopware versions.
 func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request) {
 	var req api.ExtensionCompatibilityRequest

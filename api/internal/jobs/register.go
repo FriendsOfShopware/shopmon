@@ -26,6 +26,7 @@ type SitespeedScrape struct {
 type LockCleanup struct{}
 type InvitationCleanup struct{}
 type OldDataCleanup struct{}
+type SecurityAdvisorySync struct{}
 
 // NewBus creates a go-queue Bus backed by PostgreSQL and registers all job handlers.
 func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mailSvc mail.Sender) (*goqueue.Bus, error) {
@@ -46,12 +47,14 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 	envScrape := NewEnvironmentScrapeHandler(pool, q, cfg, bus, mailSvc)
 	sitespeed := NewSitespeedScrapeHandler(pool, q, cfg)
 	cleanup := NewCleanupHandler(q)
+	securityAdvisory := NewSecurityAdvisorySyncHandler(q)
 
 	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleLockCleanup)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleInvitationCleanup)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleOldDataCleanup)
+	goqueue.HandleFunc(bus, TransportName, securityAdvisory.HandleSync)
 
 	if err := bus.Setup(ctx); err != nil {
 		return nil, err

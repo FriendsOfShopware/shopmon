@@ -18,6 +18,7 @@ import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
 import FaBook from "~icons/fa6-solid/book";
 import FaChartLine from "~icons/fa6-solid/chart-line";
+import FaShieldHalved from "~icons/fa6-solid/shield-halved";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -284,6 +285,15 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           titleKey: "nav.ecosystem",
           icon: FaChartLine,
+        },
+      },
+      {
+        name: "account.security-advisories",
+        path: "security-advisories",
+        component: () => import("@/views/account/SecurityAdvisories.vue"),
+        meta: {
+          titleKey: "nav.securityAdvisories",
+          icon: FaShieldHalved,
         },
       },
       {

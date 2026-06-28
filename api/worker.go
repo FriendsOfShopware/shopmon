@@ -130,6 +130,13 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}); err != nil {
 		slog.Error("failed to add old data cleanup cron", "error", err)
 	}
+	if _, err := c.AddFunc("0 6 * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.SecurityAdvisorySync{}); err != nil {
+			slog.Error("failed to dispatch security advisory sync", "error", err)
+		}
+	}); err != nil {
+		slog.Error("failed to add security advisory sync cron", "error", err)
+	}
 	c.Start()
 
 	// Worker

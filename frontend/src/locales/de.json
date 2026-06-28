@@ -109,6 +109,7 @@
     "editShop": "Shop bearbeiten",
     "documentation": "Dokumentation",
     "ecosystem": "Ökosystem",
+    "securityAdvisories": "Sicherheitshinweise",
     "navigation": "Navigation",
     "shops": "Shops",
     "onThisPage": "Auf dieser Seite",
@@ -119,6 +120,20 @@
     "description": "Aggregierte Wachstums- und Shopware-Versionsstatistiken über ganz Shopmon hinweg.",
     "loading": "Ökosystem-Statistiken werden geladen...",
     "groupByMinor": "Nach Minor-Version gruppieren"
+  },
+  "securityAdvisories": {
+    "title": "Sicherheitshinweise",
+    "description": "Bekannte Sicherheitshinweise für die First-Party-Shopware-Pakete, importiert von Packagist.",
+    "loading": "Sicherheitshinweise werden geladen...",
+    "empty": "Keine Sicherheitshinweise gefunden.",
+    "allPackages": "Alle Pakete",
+    "unknownSeverity": "Unbekannt",
+    "colSeverity": "Schweregrad",
+    "colTitle": "Titel",
+    "colPackage": "Paket",
+    "colAffectedVersions": "Betroffene Versionen",
+    "colCve": "CVE",
+    "colReportedAt": "Gemeldet"
   },
   "home": {
     "title": "Shopmon - Das Open-Source-Dashboard für Shopware-Entwickler",

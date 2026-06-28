@@ -204,6 +204,22 @@ type Passkey struct {
 	Aaguid       *string          `json:"aaguid"`
 }
 
+type SecurityAdvisory struct {
+	AdvisoryID       string           `json:"advisory_id"`
+	Origin           string           `json:"origin"`
+	PackageName      string           `json:"package_name"`
+	Title            string           `json:"title"`
+	Link             *string          `json:"link"`
+	Cve              *string          `json:"cve"`
+	AffectedVersions string           `json:"affected_versions"`
+	SourceName       *string          `json:"source_name"`
+	SourceRemoteID   *string          `json:"source_remote_id"`
+	Severity         *string          `json:"severity"`
+	ReportedAt       pgtype.Timestamp `json:"reported_at"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
+}
+
 type Session struct {
 	ID                   string           `json:"id"`
 	ExpiresAt            pgtype.Timestamp `json:"expires_at"`

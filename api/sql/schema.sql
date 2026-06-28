@@ -371,3 +371,27 @@ CREATE INDEX IF NOT EXISTS idx_account_provider_user ON account(provider_id, use
 CREATE INDEX IF NOT EXISTS idx_account_provider_account ON account(provider_id, account_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log (actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at);
+
+-- security_advisory is the central, browsable catalog of security advisories,
+-- imported from the Packagist Security Advisories API for the first-party
+-- Shopware packages. `origin` distinguishes imported advisories from future
+-- user-submitted plugin disclosures; `affected_versions` (a composer
+-- constraint) enables matching against tracked environments later.
+CREATE TABLE "security_advisory" (
+  "advisory_id" text PRIMARY KEY NOT NULL,
+  "origin" text NOT NULL DEFAULT 'packagist',
+  "package_name" text NOT NULL,
+  "title" text NOT NULL,
+  "link" text,
+  "cve" text,
+  "affected_versions" text NOT NULL,
+  "source_name" text,
+  "source_remote_id" text,
+  "severity" text,
+  "reported_at" timestamp,
+  "created_at" timestamp NOT NULL DEFAULT NOW(),
+  "updated_at" timestamp NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_security_advisory_package ON security_advisory (package_name);
+CREATE INDEX IF NOT EXISTS idx_security_advisory_reported_at ON security_advisory (reported_at DESC);

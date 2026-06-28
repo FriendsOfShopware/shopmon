@@ -836,6 +836,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/info/security-advisories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List security advisories
+     * @description Browsable catalog of security advisories for the first-party Shopware packages, imported from the Packagist Security Advisories API. Visible to any authenticated user.
+     */
+    get: operations["listSecurityAdvisories"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/auth/sign-up/email": {
     parameters: {
       query?: never;
@@ -2275,6 +2295,21 @@ export interface components {
     EcosystemStats: {
       growth: components["schemas"]["AdminGrowth"];
       shopwareVersions: components["schemas"]["ShopwareVersionCount"][];
+    };
+    SecurityAdvisory: {
+      advisoryId: string;
+      /** @description Source of the advisory, e.g. "packagist". */
+      origin: string;
+      packageName: string;
+      title: string;
+      link?: string | null;
+      cve?: string | null;
+      /** @description Composer version constraint describing affected versions. */
+      affectedVersions: string;
+      severity?: string | null;
+      source?: string | null;
+      /** Format: date-time */
+      reportedAt?: string | null;
     };
     ExtensionCompatibilityRequest: {
       currentVersion: string;
@@ -3827,6 +3862,27 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["EcosystemStats"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  listSecurityAdvisories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Security advisories */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SecurityAdvisory"][];
         };
       };
       401: components["responses"]["Unauthorized"];

@@ -1298,6 +1298,27 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /info/security-advisories:
+    get:
+      operationId: listSecurityAdvisories
+      tags: [Info]
+      summary: List security advisories
+      description: >-
+        Browsable catalog of security advisories for the first-party Shopware
+        packages, imported from the Packagist Security Advisories API. Visible to
+        any authenticated user.
+      responses:
+        "200":
+          description: Security advisories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SecurityAdvisory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ──────────────────────────────────────────────
   # Auth – Authentication
   # ──────────────────────────────────────────────
@@ -4454,6 +4475,44 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopwareVersionCount"
+
+    SecurityAdvisory:
+      type: object
+      required:
+        - advisoryId
+        - origin
+        - packageName
+        - title
+        - affectedVersions
+      properties:
+        advisoryId:
+          type: string
+        origin:
+          type: string
+          description: Source of the advisory, e.g. "packagist".
+        packageName:
+          type: string
+        title:
+          type: string
+        link:
+          type: string
+          nullable: true
+        cve:
+          type: string
+          nullable: true
+        affectedVersions:
+          type: string
+          description: Composer version constraint describing affected versions.
+        severity:
+          type: string
+          nullable: true
+        source:
+          type: string
+          nullable: true
+        reportedAt:
+          type: string
+          format: date-time
+          nullable: true
 
     # ── Info ─────────────────────────────────────
     ExtensionCompatibilityRequest:

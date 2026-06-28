@@ -109,6 +109,7 @@
     "editShop": "Edit Shop",
     "documentation": "Documentation",
     "ecosystem": "Ecosystem",
+    "securityAdvisories": "Security Advisories",
     "navigation": "Navigation",
     "shops": "Shops",
     "onThisPage": "On this page",
@@ -119,6 +120,20 @@
     "description": "Aggregate growth and Shopware version statistics across all of Shopmon.",
     "loading": "Loading ecosystem statistics...",
     "groupByMinor": "Group by minor version"
+  },
+  "securityAdvisories": {
+    "title": "Security Advisories",
+    "description": "Known security advisories for the first-party Shopware packages, imported from Packagist.",
+    "loading": "Loading security advisories...",
+    "empty": "No security advisories found.",
+    "allPackages": "All packages",
+    "unknownSeverity": "Unknown",
+    "colSeverity": "Severity",
+    "colTitle": "Title",
+    "colPackage": "Package",
+    "colAffectedVersions": "Affected versions",
+    "colCve": "CVE",
+    "colReportedAt": "Reported"
   },
   "home": {
     "title": "Shopmon - The Open-Source Dashboard for Shopware Developers",
