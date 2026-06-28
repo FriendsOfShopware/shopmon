@@ -372,7 +372,6 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 			oldLatest, wasStore := oldStoreLatest[ext.Name]
 			switch {
 			case ext.Store != nil && ext.Store.primary() != nil:
-				// Fresh store data: write the full catalog + link.
 				storeNames = append(storeNames, ext.Name)
 				if err := h.persistStoreExtension(ctx, txQueries, env.ID, ext); err != nil {
 					persistSpan.RecordError(err)
@@ -381,12 +380,9 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 					return err
 				}
 			case !storeOK && wasStore:
-				// The store API is unreachable this scrape but this extension was
-				// store-known: keep it classified as store and update only the
-				// per-environment link from shop data (the catalog row already
-				// exists and its compatible latest version is preserved). This
-				// avoids wiping the catalog link or duplicating the row into the
-				// unknown table on a transient store outage.
+				// Store API unreachable but this was a store extension: keep it as a
+				// store link and refresh only the shop-side fields, so a transient
+				// outage neither wipes the link nor duplicates it into the unknown table.
 				storeNames = append(storeNames, ext.Name)
 				if err := txQueries.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
 					EnvironmentID: env.ID,

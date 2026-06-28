@@ -20,17 +20,10 @@ import (
 
 // enrichExtensionsFromStore fetches store metadata for the given extensions in
 // both English (en_GB) and German (de_DE) and attaches it to the entries the
-// store knows about. The latest compatible version is recorded per entry.
-// Extensions the store does not return are left untouched and later persisted as
-// unknown extensions. If the store request fails entirely the extensions are
-// treated as unknown for this scrape and reclassified on the next successful one.
-// The store locale must use the underscore form ("en_GB"/"de_DE"); the
-// hyphenated form is silently ignored by the API.
-//
-// It returns whether the store membership is known for this scrape: true if at
-// least one locale call succeeded (the successful response authoritatively says
-// which extensions the store knows), false if both calls failed. Callers use
-// this to avoid reclassifying or pruning store extensions on a transient outage.
+// store knows about, recording the latest compatible version per entry. The
+// locale must use the underscore form; the hyphenated form is silently ignored
+// by the API. It returns false only when both locale calls fail, meaning store
+// membership is unknown for this scrape.
 func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) bool {
 	technicalNames := make([]string, 0, len(extensions))
 	for _, ext := range extensions {

@@ -5,11 +5,8 @@ interface LocalizedChangelogEntry {
   textDe?: string | null;
 }
 
-/**
- * Returns a function that resolves an extension changelog entry's text for the
- * active UI locale, falling back to the English text when no German translation
- * is available.
- */
+// Resolves an extension changelog entry's text for the active UI locale, falling
+// back to English when no German translation is available.
 export function useChangelogText() {
   const { locale } = useLocale();
 

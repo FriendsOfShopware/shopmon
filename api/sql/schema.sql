@@ -236,10 +236,8 @@ CREATE TABLE "environment_extension" (
 );
 
 -- store_extension is the deduplicated catalog of extensions available on the
--- Shopware store. One row per technical name, shared across all environments.
--- Localized text fields are stored per language (en / de). The
--- compatibility-capped "latest version" is environment-specific and therefore
--- lives on the link table environment_store_extension, not here.
+-- Shopware store, one row per technical name. The compatibility-capped "latest
+-- version" is environment-specific and lives on environment_store_extension, not here.
 CREATE TABLE "store_extension" (
   "name" text PRIMARY KEY NOT NULL,
   "store_id" integer,
