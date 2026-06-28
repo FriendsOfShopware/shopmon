@@ -36,42 +36,24 @@ func findCheck(checks []Check, id string) (Check, bool) {
 	return Check{}, false
 }
 
-func TestGetFroshMessage(t *testing.T) {
-	tests := []struct {
-		snippet string
-		want    string
-	}{
-		{"phpGood", "PHP version is up to date"},
-		{"phpOutdated", "PHP version is outdated"},
-		{"opcacheNoJit", "OPcache JIT is not enabled"},
-		{"cacheWarning", "Cache is using filesystem adapter"},
-		{"unknownSnippet", ""},
-		{"", ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.snippet, func(t *testing.T) {
-			assert.Equal(t, tt.want, getFroshMessage(tt.snippet))
-		})
-	}
-}
-
 func TestMapFroshChecks(t *testing.T) {
 	tests := []struct {
-		name        string
-		check       froshToolsCheck
-		wantEmitted bool
-		wantID      string
-		wantLevel   Status
-		wantMessage string
+		name            string
+		check           froshToolsCheck
+		wantEmitted     bool
+		wantID          string
+		wantLevel       Status
+		wantKey         string
+		wantCurrent     string
+		wantRecommended string
 	}{
 		{
-			name:        "STATE_OK known snippet emits success with mapped message",
+			name:        "STATE_OK known snippet emits success with mapped key",
 			check:       froshToolsCheck{Snippet: "phpGood", State: "STATE_OK", URL: "http://example.com"},
 			wantEmitted: true,
 			wantID:      "frosh.phpGood",
 			wantLevel:   StatusGreen,
-			wantMessage: "PHP version is up to date",
+			wantKey:     "check.frosh.phpGood",
 		},
 		{
 			name:        "STATE_WARNING emits warning",
@@ -79,7 +61,7 @@ func TestMapFroshChecks(t *testing.T) {
 			wantEmitted: true,
 			wantID:      "frosh.phpOutdated",
 			wantLevel:   StatusYellow,
-			wantMessage: "PHP version is outdated",
+			wantKey:     "check.frosh.phpOutdated",
 		},
 		{
 			name:        "STATE_ERROR emits error",
@@ -87,7 +69,7 @@ func TestMapFroshChecks(t *testing.T) {
 			wantEmitted: true,
 			wantID:      "frosh.cacheWarning",
 			wantLevel:   StatusRed,
-			wantMessage: "Cache is using filesystem adapter",
+			wantKey:     "check.frosh.cacheWarning",
 		},
 		{
 			name:        "ignored snippet always emits success even on error state",
@@ -95,31 +77,33 @@ func TestMapFroshChecks(t *testing.T) {
 			wantEmitted: true,
 			wantID:      "frosh.scheduledTaskWarning",
 			wantLevel:   StatusGreen,
-			wantMessage: "Some scheduled tasks are overdue",
+			wantKey:     "check.frosh.scheduledTaskWarning",
 		},
 		{
-			name:        "unknown snippet falls back to snippet as message",
+			name:        "unknown snippet still keyed, snippet param carries fallback",
 			check:       froshToolsCheck{Snippet: "somethingCustom", State: "STATE_OK"},
 			wantEmitted: true,
 			wantID:      "frosh.somethingCustom",
 			wantLevel:   StatusGreen,
-			wantMessage: "somethingCustom",
+			wantKey:     "check.frosh.somethingCustom",
 		},
 		{
-			name:        "current and recommended appended to message",
-			check:       froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: strPtr("7.4"), Recommended: strPtr("8.2")},
-			wantEmitted: true,
-			wantID:      "frosh.phpOutdated",
-			wantLevel:   StatusYellow,
-			wantMessage: "PHP version is outdated (Current: 7.4, Recommended: 8.2)",
+			name:            "current and recommended carried as params",
+			check:           froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: strPtr("7.4"), Recommended: strPtr("8.2")},
+			wantEmitted:     true,
+			wantID:          "frosh.phpOutdated",
+			wantLevel:       StatusYellow,
+			wantKey:         "check.frosh.phpOutdated",
+			wantCurrent:     "7.4",
+			wantRecommended: "8.2",
 		},
 		{
-			name:        "empty snippet uses id for check id",
+			name:        "empty snippet uses id for check id and key",
 			check:       froshToolsCheck{ID: "custom-id", Snippet: "", State: "STATE_OK"},
 			wantEmitted: true,
 			wantID:      "frosh.custom-id",
 			wantLevel:   StatusGreen,
-			wantMessage: "",
+			wantKey:     "check.frosh.custom-id",
 		},
 		{
 			name:        "empty snippet and id is skipped",
@@ -148,8 +132,13 @@ func TestMapFroshChecks(t *testing.T) {
 			check := checks[0]
 			assert.Equal(t, tt.wantID, check.ID)
 			assert.Equal(t, tt.wantLevel, check.Level)
-			assert.Equal(t, tt.wantMessage, check.Message)
+			assert.Equal(t, tt.wantKey, check.MessageKey)
 			assert.Equal(t, "FroshTools", check.Source)
+
+			if tt.wantCurrent != "" {
+				assert.Equal(t, tt.wantCurrent, check.MessageParams["current"])
+				assert.Equal(t, tt.wantRecommended, check.MessageParams["recommended"])
+			}
 		})
 	}
 }

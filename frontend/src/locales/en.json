@@ -1,4 +1,82 @@
 {
+  "notification": {
+    "statusDegraded": {
+      "title": "Environment: {name} status changed",
+      "message": "Status changed from {from} to {to}"
+    },
+    "statusRecovered": {
+      "title": "Environment: {name} recovered",
+      "message": "Status improved from {from} to {to}"
+    },
+    "authError": {
+      "title": "Environment: {name} could not be updated",
+      "message": "Could not connect to environment. Please check your credentials and try again. {error}"
+    },
+    "dataFetchError": {
+      "title": "Environment: {name} could not be updated",
+      "message": "Could not connect to environment. Please check your credentials and try again."
+    }
+  },
+  "statusHistory": {
+    "empty": "No status changes recorded yet",
+    "emptyHint": "When this environment's status changes, the transition and the checks that caused it will appear here."
+  },
+  "check": {
+    "recommendationSuffix": " (current: {current}, recommended: {recommended})",
+    "env": {
+      "invalid": "The environment is set to '{environment}'. It should be set to 'production' or 'staging'.",
+      "valid": "Environment is correctly set to '{environment}'."
+    },
+    "worker": {
+      "enabled": "The admin worker is enabled. This can cause performance issues. Consider using the CLI worker instead.",
+      "disabled": "Admin worker is disabled. CLI worker is being used."
+    },
+    "task": {
+      "overdue": "Scheduled task '{name}' is overdue",
+      "allRunning": "All scheduled tasks are running correctly."
+    },
+    "security": {
+      "advisory": "{title}",
+      "advisoryCve": "{title} ({cve})"
+    },
+    "frosh": {
+      "phpGood": "PHP version is up to date",
+      "phpOutdated": "PHP version is outdated",
+      "mysqlGood": "MySQL version is up to date",
+      "mysqlOutdated": "MySQL version is outdated",
+      "opcacheGood": "OPcache is enabled",
+      "opcacheDisabled": "OPcache is disabled",
+      "opcacheNoJit": "OPcache JIT is not enabled",
+      "scheduledTaskGood": "All scheduled tasks are running",
+      "scheduledTaskWarning": "Some scheduled tasks are overdue",
+      "queuesGood": "Message queue is empty",
+      "queuesWarning": "Message queue has pending messages",
+      "prodGood": "Environment is set to production",
+      "not-prod": "Environment is not set to production",
+      "adminWorkerGood": "Admin worker is disabled",
+      "adminWorkerWarning": "Admin worker is enabled",
+      "publicFilesystemGood": "Public filesystem is using a proper adapter",
+      "publicFilesystemWarning": "Public filesystem is using local adapter",
+      "privateFilesystemGood": "Private filesystem is using a proper adapter",
+      "privateFilesystemWarning": "Private filesystem is using local adapter",
+      "queueConnectionGood": "Queue connection is properly configured",
+      "queueConnectionWarning": "Queue connection is using sync adapter",
+      "sessionConnectionGood": "Session storage is properly configured",
+      "sessionConnectionWarning": "Session storage is using default file adapter",
+      "mailerGood": "Mailer is properly configured",
+      "mailerWarning": "Mailer is using null transport",
+      "incrementGood": "Increment storage is properly configured",
+      "incrementWarning": "Increment storage is using default adapter",
+      "numberRangeGood": "Number range storage is properly configured",
+      "numberRangeWarning": "Number range storage is using default adapter",
+      "lockGood": "Lock storage is properly configured",
+      "lockWarning": "Lock storage is using default flock adapter",
+      "cacheGood": "Cache adapter is properly configured",
+      "cacheWarning": "Cache is using filesystem adapter",
+      "puppeteerGood": "Puppeteer/Chrome is available",
+      "puppeteerWarning": "Puppeteer/Chrome is not available"
+    }
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -98,6 +176,7 @@
     "register": "Register",
     "goToApp": "Go to app",
     "checks": "Checks",
+    "statusHistory": "Status history",
     "extensions": "Extensions",
     "scheduledTasks": "Scheduled tasks",
     "queue": "Queue",
@@ -298,6 +377,27 @@
     "sessions": "Sessions",
     "userAgent": "User Agent",
     "notifications": "Notifications",
+    "notificationChannels": "Delivery channels",
+    "notificationChannelsHint": "Choose how you receive alerts. These apply to every environment you watch.",
+    "channelInApp": "In-app notifications",
+    "channelInAppHint": "Show alerts in the notification center.",
+    "channelEmail": "Email notifications",
+    "channelEmailHint": "Send alert emails for status changes and errors.",
+    "eventTypes": "Event types",
+    "eventTypesHint": "Choose which kinds of events you want to be notified about. Disabling one silences it on every channel.",
+    "eventType": {
+      "status_degraded": "Status degraded",
+      "status_recovered": "Status recovered",
+      "auth_error": "Connection / authentication errors",
+      "data_fetch_error": "Data fetch errors"
+    },
+    "watchedEnvironments": "Watched environments",
+    "otherEnvironments": "Other",
+    "perEnvHint": "Override your global settings for this environment. \"Inherit\" uses the global setting above; environment overrides take precedence.",
+    "perEnvChannels": "Channels",
+    "channelInherit": "Inherit",
+    "channelOn": "On",
+    "channelOff": "Off",
     "notSubscribed": "You are not subscribed to any environment notifications.",
     "notSubscribedHint": "Visit an environment's detail page and click the watch button to receive notifications about changes.",
     "environmentName": "Environment Name",
@@ -374,6 +474,10 @@
     "admin": "Admin",
     "watchEnvironment": "Watch environment",
     "unwatchEnvironment": "Unwatch environment",
+    "notificationSettings": "Notification settings",
+    "watchHint": "Receive notifications about this environment.",
+    "watchToConfigure": "Start watching this environment to configure notifications.",
+    "perEventHint": "Override per event type for this environment. \"Inherit\" uses your global settings.",
     "clearCache": "Clear environment cache",
     "refreshData": "Refresh environment data",
     "autoUpdateDisabled": "This environment will not be automatically updated anymore. Please update the API credentials or URL to fix this issue.",

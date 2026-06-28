@@ -10,7 +10,8 @@ CREATE TABLE "user" (
   "banned" boolean DEFAULT false,
   "ban_reason" text,
   "ban_expires" timestamp,
-  "notifications" jsonb DEFAULT '[]'::jsonb
+  "notifications" jsonb DEFAULT '[]'::jsonb,
+  "locale" text NOT NULL DEFAULT 'en'
 );
 
 CREATE TABLE "account" (
@@ -213,6 +214,8 @@ CREATE TABLE "environment_check" (
   "check_id" text NOT NULL,
   "level" text NOT NULL,
   "message" text NOT NULL,
+  "message_key" text,
+  "params" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "source" text NOT NULL,
   "link" text,
   UNIQUE ("environment_id", "check_id")
@@ -342,11 +345,40 @@ CREATE TABLE "user_notification" (
   "level" text NOT NULL,
   "title" text NOT NULL,
   "message" text NOT NULL,
+  "title_key" text,
+  "message_key" text,
+  "params" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "link" jsonb NOT NULL,
   "read" boolean NOT NULL DEFAULT false,
   "created_at" timestamp NOT NULL,
   UNIQUE ("user_id", "key")
 );
+
+CREATE TABLE "environment_status_event" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "old_status" text NOT NULL,
+  "new_status" text NOT NULL,
+  "reasons" jsonb NOT NULL DEFAULT '[]'::jsonb,
+  "created_at" timestamp NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX "idx_environment_status_event_env" ON "environment_status_event" ("environment_id", "created_at" DESC);
+
+CREATE TABLE "notification_preference" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "user_id" text NOT NULL REFERENCES "user"("id") ON DELETE cascade,
+  "scope_type" text NOT NULL,
+  "scope_id" text NOT NULL DEFAULT '',
+  "event_type" text NOT NULL DEFAULT '',
+  "channel" text NOT NULL DEFAULT '',
+  "enabled" boolean NOT NULL DEFAULT true,
+  "config" jsonb NOT NULL DEFAULT '{}'::jsonb,
+  UNIQUE ("user_id", "scope_type", "scope_id", "event_type", "channel")
+);
+
+CREATE INDEX "idx_notification_preference_user" ON "notification_preference" ("user_id");
+CREATE INDEX "idx_notification_preference_scope" ON "notification_preference" ("scope_type", "scope_id");
 
 CREATE TABLE "lock" (
   "key" text PRIMARY KEY NOT NULL,

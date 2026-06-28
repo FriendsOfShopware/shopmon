@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,16 +35,24 @@ var statusWeight = map[string]int{
 
 // EnvironmentScrapeHandler handles scraping of environments.
 type EnvironmentScrapeHandler struct {
-	pool    *pgxpool.Pool
-	queries *queries.Queries
-	cfg     *config.Config
-	bus     *goqueue.Bus
-	mail    mail.Sender
+	pool     *pgxpool.Pool
+	queries  *queries.Queries
+	cfg      *config.Config
+	bus      *goqueue.Bus
+	mail     mail.Sender
+	notifier *notify.Dispatcher
 }
 
 // NewEnvironmentScrapeHandler creates a new EnvironmentScrapeHandler.
 func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, bus *goqueue.Bus, mail mail.Sender) *EnvironmentScrapeHandler {
-	return &EnvironmentScrapeHandler{pool: pool, queries: q, cfg: cfg, bus: bus, mail: mail}
+	return &EnvironmentScrapeHandler{
+		pool:     pool,
+		queries:  q,
+		cfg:      cfg,
+		bus:      bus,
+		mail:     mail,
+		notifier: notify.NewDispatcher(q, mail),
+	}
 }
 
 // HandleScrape scrapes a single environment by ID from the message payload.
@@ -335,7 +344,15 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	checkSpan.End()
 
 	newStatus := string(checkerResult.Status)
-	h.handleStatusChange(ctx, env, newStatus)
+
+	// Capture the previously persisted checks before they are replaced so the
+	// status transition can be explained by the specific checks that changed.
+	oldChecks, err := h.queries.GetEnvironmentChecks(ctx, env.ID)
+	if err != nil {
+		slog.Warn("failed to load previous checks for status diff", "environmentId", env.ID, "error", err)
+		oldChecks = nil
+	}
+	transition := h.handleStatusTransition(ctx, env, oldChecks, checkerResult.Checks, newStatus)
 
 	ctx, persistSpan := tracer.Start(ctx, "environment.scrape.persist",
 		trace.WithAttributes(
@@ -515,16 +532,35 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		return fmt.Errorf("upsert environment cache: %w", err)
 	}
 
+	translator := h.notifier.Translator()
 	for _, c := range checkerResult.Checks {
 		var link *string
 		if c.Link != "" {
 			link = &c.Link
 		}
+
+		// Persist key + params for per-viewer rendering, plus an English-rendered
+		// fallback in the message column for legacy/non-i18n consumers.
+		params := []byte("{}")
+		if len(c.MessageParams) > 0 {
+			if b, err := json.Marshal(c.MessageParams); err == nil {
+				params = b
+			}
+		}
+		var messageKey *string
+		if c.MessageKey != "" {
+			mk := c.MessageKey
+			messageKey = &mk
+		}
+		message := translator.RenderCheck(notify.DefaultLocale, c.MessageKey, c.MessageParams)
+
 		if err := txQueries.InsertEnvironmentCheck(ctx, queries.InsertEnvironmentCheckParams{
 			EnvironmentID: env.ID,
 			CheckID:       c.ID,
 			Level:         string(c.Level),
-			Message:       c.Message,
+			Message:       message,
+			MessageKey:    messageKey,
+			Params:        params,
 			Source:        c.Source,
 			Link:          link,
 		}); err != nil {
@@ -532,6 +568,25 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 			persistSpan.SetStatus(codes.Error, err.Error())
 			persistSpan.End()
 			return fmt.Errorf("insert environment check %s: %w", c.ID, err)
+		}
+	}
+
+	// Record the status transition on the timeline (alongside the new checks).
+	if transition != nil {
+		reasonsJSON, err := json.Marshal(transition.reasons)
+		if err != nil || len(transition.reasons) == 0 {
+			reasonsJSON = []byte("[]")
+		}
+		if err := txQueries.InsertEnvironmentStatusEvent(ctx, queries.InsertEnvironmentStatusEventParams{
+			EnvironmentID: env.ID,
+			OldStatus:     transition.oldStatus,
+			NewStatus:     transition.newStatus,
+			Reasons:       reasonsJSON,
+		}); err != nil {
+			persistSpan.RecordError(err)
+			persistSpan.SetStatus(codes.Error, err.Error())
+			persistSpan.End()
+			return fmt.Errorf("insert environment status event: %w", err)
 		}
 	}
 

@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
@@ -52,7 +53,7 @@ func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environ
 		langStr = &s
 	}
 	aggregate := h.loadEnvironmentDetailAggregate(r.Context(), int32(environmentId), resolveLanguage(langStr))
-	aggregate.subscribed = userSubscribedToEnvironment(user, environmentId)
+	aggregate.subscribed = h.userSubscribedToEnvironment(r.Context(), user.ID, environmentId)
 	httputil.WriteJSON(w, http.StatusOK, h.buildEnvironmentDetail(environment, aggregate))
 }
 
@@ -286,17 +287,18 @@ func (h *Handler) RescheduleTask(w http.ResponseWriter, r *http.Request, environ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// userSubscribedToEnvironment reports whether the user is subscribed to the
-// environment's notifications. user.Notifications is already loaded on every
-// authenticated request, so this is an in-memory check with no extra DB query.
-func userSubscribedToEnvironment(user *auth.User, environmentID int) bool {
-	key := environmentNotificationKey(environmentID)
-	for _, n := range user.Notifications {
-		if n == key {
-			return true
-		}
+// userSubscribedToEnvironment reports whether the user watches the environment,
+// i.e. has an enabled subscription-marker preference for it.
+func (h *Handler) userSubscribedToEnvironment(ctx context.Context, userID string, environmentID int) bool {
+	subscribed, err := h.queries.IsEnvironmentSubscribed(ctx, queries.IsEnvironmentSubscribedParams{
+		UserID:  userID,
+		ScopeID: strconv.Itoa(environmentID),
+	})
+	if err != nil {
+		slog.Error("failed to check environment subscription", "userId", userID, "environmentId", environmentID, "error", err)
+		return false
 	}
-	return false
+	return subscribed
 }
 
 // SubscribeToEnvironment subscribes the user to environment notifications.
@@ -310,25 +312,9 @@ func (h *Handler) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	key := environmentNotificationKey(environmentId)
-
-	for _, n := range user.Notifications {
-		if n == key {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-	}
-
-	notifications := append(user.Notifications, key)
-	notificationsJSON, err := json.Marshal(notifications)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to subscribe")
-		return
-	}
-
-	if err := h.queries.UpdateUserNotifications(r.Context(), queries.UpdateUserNotificationsParams{
-		Notifications: notificationsJSON,
-		ID:            user.ID,
+	if err := h.queries.SubscribeEnvironment(r.Context(), queries.SubscribeEnvironmentParams{
+		UserID:  user.ID,
+		ScopeID: strconv.Itoa(environmentId),
 	}); err != nil {
 		httputil.WriteErrorAuto(w, err)
 		return
@@ -337,7 +323,8 @@ func (h *Handler) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request,
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UnsubscribeFromEnvironment unsubscribes the user from environment notifications.
+// UnsubscribeFromEnvironment unsubscribes the user from environment
+// notifications, removing the marker and any per-channel overrides for it.
 func (h *Handler) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
 	user := h.requireUser(w, r)
 	if user == nil {
@@ -348,29 +335,57 @@ func (h *Handler) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	key := environmentNotificationKey(environmentId)
-	newNotifications := make([]string, 0, len(user.Notifications))
-	for _, n := range user.Notifications {
-		if n != key {
-			newNotifications = append(newNotifications, n)
-		}
-	}
-
-	notificationsJSON, err := json.Marshal(newNotifications)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to unsubscribe")
-		return
-	}
-
-	if err := h.queries.UpdateUserNotifications(r.Context(), queries.UpdateUserNotificationsParams{
-		Notifications: notificationsJSON,
-		ID:            user.ID,
+	if err := h.queries.UnsubscribeEnvironment(r.Context(), queries.UnsubscribeEnvironmentParams{
+		UserID:  user.ID,
+		ScopeID: strconv.Itoa(environmentId),
 	}); err != nil {
 		httputil.WriteErrorAuto(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// GetEnvironmentStatusEvents returns the status change history for an environment.
+func (h *Handler) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	if _, ok := h.loadAuthorizedEnvironment(w, r, user, int32(environmentId)); !ok {
+		return
+	}
+
+	rows, err := h.queries.ListEnvironmentStatusEvents(r.Context(), int32(environmentId))
+	if err != nil {
+		slog.Error("failed to list environment status events", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get status events")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, mapEnvironmentStatusEvents(rows))
+}
+
+func mapEnvironmentStatusEvents(rows []queries.EnvironmentStatusEvent) []api.StatusEvent {
+	events := make([]api.StatusEvent, 0, len(rows))
+	for _, row := range rows {
+		reasons := []api.StatusReason{}
+		if len(row.Reasons) > 0 {
+			if err := json.Unmarshal(row.Reasons, &reasons); err != nil {
+				slog.Warn("failed to unmarshal status event reasons", "eventId", row.ID, "error", err)
+				reasons = []api.StatusReason{}
+			}
+		}
+		events = append(events, api.StatusEvent{
+			Id:        int(row.ID),
+			OldStatus: row.OldStatus,
+			NewStatus: row.NewStatus,
+			Reasons:   reasons,
+			CreatedAt: pgtimeToTime(row.CreatedAt),
+		})
+	}
+	return events
 }
 
 // UpdateSitespeedSettings updates sitespeed settings for an environment.

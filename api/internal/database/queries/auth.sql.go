@@ -814,9 +814,24 @@ SELECT id, name, email, email_verified, image, created_at, updated_at, role, ban
 FROM "user" WHERE email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type GetUserByEmailRow struct {
+	ID            string           `json:"id"`
+	Name          string           `json:"name"`
+	Email         string           `json:"email"`
+	EmailVerified bool             `json:"email_verified"`
+	Image         *string          `json:"image"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+	Role          string           `json:"role"`
+	Banned        *bool            `json:"banned"`
+	BanReason     *string          `json:"ban_reason"`
+	BanExpires    pgtype.Timestamp `json:"ban_expires"`
+	Notifications []byte           `json:"notifications"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

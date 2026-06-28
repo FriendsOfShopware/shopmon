@@ -2,12 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -34,9 +32,58 @@ func (h *Handler) GetAccountMe(w http.ResponseWriter, r *http.Request) {
 		DisplayName: dbUser.Name,
 		Email:       openapi_types.Email(dbUser.Email),
 		CreatedAt:   pgtimeToTime(dbUser.CreatedAt),
+		Locale:      dbUser.Locale,
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, profile)
+}
+
+// supportedLocales bounds the locales a user may select, matching the frontend
+// catalog and the server-side email translator.
+var supportedLocales = map[string]bool{"en": true, "de": true}
+
+// UpdateAccountMe updates the current user's preferences (currently locale).
+func (h *Handler) UpdateAccountMe(w http.ResponseWriter, r *http.Request) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	var body api.UpdateAccountMeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if body.Locale != nil {
+		if !supportedLocales[*body.Locale] {
+			httputil.WriteError(w, http.StatusBadRequest, "unsupported locale")
+			return
+		}
+		if err := h.queries.UpdateUserLocale(r.Context(), queries.UpdateUserLocaleParams{
+			Locale: *body.Locale,
+			ID:     user.ID,
+		}); err != nil {
+			slog.Error("failed to update user locale", "userId", user.ID, "error", err)
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to update preferences")
+			return
+		}
+	}
+
+	dbUser, err := h.queries.GetUserByID(r.Context(), user.ID)
+	if err != nil {
+		slog.Error("failed to get user", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get user")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, api.UserProfile{
+		Id:          dbUser.ID,
+		DisplayName: dbUser.Name,
+		Email:       openapi_types.Email(dbUser.Email),
+		CreatedAt:   pgtimeToTime(dbUser.CreatedAt),
+		Locale:      dbUser.Locale,
+	})
 }
 
 // GetAccountExtensions returns aggregated extensions for the user's active organization.
@@ -558,35 +605,38 @@ func (h *Handler) GetAccountSubscribedEnvironments(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// User notifications is a list of strings like "environment-123"
+	scopeIDs, err := h.queries.ListSubscribedEnvironmentIDs(r.Context(), user.ID)
+	if err != nil {
+		slog.Error("failed to list subscribed environments", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get subscribed environments")
+		return
+	}
+
 	subscribedEnvironments := []api.SubscribedEnvironment{}
-
-	for _, notification := range user.Notifications {
-		if strings.HasPrefix(notification, "environment-") {
-			idStr := strings.TrimPrefix(notification, "environment-")
-			environmentID, err := strconv.Atoi(idStr)
-			if err != nil {
-				continue
-			}
-
-			// Fetch environment name
-			environment, err := h.queries.GetEnvironmentByID(r.Context(), int32(environmentID))
-			if err != nil {
-				slog.Warn("failed to get subscribed environment", "environmentId", environmentID, "error", err)
-				continue
-			}
-
-			subscribedEnvironments = append(subscribedEnvironments, api.SubscribedEnvironment{
-				Id:   environmentID,
-				Name: environment.Name,
-			})
+	for _, idStr := range scopeIDs {
+		environmentID, err := strconv.Atoi(idStr)
+		if err != nil {
+			continue
 		}
+
+		environment, err := h.queries.GetEnvironmentByID(r.Context(), int32(environmentID))
+		if err != nil {
+			slog.Warn("failed to get subscribed environment", "environmentId", environmentID, "error", err)
+			continue
+		}
+
+		sub := api.SubscribedEnvironment{
+			Id:       environmentID,
+			Name:     environment.Name,
+			ShopName: environment.ShopName,
+		}
+		if environment.ShopID > 0 {
+			shopID := int(environment.ShopID)
+			sub.ShopId = &shopID
+		}
+
+		subscribedEnvironments = append(subscribedEnvironments, sub)
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, subscribedEnvironments)
-}
-
-// helper to check for "environment-{id}" pattern match
-func environmentNotificationKey(environmentID int) string {
-	return fmt.Sprintf("environment-%d", environmentID)
 }

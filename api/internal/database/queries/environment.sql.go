@@ -320,7 +320,7 @@ func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, environmentID *i
 }
 
 const getEnvironmentChecks = `-- name: GetEnvironmentChecks :many
-SELECT id, environment_id, check_id, level, message, source, link FROM environment_check WHERE environment_id = $1
+SELECT id, environment_id, check_id, level, message, message_key, params, source, link FROM environment_check WHERE environment_id = $1
 `
 
 func (q *Queries) GetEnvironmentChecks(ctx context.Context, environmentID int32) ([]EnvironmentCheck, error) {
@@ -338,6 +338,8 @@ func (q *Queries) GetEnvironmentChecks(ctx context.Context, environmentID int32)
 			&i.CheckID,
 			&i.Level,
 			&i.Message,
+			&i.MessageKey,
+			&i.Params,
 			&i.Source,
 			&i.Link,
 		); err != nil {
@@ -460,11 +462,15 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 }
 
 const getEnvironmentNotificationSubscribers = `-- name: GetEnvironmentNotificationSubscribers :many
-SELECT u.id, u.name, u.email
+SELECT u.id, u.name, u.email, u.locale
 FROM "user" u
 JOIN member m ON m.user_id = u.id
+JOIN notification_preference np ON np.user_id = u.id
 WHERE m.organization_id = $1
-  AND u.notifications @> to_jsonb(ARRAY['environment-' || $2::text])::jsonb
+  AND np.scope_type = 'environment'
+  AND np.scope_id = $2::text
+  AND np.channel = ''
+  AND np.enabled = true
 `
 
 type GetEnvironmentNotificationSubscribersParams struct {
@@ -473,9 +479,10 @@ type GetEnvironmentNotificationSubscribersParams struct {
 }
 
 type GetEnvironmentNotificationSubscribersRow struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Locale string `json:"locale"`
 }
 
 func (q *Queries) GetEnvironmentNotificationSubscribers(ctx context.Context, arg GetEnvironmentNotificationSubscribersParams) ([]GetEnvironmentNotificationSubscribersRow, error) {
@@ -487,7 +494,12 @@ func (q *Queries) GetEnvironmentNotificationSubscribers(ctx context.Context, arg
 	items := []GetEnvironmentNotificationSubscribersRow{}
 	for rows.Next() {
 		var i GetEnvironmentNotificationSubscribersRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Locale,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -820,18 +832,20 @@ func (q *Queries) InsertEnvironmentChangelog(ctx context.Context, arg InsertEnvi
 }
 
 const insertEnvironmentCheck = `-- name: InsertEnvironmentCheck :exec
-INSERT INTO environment_check (environment_id, check_id, level, message, source, link)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
+INSERT INTO environment_check (environment_id, check_id, level, message, message_key, params, source, link)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, message_key = $5, params = $6, source = $7, link = $8
 `
 
 type InsertEnvironmentCheckParams struct {
-	EnvironmentID int32   `json:"environment_id"`
-	CheckID       string  `json:"check_id"`
-	Level         string  `json:"level"`
-	Message       string  `json:"message"`
-	Source        string  `json:"source"`
-	Link          *string `json:"link"`
+	EnvironmentID int32           `json:"environment_id"`
+	CheckID       string          `json:"check_id"`
+	Level         string          `json:"level"`
+	Message       string          `json:"message"`
+	MessageKey    *string         `json:"message_key"`
+	Params        json.RawMessage `json:"params"`
+	Source        string          `json:"source"`
+	Link          *string         `json:"link"`
 }
 
 func (q *Queries) InsertEnvironmentCheck(ctx context.Context, arg InsertEnvironmentCheckParams) error {
@@ -840,6 +854,8 @@ func (q *Queries) InsertEnvironmentCheck(ctx context.Context, arg InsertEnvironm
 		arg.CheckID,
 		arg.Level,
 		arg.Message,
+		arg.MessageKey,
+		arg.Params,
 		arg.Source,
 		arg.Link,
 	)

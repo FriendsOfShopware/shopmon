@@ -204,14 +204,16 @@
                     <icon-fa6-solid:circle-info v-else class="size-4 text-info" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium break-words">{{ notification.title }}</div>
+                    <div class="text-sm font-medium break-words">
+                      {{ translateNotificationTitle(notification) }}
+                    </div>
                     <div class="text-xs text-muted-foreground">
                       {{ formatDateTime(notification.createdAt) }}
                     </div>
                     <div
                       class="text-[0.8125rem] leading-snug text-muted-foreground break-words [overflow-wrap:anywhere]"
                     >
-                      {{ notification.message }}
+                      {{ translateNotificationMessage(notification) }}
                       <a
                         v-if="notification.link"
                         :href="notification.link.url"
@@ -220,6 +222,18 @@
                         {{ notification.link.label || $t("topBar.more") }}
                       </a>
                     </div>
+                    <ul v-if="notificationReasons(notification).length" class="mt-1 space-y-0.5">
+                      <li
+                        v-for="(reason, ri) in notificationReasons(notification)"
+                        :key="ri"
+                        class="flex items-start gap-1.5 text-[0.75rem] leading-snug text-muted-foreground"
+                      >
+                        <StatusIcon :status="reason.level" class="mt-0.5 shrink-0" />
+                        <span class="break-words [overflow-wrap:anywhere]">{{
+                          translateReason(reason)
+                        }}</span>
+                      </li>
+                    </ul>
                   </div>
                   <button
                     type="button"
@@ -273,6 +287,12 @@ import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { api, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
+import {
+  notificationReasons,
+  translateNotificationMessage,
+  translateNotificationTitle,
+  translateReason,
+} from "@/helpers/i18n";
 import type { components } from "@/types/api";
 
 import { Button } from "@/components/ui/button";

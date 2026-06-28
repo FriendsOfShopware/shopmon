@@ -81,11 +81,15 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 		}
 
 		id := fmt.Sprintf("security.%s", advisoryID)
-		message := advisory.Title
+		// The advisory title is external data from Shopware (already English);
+		// only the CVE wrapper is boilerplate, so the key picks the format and
+		// the title/cve ride along as params.
+		params := map[string]any{"title": advisory.Title, "cve": advisory.CVE}
+		messageKey := "check.security.advisory"
 		if advisory.CVE != "" {
-			message = fmt.Sprintf("%s (%s)", advisory.Title, advisory.CVE)
+			messageKey = "check.security.advisoryCve"
 		}
 
-		output.Error(id, message, "Security", advisory.Link)
+		output.Error(id, messageKey, params, "Security", advisory.Link)
 	}
 }

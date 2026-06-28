@@ -8,6 +8,7 @@ import adminRoutes from "@/router/admin";
 
 import FaShop from "~icons/fa6-solid/shop";
 import FaCircleCheck from "~icons/fa6-solid/circle-check";
+import FaClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 import FaFileWaveform from "~icons/fa6-solid/file-waveform";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaPlug from "~icons/fa6-solid/plug";
@@ -156,6 +157,15 @@ export const routes: RouteRecordRaw[] = [
             meta: {
               titleKey: "nav.checks",
               icon: FaCircleCheck,
+            },
+          },
+          {
+            name: "account.environments.detail.statusHistory",
+            path: "status-history",
+            component: () => import("@/views/environment/detail/DetailStatusHistory.vue"),
+            meta: {
+              titleKey: "nav.statusHistory",
+              icon: FaClockRotateLeft,
             },
           },
           {
