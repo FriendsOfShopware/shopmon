@@ -14,6 +14,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goqueue "github.com/shyim/go-queue"
 	"go.opentelemetry.io/otel"
@@ -629,32 +630,15 @@ func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q 
 		rating = &v
 	}
 
-	var enLabel, enShort, enDesc, enManual string
-	if sd.en != nil {
-		enLabel, enShort, enDesc, enManual = sd.en.Label, sd.en.ShortDescription, sd.en.Description, sd.en.InstallationManual
-	}
-	var deLabel, deShort, deDesc, deManual string
-	if sd.de != nil {
-		deLabel, deShort, deDesc, deManual = sd.de.Label, sd.de.ShortDescription, sd.de.Description, sd.de.InstallationManual
-	}
-
 	if err := q.UpsertStoreExtension(ctx, queries.UpsertStoreExtensionParams{
-		Name:                 ext.Name,
-		StoreID:              storeID,
-		IconUrl:              nilIfEmpty(p.IconPath),
-		ProducerName:         nilIfEmpty(p.ProducerName),
-		ProducerWebsite:      nilIfEmpty(p.ProducerWebsite),
-		RatingAverage:        rating,
-		StoreLink:            nilIfEmpty(p.StoreLink),
-		ReleaseDate:          nilIfEmpty(p.ReleaseDate),
-		LabelEn:              nilIfEmpty(enLabel),
-		LabelDe:              nilIfEmpty(deLabel),
-		ShortDescriptionEn:   nilIfEmpty(enShort),
-		ShortDescriptionDe:   nilIfEmpty(deShort),
-		DescriptionEn:        nilIfEmpty(enDesc),
-		DescriptionDe:        nilIfEmpty(deDesc),
-		InstallationManualEn: nilIfEmpty(enManual),
-		InstallationManualDe: nilIfEmpty(deManual),
+		Name:            ext.Name,
+		StoreID:         storeID,
+		IconUrl:         nilIfEmpty(p.IconPath),
+		ProducerName:    nilIfEmpty(p.ProducerName),
+		ProducerWebsite: nilIfEmpty(p.ProducerWebsite),
+		RatingAverage:   rating,
+		StoreLink:       nilIfEmpty(p.StoreLink),
+		ReleaseDate:     nilIfEmpty(p.ReleaseDate),
 		// The catalog row is shared across environments, so it stores the
 		// environment-independent global latest version rather than the
 		// Shopware-version-capped value (which lives on the link row).
@@ -663,15 +647,43 @@ func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q 
 		return fmt.Errorf("upsert store extension %s: %w", ext.Name, err)
 	}
 
+	// Persist one translation row per locale the store returned.
+	for lang, resp := range map[string]*shopwareaccount.StorePlugin{"en": sd.en, "de": sd.de} {
+		if resp == nil {
+			continue
+		}
+		if err := q.UpsertStoreExtensionTranslation(ctx, queries.UpsertStoreExtensionTranslationParams{
+			ExtensionName:      ext.Name,
+			Language:           lang,
+			Label:              nilIfEmpty(resp.Label),
+			ShortDescription:   nilIfEmpty(resp.ShortDescription),
+			Description:        nilIfEmpty(resp.Description),
+			InstallationManual: nilIfEmpty(resp.InstallationManual),
+		}); err != nil {
+			return fmt.Errorf("upsert store extension translation %s/%s: %w", ext.Name, lang, err)
+		}
+	}
+
 	for _, mc := range sd.mergedChangelogs() {
-		if err := q.UpsertStoreExtensionVersion(ctx, queries.UpsertStoreExtensionVersionParams{
+		versionID, err := q.UpsertStoreExtensionVersion(ctx, queries.UpsertStoreExtensionVersionParams{
 			ExtensionName: ext.Name,
 			Version:       mc.Version,
-			ChangelogEn:   nilIfEmpty(mc.En),
-			ChangelogDe:   nilIfEmpty(mc.De),
 			ReleasedAt:    nilIfEmpty(mc.ReleasedAt),
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("upsert store extension version %s@%s: %w", ext.Name, mc.Version, err)
+		}
+		for lang, text := range map[string]string{"en": mc.En, "de": mc.De} {
+			if text == "" {
+				continue
+			}
+			if err := q.UpsertStoreExtensionVersionTranslation(ctx, queries.UpsertStoreExtensionVersionTranslationParams{
+				ExtensionVersionID: versionID,
+				Language:           lang,
+				Changelog:          nilIfEmpty(text),
+			}); err != nil {
+				return fmt.Errorf("upsert store extension version translation %s@%s/%s: %w", ext.Name, mc.Version, lang, err)
+			}
 		}
 	}
 

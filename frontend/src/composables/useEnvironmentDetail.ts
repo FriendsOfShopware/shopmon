@@ -3,7 +3,7 @@ import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { compareVersions } from "compare-versions";
-import { api } from "@/helpers/api";
+import { api, apiLanguage } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 
@@ -55,7 +55,7 @@ export function useEnvironmentDetail() {
     isLoading.value = true;
     try {
       const { data } = await api.GET("/environments/{environmentId}", {
-        params: { path: { environmentId: id } },
+        params: { path: { environmentId: id }, query: { language: apiLanguage() } },
       });
       environment.value = data ?? null;
       // Subscription status ships with the environment payload, no extra request.

@@ -247,28 +247,38 @@ CREATE TABLE "store_extension" (
   "rating_average" integer,
   "store_link" text,
   "release_date" text,
-  "label_en" text,
-  "label_de" text,
-  "short_description_en" text,
-  "short_description_de" text,
-  "description_en" text,
-  "description_de" text,
-  "installation_manual_en" text,
-  "installation_manual_de" text,
   "latest_version" text,
   "last_refreshed_at" timestamp NOT NULL DEFAULT NOW()
 );
 
+-- store_extension_translation holds the per-language store metadata for a store
+-- extension. The API joins on the requested language and falls back to English.
+CREATE TABLE "store_extension_translation" (
+  "extension_name" text NOT NULL REFERENCES "store_extension"("name") ON DELETE cascade,
+  "language" text NOT NULL,
+  "label" text,
+  "short_description" text,
+  "description" text,
+  "installation_manual" text,
+  PRIMARY KEY ("extension_name", "language")
+);
+
 -- store_extension_version is the per-version changelog catalog for a store
--- extension, with the changelog text stored per language (en / de).
+-- extension; the changelog text itself is stored per language in
+-- store_extension_version_translation.
 CREATE TABLE "store_extension_version" (
   "id" serial PRIMARY KEY NOT NULL,
   "extension_name" text NOT NULL REFERENCES "store_extension"("name") ON DELETE cascade,
   "version" text NOT NULL,
-  "changelog_en" text,
-  "changelog_de" text,
   "released_at" text,
   UNIQUE ("extension_name", "version")
+);
+
+CREATE TABLE "store_extension_version_translation" (
+  "extension_version_id" integer NOT NULL REFERENCES "store_extension_version"("id") ON DELETE cascade,
+  "language" text NOT NULL,
+  "changelog" text,
+  PRIMARY KEY ("extension_version_id", "language")
 );
 
 -- store_extension_image holds the store listing pictures (screenshots) for a

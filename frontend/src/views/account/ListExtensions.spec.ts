@@ -3,12 +3,6 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import ListExtensions from "./ListExtensions.vue";
 
-const ExtensionChangelogStub = defineComponent({
-  name: "ExtensionChangelog",
-  props: ["show", "extension"],
-  template: '<div class="extension-changelog" />',
-});
-
 const mockExtensions = [
   {
     name: "FroshTools",
@@ -26,7 +20,10 @@ const mockExtensions = [
         environmentId: 1,
         environmentName: "Environment A",
         environmentOrganizationId: "org-a",
+        installed: true,
+        active: true,
         version: "1.0.0",
+        latestVersion: "1.1.0",
       },
     ],
   },
@@ -42,22 +39,15 @@ vi.mock("@/helpers/api", () => ({
   },
   setToken: vi.fn(),
   getToken: vi.fn(),
-}));
-
-vi.mock("@/helpers/formatter", () => ({
-  formatDateTime: (d: string) => d,
-}));
-
-vi.mock("@/composables/useExtensionChangelogModal", () => ({
-  useExtensionChangelogModal: () => ({
-    viewExtensionChangelogDialog: { value: false },
-    dialogExtension: { value: null },
-    openExtensionChangelog: vi.fn(),
-    closeExtensionChangelog: vi.fn(),
-  }),
+  apiLanguage: vi.fn(() => "en"),
 }));
 
 import { api } from "@/helpers/api";
+
+const stubs = {
+  RouterLink: defineComponent({ template: "<a><slot /></a>" }),
+  RatingStars: defineComponent({ template: "<span />" }),
+};
 
 describe("ListExtensions", () => {
   beforeEach(() => {
@@ -71,18 +61,7 @@ describe("ListExtensions", () => {
   });
 
   function mountComponent() {
-    return mount(ListExtensions, {
-      global: {
-        stubs: {
-          RouterLink: defineComponent({
-            template: "<a><slot /></a>",
-          }),
-          ExtensionChangelog: ExtensionChangelogStub,
-          StatusIcon: defineComponent({ template: "<span />" }),
-          RatingStars: defineComponent({ template: "<span />" }),
-        },
-      },
-    });
+    return mount(ListExtensions, { global: { stubs } });
   }
 
   it("renders page title", async () => {
@@ -98,29 +77,17 @@ describe("ListExtensions", () => {
       }
       return Promise.resolve({ data: null, error: null, response: new Response() });
     }) as any);
-    const wrapper = mount(ListExtensions, {
-      global: {
-        stubs: {
-          RouterLink: defineComponent({
-            template: "<a><slot /></a>",
-          }),
-          ExtensionChangelog: ExtensionChangelogStub,
-          StatusIcon: defineComponent({ template: "<span />" }),
-          RatingStars: defineComponent({ template: "<span />" }),
-        },
-      },
-    });
+    const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find(".border-dashed").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Extensions");
+    expect(wrapper.text()).toContain("No extensions yet");
   });
 
-  it("shows search input and extension list when extensions exist", async () => {
+  it("shows search input and extension cards when extensions exist", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find("input").exists()).toBe(true);
-    // Component renders extensions as bordered div cards, not a table
-    const extensionCards = wrapper.findAll(".rounded-xl.border");
+    const extensionCards = wrapper.findAll("a.group");
     expect(extensionCards.length).toBeGreaterThan(0);
   });
 
@@ -131,9 +98,9 @@ describe("ListExtensions", () => {
     expect(wrapper.text()).toContain("FroshTools");
   });
 
-  it("renders extension changelog modal", async () => {
+  it("links each extension card to its detail page", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find(".extension-changelog").exists()).toBe(true);
+    expect(wrapper.find("a.group").exists()).toBe(true);
   });
 });

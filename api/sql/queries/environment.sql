@@ -48,19 +48,27 @@ SELECT id, environment_id, name, label, active, version, latest_version, install
 FROM environment_extension WHERE environment_id = $1 ORDER BY name;
 
 -- name: GetEnvironmentStoreExtensions :many
+-- Localized label / short description resolve to the requested language ($2)
+-- and fall back to English when that translation is missing.
 SELECT ese.id, ese.environment_id, ese.extension_name, ese.label, ese.active, ese.version,
        ese.latest_version, ese.installed, ese.installed_at,
        se.store_link, se.rating_average, se.icon_url,
-       se.label_en, se.label_de, se.short_description_en, se.short_description_de
+       COALESCE(t.label, ten.label) AS label_localized,
+       COALESCE(t.short_description, ten.short_description) AS short_description
 FROM environment_store_extension ese
 JOIN store_extension se ON se.name = ese.extension_name
+LEFT JOIN store_extension_translation t ON t.extension_name = ese.extension_name AND t.language = $2
+LEFT JOIN store_extension_translation ten ON ten.extension_name = ese.extension_name AND ten.language = 'en'
 WHERE ese.environment_id = $1
 ORDER BY ese.extension_name;
 
 -- name: GetEnvironmentStoreExtensionChangelogs :many
-SELECT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+SELECT sev.extension_name, sev.version,
+       COALESCE(t.changelog, ten.changelog) AS changelog, sev.released_at
 FROM store_extension_version sev
 JOIN environment_store_extension ese ON ese.extension_name = sev.extension_name
+LEFT JOIN store_extension_version_translation t ON t.extension_version_id = sev.id AND t.language = $2
+LEFT JOIN store_extension_version_translation ten ON ten.extension_version_id = sev.id AND ten.language = 'en'
 WHERE ese.environment_id = $1
 ORDER BY sev.extension_name, sev.version;
 
@@ -123,38 +131,39 @@ ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, versio
 DELETE FROM environment_extension WHERE environment_id = $1 AND name != ALL($2::text[]);
 
 -- name: UpsertStoreExtension :exec
--- Localized text fields use COALESCE so a failed locale fetch (NULL value) does
--- not erase the previously stored translation.
 INSERT INTO store_extension (
   name, store_id, icon_url, producer_name, producer_website, rating_average, store_link,
-  release_date, label_en, label_de, short_description_en, short_description_de,
-  description_en, description_de, installation_manual_en, installation_manual_de,
-  latest_version, last_refreshed_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+  release_date, latest_version, last_refreshed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 ON CONFLICT (name) DO UPDATE SET
   store_id = $2, icon_url = $3, producer_name = $4, producer_website = $5, rating_average = $6,
-  store_link = $7, release_date = $8,
-  label_en = COALESCE($9, store_extension.label_en),
-  label_de = COALESCE($10, store_extension.label_de),
-  short_description_en = COALESCE($11, store_extension.short_description_en),
-  short_description_de = COALESCE($12, store_extension.short_description_de),
-  description_en = COALESCE($13, store_extension.description_en),
-  description_de = COALESCE($14, store_extension.description_de),
-  installation_manual_en = COALESCE($15, store_extension.installation_manual_en),
-  installation_manual_de = COALESCE($16, store_extension.installation_manual_de),
-  latest_version = $17,
-  last_refreshed_at = NOW();
+  store_link = $7, release_date = $8, latest_version = $9, last_refreshed_at = NOW();
 
--- name: UpsertStoreExtensionVersion :exec
--- COALESCE keeps the existing per-language changelog text and date when a locale
--- fetch fails (NULL), so a transient single-locale store outage does not erase a
--- previously stored translation.
-INSERT INTO store_extension_version (extension_name, version, changelog_en, changelog_de, released_at)
-VALUES ($1, $2, $3, $4, $5)
+-- name: UpsertStoreExtensionTranslation :exec
+-- Localized fields use COALESCE so a failed locale fetch (NULL value) does not
+-- erase the previously stored translation for that language.
+INSERT INTO store_extension_translation (
+  extension_name, language, label, short_description, description, installation_manual
+) VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (extension_name, language) DO UPDATE SET
+  label = COALESCE($3, store_extension_translation.label),
+  short_description = COALESCE($4, store_extension_translation.short_description),
+  description = COALESCE($5, store_extension_translation.description),
+  installation_manual = COALESCE($6, store_extension_translation.installation_manual);
+
+-- name: UpsertStoreExtensionVersion :one
+INSERT INTO store_extension_version (extension_name, version, released_at)
+VALUES ($1, $2, $3)
 ON CONFLICT (extension_name, version) DO UPDATE SET
-  changelog_en = COALESCE($3, store_extension_version.changelog_en),
-  changelog_de = COALESCE($4, store_extension_version.changelog_de),
-  released_at = COALESCE($5, store_extension_version.released_at);
+  released_at = COALESCE($3, store_extension_version.released_at)
+RETURNING id;
+
+-- name: UpsertStoreExtensionVersionTranslation :exec
+-- COALESCE keeps the existing changelog text when a locale fetch fails (NULL).
+INSERT INTO store_extension_version_translation (extension_version_id, language, changelog)
+VALUES ($1, $2, $3)
+ON CONFLICT (extension_version_id, language) DO UPDATE SET
+  changelog = COALESCE($3, store_extension_version_translation.changelog);
 
 -- name: UpsertStoreExtensionImage :exec
 INSERT INTO store_extension_image (extension_name, url, preview, priority)

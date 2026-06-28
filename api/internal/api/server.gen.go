@@ -19,6 +19,60 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for LanguageParam.
+const (
+	LanguageParamDe LanguageParam = "de"
+	LanguageParamEn LanguageParam = "en"
+)
+
+// Valid indicates whether the value is a known member of the LanguageParam enum.
+func (e LanguageParam) Valid() bool {
+	switch e {
+	case LanguageParamDe:
+		return true
+	case LanguageParamEn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetAccountExtensionsParamsLanguage.
+const (
+	GetAccountExtensionsParamsLanguageDe GetAccountExtensionsParamsLanguage = "de"
+	GetAccountExtensionsParamsLanguageEn GetAccountExtensionsParamsLanguage = "en"
+)
+
+// Valid indicates whether the value is a known member of the GetAccountExtensionsParamsLanguage enum.
+func (e GetAccountExtensionsParamsLanguage) Valid() bool {
+	switch e {
+	case GetAccountExtensionsParamsLanguageDe:
+		return true
+	case GetAccountExtensionsParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetAccountExtensionParamsLanguage.
+const (
+	GetAccountExtensionParamsLanguageDe GetAccountExtensionParamsLanguage = "de"
+	GetAccountExtensionParamsLanguageEn GetAccountExtensionParamsLanguage = "en"
+)
+
+// Valid indicates whether the value is a known member of the GetAccountExtensionParamsLanguage enum.
+func (e GetAccountExtensionParamsLanguage) Valid() bool {
+	switch e {
+	case GetAccountExtensionParamsLanguageDe:
+		return true
+	case GetAccountExtensionParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminGetEnvironmentsParamsSortDirection.
 const (
 	AdminGetEnvironmentsParamsSortDirectionAsc  AdminGetEnvironmentsParamsSortDirection = "asc"
@@ -79,6 +133,24 @@ func (e AdminGetOrganizationsParamsSortDirection) Valid() bool {
 	}
 }
 
+// Defines values for GetEnvironmentParamsLanguage.
+const (
+	GetEnvironmentParamsLanguageDe GetEnvironmentParamsLanguage = "de"
+	GetEnvironmentParamsLanguageEn GetEnvironmentParamsLanguage = "en"
+)
+
+// Valid indicates whether the value is a known member of the GetEnvironmentParamsLanguage enum.
+func (e GetEnvironmentParamsLanguage) Valid() bool {
+	switch e {
+	case GetEnvironmentParamsLanguageDe:
+		return true
+	case GetEnvironmentParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
 // AccountChangelog defines model for AccountChangelog.
 type AccountChangelog struct {
 	Date                        time.Time `json:"date"`
@@ -112,17 +184,35 @@ type AccountEnvironment struct {
 
 // AccountExtension defines model for AccountExtension.
 type AccountExtension struct {
-	Active        bool                          `json:"active"`
-	Changelog     *[]ExtensionChangelogEntry    `json:"changelog"`
-	Environments  []AccountExtensionEnvironment `json:"environments"`
-	Installed     bool                          `json:"installed"`
-	InstalledAt   *time.Time                    `json:"installedAt"`
-	Label         string                        `json:"label"`
-	LatestVersion string                        `json:"latestVersion"`
-	Name          string                        `json:"name"`
-	RatingAverage *float32                      `json:"ratingAverage"`
-	StoreLink     *string                       `json:"storeLink"`
-	Version       string                        `json:"version"`
+	Active    bool                       `json:"active"`
+	Changelog *[]ExtensionChangelogEntry `json:"changelog"`
+
+	// Description Full store description (HTML) in the requested language (falls back to English).
+	Description  *string                       `json:"description,omitempty"`
+	Environments []AccountExtensionEnvironment `json:"environments"`
+
+	// IconUrl URL of the extension's store icon, when known.
+	IconUrl *string `json:"iconUrl,omitempty"`
+
+	// InstallationManual Installation manual (HTML) in the requested language (falls back to English).
+	InstallationManual *string    `json:"installationManual,omitempty"`
+	Installed          bool       `json:"installed"`
+	InstalledAt        *time.Time `json:"installedAt"`
+	Label              string     `json:"label"`
+	LatestVersion      string     `json:"latestVersion"`
+	Name               string     `json:"name"`
+	ProducerName       *string    `json:"producerName,omitempty"`
+	ProducerWebsite    *string    `json:"producerWebsite,omitempty"`
+	RatingAverage      *float32   `json:"ratingAverage"`
+
+	// ReleaseDate Release date of the latest store version (raw store value).
+	ReleaseDate *string                `json:"releaseDate,omitempty"`
+	Screenshots *[]ExtensionScreenshot `json:"screenshots,omitempty"`
+
+	// ShortDescription Short store description in the requested language (falls back to English).
+	ShortDescription *string `json:"shortDescription,omitempty"`
+	StoreLink        *string `json:"storeLink"`
+	Version          string  `json:"version"`
 }
 
 // AccountExtensionEnvironment defines model for AccountExtensionEnvironment.
@@ -135,7 +225,13 @@ type AccountExtensionEnvironment struct {
 	EnvironmentUrl              string `json:"environmentUrl"`
 	Installed                   bool   `json:"installed"`
 	LatestVersion               string `json:"latestVersion"`
-	Version                     string `json:"version"`
+
+	// ShopId ID of the shop this environment belongs to.
+	ShopId int `json:"shopId"`
+
+	// ShopName Name of the shop this environment belongs to (environments may share a name across shops).
+	ShopName string `json:"shopName"`
+	Version  string `json:"version"`
 }
 
 // AccountOrganization defines model for AccountOrganization.
@@ -537,10 +633,10 @@ type ErrorResponse struct {
 type ExtensionChangelogEntry struct {
 	CreationDate time.Time `json:"creationDate"`
 
-	// Text Changelog text in English (en_GB).
+	// Text Changelog text. For store catalog endpoints this is already resolved to the requested language (English fallback). For stored environment-changelog history it holds the English (en_GB) text, with textDe carrying the German variant when available.
 	Text string `json:"text"`
 
-	// TextDe Changelog text in German (de_DE), when available.
+	// TextDe German (de_DE) changelog text for stored history entries, when available.
 	TextDe  *string `json:"textDe,omitempty"`
 	Version string  `json:"version"`
 }
@@ -576,6 +672,13 @@ type ExtensionDiff struct {
 	NewVersion *string                    `json:"newVersion,omitempty"`
 	OldVersion *string                    `json:"oldVersion,omitempty"`
 	State      string                     `json:"state"`
+}
+
+// ExtensionScreenshot defines model for ExtensionScreenshot.
+type ExtensionScreenshot struct {
+	// Preview Whether this image is the store's primary preview image.
+	Preview bool   `json:"preview"`
+	Url     string `json:"url"`
 }
 
 // GrowthDataPoint defines model for GrowthDataPoint.
@@ -756,6 +859,9 @@ type EnvironmentId = int
 // KeyId defines model for KeyId.
 type KeyId = string
 
+// LanguageParam defines model for LanguageParam.
+type LanguageParam string
+
 // NotificationId defines model for NotificationId.
 type NotificationId = int
 
@@ -788,6 +894,24 @@ type ValidationError = ErrorResponse
 
 // bearerAuthContextKey is the context key for bearerAuth security scheme
 type bearerAuthContextKey string
+
+// GetAccountExtensionsParams defines parameters for GetAccountExtensions.
+type GetAccountExtensionsParams struct {
+	// Language Language for localized store text (label, description, manual, changelog). Falls back to English.
+	Language *GetAccountExtensionsParamsLanguage `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GetAccountExtensionsParamsLanguage defines parameters for GetAccountExtensions.
+type GetAccountExtensionsParamsLanguage string
+
+// GetAccountExtensionParams defines parameters for GetAccountExtension.
+type GetAccountExtensionParams struct {
+	// Language Language for localized store text (label, description, manual, changelog). Falls back to English.
+	Language *GetAccountExtensionParamsLanguage `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GetAccountExtensionParamsLanguage defines parameters for GetAccountExtension.
+type GetAccountExtensionParamsLanguage string
 
 // AdminGetAuditLogParams defines parameters for AdminGetAuditLog.
 type AdminGetAuditLogParams struct {
@@ -834,6 +958,15 @@ type AdminGetOrganizationsParamsSortBy string
 
 // AdminGetOrganizationsParamsSortDirection defines parameters for AdminGetOrganizations.
 type AdminGetOrganizationsParamsSortDirection string
+
+// GetEnvironmentParams defines parameters for GetEnvironment.
+type GetEnvironmentParams struct {
+	// Language Language for localized store text (label, description, manual, changelog). Falls back to English.
+	Language *GetEnvironmentParamsLanguage `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GetEnvironmentParamsLanguage defines parameters for GetEnvironment.
+type GetEnvironmentParamsLanguage string
 
 // GetDeploymentsParams defines parameters for GetDeployments.
 type GetDeploymentsParams struct {
@@ -895,7 +1028,10 @@ type ServerInterface interface {
 	GetAccountEnvironments(w http.ResponseWriter, r *http.Request)
 	// Get aggregated extensions across all environments
 	// (GET /account/extensions)
-	GetAccountExtensions(w http.ResponseWriter, r *http.Request)
+	GetAccountExtensions(w http.ResponseWriter, r *http.Request, params GetAccountExtensionsParams)
+	// Get a single aggregated extension by technical name
+	// (GET /account/extensions/{name})
+	GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams)
 	// Get current user profile
 	// (GET /account/me)
 	GetAccountMe(w http.ResponseWriter, r *http.Request)
@@ -949,7 +1085,7 @@ type ServerInterface interface {
 	DeleteEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
 	// Get full environment details
 	// (GET /environments/{environmentId})
-	GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentParams)
 	// Update an environment
 	// (PATCH /environments/{environmentId})
 	UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
@@ -1078,7 +1214,13 @@ func (_ Unimplemented) GetAccountEnvironments(w http.ResponseWriter, r *http.Req
 
 // Get aggregated extensions across all environments
 // (GET /account/extensions)
-func (_ Unimplemented) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) GetAccountExtensions(w http.ResponseWriter, r *http.Request, params GetAccountExtensionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a single aggregated extension by technical name
+// (GET /account/extensions/{name})
+func (_ Unimplemented) GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1186,7 +1328,7 @@ func (_ Unimplemented) DeleteEnvironment(w http.ResponseWriter, r *http.Request,
 
 // Get full environment details
 // (GET /environments/{environmentId})
-func (_ Unimplemented) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+func (_ Unimplemented) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1458,14 +1600,81 @@ func (siw *ServerInterfaceWrapper) GetAccountEnvironments(w http.ResponseWriter,
 // GetAccountExtensions operation middleware
 func (siw *ServerInterfaceWrapper) GetAccountExtensions(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAccountExtensionsParams
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "language", r.URL.Query(), &params.Language, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "language"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "language", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAccountExtensions(w, r)
+		siw.Handler.GetAccountExtensions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAccountExtension operation middleware
+func (siw *ServerInterfaceWrapper) GetAccountExtension(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAccountExtensionParams
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "language", r.URL.Query(), &params.Language, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "language"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "language", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAccountExtension(w, r, name, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2209,8 +2418,24 @@ func (siw *ServerInterfaceWrapper) GetEnvironment(w http.ResponseWriter, r *http
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEnvironmentParams
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "language", r.URL.Query(), &params.Language, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "language"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "language", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEnvironment(w, r, environmentId)
+		siw.Handler.GetEnvironment(w, r, environmentId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3550,6 +3775,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/extensions", wrapper.GetAccountExtensions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/account/extensions/{name}", wrapper.GetAccountExtension)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/me", wrapper.GetAccountMe)

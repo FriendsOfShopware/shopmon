@@ -46,8 +46,9 @@ func toAccountEnvironments(rows []queries.ListEnvironmentsByOrganizationRow) []a
 // mergeEnvironmentExtensions assembles the unified extension list for an
 // environment from the normalized store tables and the unknown-extension table.
 // Store extensions carry catalog metadata (store link, rating) and a
-// compatibility-capped changelog (both languages) built from the version
-// catalog; unknown extensions carry only the shop-reported fields.
+// compatibility-capped changelog (already resolved to the requested language)
+// built from the version catalog; unknown extensions carry only the
+// shop-reported fields.
 func mergeEnvironmentExtensions(
 	storeRows []queries.GetEnvironmentStoreExtensionsRow,
 	unknownRows []queries.EnvironmentExtension,
@@ -57,8 +58,7 @@ func mergeEnvironmentExtensions(
 	for _, r := range changelogRows {
 		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
 			Version:    r.Version,
-			TextEn:     deref(r.ChangelogEn),
-			TextDe:     deref(r.ChangelogDe),
+			Text:       deref(r.Changelog),
 			ReleasedAt: deref(r.ReleasedAt),
 		})
 	}
@@ -107,18 +107,17 @@ func mergeEnvironmentExtensions(
 	return extensions
 }
 
-// changelogVersion is an intermediate, language-agnostic store changelog entry.
+// changelogVersion is an intermediate store changelog entry whose text is
+// already resolved to the requested language.
 type changelogVersion struct {
 	Version    string
-	TextEn     string
-	TextDe     string
+	Text       string
 	ReleasedAt string
 }
 
 // buildCompatibleChangelog returns changelog entries strictly newer than the
 // installed version and not newer than the latest compatible version (when
-// known), ordered oldest-first, with both language texts. Returns nil when there
-// is nothing to show.
+// known), ordered oldest-first. Returns nil when there is nothing to show.
 func buildCompatibleChangelog(versions []changelogVersion, installedVersion, latestVersion string) *[]api.ExtensionChangelogEntry {
 	entries := make([]api.ExtensionChangelogEntry, 0, len(versions))
 	for _, v := range versions {
@@ -130,11 +129,7 @@ func buildCompatibleChangelog(versions []changelogVersion, installedVersion, lat
 		}
 		entry := api.ExtensionChangelogEntry{
 			Version: v.Version,
-			Text:    v.TextEn,
-		}
-		if v.TextDe != "" {
-			textDe := v.TextDe
-			entry.TextDe = &textDe
+			Text:    v.Text,
 		}
 		if v.ReleasedAt != "" {
 			if t, err := time.Parse(time.RFC3339, v.ReleasedAt); err == nil {
@@ -150,6 +145,45 @@ func buildCompatibleChangelog(versions []changelogVersion, installedVersion, lat
 		return version.Compare(entries[i].Version, entries[j].Version) < 0
 	})
 	return &entries
+}
+
+// buildFullChangelog returns the complete version history for a store extension,
+// newest-first, regardless of the installed version. Used by the catalog/detail
+// view, where the full history is meaningful, in contrast to the
+// compatibility-capped view used in the per-environment update context. Returns
+// nil when there is nothing to show.
+func buildFullChangelog(versions []changelogVersion) *[]api.ExtensionChangelogEntry {
+	entries := make([]api.ExtensionChangelogEntry, 0, len(versions))
+	for _, v := range versions {
+		entry := api.ExtensionChangelogEntry{
+			Version: v.Version,
+			Text:    v.Text,
+		}
+		if v.ReleasedAt != "" {
+			if t, err := time.Parse(time.RFC3339, v.ReleasedAt); err == nil {
+				entry.CreationDate = t
+			}
+		}
+		entries = append(entries, entry)
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return version.Compare(entries[i].Version, entries[j].Version) > 0
+	})
+	return &entries
+}
+
+// resolveLanguage normalizes an optional request language to a supported store
+// language code, defaulting to English. The query layer already falls back to
+// English for any field missing in the requested language, so an unsupported
+// value simply behaves like English.
+func resolveLanguage(lang *string) string {
+	if lang != nil && *lang == "de" {
+		return "de"
+	}
+	return "en"
 }
 
 // parseInstalledAt parses the RFC3339 installed-at timestamp, returning nil when

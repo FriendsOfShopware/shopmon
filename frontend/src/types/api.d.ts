@@ -55,6 +55,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/account/extensions/{name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single aggregated extension by technical name */
+    get: operations["getAccountExtension"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/account/organizations": {
     parameters: {
       query?: never;
@@ -1665,7 +1682,25 @@ export interface components {
       /** Format: date-time */
       installedAt: string | null;
       changelog: components["schemas"]["ExtensionChangelogEntry"][] | null;
+      /** @description URL of the extension's store icon, when known. */
+      iconUrl?: string | null;
+      producerName?: string | null;
+      producerWebsite?: string | null;
+      /** @description Release date of the latest store version (raw store value). */
+      releaseDate?: string | null;
+      /** @description Short store description in the requested language (falls back to English). */
+      shortDescription?: string | null;
+      /** @description Full store description (HTML) in the requested language (falls back to English). */
+      description?: string | null;
+      /** @description Installation manual (HTML) in the requested language (falls back to English). */
+      installationManual?: string | null;
+      screenshots?: components["schemas"]["ExtensionScreenshot"][] | null;
       environments: components["schemas"]["AccountExtensionEnvironment"][];
+    };
+    ExtensionScreenshot: {
+      url: string;
+      /** @description Whether this image is the store's primary preview image. */
+      preview: boolean;
     };
     AccountExtensionEnvironment: {
       environmentId: number;
@@ -1673,6 +1708,10 @@ export interface components {
       environmentOrganizationName: string;
       environmentOrganizationId: string;
       environmentUrl: string;
+      /** @description ID of the shop this environment belongs to. */
+      shopId: number;
+      /** @description Name of the shop this environment belongs to (environments may share a name across shops). */
+      shopName: string;
       active: boolean;
       version: string;
       latestVersion: string;
@@ -1735,9 +1774,9 @@ export interface components {
     };
     ExtensionChangelogEntry: {
       version: string;
-      /** @description Changelog text in English (en_GB). */
+      /** @description Changelog text. For store catalog endpoints this is already resolved to the requested language (English fallback). For stored environment-changelog history it holds the English (en_GB) text, with textDe carrying the German variant when available. */
       text: string;
-      /** @description Changelog text in German (de_DE), when available. */
+      /** @description German (de_DE) changelog text for stored history entries, when available. */
       textDe?: string | null;
       /** Format: date-time */
       creationDate: string;
@@ -2320,6 +2359,8 @@ export interface components {
   parameters: {
     /** @description Organization ID */
     OrgId: string;
+    /** @description Language for localized store text (label, description, manual, changelog). Falls back to English. */
+    LanguageParam: "en" | "de";
     /** @description Environment ID */
     EnvironmentId: number;
     /** @description Shop ID */
@@ -2386,7 +2427,10 @@ export interface operations {
   };
   getAccountExtensions: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Language for localized store text (label, description, manual, changelog). Falls back to English. */
+        language?: components["parameters"]["LanguageParam"];
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -2403,6 +2447,34 @@ export interface operations {
         };
       };
       401: components["responses"]["Unauthorized"];
+    };
+  };
+  getAccountExtension: {
+    parameters: {
+      query?: {
+        /** @description Language for localized store text (label, description, manual, changelog). Falls back to English. */
+        language?: components["parameters"]["LanguageParam"];
+      };
+      header?: never;
+      path: {
+        /** @description Technical name of the extension */
+        name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The extension */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AccountExtension"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
     };
   };
   getAccountOrganizations: {
@@ -2643,7 +2715,10 @@ export interface operations {
   };
   getEnvironment: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Language for localized store text (label, description, manual, changelog). Falls back to English. */
+        language?: components["parameters"]["LanguageParam"];
+      };
       header?: never;
       path: {
         /** @description Environment ID */

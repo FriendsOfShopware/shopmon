@@ -24,7 +24,7 @@ type environmentDetailAggregate struct {
 	subscribed  bool
 }
 
-func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmentID int32) environmentDetailAggregate {
+func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmentID int32, language string) environmentDetailAggregate {
 	aggregate := environmentDetailAggregate{}
 
 	var wg sync.WaitGroup
@@ -32,7 +32,7 @@ func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmen
 
 	go func() {
 		defer wg.Done()
-		aggregate.extensions = h.loadEnvironmentExtensions(ctx, environmentID)
+		aggregate.extensions = h.loadEnvironmentExtensions(ctx, environmentID, language)
 	}()
 	go func() {
 		defer wg.Done()
@@ -71,12 +71,15 @@ func (h *Handler) loadEnvironmentDetailAggregate(ctx context.Context, environmen
 	return aggregate
 }
 
-func (h *Handler) loadEnvironmentExtensions(ctx context.Context, environmentID int32) []api.EnvironmentExtension {
+func (h *Handler) loadEnvironmentExtensions(ctx context.Context, environmentID int32, language string) []api.EnvironmentExtension {
 	// The store and unknown queries together make up the full extension list, so
 	// a failure in either must not silently produce a partial list (which would
 	// look like a successful empty/short response). Bail out like the sibling
 	// load* helpers instead.
-	storeRows, err := h.queries.GetEnvironmentStoreExtensions(ctx, environmentID)
+	storeRows, err := h.queries.GetEnvironmentStoreExtensions(ctx, queries.GetEnvironmentStoreExtensionsParams{
+		EnvironmentID: environmentID,
+		Language:      language,
+	})
 	if err != nil {
 		slog.Error("failed to get environment store extensions", "error", err)
 		return nil
@@ -88,7 +91,10 @@ func (h *Handler) loadEnvironmentExtensions(ctx context.Context, environmentID i
 	}
 	// The changelog is supplementary; on failure we still return the extensions
 	// without it rather than dropping the whole list.
-	changelogRows, err := h.queries.GetEnvironmentStoreExtensionChangelogs(ctx, environmentID)
+	changelogRows, err := h.queries.GetEnvironmentStoreExtensionChangelogs(ctx, queries.GetEnvironmentStoreExtensionChangelogsParams{
+		EnvironmentID: environmentID,
+		Language:      language,
+	})
 	if err != nil {
 		slog.Error("failed to get environment store extension changelogs", "error", err)
 	}

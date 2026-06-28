@@ -6,6 +6,18 @@ export function getToken(): string | null {
   return localStorage.getItem("shopmon_token");
 }
 
+// The supported API content languages. Server-side localized store text resolves
+// to one of these (falling back to English), so the active UI locale is mapped
+// down to this set before being sent as the `language` query parameter.
+export type ApiLanguage = "en" | "de";
+
+// Returns the language to request localized API content in, derived from the
+// persisted UI locale (same key useLocale writes). Defaults to English.
+export function apiLanguage(): ApiLanguage {
+  if (import.meta.env.SSR) return "en";
+  return localStorage.getItem("shopmon-locale") === "de" ? "de" : "en";
+}
+
 export function setToken(token: string | null) {
   if (import.meta.env.SSR) return;
   if (token) {

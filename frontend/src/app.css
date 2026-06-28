@@ -160,3 +160,52 @@
     color: var(--color-primary-text);
   }
 }
+
+/* Rich-text rendering for untrusted store HTML (extension descriptions,
+   installation manuals, changelogs) injected via v-html. Tailwind's Preflight
+   resets list styling and margins, and the typography plugin is not installed,
+   so this restores readable formatting. Applied as a global class because
+   v-html content is not processed by Vue's scoped-CSS hashing. */
+@layer components {
+  .richtext {
+    @apply text-sm leading-relaxed text-foreground;
+  }
+  .richtext p {
+    @apply mb-3;
+  }
+  .richtext p:last-child {
+    @apply mb-0;
+  }
+  .richtext ul,
+  .richtext ol {
+    @apply mb-3 space-y-1 pl-5;
+  }
+  .richtext ul {
+    @apply list-disc;
+  }
+  .richtext ol {
+    @apply list-decimal;
+  }
+  .richtext li {
+    @apply pl-1;
+  }
+  .richtext h2,
+  .richtext h3,
+  .richtext h4 {
+    @apply mt-5 mb-2 font-semibold text-foreground;
+  }
+  .richtext h2:first-child,
+  .richtext h3:first-child,
+  .richtext h4:first-child {
+    @apply mt-0;
+  }
+  .richtext a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .richtext strong {
+    @apply font-semibold text-foreground;
+  }
+  .richtext code {
+    @apply rounded bg-muted px-1.5 py-0.5 text-sm;
+  }
+}

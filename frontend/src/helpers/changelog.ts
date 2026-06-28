@@ -1,20 +1,24 @@
 import { useLocale } from "@/composables/useLocale";
+import { sanitizeHtml } from "@/helpers/sanitize";
 
-interface LocalizedChangelogEntry {
+interface ChangelogEntry {
   text: string;
   textDe?: string | null;
 }
 
-// Resolves an extension changelog entry's text for the active UI locale, falling
-// back to English when no German translation is available.
+// Returns an extension changelog entry's text, sanitized for v-html rendering.
+// Store catalog endpoints already resolve `text` to the requested language, so
+// textDe is absent there and the fallback simply returns `text`. Stored
+// environment-changelog history still carries both languages (text = en_GB,
+// textDe = de_DE), so honour the active locale for those entries.
 export function useChangelogText() {
   const { locale } = useLocale();
 
-  return (entry: LocalizedChangelogEntry): string => {
+  return (entry: ChangelogEntry): string => {
     if (locale.value === "de" && entry.textDe) {
-      return entry.textDe;
+      return sanitizeHtml(entry.textDe);
     }
-    return entry.text;
+    return sanitizeHtml(entry.text);
   };
 }
 

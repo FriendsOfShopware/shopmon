@@ -1,13 +1,33 @@
 <template>
   <div class="space-y-6">
-    <h1 class="text-2xl font-bold tracking-tight">{{ $t("nav.myExtensions") }}</h1>
+    <!-- Header -->
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">{{ $t("extensions.title") }}</h1>
+        <p class="mt-1 text-sm text-muted-foreground">{{ $t("extensions.subtitle") }}</p>
+      </div>
+      <div
+        v-if="extensions.length > 0"
+        class="flex items-center gap-4 text-sm text-muted-foreground"
+      >
+        <span>{{ $t("extensions.summary", { count: extensions.length }, extensions.length) }}</span>
+        <span v-if="outdatedCount > 0" class="text-warning">
+          {{ $t("extensions.updatesSummary", { count: outdatedCount }, outdatedCount) }}
+        </span>
+      </div>
+    </div>
 
-    <!-- Empty state -->
+    <!-- Loading -->
+    <div v-if="loading" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <Skeleton v-for="i in 8" :key="i" class="h-40 rounded-xl" />
+    </div>
+
+    <!-- Empty: no extensions at all -->
     <EmptyState
-      v-if="extensions && extensions.length === 0"
+      v-else-if="extensions.length === 0"
       :icon="IconPuzzlePiece"
-      :title="$t('shopDetail.extensions')"
-      :description="$t('common.getStartedElement')"
+      :title="$t('extensions.noExtensions')"
+      :description="$t('extensions.noExtensionsHint')"
     >
       <Button as-child>
         <RouterLink :to="{ name: 'account.environments.new' }">
@@ -17,211 +37,135 @@
       </Button>
     </EmptyState>
 
-    <template v-else-if="extensions && extensions.length > 0">
-      <!-- Summary + search -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-4 text-sm text-muted-foreground">
-          <span
-            ><strong class="text-foreground tabular-nums">{{ extensions.length }}</strong>
-            {{ $t("nav.extensions") }}</span
-          >
-          <span
-            ><strong
-              class="tabular-nums"
-              :class="outdatedCount > 0 ? 'text-warning' : 'text-foreground'"
-              >{{ outdatedCount }}</strong
-            >
-            {{ $t("common.updates") }}</span
-          >
-        </div>
-        <div class="relative">
-          <icon-fa6-solid:magnifying-glass
-            class="pointer-events-none absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            v-model="term"
-            :placeholder="$t('common.search')"
-            class="h-8 w-full sm:w-56 pl-8 text-sm"
-          />
-        </div>
-      </div>
+    <template v-else>
+      <!-- Toolbar: search + filters -->
+      <FilterSearchBar
+        v-model:filter="activeFilter"
+        v-model:search="term"
+        :filters="filters"
+        :search-placeholder="$t('shopDetail.searchExtensions')"
+      />
 
-      <!-- Extension list -->
-      <div class="space-y-2">
-        <div
+      <!-- Card grid -->
+      <div
+        v-if="filteredExtensions.length > 0"
+        class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
+        <RouterLink
           v-for="ext in filteredExtensions"
           :key="ext.name"
-          :class="[
-            'rounded-xl border transition-colors',
-            hasUpdate(ext) ? 'border-warning/20 bg-warning/5' : '',
-            !ext.active && ext.installed ? 'opacity-60' : '',
-            !ext.installed ? 'opacity-40' : '',
-          ]"
+          :to="{ name: 'account.extension.detail', params: { name: ext.name } }"
+          class="group flex h-full flex-col rounded-xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+          :class="{ 'opacity-60': isInactive(ext) }"
         >
-          <!-- Main row -->
-          <div class="flex items-center gap-4 px-4 py-3">
-            <StatusIcon :status="getExtensionState(ext)" class="shrink-0" />
-
-            <!-- Name -->
+          <div class="flex items-start gap-3">
+            <ExtensionIcon :src="ext.iconUrl" :alt="ext.label" :size="44" />
             <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <component
-                  :is="ext.storeLink ? 'a' : 'span'"
-                  v-bind="
-                    ext.storeLink
-                      ? {
-                          href: ext.storeLink,
-                          target: '_blank',
-                          class: 'hover:text-primary transition-colors',
-                        }
-                      : {}
-                  "
-                  class="truncate font-medium"
-                >
-                  {{ ext.label }}
-                  <icon-fa6-solid:arrow-up-right-from-square
-                    v-if="ext.storeLink"
-                    class="ml-1 inline size-2.5 text-muted-foreground"
-                  />
-                </component>
-              </div>
-              <div class="text-xs text-muted-foreground">{{ ext.name }}</div>
+              <h3 class="truncate font-semibold transition-colors group-hover:text-primary">
+                {{ ext.label }}
+              </h3>
+              <p class="truncate font-mono text-xs text-muted-foreground">{{ ext.name }}</p>
             </div>
-
-            <!-- Version -->
-            <div class="hidden shrink-0 items-center gap-2 sm:flex">
-              <Badge variant="secondary" class="font-mono text-xs">{{
-                ext.latestVersion || ext.version
-              }}</Badge>
-              <template v-if="hasUpdate(ext)">
-                <button
-                  class="cursor-pointer text-xs text-warning hover:underline"
-                  @click="openExtensionChangelog(ext)"
-                >
-                  {{ $t("shopDetail.updateAvailable") }}
-                </button>
-              </template>
-            </div>
-
-            <!-- Rating -->
-            <div class="hidden shrink-0 lg:block">
-              <RatingStars :rating="ext.ratingAverage" />
-            </div>
-
-            <!-- Expand -->
-            <button
-              :aria-label="$t('common.toggleDetails')"
-              :aria-expanded="expanded.has(ext.name)"
-              class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-              @click="toggle(ext.name)"
+            <Badge
+              v-if="isInactive(ext)"
+              variant="secondary"
+              class="shrink-0 text-[10px] uppercase"
             >
-              <icon-fa6-solid:chevron-down
-                :class="[
-                  'size-2.5 transition-transform',
-                  expanded.has(ext.name) ? 'rotate-180' : '',
-                ]"
-              />
-            </button>
+              {{ $t("extensions.inactive") }}
+            </Badge>
           </div>
 
-          <!-- Expanded: environments using this extension -->
-          <div v-if="expanded.has(ext.name)" class="border-t px-4 py-3">
-            <div class="mb-2 text-xs font-medium text-muted-foreground">
-              {{ $t("shopDetail.installedInEnvironments", { count: ext.environments.length }) }}
-            </div>
-            <div class="space-y-1.5">
-              <RouterLink
-                v-for="env in ext.environments"
-                :key="env.environmentId"
-                :to="{
-                  name: 'account.environments.detail.extensions',
-                  params: {
-                    organizationId: env.environmentOrganizationId,
-                    environmentId: env.environmentId,
-                  },
-                }"
-                class="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-accent"
-              >
-                <StatusIcon :status="getEnvExtensionState(env)" class="shrink-0" />
-                <span class="min-w-0 flex-1 truncate">{{ env.environmentName }}</span>
-                <Badge variant="secondary" class="font-mono text-[10px]">{{ env.version }}</Badge>
-                <icon-fa6-solid:arrow-up
-                  v-if="env.version !== env.latestVersion && env.latestVersion"
-                  class="size-3 text-warning"
-                  :title="$t('shopDetail.updateToVersion', { version: env.latestVersion })"
-                />
-              </RouterLink>
-            </div>
+          <div class="mt-3 min-h-5">
+            <RatingStars v-if="ext.ratingAverage !== null" :rating="ext.ratingAverage" />
+            <span v-else class="text-xs text-muted-foreground/70">{{
+              $t("extensions.noRating")
+            }}</span>
           </div>
-        </div>
+
+          <div class="mt-auto flex items-center justify-between gap-2 pt-4">
+            <span class="text-xs text-muted-foreground">
+              {{
+                $t("extensions.usedIn", { count: ext.environments.length }, ext.environments.length)
+              }}
+            </span>
+            <Badge
+              v-if="updateCount(ext) > 0"
+              variant="outline"
+              class="border-warning/30 bg-warning/10 text-warning"
+            >
+              <icon-fa6-solid:arrow-up class="mr-1 size-2.5" />
+              {{ $t("extensions.updatesAvailable", { count: updateCount(ext) }, updateCount(ext)) }}
+            </Badge>
+            <Badge v-else variant="outline" class="border-success/30 bg-success/10 text-success">
+              <icon-fa6-solid:check class="mr-1 size-2.5" />
+              {{ $t("extensions.upToDate") }}
+            </Badge>
+          </div>
+        </RouterLink>
       </div>
+
+      <!-- Empty: no filter/search match -->
+      <EmptyState
+        v-else
+        :icon="IconMagnifyingGlass"
+        :title="$t('extensions.noResults')"
+        :description="$t('extensions.noResultsHint')"
+        size="sm"
+      >
+        <Button variant="outline" size="sm" @click="clearFilters">
+          {{ $t("extensions.clearFilters") }}
+        </Button>
+      </EmptyState>
     </template>
   </div>
-
-  <ExtensionChangelog
-    :show="viewExtensionChangelogDialog"
-    :extension="dialogExtension"
-    @close="closeExtensionChangelog"
-  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from "vue";
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import StatusIcon from "@/components/StatusIcon.vue";
+import { Skeleton } from "@/components/ui/skeleton";
 import RatingStars from "@/components/RatingStars.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import FilterSearchBar from "@/components/FilterSearchBar.vue";
+import ExtensionIcon from "@/components/ExtensionIcon.vue";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
-import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
-import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
+import IconMagnifyingGlass from "~icons/fa6-solid/magnifying-glass";
+import { api, apiLanguage } from "@/helpers/api";
+import {
+  type AccountExtension,
+  hasUpdate,
+  isInactive,
+  updateCount,
+} from "@/composables/useAccountExtensions";
 
-type AccountExtension = components["schemas"]["AccountExtension"];
-type AccountExtensionEnvironment = components["schemas"]["AccountExtensionEnvironment"];
+const { t } = useI18n();
 
 const term = ref("");
+const activeFilter = ref<"all" | "updates" | "inactive">("all");
 const extensions = ref<AccountExtension[]>([]);
-const expanded = reactive(new Set<string>());
+const loading = ref(true);
 
-const {
-  viewExtensionChangelogDialog,
-  dialogExtension,
-  openExtensionChangelog,
-  closeExtensionChangelog,
-} = useExtensionChangelogModal();
+const filters = [
+  { label: t("extensions.filterAll"), value: "all" },
+  { label: t("extensions.filterUpdates"), value: "updates" },
+  { label: t("extensions.filterInactive"), value: "inactive" },
+];
 
-api.GET("/account/extensions").then(({ data }) => {
-  if (data) extensions.value = data;
-});
-
-function hasUpdate(ext: AccountExtension): boolean {
-  return !!(ext.installed && ext.latestVersion && ext.version !== ext.latestVersion);
-}
-
-function getExtensionState(ext: AccountExtension) {
-  if (!ext.installed) return "not installed";
-  if (ext.active) return "active";
-  return "inactive";
-}
-
-function getEnvExtensionState(env: AccountExtensionEnvironment) {
-  if (!env.installed) return "not installed";
-  if (env.active) return "active";
-  return "inactive";
-}
-
-function toggle(name: string) {
-  if (expanded.has(name)) {
-    expanded.delete(name);
-  } else {
-    expanded.add(name);
-  }
-}
+api
+  .GET("/account/extensions", { params: { query: { language: apiLanguage() } } })
+  .then(({ data }) => {
+    if (data) extensions.value = data;
+    loading.value = false;
+  });
 
 const outdatedCount = computed(() => extensions.value.filter((e) => hasUpdate(e)).length);
+
+function clearFilters() {
+  term.value = "";
+  activeFilter.value = "all";
+}
 
 const filteredExtensions = computed(() => {
   let list = [...extensions.value];
@@ -231,6 +175,9 @@ const filteredExtensions = computed(() => {
     if (a.installed !== b.installed) return a.installed ? -1 : 1;
     return a.label.localeCompare(b.label);
   });
+
+  if (activeFilter.value === "updates") list = list.filter((e) => updateCount(e) > 0);
+  if (activeFilter.value === "inactive") list = list.filter((e) => isInactive(e));
 
   if (term.value.length >= 2) {
     const q = term.value.toLowerCase();
