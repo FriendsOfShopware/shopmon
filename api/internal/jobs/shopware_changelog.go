@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -44,10 +43,6 @@ type changelogEntry struct {
 	Version string    `json:"version"`
 }
 
-// phpCodeRe extracts the individual <code>X.Y</code> PHP versions from the
-// "tested on PHP" list item present in newer release bodies.
-var phpCodeRe = regexp.MustCompile(`<code>([^<]+)</code>`)
-
 func (h *ShopwareChangelogHandler) HandleSync(ctx context.Context, _ ShopwareChangelogSync) error {
 	versions, err := h.fetchIndex(ctx)
 	if err != nil {
@@ -78,15 +73,9 @@ func (h *ShopwareChangelogHandler) HandleSync(ctx context.Context, _ ShopwareCha
 			continue
 		}
 
-		phpVersions, err := json.Marshal(parsePHPVersions(entry.Body))
-		if err != nil {
-			return fmt.Errorf("marshal php versions: %w", err)
-		}
-
 		if err := h.queries.UpsertShopwareVersion(ctx, queries.UpsertShopwareVersionParams{
 			Version:     version,
 			ReleaseDate: pgtype.Timestamp{Time: entry.Date, Valid: true},
-			PhpVersions: phpVersions,
 			Title:       entry.Title,
 			Body:        entry.Body,
 		}); err != nil {
@@ -137,35 +126,4 @@ func (h *ShopwareChangelogHandler) getJSON(ctx context.Context, url string, dst 
 	}
 
 	return json.Unmarshal(body, dst)
-}
-
-// parsePHPVersions extracts the supported PHP versions from a release body. Newer
-// releases contain a list item like:
-//
-//	<li>tested on PHP <code>8.2</code>, <code>8.4</code> and <code>8.5</code></li>
-//
-// Older releases don't advertise PHP versions, in which case an empty slice is
-// returned. The result is always non-nil so it marshals to a JSON array.
-func parsePHPVersions(body string) []string {
-	versions := []string{}
-
-	idx := strings.Index(body, "tested on PHP")
-	if idx == -1 {
-		return versions
-	}
-
-	segment := body[idx:]
-	// Bound the search to the single list item so we don't pick up the
-	// MySQL/MariaDB <code> entries on the following line.
-	if end := strings.Index(segment, "</li>"); end != -1 {
-		segment = segment[:end]
-	}
-
-	for _, m := range phpCodeRe.FindAllStringSubmatch(segment, -1) {
-		if v := strings.TrimSpace(m[1]); v != "" {
-			versions = append(versions, v)
-		}
-	}
-
-	return versions
 }

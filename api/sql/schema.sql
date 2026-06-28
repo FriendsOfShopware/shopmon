@@ -378,7 +378,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at);
 CREATE TABLE "shopware_version" (
   "version" text PRIMARY KEY NOT NULL,
   "release_date" timestamp NOT NULL,
-  "php_versions" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "title" text NOT NULL DEFAULT '',
   "body" text NOT NULL DEFAULT '',
   "created_at" timestamp NOT NULL DEFAULT NOW(),

@@ -5,7 +5,6 @@
 CREATE TABLE "shopware_version" (
   "version" text PRIMARY KEY NOT NULL,
   "release_date" timestamp NOT NULL,
-  "php_versions" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "title" text NOT NULL DEFAULT '',
   "body" text NOT NULL DEFAULT '',
   "created_at" timestamp NOT NULL DEFAULT NOW(),

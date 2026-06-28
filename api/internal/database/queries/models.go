@@ -241,7 +241,6 @@ type ShopApiKey struct {
 type ShopwareVersion struct {
 	Version     string           `json:"version"`
 	ReleaseDate pgtype.Timestamp `json:"release_date"`
-	PhpVersions json.RawMessage  `json:"php_versions"`
 	Title       string           `json:"title"`
 	Body        string           `json:"body"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`

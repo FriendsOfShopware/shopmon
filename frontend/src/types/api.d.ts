@@ -788,7 +788,7 @@ export interface paths {
     };
     /**
      * Get known Shopware versions
-     * @description Returns all known Shopware versions (newest first) with their release date and supported PHP versions. Served from a local cache that the worker refreshes hourly from the Shopware release changelog.
+     * @description Returns all known Shopware version numbers, newest first. Served from a local cache that the worker refreshes hourly from the Shopware release changelog.
      */
     get: operations["getShopwareVersions"];
     put?: never;
@@ -2274,12 +2274,6 @@ export interface components {
     ShopwareVersionCount: {
       version: string;
       count: number;
-    };
-    ShopwareVersion: {
-      version: string;
-      /** Format: date-time */
-      releaseDate: string;
-      phpVersions: string[];
     };
     EcosystemStats: {
       growth: components["schemas"]["AdminGrowth"];
@@ -3797,7 +3791,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ShopwareVersion"][];
+          "application/json": string[];
         };
       };
     };

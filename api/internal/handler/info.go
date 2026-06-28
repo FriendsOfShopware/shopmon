@@ -125,31 +125,16 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 	httputil.WriteJSON(w, http.StatusOK, results)
 }
 
-// GetShopwareVersions returns all known Shopware versions, newest first, with
-// their release date and supported PHP versions. The data is served from the
-// shopware_version table, which the worker keeps up to date by crawling the
-// Shopware release changelog hourly, so no external call is made at request time.
+// GetShopwareVersions returns all known Shopware versions, newest first. The
+// data is served from the shopware_version table, which the worker keeps up to
+// date by crawling the Shopware release changelog hourly, so no external call is
+// made at request time.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.queries.ListShopwareVersions(r.Context())
+	versions, err := h.queries.ListShopwareVersions(r.Context())
 	if err != nil {
 		slog.Error("failed to list shopware versions", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load shopware versions")
 		return
-	}
-
-	versions := make([]api.ShopwareVersion, 0, len(rows))
-	for _, row := range rows {
-		phpVersions := []string{}
-		if len(row.PhpVersions) > 0 {
-			if err := json.Unmarshal(row.PhpVersions, &phpVersions); err != nil {
-				slog.Warn("failed to decode php versions", "version", row.Version, "error", err)
-			}
-		}
-		versions = append(versions, api.ShopwareVersion{
-			Version:     row.Version,
-			ReleaseDate: row.ReleaseDate.Time,
-			PhpVersions: phpVersions,
-		})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, versions)

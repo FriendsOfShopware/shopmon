@@ -7,7 +7,6 @@ package queries
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -37,30 +36,24 @@ func (q *Queries) GetKnownShopwareVersions(ctx context.Context) ([]string, error
 }
 
 const listShopwareVersions = `-- name: ListShopwareVersions :many
-SELECT version, release_date, php_versions
+SELECT version
 FROM shopware_version
 ORDER BY release_date DESC, version DESC
 `
 
-type ListShopwareVersionsRow struct {
-	Version     string           `json:"version"`
-	ReleaseDate pgtype.Timestamp `json:"release_date"`
-	PhpVersions json.RawMessage  `json:"php_versions"`
-}
-
-func (q *Queries) ListShopwareVersions(ctx context.Context) ([]ListShopwareVersionsRow, error) {
+func (q *Queries) ListShopwareVersions(ctx context.Context) ([]string, error) {
 	rows, err := q.db.Query(ctx, listShopwareVersions)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListShopwareVersionsRow{}
+	items := []string{}
 	for rows.Next() {
-		var i ListShopwareVersionsRow
-		if err := rows.Scan(&i.Version, &i.ReleaseDate, &i.PhpVersions); err != nil {
+		var version string
+		if err := rows.Scan(&version); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, version)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -69,11 +62,10 @@ func (q *Queries) ListShopwareVersions(ctx context.Context) ([]ListShopwareVersi
 }
 
 const upsertShopwareVersion = `-- name: UpsertShopwareVersion :exec
-INSERT INTO shopware_version (version, release_date, php_versions, title, body, updated_at)
-VALUES ($1, $2, $3, $4, $5, NOW())
+INSERT INTO shopware_version (version, release_date, title, body, updated_at)
+VALUES ($1, $2, $3, $4, NOW())
 ON CONFLICT (version) DO UPDATE SET
   release_date = EXCLUDED.release_date,
-  php_versions = EXCLUDED.php_versions,
   title = EXCLUDED.title,
   body = EXCLUDED.body,
   updated_at = NOW()
@@ -82,7 +74,6 @@ ON CONFLICT (version) DO UPDATE SET
 type UpsertShopwareVersionParams struct {
 	Version     string           `json:"version"`
 	ReleaseDate pgtype.Timestamp `json:"release_date"`
-	PhpVersions json.RawMessage  `json:"php_versions"`
 	Title       string           `json:"title"`
 	Body        string           `json:"body"`
 }
@@ -91,7 +82,6 @@ func (q *Queries) UpsertShopwareVersion(ctx context.Context, arg UpsertShopwareV
 	_, err := q.db.Exec(ctx, upsertShopwareVersion,
 		arg.Version,
 		arg.ReleaseDate,
-		arg.PhpVersions,
 		arg.Title,
 		arg.Body,
 	)

@@ -756,13 +756,6 @@ type Shop struct {
 	OrganizationId       string  `json:"organizationId"`
 }
 
-// ShopwareVersion defines model for ShopwareVersion.
-type ShopwareVersion struct {
-	PhpVersions []string  `json:"phpVersions"`
-	ReleaseDate time.Time `json:"releaseDate"`
-	Version     string    `json:"version"`
-}
-
 // ShopwareVersionCount defines model for ShopwareVersionCount.
 type ShopwareVersionCount struct {
 	Count   int    `json:"count"`
