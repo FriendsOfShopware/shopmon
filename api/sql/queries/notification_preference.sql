@@ -32,3 +32,17 @@ SELECT EXISTS (
 -- name: ListSubscribedEnvironmentIDs :many
 SELECT scope_id FROM notification_preference
 WHERE user_id = $1 AND scope_type = 'environment' AND channel = '' AND enabled = true;
+
+-- name: DeleteUserOrgNotificationPreferences :exec
+-- Removes a user's environment-scoped preferences for every environment in an
+-- organization (used when the user is removed from / leaves the org).
+DELETE FROM notification_preference
+WHERE user_id = $1
+  AND scope_type = 'environment'
+  AND scope_id IN (SELECT id::text FROM environment WHERE organization_id = $2);
+
+-- name: DeleteEnvironmentNotificationPreferences :exec
+-- Removes all users' preferences scoped to a single environment (used when the
+-- environment is deleted). scope_id is text, so there is no FK to cascade on.
+DELETE FROM notification_preference
+WHERE scope_type = 'environment' AND scope_id = $1;

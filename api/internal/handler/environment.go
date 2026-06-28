@@ -181,6 +181,16 @@ func (h *Handler) DeleteEnvironment(w http.ResponseWriter, r *http.Request, envi
 		if err := txq.ReassignShopDefaultEnvironment(r.Context(), int32(environmentId)); err != nil {
 			return err
 		}
+		// notification_preference / user_notification reference the environment by
+		// a text scope_id / link param, not a foreign key, so they are not cascaded
+		// by the environment delete; clean them up explicitly.
+		envIDStr := strconv.Itoa(int(environmentId))
+		if err := txq.DeleteEnvironmentNotificationPreferences(r.Context(), envIDStr); err != nil {
+			return err
+		}
+		if err := txq.DeleteEnvironmentNotifications(r.Context(), envIDStr); err != nil {
+			return err
+		}
 		return txq.DeleteEnvironment(r.Context(), int32(environmentId))
 	}); err != nil {
 		httputil.WriteErrorAuto(w, err)

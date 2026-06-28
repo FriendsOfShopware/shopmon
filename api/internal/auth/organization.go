@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -237,15 +238,37 @@ func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organ
 		}
 	}
 
-	if err := h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
-		OrganizationID: organizationId,
-		UserID:         userId,
-	}); err != nil {
+	if err := h.removeMember(r.Context(), organizationId, userId); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to remove member")
 		return
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+}
+
+// removeMember deletes the membership and the member's notification data scoped
+// to that organization's environments, atomically. The notification rows are
+// keyed by text scope_id / link params (no foreign key), so they would
+// otherwise linger after the member is gone.
+func (h *AuthHandler) removeMember(ctx context.Context, organizationID, userID string) error {
+	return h.withTx(ctx, func(txq *queries.Queries) error {
+		if err := txq.DeleteMember(ctx, queries.DeleteMemberParams{
+			OrganizationID: organizationID,
+			UserID:         userID,
+		}); err != nil {
+			return err
+		}
+		if err := txq.DeleteUserOrgNotificationPreferences(ctx, queries.DeleteUserOrgNotificationPreferencesParams{
+			UserID:         userID,
+			OrganizationID: organizationID,
+		}); err != nil {
+			return err
+		}
+		return txq.DeleteUserOrgNotifications(ctx, queries.DeleteUserOrgNotificationsParams{
+			UserID:         userID,
+			OrganizationID: organizationID,
+		})
+	})
 }
 
 func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationId string) {
@@ -274,10 +297,7 @@ func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, 
 		}
 	}
 
-	if err := h.queries.DeleteMember(r.Context(), queries.DeleteMemberParams{
-		OrganizationID: organizationId,
-		UserID:         su.User.ID,
-	}); err != nil {
+	if err := h.removeMember(r.Context(), organizationId, su.User.ID); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to leave organization")
 		return
 	}

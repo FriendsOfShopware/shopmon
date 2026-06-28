@@ -10,6 +10,18 @@ import (
 	"encoding/json"
 )
 
+const deleteEnvironmentNotificationPreferences = `-- name: DeleteEnvironmentNotificationPreferences :exec
+DELETE FROM notification_preference
+WHERE scope_type = 'environment' AND scope_id = $1
+`
+
+// Removes all users' preferences scoped to a single environment (used when the
+// environment is deleted). scope_id is text, so there is no FK to cascade on.
+func (q *Queries) DeleteEnvironmentNotificationPreferences(ctx context.Context, scopeID string) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentNotificationPreferences, scopeID)
+	return err
+}
+
 const deleteNotificationPreference = `-- name: DeleteNotificationPreference :exec
 DELETE FROM notification_preference
 WHERE user_id = $1 AND scope_type = $2 AND scope_id = $3 AND event_type = $4 AND channel = $5
@@ -31,6 +43,25 @@ func (q *Queries) DeleteNotificationPreference(ctx context.Context, arg DeleteNo
 		arg.EventType,
 		arg.Channel,
 	)
+	return err
+}
+
+const deleteUserOrgNotificationPreferences = `-- name: DeleteUserOrgNotificationPreferences :exec
+DELETE FROM notification_preference
+WHERE user_id = $1
+  AND scope_type = 'environment'
+  AND scope_id IN (SELECT id::text FROM environment WHERE organization_id = $2)
+`
+
+type DeleteUserOrgNotificationPreferencesParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// Removes a user's environment-scoped preferences for every environment in an
+// organization (used when the user is removed from / leaves the org).
+func (q *Queries) DeleteUserOrgNotificationPreferences(ctx context.Context, arg DeleteUserOrgNotificationPreferencesParams) error {
+	_, err := q.db.Exec(ctx, deleteUserOrgNotificationPreferences, arg.UserID, arg.OrganizationID)
 	return err
 }
 

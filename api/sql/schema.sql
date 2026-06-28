@@ -340,7 +340,7 @@ CREATE TABLE "environment_scheduled_task" (
 
 CREATE TABLE "user_notification" (
   "id" serial PRIMARY KEY NOT NULL,
-  "user_id" text NOT NULL REFERENCES "user"("id"),
+  "user_id" text NOT NULL REFERENCES "user"("id") ON DELETE cascade,
   "key" text NOT NULL,
   "level" text NOT NULL,
   "title" text NOT NULL,
