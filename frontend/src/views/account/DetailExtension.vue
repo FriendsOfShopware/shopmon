@@ -109,6 +109,11 @@
                 <icon-fa6-solid:arrow-up-right-from-square class="ml-1.5 size-3" />
               </a>
             </Button>
+            <Button v-if="extension.storeLink" variant="outline" @click="reportDialogOpen = true">
+              <icon-fa6-solid:flag class="mr-1.5 size-3" />
+              {{ $t("reportExtension.title") }}
+            </Button>
+            <ExtensionReportBadge :reports="extension.reports" class="justify-center" />
             <div
               class="flex items-center justify-center gap-1.5 rounded-lg border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground"
             >
@@ -310,6 +315,13 @@
       </div>
     </template>
   </div>
+
+  <ReportExtension
+    v-if="extension"
+    :show="reportDialogOpen"
+    :extension="{ name: extension.name, label: extension.label }"
+    @close="reportDialogOpen = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -345,6 +357,8 @@ import RatingStars from "@/components/RatingStars.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ExtensionIcon from "@/components/ExtensionIcon.vue";
 import ScreenshotGallery from "@/components/ScreenshotGallery.vue";
+import ExtensionReportBadge from "@/components/ExtensionReportBadge.vue";
+import ReportExtension from "@/components/modal/ReportExtension.vue";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 
@@ -353,6 +367,7 @@ const changelogText = useChangelogText();
 
 const extension = ref<AccountExtension | null>(null);
 const loading = ref(true);
+const reportDialogOpen = ref(false);
 
 const name = computed(() => String(route.params.name));
 

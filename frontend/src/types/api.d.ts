@@ -72,6 +72,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/account/extensions/{extensionName}/report": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Report a store extension (e.g. performance or security issue) */
+    post: operations["reportExtension"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/account/organizations": {
     parameters: {
       query?: never;
@@ -756,6 +773,57 @@ export interface paths {
     get: operations["adminGetShopwareVersions"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/extension-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List extension reports (admin only) */
+    get: operations["adminGetExtensionReports"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/extension-reports/{reportId}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve an extension report (admin only) */
+    post: operations["adminApproveExtensionReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/extension-reports/{reportId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject an extension report (admin only) */
+    post: operations["adminRejectExtensionReport"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1698,6 +1766,8 @@ export interface components {
       /** @description Installation manual (HTML) in the requested language (falls back to English). */
       installationManual?: string | null;
       screenshots?: components["schemas"]["ExtensionScreenshot"][] | null;
+      /** @description Approved community reports grouped by category. Null/empty when none. */
+      reports?: components["schemas"]["ExtensionReportSummary"][] | null;
       environments: components["schemas"]["AccountExtensionEnvironment"][];
     };
     ExtensionScreenshot: {
@@ -1866,6 +1936,8 @@ export interface components {
       /** Format: date-time */
       installedAt?: string | null;
       changelog?: components["schemas"]["ExtensionChangelogEntry"][] | null;
+      /** @description Approved community reports grouped by category. Null/empty when none. */
+      reports?: components["schemas"]["ExtensionReportSummary"][] | null;
     };
     ScheduledTask: {
       id: string;
@@ -2249,6 +2321,35 @@ export interface components {
       entries: components["schemas"]["AdminAuditLogEntry"][];
       total: number;
     };
+    ExtensionReportRequest: {
+      /** @enum {string} */
+      category: "performance" | "security" | "compatibility" | "stability" | "other";
+      comment: string;
+    };
+    ExtensionReportSummary: {
+      category: string;
+      count: number;
+    };
+    AdminExtensionReport: {
+      id: number;
+      extensionName: string;
+      extensionLabel?: string | null;
+      category: string;
+      comment: string;
+      status: string;
+      reporterId?: string | null;
+      reporterName?: string | null;
+      reporterEmail?: string | null;
+      reviewerName?: string | null;
+      /** Format: date-time */
+      reviewedAt?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    AdminExtensionReportsResponse: {
+      reports: components["schemas"]["AdminExtensionReport"][];
+      total: number;
+    };
     AdminStats: {
       totalUsers: number;
       totalOrganizations: number;
@@ -2375,6 +2476,10 @@ export interface components {
     DeploymentId: number;
     /** @description API key ID */
     KeyId: string;
+    /** @description Technical name of the store extension */
+    ExtensionName: string;
+    /** @description Extension report ID */
+    ReportId: number;
     /** @description Packages token ID */
     TokenId: number;
     /** @description Scheduled task ID */
@@ -2481,6 +2586,34 @@ export interface operations {
       };
       401: components["responses"]["Unauthorized"];
       404: components["responses"]["NotFound"];
+    };
+  };
+  reportExtension: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Technical name of the store extension */
+        extensionName: components["parameters"]["ExtensionName"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ExtensionReportRequest"];
+      };
+    };
+    responses: {
+      /** @description Report submitted for review */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      404: components["responses"]["NotFound"];
+      422: components["responses"]["ValidationError"];
     };
   };
   getAccountOrganizations: {
@@ -3752,6 +3885,80 @@ export interface operations {
       };
       401: components["responses"]["Unauthorized"];
       403: components["responses"]["Forbidden"];
+    };
+  };
+  adminGetExtensionReports: {
+    parameters: {
+      query?: {
+        status?: "pending" | "approved" | "rejected";
+        limit?: number;
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated extension reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminExtensionReportsResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  adminApproveExtensionReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Extension report ID */
+        reportId: components["parameters"]["ReportId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report approved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  adminRejectExtensionReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Extension report ID */
+        reportId: components["parameters"]["ReportId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report rejected */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      404: components["responses"]["NotFound"];
     };
   };
   checkExtensionCompatibility: {

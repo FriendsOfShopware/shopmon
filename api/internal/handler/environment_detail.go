@@ -99,7 +99,20 @@ func (h *Handler) loadEnvironmentExtensions(ctx context.Context, environmentID i
 		slog.Error("failed to get environment store extension changelogs", "error", err)
 	}
 
-	return mergeEnvironmentExtensions(storeRows, unknownRows, changelogRows)
+	extensions := mergeEnvironmentExtensions(storeRows, unknownRows, changelogRows)
+
+	// Attach approved community report warnings (best-effort; nil on failure).
+	reportSummaries := h.loadApprovedReportSummaries(ctx)
+	if reportSummaries != nil {
+		for i := range extensions {
+			if summaries, ok := reportSummaries[extensions[i].Name]; ok {
+				s := summaries
+				extensions[i].Reports = &s
+			}
+		}
+	}
+
+	return extensions
 }
 
 func (h *Handler) loadEnvironmentScheduledTasks(ctx context.Context, environmentID int32) []queries.EnvironmentScheduledTask {
