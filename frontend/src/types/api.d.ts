@@ -1735,7 +1735,10 @@ export interface components {
     };
     ExtensionChangelogEntry: {
       version: string;
+      /** @description Changelog text in English (en_GB). */
       text: string;
+      /** @description Changelog text in German (de_DE), when available. */
+      textDe?: string | null;
       /** Format: date-time */
       creationDate: string;
     };

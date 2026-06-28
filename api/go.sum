@@ -262,6 +262,8 @@ github.com/shyim/go-mailer/transport/smtp v0.1.0 h1:WIVDl2TZ+yGPT63kF+CgtP9R5RS0
 github.com/shyim/go-mailer/transport/smtp v0.1.0/go.mod h1:0zhAZAudCho2eNmqCd3JXXu7oQ+MVLuwvMMHlpiAvAo=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9 h1:8ypmSyLMJUO53fqLAmNKwO8lhyJnMCqTsj6GHLLUI0E=
 github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9/go.mod h1:fzclyVXELfyyBh6oX+apcYdduL/nHbzeBcMkAJbo0UA=
+github.com/shyim/go-version v0.0.0-20260602054622-2f4aa95a0358 h1:lynQeFLRGGzEbgqNmxXBSK+omBl56QsKcHwRVxIOqSw=
+github.com/shyim/go-version v0.0.0-20260602054622-2f4aa95a0358/go.mod h1:BlGslYZMvN2D5rVZhaXBGoJfIEMdJe2QXGwFByxAyV4=
 github.com/sirupsen/logrus v1.9.4 h1:TsZE7l11zFCLZnZ+teH4Umoq5BhEIfIzfRDZ1Uzql2w=
 github.com/sirupsen/logrus v1.9.4/go.mod h1:ftWc9WdOfJ0a92nsE2jF5u5ZwH8Bv2zdeOC42RjbV2g=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=

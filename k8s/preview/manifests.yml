@@ -25,7 +25,9 @@ stringData:
   POSTGRES_DB: "shopmon"
   POSTGRES_USER: "shopmon"
   POSTGRES_PASSWORD: "shopmon"
-  APP_SECRET: "preview-secret"
+  # APP_SECRET is the AES key for credential encryption and must be exactly
+  # 16, 24, or 32 bytes. This 32-byte value targets AES-256.
+  APP_SECRET: "preview-app-secret-32-bytes-long"
   APP_SITESPEED_API_KEY: "secret"
   APP_S3_ACCESS_KEY_ID: "rustfsadmin"
   APP_S3_SECRET_ACCESS_KEY: "rustfsadmin"

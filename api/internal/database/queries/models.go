@@ -110,9 +110,6 @@ type EnvironmentExtension struct {
 	Version       string  `json:"version"`
 	LatestVersion *string `json:"latest_version"`
 	Installed     bool    `json:"installed"`
-	RatingAverage *int32  `json:"rating_average"`
-	StoreLink     *string `json:"store_link"`
-	Changelog     []byte  `json:"changelog"`
 	InstalledAt   *string `json:"installed_at"`
 }
 
@@ -146,6 +143,18 @@ type EnvironmentSitespeed struct {
 	FirstContentfulPaint   *int32           `json:"first_contentful_paint"`
 	CumulativeLayoutShift  *float32         `json:"cumulative_layout_shift"`
 	TransferSize           *int32           `json:"transfer_size"`
+}
+
+type EnvironmentStoreExtension struct {
+	ID            int32   `json:"id"`
+	EnvironmentID int32   `json:"environment_id"`
+	ExtensionName string  `json:"extension_name"`
+	Label         string  `json:"label"`
+	Version       string  `json:"version"`
+	LatestVersion *string `json:"latest_version"`
+	Active        bool    `json:"active"`
+	Installed     bool    `json:"installed"`
+	InstalledAt   *string `json:"installed_at"`
 }
 
 type Invitation struct {
@@ -236,6 +245,44 @@ type SsoProvider struct {
 	ProviderID     string  `json:"provider_id"`
 	OrganizationID *string `json:"organization_id"`
 	Domain         string  `json:"domain"`
+}
+
+type StoreExtension struct {
+	Name                 string           `json:"name"`
+	StoreID              *int32           `json:"store_id"`
+	IconUrl              *string          `json:"icon_url"`
+	ProducerName         *string          `json:"producer_name"`
+	ProducerWebsite      *string          `json:"producer_website"`
+	RatingAverage        *int32           `json:"rating_average"`
+	StoreLink            *string          `json:"store_link"`
+	ReleaseDate          *string          `json:"release_date"`
+	LabelEn              *string          `json:"label_en"`
+	LabelDe              *string          `json:"label_de"`
+	ShortDescriptionEn   *string          `json:"short_description_en"`
+	ShortDescriptionDe   *string          `json:"short_description_de"`
+	DescriptionEn        *string          `json:"description_en"`
+	DescriptionDe        *string          `json:"description_de"`
+	InstallationManualEn *string          `json:"installation_manual_en"`
+	InstallationManualDe *string          `json:"installation_manual_de"`
+	LatestVersion        *string          `json:"latest_version"`
+	LastRefreshedAt      pgtype.Timestamp `json:"last_refreshed_at"`
+}
+
+type StoreExtensionImage struct {
+	ID            int32  `json:"id"`
+	ExtensionName string `json:"extension_name"`
+	Url           string `json:"url"`
+	Preview       bool   `json:"preview"`
+	Priority      int32  `json:"priority"`
+}
+
+type StoreExtensionVersion struct {
+	ID            int32   `json:"id"`
+	ExtensionName string  `json:"extension_name"`
+	Version       string  `json:"version"`
+	ChangelogEn   *string `json:"changelog_en"`
+	ChangelogDe   *string `json:"changelog_de"`
+	ReleasedAt    *string `json:"released_at"`
 }
 
 type User struct {

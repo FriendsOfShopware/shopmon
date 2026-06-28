@@ -27,6 +27,7 @@ require (
 	github.com/shyim/go-mailer/middleware/otelmw v0.1.0
 	github.com/shyim/go-mailer/transport/smtp v0.1.0
 	github.com/shyim/go-queue v0.0.0-20260606124220-e2aa789807c9
+	github.com/shyim/go-version v0.0.0-20260602054622-2f4aa95a0358
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.43.0

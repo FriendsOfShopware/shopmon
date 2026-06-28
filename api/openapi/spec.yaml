@@ -2920,7 +2920,12 @@ components:
         version:
           type: string
         text:
+          description: Changelog text in English (en_GB).
           type: string
+        textDe:
+          description: Changelog text in German (de_DE), when available.
+          type: string
+          nullable: true
         creationDate:
           type: string
           format: date-time

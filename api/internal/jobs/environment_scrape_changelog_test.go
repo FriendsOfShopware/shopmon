@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,68 +65,95 @@ func TestExtensionDiffRoundTrip(t *testing.T) {
 	assert.True(t, created.Equal(entry.CreationDate))
 }
 
-func TestBuildCompatibleChangelogs(t *testing.T) {
-	mkEntry := func(v string) shopwareaccount.StoreChangelog {
-		cl := shopwareaccount.StoreChangelog{Version: v, Text: "notes " + v}
+func TestStoreChangelogsBetween(t *testing.T) {
+	mkEn := func(v string) shopwareaccount.StoreChangelog {
+		cl := shopwareaccount.StoreChangelog{Version: v, Text: "en " + v}
 		cl.CreationDate.Date = "2024-01-15 08:30:00"
 		return cl
 	}
+	mkDe := func(v string) shopwareaccount.StoreChangelog {
+		return shopwareaccount.StoreChangelog{Version: v, Text: "de " + v}
+	}
 
-	sp := &shopwareaccount.StorePlugin{
-		Name:    "AcmeExt",
-		Version: "2.1.0", // latest version compatible with shop's Shopware version
-		Changelogs: []shopwareaccount.StoreChangelog{
-			mkEntry("1.9.0"), // older than installed -> excluded
-			mkEntry("2.0.0"), // == installed       -> excluded
-			mkEntry("2.0.5"), // in range            -> included
-			mkEntry("2.1.0"), // == cap              -> included
-			mkEntry("2.2.0"), // requires newer SW   -> excluded
-			mkEntry("3.0.0"), // requires newer SW   -> excluded
+	sd := &storeExtensionData{
+		en: &shopwareaccount.StorePlugin{
+			Name: "AcmeExt", Version: "2.1.0",
+			Changelogs: []shopwareaccount.StoreChangelog{
+				mkEn("2.1.0"), // store returns newest-first
+				mkEn("2.0.5"),
+				mkEn("2.0.0"),
+				mkEn("1.9.0"),
+			},
+		},
+		de: &shopwareaccount.StorePlugin{
+			Name: "AcmeExt", Version: "2.1.0",
+			Changelogs: []shopwareaccount.StoreChangelog{mkDe("2.1.0"), mkDe("2.0.5")},
 		},
 	}
 
-	got := buildCompatibleChangelogs(sp, "2.0.0")
-
+	// Window (installed 2.0.0, new 2.1.0] -> 2.0.5 and 2.1.0, oldest-first.
+	got := sd.changelogsBetween("2.0.0", "2.1.0")
 	require.Len(t, got, 2)
 	assert.Equal(t, "2.0.5", got[0].Version)
+	assert.Equal(t, "en 2.0.5", got[0].Text)
+	assert.Equal(t, "de 2.0.5", got[0].TextDe, "German changelog text must be merged in")
 	assert.Equal(t, "2.1.0", got[1].Version)
+	assert.Equal(t, "de 2.1.0", got[1].TextDe)
+	assert.True(t, time.Date(2024, 1, 15, 8, 30, 0, 0, time.UTC).Equal(got[0].CreationDate))
 
-	// When installed == sp.Version there's nothing newer compatible.
-	assert.Nil(t, buildCompatibleChangelogs(sp, "2.1.0"))
+	// Nothing newer than the new version.
+	assert.Nil(t, sd.changelogsBetween("2.1.0", "2.1.0"))
 }
 
-func TestCalculateExtensionDiffCapsChangelogToNewVersion(t *testing.T) {
-	// Stored changelog at scrape time was capped at the latest compatible
-	// version (2.2.4). Shop actually updates 2.1.0 -> 2.2.1, so the diff
-	// must drop entries above 2.2.1.
-	stored := []extensionChangelog{
-		{Version: "2.1.1", Text: "patch 1"},
-		{Version: "2.2.0", Text: "minor"},
-		{Version: "2.2.1", Text: "target"},
-		{Version: "2.2.2", Text: "above target"},
-		{Version: "2.2.4", Text: "latest compatible"},
+func TestGlobalLatestVersion(t *testing.T) {
+	// The global latest is the newest changelog version (uncapped), not the
+	// Shopware-version-capped Version field.
+	sd := &storeExtensionData{
+		en: &shopwareaccount.StorePlugin{
+			Name:    "AcmeExt",
+			Version: "9.12.4", // compatible cap for this environment
+			Changelogs: []shopwareaccount.StoreChangelog{
+				{Version: "10.6.4"}, // newest, requires newer Shopware
+				{Version: "9.12.4"},
+				{Version: "9.10.0"},
+			},
+		},
 	}
-	raw, err := json.Marshal(stored)
-	require.NoError(t, err)
+	if got := sd.globalLatestVersion(); got != "10.6.4" {
+		t.Fatalf("globalLatestVersion() = %q, want 10.6.4", got)
+	}
 
-	old := []queries.EnvironmentExtension{
-		{
-			Name:      "AcmeExt",
-			Label:     "Acme",
-			Active:    true,
-			Version:   "2.1.0",
-			Installed: true,
-			Changelog: raw,
+	// Falls back to the compatible version when no changelog is available.
+	sd = &storeExtensionData{en: &shopwareaccount.StorePlugin{Name: "AcmeExt", Version: "1.2.3"}}
+	if got := sd.globalLatestVersion(); got != "1.2.3" {
+		t.Fatalf("globalLatestVersion() fallback = %q, want 1.2.3", got)
+	}
+}
+
+func TestCalculateExtensionDiffUsesStoreChangelog(t *testing.T) {
+	// Shop updates AcmeExt 2.1.0 -> 2.2.1; the diff changelog must contain the
+	// store entries strictly between the two versions, in both languages.
+	old := []existingExtension{
+		{Name: "AcmeExt", Label: "Acme", Active: true, Version: "2.1.0", Installed: true},
+	}
+	sd := &storeExtensionData{
+		en: &shopwareaccount.StorePlugin{
+			Name: "AcmeExt", Version: "2.2.1",
+			Changelogs: []shopwareaccount.StoreChangelog{
+				{Version: "2.2.2", Text: "above target"},
+				{Version: "2.2.1", Text: "target"},
+				{Version: "2.2.0", Text: "minor"},
+				{Version: "2.1.1", Text: "patch 1"},
+				{Version: "2.1.0", Text: "installed"},
+			},
+		},
+		de: &shopwareaccount.StorePlugin{
+			Name: "AcmeExt", Version: "2.2.1",
+			Changelogs: []shopwareaccount.StoreChangelog{{Version: "2.2.1", Text: "ziel"}},
 		},
 	}
 	newExts := []extensionEntry{
-		{
-			Name:      "AcmeExt",
-			Label:     "Acme",
-			Active:    true,
-			Version:   "2.2.1",
-			Installed: true,
-		},
+		{Name: "AcmeExt", Label: "Acme", Active: true, Version: "2.2.1", Installed: true, Store: sd},
 	}
 
 	diffs := calculateExtensionDiff(old, newExts)
@@ -142,6 +168,7 @@ func TestCalculateExtensionDiffCapsChangelogToNewVersion(t *testing.T) {
 	require.Len(t, d.Changelog, 3)
 	got := []string{d.Changelog[0].Version, d.Changelog[1].Version, d.Changelog[2].Version}
 	assert.Equal(t, []string{"2.1.1", "2.2.0", "2.2.1"}, got)
+	assert.Equal(t, "ziel", d.Changelog[2].TextDe)
 }
 
 func TestParseStoreDate(t *testing.T) {

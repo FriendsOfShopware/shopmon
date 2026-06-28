@@ -52,17 +52,6 @@ WHERE m.user_id = $1
 ORDER BY ec.date DESC
 LIMIT 10;
 
--- name: GetUserExtensions :many
-SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
-       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
-       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
-FROM environment_extension ee
-JOIN environment e ON e.id = ee.environment_id
-JOIN organization o ON o.id = e.organization_id
-JOIN member m ON m.organization_id = e.organization_id
-WHERE m.user_id = $1
-ORDER BY ee.name, e.name;
-
 -- name: GetUserEnvironmentsByOrg :many
 SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version, e.last_scraped_at, e.last_scraped_error,
        e.organization_id, o.name AS organization_name, s.id AS shop_id, s.name AS shop_name
@@ -92,16 +81,42 @@ WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ec.date DESC
 LIMIT 10;
 
--- name: GetUserExtensionsByOrg :many
+-- name: GetUserStoreExtensionsByOrg :many
+SELECT ese.extension_name AS name, ese.label, ese.version, ese.latest_version, ese.active, ese.installed,
+       se.store_link, se.rating_average, ese.installed_at,
+       ese.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+JOIN environment e ON e.id = ese.environment_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2
+ORDER BY ese.extension_name, e.name;
+
+-- name: GetUserUnknownExtensionsByOrg :many
 SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
-       ee.store_link, ee.rating_average, ee.installed_at, ee.changelog,
-       ee.environment_id, e.name AS environment_name, e.url AS environment_url, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       NULL::text AS store_link, NULL::integer AS rating_average, ee.installed_at,
+       ee.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
 FROM environment_extension ee
 JOIN environment e ON e.id = ee.environment_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ee.name, e.name;
+
+-- name: GetUserStoreExtensionChangelogsByOrg :many
+SELECT DISTINCT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+FROM store_extension_version sev
+WHERE sev.extension_name IN (
+  SELECT ese.extension_name
+  FROM environment_store_extension ese
+  JOIN environment e ON e.id = ese.environment_id
+  JOIN member m ON m.organization_id = e.organization_id
+  WHERE m.user_id = $1 AND e.organization_id = $2
+)
+ORDER BY sev.extension_name, sev.version;
 
 -- name: IsOrganizationMember :one
 SELECT COUNT(*) > 0 AS is_member FROM member WHERE organization_id = $1 AND user_id = $2;

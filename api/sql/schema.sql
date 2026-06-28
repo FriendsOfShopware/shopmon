@@ -218,6 +218,10 @@ CREATE TABLE "environment_check" (
   UNIQUE ("environment_id", "check_id")
 );
 
+-- environment_extension holds only extensions that are NOT known to the Shopware
+-- store (api.shopware.com). Store-known extensions live in the normalized
+-- store_extension* tables and are linked per environment via
+-- environment_store_extension.
 CREATE TABLE "environment_extension" (
   "id" serial PRIMARY KEY NOT NULL,
   "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
@@ -227,12 +231,78 @@ CREATE TABLE "environment_extension" (
   "version" text NOT NULL,
   "latest_version" text,
   "installed" boolean NOT NULL,
-  "rating_average" integer,
-  "store_link" text,
-  "changelog" jsonb,
   "installed_at" text,
   UNIQUE ("environment_id", "name")
 );
+
+-- store_extension is the deduplicated catalog of extensions available on the
+-- Shopware store, one row per technical name. The compatibility-capped "latest
+-- version" is environment-specific and lives on environment_store_extension, not here.
+CREATE TABLE "store_extension" (
+  "name" text PRIMARY KEY NOT NULL,
+  "store_id" integer,
+  "icon_url" text,
+  "producer_name" text,
+  "producer_website" text,
+  "rating_average" integer,
+  "store_link" text,
+  "release_date" text,
+  "label_en" text,
+  "label_de" text,
+  "short_description_en" text,
+  "short_description_de" text,
+  "description_en" text,
+  "description_de" text,
+  "installation_manual_en" text,
+  "installation_manual_de" text,
+  "latest_version" text,
+  "last_refreshed_at" timestamp NOT NULL DEFAULT NOW()
+);
+
+-- store_extension_version is the per-version changelog catalog for a store
+-- extension, with the changelog text stored per language (en / de).
+CREATE TABLE "store_extension_version" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "extension_name" text NOT NULL REFERENCES "store_extension"("name") ON DELETE cascade,
+  "version" text NOT NULL,
+  "changelog_en" text,
+  "changelog_de" text,
+  "released_at" text,
+  UNIQUE ("extension_name", "version")
+);
+
+-- store_extension_image holds the store listing pictures (screenshots) for a
+-- store extension, used to build a richer extension listing in the UI.
+CREATE TABLE "store_extension_image" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "extension_name" text NOT NULL REFERENCES "store_extension"("name") ON DELETE cascade,
+  "url" text NOT NULL,
+  "preview" boolean NOT NULL DEFAULT false,
+  "priority" integer NOT NULL DEFAULT 0,
+  UNIQUE ("extension_name", "url")
+);
+
+-- environment_store_extension links an environment to a store_extension and
+-- records the per-environment install state. latest_version is the latest
+-- release the store reports as compatible with this environment's Shopware
+-- version, so it is stored here rather than on the shared catalog row.
+CREATE TABLE "environment_store_extension" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "extension_name" text NOT NULL REFERENCES "store_extension"("name") ON DELETE cascade,
+  "label" text NOT NULL,
+  "version" text NOT NULL,
+  "latest_version" text,
+  "active" boolean NOT NULL,
+  "installed" boolean NOT NULL,
+  "installed_at" text,
+  UNIQUE ("environment_id", "extension_name")
+);
+
+CREATE INDEX IF NOT EXISTS idx_store_extension_version_name ON store_extension_version (extension_name);
+CREATE INDEX IF NOT EXISTS idx_store_extension_image_name ON store_extension_image (extension_name);
+CREATE INDEX IF NOT EXISTS idx_environment_store_extension_env ON environment_store_extension (environment_id);
+CREATE INDEX IF NOT EXISTS idx_environment_store_extension_name ON environment_store_extension (extension_name);
 
 CREATE TABLE "environment_queue" (
   "id" serial PRIMARY KEY NOT NULL,

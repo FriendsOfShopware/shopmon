@@ -158,7 +158,7 @@
                   <!-- eslint-disable vue/no-v-html -->
                   <div
                     class="prose prose-sm dark:prose-invert max-w-none text-xs"
-                    v-html="entryLog.text"
+                    v-html="changelogText(entryLog)"
                   />
                   <!-- eslint-enable vue/no-v-html -->
                 </div>
@@ -174,6 +174,7 @@
 <script setup lang="ts">
 import { reactive } from "vue";
 import { formatDate } from "@/helpers/formatter";
+import { useChangelogText } from "@/helpers/changelog";
 import type { components } from "@/types/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 
@@ -182,6 +183,7 @@ import { Badge } from "@/components/ui/badge";
 type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 const { environment } = useEnvironmentDetail();
+const changelogText = useChangelogText();
 
 const expanded = reactive(new Set<number>());
 

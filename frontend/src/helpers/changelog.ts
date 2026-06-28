@@ -1,3 +1,23 @@
+import { useLocale } from "@/composables/useLocale";
+
+interface LocalizedChangelogEntry {
+  text: string;
+  textDe?: string | null;
+}
+
+// Resolves an extension changelog entry's text for the active UI locale, falling
+// back to English when no German translation is available.
+export function useChangelogText() {
+  const { locale } = useLocale();
+
+  return (entry: LocalizedChangelogEntry): string => {
+    if (locale.value === "de" && entry.textDe) {
+      return entry.textDe;
+    }
+    return entry.text;
+  };
+}
+
 export function sumChanges(changes: {
   oldShopwareVersion?: string | null;
   newShopwareVersion?: string | null;
