@@ -145,14 +145,20 @@
 
             <!-- Environments tab -->
             <TabsContent value="environments" class="mt-4">
-              <Card>
+              <Card class="py-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{{ $t("extensions.colEnvironment") }}</TableHead>
-                      <TableHead>{{ $t("extensions.colVersion") }}</TableHead>
-                      <TableHead>{{ $t("extensions.colState") }}</TableHead>
-                      <TableHead>{{ $t("extensions.colUpdate") }}</TableHead>
+                      <TableHead class="w-px whitespace-nowrap">{{
+                        $t("extensions.colVersion")
+                      }}</TableHead>
+                      <TableHead class="w-px whitespace-nowrap">{{
+                        $t("extensions.colState")
+                      }}</TableHead>
+                      <TableHead class="w-px whitespace-nowrap pr-4">{{
+                        $t("extensions.colUpdate")
+                      }}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -209,7 +215,7 @@
                             {{ $t("extensions.stateInactive") }}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell class="pr-4">
                           <Badge
                             v-if="envHasUpdate(env)"
                             variant="outline"
@@ -232,7 +238,7 @@
 
             <!-- Description tab -->
             <TabsContent v-if="description" value="description" class="mt-4">
-              <Card>
+              <Card class="py-0">
                 <CardContent class="p-6">
                   <!-- eslint-disable vue/no-v-html -->
                   <div class="richtext" v-html="description" />
@@ -243,7 +249,7 @@
 
             <!-- Installation tab -->
             <TabsContent v-if="installationManual" value="installation" class="mt-4">
-              <Card>
+              <Card class="py-0">
                 <CardContent class="p-6">
                   <!-- eslint-disable vue/no-v-html -->
                   <div class="richtext" v-html="installationManual" />
@@ -254,7 +260,7 @@
 
             <!-- Changelog tab -->
             <TabsContent value="changelog" class="mt-4">
-              <Card v-if="changelog.length > 0">
+              <Card v-if="changelog.length > 0" class="py-0">
                 <CardContent class="space-y-6 p-6">
                   <div
                     v-for="(entry, i) in changelog"
