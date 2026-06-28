@@ -34,7 +34,6 @@ const props = withDefaults(
 );
 
 const failed = ref(false);
-// Reset the error flag if the source changes (e.g. list re-renders).
 watch(
   () => props.src,
   () => {

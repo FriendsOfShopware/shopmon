@@ -13,17 +13,14 @@ export function normalizeWebsite(url?: string | null): string | null {
   return url;
 }
 
-// True when the extension is installed and a newer version is available in the store.
 export function hasUpdate(ext: AccountExtension): boolean {
   return !!(ext.installed && ext.latestVersion && ext.version !== ext.latestVersion);
 }
 
-// True when a specific environment install is running an outdated version.
 export function envHasUpdate(env: AccountExtensionEnvironment): boolean {
   return !!(env.installed && env.latestVersion && env.version !== env.latestVersion);
 }
 
-// Number of environments that still need to update this extension.
 export function updateCount(ext: AccountExtension): number {
   return ext.environments.filter((e) => envHasUpdate(e)).length;
 }

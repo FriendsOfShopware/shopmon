@@ -137,7 +137,6 @@ const lightboxOpen = ref(false);
 const frame = ref<HTMLElement | null>(null);
 const lightboxEl = ref<HTMLElement | null>(null);
 
-// Reset to the first slide whenever the image set changes.
 watch(
   () => props.images,
   () => {
@@ -160,14 +159,12 @@ function openLightbox(i: number) {
   lightboxOpen.value = true;
 }
 
-// Arrow keys page through the slides whenever the lightbox is open; Escape closes it.
 onKeyStroke("ArrowLeft", () => lightboxOpen.value && prev());
 onKeyStroke("ArrowRight", () => lightboxOpen.value && next());
 onKeyStroke("Escape", () => {
   lightboxOpen.value = false;
 });
 
-// Touch swipe on the inline frame and inside the lightbox.
 useSwipe(frame, {
   onSwipeEnd(_e, direction) {
     if (direction === "left") next();

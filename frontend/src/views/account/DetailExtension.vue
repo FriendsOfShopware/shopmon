@@ -390,17 +390,13 @@ const environmentsByShop = computed(() => {
 const changelog = computed(() => extension.value?.changelog ?? []);
 const outdated = computed(() => (extension.value ? updateCount(extension.value) : 0));
 
-// Localized text fields are already resolved to the requested language by the
-// API (with English fallback), so the frontend just reads them directly.
 const producerWebsite = computed(() => normalizeWebsite(extension.value?.producerWebsite));
 const shortDescription = computed(() => extension.value?.shortDescription ?? null);
-// description + installationManual are third-party store HTML rendered via
-// v-html, so sanitize them. shortDescription is rendered as plain text ({{ }})
-// and needs no sanitization.
+// description and installationManual are third-party store HTML rendered via
+// v-html, so sanitize them; shortDescription is rendered as plain text.
 const description = computed(() => sanitizeHtml(extension.value?.description));
 const installationManual = computed(() => sanitizeHtml(extension.value?.installationManual));
 
-// Sort screenshots so the store's preview image comes first.
 const screenshots = computed(() => {
   const list = [...(extension.value?.screenshots ?? [])];
   list.sort((a, b) => (b.preview ? 1 : 0) - (a.preview ? 1 : 0));
