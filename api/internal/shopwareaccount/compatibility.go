@@ -15,11 +15,12 @@ type CompatibilityExtension struct {
 	Version string `json:"version"`
 }
 
-// compatibilityRequest is the payload the Shopware auto-update API expects.
+// compatibilityRequest is the JSON body the Shopware auto-update API expects.
+// The current Shopware version and language are passed as query parameters, not
+// in the body (see CheckExtensionCompatibility).
 type compatibilityRequest struct {
-	CurrentVersion string                   `json:"shopwareVersion"`
-	FutureVersion  string                   `json:"futureShopwareVersion"`
-	Plugins        []CompatibilityExtension `json:"plugins"`
+	FutureVersion string                   `json:"futureShopwareVersion"`
+	Plugins       []CompatibilityExtension `json:"plugins"`
 }
 
 // CompatibilityResponse is the raw result of an autoupdate compatibility check.
@@ -34,9 +35,8 @@ type CompatibilityResponse struct {
 // It returns the raw response so the caller controls response semantics.
 func (c *Client) CheckExtensionCompatibility(ctx context.Context, currentVersion, futureVersion string, extensions []CompatibilityExtension) (*CompatibilityResponse, error) {
 	reqBody, err := json.Marshal(compatibilityRequest{
-		CurrentVersion: currentVersion,
-		FutureVersion:  futureVersion,
-		Plugins:        extensions,
+		FutureVersion: futureVersion,
+		Plugins:       extensions,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
@@ -46,6 +46,15 @@ func (c *Client) CheckExtensionCompatibility(ctx context.Context, currentVersion
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
+	// The autoupdate API expects the current Shopware version and language as
+	// query parameters (the body only carries futureShopwareVersion + plugins);
+	// without `language` the store rejects the request with
+	// REQUEST_PARAMETER_LANGUAGE_NOT_GIVEN. The response is version compatibility
+	// data, not localized prose, so a fixed English locale is sufficient.
+	q := req.URL.Query()
+	q.Set("language", "en-GB")
+	q.Set("shopwareVersion", currentVersion)
+	req.URL.RawQuery = q.Encode()
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)

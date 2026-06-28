@@ -23,10 +23,12 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 		}
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		// language and the current Shopware version are passed as query params.
+		assert.Equal(t, "en-GB", r.URL.Query().Get("language"))
+		assert.Equal(t, "6.5.0.0", r.URL.Query().Get("shopwareVersion"))
 
-		// Decode and verify the request body
+		// The body carries only the future version and the plugins.
 		var req struct {
-			ShopwareVersion       string `json:"shopwareVersion"`
 			FutureShopwareVersion string `json:"futureShopwareVersion"`
 			Plugins               []struct {
 				Name    string `json:"name"`
@@ -34,7 +36,6 @@ func TestCheckExtensionCompatibility(t *testing.T) {
 			} `json:"plugins"`
 		}
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		assert.Equal(t, "6.5.0.0", req.ShopwareVersion)
 		assert.Equal(t, "6.6.0.0", req.FutureShopwareVersion)
 		assert.Len(t, req.Plugins, 1)
 		assert.Equal(t, "SwagPayPal", req.Plugins[0].Name)
