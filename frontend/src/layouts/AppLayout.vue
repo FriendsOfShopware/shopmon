@@ -208,9 +208,7 @@
                     <div class="text-xs text-muted-foreground">
                       {{ formatDateTime(notification.createdAt) }}
                     </div>
-                    <div
-                      class="text-[0.8125rem] leading-snug text-muted-foreground wrap-anywhere"
-                    >
+                    <div class="text-[0.8125rem] leading-snug text-muted-foreground wrap-anywhere">
                       {{ notification.message }}
                       <a
                         v-if="notification.link"

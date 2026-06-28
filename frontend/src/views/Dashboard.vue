@@ -159,10 +159,7 @@
               :key="version.version"
               class="flex min-w-0 items-center gap-3"
             >
-              <Badge
-                variant="secondary"
-                class="min-w-20 shrink-0 justify-center font-mono text-xs"
-              >
+              <Badge variant="secondary" class="min-w-20 shrink-0 justify-center font-mono text-xs">
                 {{ version.version }}
               </Badge>
               <div class="min-w-0 flex-1">
