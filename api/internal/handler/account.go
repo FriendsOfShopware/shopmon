@@ -145,6 +145,141 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request, p
 			isStore: false,
 		})
 	}
+	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt)
+
+	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
+// GetAccountExtension returns a single aggregated extension by technical name,
+// scoped to the user's active organization. Unlike GetAccountExtensions it only
+// queries rows for the requested extension, so the detail view does not transfer
+// the whole catalog.
+func (h *Handler) GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params api.GetAccountExtensionParams) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	var langStr *string
+	if params.Language != nil {
+		s := string(*params.Language)
+		langStr = &s
+	}
+	language := resolveLanguage(langStr)
+
+	activeOrgID := h.getActiveOrganizationID(r)
+	if activeOrgID == nil {
+		httputil.WriteError(w, http.StatusNotFound, "extension not found")
+		return
+	}
+
+	storeRows, err := h.queries.GetUserStoreExtensionByOrgAndName(r.Context(), queries.GetUserStoreExtensionByOrgAndNameParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+		Language:       language,
+		ExtensionName:  name,
+	})
+	if err != nil {
+		slog.Error("failed to get user store extension", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extension")
+		return
+	}
+	unknownRows, err := h.queries.GetUserUnknownExtensionByOrgAndName(r.Context(), queries.GetUserUnknownExtensionByOrgAndNameParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+		Name:           name,
+	})
+	if err != nil {
+		slog.Error("failed to get user unknown extension", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extension")
+		return
+	}
+	changelogRows, err := h.queries.GetUserStoreExtensionChangelogsByOrgAndName(r.Context(), queries.GetUserStoreExtensionChangelogsByOrgAndNameParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+		Language:       language,
+		ExtensionName:  name,
+	})
+	if err != nil {
+		slog.Error("failed to get user store extension changelogs", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extension")
+		return
+	}
+
+	changelogByExt := make(map[string][]changelogVersion)
+	for _, r := range changelogRows {
+		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
+			Version:    r.Version,
+			Text:       deref(r.Changelog),
+			ReleasedAt: deref(r.ReleasedAt),
+		})
+	}
+
+	imageRows, err := h.queries.GetUserStoreExtensionImagesByOrgAndName(r.Context(), queries.GetUserStoreExtensionImagesByOrgAndNameParams{
+		UserID:         user.ID,
+		OrganizationID: *activeOrgID,
+		ExtensionName:  name,
+	})
+	if err != nil {
+		slog.Error("failed to get user store extension images", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to get extension")
+		return
+	}
+
+	screenshotsByExt := make(map[string][]api.ExtensionScreenshot)
+	for _, r := range imageRows {
+		screenshotsByExt[r.ExtensionName] = append(screenshotsByExt[r.ExtensionName], api.ExtensionScreenshot{
+			Url:     r.Url,
+			Preview: r.Preview,
+		})
+	}
+
+	rows := make([]accountExtRow, 0, len(storeRows)+len(unknownRows))
+	for _, row := range storeRows {
+		rows = append(rows, accountExtRow{
+			Name: row.Name, Label: row.Label, Version: row.Version, LatestVersion: row.LatestVersion,
+			Active: row.Active, Installed: row.Installed, StoreLink: row.StoreLink, RatingAverage: row.RatingAverage,
+			InstalledAt: row.InstalledAt, IconUrl: row.IconUrl, ProducerName: row.ProducerName,
+			ProducerWebsite: row.ProducerWebsite, ReleaseDate: row.ReleaseDate,
+			ShortDescription: row.ShortDescription, Description: row.Description,
+			InstallationManual: row.InstallationManual,
+			EnvironmentID:      row.EnvironmentID, EnvironmentName: row.EnvironmentName,
+			EnvironmentUrl: row.EnvironmentUrl, EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationID: row.EnvironmentOrganizationID,
+			EnvironmentShopID:         row.EnvironmentShopID, EnvironmentShopName: row.EnvironmentShopName,
+			isStore: true,
+		})
+	}
+	for _, row := range unknownRows {
+		rows = append(rows, accountExtRow{
+			Name: row.Name, Label: row.Label, Version: row.Version, LatestVersion: row.LatestVersion,
+			Active: row.Active, Installed: row.Installed, StoreLink: row.StoreLink, RatingAverage: row.RatingAverage,
+			InstalledAt: row.InstalledAt, EnvironmentID: row.EnvironmentID, EnvironmentName: row.EnvironmentName,
+			EnvironmentUrl: row.EnvironmentUrl, EnvironmentOrganizationName: row.EnvironmentOrganizationName,
+			EnvironmentOrganizationID: row.EnvironmentOrganizationID,
+			EnvironmentShopID:         row.EnvironmentShopID, EnvironmentShopName: row.EnvironmentShopName,
+			isStore: false,
+		})
+	}
+
+	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt)
+	if len(result) == 0 {
+		httputil.WriteError(w, http.StatusNotFound, "extension not found")
+		return
+	}
+
+	httputil.WriteJSON(w, http.StatusOK, result[0])
+}
+
+// aggregateAccountExtensions groups normalized rows by technical name into
+// AccountExtension entries, attaching the full changelog history and screenshots
+// for store extensions. Rows are ordered by name then environment so the output
+// is stable.
+func aggregateAccountExtensions(
+	rows []accountExtRow,
+	changelogByExt map[string][]changelogVersion,
+	screenshotsByExt map[string][]api.ExtensionScreenshot,
+) []api.AccountExtension {
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].Name != rows[j].Name {
 			return rows[i].Name < rows[j].Name
@@ -152,7 +287,6 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request, p
 		return rows[i].EnvironmentName < rows[j].EnvironmentName
 	})
 
-	// Group extensions by name, aggregating environments
 	extMap := make(map[string]*api.AccountExtension)
 	extOrder := []string{}
 
@@ -223,8 +357,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request, p
 	for _, key := range extOrder {
 		result = append(result, *extMap[key])
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return result
 }
 
 // accountExtRow is a unified row for aggregating account extensions from the

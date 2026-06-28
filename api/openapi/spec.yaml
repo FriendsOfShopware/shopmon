@@ -99,6 +99,31 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /account/extensions/{name}:
+    get:
+      operationId: getAccountExtension
+      tags: [Account]
+      summary: Get a single aggregated extension by technical name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Technical name of the extension
+        - $ref: "#/components/parameters/LanguageParam"
+      responses:
+        "200":
+          description: The extension
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExtension"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /account/organizations:
     get:
       operationId: getAccountOrganizations

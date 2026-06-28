@@ -351,9 +351,11 @@ const loading = ref(true);
 const name = computed(() => String(route.params.name));
 
 api
-  .GET("/account/extensions", { params: { query: { language: apiLanguage() } } })
+  .GET("/account/extensions/{name}", {
+    params: { path: { name: name.value }, query: { language: apiLanguage() } },
+  })
   .then(({ data }) => {
-    if (data) extension.value = data.find((e) => e.name === name.value) ?? null;
+    extension.value = data ?? null;
     loading.value = false;
   });
 

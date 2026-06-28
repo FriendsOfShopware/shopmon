@@ -55,6 +55,24 @@ func (e GetAccountExtensionsParamsLanguage) Valid() bool {
 	}
 }
 
+// Defines values for GetAccountExtensionParamsLanguage.
+const (
+	GetAccountExtensionParamsLanguageDe GetAccountExtensionParamsLanguage = "de"
+	GetAccountExtensionParamsLanguageEn GetAccountExtensionParamsLanguage = "en"
+)
+
+// Valid indicates whether the value is a known member of the GetAccountExtensionParamsLanguage enum.
+func (e GetAccountExtensionParamsLanguage) Valid() bool {
+	switch e {
+	case GetAccountExtensionParamsLanguageDe:
+		return true
+	case GetAccountExtensionParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdminGetEnvironmentsParamsSortDirection.
 const (
 	AdminGetEnvironmentsParamsSortDirectionAsc  AdminGetEnvironmentsParamsSortDirection = "asc"
@@ -117,16 +135,16 @@ func (e AdminGetOrganizationsParamsSortDirection) Valid() bool {
 
 // Defines values for GetEnvironmentParamsLanguage.
 const (
-	De GetEnvironmentParamsLanguage = "de"
-	En GetEnvironmentParamsLanguage = "en"
+	GetEnvironmentParamsLanguageDe GetEnvironmentParamsLanguage = "de"
+	GetEnvironmentParamsLanguageEn GetEnvironmentParamsLanguage = "en"
 )
 
 // Valid indicates whether the value is a known member of the GetEnvironmentParamsLanguage enum.
 func (e GetEnvironmentParamsLanguage) Valid() bool {
 	switch e {
-	case De:
+	case GetEnvironmentParamsLanguageDe:
 		return true
-	case En:
+	case GetEnvironmentParamsLanguageEn:
 		return true
 	default:
 		return false
@@ -886,6 +904,15 @@ type GetAccountExtensionsParams struct {
 // GetAccountExtensionsParamsLanguage defines parameters for GetAccountExtensions.
 type GetAccountExtensionsParamsLanguage string
 
+// GetAccountExtensionParams defines parameters for GetAccountExtension.
+type GetAccountExtensionParams struct {
+	// Language Language for localized store text (label, description, manual, changelog). Falls back to English.
+	Language *GetAccountExtensionParamsLanguage `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GetAccountExtensionParamsLanguage defines parameters for GetAccountExtension.
+type GetAccountExtensionParamsLanguage string
+
 // AdminGetAuditLogParams defines parameters for AdminGetAuditLog.
 type AdminGetAuditLogParams struct {
 	Limit        *int    `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1002,6 +1029,9 @@ type ServerInterface interface {
 	// Get aggregated extensions across all environments
 	// (GET /account/extensions)
 	GetAccountExtensions(w http.ResponseWriter, r *http.Request, params GetAccountExtensionsParams)
+	// Get a single aggregated extension by technical name
+	// (GET /account/extensions/{name})
+	GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams)
 	// Get current user profile
 	// (GET /account/me)
 	GetAccountMe(w http.ResponseWriter, r *http.Request)
@@ -1185,6 +1215,12 @@ func (_ Unimplemented) GetAccountEnvironments(w http.ResponseWriter, r *http.Req
 // Get aggregated extensions across all environments
 // (GET /account/extensions)
 func (_ Unimplemented) GetAccountExtensions(w http.ResponseWriter, r *http.Request, params GetAccountExtensionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a single aggregated extension by technical name
+// (GET /account/extensions/{name})
+func (_ Unimplemented) GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1591,6 +1627,54 @@ func (siw *ServerInterfaceWrapper) GetAccountExtensions(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountExtensions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAccountExtension operation middleware
+func (siw *ServerInterfaceWrapper) GetAccountExtension(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAccountExtensionParams
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "language", r.URL.Query(), &params.Language, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "language"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "language", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAccountExtension(w, r, name, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3691,6 +3775,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/extensions", wrapper.GetAccountExtensions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/account/extensions/{name}", wrapper.GetAccountExtension)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/me", wrapper.GetAccountMe)

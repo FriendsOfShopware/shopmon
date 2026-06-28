@@ -11,3 +11,4 @@ litestream.yml
 .eslintcache
 /.jj
 .soulforge
+.design-sync/

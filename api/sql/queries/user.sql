@@ -104,6 +104,28 @@ JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ese.extension_name, e.name;
 
+-- name: GetUserStoreExtensionByOrgAndName :many
+-- Single store extension by technical name ($4), scoped to the user's org.
+SELECT ese.extension_name AS name, ese.label, ese.version, ese.latest_version, ese.active, ese.installed,
+       se.store_link, se.rating_average, ese.installed_at,
+       se.icon_url, se.producer_name, se.producer_website, se.release_date,
+       COALESCE(t.short_description, ten.short_description) AS short_description,
+       COALESCE(t.description, ten.description) AS description,
+       COALESCE(t.installation_manual, ten.installation_manual) AS installation_manual,
+       ese.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
+FROM environment_store_extension ese
+JOIN store_extension se ON se.name = ese.extension_name
+LEFT JOIN store_extension_translation t ON t.extension_name = ese.extension_name AND t.language = $3
+LEFT JOIN store_extension_translation ten ON ten.extension_name = ese.extension_name AND ten.language = 'en'
+JOIN environment e ON e.id = ese.environment_id
+JOIN shop sh ON sh.id = e.shop_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2 AND ese.extension_name = $4
+ORDER BY e.name;
+
 -- name: GetUserStoreExtensionImagesByOrg :many
 SELECT sei.extension_name, sei.url, sei.preview
 FROM store_extension_image sei
@@ -115,6 +137,19 @@ WHERE sei.extension_name IN (
   WHERE m.user_id = $1 AND e.organization_id = $2
 )
 ORDER BY sei.extension_name, sei.preview DESC, sei.priority, sei.id;
+
+-- name: GetUserStoreExtensionImagesByOrgAndName :many
+SELECT sei.extension_name, sei.url, sei.preview
+FROM store_extension_image sei
+WHERE sei.extension_name = $3
+  AND EXISTS (
+    SELECT 1
+    FROM environment_store_extension ese
+    JOIN environment e ON e.id = ese.environment_id
+    JOIN member m ON m.organization_id = e.organization_id
+    WHERE m.user_id = $1 AND e.organization_id = $2 AND ese.extension_name = $3
+  )
+ORDER BY sei.preview DESC, sei.priority, sei.id;
 
 -- name: GetUserUnknownExtensionsByOrg :many
 SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
@@ -129,6 +164,20 @@ JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ee.name, e.name;
+
+-- name: GetUserUnknownExtensionByOrgAndName :many
+SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
+       NULL::text AS store_link, NULL::integer AS rating_average, ee.installed_at,
+       ee.environment_id, e.name AS environment_name, e.url AS environment_url,
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
+FROM environment_extension ee
+JOIN environment e ON e.id = ee.environment_id
+JOIN shop sh ON sh.id = e.shop_id
+JOIN organization o ON o.id = e.organization_id
+JOIN member m ON m.organization_id = e.organization_id
+WHERE m.user_id = $1 AND e.organization_id = $2 AND ee.name = $3
+ORDER BY e.name;
 
 -- name: GetUserStoreExtensionChangelogsByOrg :many
 -- Changelog text resolves to the requested language ($3), falling back to en.
@@ -145,6 +194,23 @@ WHERE sev.extension_name IN (
   WHERE m.user_id = $1 AND e.organization_id = $2
 )
 ORDER BY sev.extension_name, sev.version;
+
+-- name: GetUserStoreExtensionChangelogsByOrgAndName :many
+-- Changelog text resolves to the requested language ($3), falling back to en.
+SELECT DISTINCT sev.extension_name, sev.version,
+       COALESCE(t.changelog, ten.changelog) AS changelog, sev.released_at
+FROM store_extension_version sev
+LEFT JOIN store_extension_version_translation t ON t.extension_version_id = sev.id AND t.language = $3
+LEFT JOIN store_extension_version_translation ten ON ten.extension_version_id = sev.id AND ten.language = 'en'
+WHERE sev.extension_name = $4
+  AND EXISTS (
+    SELECT 1
+    FROM environment_store_extension ese
+    JOIN environment e ON e.id = ese.environment_id
+    JOIN member m ON m.organization_id = e.organization_id
+    WHERE m.user_id = $1 AND e.organization_id = $2 AND ese.extension_name = $4
+  )
+ORDER BY sev.version;
 
 -- name: IsOrganizationMember :one
 SELECT COUNT(*) > 0 AS is_member FROM member WHERE organization_id = $1 AND user_id = $2;
