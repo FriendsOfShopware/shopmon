@@ -1,4 +1,82 @@
 {
+  "notification": {
+    "statusDegraded": {
+      "title": "Umgebung: {name} Status geändert",
+      "message": "Status von {from} auf {to} geändert"
+    },
+    "statusRecovered": {
+      "title": "Umgebung: {name} wiederhergestellt",
+      "message": "Status von {from} auf {to} verbessert"
+    },
+    "authError": {
+      "title": "Umgebung: {name} konnte nicht aktualisiert werden",
+      "message": "Verbindung zur Umgebung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten und versuche es erneut. {error}"
+    },
+    "dataFetchError": {
+      "title": "Umgebung: {name} konnte nicht aktualisiert werden",
+      "message": "Verbindung zur Umgebung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten und versuche es erneut."
+    }
+  },
+  "statusHistory": {
+    "empty": "Noch keine Statusänderungen aufgezeichnet",
+    "emptyHint": "Wenn sich der Status dieser Umgebung ändert, erscheinen hier der Übergang und die auslösenden Prüfungen."
+  },
+  "check": {
+    "recommendationSuffix": " (aktuell: {current}, empfohlen: {recommended})",
+    "env": {
+      "invalid": "Die Umgebung ist auf '{environment}' gesetzt. Sie sollte auf 'production' oder 'staging' gesetzt sein.",
+      "valid": "Die Umgebung ist korrekt auf '{environment}' gesetzt."
+    },
+    "worker": {
+      "enabled": "Der Admin-Worker ist aktiviert. Dies kann zu Performance-Problemen führen. Verwende stattdessen den CLI-Worker.",
+      "disabled": "Admin-Worker ist deaktiviert. Der CLI-Worker wird verwendet."
+    },
+    "task": {
+      "overdue": "Geplante Aufgabe '{name}' ist überfällig",
+      "allRunning": "Alle geplanten Aufgaben laufen korrekt."
+    },
+    "security": {
+      "advisory": "{title}",
+      "advisoryCve": "{title} ({cve})"
+    },
+    "frosh": {
+      "phpGood": "PHP-Version ist aktuell",
+      "phpOutdated": "PHP-Version ist veraltet",
+      "mysqlGood": "MySQL-Version ist aktuell",
+      "mysqlOutdated": "MySQL-Version ist veraltet",
+      "opcacheGood": "OPcache ist aktiviert",
+      "opcacheDisabled": "OPcache ist deaktiviert",
+      "opcacheNoJit": "OPcache JIT ist nicht aktiviert",
+      "scheduledTaskGood": "Alle geplanten Aufgaben laufen",
+      "scheduledTaskWarning": "Einige geplante Aufgaben sind überfällig",
+      "queuesGood": "Die Nachrichtenwarteschlange ist leer",
+      "queuesWarning": "Die Nachrichtenwarteschlange hat ausstehende Nachrichten",
+      "prodGood": "Umgebung ist auf Produktion gesetzt",
+      "not-prod": "Umgebung ist nicht auf Produktion gesetzt",
+      "adminWorkerGood": "Admin-Worker ist deaktiviert",
+      "adminWorkerWarning": "Admin-Worker ist aktiviert",
+      "publicFilesystemGood": "Öffentliches Dateisystem verwendet einen geeigneten Adapter",
+      "publicFilesystemWarning": "Öffentliches Dateisystem verwendet den lokalen Adapter",
+      "privateFilesystemGood": "Privates Dateisystem verwendet einen geeigneten Adapter",
+      "privateFilesystemWarning": "Privates Dateisystem verwendet den lokalen Adapter",
+      "queueConnectionGood": "Queue-Verbindung ist korrekt konfiguriert",
+      "queueConnectionWarning": "Queue-Verbindung verwendet den sync-Adapter",
+      "sessionConnectionGood": "Session-Speicher ist korrekt konfiguriert",
+      "sessionConnectionWarning": "Session-Speicher verwendet den Standard-Datei-Adapter",
+      "mailerGood": "Mailer ist korrekt konfiguriert",
+      "mailerWarning": "Mailer verwendet den null-Transport",
+      "incrementGood": "Increment-Speicher ist korrekt konfiguriert",
+      "incrementWarning": "Increment-Speicher verwendet den Standard-Adapter",
+      "numberRangeGood": "Nummernkreis-Speicher ist korrekt konfiguriert",
+      "numberRangeWarning": "Nummernkreis-Speicher verwendet den Standard-Adapter",
+      "lockGood": "Lock-Speicher ist korrekt konfiguriert",
+      "lockWarning": "Lock-Speicher verwendet den Standard-flock-Adapter",
+      "cacheGood": "Cache-Adapter ist korrekt konfiguriert",
+      "cacheWarning": "Cache verwendet den Dateisystem-Adapter",
+      "puppeteerGood": "Puppeteer/Chrome ist verfügbar",
+      "puppeteerWarning": "Puppeteer/Chrome ist nicht verfügbar"
+    }
+  },
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
@@ -98,6 +176,7 @@
     "register": "Registrieren",
     "goToApp": "Zur App",
     "checks": "Prüfungen",
+    "statusHistory": "Statusverlauf",
     "extensions": "Erweiterungen",
     "scheduledTasks": "Geplante Aufgaben",
     "queue": "Warteschlange",
@@ -298,6 +377,27 @@
     "sessions": "Sitzungen",
     "userAgent": "User Agent",
     "notifications": "Benachrichtigungen",
+    "notificationChannels": "Zustellkanäle",
+    "notificationChannelsHint": "Lege fest, wie du Benachrichtigungen erhältst. Dies gilt für alle beobachteten Umgebungen.",
+    "channelInApp": "In-App-Benachrichtigungen",
+    "channelInAppHint": "Benachrichtigungen im Benachrichtigungscenter anzeigen.",
+    "channelEmail": "E-Mail-Benachrichtigungen",
+    "channelEmailHint": "Benachrichtigungs-E-Mails bei Statusänderungen und Fehlern senden.",
+    "eventTypes": "Ereignistypen",
+    "eventTypesHint": "Wähle, über welche Arten von Ereignissen du benachrichtigt werden möchtest. Deaktivieren schaltet sie auf allen Kanälen stumm.",
+    "eventType": {
+      "status_degraded": "Status verschlechtert",
+      "status_recovered": "Status wiederhergestellt",
+      "auth_error": "Verbindungs-/Authentifizierungsfehler",
+      "data_fetch_error": "Fehler beim Datenabruf"
+    },
+    "watchedEnvironments": "Beobachtete Umgebungen",
+    "otherEnvironments": "Sonstige",
+    "perEnvHint": "Überschreibe deine globalen Einstellungen für diese Umgebung. \"Erben\" verwendet die globale Einstellung oben; Umgebungs-Overrides haben Vorrang.",
+    "perEnvChannels": "Kanäle",
+    "channelInherit": "Erben",
+    "channelOn": "An",
+    "channelOff": "Aus",
     "notSubscribed": "Sie haben keine Umgebungs-Benachrichtigungen abonniert.",
     "notSubscribedHint": "Besuchen Sie die Detailseite einer Umgebung und klicken Sie auf die Beobachten-Schaltfläche, um Benachrichtigungen über Änderungen zu erhalten.",
     "environmentName": "Umgebungsname",
@@ -374,6 +474,10 @@
     "admin": "Administration",
     "watchEnvironment": "Umgebung beobachten",
     "unwatchEnvironment": "Umgebung nicht mehr beobachten",
+    "notificationSettings": "Benachrichtigungseinstellungen",
+    "watchHint": "Benachrichtigungen zu dieser Umgebung erhalten.",
+    "watchToConfigure": "Beobachte diese Umgebung, um Benachrichtigungen zu konfigurieren.",
+    "perEventHint": "Pro Ereignistyp für diese Umgebung überschreiben. \"Erben\" verwendet deine globalen Einstellungen.",
     "clearCache": "Umgebungs-Cache leeren",
     "refreshData": "Umgebungsdaten aktualisieren",
     "autoUpdateDisabled": "Diese Umgebung wird nicht mehr automatisch aktualisiert. Bitte aktualisieren Sie die API-Zugangsdaten oder die URL, um dieses Problem zu beheben.",

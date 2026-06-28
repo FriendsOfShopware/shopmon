@@ -214,6 +214,53 @@
 
     <!-- Notifications -->
     <CardSection :icon="IconBell" :title="$t('settings.notifications')">
+      <!-- Delivery channels -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium">{{ $t("settings.notificationChannels") }}</h3>
+        <p class="mb-3 text-sm text-muted-foreground">
+          {{ $t("settings.notificationChannelsHint") }}
+        </p>
+        <div class="space-y-2">
+          <label
+            v-for="ch in channelList"
+            :key="ch.channel"
+            class="flex items-center justify-between gap-4 rounded-xl border px-4 py-3"
+          >
+            <span class="min-w-0">
+              <span class="block text-sm font-medium">{{ $t(ch.labelKey) }}</span>
+              <span class="block text-xs text-muted-foreground">{{
+                $t(`${ch.labelKey}Hint`)
+              }}</span>
+            </span>
+            <Switch
+              :model-value="globalChannelEnabled(ch.channel)"
+              @update:model-value="(v: boolean) => setGlobalChannel(ch.channel, v)"
+            />
+          </label>
+        </div>
+      </div>
+
+      <!-- Event types -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium">{{ $t("settings.eventTypes") }}</h3>
+        <p class="mb-3 text-sm text-muted-foreground">{{ $t("settings.eventTypesHint") }}</p>
+        <div class="space-y-2">
+          <label
+            v-for="et in eventTypes"
+            :key="et.type"
+            class="flex items-center justify-between gap-4 rounded-xl border px-4 py-3"
+          >
+            <span class="text-sm font-medium">{{ eventTypeLabel(et.type) }}</span>
+            <Switch
+              :model-value="eventTypeEnabled(et.type)"
+              @update:model-value="(v: boolean) => setEventType(et.type, v)"
+            />
+          </label>
+        </div>
+      </div>
+
+      <!-- Watched environments -->
+      <h3 class="mb-3 text-sm font-medium">{{ $t("settings.watchedEnvironments") }}</h3>
       <EmptyState
         v-if="!subscribedShops?.length"
         :icon="IconBellSlash"
@@ -221,22 +268,99 @@
         :description="$t('settings.notSubscribedHint')"
         size="sm"
       />
-      <div v-else class="space-y-2">
-        <div
-          v-for="env in subscribedShops"
-          :key="env.id"
-          class="flex items-center justify-between rounded-xl border px-4 py-3"
-        >
-          <div class="text-sm font-medium">{{ env.name }}</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-7 text-muted-foreground hover:text-destructive"
-            :title="$t('settings.unsubscribe')"
-            @click="unsubscribeFromEnvironment(env.id)"
-          >
-            <icon-fa6-solid:bell-slash class="size-3" />
-          </Button>
+      <div v-else class="space-y-4">
+        <div v-for="group in groupedSubscribedShops" :key="group.key" class="space-y-2">
+          <h4 class="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {{ group.shopName ?? $t("settings.otherEnvironments") }}
+          </h4>
+          <div v-for="env in group.environments" :key="env.id" class="rounded-xl border">
+            <div class="flex items-center justify-between px-4 py-3">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-2 text-left"
+                @click="toggleEnvExpanded(env.id)"
+              >
+                <icon-fa6-solid:chevron-right
+                  class="size-3 shrink-0 text-muted-foreground transition-transform"
+                  :class="{ 'rotate-90': expandedEnv === env.id }"
+                />
+                <span class="truncate text-sm font-medium">{{ env.name }}</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="size-7 text-muted-foreground hover:text-destructive"
+                :title="$t('settings.unsubscribe')"
+                @click="unsubscribeFromEnvironment(env.id)"
+              >
+                <icon-fa6-solid:bell-slash class="size-3" />
+              </Button>
+            </div>
+
+            <div v-if="expandedEnv === env.id" class="space-y-4 border-t px-4 py-3">
+              <p class="text-xs text-muted-foreground">{{ $t("settings.perEnvHint") }}</p>
+
+              <!-- Channel overrides -->
+              <div class="space-y-2">
+                <h4 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {{ $t("settings.perEnvChannels") }}
+                </h4>
+                <div
+                  v-for="ch in channelList"
+                  :key="ch.channel"
+                  class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
+                >
+                  <span class="text-sm font-medium">{{ $t(ch.labelKey) }}</span>
+                  <div class="flex rounded-lg border bg-muted/50 p-0.5">
+                    <button
+                      v-for="opt in triStateOptions"
+                      :key="opt.value"
+                      type="button"
+                      :class="[
+                        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                        envChannelState(env.id, ch.channel) === opt.value
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground',
+                      ]"
+                      @click="setEnvChannel(env.id, ch.channel, opt.value)"
+                    >
+                      {{ $t(opt.labelKey) }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Event-type overrides -->
+              <div class="space-y-2">
+                <h4 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {{ $t("settings.eventTypes") }}
+                </h4>
+                <div
+                  v-for="et in eventTypes"
+                  :key="et.type"
+                  class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
+                >
+                  <span class="text-sm font-medium">{{ eventTypeLabel(et.type) }}</span>
+                  <div class="flex rounded-lg border bg-muted/50 p-0.5">
+                    <button
+                      v-for="opt in triStateOptions"
+                      :key="opt.value"
+                      type="button"
+                      :class="[
+                        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                        envEventState(env.id, et.type) === opt.value
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground',
+                      ]"
+                      @click="setEnvEvent(env.id, et.type, opt.value)"
+                    >
+                      {{ $t(opt.labelKey) }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </CardSection>
@@ -313,6 +437,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import CardSection from "@/components/CardSection.vue";
 import PasswordInput from "@/components/PasswordInput.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -337,6 +462,7 @@ import IconBell from "~icons/fa6-solid/bell";
 import IconBellSlash from "~icons/fa6-regular/bell-slash";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
+import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -344,6 +470,22 @@ import { startRegistration } from "@simplewebauthn/browser";
 const { t } = useI18n();
 const { session: sessionData } = useSession();
 const alert = useAlert();
+
+const {
+  eventTypes,
+  channelList,
+  triStateOptions,
+  loadAll: loadNotificationPreferences,
+  eventTypeLabel,
+  globalChannelEnabled,
+  setGlobalChannel,
+  eventTypeEnabled,
+  setEventType,
+  envChannelState,
+  setEnvChannel,
+  envEventState,
+  setEnvEvent,
+} = useNotificationPreferences();
 
 const passKeyName = ref("");
 
@@ -364,6 +506,29 @@ const passkeys = ref<PasskeyEntry[] | null>([]);
 const sessions = ref<SessionEntry[] | null>([]);
 const connectedProviders = ref<string[]>([]);
 const subscribedShops = ref<components["schemas"]["SubscribedEnvironment"][] | null>(null);
+const expandedEnv = ref<number | null>(null);
+
+type SubscribedEnvironment = components["schemas"]["SubscribedEnvironment"];
+
+// Watched environments grouped by the shop they belong to, so multiple
+// environments of the same shop (e.g. Production, Staging) appear together.
+const groupedSubscribedShops = computed(() => {
+  const groups = new Map<
+    string,
+    { key: string; shopName: string | null; environments: SubscribedEnvironment[] }
+  >();
+  for (const env of subscribedShops.value ?? []) {
+    const key = env.shopId != null ? `shop-${env.shopId}` : "no-shop";
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, shopName: env.shopName ?? null, environments: [] };
+      groups.set(key, group);
+    }
+    group.environments.push(env);
+  }
+  return Array.from(groups.values());
+});
+
 const organizations = ref<{ id: string; name: string }[]>([]);
 const deleteCurrentPassword = ref("");
 
@@ -467,6 +632,10 @@ async function loadSubscribedEnvironments() {
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
+}
+
+function toggleEnvExpanded(environmentId: number) {
+  expandedEnv.value = expandedEnv.value === environmentId ? null : environmentId;
 }
 
 const showAccountDeletionModal = ref(false);
@@ -585,5 +754,6 @@ onMounted(() => {
   loadLinkedAccounts();
   loadOrganizations();
   loadSubscribedEnvironments();
+  loadNotificationPreferences();
 });
 </script>

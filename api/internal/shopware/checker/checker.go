@@ -16,11 +16,15 @@ const (
 )
 
 type Check struct {
-	ID      string `json:"id"`
-	Level   Status `json:"level"`
-	Message string `json:"message"`
-	Source  string `json:"source"`
-	Link    string `json:"link,omitempty"`
+	ID    string `json:"id"`
+	Level Status `json:"level"`
+	// MessageKey is a translation catalog key; MessageParams interpolate into it.
+	// Rendering happens at the edges (UI per viewer, server for the English
+	// fallback) so check text is never stored pre-translated.
+	MessageKey    string         `json:"messageKey"`
+	MessageParams map[string]any `json:"messageParams,omitempty"`
+	Source        string         `json:"source"`
+	Link          string         `json:"link,omitempty"`
 }
 
 type Extension struct {
@@ -98,42 +102,45 @@ func NewOutput(ignores []string) *Output {
 	}
 }
 
-func (o *Output) Success(id, message, source string, link string) {
+func (o *Output) Success(id, messageKey string, params map[string]any, source, link string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.checks = append(o.checks, Check{
-		ID:      id,
-		Level:   StatusGreen,
-		Message: message,
-		Source:  source,
-		Link:    link,
+		ID:            id,
+		Level:         StatusGreen,
+		MessageKey:    messageKey,
+		MessageParams: params,
+		Source:        source,
+		Link:          link,
 	})
 }
 
-func (o *Output) Warning(id, message, source string, link string) {
+func (o *Output) Warning(id, messageKey string, params map[string]any, source, link string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.checks = append(o.checks, Check{
-		ID:      id,
-		Level:   StatusYellow,
-		Message: message,
-		Source:  source,
-		Link:    link,
+		ID:            id,
+		Level:         StatusYellow,
+		MessageKey:    messageKey,
+		MessageParams: params,
+		Source:        source,
+		Link:          link,
 	})
 	if !o.ignores[id] && o.status != StatusRed {
 		o.status = StatusYellow
 	}
 }
 
-func (o *Output) Error(id, message, source string, link string) {
+func (o *Output) Error(id, messageKey string, params map[string]any, source, link string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.checks = append(o.checks, Check{
-		ID:      id,
-		Level:   StatusRed,
-		Message: message,
-		Source:  source,
-		Link:    link,
+		ID:            id,
+		Level:         StatusRed,
+		MessageKey:    messageKey,
+		MessageParams: params,
+		Source:        source,
+		Link:          link,
 	})
 	if !o.ignores[id] {
 		o.status = StatusRed

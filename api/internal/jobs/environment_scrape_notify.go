@@ -3,187 +3,227 @@ package jobs
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 )
 
-// acquireNotificationLock atomically acquires a dedup lock for the given key
-// and TTL. It returns true only when this caller obtained the lock (i.e. no
-// active lock existed). On a database error it returns false and logs so that
-// callers avoid spamming notifications when the lock state is unknown.
-func (h *EnvironmentScrapeHandler) acquireNotificationLock(ctx context.Context, key string, ttl time.Duration) bool {
-	_, err := h.queries.AcquireLockIfFree(ctx, queries.AcquireLockIfFreeParams{
-		Key:     key,
-		Expires: pgtype.Timestamp{Time: time.Now().Add(ttl), Valid: true},
-	})
-	if err == nil {
-		return true
+// environmentLink builds the frontend route reference for an environment detail
+// page, shared by all environment notifications.
+func environmentLink(envID int32) notify.Link {
+	return notify.Link{
+		Name: "account.environments.detail",
+		Params: map[string]string{
+			"environmentId": strconv.Itoa(int(envID)),
+		},
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
-		// Lock is already held — deduped, skip sending.
-		return false
-	}
-	slog.Error("failed to acquire notification lock", "key", key, "error", err)
-	return false
 }
 
-// handleStatusChange detects degradation and sends notifications.
-func (h *EnvironmentScrapeHandler) handleStatusChange(ctx context.Context, env queries.GetAllEnvironmentsRow, newStatus string) {
+// environmentRecipients resolves the subscribers of an environment into notify
+// recipients. It returns nil (and logs) on error so callers can simply skip.
+func (h *EnvironmentScrapeHandler) environmentRecipients(ctx context.Context, env queries.GetAllEnvironmentsRow) []notify.Recipient {
+	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
+		OrganizationID: env.OrganizationID,
+		EnvironmentID:  strconv.Itoa(int(env.ID)),
+	})
+	if err != nil {
+		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
+		return nil
+	}
+
+	recipients := make([]notify.Recipient, 0, len(subscribers))
+	for _, u := range subscribers {
+		recipients = append(recipients, notify.Recipient{
+			ID:     u.ID,
+			Name:   u.Name,
+			Email:  u.Email,
+			Locale: u.Locale,
+		})
+	}
+	return recipients
+}
+
+// statusTransition captures a recorded status change so the caller can persist
+// it to the timeline within the scrape transaction.
+type statusTransition struct {
+	oldStatus string
+	newStatus string
+	reasons   []notify.StatusReason
+}
+
+// handleStatusTransition detects a status change (in either direction),
+// dispatches the appropriate notification with the checks that caused it, and
+// returns the transition for timeline persistence. It returns nil when the
+// status is unchanged.
+func (h *EnvironmentScrapeHandler) handleStatusTransition(ctx context.Context, env queries.GetAllEnvironmentsRow, oldChecks []queries.EnvironmentCheck, newChecks []checker.Check, newStatus string) *statusTransition {
 	envDetail, err := h.queries.GetEnvironmentByID(ctx, env.ID)
 	if err != nil {
 		slog.Warn("failed to get environment details for status comparison", "environmentId", env.ID, "error", err)
-		return
+		return nil
 	}
 
-	oldWeight := statusWeight[envDetail.Status]
+	oldStatus := envDetail.Status
+	oldWeight := statusWeight[oldStatus]
 	newWeight := statusWeight[newStatus]
-
-	if newWeight <= oldWeight {
-		return // not degraded
+	if newWeight == oldWeight {
+		return nil // unchanged
 	}
 
-	// Status degraded - send notifications
-	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
-		OrganizationID: env.OrganizationID,
-		EnvironmentID:  strconv.Itoa(int(env.ID)),
-	})
-	if err != nil {
-		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
-		return
-	}
+	degraded := newWeight > oldWeight
+	reasons := computeStatusReasons(oldChecks, newChecks, degraded)
 
-	statusChangeKey := fmt.Sprintf("environment.change-status.%d", env.ID)
-
-	// Atomically acquire the dedup lock for 1 hour. Emails are only sent when
-	// this caller obtained the lock, preventing duplicate alerts and spam when
-	// the lock state cannot be determined.
-	alertLockKey := fmt.Sprintf("alert_%s", statusChangeKey)
-	sendEmails := h.acquireNotificationLock(ctx, alertLockKey, 1*time.Hour)
-
-	linkJSON, _ := json.Marshal(notificationLink{
-		Name: "account.environments.detail",
-		Params: map[string]string{
-			"environmentId": strconv.Itoa(int(env.ID)),
+	ev := notify.Event{
+		Level:     notify.LevelInfo,
+		ScopeType: notify.ScopeEnvironment,
+		ScopeID:   strconv.Itoa(int(env.ID)),
+		OrgID:     env.OrganizationID,
+		Params: map[string]any{
+			"name": env.Name,
+			"from": oldStatus,
+			"to":   newStatus,
 		},
-	})
+		Reasons: reasons,
+		Link:    environmentLink(env.ID),
+	}
 
-	alertMessage := fmt.Sprintf("Status changed from %s to %s", envDetail.Status, newStatus)
+	if degraded {
+		ev.Type = notify.EventStatusDegraded
+		ev.Level = notify.LevelWarning
+		ev.DedupKey = fmt.Sprintf("environment.change-status.%d", env.ID)
+		ev.TitleKey = "notification.statusDegraded.title"
+		ev.MessageKey = "notification.statusDegraded.message"
+	} else {
+		ev.Type = notify.EventStatusRecovered
+		ev.DedupKey = fmt.Sprintf("environment.recover-status.%d", env.ID)
+		ev.TitleKey = "notification.statusRecovered.title"
+		ev.MessageKey = "notification.statusRecovered.message"
+	}
 
-	for _, user := range subscribers {
-		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
-			UserID:  user.ID,
-			Key:     statusChangeKey,
-			Level:   "warning",
-			Title:   fmt.Sprintf("Environment: %s status changed", env.Name),
-			Message: alertMessage,
-			Link:    linkJSON,
-		}); err != nil {
-			slog.Warn("failed to send status change notification", "userId", user.ID, "environmentId", env.ID, "error", err)
-		}
+	h.notifier.Dispatch(ctx, ev, h.environmentRecipients(ctx, env))
 
-		// Send email alert (only if not deduped)
-		if sendEmails && h.mail != nil {
-			body := h.mail.BuildStatusChangeEmail(user.Name, env.Name, newStatus, alertMessage)
-			if err := h.mail.Send(ctx, user.Email, body); err != nil {
-				slog.Warn("failed to send status change email", "userId", user.ID, "email", user.Email, "error", err)
-			}
-		}
+	return &statusTransition{oldStatus: oldStatus, newStatus: newStatus, reasons: reasons}
+}
+
+// checkWeight orders check levels for comparison (higher is worse).
+func checkWeight(level string) int {
+	switch level {
+	case "red":
+		return 3
+	case "yellow":
+		return 2
+	default:
+		return 1
 	}
 }
 
-// notifyAuthError sends notifications when authentication fails.
-func (h *EnvironmentScrapeHandler) notifyAuthError(ctx context.Context, env queries.GetAllEnvironmentsRow, authErr error) {
-	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
-		OrganizationID: env.OrganizationID,
-		EnvironmentID:  strconv.Itoa(int(env.ID)),
-	})
-	if err != nil {
-		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
-		return
+// computeStatusReasons returns the checks responsible for a status transition:
+// the checks that worsened (degradation) or improved (recovery).
+func computeStatusReasons(oldChecks []queries.EnvironmentCheck, newChecks []checker.Check, degraded bool) []notify.StatusReason {
+	reasons := []notify.StatusReason{}
+
+	if degraded {
+		oldLevel := make(map[string]string, len(oldChecks))
+		for _, c := range oldChecks {
+			oldLevel[c.CheckID] = c.Level
+		}
+		for _, c := range newChecks {
+			prev := oldLevel[c.ID]
+			if prev == "" {
+				prev = "green"
+			}
+			if string(c.Level) != "green" && checkWeight(string(c.Level)) > checkWeight(prev) {
+				reasons = append(reasons, notify.StatusReason{
+					Level:  string(c.Level),
+					Key:    c.MessageKey,
+					Params: c.MessageParams,
+					Source: c.Source,
+				})
+			}
+		}
+		return reasons
 	}
 
-	notifKey := fmt.Sprintf("environment.update-auth-error.%d", env.ID)
+	newLevel := make(map[string]string, len(newChecks))
+	for _, c := range newChecks {
+		newLevel[c.ID] = string(c.Level)
+	}
+	for _, c := range oldChecks {
+		next := newLevel[c.CheckID]
+		if next == "" {
+			next = "green"
+		}
+		if c.Level != "green" && checkWeight(c.Level) > checkWeight(next) {
+			reasons = append(reasons, notify.StatusReason{
+				Level:  c.Level,
+				Key:    derefString(c.MessageKey),
+				Params: decodeParams(c.Params),
+				Source: c.Source,
+			})
+		}
+	}
+	return reasons
+}
 
-	// Atomically acquire the dedup lock; only send emails when acquired.
-	alertLockKey := fmt.Sprintf("alert_%s", notifKey)
-	sendEmails := h.acquireNotificationLock(ctx, alertLockKey, 1*time.Hour)
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
 
-	linkJSON, _ := json.Marshal(notificationLink{
-		Name: "account.environments.detail",
-		Params: map[string]string{
-			"environmentId": strconv.Itoa(int(env.ID)),
-		},
-	})
+func decodeParams(raw []byte) map[string]any {
+	if len(raw) == 0 {
+		return nil
+	}
+	var params map[string]any
+	if err := json.Unmarshal(raw, &params); err != nil {
+		return nil
+	}
+	return params
+}
 
+// notifyAuthError dispatches notifications when authentication fails.
+func (h *EnvironmentScrapeHandler) notifyAuthError(ctx context.Context, env queries.GetAllEnvironmentsRow, authErr error) {
 	errMsg := fmt.Sprintf("%v", authErr)
 	if len(errMsg) > 50 {
 		errMsg = errMsg[:50] + "..."
 	}
 
-	alertMessage := fmt.Sprintf("Could not connect to environment. Please check your credentials and try again. %s", errMsg)
-
-	for _, user := range subscribers {
-		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
-			UserID:  user.ID,
-			Key:     notifKey,
-			Level:   "error",
-			Title:   fmt.Sprintf("Environment: %s could not be updated", env.Name),
-			Message: alertMessage,
-			Link:    linkJSON,
-		}); err != nil {
-			slog.Warn("failed to send auth error notification", "userId", user.ID, "environmentId", env.ID, "error", err)
-		}
-
-		// Send email alert (only if not deduped)
-		if sendEmails && h.mail != nil {
-			body := h.mail.BuildConnectionFailedEmail(user.Name, env.Name, alertMessage)
-			if err := h.mail.Send(ctx, user.Email, body); err != nil {
-				slog.Warn("failed to send auth error email", "userId", user.ID, "error", err)
-			}
-		}
-	}
+	h.notifier.Dispatch(ctx, notify.Event{
+		Type:       notify.EventAuthError,
+		Level:      notify.LevelError,
+		ScopeType:  notify.ScopeEnvironment,
+		ScopeID:    strconv.Itoa(int(env.ID)),
+		OrgID:      env.OrganizationID,
+		DedupKey:   fmt.Sprintf("environment.update-auth-error.%d", env.ID),
+		TitleKey:   "notification.authError.title",
+		MessageKey: "notification.authError.message",
+		Params: map[string]any{
+			"name":  env.Name,
+			"error": errMsg,
+		},
+		Link: environmentLink(env.ID),
+	}, h.environmentRecipients(ctx, env))
 }
 
-// notifyDataFetchError sends notifications when data fetching fails.
-func (h *EnvironmentScrapeHandler) notifyDataFetchError(ctx context.Context, env queries.GetAllEnvironmentsRow, errMsg string) {
-	subscribers, err := h.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
-		OrganizationID: env.OrganizationID,
-		EnvironmentID:  strconv.Itoa(int(env.ID)),
-	})
-	if err != nil {
-		slog.Warn("failed to get notification subscribers", "environmentId", env.ID, "error", err)
-		return
-	}
-
-	notifKey := fmt.Sprintf("environment.not.updated_%d", env.ID)
-
-	linkJSON, _ := json.Marshal(notificationLink{
-		Name: "account.environments.detail",
-		Params: map[string]string{
-			"environmentId": strconv.Itoa(int(env.ID)),
+// notifyDataFetchError dispatches notifications when data fetching fails.
+func (h *EnvironmentScrapeHandler) notifyDataFetchError(ctx context.Context, env queries.GetAllEnvironmentsRow, _ string) {
+	h.notifier.Dispatch(ctx, notify.Event{
+		Type:       notify.EventDataFetchError,
+		Level:      notify.LevelError,
+		ScopeType:  notify.ScopeEnvironment,
+		ScopeID:    strconv.Itoa(int(env.ID)),
+		OrgID:      env.OrganizationID,
+		DedupKey:   fmt.Sprintf("environment.not.updated_%d", env.ID),
+		TitleKey:   "notification.dataFetchError.title",
+		MessageKey: "notification.dataFetchError.message",
+		Params: map[string]any{
+			"name": env.Name,
 		},
-	})
-
-	// The in-app notification is always (re)recorded — UpsertNotification is
-	// idempotent on notifKey, so there is no spam to dedup here (unlike the
-	// auth-error path, which also sends emails gated behind a lock).
-	for _, user := range subscribers {
-		if err := h.queries.UpsertNotification(ctx, queries.UpsertNotificationParams{
-			UserID:  user.ID,
-			Key:     notifKey,
-			Level:   "error",
-			Title:   fmt.Sprintf("Environment: %s could not be updated", env.Name),
-			Message: "Could not connect to environment. Please check your credentials and try again.",
-			Link:    linkJSON,
-		}); err != nil {
-			slog.Warn("failed to send data fetch error notification", "userId", user.ID, "environmentId", env.ID, "error", err)
-		}
-	}
+		Link: environmentLink(env.ID),
+	}, h.environmentRecipients(ctx, env))
 }

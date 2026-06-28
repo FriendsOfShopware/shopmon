@@ -265,12 +265,22 @@ func mapEnvironmentCache(row *queries.EnvironmentCache) *api.CacheInfo {
 func mapEnvironmentChecks(rows []queries.EnvironmentCheck) []api.EnvironmentCheck {
 	checks := make([]api.EnvironmentCheck, 0, len(rows))
 	for _, row := range rows {
-		checks = append(checks, api.EnvironmentCheck{
-			Id:      row.CheckID,
-			Level:   row.Level,
-			Message: row.Message,
-			Link:    row.Link,
-		})
+		check := api.EnvironmentCheck{
+			Id:         row.CheckID,
+			Level:      row.Level,
+			Message:    row.Message,
+			MessageKey: row.MessageKey,
+			Link:       row.Link,
+		}
+
+		if len(row.Params) > 0 {
+			var params map[string]interface{}
+			if err := json.Unmarshal(row.Params, &params); err == nil && len(params) > 0 {
+				check.Params = &params
+			}
+		}
+
+		checks = append(checks, check)
 	}
 
 	return checks

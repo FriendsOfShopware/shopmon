@@ -1,5 +1,8 @@
 -- name: GetUserByID :one
-SELECT id, name, email, email_verified, image, created_at, updated_at, role, banned, ban_reason, ban_expires, notifications FROM "user" WHERE id = $1;
+SELECT id, name, email, email_verified, image, created_at, updated_at, role, banned, ban_reason, ban_expires, notifications, locale FROM "user" WHERE id = $1;
+
+-- name: UpdateUserLocale :exec
+UPDATE "user" SET locale = $1, updated_at = NOW() WHERE id = $2;
 
 -- name: GetUserNotifications :one
 SELECT notifications FROM "user" WHERE id = $1;

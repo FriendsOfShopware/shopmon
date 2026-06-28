@@ -10,22 +10,22 @@ import (
 
 func TestCheckWorker(t *testing.T) {
 	tests := []struct {
-		name        string
-		enabled     bool
-		wantLevel   Status
-		wantMessage string
+		name      string
+		enabled   bool
+		wantLevel Status
+		wantKey   string
 	}{
 		{
-			name:        "admin worker enabled is warning",
-			enabled:     true,
-			wantLevel:   StatusYellow,
-			wantMessage: "The admin worker is enabled. This can cause performance issues. Consider using the CLI worker instead.",
+			name:      "admin worker enabled is warning",
+			enabled:   true,
+			wantLevel: StatusYellow,
+			wantKey:   "check.worker.enabled",
 		},
 		{
-			name:        "admin worker disabled is success",
-			enabled:     false,
-			wantLevel:   StatusGreen,
-			wantMessage: "Admin worker is disabled. CLI worker is being used.",
+			name:      "admin worker disabled is success",
+			enabled:   false,
+			wantLevel: StatusGreen,
+			wantKey:   "check.worker.disabled",
 		},
 	}
 
@@ -43,7 +43,7 @@ func TestCheckWorker(t *testing.T) {
 			check := checks[0]
 			assert.Equal(t, "admin.worker", check.ID)
 			assert.Equal(t, tt.wantLevel, check.Level)
-			assert.Equal(t, tt.wantMessage, check.Message)
+			assert.Equal(t, tt.wantKey, check.MessageKey)
 			assert.Equal(t, "Shopware", check.Source)
 		})
 	}

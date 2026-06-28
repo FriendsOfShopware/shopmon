@@ -19,13 +19,14 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 			hasWarning = true
 			output.Warning(
 				fmt.Sprintf("task.%s", task.Name),
-				fmt.Sprintf("Scheduled task '%s' is overdue", task.Name),
+				"check.task.overdue",
+				map[string]any{"name": task.Name},
 				"Shopware", "")
 		}
 	}
 
 	if !hasWarning {
-		output.Success("task.all", "All scheduled tasks are running correctly.", "Shopware", "")
+		output.Success("task.all", "check.task.allRunning", nil, "Shopware", "")
 	}
 }
 

@@ -113,8 +113,3 @@ type extensionDiff struct {
 	Changelog  []extensionChangelog `json:"changelog,omitempty"`
 	Active     bool                 `json:"active"`
 }
-
-type notificationLink struct {
-	Name   string            `json:"name"`
-	Params map[string]string `json:"params"`
-}

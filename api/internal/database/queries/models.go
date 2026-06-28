@@ -92,13 +92,15 @@ type EnvironmentChangelog struct {
 }
 
 type EnvironmentCheck struct {
-	ID            int32   `json:"id"`
-	EnvironmentID int32   `json:"environment_id"`
-	CheckID       string  `json:"check_id"`
-	Level         string  `json:"level"`
-	Message       string  `json:"message"`
-	Source        string  `json:"source"`
-	Link          *string `json:"link"`
+	ID            int32           `json:"id"`
+	EnvironmentID int32           `json:"environment_id"`
+	CheckID       string          `json:"check_id"`
+	Level         string          `json:"level"`
+	Message       string          `json:"message"`
+	MessageKey    *string         `json:"message_key"`
+	Params        json.RawMessage `json:"params"`
+	Source        string          `json:"source"`
+	Link          *string         `json:"link"`
 }
 
 type EnvironmentExtension struct {
@@ -145,6 +147,15 @@ type EnvironmentSitespeed struct {
 	TransferSize           *int32           `json:"transfer_size"`
 }
 
+type EnvironmentStatusEvent struct {
+	ID            int32            `json:"id"`
+	EnvironmentID int32            `json:"environment_id"`
+	OldStatus     string           `json:"old_status"`
+	NewStatus     string           `json:"new_status"`
+	Reasons       json.RawMessage  `json:"reasons"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
 type EnvironmentStoreExtension struct {
 	ID            int32   `json:"id"`
 	EnvironmentID int32   `json:"environment_id"`
@@ -180,6 +191,17 @@ type Member struct {
 	UserID         string           `json:"user_id"`
 	Role           string           `json:"role"`
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
+}
+
+type NotificationPreference struct {
+	ID        int32           `json:"id"`
+	UserID    string          `json:"user_id"`
+	ScopeType string          `json:"scope_type"`
+	ScopeID   string          `json:"scope_id"`
+	EventType string          `json:"event_type"`
+	Channel   string          `json:"channel"`
+	Enabled   bool            `json:"enabled"`
+	Config    json.RawMessage `json:"config"`
 }
 
 type Organization struct {
@@ -312,18 +334,22 @@ type User struct {
 	BanReason     *string          `json:"ban_reason"`
 	BanExpires    pgtype.Timestamp `json:"ban_expires"`
 	Notifications []byte           `json:"notifications"`
+	Locale        string           `json:"locale"`
 }
 
 type UserNotification struct {
-	ID        int32            `json:"id"`
-	UserID    string           `json:"user_id"`
-	Key       string           `json:"key"`
-	Level     string           `json:"level"`
-	Title     string           `json:"title"`
-	Message   string           `json:"message"`
-	Link      json.RawMessage  `json:"link"`
-	Read      bool             `json:"read"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	ID         int32            `json:"id"`
+	UserID     string           `json:"user_id"`
+	Key        string           `json:"key"`
+	Level      string           `json:"level"`
+	Title      string           `json:"title"`
+	Message    string           `json:"message"`
+	TitleKey   *string          `json:"title_key"`
+	MessageKey *string          `json:"message_key"`
+	Params     json.RawMessage  `json:"params"`
+	Link       json.RawMessage  `json:"link"`
+	Read       bool             `json:"read"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
 }
 
 type Verification struct {

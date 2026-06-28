@@ -14,13 +14,10 @@ var validEnvironments = map[string]bool{
 
 func checkEnv(_ context.Context, input Input, output *Output) {
 	env := strings.ToLower(input.CacheInfo.Environment)
+	params := map[string]any{"environment": input.CacheInfo.Environment}
 	if !validEnvironments[env] {
-		output.Warning("shopware.env",
-			"The environment is set to '"+input.CacheInfo.Environment+"'. It should be set to 'production' or 'staging'.",
-			"Shopware", "")
+		output.Warning("shopware.env", "check.env.invalid", params, "Shopware", "")
 	} else {
-		output.Success("shopware.env",
-			"Environment is correctly set to '"+input.CacheInfo.Environment+"'.",
-			"Shopware", "")
+		output.Success("shopware.env", "check.env.valid", params, "Shopware", "")
 	}
 }
