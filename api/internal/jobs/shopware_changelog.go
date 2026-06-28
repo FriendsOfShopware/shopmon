@@ -84,8 +84,6 @@ func (h *ShopwareChangelogHandler) HandleSync(ctx context.Context, _ ShopwareCha
 			continue
 		}
 
-		// The version comes from a third-party index and is interpolated into a
-		// URL, so reject anything that isn't a plain dotted version before use.
 		if !shopwareVersionRe.MatchString(version) {
 			slog.Warn("skipping malformed shopware version", "version", version)
 			failed++

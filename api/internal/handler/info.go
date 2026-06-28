@@ -126,10 +126,10 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 }
 
 // GetShopwareVersions returns all known Shopware versions, newest first. Each
-// version is wrapped in an object so the response can grow extra fields (release
-// date, EOL, …) without breaking clients. The data is served from the
-// shopware_version table, which the worker keeps up to date by crawling the
-// Shopware release changelog hourly, so no external call is made at request time.
+// version is wrapped in an object so the response can gain fields later without
+// breaking clients. The data is served from the shopware_version table, which
+// the worker refreshes hourly from the Shopware release changelog, so no
+// external call is made at request time.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 	names, err := h.queries.ListShopwareVersions(r.Context())
 	if err != nil {
