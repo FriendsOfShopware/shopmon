@@ -126,18 +126,11 @@ func TestCheckExtensionCompatibility_APIError(t *testing.T) {
 }
 
 func TestGetShopwareVersions(t *testing.T) {
-	mockVersionsAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"6.6.0.0": []string{"8.2", "8.3"},
-			"6.5.8.0": []string{"8.1", "8.2", "8.3"},
-		})
-	}))
-	defer mockVersionsAPI.Close()
+	env := testutil.Setup(t)
 
-	env := testutil.Setup(t, func(cfg *config.Config) {
-		cfg.ShopwareVersionsURL = mockVersionsAPI.URL
-	})
+	// Insert out of chronological order to prove the handler orders by release date.
+	seedShopwareVersion(t, env, "6.5.8.0", "2024-01-18T13:34:26Z")
+	seedShopwareVersion(t, env, "6.6.0.0", "2024-03-21T08:00:00Z")
 
 	resp, err := testutil.Get(t, env.Server.URL+"/api/info/shopware-versions")
 	require.NoError(t, err)
@@ -146,36 +139,21 @@ func TestGetShopwareVersions(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 
-	var versions map[string][]string
+	var versions []api.ShopwareVersion
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&versions))
-	assert.Contains(t, versions, "6.6.0.0")
-	assert.Contains(t, versions, "6.5.8.0")
-	assert.Equal(t, []string{"8.2", "8.3"}, versions["6.6.0.0"])
+
+	// Newest first.
+	assert.Equal(t, []api.ShopwareVersion{{Name: "6.6.0.0"}, {Name: "6.5.8.0"}}, versions)
 }
 
-func TestGetShopwareVersions_CachesUpstream(t *testing.T) {
-	var upstreamCalls int
-	mockVersionsAPI := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		upstreamCalls++
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"6.6.0.0": []string{"8.2", "8.3"},
-		})
-	}))
-	defer mockVersionsAPI.Close()
-
-	env := testutil.Setup(t, func(cfg *config.Config) {
-		cfg.ShopwareVersionsURL = mockVersionsAPI.URL
-	})
-
-	for range 3 {
-		resp, err := testutil.Get(t, env.Server.URL+"/api/info/shopware-versions")
-		require.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		_ = resp.Body.Close()
-	}
-
-	assert.Equal(t, 1, upstreamCalls, "upstream should only be hit once; subsequent requests served from cache")
+// seedShopwareVersion inserts a row into the shopware_version table.
+func seedShopwareVersion(t *testing.T, env *testutil.TestEnv, version, releaseDate string) {
+	t.Helper()
+	_, err := env.Pool.Exec(t.Context(), `
+		INSERT INTO shopware_version (version, release_date)
+		VALUES ($1, $2)
+	`, version, releaseDate)
+	require.NoError(t, err)
 }
 
 func TestCheckExtensionCompatibility_InvalidBody(t *testing.T) {

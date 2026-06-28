@@ -371,3 +371,17 @@ CREATE INDEX IF NOT EXISTS idx_account_provider_user ON account(provider_id, use
 CREATE INDEX IF NOT EXISTS idx_account_provider_account ON account(provider_id, account_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log (actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at);
+
+-- shopware_version is a local cache of Shopware releases crawled hourly from
+-- https://releases.shopware.com/changelog. It lets the API answer version
+-- queries without calling any external service.
+CREATE TABLE "shopware_version" (
+  "version" text PRIMARY KEY NOT NULL,
+  "release_date" timestamp NOT NULL,
+  "title" text NOT NULL DEFAULT '',
+  "body" text NOT NULL DEFAULT '',
+  "created_at" timestamp NOT NULL DEFAULT NOW(),
+  "updated_at" timestamp NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_shopware_version_release_date ON shopware_version (release_date);

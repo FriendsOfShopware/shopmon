@@ -46,8 +46,10 @@ type Config struct {
 	// (theme compile, indexing, cache warming) time to settle.
 	DeploymentScrapeDelay time.Duration
 
-	ShopwareAPIURL      string
-	ShopwareVersionsURL string
+	ShopwareAPIURL string
+	// ShopwareChangelogURL is the base URL of the Shopware release changelog API
+	// (index.json + per-version JSON) crawled hourly by the worker.
+	ShopwareChangelogURL string
 
 	OtelEnabled        bool
 	OtelTraceEndpoint  string
@@ -103,8 +105,8 @@ func Load() *Config {
 
 		DisableRegistration: getEnv("DISABLE_REGISTRATION", "false") == "true",
 
-		ShopwareAPIURL:      getEnv("SHOPWARE_API_URL", "https://api.shopware.com"),
-		ShopwareVersionsURL: getEnv("SHOPWARE_VERSIONS_URL", "https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/all-supported-php-versions-by-shopware-version.json"),
+		ShopwareAPIURL:       getEnv("SHOPWARE_API_URL", "https://api.shopware.com"),
+		ShopwareChangelogURL: getEnv("SHOPWARE_CHANGELOG_URL", "https://releases.shopware.com/changelog"),
 
 		OtelEnabled:        getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")) != "",
 		OtelTraceEndpoint:  getEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "")),

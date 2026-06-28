@@ -238,6 +238,15 @@ type ShopApiKey struct {
 	LastUsedAt pgtype.Timestamp `json:"last_used_at"`
 }
 
+type ShopwareVersion struct {
+	Version     string           `json:"version"`
+	ReleaseDate pgtype.Timestamp `json:"release_date"`
+	Title       string           `json:"title"`
+	Body        string           `json:"body"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
 type SsoProvider struct {
 	ID             string  `json:"id"`
 	Issuer         string  `json:"issuer"`

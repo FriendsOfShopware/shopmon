@@ -756,6 +756,11 @@ type Shop struct {
 	OrganizationId       string  `json:"organizationId"`
 }
 
+// ShopwareVersion defines model for ShopwareVersion.
+type ShopwareVersion struct {
+	Name string `json:"name"`
+}
+
 // ShopwareVersionCount defines model for ShopwareVersionCount.
 type ShopwareVersionCount struct {
 	Count   int    `json:"count"`
@@ -1128,7 +1133,7 @@ type ServerInterface interface {
 	// Check extension compatibility between Shopware versions
 	// (POST /info/extension-compatibility)
 	CheckExtensionCompatibility(w http.ResponseWriter, r *http.Request)
-	// Get latest Shopware version information
+	// Get known Shopware versions
 	// (GET /info/shopware-versions)
 	GetShopwareVersions(w http.ResponseWriter, r *http.Request)
 	// Delete all notifications
@@ -1416,7 +1421,7 @@ func (_ Unimplemented) CheckExtensionCompatibility(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get latest Shopware version information
+// Get known Shopware versions
 // (GET /info/shopware-versions)
 func (_ Unimplemented) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)

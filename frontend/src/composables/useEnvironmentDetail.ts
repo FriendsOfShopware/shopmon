@@ -63,11 +63,13 @@ export function useEnvironmentDetail() {
 
       const { data: shopwareVersionsData } = await api.GET("/info/shopware-versions");
       if (shopwareVersionsData) {
-        shopwareVersions.value = Object.keys(shopwareVersionsData)
-          .reverse()
+        // The endpoint returns versions newest-first already.
+        shopwareVersions.value = shopwareVersionsData
+          .map((entry) => entry.name)
           .filter(
+            // Exclude pre-releases (the changelog source uses lowercase "-rc").
             (version) =>
-              !version.includes("-RC") &&
+              !version.toLowerCase().includes("-rc") &&
               compareVersions(environment.value?.shopwareVersion ?? "", version) < 0,
           );
         latestShopwareVersion.value = shopwareVersions.value[0];
