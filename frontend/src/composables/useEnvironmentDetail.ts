@@ -63,13 +63,15 @@ export function useEnvironmentDetail() {
 
       const { data: shopwareVersionsData } = await api.GET("/info/shopware-versions");
       if (shopwareVersionsData) {
-        // The endpoint returns version numbers newest-first already.
-        shopwareVersions.value = shopwareVersionsData.filter(
-          // Exclude pre-releases (the changelog source uses lowercase "-rc").
-          (version) =>
-            !version.toLowerCase().includes("-rc") &&
-            compareVersions(environment.value?.shopwareVersion ?? "", version) < 0,
-        );
+        // The endpoint returns versions newest-first already.
+        shopwareVersions.value = shopwareVersionsData
+          .map((entry) => entry.name)
+          .filter(
+            // Exclude pre-releases (the changelog source uses lowercase "-rc").
+            (version) =>
+              !version.toLowerCase().includes("-rc") &&
+              compareVersions(environment.value?.shopwareVersion ?? "", version) < 0,
+          );
         latestShopwareVersion.value = shopwareVersions.value[0];
       }
     } catch (e) {

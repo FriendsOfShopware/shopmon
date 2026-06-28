@@ -756,6 +756,11 @@ type Shop struct {
 	OrganizationId       string  `json:"organizationId"`
 }
 
+// ShopwareVersion defines model for ShopwareVersion.
+type ShopwareVersion struct {
+	Name string `json:"name"`
+}
+
 // ShopwareVersionCount defines model for ShopwareVersionCount.
 type ShopwareVersionCount struct {
 	Count   int    `json:"count"`

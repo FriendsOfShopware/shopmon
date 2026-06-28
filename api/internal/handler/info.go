@@ -125,16 +125,22 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 	httputil.WriteJSON(w, http.StatusOK, results)
 }
 
-// GetShopwareVersions returns all known Shopware versions, newest first. The
-// data is served from the shopware_version table, which the worker keeps up to
-// date by crawling the Shopware release changelog hourly, so no external call is
-// made at request time.
+// GetShopwareVersions returns all known Shopware versions, newest first. Each
+// version is wrapped in an object so the response can grow extra fields (release
+// date, EOL, …) without breaking clients. The data is served from the
+// shopware_version table, which the worker keeps up to date by crawling the
+// Shopware release changelog hourly, so no external call is made at request time.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
-	versions, err := h.queries.ListShopwareVersions(r.Context())
+	names, err := h.queries.ListShopwareVersions(r.Context())
 	if err != nil {
 		slog.Error("failed to list shopware versions", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load shopware versions")
 		return
+	}
+
+	versions := make([]api.ShopwareVersion, 0, len(names))
+	for _, name := range names {
+		versions = append(versions, api.ShopwareVersion{Name: name})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, versions)

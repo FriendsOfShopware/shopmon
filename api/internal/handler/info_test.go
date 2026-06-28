@@ -139,11 +139,11 @@ func TestGetShopwareVersions(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 
-	var versions []string
+	var versions []api.ShopwareVersion
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&versions))
 
 	// Newest first.
-	assert.Equal(t, []string{"6.6.0.0", "6.5.8.0"}, versions)
+	assert.Equal(t, []api.ShopwareVersion{{Name: "6.6.0.0"}, {Name: "6.5.8.0"}}, versions)
 }
 
 // seedShopwareVersion inserts a row into the shopware_version table.
