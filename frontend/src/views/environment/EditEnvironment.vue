@@ -2,7 +2,7 @@
   <div v-if="environment" class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h1 class="min-w-0 text-2xl font-bold tracking-tight break-words">
+      <h1 class="min-w-0 text-2xl font-bold tracking-tight wrap-break-word">
         {{ $t("environment.editEnvironment", { name: environment.name }) }}
       </h1>
       <Button as-child variant="outline" class="w-full sm:w-auto">

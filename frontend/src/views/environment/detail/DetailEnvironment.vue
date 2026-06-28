@@ -268,7 +268,7 @@
         <div v-for="item in infoItems" :key="item.label" class="min-w-0">
           <dt class="text-xs font-medium text-muted-foreground">{{ item.label }}</dt>
           <dd class="mt-0.5">
-            <span class="text-sm break-words">{{ item.value }}</span>
+            <span class="text-sm wrap-break-word">{{ item.value }}</span>
           </dd>
         </div>
 

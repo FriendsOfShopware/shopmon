@@ -76,7 +76,7 @@
           <CardContent>
             <div class="space-y-2">
               <div v-for="v in versionData" :key="v.version" class="flex items-center gap-3">
-                <Badge variant="secondary" class="min-w-[5rem] justify-center font-mono text-xs">{{
+                <Badge variant="secondary" class="min-w-20 justify-center font-mono text-xs">{{
                   v.version
                 }}</Badge>
                 <div class="flex-1">

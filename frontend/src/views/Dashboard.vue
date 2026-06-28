@@ -161,7 +161,7 @@
             >
               <Badge
                 variant="secondary"
-                class="min-w-[5rem] shrink-0 justify-center font-mono text-xs"
+                class="min-w-20 shrink-0 justify-center font-mono text-xs"
               >
                 {{ version.version }}
               </Badge>

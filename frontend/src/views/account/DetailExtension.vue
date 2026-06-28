@@ -269,7 +269,7 @@
                     :class="i === 0 ? 'border-primary/40' : 'border-border'"
                   >
                     <span
-                      class="absolute -left-[7px] top-1 size-3 rounded-full border-2 border-card"
+                      class="absolute -left-1.75 top-1 size-3 rounded-full border-2 border-card"
                       :class="i === 0 ? 'bg-primary' : 'bg-border'"
                     />
                     <div class="flex flex-wrap items-center gap-2">

@@ -118,7 +118,7 @@
 
                 <!-- Extension info -->
                 <div class="min-w-0 flex-1 basis-full sm:basis-0">
-                  <span class="font-medium break-words">{{ ext.label }}</span>
+                  <span class="font-medium wrap-break-word">{{ ext.label }}</span>
                   <span class="ml-1 text-muted-foreground break-all">({{ ext.name }})</span>
                 </div>
 

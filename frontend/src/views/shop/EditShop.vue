@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h1 class="min-w-0 text-2xl font-bold tracking-tight break-words">
+      <h1 class="min-w-0 text-2xl font-bold tracking-tight wrap-break-word">
         {{ shop ? $t("shop.editShop", { name: shop.name }) : $t("nav.editShop") }}
       </h1>
       <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">

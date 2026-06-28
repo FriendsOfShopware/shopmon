@@ -204,12 +204,12 @@
                     <icon-fa6-solid:circle-info v-else class="size-4 text-info" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium break-words">{{ notification.title }}</div>
+                    <div class="text-sm font-medium wrap-break-word">{{ notification.title }}</div>
                     <div class="text-xs text-muted-foreground">
                       {{ formatDateTime(notification.createdAt) }}
                     </div>
                     <div
-                      class="text-[0.8125rem] leading-snug text-muted-foreground break-words [overflow-wrap:anywhere]"
+                      class="text-[0.8125rem] leading-snug text-muted-foreground wrap-anywhere"
                     >
                       {{ notification.message }}
                       <a
