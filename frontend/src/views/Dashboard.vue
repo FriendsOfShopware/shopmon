@@ -150,7 +150,7 @@
       </section>
 
       <!-- Shopware version overview + recent changes -->
-      <div class="mb-8 grid gap-6 lg:grid-cols-3">
+      <div class="mb-8 grid items-start gap-6 lg:grid-cols-3">
         <!-- Version distribution -->
         <CardSection :icon="IconCodeBranch" :title="$t('dashboard.shopwareVersions')">
           <div class="space-y-2">

@@ -3,7 +3,7 @@
     <MobileSidebarAutoClose />
     <Sidebar collapsible="icon">
       <!-- Logo + brand -->
-      <SidebarHeader class="border-b">
+      <SidebarHeader class="h-12 justify-center border-b py-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton as-child class="h-10 hover:bg-transparent active:bg-transparent">
