@@ -83,7 +83,7 @@ SELECT id, environment_id, name, size FROM environment_queue WHERE environment_i
 SELECT id, environment_id, environment, http_cache, cache_adapter FROM environment_cache WHERE environment_id = $1;
 
 -- name: GetEnvironmentChecks :many
-SELECT id, environment_id, check_id, level, message, source, link FROM environment_check WHERE environment_id = $1;
+SELECT id, environment_id, check_id, level, message, message_key, params, source, link FROM environment_check WHERE environment_id = $1;
 
 -- name: GetEnvironmentSitespeeds :many
 SELECT id, environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size
@@ -233,11 +233,11 @@ WHERE (environment_cache.environment, environment_cache.http_cache, environment_
 DELETE FROM environment_check WHERE environment_id = $1 AND check_id != ALL($2::text[]);
 
 -- name: InsertEnvironmentCheck :exec
-INSERT INTO environment_check (environment_id, check_id, level, message, source, link)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
-WHERE (environment_check.level, environment_check.message, environment_check.source, environment_check.link)
-  IS DISTINCT FROM ($3, $4, $5, $6);
+INSERT INTO environment_check (environment_id, check_id, level, message, message_key, params, source, link)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, message_key = $5, params = $6, source = $7, link = $8
+WHERE (environment_check.level, environment_check.message, environment_check.message_key, environment_check.params, environment_check.source, environment_check.link)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8);
 
 -- name: InsertEnvironmentChangelog :exec
 INSERT INTO environment_changelog (environment_id, extensions, old_shopware_version, new_shopware_version, date)

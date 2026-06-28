@@ -325,7 +325,7 @@ func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, environmentID *i
 }
 
 const getEnvironmentChecks = `-- name: GetEnvironmentChecks :many
-SELECT id, environment_id, check_id, level, message, source, link FROM environment_check WHERE environment_id = $1
+SELECT id, environment_id, check_id, level, message, message_key, params, source, link FROM environment_check WHERE environment_id = $1
 `
 
 func (q *Queries) GetEnvironmentChecks(ctx context.Context, environmentID int32) ([]EnvironmentCheck, error) {
@@ -343,6 +343,8 @@ func (q *Queries) GetEnvironmentChecks(ctx context.Context, environmentID int32)
 			&i.CheckID,
 			&i.Level,
 			&i.Message,
+			&i.MessageKey,
+			&i.Params,
 			&i.Source,
 			&i.Link,
 		); err != nil {
@@ -855,20 +857,22 @@ func (q *Queries) InsertEnvironmentChangelog(ctx context.Context, arg InsertEnvi
 }
 
 const insertEnvironmentCheck = `-- name: InsertEnvironmentCheck :exec
-INSERT INTO environment_check (environment_id, check_id, level, message, source, link)
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
-WHERE (environment_check.level, environment_check.message, environment_check.source, environment_check.link)
-  IS DISTINCT FROM ($3, $4, $5, $6)
+INSERT INTO environment_check (environment_id, check_id, level, message, message_key, params, source, link)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, message_key = $5, params = $6, source = $7, link = $8
+WHERE (environment_check.level, environment_check.message, environment_check.message_key, environment_check.params, environment_check.source, environment_check.link)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8)
 `
 
 type InsertEnvironmentCheckParams struct {
-	EnvironmentID int32   `json:"environment_id"`
-	CheckID       string  `json:"check_id"`
-	Level         string  `json:"level"`
-	Message       string  `json:"message"`
-	Source        string  `json:"source"`
-	Link          *string `json:"link"`
+	EnvironmentID int32           `json:"environment_id"`
+	CheckID       string          `json:"check_id"`
+	Level         string          `json:"level"`
+	Message       string          `json:"message"`
+	MessageKey    *string         `json:"message_key"`
+	Params        json.RawMessage `json:"params"`
+	Source        string          `json:"source"`
+	Link          *string         `json:"link"`
 }
 
 func (q *Queries) InsertEnvironmentCheck(ctx context.Context, arg InsertEnvironmentCheckParams) error {
@@ -877,6 +881,8 @@ func (q *Queries) InsertEnvironmentCheck(ctx context.Context, arg InsertEnvironm
 		arg.CheckID,
 		arg.Level,
 		arg.Message,
+		arg.MessageKey,
+		arg.Params,
 		arg.Source,
 		arg.Link,
 	)

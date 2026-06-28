@@ -295,3 +295,44 @@ func int32PointerToInt(value *int32) *int {
 	converted := int(*value)
 	return &converted
 }
+
+// StatusEvents returns the recent status change timeline for an environment.
+func (s *Service) StatusEvents(ctx context.Context, userID string, environmentID int32) ([]api.StatusEvent, error) {
+	environment, err := s.queries.GetEnvironmentByID(ctx, environmentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("get environment: %w", err)
+	}
+	member, err := s.authorizer.IsMember(ctx, userID, environment.OrganizationID)
+	if err != nil {
+		return nil, fmt.Errorf("authorize organization membership: %w", err)
+	}
+	if !member {
+		return nil, ErrNotAuthorized
+	}
+
+	rows, err := s.queries.ListEnvironmentStatusEvents(ctx, environmentID)
+	if err != nil {
+		return nil, fmt.Errorf("list environment status events: %w", err)
+	}
+
+	events := make([]api.StatusEvent, 0, len(rows))
+	for _, row := range rows {
+		reasons := []api.StatusReason{}
+		if len(row.Reasons) > 0 {
+			if err := json.Unmarshal(row.Reasons, &reasons); err != nil {
+				reasons = []api.StatusReason{}
+			}
+		}
+		events = append(events, api.StatusEvent{
+			Id:        int(row.ID),
+			OldStatus: row.OldStatus,
+			NewStatus: row.NewStatus,
+			Reasons:   reasons,
+			CreatedAt: pgtimeToTime(row.CreatedAt),
+		})
+	}
+	return events, nil
+}

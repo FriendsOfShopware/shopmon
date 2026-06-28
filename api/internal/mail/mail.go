@@ -36,6 +36,7 @@ type Sender interface {
 	BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) Email
 	BuildStatusChangeEmail(userName, envName, newStatus, alertMessage string) Email
 	BuildConnectionFailedEmail(userName, envName, alertMessage string) Email
+	BuildAlertEmail(userName, subject, intro, alertMessage string) Email
 }
 
 // Config holds the settings for the SMTP mailer.

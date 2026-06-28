@@ -25,14 +25,23 @@ func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 	result := make([]api.Notification, 0, len(rows))
 	for _, row := range rows {
 		n := api.Notification{
-			Id:        int(row.ID),
-			UserId:    row.UserID,
-			Key:       row.Key,
-			Level:     row.Level,
-			Title:     row.Title,
-			Message:   row.Message,
-			Read:      row.Read,
-			CreatedAt: row.CreatedAt,
+			Id:         int(row.ID),
+			UserId:     row.UserID,
+			Key:        row.Key,
+			Level:      row.Level,
+			Title:      row.Title,
+			Message:    row.Message,
+			TitleKey:   row.TitleKey,
+			MessageKey: row.MessageKey,
+			Read:       row.Read,
+			CreatedAt:  row.CreatedAt,
+		}
+
+		if len(row.Params) > 0 {
+			params := map[string]interface{}(row.Params)
+			if len(params) > 0 {
+				n.Params = &params
+			}
 		}
 
 		if row.Link != nil {

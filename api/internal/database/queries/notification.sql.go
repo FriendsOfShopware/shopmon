@@ -34,7 +34,7 @@ func (q *Queries) DeleteNotification(ctx context.Context, arg DeleteNotification
 }
 
 const listNotifications = `-- name: ListNotifications :many
-SELECT id, user_id, key, level, title, message, link, read, created_at
+SELECT id, user_id, key, level, title, message, title_key, message_key, params, link, read, created_at
 FROM user_notification WHERE user_id = $1 ORDER BY created_at DESC
 `
 
@@ -54,6 +54,9 @@ func (q *Queries) ListNotifications(ctx context.Context, userID string) ([]UserN
 			&i.Level,
 			&i.Title,
 			&i.Message,
+			&i.TitleKey,
+			&i.MessageKey,
+			&i.Params,
 			&i.Link,
 			&i.Read,
 			&i.CreatedAt,
@@ -78,18 +81,22 @@ func (q *Queries) MarkAllNotificationsRead(ctx context.Context, userID string) e
 }
 
 const upsertNotification = `-- name: UpsertNotification :exec
-INSERT INTO user_notification (user_id, key, level, title, message, link, read, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
-ON CONFLICT (user_id, key) DO UPDATE SET level = $3, title = $4, message = $5, link = $6, read = false, created_at = NOW()
+INSERT INTO user_notification (user_id, key, level, title, message, title_key, message_key, params, link, read, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, NOW())
+ON CONFLICT (user_id, key) DO UPDATE SET
+  level = $3, title = $4, message = $5, title_key = $6, message_key = $7, params = $8, link = $9, read = false, created_at = NOW()
 `
 
 type UpsertNotificationParams struct {
-	UserID  string          `json:"user_id"`
-	Key     string          `json:"key"`
-	Level   string          `json:"level"`
-	Title   string          `json:"title"`
-	Message string          `json:"message"`
-	Link    json.RawMessage `json:"link"`
+	UserID     string          `json:"user_id"`
+	Key        string          `json:"key"`
+	Level      string          `json:"level"`
+	Title      string          `json:"title"`
+	Message    string          `json:"message"`
+	TitleKey   *string         `json:"title_key"`
+	MessageKey *string         `json:"message_key"`
+	Params     json.RawMessage `json:"params"`
+	Link       json.RawMessage `json:"link"`
 }
 
 func (q *Queries) UpsertNotification(ctx context.Context, arg UpsertNotificationParams) error {
@@ -99,6 +106,9 @@ func (q *Queries) UpsertNotification(ctx context.Context, arg UpsertNotification
 		arg.Level,
 		arg.Title,
 		arg.Message,
+		arg.TitleKey,
+		arg.MessageKey,
+		arg.Params,
 		arg.Link,
 	)
 	return err

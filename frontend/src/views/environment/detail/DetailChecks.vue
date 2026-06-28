@@ -65,7 +65,7 @@
 
         <div class="min-w-0 flex-1">
           <div class="text-sm">
-            {{ check.message }}
+            {{ translateCheckMessage(check) }}
           </div>
           <a
             v-if="check.link"
@@ -108,6 +108,7 @@ import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { api } from "@/helpers/api";
+import { translateCheckMessage } from "@/helpers/i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 
 import { Button } from "@/components/ui/button";

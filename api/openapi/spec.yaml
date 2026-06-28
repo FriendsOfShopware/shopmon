@@ -79,6 +79,31 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "401":
           $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateAccountMe
+      tags: [Account]
+      summary: Update current user preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                locale:
+                  type: string
+                  description: Preferred language (e.g. "en", "de").
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /account/extensions:
     get:
@@ -209,6 +234,72 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /account/notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      tags: [Account]
+      summary: Get the current user's notification preferences
+      responses:
+        "200":
+          description: List of notification preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationPreference"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: setNotificationPreference
+      tags: [Account]
+      summary: Create or update a single notification preference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferenceInput"
+      responses:
+        "204":
+          description: Preference saved
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteNotificationPreference
+      tags: [Account]
+      summary: Delete a single notification preference (revert to inherited/default)
+      parameters:
+        - name: scopeType
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: scopeId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: eventType
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: channel
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Preference deleted
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ──────────────────────────────────────────────
   # Notifications
   # ──────────────────────────────────────────────
@@ -235,6 +326,23 @@ paths:
       responses:
         "204":
           description: All notifications deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /notifications/event-types:
+    get:
+      operationId: getNotificationEventTypes
+      tags: [Notifications]
+      summary: List the notifiable event types and their default channels
+      responses:
+        "200":
+          description: List of event types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationEventType"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -451,6 +559,27 @@ paths:
       responses:
         "204":
           description: Unsubscribed
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /environments/{environmentId}/status-events:
+    get:
+      operationId: getEnvironmentStatusEvents
+      tags: [Environments]
+      summary: Get the status change history for an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      responses:
+        "200":
+          description: List of status events (most recent first)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusEvent"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -2700,6 +2829,7 @@ components:
         - displayName
         - email
         - createdAt
+        - locale
       properties:
         id:
           type: string
@@ -2711,6 +2841,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        locale:
+          type: string
+          description: The user's preferred language, used to localize notification emails.
 
     AccountExtension:
       type: object
@@ -3043,6 +3176,109 @@ components:
           type: integer
         name:
           type: string
+        shopId:
+          type: integer
+          nullable: true
+          description: The shop this environment belongs to, if any.
+        shopName:
+          type: string
+          nullable: true
+
+    StatusReason:
+      type: object
+      required:
+        - level
+        - messageKey
+      properties:
+        level:
+          type: string
+        messageKey:
+          type: string
+        params:
+          type: object
+          additionalProperties: true
+        source:
+          type: string
+
+    StatusEvent:
+      type: object
+      required:
+        - id
+        - oldStatus
+        - newStatus
+        - reasons
+        - createdAt
+      properties:
+        id:
+          type: integer
+        oldStatus:
+          type: string
+        newStatus:
+          type: string
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusReason"
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationEventType:
+      type: object
+      required:
+        - type
+        - defaultChannels
+      properties:
+        type:
+          type: string
+          description: Stable event type identifier (e.g. status_degraded).
+        defaultChannels:
+          type: array
+          items:
+            type: string
+          description: Channels this event is delivered on by default.
+
+    NotificationPreference:
+      type: object
+      required:
+        - scopeType
+        - scopeId
+        - eventType
+        - channel
+        - enabled
+      properties:
+        scopeType:
+          type: string
+          description: "Scope of the preference: global, organization, or environment."
+        scopeId:
+          type: string
+          description: "Empty for global; organization or environment id otherwise."
+        eventType:
+          type: string
+          description: "Empty matches all event types; otherwise a specific event type."
+        channel:
+          type: string
+          description: "Empty is a subscription marker; otherwise in_app or email."
+        enabled:
+          type: boolean
+
+    NotificationPreferenceInput:
+      type: object
+      required:
+        - scopeType
+        - channel
+        - enabled
+      properties:
+        scopeType:
+          type: string
+        scopeId:
+          type: string
+        eventType:
+          type: string
+        channel:
+          type: string
+        enabled:
+          type: boolean
 
     # ── Notifications ────────────────────────────
     Notification:
@@ -3070,6 +3306,18 @@ components:
           type: string
         message:
           type: string
+        titleKey:
+          type: string
+          nullable: true
+          description: Translation key for the title; render with params client-side. Falls back to title.
+        messageKey:
+          type: string
+          nullable: true
+          description: Translation key for the message; render with params client-side. Falls back to message.
+        params:
+          type: object
+          additionalProperties: true
+          description: Structured params for interpolating titleKey/messageKey.
         link:
           allOf:
             - $ref: "#/components/schemas/NotificationLink"
@@ -3364,6 +3612,14 @@ components:
           type: string
         message:
           type: string
+        messageKey:
+          type: string
+          nullable: true
+          description: Translation key for the message; render with params client-side. Falls back to message.
+        params:
+          type: object
+          additionalProperties: true
+          description: Structured params for interpolating messageKey.
         link:
           type: string
           nullable: true

@@ -24,6 +24,43 @@ func (h *Handler) GetAccountMe(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, profile)
 }
 
+// supportedLocales bounds the locales a user may select, matching the frontend
+// catalog and the server-side email translator.
+var supportedLocales = map[string]bool{"en": true, "de": true}
+
+// UpdateAccountMe updates the current user's preferences (currently locale).
+func (h *Handler) UpdateAccountMe(w http.ResponseWriter, r *http.Request) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	var body api.UpdateAccountMeJSONRequestBody
+	if err := httputil.DecodeBody(r, &body); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if body.Locale != nil {
+		if !supportedLocales[*body.Locale] {
+			httputil.WriteError(w, http.StatusBadRequest, "unsupported locale")
+			return
+		}
+		if err := h.account.UpdateLocale(r.Context(), user.ID, *body.Locale); err != nil {
+			slog.Error("failed to update user locale", "userId", user.ID, "error", err)
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to update preferences")
+			return
+		}
+	}
+
+	profile, err := h.account.Profile(r.Context(), user.ID)
+	if err != nil {
+		h.writeAccountReadError(w, r, "get account profile", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, profile)
+}
+
 func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request, params api.GetAccountExtensionsParams) {
 	user := h.requireUser(w, r)
 	if user == nil {

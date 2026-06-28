@@ -368,3 +368,18 @@ func (h *Handler) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// GetEnvironmentStatusEvents returns the status change history for an environment.
+func (h *Handler) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	events, err := h.environments.StatusEvents(r.Context(), user.ID, int32(environmentId))
+	if err != nil {
+		h.writeEnvironmentReadError(w, r, "list environment status events", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, events)
+}

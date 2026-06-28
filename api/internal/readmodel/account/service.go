@@ -38,7 +38,19 @@ func (s *Service) Profile(ctx context.Context, userID string) (api.UserProfile, 
 		DisplayName: dbUser.Name,
 		Email:       openapi_types.Email(dbUser.Email),
 		CreatedAt:   pgtimeToTime(dbUser.CreatedAt),
+		Locale:      dbUser.Locale,
 	}, nil
+}
+
+// UpdateLocale persists the user's preferred UI/email locale.
+func (s *Service) UpdateLocale(ctx context.Context, userID, locale string) error {
+	if err := s.queries.UpdateUserLocale(ctx, queries.UpdateUserLocaleParams{
+		Locale: locale,
+		ID:     userID,
+	}); err != nil {
+		return fmt.Errorf("update user locale: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) Extensions(ctx context.Context, userID string, activeOrgID, requestedLanguage *string) ([]api.AccountExtension, error) {

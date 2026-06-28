@@ -71,7 +71,7 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (GetSessi
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, name, email, email_verified, image, created_at, updated_at, role, banned, ban_reason, ban_expires, notifications FROM "user" WHERE id = $1
+SELECT id, name, email, email_verified, image, created_at, updated_at, role, banned, ban_reason, ban_expires, notifications, locale FROM "user" WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
@@ -90,6 +90,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.BanReason,
 		&i.BanExpires,
 		&i.Notifications,
+		&i.Locale,
 	)
 	return i, err
 }
@@ -1065,6 +1066,20 @@ func (q *Queries) IsOrganizationMember(ctx context.Context, arg IsOrganizationMe
 	var is_member bool
 	err := row.Scan(&is_member)
 	return is_member, err
+}
+
+const updateUserLocale = `-- name: UpdateUserLocale :exec
+UPDATE "user" SET locale = $1, updated_at = NOW() WHERE id = $2
+`
+
+type UpdateUserLocaleParams struct {
+	Locale string `json:"locale"`
+	ID     string `json:"id"`
+}
+
+func (q *Queries) UpdateUserLocale(ctx context.Context, arg UpdateUserLocaleParams) error {
+	_, err := q.db.Exec(ctx, updateUserLocale, arg.Locale, arg.ID)
+	return err
 }
 
 const updateUserNotifications = `-- name: UpdateUserNotifications :exec
