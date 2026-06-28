@@ -157,10 +157,30 @@ func (r *Repository) AcceptInvitation(ctx context.Context, invitationID, memberI
 }
 
 func (r *Repository) DeleteMember(ctx context.Context, organizationID, userID string) error {
-	if err := r.queries.DeleteMember(ctx, queries.DeleteMemberParams{OrganizationID: organizationID, UserID: userID}); err != nil {
-		return fmt.Errorf("execute member delete: %w", err)
-	}
-	return nil
+	// notification_preference / user_notification reference environments by text
+	// scope_id / link params (no foreign key), so they would otherwise linger after
+	// the member is gone. Delete them in the same transaction as the membership.
+	return r.withTx(ctx, func(txq *queries.Queries) error {
+		if err := txq.DeleteMember(ctx, queries.DeleteMemberParams{
+			OrganizationID: organizationID,
+			UserID:         userID,
+		}); err != nil {
+			return fmt.Errorf("execute member delete: %w", err)
+		}
+		if err := txq.DeleteUserOrgNotificationPreferences(ctx, queries.DeleteUserOrgNotificationPreferencesParams{
+			UserID:         userID,
+			OrganizationID: organizationID,
+		}); err != nil {
+			return fmt.Errorf("delete org notification preferences: %w", err)
+		}
+		if err := txq.DeleteUserOrgNotifications(ctx, queries.DeleteUserOrgNotificationsParams{
+			UserID:         userID,
+			OrganizationID: organizationID,
+		}); err != nil {
+			return fmt.Errorf("delete org notifications: %w", err)
+		}
+		return nil
+	})
 }
 
 func (r *Repository) CountOwners(ctx context.Context, organizationID string) (int32, error) {

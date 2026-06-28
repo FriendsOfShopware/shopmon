@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
@@ -202,6 +203,16 @@ func (r *Repository) DeleteEnvironment(ctx context.Context, environmentID int32)
 	txq := r.queries.WithTx(tx)
 	if err := txq.ReassignShopDefaultEnvironment(ctx, environmentID); err != nil {
 		return fmt.Errorf("reassign shop default environment: %w", err)
+	}
+	// notification_preference / user_notification reference the environment by a
+	// text scope_id / link param, not a foreign key, so they are not cascaded by
+	// the environment delete; clean them up explicitly.
+	envIDStr := strconv.Itoa(int(environmentID))
+	if err := txq.DeleteEnvironmentNotificationPreferences(ctx, envIDStr); err != nil {
+		return fmt.Errorf("delete environment notification preferences: %w", err)
+	}
+	if err := txq.DeleteEnvironmentNotifications(ctx, envIDStr); err != nil {
+		return fmt.Errorf("delete environment notifications: %w", err)
 	}
 	if err := txq.DeleteEnvironment(ctx, environmentID); err != nil {
 		return fmt.Errorf("delete environment: %w", err)

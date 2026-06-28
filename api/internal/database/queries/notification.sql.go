@@ -19,6 +19,17 @@ func (q *Queries) DeleteAllNotifications(ctx context.Context, userID string) err
 	return err
 }
 
+const deleteEnvironmentNotifications = `-- name: DeleteEnvironmentNotifications :exec
+DELETE FROM user_notification
+WHERE (link->'params'->>'environmentId') = $1::text
+`
+
+// Removes all users' inbox notifications tied to a single environment.
+func (q *Queries) DeleteEnvironmentNotifications(ctx context.Context, environmentID string) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentNotifications, environmentID)
+	return err
+}
+
 const deleteNotification = `-- name: DeleteNotification :exec
 DELETE FROM user_notification WHERE id = $1 AND user_id = $2
 `
@@ -30,6 +41,25 @@ type DeleteNotificationParams struct {
 
 func (q *Queries) DeleteNotification(ctx context.Context, arg DeleteNotificationParams) error {
 	_, err := q.db.Exec(ctx, deleteNotification, arg.ID, arg.UserID)
+	return err
+}
+
+const deleteUserOrgNotifications = `-- name: DeleteUserOrgNotifications :exec
+DELETE FROM user_notification
+WHERE user_id = $1
+  AND (link->'params'->>'environmentId') IN (
+    SELECT id::text FROM environment WHERE organization_id = $2
+  )
+`
+
+type DeleteUserOrgNotificationsParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// Removes a user's inbox notifications tied to environments of an organization.
+func (q *Queries) DeleteUserOrgNotifications(ctx context.Context, arg DeleteUserOrgNotificationsParams) error {
+	_, err := q.db.Exec(ctx, deleteUserOrgNotifications, arg.UserID, arg.OrganizationID)
 	return err
 }
 
