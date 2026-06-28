@@ -35,7 +35,7 @@ func (h *Handler) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Req
 }
 
 // GetEnvironment returns full environment details.
-func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
+func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetEnvironmentParams) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
@@ -46,7 +46,12 @@ func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environ
 		return
 	}
 
-	aggregate := h.loadEnvironmentDetailAggregate(r.Context(), int32(environmentId))
+	var langStr *string
+	if params.Language != nil {
+		s := string(*params.Language)
+		langStr = &s
+	}
+	aggregate := h.loadEnvironmentDetailAggregate(r.Context(), int32(environmentId), resolveLanguage(langStr))
 	aggregate.subscribed = userSubscribedToEnvironment(user, environmentId)
 	httputil.WriteJSON(w, http.StatusOK, h.buildEnvironmentDetail(environment, aggregate))
 }

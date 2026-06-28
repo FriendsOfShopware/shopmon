@@ -487,8 +487,11 @@ func (q *Queries) GetUserShopsByOrg(ctx context.Context, arg GetUserShopsByOrgPa
 }
 
 const getUserStoreExtensionChangelogsByOrg = `-- name: GetUserStoreExtensionChangelogsByOrg :many
-SELECT DISTINCT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+SELECT DISTINCT sev.extension_name, sev.version,
+       COALESCE(t.changelog, ten.changelog) AS changelog, sev.released_at
 FROM store_extension_version sev
+LEFT JOIN store_extension_version_translation t ON t.extension_version_id = sev.id AND t.language = $3
+LEFT JOIN store_extension_version_translation ten ON ten.extension_version_id = sev.id AND ten.language = 'en'
 WHERE sev.extension_name IN (
   SELECT ese.extension_name
   FROM environment_store_extension ese
@@ -502,18 +505,19 @@ ORDER BY sev.extension_name, sev.version
 type GetUserStoreExtensionChangelogsByOrgParams struct {
 	UserID         string `json:"user_id"`
 	OrganizationID string `json:"organization_id"`
+	Language       string `json:"language"`
 }
 
 type GetUserStoreExtensionChangelogsByOrgRow struct {
 	ExtensionName string  `json:"extension_name"`
 	Version       string  `json:"version"`
-	ChangelogEn   *string `json:"changelog_en"`
-	ChangelogDe   *string `json:"changelog_de"`
+	Changelog     *string `json:"changelog"`
 	ReleasedAt    *string `json:"released_at"`
 }
 
+// Changelog text resolves to the requested language ($3), falling back to en.
 func (q *Queries) GetUserStoreExtensionChangelogsByOrg(ctx context.Context, arg GetUserStoreExtensionChangelogsByOrgParams) ([]GetUserStoreExtensionChangelogsByOrgRow, error) {
-	rows, err := q.db.Query(ctx, getUserStoreExtensionChangelogsByOrg, arg.UserID, arg.OrganizationID)
+	rows, err := q.db.Query(ctx, getUserStoreExtensionChangelogsByOrg, arg.UserID, arg.OrganizationID, arg.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -524,10 +528,53 @@ func (q *Queries) GetUserStoreExtensionChangelogsByOrg(ctx context.Context, arg 
 		if err := rows.Scan(
 			&i.ExtensionName,
 			&i.Version,
-			&i.ChangelogEn,
-			&i.ChangelogDe,
+			&i.Changelog,
 			&i.ReleasedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserStoreExtensionImagesByOrg = `-- name: GetUserStoreExtensionImagesByOrg :many
+SELECT sei.extension_name, sei.url, sei.preview
+FROM store_extension_image sei
+WHERE sei.extension_name IN (
+  SELECT ese.extension_name
+  FROM environment_store_extension ese
+  JOIN environment e ON e.id = ese.environment_id
+  JOIN member m ON m.organization_id = e.organization_id
+  WHERE m.user_id = $1 AND e.organization_id = $2
+)
+ORDER BY sei.extension_name, sei.preview DESC, sei.priority, sei.id
+`
+
+type GetUserStoreExtensionImagesByOrgParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+type GetUserStoreExtensionImagesByOrgRow struct {
+	ExtensionName string `json:"extension_name"`
+	Url           string `json:"url"`
+	Preview       bool   `json:"preview"`
+}
+
+func (q *Queries) GetUserStoreExtensionImagesByOrg(ctx context.Context, arg GetUserStoreExtensionImagesByOrgParams) ([]GetUserStoreExtensionImagesByOrgRow, error) {
+	rows, err := q.db.Query(ctx, getUserStoreExtensionImagesByOrg, arg.UserID, arg.OrganizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserStoreExtensionImagesByOrgRow{}
+	for rows.Next() {
+		var i GetUserStoreExtensionImagesByOrgRow
+		if err := rows.Scan(&i.ExtensionName, &i.Url, &i.Preview); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -541,11 +588,19 @@ func (q *Queries) GetUserStoreExtensionChangelogsByOrg(ctx context.Context, arg 
 const getUserStoreExtensionsByOrg = `-- name: GetUserStoreExtensionsByOrg :many
 SELECT ese.extension_name AS name, ese.label, ese.version, ese.latest_version, ese.active, ese.installed,
        se.store_link, se.rating_average, ese.installed_at,
+       se.icon_url, se.producer_name, se.producer_website, se.release_date,
+       COALESCE(t.short_description, ten.short_description) AS short_description,
+       COALESCE(t.description, ten.description) AS description,
+       COALESCE(t.installation_manual, ten.installation_manual) AS installation_manual,
        ese.environment_id, e.name AS environment_name, e.url AS environment_url,
-       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
 FROM environment_store_extension ese
 JOIN store_extension se ON se.name = ese.extension_name
+LEFT JOIN store_extension_translation t ON t.extension_name = ese.extension_name AND t.language = $3
+LEFT JOIN store_extension_translation ten ON ten.extension_name = ese.extension_name AND ten.language = 'en'
 JOIN environment e ON e.id = ese.environment_id
+JOIN shop sh ON sh.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
@@ -555,6 +610,7 @@ ORDER BY ese.extension_name, e.name
 type GetUserStoreExtensionsByOrgParams struct {
 	UserID         string `json:"user_id"`
 	OrganizationID string `json:"organization_id"`
+	Language       string `json:"language"`
 }
 
 type GetUserStoreExtensionsByOrgRow struct {
@@ -567,15 +623,26 @@ type GetUserStoreExtensionsByOrgRow struct {
 	StoreLink                   *string `json:"store_link"`
 	RatingAverage               *int32  `json:"rating_average"`
 	InstalledAt                 *string `json:"installed_at"`
+	IconUrl                     *string `json:"icon_url"`
+	ProducerName                *string `json:"producer_name"`
+	ProducerWebsite             *string `json:"producer_website"`
+	ReleaseDate                 *string `json:"release_date"`
+	ShortDescription            *string `json:"short_description"`
+	Description                 *string `json:"description"`
+	InstallationManual          *string `json:"installation_manual"`
 	EnvironmentID               int32   `json:"environment_id"`
 	EnvironmentName             string  `json:"environment_name"`
 	EnvironmentUrl              string  `json:"environment_url"`
 	EnvironmentOrganizationName string  `json:"environment_organization_name"`
 	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
+	EnvironmentShopID           int32   `json:"environment_shop_id"`
+	EnvironmentShopName         string  `json:"environment_shop_name"`
 }
 
+// Localized fields resolve to the requested language ($3), falling back to the
+// English translation when that language is missing.
 func (q *Queries) GetUserStoreExtensionsByOrg(ctx context.Context, arg GetUserStoreExtensionsByOrgParams) ([]GetUserStoreExtensionsByOrgRow, error) {
-	rows, err := q.db.Query(ctx, getUserStoreExtensionsByOrg, arg.UserID, arg.OrganizationID)
+	rows, err := q.db.Query(ctx, getUserStoreExtensionsByOrg, arg.UserID, arg.OrganizationID, arg.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -593,11 +660,20 @@ func (q *Queries) GetUserStoreExtensionsByOrg(ctx context.Context, arg GetUserSt
 			&i.StoreLink,
 			&i.RatingAverage,
 			&i.InstalledAt,
+			&i.IconUrl,
+			&i.ProducerName,
+			&i.ProducerWebsite,
+			&i.ReleaseDate,
+			&i.ShortDescription,
+			&i.Description,
+			&i.InstallationManual,
 			&i.EnvironmentID,
 			&i.EnvironmentName,
 			&i.EnvironmentUrl,
 			&i.EnvironmentOrganizationName,
 			&i.EnvironmentOrganizationID,
+			&i.EnvironmentShopID,
+			&i.EnvironmentShopName,
 		); err != nil {
 			return nil, err
 		}
@@ -613,9 +689,11 @@ const getUserUnknownExtensionsByOrg = `-- name: GetUserUnknownExtensionsByOrg :m
 SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
        NULL::text AS store_link, NULL::integer AS rating_average, ee.installed_at,
        ee.environment_id, e.name AS environment_name, e.url AS environment_url,
-       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
 FROM environment_extension ee
 JOIN environment e ON e.id = ee.environment_id
+JOIN shop sh ON sh.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
@@ -642,6 +720,8 @@ type GetUserUnknownExtensionsByOrgRow struct {
 	EnvironmentUrl              string  `json:"environment_url"`
 	EnvironmentOrganizationName string  `json:"environment_organization_name"`
 	EnvironmentOrganizationID   string  `json:"environment_organization_id"`
+	EnvironmentShopID           int32   `json:"environment_shop_id"`
+	EnvironmentShopName         string  `json:"environment_shop_name"`
 }
 
 func (q *Queries) GetUserUnknownExtensionsByOrg(ctx context.Context, arg GetUserUnknownExtensionsByOrgParams) ([]GetUserUnknownExtensionsByOrgRow, error) {
@@ -668,6 +748,8 @@ func (q *Queries) GetUserUnknownExtensionsByOrg(ctx context.Context, arg GetUser
 			&i.EnvironmentUrl,
 			&i.EnvironmentOrganizationName,
 			&i.EnvironmentOrganizationID,
+			&i.EnvironmentShopID,
+			&i.EnvironmentShopName,
 		); err != nil {
 			return nil, err
 		}

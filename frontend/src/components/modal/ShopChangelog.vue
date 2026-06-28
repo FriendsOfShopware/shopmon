@@ -64,10 +64,7 @@
                     }}</span>
                   </div>
                   <!-- eslint-disable vue/no-v-html -->
-                  <div
-                    class="prose prose-sm dark:prose-invert max-w-none"
-                    v-html="changelogText(entry)"
-                  />
+                  <div class="richtext" v-html="changelogText(entry)" />
                   <!-- eslint-enable vue/no-v-html -->
                 </li>
               </ul>

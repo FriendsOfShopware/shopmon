@@ -599,23 +599,30 @@ func (q *Queries) GetEnvironmentSitespeeds(ctx context.Context, environmentID *i
 }
 
 const getEnvironmentStoreExtensionChangelogs = `-- name: GetEnvironmentStoreExtensionChangelogs :many
-SELECT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+SELECT sev.extension_name, sev.version,
+       COALESCE(t.changelog, ten.changelog) AS changelog, sev.released_at
 FROM store_extension_version sev
 JOIN environment_store_extension ese ON ese.extension_name = sev.extension_name
+LEFT JOIN store_extension_version_translation t ON t.extension_version_id = sev.id AND t.language = $2
+LEFT JOIN store_extension_version_translation ten ON ten.extension_version_id = sev.id AND ten.language = 'en'
 WHERE ese.environment_id = $1
 ORDER BY sev.extension_name, sev.version
 `
 
+type GetEnvironmentStoreExtensionChangelogsParams struct {
+	EnvironmentID int32  `json:"environment_id"`
+	Language      string `json:"language"`
+}
+
 type GetEnvironmentStoreExtensionChangelogsRow struct {
 	ExtensionName string  `json:"extension_name"`
 	Version       string  `json:"version"`
-	ChangelogEn   *string `json:"changelog_en"`
-	ChangelogDe   *string `json:"changelog_de"`
+	Changelog     *string `json:"changelog"`
 	ReleasedAt    *string `json:"released_at"`
 }
 
-func (q *Queries) GetEnvironmentStoreExtensionChangelogs(ctx context.Context, environmentID int32) ([]GetEnvironmentStoreExtensionChangelogsRow, error) {
-	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensionChangelogs, environmentID)
+func (q *Queries) GetEnvironmentStoreExtensionChangelogs(ctx context.Context, arg GetEnvironmentStoreExtensionChangelogsParams) ([]GetEnvironmentStoreExtensionChangelogsRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensionChangelogs, arg.EnvironmentID, arg.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -626,8 +633,7 @@ func (q *Queries) GetEnvironmentStoreExtensionChangelogs(ctx context.Context, en
 		if err := rows.Scan(
 			&i.ExtensionName,
 			&i.Version,
-			&i.ChangelogEn,
-			&i.ChangelogDe,
+			&i.Changelog,
 			&i.ReleasedAt,
 		); err != nil {
 			return nil, err
@@ -684,34 +690,42 @@ const getEnvironmentStoreExtensions = `-- name: GetEnvironmentStoreExtensions :m
 SELECT ese.id, ese.environment_id, ese.extension_name, ese.label, ese.active, ese.version,
        ese.latest_version, ese.installed, ese.installed_at,
        se.store_link, se.rating_average, se.icon_url,
-       se.label_en, se.label_de, se.short_description_en, se.short_description_de
+       COALESCE(t.label, ten.label) AS label_localized,
+       COALESCE(t.short_description, ten.short_description) AS short_description
 FROM environment_store_extension ese
 JOIN store_extension se ON se.name = ese.extension_name
+LEFT JOIN store_extension_translation t ON t.extension_name = ese.extension_name AND t.language = $2
+LEFT JOIN store_extension_translation ten ON ten.extension_name = ese.extension_name AND ten.language = 'en'
 WHERE ese.environment_id = $1
 ORDER BY ese.extension_name
 `
 
-type GetEnvironmentStoreExtensionsRow struct {
-	ID                 int32   `json:"id"`
-	EnvironmentID      int32   `json:"environment_id"`
-	ExtensionName      string  `json:"extension_name"`
-	Label              string  `json:"label"`
-	Active             bool    `json:"active"`
-	Version            string  `json:"version"`
-	LatestVersion      *string `json:"latest_version"`
-	Installed          bool    `json:"installed"`
-	InstalledAt        *string `json:"installed_at"`
-	StoreLink          *string `json:"store_link"`
-	RatingAverage      *int32  `json:"rating_average"`
-	IconUrl            *string `json:"icon_url"`
-	LabelEn            *string `json:"label_en"`
-	LabelDe            *string `json:"label_de"`
-	ShortDescriptionEn *string `json:"short_description_en"`
-	ShortDescriptionDe *string `json:"short_description_de"`
+type GetEnvironmentStoreExtensionsParams struct {
+	EnvironmentID int32  `json:"environment_id"`
+	Language      string `json:"language"`
 }
 
-func (q *Queries) GetEnvironmentStoreExtensions(ctx context.Context, environmentID int32) ([]GetEnvironmentStoreExtensionsRow, error) {
-	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensions, environmentID)
+type GetEnvironmentStoreExtensionsRow struct {
+	ID               int32   `json:"id"`
+	EnvironmentID    int32   `json:"environment_id"`
+	ExtensionName    string  `json:"extension_name"`
+	Label            string  `json:"label"`
+	Active           bool    `json:"active"`
+	Version          string  `json:"version"`
+	LatestVersion    *string `json:"latest_version"`
+	Installed        bool    `json:"installed"`
+	InstalledAt      *string `json:"installed_at"`
+	StoreLink        *string `json:"store_link"`
+	RatingAverage    *int32  `json:"rating_average"`
+	IconUrl          *string `json:"icon_url"`
+	LabelLocalized   *string `json:"label_localized"`
+	ShortDescription *string `json:"short_description"`
+}
+
+// Localized label / short description resolve to the requested language ($2)
+// and fall back to English when that translation is missing.
+func (q *Queries) GetEnvironmentStoreExtensions(ctx context.Context, arg GetEnvironmentStoreExtensionsParams) ([]GetEnvironmentStoreExtensionsRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentStoreExtensions, arg.EnvironmentID, arg.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -732,10 +746,8 @@ func (q *Queries) GetEnvironmentStoreExtensions(ctx context.Context, environment
 			&i.StoreLink,
 			&i.RatingAverage,
 			&i.IconUrl,
-			&i.LabelEn,
-			&i.LabelDe,
-			&i.ShortDescriptionEn,
-			&i.ShortDescriptionDe,
+			&i.LabelLocalized,
+			&i.ShortDescription,
 		); err != nil {
 			return nil, err
 		}
@@ -1208,47 +1220,25 @@ func (q *Queries) UpsertEnvironmentStoreExtension(ctx context.Context, arg Upser
 const upsertStoreExtension = `-- name: UpsertStoreExtension :exec
 INSERT INTO store_extension (
   name, store_id, icon_url, producer_name, producer_website, rating_average, store_link,
-  release_date, label_en, label_de, short_description_en, short_description_de,
-  description_en, description_de, installation_manual_en, installation_manual_de,
-  latest_version, last_refreshed_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+  release_date, latest_version, last_refreshed_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 ON CONFLICT (name) DO UPDATE SET
   store_id = $2, icon_url = $3, producer_name = $4, producer_website = $5, rating_average = $6,
-  store_link = $7, release_date = $8,
-  label_en = COALESCE($9, store_extension.label_en),
-  label_de = COALESCE($10, store_extension.label_de),
-  short_description_en = COALESCE($11, store_extension.short_description_en),
-  short_description_de = COALESCE($12, store_extension.short_description_de),
-  description_en = COALESCE($13, store_extension.description_en),
-  description_de = COALESCE($14, store_extension.description_de),
-  installation_manual_en = COALESCE($15, store_extension.installation_manual_en),
-  installation_manual_de = COALESCE($16, store_extension.installation_manual_de),
-  latest_version = $17,
-  last_refreshed_at = NOW()
+  store_link = $7, release_date = $8, latest_version = $9, last_refreshed_at = NOW()
 `
 
 type UpsertStoreExtensionParams struct {
-	Name                 string  `json:"name"`
-	StoreID              *int32  `json:"store_id"`
-	IconUrl              *string `json:"icon_url"`
-	ProducerName         *string `json:"producer_name"`
-	ProducerWebsite      *string `json:"producer_website"`
-	RatingAverage        *int32  `json:"rating_average"`
-	StoreLink            *string `json:"store_link"`
-	ReleaseDate          *string `json:"release_date"`
-	LabelEn              *string `json:"label_en"`
-	LabelDe              *string `json:"label_de"`
-	ShortDescriptionEn   *string `json:"short_description_en"`
-	ShortDescriptionDe   *string `json:"short_description_de"`
-	DescriptionEn        *string `json:"description_en"`
-	DescriptionDe        *string `json:"description_de"`
-	InstallationManualEn *string `json:"installation_manual_en"`
-	InstallationManualDe *string `json:"installation_manual_de"`
-	LatestVersion        *string `json:"latest_version"`
+	Name            string  `json:"name"`
+	StoreID         *int32  `json:"store_id"`
+	IconUrl         *string `json:"icon_url"`
+	ProducerName    *string `json:"producer_name"`
+	ProducerWebsite *string `json:"producer_website"`
+	RatingAverage   *int32  `json:"rating_average"`
+	StoreLink       *string `json:"store_link"`
+	ReleaseDate     *string `json:"release_date"`
+	LatestVersion   *string `json:"latest_version"`
 }
 
-// Localized text fields use COALESCE so a failed locale fetch (NULL value) does
-// not erase the previously stored translation.
 func (q *Queries) UpsertStoreExtension(ctx context.Context, arg UpsertStoreExtensionParams) error {
 	_, err := q.db.Exec(ctx, upsertStoreExtension,
 		arg.Name,
@@ -1259,14 +1249,6 @@ func (q *Queries) UpsertStoreExtension(ctx context.Context, arg UpsertStoreExten
 		arg.RatingAverage,
 		arg.StoreLink,
 		arg.ReleaseDate,
-		arg.LabelEn,
-		arg.LabelDe,
-		arg.ShortDescriptionEn,
-		arg.ShortDescriptionDe,
-		arg.DescriptionEn,
-		arg.DescriptionDe,
-		arg.InstallationManualEn,
-		arg.InstallationManualDe,
 		arg.LatestVersion,
 	)
 	return err
@@ -1295,33 +1277,76 @@ func (q *Queries) UpsertStoreExtensionImage(ctx context.Context, arg UpsertStore
 	return err
 }
 
-const upsertStoreExtensionVersion = `-- name: UpsertStoreExtensionVersion :exec
-INSERT INTO store_extension_version (extension_name, version, changelog_en, changelog_de, released_at)
-VALUES ($1, $2, $3, $4, $5)
+const upsertStoreExtensionTranslation = `-- name: UpsertStoreExtensionTranslation :exec
+INSERT INTO store_extension_translation (
+  extension_name, language, label, short_description, description, installation_manual
+) VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (extension_name, language) DO UPDATE SET
+  label = COALESCE($3, store_extension_translation.label),
+  short_description = COALESCE($4, store_extension_translation.short_description),
+  description = COALESCE($5, store_extension_translation.description),
+  installation_manual = COALESCE($6, store_extension_translation.installation_manual)
+`
+
+type UpsertStoreExtensionTranslationParams struct {
+	ExtensionName      string  `json:"extension_name"`
+	Language           string  `json:"language"`
+	Label              *string `json:"label"`
+	ShortDescription   *string `json:"short_description"`
+	Description        *string `json:"description"`
+	InstallationManual *string `json:"installation_manual"`
+}
+
+// Localized fields use COALESCE so a failed locale fetch (NULL value) does not
+// erase the previously stored translation for that language.
+func (q *Queries) UpsertStoreExtensionTranslation(ctx context.Context, arg UpsertStoreExtensionTranslationParams) error {
+	_, err := q.db.Exec(ctx, upsertStoreExtensionTranslation,
+		arg.ExtensionName,
+		arg.Language,
+		arg.Label,
+		arg.ShortDescription,
+		arg.Description,
+		arg.InstallationManual,
+	)
+	return err
+}
+
+const upsertStoreExtensionVersion = `-- name: UpsertStoreExtensionVersion :one
+INSERT INTO store_extension_version (extension_name, version, released_at)
+VALUES ($1, $2, $3)
 ON CONFLICT (extension_name, version) DO UPDATE SET
-  changelog_en = COALESCE($3, store_extension_version.changelog_en),
-  changelog_de = COALESCE($4, store_extension_version.changelog_de),
-  released_at = COALESCE($5, store_extension_version.released_at)
+  released_at = COALESCE($3, store_extension_version.released_at)
+RETURNING id
 `
 
 type UpsertStoreExtensionVersionParams struct {
 	ExtensionName string  `json:"extension_name"`
 	Version       string  `json:"version"`
-	ChangelogEn   *string `json:"changelog_en"`
-	ChangelogDe   *string `json:"changelog_de"`
 	ReleasedAt    *string `json:"released_at"`
 }
 
-// COALESCE keeps the existing per-language changelog text and date when a locale
-// fetch fails (NULL), so a transient single-locale store outage does not erase a
-// previously stored translation.
-func (q *Queries) UpsertStoreExtensionVersion(ctx context.Context, arg UpsertStoreExtensionVersionParams) error {
-	_, err := q.db.Exec(ctx, upsertStoreExtensionVersion,
-		arg.ExtensionName,
-		arg.Version,
-		arg.ChangelogEn,
-		arg.ChangelogDe,
-		arg.ReleasedAt,
-	)
+func (q *Queries) UpsertStoreExtensionVersion(ctx context.Context, arg UpsertStoreExtensionVersionParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertStoreExtensionVersion, arg.ExtensionName, arg.Version, arg.ReleasedAt)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const upsertStoreExtensionVersionTranslation = `-- name: UpsertStoreExtensionVersionTranslation :exec
+INSERT INTO store_extension_version_translation (extension_version_id, language, changelog)
+VALUES ($1, $2, $3)
+ON CONFLICT (extension_version_id, language) DO UPDATE SET
+  changelog = COALESCE($3, store_extension_version_translation.changelog)
+`
+
+type UpsertStoreExtensionVersionTranslationParams struct {
+	ExtensionVersionID int32   `json:"extension_version_id"`
+	Language           string  `json:"language"`
+	Changelog          *string `json:"changelog"`
+}
+
+// COALESCE keeps the existing changelog text when a locale fetch fails (NULL).
+func (q *Queries) UpsertStoreExtensionVersionTranslation(ctx context.Context, arg UpsertStoreExtensionVersionTranslationParams) error {
+	_, err := q.db.Exec(ctx, upsertStoreExtensionVersionTranslation, arg.ExtensionVersionID, arg.Language, arg.Changelog)
 	return err
 }

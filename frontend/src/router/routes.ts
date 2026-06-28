@@ -270,6 +270,14 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: "account.extension.detail",
+        path: "extensions/:name",
+        component: () => import("@/views/account/DetailExtension.vue"),
+        meta: {
+          titleKey: "nav.myExtensions",
+        },
+      },
+      {
         name: "account.ecosystem",
         path: "ecosystem",
         component: () => import("@/views/account/Ecosystem.vue"),

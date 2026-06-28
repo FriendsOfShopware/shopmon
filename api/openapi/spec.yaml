@@ -85,6 +85,8 @@ paths:
       operationId: getAccountExtensions
       tags: [Account]
       summary: Get aggregated extensions across all environments
+      parameters:
+        - $ref: "#/components/parameters/LanguageParam"
       responses:
         "200":
           description: List of extensions
@@ -287,6 +289,7 @@ paths:
       summary: Get full environment details
       parameters:
         - $ref: "#/components/parameters/EnvironmentId"
+        - $ref: "#/components/parameters/LanguageParam"
       responses:
         "200":
           description: Environment details
@@ -2536,6 +2539,16 @@ components:
         type: string
       description: Organization ID
 
+    LanguageParam:
+      name: language
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [en, de]
+        default: en
+      description: Language for localized store text (label, description, manual, changelog). Falls back to English.
+
     EnvironmentId:
       name: environmentId
       in: path
@@ -2706,10 +2719,53 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/ExtensionChangelogEntry'
+        iconUrl:
+          description: URL of the extension's store icon, when known.
+          type: string
+          nullable: true
+        producerName:
+          type: string
+          nullable: true
+        producerWebsite:
+          type: string
+          nullable: true
+        releaseDate:
+          description: Release date of the latest store version (raw store value).
+          type: string
+          nullable: true
+        shortDescription:
+          description: Short store description in the requested language (falls back to English).
+          type: string
+          nullable: true
+        description:
+          description: Full store description (HTML) in the requested language (falls back to English).
+          type: string
+          nullable: true
+        installationManual:
+          description: Installation manual (HTML) in the requested language (falls back to English).
+          type: string
+          nullable: true
+        screenshots:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ExtensionScreenshot'
         environments:
           type: array
           items:
             $ref: "#/components/schemas/AccountExtensionEnvironment"
+
+    ExtensionScreenshot:
+      type: object
+      required:
+        - url
+        - preview
+      properties:
+        url:
+          type: string
+        preview:
+          description: Whether this image is the store's primary preview image.
+          type: boolean
 
     AccountExtensionEnvironment:
       type: object
@@ -2719,6 +2775,8 @@ components:
         - environmentOrganizationName
         - environmentOrganizationId
         - environmentUrl
+        - shopId
+        - shopName
         - active
         - version
         - latestVersion
@@ -2733,6 +2791,12 @@ components:
         environmentOrganizationId:
           type: string
         environmentUrl:
+          type: string
+        shopId:
+          description: ID of the shop this environment belongs to.
+          type: integer
+        shopName:
+          description: Name of the shop this environment belongs to (environments may share a name across shops).
           type: string
         active:
           type: boolean
@@ -2920,12 +2984,8 @@ components:
         version:
           type: string
         text:
-          description: Changelog text in English (en_GB).
+          description: Changelog text in the requested language (falls back to English).
           type: string
-        textDe:
-          description: Changelog text in German (de_DE), when available.
-          type: string
-          nullable: true
         creationDate:
           type: string
           format: date-time

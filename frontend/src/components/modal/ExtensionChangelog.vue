@@ -21,10 +21,7 @@
           </div>
 
           <!-- eslint-disable vue/no-v-html -->
-          <div
-            class="prose prose-sm dark:prose-invert max-w-none"
-            v-html="changelogText(changeLog)"
-          />
+          <div class="richtext" v-html="changelogText(changeLog)" />
           <!-- eslint-enable vue/no-v-html -->
         </li>
       </ul>

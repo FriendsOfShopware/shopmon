@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
@@ -202,7 +203,12 @@ func (h *EnvironmentScrapeHandler) loadExistingExtensions(ctx context.Context, e
 		})
 	}
 
-	store, err := h.queries.GetEnvironmentStoreExtensions(ctx, envID)
+	// The scrape only reads name/version/state here, not localized text, so the
+	// language is irrelevant — request English.
+	store, err := h.queries.GetEnvironmentStoreExtensions(ctx, queries.GetEnvironmentStoreExtensionsParams{
+		EnvironmentID: envID,
+		Language:      "en",
+	})
 	if err != nil {
 		slog.Warn("failed to get old store extensions", "environmentId", envID, "error", err)
 	}

@@ -1,21 +1,15 @@
-import { useLocale } from "@/composables/useLocale";
+import { sanitizeHtml } from "@/helpers/sanitize";
 
-interface LocalizedChangelogEntry {
+interface ChangelogEntry {
   text: string;
-  textDe?: string | null;
 }
 
-// Resolves an extension changelog entry's text for the active UI locale, falling
-// back to English when no German translation is available.
+// Returns an extension changelog entry's text, sanitized for v-html rendering.
+// The text is already resolved to the requested language by the API (the
+// `language` query parameter, with English fallback); this only strips the
+// untrusted store HTML of any XSS vectors.
 export function useChangelogText() {
-  const { locale } = useLocale();
-
-  return (entry: LocalizedChangelogEntry): string => {
-    if (locale.value === "de" && entry.textDe) {
-      return entry.textDe;
-    }
-    return entry.text;
-  };
+  return (entry: ChangelogEntry): string => sanitizeHtml(entry.text);
 }
 
 export function sumChanges(changes: {

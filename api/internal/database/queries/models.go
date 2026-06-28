@@ -248,24 +248,16 @@ type SsoProvider struct {
 }
 
 type StoreExtension struct {
-	Name                 string           `json:"name"`
-	StoreID              *int32           `json:"store_id"`
-	IconUrl              *string          `json:"icon_url"`
-	ProducerName         *string          `json:"producer_name"`
-	ProducerWebsite      *string          `json:"producer_website"`
-	RatingAverage        *int32           `json:"rating_average"`
-	StoreLink            *string          `json:"store_link"`
-	ReleaseDate          *string          `json:"release_date"`
-	LabelEn              *string          `json:"label_en"`
-	LabelDe              *string          `json:"label_de"`
-	ShortDescriptionEn   *string          `json:"short_description_en"`
-	ShortDescriptionDe   *string          `json:"short_description_de"`
-	DescriptionEn        *string          `json:"description_en"`
-	DescriptionDe        *string          `json:"description_de"`
-	InstallationManualEn *string          `json:"installation_manual_en"`
-	InstallationManualDe *string          `json:"installation_manual_de"`
-	LatestVersion        *string          `json:"latest_version"`
-	LastRefreshedAt      pgtype.Timestamp `json:"last_refreshed_at"`
+	Name            string           `json:"name"`
+	StoreID         *int32           `json:"store_id"`
+	IconUrl         *string          `json:"icon_url"`
+	ProducerName    *string          `json:"producer_name"`
+	ProducerWebsite *string          `json:"producer_website"`
+	RatingAverage   *int32           `json:"rating_average"`
+	StoreLink       *string          `json:"store_link"`
+	ReleaseDate     *string          `json:"release_date"`
+	LatestVersion   *string          `json:"latest_version"`
+	LastRefreshedAt pgtype.Timestamp `json:"last_refreshed_at"`
 }
 
 type StoreExtensionImage struct {
@@ -276,13 +268,26 @@ type StoreExtensionImage struct {
 	Priority      int32  `json:"priority"`
 }
 
+type StoreExtensionTranslation struct {
+	ExtensionName      string  `json:"extension_name"`
+	Language           string  `json:"language"`
+	Label              *string `json:"label"`
+	ShortDescription   *string `json:"short_description"`
+	Description        *string `json:"description"`
+	InstallationManual *string `json:"installation_manual"`
+}
+
 type StoreExtensionVersion struct {
 	ID            int32   `json:"id"`
 	ExtensionName string  `json:"extension_name"`
 	Version       string  `json:"version"`
-	ChangelogEn   *string `json:"changelog_en"`
-	ChangelogDe   *string `json:"changelog_de"`
 	ReleasedAt    *string `json:"released_at"`
+}
+
+type StoreExtensionVersionTranslation struct {
+	ExtensionVersionID int32   `json:"extension_version_id"`
+	Language           string  `json:"language"`
+	Changelog          *string `json:"changelog"`
 }
 
 type User struct {

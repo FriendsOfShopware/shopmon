@@ -82,33 +82,61 @@ ORDER BY ec.date DESC
 LIMIT 10;
 
 -- name: GetUserStoreExtensionsByOrg :many
+-- Localized fields resolve to the requested language ($3), falling back to the
+-- English translation when that language is missing.
 SELECT ese.extension_name AS name, ese.label, ese.version, ese.latest_version, ese.active, ese.installed,
        se.store_link, se.rating_average, ese.installed_at,
+       se.icon_url, se.producer_name, se.producer_website, se.release_date,
+       COALESCE(t.short_description, ten.short_description) AS short_description,
+       COALESCE(t.description, ten.description) AS description,
+       COALESCE(t.installation_manual, ten.installation_manual) AS installation_manual,
        ese.environment_id, e.name AS environment_name, e.url AS environment_url,
-       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
 FROM environment_store_extension ese
 JOIN store_extension se ON se.name = ese.extension_name
+LEFT JOIN store_extension_translation t ON t.extension_name = ese.extension_name AND t.language = $3
+LEFT JOIN store_extension_translation ten ON ten.extension_name = ese.extension_name AND ten.language = 'en'
 JOIN environment e ON e.id = ese.environment_id
+JOIN shop sh ON sh.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ese.extension_name, e.name;
 
+-- name: GetUserStoreExtensionImagesByOrg :many
+SELECT sei.extension_name, sei.url, sei.preview
+FROM store_extension_image sei
+WHERE sei.extension_name IN (
+  SELECT ese.extension_name
+  FROM environment_store_extension ese
+  JOIN environment e ON e.id = ese.environment_id
+  JOIN member m ON m.organization_id = e.organization_id
+  WHERE m.user_id = $1 AND e.organization_id = $2
+)
+ORDER BY sei.extension_name, sei.preview DESC, sei.priority, sei.id;
+
 -- name: GetUserUnknownExtensionsByOrg :many
 SELECT ee.name, ee.label, ee.version, ee.latest_version, ee.active, ee.installed,
        NULL::text AS store_link, NULL::integer AS rating_average, ee.installed_at,
        ee.environment_id, e.name AS environment_name, e.url AS environment_url,
-       o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       o.name AS environment_organization_name, e.organization_id AS environment_organization_id,
+       e.shop_id AS environment_shop_id, sh.name AS environment_shop_name
 FROM environment_extension ee
 JOIN environment e ON e.id = ee.environment_id
+JOIN shop sh ON sh.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
 ORDER BY ee.name, e.name;
 
 -- name: GetUserStoreExtensionChangelogsByOrg :many
-SELECT DISTINCT sev.extension_name, sev.version, sev.changelog_en, sev.changelog_de, sev.released_at
+-- Changelog text resolves to the requested language ($3), falling back to en.
+SELECT DISTINCT sev.extension_name, sev.version,
+       COALESCE(t.changelog, ten.changelog) AS changelog, sev.released_at
 FROM store_extension_version sev
+LEFT JOIN store_extension_version_translation t ON t.extension_version_id = sev.id AND t.language = $3
+LEFT JOIN store_extension_version_translation ten ON ten.extension_version_id = sev.id AND ten.language = 'en'
 WHERE sev.extension_name IN (
   SELECT ese.extension_name
   FROM environment_store_extension ese
