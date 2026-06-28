@@ -1258,11 +1258,21 @@ paths:
     get:
       operationId: getShopwareVersions
       tags: [Info]
-      summary: Get latest Shopware version information
+      summary: Get known Shopware versions
+      description: >-
+        Returns all known Shopware versions (newest first) with their release
+        date and supported PHP versions. Served from a local cache that the
+        worker refreshes hourly from the Shopware release changelog.
       security: []
       responses:
         "200":
-          description: Shopware version information
+          description: Known Shopware versions, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopwareVersion"
 
   /info/config:
     get:
@@ -4441,6 +4451,23 @@ components:
           type: string
         count:
           type: integer
+
+    ShopwareVersion:
+      type: object
+      required:
+        - version
+        - releaseDate
+        - phpVersions
+      properties:
+        version:
+          type: string
+        releaseDate:
+          type: string
+          format: date-time
+        phpVersions:
+          type: array
+          items:
+            type: string
 
     EcosystemStats:
       type: object

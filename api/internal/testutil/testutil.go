@@ -162,6 +162,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.LockCleanup) error { return nil })
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.InvitationCleanup) error { return nil })
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.OldDataCleanup) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.ShopwareChangelogSync) error { return nil })
 	h := handler.New(pool, q, nil, cfg, mailSender, bus)
 
 	// Build chi router matching production setup

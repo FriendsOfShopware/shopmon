@@ -2,21 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	"io"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
-
-// shopwareVersionsCacheKey is the Redis key for the cached versions response.
-const shopwareVersionsCacheKey = "shopmon:shopware-versions"
-
-// shopwareVersionsCacheTTL is how long the versions response is cached.
-const shopwareVersionsCacheTTL = time.Hour
 
 // GetInstanceConfig returns the feature configuration for this instance.
 func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
@@ -133,45 +125,32 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 	httputil.WriteJSON(w, http.StatusOK, results)
 }
 
-// GetShopwareVersions returns the latest Shopware version information.
-// The upstream response is cached in Redis to avoid hitting it on every request.
+// GetShopwareVersions returns all known Shopware versions, newest first, with
+// their release date and supported PHP versions. The data is served from the
+// shopware_version table, which the worker keeps up to date by crawling the
+// Shopware release changelog hourly, so no external call is made at request time.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
-	if h.redis != nil {
-		if cached, err := h.redis.Get(r.Context(), shopwareVersionsCacheKey).Bytes(); err == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write(cached)
-			return
+	rows, err := h.queries.ListShopwareVersions(r.Context())
+	if err != nil {
+		slog.Error("failed to list shopware versions", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to load shopware versions")
+		return
+	}
+
+	versions := make([]api.ShopwareVersion, 0, len(rows))
+	for _, row := range rows {
+		phpVersions := []string{}
+		if len(row.PhpVersions) > 0 {
+			if err := json.Unmarshal(row.PhpVersions, &phpVersions); err != nil {
+				slog.Warn("failed to decode php versions", "version", row.Version, "error", err)
+			}
 		}
+		versions = append(versions, api.ShopwareVersion{
+			Version:     row.Version,
+			ReleaseDate: row.ReleaseDate.Time,
+			PhpVersions: phpVersions,
+		})
 	}
 
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, h.cfg.ShopwareVersionsURL, nil)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create versions request")
-		return
-	}
-
-	resp, err := httputil.NewHTTPClient().Do(req)
-	if err != nil {
-		slog.Error("failed to fetch shopware versions", "error", err)
-		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch shopware versions")
-		return
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to read versions response")
-		return
-	}
-
-	if h.redis != nil && resp.StatusCode == http.StatusOK {
-		if err := h.redis.Set(r.Context(), shopwareVersionsCacheKey, body, shopwareVersionsCacheTTL).Err(); err != nil {
-			slog.Warn("failed to cache shopware versions", "error", err)
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(body)
+	httputil.WriteJSON(w, http.StatusOK, versions)
 }

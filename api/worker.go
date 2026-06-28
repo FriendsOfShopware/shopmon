@@ -130,7 +130,23 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}); err != nil {
 		slog.Error("failed to add old data cleanup cron", "error", err)
 	}
+	// Crawl the Shopware release changelog hourly so version lookups are served
+	// from our own database instead of an external service.
+	if _, err := c.AddFunc("15 * * * *", func() {
+		if err := goqueue.Dispatch(context.Background(), bus, jobs.ShopwareChangelogSync{}); err != nil {
+			slog.Error("failed to dispatch shopware changelog sync", "error", err)
+		}
+	}); err != nil {
+		slog.Error("failed to add shopware changelog sync cron", "error", err)
+	}
 	c.Start()
+
+	// Populate the Shopware version cache immediately on startup so the data is
+	// available without waiting for the first hourly tick. Only versions not yet
+	// stored are fetched, so this is cheap once the cache is warm.
+	if err := goqueue.Dispatch(ctx, bus, jobs.ShopwareChangelogSync{}); err != nil {
+		slog.Error("failed to dispatch initial shopware changelog sync", "error", err)
+	}
 
 	// Worker
 	worker := goqueue.NewWorker(bus, goqueue.WorkerConfig{
