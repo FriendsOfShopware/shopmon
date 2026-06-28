@@ -615,9 +615,12 @@ type ErrorResponse struct {
 type ExtensionChangelogEntry struct {
 	CreationDate time.Time `json:"creationDate"`
 
-	// Text Changelog text in the requested language (falls back to English).
-	Text    string `json:"text"`
-	Version string `json:"version"`
+	// Text Changelog text. For store catalog endpoints this is already resolved to the requested language (English fallback). For stored environment-changelog history it holds the English (en_GB) text, with textDe carrying the German variant when available.
+	Text string `json:"text"`
+
+	// TextDe German (de_DE) changelog text for stored history entries, when available.
+	TextDe  *string `json:"textDe,omitempty"`
+	Version string  `json:"version"`
 }
 
 // ExtensionCompatibilityRequest defines model for ExtensionCompatibilityRequest.

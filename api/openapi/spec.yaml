@@ -2984,8 +2984,16 @@ components:
         version:
           type: string
         text:
-          description: Changelog text in the requested language (falls back to English).
+          description: >-
+            Changelog text. For store catalog endpoints this is already resolved
+            to the requested language (English fallback). For stored
+            environment-changelog history it holds the English (en_GB) text,
+            with textDe carrying the German variant when available.
           type: string
+        textDe:
+          description: German (de_DE) changelog text for stored history entries, when available.
+          type: string
+          nullable: true
         creationDate:
           type: string
           format: date-time
