@@ -1,5 +1,5 @@
 <template>
-  <div class="overflow-x-auto rounded-xl border">
+  <div class="min-w-0 overflow-x-auto rounded-xl border">
     <table class="w-full text-sm">
       <thead>
         <tr class="border-b bg-muted/40">
@@ -9,13 +9,13 @@
             :key="ch.channel"
             class="px-4 py-2 text-center font-medium whitespace-nowrap"
           >
-            {{ $t(ch.labelKey) }}
+            {{ $t(ch.shortLabelKey) }}
           </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="et in eventTypes" :key="et.type" class="border-b last:border-0">
-          <td class="px-4 py-2.5 font-medium whitespace-nowrap">{{ eventTypeLabel(et.type) }}</td>
+          <td class="px-4 py-2.5 font-medium">{{ eventTypeLabel(et.type) }}</td>
           <td v-for="ch in matrixChannels" :key="ch.channel" class="px-4 py-2.5 text-center">
             <template v-if="et.defaultChannels.includes(ch.channel)">
               <!-- Global scope: a simple on/off switch per cell. -->

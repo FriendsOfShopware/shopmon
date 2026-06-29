@@ -11,9 +11,17 @@ type NotificationEventType = components["schemas"]["NotificationEventType"];
 export type TriState = "inherit" | "on" | "off";
 export type ChannelName = "in_app" | "email";
 
-export const channelList: { channel: ChannelName; labelKey: string }[] = [
-  { channel: "in_app", labelKey: "settings.channelInApp" },
-  { channel: "email", labelKey: "settings.channelEmail" },
+export const channelList: { channel: ChannelName; labelKey: string; shortLabelKey: string }[] = [
+  {
+    channel: "in_app",
+    labelKey: "settings.channelInApp",
+    shortLabelKey: "settings.channelInAppShort",
+  },
+  {
+    channel: "email",
+    labelKey: "settings.channelEmail",
+    shortLabelKey: "settings.channelEmailShort",
+  },
 ];
 
 export const triStateOptions: { value: TriState; labelKey: string }[] = [
