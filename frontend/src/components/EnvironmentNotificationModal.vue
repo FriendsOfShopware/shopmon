@@ -6,7 +6,7 @@
         <DialogDescription>{{ environment?.name }}</DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4">
+      <div class="min-w-0 space-y-4">
         <!-- Watch toggle -->
         <div class="flex items-center justify-between gap-4 rounded-xl border px-4 py-3">
           <span class="min-w-0">
