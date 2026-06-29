@@ -66,45 +66,27 @@ export function useNotificationPreferences() {
     }
   }
 
-  // ── Global channel (boolean: enabled unless a global wildcard disable row) ──
-  function globalChannelEnabled(channel: ChannelName): boolean {
-    return !preferences.value.some(
-      (p) => p.scopeType === "global" && p.eventType === "" && p.channel === channel && !p.enabled,
+  // ── Global event x channel (boolean per cell of the matrix) ──
+  // Resolves like the server: an event-specific global row wins, else the
+  // channel wildcard row, else enabled by default. Toggling writes an explicit
+  // event-specific row so each cell is independently controllable.
+  function eventChannelEnabled(eventType: string, channel: ChannelName): boolean {
+    const specific = preferences.value.find(
+      (p) => p.scopeType === "global" && p.eventType === eventType && p.channel === channel,
     );
+    if (specific) return specific.enabled;
+    const wildcard = preferences.value.find(
+      (p) => p.scopeType === "global" && p.eventType === "" && p.channel === channel,
+    );
+    if (wildcard) return wildcard.enabled;
+    return true;
   }
 
-  async function setGlobalChannel(channel: ChannelName, enabled: boolean) {
+  async function setEventChannel(eventType: string, channel: ChannelName, enabled: boolean) {
     const { error } = await api.PUT("/account/notification-preferences", {
-      body: { scopeType: "global", scopeId: "", eventType: "", channel, enabled },
+      body: { scopeType: "global", scopeId: "", eventType, channel, enabled },
     });
     reportFirstError([error]);
-    await loadPreferences();
-  }
-
-  // ── Global event type (boolean across both channels) ──
-  function eventTypeEnabled(eventType: string): boolean {
-    return !preferences.value.some(
-      (p) =>
-        p.scopeType === "global" &&
-        p.eventType === eventType &&
-        (p.channel === "in_app" || p.channel === "email") &&
-        !p.enabled,
-    );
-  }
-
-  async function setEventType(eventType: string, enabled: boolean) {
-    const results = await Promise.all(
-      CHANNELS.map((channel) =>
-        enabled
-          ? api.DELETE("/account/notification-preferences", {
-              params: { query: { scopeType: "global", scopeId: "", eventType, channel } },
-            })
-          : api.PUT("/account/notification-preferences", {
-              body: { scopeType: "global", scopeId: "", eventType, channel, enabled: false },
-            }),
-      ),
-    );
-    reportFirstError(results.map((r) => r.error));
     await loadPreferences();
   }
 
@@ -186,10 +168,8 @@ export function useNotificationPreferences() {
     loadPreferences,
     loadEventTypes,
     eventTypeLabel,
-    globalChannelEnabled,
-    setGlobalChannel,
-    eventTypeEnabled,
-    setEventType,
+    eventChannelEnabled,
+    setEventChannel,
     envChannelState,
     setEnvChannel,
     envEventState,

@@ -383,6 +383,8 @@
     "channelInAppHint": "Benachrichtigungen im Benachrichtigungscenter anzeigen.",
     "channelEmail": "E-Mail-Benachrichtigungen",
     "channelEmailHint": "Benachrichtigungs-E-Mails bei Statusänderungen und Fehlern senden.",
+    "notificationMatrix": "Benachrichtigungen",
+    "notificationMatrixHint": "Lege fest, über welchen Kanal jede Art von Ereignis zugestellt wird.",
     "eventTypes": "Ereignistypen",
     "eventTypesHint": "Wähle, über welche Arten von Ereignissen du benachrichtigt werden möchtest. Deaktivieren schaltet sie auf allen Kanälen stumm.",
     "eventType": {
