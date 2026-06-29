@@ -846,7 +846,24 @@
     "actionUnbanUser": "Benutzersperre aufgehoben",
     "actionImpersonate": "Identität angenommen",
     "actionPasswordChange": "Passwort geändert",
-    "actionPasswordReset": "Passwort zurückgesetzt"
+    "actionPasswordReset": "Passwort zurückgesetzt",
+    "extensionReports": "Erweiterungsmeldungen",
+    "loadingExtensionReports": "Erweiterungsmeldungen werden geladen...",
+    "failedLoadExtensionReports": "Erweiterungsmeldungen konnten nicht geladen werden: {error}",
+    "noExtensionReportsFound": "Keine Erweiterungsmeldungen gefunden",
+    "reportFilterStatus": "Status",
+    "reportStatus": {
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "reportedBy": "Gemeldet von",
+    "reviewedBy": "Geprüft von",
+    "reporterRemoved": "Melder entfernt",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "reportApproved": "Meldung genehmigt",
+    "reportRejected": "Meldung abgelehnt"
   },
   "privacy": {
     "title": "Datenschutzerklärung",
@@ -944,6 +961,25 @@
     "stateActive": "Aktiv",
     "stateInactive": "Inaktiv",
     "current": "Aktuell"
+  },
+  "reportExtension": {
+    "title": "Erweiterung melden",
+    "subtitle": "Melde ein Problem mit {name}, um andere Nutzer zu warnen.",
+    "category": "Kategorie",
+    "selectCategory": "Kategorie auswählen",
+    "categories": {
+      "performance": "Performance",
+      "security": "Sicherheit",
+      "compatibility": "Kompatibilität",
+      "stability": "Stabilität / Fehler",
+      "other": "Sonstiges"
+    },
+    "comment": "Beschreibung",
+    "commentPlaceholder": "Beschreibe das Problem, das du mit dieser Erweiterung hattest...",
+    "reviewNote": "Meldungen werden von einem Administrator geprüft, bevor sie für andere Nutzer sichtbar werden.",
+    "submit": "Meldung absenden",
+    "success": "Danke! Deine Meldung wurde zur Prüfung eingereicht.",
+    "communityReports": "Community-Meldungen"
   },
   "updateWizard": {
     "title": "Shopware Erweiterungs-Kompatibilitätsprüfung",

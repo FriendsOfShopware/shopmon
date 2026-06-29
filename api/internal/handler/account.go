@@ -145,7 +145,7 @@ func (h *Handler) GetAccountExtensions(w http.ResponseWriter, r *http.Request, p
 			isStore: false,
 		})
 	}
-	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt)
+	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt, h.loadApprovedReportSummaries(r.Context()))
 
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
@@ -262,7 +262,7 @@ func (h *Handler) GetAccountExtension(w http.ResponseWriter, r *http.Request, na
 		})
 	}
 
-	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt)
+	result := aggregateAccountExtensions(rows, changelogByExt, screenshotsByExt, h.loadApprovedReportSummaries(r.Context()))
 	if len(result) == 0 {
 		httputil.WriteError(w, http.StatusNotFound, "extension not found")
 		return
@@ -279,6 +279,7 @@ func aggregateAccountExtensions(
 	rows []accountExtRow,
 	changelogByExt map[string][]changelogVersion,
 	screenshotsByExt map[string][]api.ExtensionScreenshot,
+	reportsByExt map[string][]api.ExtensionReportSummary,
 ) []api.AccountExtension {
 	sort.Slice(rows, func(i, j int) bool {
 		if rows[i].Name != rows[j].Name {
@@ -351,6 +352,14 @@ func aggregateAccountExtensions(
 			Installed:                   row.Installed,
 		}
 		ext.Environments = append(ext.Environments, env)
+	}
+
+	// Attach approved community report warnings (best-effort; nil when absent).
+	for name, summaries := range reportsByExt {
+		if ext, ok := extMap[name]; ok {
+			s := summaries
+			ext.Reports = &s
+		}
 	}
 
 	result := make([]api.AccountExtension, 0, len(extOrder))

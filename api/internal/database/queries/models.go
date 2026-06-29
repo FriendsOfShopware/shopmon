@@ -277,6 +277,18 @@ type StoreExtensionImage struct {
 	Priority      int32  `json:"priority"`
 }
 
+type StoreExtensionReport struct {
+	ID            int32            `json:"id"`
+	ExtensionName string           `json:"extension_name"`
+	UserID        *string          `json:"user_id"`
+	Category      string           `json:"category"`
+	Comment       string           `json:"comment"`
+	Status        string           `json:"status"`
+	ReviewedBy    *string          `json:"reviewed_by"`
+	ReviewedAt    pgtype.Timestamp `json:"reviewed_at"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
 type StoreExtensionTranslation struct {
 	ExtensionName      string  `json:"extension_name"`
 	Language           string  `json:"language"`

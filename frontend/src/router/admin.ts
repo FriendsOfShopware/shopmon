@@ -47,6 +47,11 @@ const adminRoutes: RouteRecordRaw[] = [
         component: () => import("@/views/admin/DetailEnvironment.vue"),
       },
       {
+        path: "extension-reports",
+        name: "admin.extensionReports",
+        component: () => import("@/views/admin/ListExtensionReports.vue"),
+      },
+      {
         path: "audit-log",
         name: "admin.auditLog",
         component: () => import("@/views/admin/ListAuditLog.vue"),

@@ -846,7 +846,24 @@
     "actionUnbanUser": "User unbanned",
     "actionImpersonate": "Impersonated",
     "actionPasswordChange": "Password changed",
-    "actionPasswordReset": "Password reset"
+    "actionPasswordReset": "Password reset",
+    "extensionReports": "Extension Reports",
+    "loadingExtensionReports": "Loading extension reports...",
+    "failedLoadExtensionReports": "Failed to load extension reports: {error}",
+    "noExtensionReportsFound": "No extension reports found",
+    "reportFilterStatus": "Status",
+    "reportStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "reportedBy": "Reported by",
+    "reviewedBy": "Reviewed by",
+    "reporterRemoved": "Reporter removed",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reportApproved": "Report approved",
+    "reportRejected": "Report rejected"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -944,6 +961,25 @@
     "stateActive": "Active",
     "stateInactive": "Inactive",
     "current": "Current"
+  },
+  "reportExtension": {
+    "title": "Report extension",
+    "subtitle": "Report an issue with {name} to warn other users.",
+    "category": "Category",
+    "selectCategory": "Select a category",
+    "categories": {
+      "performance": "Performance",
+      "security": "Security",
+      "compatibility": "Compatibility",
+      "stability": "Stability / Bugs",
+      "other": "Other"
+    },
+    "comment": "Description",
+    "commentPlaceholder": "Describe the issue you experienced with this extension...",
+    "reviewNote": "Reports are reviewed by an administrator before becoming visible to other users.",
+    "submit": "Submit report",
+    "success": "Thanks! Your report was submitted for review.",
+    "communityReports": "Community reports"
   },
   "updateWizard": {
     "title": "Shopware Extension Compatibility Check",
