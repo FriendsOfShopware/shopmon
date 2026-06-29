@@ -5,31 +5,29 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTranslatorInterpolatesAndFallsBack(t *testing.T) {
 	tr := NewTranslator()
 
-	got := tr.T("en", "notification.statusDegraded.message", map[string]any{"from": "green", "to": "red"})
-	if want := "Status changed from green to red"; got != want {
-		t.Fatalf("en interpolation = %q, want %q", got, want)
-	}
+	assert.Equal(t,
+		"Status changed from green to red",
+		tr.T("en", "notification.statusDegraded.message", map[string]any{"from": "green", "to": "red"}))
 
-	got = tr.T("de", "notification.statusDegraded.message", map[string]any{"from": "green", "to": "red"})
-	if want := "Status von green auf red geändert"; got != want {
-		t.Fatalf("de interpolation = %q, want %q", got, want)
-	}
+	assert.Equal(t,
+		"Status von green auf red geändert",
+		tr.T("de", "notification.statusDegraded.message", map[string]any{"from": "green", "to": "red"}))
 
 	// Unknown locale falls back to the default locale catalog.
-	got = tr.T("fr", "notification.authError.title", map[string]any{"name": "Shop"})
-	if want := "Environment: Shop could not be updated"; got != want {
-		t.Fatalf("fallback locale = %q, want %q", got, want)
-	}
+	assert.Equal(t,
+		"Environment: Shop could not be updated",
+		tr.T("fr", "notification.authError.title", map[string]any{"name": "Shop"}))
 
 	// Unknown key returns the raw key rather than failing.
-	if got := tr.T("en", "does.not.exist", nil); got != "does.not.exist" {
-		t.Fatalf("missing key = %q, want raw key", got)
-	}
+	assert.Equal(t, "does.not.exist", tr.T("en", "does.not.exist", nil))
 }
 
 // recordingChannel captures every Send for assertions.
@@ -101,22 +99,15 @@ func TestDispatchRendersPerRecipientLocale(t *testing.T) {
 		{ID: "u2", Locale: "de"},
 	})
 
-	if len(inApp.sent) != 2 {
-		t.Fatalf("in-app sends = %d, want 2", len(inApp.sent))
-	}
-	if inApp.sent[0].Body != "Status changed from green to yellow" {
-		t.Fatalf("en body = %q", inApp.sent[0].Body)
-	}
-	if inApp.sent[1].Body != "Status von green auf yellow geändert" {
-		t.Fatalf("de body = %q", inApp.sent[1].Body)
-	}
+	require.Len(t, inApp.sent, 2)
+	assert.Equal(t, "Status changed from green to yellow", inApp.sent[0].Body)
+	assert.Equal(t, "Status von green auf yellow geändert", inApp.sent[1].Body)
 }
 
 func TestDispatchEmailDedupGatesEmailOnly(t *testing.T) {
 	inApp := &recordingChannel{name: ChannelInApp}
 	email := &recordingChannel{name: ChannelEmail}
-	locker := &fakeLocker{}
-	d := newTestDispatcher(inApp, email, locker)
+	d := newTestDispatcher(inApp, email, &fakeLocker{})
 
 	recipients := []Recipient{{ID: "u1", Locale: "en"}}
 
@@ -125,32 +116,29 @@ func TestDispatchEmailDedupGatesEmailOnly(t *testing.T) {
 	// Second dispatch is deduped: in-app re-records, email is suppressed.
 	d.Dispatch(context.Background(), degradeEvent(), recipients)
 
-	if len(inApp.sent) != 2 {
-		t.Fatalf("in-app sends = %d, want 2 (idempotent re-record)", len(inApp.sent))
-	}
-	if len(email.sent) != 1 {
-		t.Fatalf("email sends = %d, want 1 (deduped)", len(email.sent))
-	}
+	assert.Len(t, inApp.sent, 2, "in-app re-records idempotently")
+	assert.Len(t, email.sent, 1, "email is deduped")
 }
 
-func TestDispatchDataFetchErrorSkipsEmail(t *testing.T) {
+func TestDispatchDataFetchErrorEmails(t *testing.T) {
 	inApp := &recordingChannel{name: ChannelInApp}
 	email := &recordingChannel{name: ChannelEmail}
 	d := newTestDispatcher(inApp, email, &fakeLocker{})
 
-	d.Dispatch(context.Background(), Event{
+	dataFetch := Event{
 		Type:       EventDataFetchError,
 		Level:      LevelError,
 		DedupKey:   "environment.not.updated_1",
 		TitleKey:   "notification.dataFetchError.title",
 		MessageKey: "notification.dataFetchError.message",
 		Params:     map[string]any{"name": "Shop"},
-	}, []Recipient{{ID: "u1", Locale: "en"}})
+	}
+	recipients := []Recipient{{ID: "u1", Locale: "en"}}
 
-	if len(inApp.sent) != 1 {
-		t.Fatalf("in-app sends = %d, want 1", len(inApp.sent))
-	}
-	if len(email.sent) != 0 {
-		t.Fatalf("email sends = %d, want 0 (data-fetch is in-app only)", len(email.sent))
-	}
+	// Data-fetch errors now deliver on both channels, with the email deduped.
+	d.Dispatch(context.Background(), dataFetch, recipients)
+	d.Dispatch(context.Background(), dataFetch, recipients)
+
+	assert.Len(t, inApp.sent, 2, "in-app re-records idempotently")
+	assert.Len(t, email.sent, 1, "email fires once then is deduped")
 }
