@@ -39,11 +39,12 @@ var registry = map[EventType]eventMeta{
 		emailDedupTTL:   time.Hour,
 	},
 	EventDataFetchError: {
-		// Data-fetch errors are in-app only and re-recorded every scrape; no
-		// email and therefore no dedup lock (matches prior behaviour).
-		defaultChannels: []ChannelName{ChannelInApp},
+		// Data-fetch errors are re-recorded every scrape, so the email is gated
+		// behind a one-hour dedup lock to avoid spamming while a fetch keeps
+		// failing.
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
 		emailSubjectKey: "email.dataFetchError.subject",
-		emailDedupTTL:   0,
+		emailDedupTTL:   time.Hour,
 	},
 }
 
