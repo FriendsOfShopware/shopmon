@@ -479,7 +479,7 @@
     "notificationSettings": "Notification settings",
     "watchHint": "Receive notifications about this environment.",
     "watchToConfigure": "Start watching this environment to configure notifications.",
-    "perEventHint": "Override per event type for this environment. \"Inherit\" uses your global settings.",
+    "perEventHint": "Override per event and channel for this environment. \"Inherit\" uses your global setting.",
     "clearCache": "Clear environment cache",
     "refreshData": "Refresh environment data",
     "autoUpdateDisabled": "This environment will not be automatically updated anymore. Please update the API credentials or URL to fix this issue.",

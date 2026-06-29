@@ -22,8 +22,6 @@ export const triStateOptions: { value: TriState; labelKey: string }[] = [
   { value: "off", labelKey: "settings.channelOff" },
 ];
 
-const CHANNELS: ChannelName[] = ["in_app", "email"];
-
 // Shared across all consumers (settings page, environment modal) so the
 // preference state stays consistent and is not refetched per component.
 const preferences = ref<NotificationPreference[]>([]);
@@ -90,72 +88,47 @@ export function useNotificationPreferences() {
     await loadPreferences();
   }
 
-  // ── Per-environment channel (tri-state) ──
-  function envChannelState(environmentId: number, channel: ChannelName): TriState {
+  // ── Per-environment event x channel (tri-state per matrix cell) ──
+  // The environment row is the most specific scope, so "inherit" (no row) falls
+  // back to the global cell for the same event x channel.
+  function envEventChannelState(
+    environmentId: number,
+    eventType: string,
+    channel: ChannelName,
+  ): TriState {
     const row = preferences.value.find(
       (p) =>
         p.scopeType === "environment" &&
         p.scopeId === String(environmentId) &&
-        p.eventType === "" &&
+        p.eventType === eventType &&
         p.channel === channel,
     );
     if (!row) return "inherit";
     return row.enabled ? "on" : "off";
   }
 
-  async function setEnvChannel(environmentId: number, channel: ChannelName, state: TriState) {
+  async function setEnvEventChannel(
+    environmentId: number,
+    eventType: string,
+    channel: ChannelName,
+    state: TriState,
+  ) {
     const scopeId = String(environmentId);
     const { error } =
       state === "inherit"
         ? await api.DELETE("/account/notification-preferences", {
-            params: { query: { scopeType: "environment", scopeId, eventType: "", channel } },
+            params: { query: { scopeType: "environment", scopeId, eventType, channel } },
           })
         : await api.PUT("/account/notification-preferences", {
             body: {
               scopeType: "environment",
               scopeId,
-              eventType: "",
+              eventType,
               channel,
               enabled: state === "on",
             },
           });
     reportFirstError([error]);
-    await loadPreferences();
-  }
-
-  // ── Per-environment event type (tri-state across both channels) ──
-  function envEventState(environmentId: number, eventType: string): TriState {
-    const rows = preferences.value.filter(
-      (p) =>
-        p.scopeType === "environment" &&
-        p.scopeId === String(environmentId) &&
-        p.eventType === eventType &&
-        (p.channel === "in_app" || p.channel === "email"),
-    );
-    if (rows.length === 0) return "inherit";
-    return rows.some((p) => !p.enabled) ? "off" : "on";
-  }
-
-  async function setEnvEvent(environmentId: number, eventType: string, state: TriState) {
-    const scopeId = String(environmentId);
-    const results = await Promise.all(
-      CHANNELS.map((channel) =>
-        state === "inherit"
-          ? api.DELETE("/account/notification-preferences", {
-              params: { query: { scopeType: "environment", scopeId, eventType, channel } },
-            })
-          : api.PUT("/account/notification-preferences", {
-              body: {
-                scopeType: "environment",
-                scopeId,
-                eventType,
-                channel,
-                enabled: state === "on",
-              },
-            }),
-      ),
-    );
-    reportFirstError(results.map((r) => r.error));
     await loadPreferences();
   }
 
@@ -170,9 +143,7 @@ export function useNotificationPreferences() {
     eventTypeLabel,
     eventChannelEnabled,
     setEventChannel,
-    envChannelState,
-    setEnvChannel,
-    envEventState,
-    setEnvEvent,
+    envEventChannelState,
+    setEnvEventChannel,
   };
 }

@@ -479,7 +479,7 @@
     "notificationSettings": "Benachrichtigungseinstellungen",
     "watchHint": "Benachrichtigungen zu dieser Umgebung erhalten.",
     "watchToConfigure": "Beobachte diese Umgebung, um Benachrichtigungen zu konfigurieren.",
-    "perEventHint": "Pro Ereignistyp für diese Umgebung überschreiben. \"Erben\" verwendet deine globalen Einstellungen.",
+    "perEventHint": "Pro Ereignis und Kanal für diese Umgebung überschreiben. \"Erben\" verwendet deine globale Einstellung.",
     "clearCache": "Umgebungs-Cache leeren",
     "refreshData": "Umgebungsdaten aktualisieren",
     "autoUpdateDisabled": "Diese Umgebung wird nicht mehr automatisch aktualisiert. Bitte aktualisieren Sie die API-Zugangsdaten oder die URL, um dieses Problem zu beheben.",

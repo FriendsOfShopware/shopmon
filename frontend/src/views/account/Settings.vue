@@ -214,42 +214,13 @@
 
     <!-- Notifications -->
     <CardSection :icon="IconBell" :title="$t('settings.notifications')">
-      <!-- Per-event x per-channel matrix -->
+      <!-- Global event x channel matrix -->
       <div class="mb-6">
         <h3 class="text-sm font-medium">{{ $t("settings.notificationMatrix") }}</h3>
         <p class="mb-3 text-sm text-muted-foreground">
           {{ $t("settings.notificationMatrixHint") }}
         </p>
-        <div class="overflow-x-auto rounded-xl border">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b bg-muted/40">
-                <th class="px-4 py-2 text-left font-medium">{{ $t("settings.eventTypes") }}</th>
-                <th
-                  v-for="ch in matrixChannels"
-                  :key="ch.channel"
-                  class="px-4 py-2 text-center font-medium"
-                >
-                  {{ $t(ch.labelKey) }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="et in eventTypes" :key="et.type" class="border-b last:border-0">
-                <td class="px-4 py-2.5 font-medium">{{ eventTypeLabel(et.type) }}</td>
-                <td v-for="ch in matrixChannels" :key="ch.channel" class="px-4 py-2.5 text-center">
-                  <Switch
-                    v-if="et.defaultChannels.includes(ch.channel)"
-                    class="align-middle"
-                    :model-value="eventChannelEnabled(et.type, ch.channel)"
-                    @update:model-value="(v: boolean) => setEventChannel(et.type, ch.channel, v)"
-                  />
-                  <span v-else class="text-muted-foreground">—</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <NotificationMatrix />
       </div>
 
       <!-- Watched environments -->
@@ -290,68 +261,9 @@
               </Button>
             </div>
 
-            <div v-if="expandedEnv === env.id" class="space-y-4 border-t px-4 py-3">
+            <div v-if="expandedEnv === env.id" class="space-y-3 border-t px-4 py-3">
               <p class="text-xs text-muted-foreground">{{ $t("settings.perEnvHint") }}</p>
-
-              <!-- Channel overrides -->
-              <div class="space-y-2">
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {{ $t("settings.perEnvChannels") }}
-                </h4>
-                <div
-                  v-for="ch in channelList"
-                  :key="ch.channel"
-                  class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
-                >
-                  <span class="text-sm font-medium">{{ $t(ch.labelKey) }}</span>
-                  <div class="flex rounded-lg border bg-muted/50 p-0.5">
-                    <button
-                      v-for="opt in triStateOptions"
-                      :key="opt.value"
-                      type="button"
-                      :class="[
-                        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                        envChannelState(env.id, ch.channel) === opt.value
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground',
-                      ]"
-                      @click="setEnvChannel(env.id, ch.channel, opt.value)"
-                    >
-                      {{ $t(opt.labelKey) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Event-type overrides -->
-              <div class="space-y-2">
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {{ $t("settings.eventTypes") }}
-                </h4>
-                <div
-                  v-for="et in eventTypes"
-                  :key="et.type"
-                  class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
-                >
-                  <span class="text-sm font-medium">{{ eventTypeLabel(et.type) }}</span>
-                  <div class="flex rounded-lg border bg-muted/50 p-0.5">
-                    <button
-                      v-for="opt in triStateOptions"
-                      :key="opt.value"
-                      type="button"
-                      :class="[
-                        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                        envEventState(env.id, et.type) === opt.value
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground',
-                      ]"
-                      @click="setEnvEvent(env.id, et.type, opt.value)"
-                    >
-                      {{ $t(opt.labelKey) }}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <NotificationMatrix :environment-id="env.id" />
             </div>
           </div>
         </div>
@@ -430,8 +342,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import CardSection from "@/components/CardSection.vue";
+import NotificationMatrix from "@/components/NotificationMatrix.vue";
 import PasswordInput from "@/components/PasswordInput.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import {
@@ -464,29 +376,9 @@ const { t } = useI18n();
 const { session: sessionData } = useSession();
 const alert = useAlert();
 
-const {
-  eventTypes,
-  channelList,
-  triStateOptions,
-  loadAll: loadNotificationPreferences,
-  eventTypeLabel,
-  eventChannelEnabled,
-  setEventChannel,
-  envChannelState,
-  setEnvChannel,
-  envEventState,
-  setEnvEvent,
-} = useNotificationPreferences();
-
-// Channels that appear as columns in the matrix: the union of every event's
-// default channels, ordered to match channelList.
-const matrixChannels = computed(() => {
-  const used = new Set<string>();
-  for (const et of eventTypes.value) {
-    for (const ch of et.defaultChannels) used.add(ch);
-  }
-  return channelList.filter((c) => used.has(c.channel));
-});
+// The notification matrix UI lives in NotificationMatrix; here we only need to
+// load the shared preference state once on mount.
+const { loadAll: loadNotificationPreferences } = useNotificationPreferences();
 
 const passKeyName = ref("");
 
