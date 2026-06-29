@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="open" @update:open="(v: boolean) => emit('update:open', v)">
-    <DialogContent class="max-w-md">
+    <DialogContent class="max-w-2xl">
       <DialogHeader>
         <DialogTitle>{{ $t("environment.notificationSettings") }}</DialogTitle>
         <DialogDescription>{{ environment?.name }}</DialogDescription>
@@ -22,35 +22,10 @@
           />
         </div>
 
-        <!-- Per-event-type overrides (only meaningful while watching) -->
+        <!-- Per-environment overrides (only meaningful while watching) -->
         <div v-if="isSubscribed && environment" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {{ $t("settings.eventTypes") }}
-          </h4>
           <p class="text-xs text-muted-foreground">{{ $t("environment.perEventHint") }}</p>
-          <div
-            v-for="et in eventTypes"
-            :key="et.type"
-            class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
-          >
-            <span class="text-sm font-medium">{{ eventTypeLabel(et.type) }}</span>
-            <div class="flex rounded-lg border bg-muted/50 p-0.5">
-              <button
-                v-for="opt in triStateOptions"
-                :key="opt.value"
-                type="button"
-                :class="[
-                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                  envEventState(environment.id, et.type) === opt.value
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
-                ]"
-                @click="setEnvEvent(environment.id, et.type, opt.value)"
-              >
-                {{ $t(opt.labelKey) }}
-              </button>
-            </div>
-          </div>
+          <NotificationMatrix :environment-id="environment.id" />
         </div>
         <p v-else class="text-sm text-muted-foreground">
           {{ $t("environment.watchToConfigure") }}
@@ -72,6 +47,7 @@ import { watch } from "vue";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 
+import NotificationMatrix from "@/components/NotificationMatrix.vue";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -88,8 +64,7 @@ const emit = defineEmits<{ "update:open": [boolean] }>();
 
 const { environment, isSubscribed, isSubscribing, toggleNotificationSubscription } =
   useEnvironmentDetail();
-const { eventTypes, triStateOptions, loadAll, eventTypeLabel, envEventState, setEnvEvent } =
-  useNotificationPreferences();
+const { loadAll } = useNotificationPreferences();
 
 // Load when the modal opens (and whenever it reopens) so it reflects current state.
 watch(
