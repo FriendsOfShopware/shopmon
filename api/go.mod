@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.24
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.104.0
-	github.com/aws/smithy-go v1.27.2
+	github.com/aws/smithy-go v1.27.3
 	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/descope/virtualwebauthn v1.0.5
 	github.com/exaring/otelpgx v0.11.1
@@ -21,7 +21,7 @@ require (
 	github.com/klauspost/compress v1.18.6
 	github.com/matcornic/hermes v1.3.0
 	github.com/oapi-codegen/runtime v1.4.2
-	github.com/redis/go-redis/v9 v9.20.1
+	github.com/redis/go-redis/v9 v9.21.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shyim/go-mailer v0.1.0
 	github.com/shyim/go-mailer/middleware/otelmw v0.1.0
