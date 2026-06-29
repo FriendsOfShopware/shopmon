@@ -214,48 +214,41 @@
 
     <!-- Notifications -->
     <CardSection :icon="IconBell" :title="$t('settings.notifications')">
-      <!-- Delivery channels -->
+      <!-- Per-event x per-channel matrix -->
       <div class="mb-6">
-        <h3 class="text-sm font-medium">{{ $t("settings.notificationChannels") }}</h3>
+        <h3 class="text-sm font-medium">{{ $t("settings.notificationMatrix") }}</h3>
         <p class="mb-3 text-sm text-muted-foreground">
-          {{ $t("settings.notificationChannelsHint") }}
+          {{ $t("settings.notificationMatrixHint") }}
         </p>
-        <div class="space-y-2">
-          <label
-            v-for="ch in channelList"
-            :key="ch.channel"
-            class="flex items-center justify-between gap-4 rounded-xl border px-4 py-3"
-          >
-            <span class="min-w-0">
-              <span class="block text-sm font-medium">{{ $t(ch.labelKey) }}</span>
-              <span class="block text-xs text-muted-foreground">{{
-                $t(`${ch.labelKey}Hint`)
-              }}</span>
-            </span>
-            <Switch
-              :model-value="globalChannelEnabled(ch.channel)"
-              @update:model-value="(v: boolean) => setGlobalChannel(ch.channel, v)"
-            />
-          </label>
-        </div>
-      </div>
-
-      <!-- Event types -->
-      <div class="mb-6">
-        <h3 class="text-sm font-medium">{{ $t("settings.eventTypes") }}</h3>
-        <p class="mb-3 text-sm text-muted-foreground">{{ $t("settings.eventTypesHint") }}</p>
-        <div class="space-y-2">
-          <label
-            v-for="et in eventTypes"
-            :key="et.type"
-            class="flex items-center justify-between gap-4 rounded-xl border px-4 py-3"
-          >
-            <span class="text-sm font-medium">{{ eventTypeLabel(et.type) }}</span>
-            <Switch
-              :model-value="eventTypeEnabled(et.type)"
-              @update:model-value="(v: boolean) => setEventType(et.type, v)"
-            />
-          </label>
+        <div class="overflow-x-auto rounded-xl border">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-muted/40">
+                <th class="px-4 py-2 text-left font-medium">{{ $t("settings.eventTypes") }}</th>
+                <th
+                  v-for="ch in matrixChannels"
+                  :key="ch.channel"
+                  class="px-4 py-2 text-center font-medium"
+                >
+                  {{ $t(ch.labelKey) }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="et in eventTypes" :key="et.type" class="border-b last:border-0">
+                <td class="px-4 py-2.5 font-medium">{{ eventTypeLabel(et.type) }}</td>
+                <td v-for="ch in matrixChannels" :key="ch.channel" class="px-4 py-2.5 text-center">
+                  <Switch
+                    v-if="et.defaultChannels.includes(ch.channel)"
+                    class="align-middle"
+                    :model-value="eventChannelEnabled(et.type, ch.channel)"
+                    @update:model-value="(v: boolean) => setEventChannel(et.type, ch.channel, v)"
+                  />
+                  <span v-else class="text-muted-foreground">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -477,15 +470,23 @@ const {
   triStateOptions,
   loadAll: loadNotificationPreferences,
   eventTypeLabel,
-  globalChannelEnabled,
-  setGlobalChannel,
-  eventTypeEnabled,
-  setEventType,
+  eventChannelEnabled,
+  setEventChannel,
   envChannelState,
   setEnvChannel,
   envEventState,
   setEnvEvent,
 } = useNotificationPreferences();
+
+// Channels that appear as columns in the matrix: the union of every event's
+// default channels, ordered to match channelList.
+const matrixChannels = computed(() => {
+  const used = new Set<string>();
+  for (const et of eventTypes.value) {
+    for (const ch of et.defaultChannels) used.add(ch);
+  }
+  return channelList.filter((c) => used.has(c.channel));
+});
 
 const passKeyName = ref("");
 

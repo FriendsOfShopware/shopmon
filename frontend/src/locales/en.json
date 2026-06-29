@@ -383,6 +383,8 @@
     "channelInAppHint": "Show alerts in the notification center.",
     "channelEmail": "Email notifications",
     "channelEmailHint": "Send alert emails for status changes and errors.",
+    "notificationMatrix": "Notifications",
+    "notificationMatrixHint": "Choose which channel each kind of event is delivered on.",
     "eventTypes": "Event types",
     "eventTypesHint": "Choose which kinds of events you want to be notified about. Disabling one silences it on every channel.",
     "eventType": {
