@@ -44,12 +44,9 @@ func (h *CleanupHandler) HandleOldDataCleanup(ctx context.Context, _ OldDataClea
 	if err := h.queries.CleanupOldSitespeedData(ctx); err != nil {
 		return fmt.Errorf("cleanup old sitespeed data: %w", err)
 	}
-	if err := h.queries.CleanupOldChangelogData(ctx); err != nil {
-		return fmt.Errorf("cleanup old changelog data: %w", err)
-	}
 	if err := h.queries.CleanupExpiredBans(ctx); err != nil {
 		return fmt.Errorf("cleanup expired bans: %w", err)
 	}
-	slog.Info("cleaned up old data: sessions, notifications, sitespeed, changelog, bans")
+	slog.Info("cleaned up old data: sessions, notifications, sitespeed, bans")
 	return nil
 }
