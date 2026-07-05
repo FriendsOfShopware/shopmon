@@ -28,15 +28,6 @@ func (q *Queries) CleanupExpiredSessions(ctx context.Context) error {
 	return err
 }
 
-const cleanupOldChangelogData = `-- name: CleanupOldChangelogData :exec
-DELETE FROM environment_changelog WHERE date < NOW() - interval '180 days'
-`
-
-func (q *Queries) CleanupOldChangelogData(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, cleanupOldChangelogData)
-	return err
-}
-
 const cleanupOldNotifications = `-- name: CleanupOldNotifications :exec
 DELETE FROM user_notification WHERE read = true AND created_at < NOW() - interval '90 days'
 `
