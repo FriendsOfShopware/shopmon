@@ -16,28 +16,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockStoreServer serves the pluginsByName endpoint for one extension
-// (FroshTools) with a compatible latest version that depends on the requested
-// Shopware version, and counts requests.
-type mockStoreServer struct {
-	*httptest.Server
-	requests atomic.Int64
-	// latestByShopwareVersion maps the shopwareVersion query param to the
-	// Version field the store reports. Versions not in the map return no plugin
-	// (no compatible release).
+// mockExtension describes what the mock store returns for one technical name.
+type mockExtension struct {
+	// latestByShopwareVersion maps the shopwareVersion query param to the Version
+	// field the store reports. A version absent from the map means the store
+	// returns no plugin for it (no compatible release) — modelling the endpoint's
+	// version scoping.
 	latestByShopwareVersion map[string]string
 	// changelogVersions is the full changelog list, newest first.
 	changelogVersions []string
 }
 
+// mockStoreServer serves the pluginsByName endpoint for a configurable set of
+// extensions whose availability and reported latest version depend on the
+// requested Shopware version, and counts requests.
+type mockStoreServer struct {
+	*httptest.Server
+	requests   atomic.Int64
+	extensions map[string]*mockExtension
+}
+
 func newMockStoreServer(t *testing.T) *mockStoreServer {
 	t.Helper()
 	m := &mockStoreServer{
-		latestByShopwareVersion: map[string]string{
-			"6.5.0.0": "1.1.0",
-			"6.6.0.0": "1.2.0",
+		extensions: map[string]*mockExtension{
+			"FroshTools": {
+				latestByShopwareVersion: map[string]string{"6.5.0.0": "1.1.0", "6.6.0.0": "1.2.0"},
+				changelogVersions:       []string{"1.2.0", "1.1.0", "1.0.0"},
+			},
 		},
-		changelogVersions: []string{"1.2.0", "1.1.0", "1.0.0"},
 	}
 
 	mux := http.NewServeMux()
@@ -46,19 +53,18 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 		locale := r.URL.Query().Get("locale")
 		swv := r.URL.Query().Get("shopwareVersion")
 
-		names := map[string]bool{}
-		for _, n := range r.URL.Query()["technicalNames[]"] {
-			names[n] = true
-		}
-
 		var plugins []map[string]any
-		if latest, ok := m.latestByShopwareVersion[swv]; ok && names["FroshTools"] {
-			label := "Frosh Tools"
-			if locale == "de_DE" {
-				label = "Frosh Werkzeuge"
+		for _, name := range r.URL.Query()["technicalNames[]"] {
+			ext, ok := m.extensions[name]
+			if !ok {
+				continue
 			}
-			changelog := make([]map[string]any, 0, len(m.changelogVersions))
-			for _, v := range m.changelogVersions {
+			latest, ok := ext.latestByShopwareVersion[swv]
+			if !ok {
+				continue // no release compatible with this Shopware version
+			}
+			changelog := make([]map[string]any, 0, len(ext.changelogVersions))
+			for _, v := range ext.changelogVersions {
 				changelog = append(changelog, map[string]any{
 					"version":      v,
 					"text":         locale + " changelog " + v,
@@ -67,12 +73,12 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 			}
 			plugins = append(plugins, map[string]any{
 				"id":            42,
-				"name":          "FroshTools",
-				"label":         label,
+				"name":          name,
+				"label":         locale + " " + name,
 				"description":   locale + " description",
 				"version":       latest,
 				"ratingAverage": 4.0,
-				"link":          "http://store.shopware.com:80/frosh-tools",
+				"link":          "http://store.shopware.com:80/" + name,
 				"iconPath":      "https://store.shopware.com/icon.png",
 				"producer":      map[string]string{"name": "FriendsOfShopware", "website": "https://friendsofshopware.com"},
 				"infos":         []map[string]string{{"shortDescription": locale + " short"}},
@@ -115,8 +121,8 @@ func TestStoreExtensionSyncPersistsCatalog(t *testing.T) {
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false))
 
-	// en + de at the newest version (6.6.0.0) plus one probe for 6.5.0.0.
-	assert.Equal(t, int64(3), store.requests.Load(), "store requests")
+	// en + de for each in-use Shopware version (6.5.0.0 and 6.6.0.0).
+	assert.Equal(t, int64(4), store.requests.Load(), "store requests")
 
 	for table, want := range map[string]int{
 		"store_extension":                     1,
@@ -143,12 +149,57 @@ func TestStoreExtensionSyncPersistsCatalog(t *testing.T) {
 	require.NotNil(t, globalLatest, "global latest")
 	assert.Equal(t, "1.2.0", *globalLatest, "global latest")
 	require.NotNil(t, storeLink, "store link")
-	assert.Equal(t, "https://store.shopware.com/frosh-tools", *storeLink, "store link normalized")
+	assert.Equal(t, "https://store.shopware.com/FroshTools", *storeLink, "store link normalized")
 
 	// The miss (CustomPlugin) must not create a catalog row but is recorded.
 	var missSynced int
 	require.NoError(t, pool.QueryRow(ctx, `SELECT COUNT(*) FROM store_extension_sync WHERE extension_name = 'CustomPlugin'`).Scan(&missSynced), "read sync state")
 	assert.Equal(t, 1, missSynced, "store miss recorded in sync bookkeeping")
+}
+
+// TestStoreExtensionSyncPersistsOlderOnlyExtension is a regression test for the
+// mixed-version scoping bug: an extension whose latest release is only
+// compatible with an older environment's Shopware version must still be
+// persisted, even when a newer environment exists and a sync is requested from
+// the older one. The store's pluginsByName endpoint omits the plugin for the
+// newer version, so building the catalog from a fixed "newest" version would
+// drop it while still marking it synced.
+func TestStoreExtensionSyncPersistsOlderOnlyExtension(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	// LegacyExt only has a release compatible with 6.5.0.0, not the newer
+	// 6.6.0.0 environment that also exists.
+	store.extensions["LegacyExt"] = &mockExtension{
+		latestByShopwareVersion: map[string]string{"6.5.0.0": "3.4.0"},
+		changelogVersions:       []string{"3.4.0", "3.3.0"},
+	}
+
+	require.NoError(t, h.SyncNames(ctx, []string{"LegacyExt"}, "6.5.0.0", false), "sync")
+
+	// The catalog and its changelog history are persisted despite the plugin
+	// being absent from the 6.6.0.0 probe.
+	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "catalog row")
+	assert.Equal(t, 2, countRows(t, pool, "store_extension_version"), "version rows")
+
+	var globalLatest *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension WHERE name = 'LegacyExt'`).Scan(&globalLatest), "read catalog row")
+	require.NotNil(t, globalLatest, "global latest")
+	assert.Equal(t, "3.4.0", *globalLatest)
+
+	// 6.5.0.0 gets a compatible latest; 6.6.0.0 records that it was checked and
+	// has no compatible release (NULL), so it is not re-probed every scrape.
+	var latest65 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'LegacyExt' AND shopware_version = '6.5.0.0'`).Scan(&latest65), "read 6.5 compat")
+	require.NotNil(t, latest65, "6.5.0.0 compatible latest")
+	assert.Equal(t, "3.4.0", *latest65)
+
+	var latest66 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'LegacyExt' AND shopware_version = '6.6.0.0'`).Scan(&latest66), "read 6.6 compat")
+	assert.Nil(t, latest66, "6.6.0.0 has no compatible release")
+
+	// It is marked synced, so the classification is stable rather than retried.
+	assert.Equal(t, 1, countRows(t, pool, "store_extension_sync"))
 }
 
 // TestStoreExtensionSyncFreshIsNoop: a second sync right after the first must
@@ -207,8 +258,9 @@ func TestStoreExtensionSyncPicksUpNewRelease(t *testing.T) {
 	before := snapshotRowVersions(t, pool)
 
 	// A new release appears and the bookkeeping ages out.
-	store.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
-	store.changelogVersions = append([]string{"1.3.0"}, store.changelogVersions...)
+	frosh := store.extensions["FroshTools"]
+	frosh.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
+	frosh.changelogVersions = append([]string{"1.3.0"}, frosh.changelogVersions...)
 	_, err := pool.Exec(ctx, `UPDATE store_extension_sync SET last_synced_at = NOW() - INTERVAL '2 days'`)
 	require.NoError(t, err, "age sync state")
 

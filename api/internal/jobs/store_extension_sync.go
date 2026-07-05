@@ -131,75 +131,63 @@ func (h *StoreExtensionSyncHandler) SyncNames(ctx context.Context, names []strin
 	if len(swvs) == 0 {
 		return nil
 	}
-	// The newest version doubles as the scope for the full catalog fetch: store
-	// metadata and the changelog list are version-independent, only the reported
-	// compatible latest version differs.
-	catalogSwv := swvs[0]
 
 	client := shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, nil)
 
-	var (
-		enPlugins, dePlugins []shopwareaccount.StorePlugin
-		enErr, deErr         error
-		wg                   sync.WaitGroup
-	)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		enPlugins, enErr = client.PluginsByName(ctx, "en_GB", catalogSwv, needed)
-	}()
-	go func() {
-		defer wg.Done()
-		dePlugins, deErr = client.PluginsByName(ctx, "de_DE", catalogSwv, needed)
-	}()
-	wg.Wait()
+	// The store's pluginsByName endpoint is scoped to the requested Shopware
+	// version: it omits any plugin whose releases are all incompatible with that
+	// version. So an extension must be persisted from a probe that actually
+	// returned it, not from a fixed "newest" version — otherwise an extension
+	// installed only on an older environment (whose latest release predates the
+	// newest environment's Shopware version) would be dropped from the catalog
+	// while still being marked synced. Every in-use version is therefore probed
+	// (en + de), and each extension's catalog data is taken from the richest
+	// probe that returned it.
+	//
+	// compat[swv][name] is the compatible latest version the store reports for
+	// that Shopware version; best[name] is the plugin data used to build the
+	// shared catalog subtree, preferring the probe with the most changelog
+	// history (which yields the correct uncapped global latest version).
+	compat := make(map[string]map[string]string, len(swvs))
+	best := make(map[string]*storeExtensionData, len(needed))
+	anyProbeSucceeded := false
 
-	if enErr != nil && deErr != nil {
-		// Bookkeeping is deliberately not updated so the queue retry (or the next
-		// scrape dispatch) tries again.
-		return fmt.Errorf("fetch store plugins: en: %w, de: %v", enErr, deErr)
-	}
-	if enErr != nil {
-		slog.Warn("failed to fetch store plugins", "locale", "en_GB", "error", enErr)
-	}
-	if deErr != nil {
-		slog.Warn("failed to fetch store plugins", "locale", "de_DE", "error", deErr)
-	}
-
-	enMap := indexStorePlugins(enPlugins)
-	deMap := indexStorePlugins(dePlugins)
-
-	// Compatible latest version per probed Shopware version. The catalog fetch
-	// already answered catalogSwv; every other in-use version costs one extra
-	// call for the whole batch.
-	compat := map[string]map[string]string{catalogSwv: {}}
-	for name, p := range enMap {
-		compat[catalogSwv][name] = p.Version
-	}
-	for name, p := range deMap {
-		if _, ok := compat[catalogSwv][name]; !ok {
-			compat[catalogSwv][name] = p.Version
-		}
-	}
-	for _, swv := range swvs[1:] {
-		plugins, err := client.PluginsByName(ctx, "en_GB", swv, needed)
+	for _, swv := range swvs {
+		enPlugins, dePlugins, err := h.probeVersion(ctx, client, swv, needed)
 		if err != nil {
 			// Skip this version; its missing compatibility rows re-trigger a sync
 			// from the next scrape of an environment running it.
-			slog.Warn("failed to probe store compatibility", "shopwareVersion", swv, "error", err)
+			slog.Warn("failed to probe store plugins", "shopwareVersion", swv, "error", err)
 			continue
 		}
-		versions := make(map[string]string, len(plugins))
-		for i := range plugins {
-			versions[plugins[i].Name] = plugins[i].Version
+		anyProbeSucceeded = true
+
+		enMap := indexStorePlugins(enPlugins)
+		deMap := indexStorePlugins(dePlugins)
+
+		versions := make(map[string]string)
+		for _, name := range needed {
+			sd := &storeExtensionData{en: enMap[name], de: deMap[name]}
+			if p := sd.primary(); p != nil {
+				versions[name] = p.Version
+				if cur, ok := best[name]; !ok || len(sd.mergedChangelogs()) > len(cur.mergedChangelogs()) {
+					best[name] = sd
+				}
+			}
 		}
 		compat[swv] = versions
 	}
 
+	if !anyProbeSucceeded {
+		// Bookkeeping is deliberately not updated so the queue retry (or the next
+		// scrape dispatch) tries again.
+		return fmt.Errorf("all store probes failed for %d version(s)", len(swvs))
+	}
+
 	synced := 0
 	for _, name := range needed {
-		sd := &storeExtensionData{en: enMap[name], de: deMap[name]}
-		if sd.primary() == nil {
+		sd, ok := best[name]
+		if !ok {
 			continue // not a store extension; still recorded in the bookkeeping below
 		}
 		if err := h.persistExtension(ctx, name, sd, compat); err != nil {
@@ -215,6 +203,38 @@ func (h *StoreExtensionSyncHandler) SyncNames(ctx context.Context, names []strin
 
 	slog.Info("synced store extensions", "requested", len(names), "fetched", len(needed), "found", synced)
 	return nil
+}
+
+// probeVersion fetches the given names from the store in both locales scoped to
+// one Shopware version, concurrently. It returns an error only when both locale
+// calls fail; a single-locale failure is logged and its (nil) result is used.
+func (h *StoreExtensionSyncHandler) probeVersion(ctx context.Context, client *shopwareaccount.Client, shopwareVersion string, names []string) ([]shopwareaccount.StorePlugin, []shopwareaccount.StorePlugin, error) {
+	var (
+		enPlugins, dePlugins []shopwareaccount.StorePlugin
+		enErr, deErr         error
+		wg                   sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		enPlugins, enErr = client.PluginsByName(ctx, "en_GB", shopwareVersion, names)
+	}()
+	go func() {
+		defer wg.Done()
+		dePlugins, deErr = client.PluginsByName(ctx, "de_DE", shopwareVersion, names)
+	}()
+	wg.Wait()
+
+	if enErr != nil && deErr != nil {
+		return nil, nil, fmt.Errorf("en: %w, de: %v", enErr, deErr)
+	}
+	if enErr != nil {
+		slog.Warn("failed to fetch store plugins", "locale", "en_GB", "shopwareVersion", shopwareVersion, "error", enErr)
+	}
+	if deErr != nil {
+		slog.Warn("failed to fetch store plugins", "locale", "de_DE", "shopwareVersion", shopwareVersion, "error", deErr)
+	}
+	return enPlugins, dePlugins, nil
 }
 
 // shopwareVersionsToProbe returns every Shopware version in use by any
