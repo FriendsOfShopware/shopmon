@@ -122,13 +122,22 @@ UPDATE environment SET environment_image = $1 WHERE id = $2;
 -- name: UpdateEnvironmentScrapeError :exec
 UPDATE environment SET last_scraped_error = $1, last_scraped_at = NOW(), connection_issue_count = connection_issue_count + 1 WHERE id = $2;
 
+-- The upserts below carry a WHERE ... IS DISTINCT FROM guard on the DO UPDATE:
+-- without it Postgres writes a new row version (and WAL) even when every value
+-- is unchanged, and the hourly scrape rewrites each row every run.
+
 -- name: UpsertEnvironmentExtension :exec
 INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, installed_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, installed_at = $8;
+ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, installed_at = $8
+WHERE (environment_extension.label, environment_extension.active, environment_extension.version, environment_extension.latest_version, environment_extension.installed, environment_extension.installed_at)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8);
 
 -- name: DeleteEnvironmentExtensionsNotIn :exec
 DELETE FROM environment_extension WHERE environment_id = $1 AND name != ALL($2::text[]);
+
+-- name: GetStoreExtensionVersionsByName :many
+SELECT id, version, released_at FROM store_extension_version WHERE extension_name = $1;
 
 -- name: UpsertStoreExtension :exec
 INSERT INTO store_extension (
@@ -149,7 +158,9 @@ ON CONFLICT (extension_name, language) DO UPDATE SET
   label = COALESCE($3, store_extension_translation.label),
   short_description = COALESCE($4, store_extension_translation.short_description),
   description = COALESCE($5, store_extension_translation.description),
-  installation_manual = COALESCE($6, store_extension_translation.installation_manual);
+  installation_manual = COALESCE($6, store_extension_translation.installation_manual)
+WHERE (store_extension_translation.label, store_extension_translation.short_description, store_extension_translation.description, store_extension_translation.installation_manual)
+  IS DISTINCT FROM (COALESCE($3, store_extension_translation.label), COALESCE($4, store_extension_translation.short_description), COALESCE($5, store_extension_translation.description), COALESCE($6, store_extension_translation.installation_manual));
 
 -- name: UpsertStoreExtensionVersion :one
 INSERT INTO store_extension_version (extension_name, version, released_at)
@@ -163,12 +174,15 @@ RETURNING id;
 INSERT INTO store_extension_version_translation (extension_version_id, language, changelog)
 VALUES ($1, $2, $3)
 ON CONFLICT (extension_version_id, language) DO UPDATE SET
-  changelog = COALESCE($3, store_extension_version_translation.changelog);
+  changelog = COALESCE($3, store_extension_version_translation.changelog)
+WHERE store_extension_version_translation.changelog
+  IS DISTINCT FROM COALESCE($3, store_extension_version_translation.changelog);
 
 -- name: UpsertStoreExtensionImage :exec
 INSERT INTO store_extension_image (extension_name, url, preview, priority)
 VALUES ($1, $2, $3, $4)
-ON CONFLICT (extension_name, url) DO UPDATE SET preview = $3, priority = $4;
+ON CONFLICT (extension_name, url) DO UPDATE SET preview = $3, priority = $4
+WHERE (store_extension_image.preview, store_extension_image.priority) IS DISTINCT FROM ($3, $4);
 
 -- name: DeleteStoreExtensionImagesNotIn :exec
 DELETE FROM store_extension_image WHERE extension_name = $1 AND url != ALL($2::text[]);
@@ -177,7 +191,9 @@ DELETE FROM store_extension_image WHERE extension_name = $1 AND url != ALL($2::t
 INSERT INTO environment_store_extension (environment_id, extension_name, label, version, latest_version, active, installed, installed_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, extension_name) DO UPDATE SET
-  label = $3, version = $4, latest_version = $5, active = $6, installed = $7, installed_at = $8;
+  label = $3, version = $4, latest_version = $5, active = $6, installed = $7, installed_at = $8
+WHERE (environment_store_extension.label, environment_store_extension.version, environment_store_extension.latest_version, environment_store_extension.active, environment_store_extension.installed, environment_store_extension.installed_at)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8);
 
 -- name: DeleteEnvironmentStoreExtensionsNotIn :exec
 DELETE FROM environment_store_extension WHERE environment_id = $1 AND extension_name != ALL($2::text[]);
@@ -191,7 +207,8 @@ ORDER BY sei.extension_name, sei.priority DESC;
 
 -- name: UpsertEnvironmentQueue :exec
 INSERT INTO environment_queue (environment_id, name, size) VALUES ($1, $2, $3)
-ON CONFLICT (environment_id, name) DO UPDATE SET size = $3;
+ON CONFLICT (environment_id, name) DO UPDATE SET size = $3
+WHERE environment_queue.size IS DISTINCT FROM $3;
 
 -- name: DeleteEnvironmentQueuesNotIn :exec
 DELETE FROM environment_queue WHERE environment_id = $1 AND name != ALL($2::text[]);
@@ -199,7 +216,9 @@ DELETE FROM environment_queue WHERE environment_id = $1 AND name != ALL($2::text
 -- name: UpsertEnvironmentScheduledTask :exec
 INSERT INTO environment_scheduled_task (environment_id, task_id, name, status, interval, overdue, last_execution_time, next_execution_time)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (environment_id, task_id) DO UPDATE SET name = $3, status = $4, interval = $5, overdue = $6, last_execution_time = $7, next_execution_time = $8;
+ON CONFLICT (environment_id, task_id) DO UPDATE SET name = $3, status = $4, interval = $5, overdue = $6, last_execution_time = $7, next_execution_time = $8
+WHERE (environment_scheduled_task.name, environment_scheduled_task.status, environment_scheduled_task.interval, environment_scheduled_task.overdue, environment_scheduled_task.last_execution_time, environment_scheduled_task.next_execution_time)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8);
 
 -- name: DeleteEnvironmentScheduledTasksNotIn :exec
 DELETE FROM environment_scheduled_task WHERE environment_id = $1 AND task_id != ALL($2::text[]);
@@ -207,15 +226,18 @@ DELETE FROM environment_scheduled_task WHERE environment_id = $1 AND task_id != 
 -- name: UpsertEnvironmentCache :exec
 INSERT INTO environment_cache (environment_id, environment, http_cache, cache_adapter)
 VALUES ($1, $2, $3, $4)
-ON CONFLICT (environment_id) DO UPDATE SET environment = $2, http_cache = $3, cache_adapter = $4;
+ON CONFLICT (environment_id) DO UPDATE SET environment = $2, http_cache = $3, cache_adapter = $4
+WHERE (environment_cache.environment, environment_cache.http_cache, environment_cache.cache_adapter) IS DISTINCT FROM ($2, $3, $4);
 
--- name: DeleteEnvironmentChecks :exec
-DELETE FROM environment_check WHERE environment_id = $1;
+-- name: DeleteEnvironmentChecksNotIn :exec
+DELETE FROM environment_check WHERE environment_id = $1 AND check_id != ALL($2::text[]);
 
 -- name: InsertEnvironmentCheck :exec
 INSERT INTO environment_check (environment_id, check_id, level, message, source, link)
 VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6;
+ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
+WHERE (environment_check.level, environment_check.message, environment_check.source, environment_check.link)
+  IS DISTINCT FROM ($3, $4, $5, $6);
 
 -- name: InsertEnvironmentChangelog :exec
 INSERT INTO environment_changelog (environment_id, extensions, old_shopware_version, new_shopware_version, date)

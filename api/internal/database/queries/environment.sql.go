@@ -65,12 +65,17 @@ func (q *Queries) DeleteEnvironment(ctx context.Context, id int32) error {
 	return err
 }
 
-const deleteEnvironmentChecks = `-- name: DeleteEnvironmentChecks :exec
-DELETE FROM environment_check WHERE environment_id = $1
+const deleteEnvironmentChecksNotIn = `-- name: DeleteEnvironmentChecksNotIn :exec
+DELETE FROM environment_check WHERE environment_id = $1 AND check_id != ALL($2::text[])
 `
 
-func (q *Queries) DeleteEnvironmentChecks(ctx context.Context, environmentID int32) error {
-	_, err := q.db.Exec(ctx, deleteEnvironmentChecks, environmentID)
+type DeleteEnvironmentChecksNotInParams struct {
+	EnvironmentID int32    `json:"environment_id"`
+	Column2       []string `json:"column_2"`
+}
+
+func (q *Queries) DeleteEnvironmentChecksNotIn(ctx context.Context, arg DeleteEnvironmentChecksNotInParams) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentChecksNotIn, arg.EnvironmentID, arg.Column2)
 	return err
 }
 
@@ -797,6 +802,36 @@ func (q *Queries) GetEnvironmentsWithSitespeedEnabled(ctx context.Context) ([]Ge
 	return items, nil
 }
 
+const getStoreExtensionVersionsByName = `-- name: GetStoreExtensionVersionsByName :many
+SELECT id, version, released_at FROM store_extension_version WHERE extension_name = $1
+`
+
+type GetStoreExtensionVersionsByNameRow struct {
+	ID         int32   `json:"id"`
+	Version    string  `json:"version"`
+	ReleasedAt *string `json:"released_at"`
+}
+
+func (q *Queries) GetStoreExtensionVersionsByName(ctx context.Context, extensionName string) ([]GetStoreExtensionVersionsByNameRow, error) {
+	rows, err := q.db.Query(ctx, getStoreExtensionVersionsByName, extensionName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetStoreExtensionVersionsByNameRow{}
+	for rows.Next() {
+		var i GetStoreExtensionVersionsByNameRow
+		if err := rows.Scan(&i.ID, &i.Version, &i.ReleasedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertEnvironmentChangelog = `-- name: InsertEnvironmentChangelog :exec
 INSERT INTO environment_changelog (environment_id, extensions, old_shopware_version, new_shopware_version, date)
 VALUES ($1, $2, $3, $4, NOW())
@@ -823,6 +858,8 @@ const insertEnvironmentCheck = `-- name: InsertEnvironmentCheck :exec
 INSERT INTO environment_check (environment_id, check_id, level, message, source, link)
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (environment_id, check_id) DO UPDATE SET level = $3, message = $4, source = $5, link = $6
+WHERE (environment_check.level, environment_check.message, environment_check.source, environment_check.link)
+  IS DISTINCT FROM ($3, $4, $5, $6)
 `
 
 type InsertEnvironmentCheckParams struct {
@@ -1088,6 +1125,7 @@ const upsertEnvironmentCache = `-- name: UpsertEnvironmentCache :exec
 INSERT INTO environment_cache (environment_id, environment, http_cache, cache_adapter)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (environment_id) DO UPDATE SET environment = $2, http_cache = $3, cache_adapter = $4
+WHERE (environment_cache.environment, environment_cache.http_cache, environment_cache.cache_adapter) IS DISTINCT FROM ($2, $3, $4)
 `
 
 type UpsertEnvironmentCacheParams struct {
@@ -1108,9 +1146,12 @@ func (q *Queries) UpsertEnvironmentCache(ctx context.Context, arg UpsertEnvironm
 }
 
 const upsertEnvironmentExtension = `-- name: UpsertEnvironmentExtension :exec
+
 INSERT INTO environment_extension (environment_id, name, label, active, version, latest_version, installed, installed_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, name) DO UPDATE SET label = $3, active = $4, version = $5, latest_version = $6, installed = $7, installed_at = $8
+WHERE (environment_extension.label, environment_extension.active, environment_extension.version, environment_extension.latest_version, environment_extension.installed, environment_extension.installed_at)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8)
 `
 
 type UpsertEnvironmentExtensionParams struct {
@@ -1124,6 +1165,9 @@ type UpsertEnvironmentExtensionParams struct {
 	InstalledAt   *string `json:"installed_at"`
 }
 
+// The upserts below carry a WHERE ... IS DISTINCT FROM guard on the DO UPDATE:
+// without it Postgres writes a new row version (and WAL) even when every value
+// is unchanged, and the hourly scrape rewrites each row every run.
 func (q *Queries) UpsertEnvironmentExtension(ctx context.Context, arg UpsertEnvironmentExtensionParams) error {
 	_, err := q.db.Exec(ctx, upsertEnvironmentExtension,
 		arg.EnvironmentID,
@@ -1141,6 +1185,7 @@ func (q *Queries) UpsertEnvironmentExtension(ctx context.Context, arg UpsertEnvi
 const upsertEnvironmentQueue = `-- name: UpsertEnvironmentQueue :exec
 INSERT INTO environment_queue (environment_id, name, size) VALUES ($1, $2, $3)
 ON CONFLICT (environment_id, name) DO UPDATE SET size = $3
+WHERE environment_queue.size IS DISTINCT FROM $3
 `
 
 type UpsertEnvironmentQueueParams struct {
@@ -1158,6 +1203,8 @@ const upsertEnvironmentScheduledTask = `-- name: UpsertEnvironmentScheduledTask 
 INSERT INTO environment_scheduled_task (environment_id, task_id, name, status, interval, overdue, last_execution_time, next_execution_time)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, task_id) DO UPDATE SET name = $3, status = $4, interval = $5, overdue = $6, last_execution_time = $7, next_execution_time = $8
+WHERE (environment_scheduled_task.name, environment_scheduled_task.status, environment_scheduled_task.interval, environment_scheduled_task.overdue, environment_scheduled_task.last_execution_time, environment_scheduled_task.next_execution_time)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8)
 `
 
 type UpsertEnvironmentScheduledTaskParams struct {
@@ -1190,6 +1237,8 @@ INSERT INTO environment_store_extension (environment_id, extension_name, label, 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, extension_name) DO UPDATE SET
   label = $3, version = $4, latest_version = $5, active = $6, installed = $7, installed_at = $8
+WHERE (environment_store_extension.label, environment_store_extension.version, environment_store_extension.latest_version, environment_store_extension.active, environment_store_extension.installed, environment_store_extension.installed_at)
+  IS DISTINCT FROM ($3, $4, $5, $6, $7, $8)
 `
 
 type UpsertEnvironmentStoreExtensionParams struct {
@@ -1258,6 +1307,7 @@ const upsertStoreExtensionImage = `-- name: UpsertStoreExtensionImage :exec
 INSERT INTO store_extension_image (extension_name, url, preview, priority)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (extension_name, url) DO UPDATE SET preview = $3, priority = $4
+WHERE (store_extension_image.preview, store_extension_image.priority) IS DISTINCT FROM ($3, $4)
 `
 
 type UpsertStoreExtensionImageParams struct {
@@ -1286,6 +1336,8 @@ ON CONFLICT (extension_name, language) DO UPDATE SET
   short_description = COALESCE($4, store_extension_translation.short_description),
   description = COALESCE($5, store_extension_translation.description),
   installation_manual = COALESCE($6, store_extension_translation.installation_manual)
+WHERE (store_extension_translation.label, store_extension_translation.short_description, store_extension_translation.description, store_extension_translation.installation_manual)
+  IS DISTINCT FROM (COALESCE($3, store_extension_translation.label), COALESCE($4, store_extension_translation.short_description), COALESCE($5, store_extension_translation.description), COALESCE($6, store_extension_translation.installation_manual))
 `
 
 type UpsertStoreExtensionTranslationParams struct {
@@ -1337,6 +1389,8 @@ INSERT INTO store_extension_version_translation (extension_version_id, language,
 VALUES ($1, $2, $3)
 ON CONFLICT (extension_version_id, language) DO UPDATE SET
   changelog = COALESCE($3, store_extension_version_translation.changelog)
+WHERE store_extension_version_translation.changelog
+  IS DISTINCT FROM COALESCE($3, store_extension_version_translation.changelog)
 `
 
 type UpsertStoreExtensionVersionTranslationParams struct {

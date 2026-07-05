@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -18,66 +17,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
-
-// enrichExtensionsFromStore fetches store metadata for the given extensions in
-// both English (en_GB) and German (de_DE) and attaches it to the entries the
-// store knows about, recording the latest compatible version per entry. The
-// locale must use the underscore form; the hyphenated form is silently ignored
-// by the API. It returns false only when both locale calls fail, meaning store
-// membership is unknown for this scrape.
-func (h *EnvironmentScrapeHandler) enrichExtensionsFromStore(extensions []extensionEntry, shopwareVersion string) bool {
-	technicalNames := make([]string, 0, len(extensions))
-	for _, ext := range extensions {
-		technicalNames = append(technicalNames, ext.Name)
-	}
-
-	client := shopwareaccount.NewClient("", nil)
-
-	var (
-		enPlugins, dePlugins []shopwareaccount.StorePlugin
-		enErr, deErr         error
-		wg                   sync.WaitGroup
-	)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		enPlugins, enErr = client.PluginsByName(context.Background(), "en_GB", shopwareVersion, technicalNames)
-	}()
-	go func() {
-		defer wg.Done()
-		dePlugins, deErr = client.PluginsByName(context.Background(), "de_DE", shopwareVersion, technicalNames)
-	}()
-	wg.Wait()
-
-	if enErr != nil {
-		slog.Warn("failed to fetch store plugins", "locale", "en_GB", "error", enErr)
-	}
-	if deErr != nil {
-		slog.Warn("failed to fetch store plugins", "locale", "de_DE", "error", deErr)
-	}
-
-	enMap := indexStorePlugins(enPlugins)
-	deMap := indexStorePlugins(dePlugins)
-
-	for i := range extensions {
-		en := enMap[extensions[i].Name]
-		de := deMap[extensions[i].Name]
-		if en == nil && de == nil {
-			continue
-		}
-		data := &storeExtensionData{en: en, de: de}
-		extensions[i].Store = data
-		// latest_version is the latest release the store reports as compatible
-		// with this environment's Shopware version (the shopwareVersion query
-		// param caps it), so it is recorded per environment on the link row.
-		if p := data.primary(); p != nil && p.Version != "" {
-			v := p.Version
-			extensions[i].LatestVersion = &v
-		}
-	}
-
-	return enErr == nil || deErr == nil
-}
 
 func indexStorePlugins(plugins []shopwareaccount.StorePlugin) map[string]*shopwareaccount.StorePlugin {
 	m := make(map[string]*shopwareaccount.StorePlugin, len(plugins))
@@ -151,11 +90,11 @@ func (s *storeExtensionData) globalLatestVersion() string {
 	return latest
 }
 
-// changelogsBetween returns store changelog entries (both languages) strictly
-// newer than oldVersion and not newer than newVersion, ordered oldest-first.
-func (s *storeExtensionData) changelogsBetween(oldVersion, newVersion string) []extensionChangelog {
+// changelogsBetween returns changelog entries (both languages) strictly newer
+// than oldVersion and not newer than newVersion, ordered oldest-first.
+func changelogsBetween(mcs []mergedChangelog, oldVersion, newVersion string) []extensionChangelog {
 	var out []extensionChangelog
-	for _, mc := range s.mergedChangelogs() {
+	for _, mc := range mcs {
 		if version.Compare(mc.Version, oldVersion) > 0 && version.Compare(mc.Version, newVersion) <= 0 {
 			entry := extensionChangelog{Version: mc.Version, Text: mc.En, TextDe: mc.De}
 			if mc.ReleasedAt != "" {
@@ -223,8 +162,8 @@ func (h *EnvironmentScrapeHandler) loadExistingExtensions(ctx context.Context, e
 }
 
 // calculateExtensionDiff compares old (from DB) and new (from scrape) extensions.
-// For updated store extensions the changelog between the old and new version is
-// taken from the freshly fetched store data (both languages).
+// Changelogs for updated store extensions are attached separately from the
+// catalog (attachStoreChangelogs).
 func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []extensionEntry) []extensionDiff {
 	if len(oldExtensions) == 0 {
 		return nil
@@ -265,18 +204,14 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 			continue
 		}
 
-		diff := extensionDiff{
+		diffs = append(diffs, extensionDiff{
 			Name:       newExt.Name,
 			Label:      newExt.Label,
 			State:      state,
 			OldVersion: strPtr(old.Version),
 			NewVersion: strPtr(newExt.Version),
 			Active:     newExt.Active,
-		}
-		if state == "updated" && newExt.Store != nil {
-			diff.Changelog = newExt.Store.changelogsBetween(old.Version, newExt.Version)
-		}
-		diffs = append(diffs, diff)
+		})
 	}
 
 	for i := range newExtensions {
