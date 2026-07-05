@@ -300,6 +300,11 @@ CREATE TABLE "store_extension_compatibility" (
   PRIMARY KEY ("extension_name", "shopware_version")
 );
 
+-- Lets CleanupUnusedStoreExtensionCompatibility, which filters by
+-- shopware_version alone, seek instead of scanning (the PK leads with extension_name).
+CREATE INDEX "store_extension_compatibility_shopware_version_idx"
+  ON "store_extension_compatibility" ("shopware_version");
+
 -- store_extension_image holds the store listing pictures (screenshots) for a
 -- store extension, used to build a richer extension listing in the UI.
 CREATE TABLE "store_extension_image" (

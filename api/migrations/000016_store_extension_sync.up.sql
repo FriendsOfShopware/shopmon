@@ -16,3 +16,9 @@ CREATE TABLE "store_extension_compatibility" (
   "latest_version" text,
   PRIMARY KEY ("extension_name", "shopware_version")
 );
+
+-- The composite PK leads with extension_name, so the daily cleanup that filters
+-- by shopware_version alone (CleanupUnusedStoreExtensionCompatibility) cannot
+-- seek on it. Index shopware_version so that cleanup stays index-driven.
+CREATE INDEX "store_extension_compatibility_shopware_version_idx"
+  ON "store_extension_compatibility" ("shopware_version");

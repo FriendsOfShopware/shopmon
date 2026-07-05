@@ -348,7 +348,16 @@ func TestResolveExtensionsFromCatalog(t *testing.T) {
 		{Name: "AcmePending", Version: "3.0.0", IsStore: true, LatestVersion: strPtr("3.9.0")},
 	}
 
-	require.NoError(t, h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, "6.5.0.0"), "resolve")
+	catalog, err := h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, "6.5.0.0")
+	require.NoError(t, err, "resolve")
+
+	// The returned state carries the reads the dispatch path reuses instead of
+	// re-querying: membership and the compatibility rows that exist (AcmeNull's
+	// NULL row counts as known).
+	assert.Equal(t, map[string]bool{"FroshTools": true, "AcmeNull": true, "AcmePending": true}, catalog.member, "member")
+	assert.Contains(t, catalog.compatKnown, "FroshTools")
+	assert.Contains(t, catalog.compatKnown, "AcmeNull")
+	assert.NotContains(t, catalog.compatKnown, "AcmePending", "no compat row yet")
 
 	assertExt := func(i int, wantStore bool, wantLatest *string) {
 		t.Helper()

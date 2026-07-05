@@ -39,12 +39,57 @@ func (h *StoreExtensionSyncHandler) HandleSync(ctx context.Context, msg StoreExt
 	return h.SyncNames(ctx, msg.Names, msg.ShopwareVersion, false)
 }
 
+// catalogState holds the per-name catalog lookups a scrape already performed:
+// store membership and, keyed the same way, the compatibility entries known for
+// the environment's Shopware version (value may be nil for "checked, no
+// compatible release"). Passing it into namesNeedingSyncWith lets the scrape's
+// dispatch reuse those reads instead of re-querying them.
+type catalogState struct {
+	member      map[string]bool
+	compatKnown map[string]*string
+}
+
 // namesNeedingSync filters names down to those whose catalog data is missing or
 // stale: never looked up (or last looked up over an hour ago), or store-known but
-// lacking a compatibility entry for the given Shopware version. The scrape uses
-// the same filter to decide what to dispatch, and the job re-applies it so
-// duplicate dispatches from many environments collapse into no-ops.
+// lacking a compatibility entry for the given Shopware version. It fetches the
+// membership and compatibility state itself; the scrape's dispatch path uses
+// namesNeedingSyncWith to reuse state it already read.
 func (h *StoreExtensionSyncHandler) namesNeedingSync(ctx context.Context, names []string, shopwareVersion string) ([]string, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+
+	memberNames, err := h.queries.GetStoreExtensionNamesIn(ctx, names)
+	if err != nil {
+		return nil, fmt.Errorf("get store extension names: %w", err)
+	}
+	member := make(map[string]bool, len(memberNames))
+	for _, n := range memberNames {
+		member[n] = true
+	}
+
+	compatKnown := make(map[string]*string)
+	if shopwareVersion != "" {
+		compatRows, err := h.queries.GetStoreExtensionCompatibility(ctx, queries.GetStoreExtensionCompatibilityParams{
+			Column1:         names,
+			ShopwareVersion: shopwareVersion,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("get store extension compatibility: %w", err)
+		}
+		for _, row := range compatRows {
+			compatKnown[row.ExtensionName] = row.LatestVersion
+		}
+	}
+
+	return h.namesNeedingSyncWith(ctx, names, shopwareVersion, catalogState{member: member, compatKnown: compatKnown})
+}
+
+// namesNeedingSyncWith applies the freshness filter given pre-resolved
+// membership and compatibility state. Only the freshness bookkeeping is queried
+// here, so the scrape avoids re-reading membership and compatibility rows it
+// just fetched in resolveExtensionsFromCatalog.
+func (h *StoreExtensionSyncHandler) namesNeedingSyncWith(ctx context.Context, names []string, shopwareVersion string, catalog catalogState) ([]string, error) {
 	if len(names) == 0 {
 		return nil, nil
 	}
@@ -58,32 +103,10 @@ func (h *StoreExtensionSyncHandler) namesNeedingSync(ctx context.Context, names 
 		fresh[n] = true
 	}
 
-	memberNames, err := h.queries.GetStoreExtensionNamesIn(ctx, names)
-	if err != nil {
-		return nil, fmt.Errorf("get store extension names: %w", err)
-	}
-	member := make(map[string]bool, len(memberNames))
-	for _, n := range memberNames {
-		member[n] = true
-	}
-
-	compatKnown := make(map[string]bool)
-	if shopwareVersion != "" {
-		compatRows, err := h.queries.GetStoreExtensionCompatibility(ctx, queries.GetStoreExtensionCompatibilityParams{
-			Column1:         names,
-			ShopwareVersion: shopwareVersion,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("get store extension compatibility: %w", err)
-		}
-		for _, row := range compatRows {
-			compatKnown[row.ExtensionName] = true
-		}
-	}
-
 	var needing []string
 	for _, n := range names {
-		if !fresh[n] || (member[n] && shopwareVersion != "" && !compatKnown[n]) {
+		_, compatKnown := catalog.compatKnown[n]
+		if !fresh[n] || (catalog.member[n] && shopwareVersion != "" && !compatKnown) {
 			needing = append(needing, n)
 		}
 	}

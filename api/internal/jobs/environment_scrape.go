@@ -252,7 +252,8 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	// local catalog. The scrape never talks to the store API itself; missing or
 	// stale catalog data is refreshed by the StoreExtensionSync job dispatched
 	// after the persist.
-	if err := h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, shopConfig.Version); err != nil {
+	catalog, err := h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, shopConfig.Version)
+	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -351,7 +352,7 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		return err
 	}
 
-	h.dispatchStoreExtensionSync(ctx, extensions, shopConfig.Version)
+	h.dispatchStoreExtensionSync(ctx, extensions, shopConfig.Version, catalog)
 
 	hasShopwareUpdate := env.ShopwareVersion != shopConfig.Version
 	hasExtensionChanges := len(extensionsDiff) > 0
@@ -612,9 +613,9 @@ func (h *EnvironmentScrapeHandler) persistScrapeResult(ctx context.Context, env 
 // compatibility table. When a compatibility entry is not there yet (sync still
 // pending), the shop-reported upgrade version is kept and, failing that, the
 // prior link value is carried over so the update hint does not flicker away.
-func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Context, extensions []extensionEntry, oldExtensions []existingExtension, shopwareVersion string) error {
+func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Context, extensions []extensionEntry, oldExtensions []existingExtension, shopwareVersion string) (catalogState, error) {
 	if len(extensions) == 0 {
-		return nil
+		return catalogState{}, nil
 	}
 
 	names := make([]string, 0, len(extensions))
@@ -624,7 +625,7 @@ func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Cont
 
 	memberNames, err := h.queries.GetStoreExtensionNamesIn(ctx, names)
 	if err != nil {
-		return fmt.Errorf("get store extension names: %w", err)
+		return catalogState{}, fmt.Errorf("get store extension names: %w", err)
 	}
 	member := make(map[string]bool, len(memberNames))
 	for _, n := range memberNames {
@@ -636,7 +637,7 @@ func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Cont
 		ShopwareVersion: shopwareVersion,
 	})
 	if err != nil {
-		return fmt.Errorf("get store extension compatibility: %w", err)
+		return catalogState{}, fmt.Errorf("get store extension compatibility: %w", err)
 	}
 	compat := make(map[string]*string, len(compatRows))
 	for _, row := range compatRows {
@@ -668,7 +669,7 @@ func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Cont
 		}
 	}
 
-	return nil
+	return catalogState{member: member, compatKnown: compat}, nil
 }
 
 // syncUpdatedExtensions force-syncs store extensions whose freshly scraped
@@ -752,9 +753,11 @@ func (h *EnvironmentScrapeHandler) attachStoreChangelogs(ctx context.Context, di
 }
 
 // dispatchStoreExtensionSync enqueues a catalog sync for the environment's
-// extensions whose catalog data is missing or stale. The sync job re-applies
-// the same filter, so overlapping dispatches from other environments are cheap.
-func (h *EnvironmentScrapeHandler) dispatchStoreExtensionSync(ctx context.Context, extensions []extensionEntry, shopwareVersion string) {
+// extensions whose catalog data is missing or stale. It reuses the membership
+// and compatibility maps already resolved by resolveExtensionsFromCatalog, so
+// only the freshness state is queried here. The sync job re-applies the same
+// filter, so overlapping dispatches from other environments are cheap.
+func (h *EnvironmentScrapeHandler) dispatchStoreExtensionSync(ctx context.Context, extensions []extensionEntry, shopwareVersion string, catalog catalogState) {
 	if h.bus == nil || h.storeSync == nil || len(extensions) == 0 {
 		return
 	}
@@ -763,7 +766,7 @@ func (h *EnvironmentScrapeHandler) dispatchStoreExtensionSync(ctx context.Contex
 	for _, ext := range extensions {
 		names = append(names, ext.Name)
 	}
-	needing, err := h.storeSync.namesNeedingSync(ctx, names, shopwareVersion)
+	needing, err := h.storeSync.namesNeedingSyncWith(ctx, names, shopwareVersion, catalog)
 	if err != nil {
 		slog.Warn("failed to determine extensions needing store sync", "error", err)
 		return
