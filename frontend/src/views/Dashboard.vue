@@ -235,6 +235,7 @@ import { useI18n } from "vue-i18n";
 import { sumChanges } from "@/helpers/changelog";
 import { formatDate } from "@/helpers/formatter";
 import { api } from "@/helpers/api";
+import { hasUpdate } from "@/composables/useAccountExtensions";
 import type { components } from "@/types/api";
 import {
   useAccountEnvironments,
@@ -315,12 +316,10 @@ const errorCount = computed(
   () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "red").length,
 );
 
-// Outdated extensions count
-const outdatedExtensionCount = computed(
-  () =>
-    extensions.value.filter((e) => e.installed && e.latestVersion && e.version !== e.latestVersion)
-      .length,
-);
+// Outdated extensions count. Uses the shared helper so it stays consistent with
+// the extensions list, which counts an extension as outdated when any of its
+// environments runs a version behind the latest.
+const outdatedExtensionCount = computed(() => extensions.value.filter((e) => hasUpdate(e)).length);
 
 // Shopware version distribution (still per-environment for accuracy)
 const versionDistribution = computed(() => {

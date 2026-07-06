@@ -13,12 +13,15 @@ export function normalizeWebsite(url?: string | null): string | null {
   return url;
 }
 
-export function hasUpdate(ext: AccountExtension): boolean {
-  return !!(ext.installed && ext.latestVersion && ext.version !== ext.latestVersion);
-}
-
 export function envHasUpdate(env: AccountExtensionEnvironment): boolean {
   return !!(env.installed && env.latestVersion && env.version !== env.latestVersion);
+}
+
+// An extension has an update when any environment it is installed in runs an
+// outdated version. The aggregate top-level version fields only reflect a single
+// environment, so they cannot be used here without missing updates in others.
+export function hasUpdate(ext: AccountExtension): boolean {
+  return ext.environments.some((e) => envHasUpdate(e));
 }
 
 export function updateCount(ext: AccountExtension): number {
