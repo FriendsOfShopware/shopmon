@@ -76,6 +76,11 @@ describe("hasUpdate", () => {
 
     expect(hasUpdate(extension)).toBe(false);
   });
+
+  it("is false when the environments list is empty", () => {
+    // ext() defaults to environments: [] — no environment to check means no update.
+    expect(hasUpdate(ext())).toBe(false);
+  });
 });
 
 describe("updateCount", () => {
