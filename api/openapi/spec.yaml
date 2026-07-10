@@ -124,6 +124,29 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /account/extensions/{extensionName}/report:
+    post:
+      operationId: reportExtension
+      tags: [Account]
+      summary: Report a store extension (e.g. performance or security issue)
+      parameters:
+        - $ref: "#/components/parameters/ExtensionName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtensionReportRequest"
+      responses:
+        "204":
+          description: Report submitted for review
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
   /account/organizations:
     get:
       operationId: getAccountOrganizations
@@ -1226,6 +1249,71 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /admin/extension-reports:
+    get:
+      operationId: adminGetExtensionReports
+      tags: [Admin]
+      summary: List extension reports (admin only)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated extension reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminExtensionReportsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/extension-reports/{reportId}/approve:
+    post:
+      operationId: adminApproveExtensionReport
+      tags: [Admin]
+      summary: Approve an extension report (admin only)
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "204":
+          description: Report approved
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/extension-reports/{reportId}/reject:
+    post:
+      operationId: adminRejectExtensionReport
+      tags: [Admin]
+      summary: Reject an extension report (admin only)
+      parameters:
+        - $ref: "#/components/parameters/ReportId"
+      responses:
+        "204":
+          description: Report rejected
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ──────────────────────────────────────────────
   # Info
@@ -2616,6 +2704,22 @@ components:
         type: string
       description: API key ID
 
+    ExtensionName:
+      name: extensionName
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Technical name of the store extension
+
+    ReportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Extension report ID
+
     TokenId:
       name: tokenId
       in: path
@@ -2785,6 +2889,12 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/ExtensionScreenshot'
+        reports:
+          description: Approved community reports grouped by category. Null/empty when none.
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ExtensionReportSummary'
         environments:
           type: array
           items:
@@ -3299,6 +3409,12 @@ components:
           nullable: true
           items:
             $ref: '#/components/schemas/ExtensionChangelogEntry'
+        reports:
+          description: Approved community reports grouped by category. Null/empty when none.
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ExtensionReportSummary'
 
     ScheduledTask:
       type: object
@@ -4369,6 +4485,87 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminAuditLogEntry"
+        total:
+          type: integer
+
+    ExtensionReportRequest:
+      type: object
+      required:
+        - category
+        - comment
+      properties:
+        category:
+          type: string
+          enum: [performance, security, compatibility, stability, other]
+        comment:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    ExtensionReportSummary:
+      type: object
+      required:
+        - category
+        - count
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+
+    AdminExtensionReport:
+      type: object
+      required:
+        - id
+        - extensionName
+        - category
+        - comment
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+        extensionName:
+          type: string
+        extensionLabel:
+          type: string
+          nullable: true
+        category:
+          type: string
+        comment:
+          type: string
+        status:
+          type: string
+        reporterId:
+          type: string
+          nullable: true
+        reporterName:
+          type: string
+          nullable: true
+        reporterEmail:
+          type: string
+          nullable: true
+        reviewerName:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          nullable: true
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminExtensionReportsResponse:
+      type: object
+      required:
+        - reports
+        - total
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExtensionReport"
         total:
           type: integer
 

@@ -88,18 +88,23 @@
                 $t("extensions.usedIn", { count: ext.environments.length }, ext.environments.length)
               }}
             </span>
-            <Badge
-              v-if="updateCount(ext) > 0"
-              variant="outline"
-              class="border-warning/30 bg-warning/10 text-warning"
-            >
-              <icon-fa6-solid:arrow-up class="mr-1 size-2.5" />
-              {{ $t("extensions.updatesAvailable", { count: updateCount(ext) }, updateCount(ext)) }}
-            </Badge>
-            <Badge v-else variant="outline" class="border-success/30 bg-success/10 text-success">
-              <icon-fa6-solid:check class="mr-1 size-2.5" />
-              {{ $t("extensions.upToDate") }}
-            </Badge>
+            <div class="flex items-center gap-2">
+              <ExtensionReportBadge :reports="ext.reports" />
+              <Badge
+                v-if="updateCount(ext) > 0"
+                variant="outline"
+                class="border-warning/30 bg-warning/10 text-warning"
+              >
+                <icon-fa6-solid:arrow-up class="mr-1 size-2.5" />
+                {{
+                  $t("extensions.updatesAvailable", { count: updateCount(ext) }, updateCount(ext))
+                }}
+              </Badge>
+              <Badge v-else variant="outline" class="border-success/30 bg-success/10 text-success">
+                <icon-fa6-solid:check class="mr-1 size-2.5" />
+                {{ $t("extensions.upToDate") }}
+              </Badge>
+            </div>
           </div>
         </RouterLink>
       </div>
@@ -139,6 +144,7 @@ import {
   isInactive,
   updateCount,
 } from "@/composables/useAccountExtensions";
+import ExtensionReportBadge from "@/components/ExtensionReportBadge.vue";
 
 const { t } = useI18n();
 

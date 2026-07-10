@@ -86,6 +86,9 @@
           </template>
         </div>
 
+        <!-- Community reports -->
+        <ExtensionReportBadge :reports="ext.reports" class="hidden shrink-0 sm:flex" />
+
         <!-- Rating -->
         <div class="hidden shrink-0 lg:block">
           <RatingStars :rating="ext.ratingAverage ?? null" />
@@ -98,6 +101,17 @@
         >
           {{ formatDate(ext.installedAt) }}
         </div>
+
+        <!-- Report -->
+        <button
+          v-if="ext.storeLink"
+          :aria-label="$t('reportExtension.title')"
+          :title="$t('reportExtension.title')"
+          class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-warning"
+          @click="openReport(ext)"
+        >
+          <icon-fa6-solid:flag class="size-2.5" />
+        </button>
       </div>
     </div>
 
@@ -123,6 +137,13 @@
     :extension="dialogExtension"
     @close="closeExtensionChangelog"
   />
+
+  <!-- Report Extension Modal -->
+  <ReportExtension
+    :show="reportDialogOpen"
+    :extension="reportExtension"
+    @close="reportDialogOpen = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -133,6 +154,8 @@ import type { components } from "@/types/api";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
+import ReportExtension from "@/components/modal/ReportExtension.vue";
+import ExtensionReportBadge from "@/components/ExtensionReportBadge.vue";
 
 import { Badge } from "@/components/ui/badge";
 import StatusIcon from "@/components/StatusIcon.vue";
@@ -160,6 +183,14 @@ const {
 
 const activeFilter = ref<"all" | "active" | "inactive" | "updates">("all");
 const searchQuery = ref("");
+
+const reportDialogOpen = ref(false);
+const reportExtension = ref<{ name: string; label?: string } | null>(null);
+
+function openReport(ext: Extension) {
+  reportExtension.value = { name: ext.name, label: ext.label };
+  reportDialogOpen.value = true;
+}
 
 const filters = [
   { label: t("common.all"), value: "all" as const },

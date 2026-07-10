@@ -19,6 +19,33 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ExtensionReportRequestCategory.
+const (
+	Compatibility ExtensionReportRequestCategory = "compatibility"
+	Other         ExtensionReportRequestCategory = "other"
+	Performance   ExtensionReportRequestCategory = "performance"
+	Security      ExtensionReportRequestCategory = "security"
+	Stability     ExtensionReportRequestCategory = "stability"
+)
+
+// Valid indicates whether the value is a known member of the ExtensionReportRequestCategory enum.
+func (e ExtensionReportRequestCategory) Valid() bool {
+	switch e {
+	case Compatibility:
+		return true
+	case Other:
+		return true
+	case Performance:
+		return true
+	case Security:
+		return true
+	case Stability:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LanguageParam.
 const (
 	LanguageParamDe LanguageParam = "de"
@@ -85,6 +112,27 @@ func (e AdminGetEnvironmentsParamsSortDirection) Valid() bool {
 	case AdminGetEnvironmentsParamsSortDirectionAsc:
 		return true
 	case AdminGetEnvironmentsParamsSortDirectionDesc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminGetExtensionReportsParamsStatus.
+const (
+	Approved AdminGetExtensionReportsParamsStatus = "approved"
+	Pending  AdminGetExtensionReportsParamsStatus = "pending"
+	Rejected AdminGetExtensionReportsParamsStatus = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetExtensionReportsParamsStatus enum.
+func (e AdminGetExtensionReportsParamsStatus) Valid() bool {
+	switch e {
+	case Approved:
+		return true
+	case Pending:
+		return true
+	case Rejected:
 		return true
 	default:
 		return false
@@ -206,8 +254,11 @@ type AccountExtension struct {
 	RatingAverage      *float32   `json:"ratingAverage"`
 
 	// ReleaseDate Release date of the latest store version (raw store value).
-	ReleaseDate *string                `json:"releaseDate,omitempty"`
-	Screenshots *[]ExtensionScreenshot `json:"screenshots,omitempty"`
+	ReleaseDate *string `json:"releaseDate,omitempty"`
+
+	// Reports Approved community reports grouped by category. Null/empty when none.
+	Reports     *[]ExtensionReportSummary `json:"reports,omitempty"`
+	Screenshots *[]ExtensionScreenshot    `json:"screenshots,omitempty"`
 
 	// ShortDescription Short store description in the requested language (falls back to English).
 	ShortDescription *string `json:"shortDescription,omitempty"`
@@ -346,6 +397,28 @@ type AdminEnvironmentTask struct {
 type AdminEnvironmentsResponse struct {
 	Environments []AccountEnvironment `json:"environments"`
 	Total        int                  `json:"total"`
+}
+
+// AdminExtensionReport defines model for AdminExtensionReport.
+type AdminExtensionReport struct {
+	Category       string     `json:"category"`
+	Comment        string     `json:"comment"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	ExtensionLabel *string    `json:"extensionLabel,omitempty"`
+	ExtensionName  string     `json:"extensionName"`
+	Id             int        `json:"id"`
+	ReporterEmail  *string    `json:"reporterEmail,omitempty"`
+	ReporterId     *string    `json:"reporterId,omitempty"`
+	ReporterName   *string    `json:"reporterName,omitempty"`
+	ReviewedAt     *time.Time `json:"reviewedAt,omitempty"`
+	ReviewerName   *string    `json:"reviewerName,omitempty"`
+	Status         string     `json:"status"`
+}
+
+// AdminExtensionReportsResponse defines model for AdminExtensionReportsResponse.
+type AdminExtensionReportsResponse struct {
+	Reports []AdminExtensionReport `json:"reports"`
+	Total   int                    `json:"total"`
 }
 
 // AdminGrowth defines model for AdminGrowth.
@@ -620,8 +693,11 @@ type EnvironmentExtension struct {
 	LatestVersion string                     `json:"latestVersion"`
 	Name          string                     `json:"name"`
 	RatingAverage *float32                   `json:"ratingAverage,omitempty"`
-	StoreLink     *string                    `json:"storeLink,omitempty"`
-	Version       string                     `json:"version"`
+
+	// Reports Approved community reports grouped by category. Null/empty when none.
+	Reports   *[]ExtensionReportSummary `json:"reports,omitempty"`
+	StoreLink *string                   `json:"storeLink,omitempty"`
+	Version   string                    `json:"version"`
 }
 
 // ErrorResponse defines model for ErrorResponse.
@@ -672,6 +748,21 @@ type ExtensionDiff struct {
 	NewVersion *string                    `json:"newVersion,omitempty"`
 	OldVersion *string                    `json:"oldVersion,omitempty"`
 	State      string                     `json:"state"`
+}
+
+// ExtensionReportRequest defines model for ExtensionReportRequest.
+type ExtensionReportRequest struct {
+	Category ExtensionReportRequestCategory `json:"category"`
+	Comment  string                         `json:"comment"`
+}
+
+// ExtensionReportRequestCategory defines model for ExtensionReportRequest.Category.
+type ExtensionReportRequestCategory string
+
+// ExtensionReportSummary defines model for ExtensionReportSummary.
+type ExtensionReportSummary struct {
+	Category string `json:"category"`
+	Count    int    `json:"count"`
 }
 
 // ExtensionScreenshot defines model for ExtensionScreenshot.
@@ -861,6 +952,9 @@ type DeploymentId = int
 // EnvironmentId defines model for EnvironmentId.
 type EnvironmentId = int
 
+// ExtensionName defines model for ExtensionName.
+type ExtensionName = string
+
 // KeyId defines model for KeyId.
 type KeyId = string
 
@@ -875,6 +969,9 @@ type OrgId = string
 
 // ProviderId defines model for ProviderId.
 type ProviderId = string
+
+// ReportId defines model for ReportId.
+type ReportId = int
 
 // ShopId defines model for ShopId.
 type ShopId = int
@@ -944,6 +1041,16 @@ type AdminGetEnvironmentsParams struct {
 // AdminGetEnvironmentsParamsSortDirection defines parameters for AdminGetEnvironments.
 type AdminGetEnvironmentsParamsSortDirection string
 
+// AdminGetExtensionReportsParams defines parameters for AdminGetExtensionReports.
+type AdminGetExtensionReportsParams struct {
+	Status *AdminGetExtensionReportsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	Limit  *int                                  `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int                                  `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// AdminGetExtensionReportsParamsStatus defines parameters for AdminGetExtensionReports.
+type AdminGetExtensionReportsParamsStatus string
+
 // AdminGetOrganizationsParams defines parameters for AdminGetOrganizations.
 type AdminGetOrganizationsParams struct {
 	Limit          *int                                      `form:"limit,omitempty" json:"limit,omitempty"`
@@ -990,6 +1097,9 @@ type DiscoverSsoParams struct {
 	Issuer string `form:"issuer" json:"issuer"`
 }
 
+// ReportExtensionJSONRequestBody defines body for ReportExtension for application/json ContentType.
+type ReportExtensionJSONRequestBody = ExtensionReportRequest
+
 // CreateCliDeploymentJSONRequestBody defines body for CreateCliDeployment for application/json ContentType.
 type CreateCliDeploymentJSONRequestBody = CreateCliDeploymentRequest
 
@@ -1034,6 +1144,9 @@ type ServerInterface interface {
 	// Get aggregated extensions across all environments
 	// (GET /account/extensions)
 	GetAccountExtensions(w http.ResponseWriter, r *http.Request, params GetAccountExtensionsParams)
+	// Report a store extension (e.g. performance or security issue)
+	// (POST /account/extensions/{extensionName}/report)
+	ReportExtension(w http.ResponseWriter, r *http.Request, extensionName ExtensionName)
 	// Get a single aggregated extension by technical name
 	// (GET /account/extensions/{name})
 	GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams)
@@ -1058,6 +1171,15 @@ type ServerInterface interface {
 	// Get an environment with detail (admin only)
 	// (GET /admin/environments/{envId})
 	AdminGetEnvironmentDetail(w http.ResponseWriter, r *http.Request, envId int)
+	// List extension reports (admin only)
+	// (GET /admin/extension-reports)
+	AdminGetExtensionReports(w http.ResponseWriter, r *http.Request, params AdminGetExtensionReportsParams)
+	// Approve an extension report (admin only)
+	// (POST /admin/extension-reports/{reportId}/approve)
+	AdminApproveExtensionReport(w http.ResponseWriter, r *http.Request, reportId ReportId)
+	// Reject an extension report (admin only)
+	// (POST /admin/extension-reports/{reportId}/reject)
+	AdminRejectExtensionReport(w http.ResponseWriter, r *http.Request, reportId ReportId)
 	// Get growth data over time
 	// (GET /admin/growth)
 	AdminGetGrowth(w http.ResponseWriter, r *http.Request)
@@ -1223,6 +1345,12 @@ func (_ Unimplemented) GetAccountExtensions(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Report a store extension (e.g. performance or security issue)
+// (POST /account/extensions/{extensionName}/report)
+func (_ Unimplemented) ReportExtension(w http.ResponseWriter, r *http.Request, extensionName ExtensionName) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Get a single aggregated extension by technical name
 // (GET /account/extensions/{name})
 func (_ Unimplemented) GetAccountExtension(w http.ResponseWriter, r *http.Request, name string, params GetAccountExtensionParams) {
@@ -1268,6 +1396,24 @@ func (_ Unimplemented) AdminGetEnvironments(w http.ResponseWriter, r *http.Reque
 // Get an environment with detail (admin only)
 // (GET /admin/environments/{envId})
 func (_ Unimplemented) AdminGetEnvironmentDetail(w http.ResponseWriter, r *http.Request, envId int) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List extension reports (admin only)
+// (GET /admin/extension-reports)
+func (_ Unimplemented) AdminGetExtensionReports(w http.ResponseWriter, r *http.Request, params AdminGetExtensionReportsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Approve an extension report (admin only)
+// (POST /admin/extension-reports/{reportId}/approve)
+func (_ Unimplemented) AdminApproveExtensionReport(w http.ResponseWriter, r *http.Request, reportId ReportId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Reject an extension report (admin only)
+// (POST /admin/extension-reports/{reportId}/reject)
+func (_ Unimplemented) AdminRejectExtensionReport(w http.ResponseWriter, r *http.Request, reportId ReportId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1632,6 +1778,38 @@ func (siw *ServerInterfaceWrapper) GetAccountExtensions(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountExtensions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReportExtension operation middleware
+func (siw *ServerInterfaceWrapper) ReportExtension(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "extensionName" -------------
+	var extensionName ExtensionName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "extensionName", chi.URLParam(r, "extensionName"), &extensionName, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "extensionName", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReportExtension(w, r, extensionName)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2039,6 +2217,135 @@ func (siw *ServerInterfaceWrapper) AdminGetEnvironmentDetail(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminGetEnvironmentDetail(w, r, envId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetExtensionReports operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetExtensionReports(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetExtensionReportsParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetExtensionReports(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminApproveExtensionReport operation middleware
+func (siw *ServerInterfaceWrapper) AdminApproveExtensionReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reportId" -------------
+	var reportId ReportId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reportId", chi.URLParam(r, "reportId"), &reportId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reportId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminApproveExtensionReport(w, r, reportId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminRejectExtensionReport operation middleware
+func (siw *ServerInterfaceWrapper) AdminRejectExtensionReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reportId" -------------
+	var reportId ReportId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reportId", chi.URLParam(r, "reportId"), &reportId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reportId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminRejectExtensionReport(w, r, reportId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3782,6 +4089,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/extensions", wrapper.GetAccountExtensions)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/account/extensions/{extensionName}/report", wrapper.ReportExtension)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/extensions/{name}", wrapper.GetAccountExtension)
 	})
 	r.Group(func(r chi.Router) {
@@ -3804,6 +4114,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/environments/{envId}", wrapper.AdminGetEnvironmentDetail)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/extension-reports", wrapper.AdminGetExtensionReports)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/extension-reports/{reportId}/approve", wrapper.AdminApproveExtensionReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/extension-reports/{reportId}/reject", wrapper.AdminRejectExtensionReport)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/growth", wrapper.AdminGetGrowth)
