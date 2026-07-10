@@ -92,7 +92,7 @@ func TestStoreChangelogsBetween(t *testing.T) {
 	}
 
 	// Window (installed 2.0.0, new 2.1.0] -> 2.0.5 and 2.1.0, oldest-first.
-	got := sd.changelogsBetween("2.0.0", "2.1.0")
+	got := changelogsBetween(sd.mergedChangelogs(), "2.0.0", "2.1.0")
 	require.Len(t, got, 2)
 	assert.Equal(t, "2.0.5", got[0].Version)
 	assert.Equal(t, "en 2.0.5", got[0].Text)
@@ -102,7 +102,7 @@ func TestStoreChangelogsBetween(t *testing.T) {
 	assert.True(t, time.Date(2024, 1, 15, 8, 30, 0, 0, time.UTC).Equal(got[0].CreationDate))
 
 	// Nothing newer than the new version.
-	assert.Nil(t, sd.changelogsBetween("2.1.0", "2.1.0"))
+	assert.Nil(t, changelogsBetween(sd.mergedChangelogs(), "2.1.0", "2.1.0"))
 }
 
 func TestGlobalLatestVersion(t *testing.T) {
@@ -130,30 +130,15 @@ func TestGlobalLatestVersion(t *testing.T) {
 	}
 }
 
-func TestCalculateExtensionDiffUsesStoreChangelog(t *testing.T) {
-	// Shop updates AcmeExt 2.1.0 -> 2.2.1; the diff changelog must contain the
-	// store entries strictly between the two versions, in both languages.
+func TestExtensionUpdateChangelogWindow(t *testing.T) {
+	// Shop updates AcmeExt 2.1.0 -> 2.2.1; the diff must record the version
+	// transition, and the changelog window attached from the catalog must
+	// contain the entries strictly between the two versions, in both languages.
 	old := []existingExtension{
 		{Name: "AcmeExt", Label: "Acme", Active: true, Version: "2.1.0", Installed: true},
 	}
-	sd := &storeExtensionData{
-		en: &shopwareaccount.StorePlugin{
-			Name: "AcmeExt", Version: "2.2.1",
-			Changelogs: []shopwareaccount.StoreChangelog{
-				{Version: "2.2.2", Text: "above target"},
-				{Version: "2.2.1", Text: "target"},
-				{Version: "2.2.0", Text: "minor"},
-				{Version: "2.1.1", Text: "patch 1"},
-				{Version: "2.1.0", Text: "installed"},
-			},
-		},
-		de: &shopwareaccount.StorePlugin{
-			Name: "AcmeExt", Version: "2.2.1",
-			Changelogs: []shopwareaccount.StoreChangelog{{Version: "2.2.1", Text: "ziel"}},
-		},
-	}
 	newExts := []extensionEntry{
-		{Name: "AcmeExt", Label: "Acme", Active: true, Version: "2.2.1", Installed: true, Store: sd},
+		{Name: "AcmeExt", Label: "Acme", Active: true, Version: "2.2.1", Installed: true, isStore: true},
 	}
 
 	diffs := calculateExtensionDiff(old, newExts)
@@ -164,6 +149,16 @@ func TestCalculateExtensionDiffUsesStoreChangelog(t *testing.T) {
 	require.NotNil(t, d.NewVersion)
 	assert.Equal(t, "2.1.0", *d.OldVersion)
 	assert.Equal(t, "2.2.1", *d.NewVersion)
+
+	// The catalog rows (here as merged changelogs) fill the diff's changelog.
+	mcs := []mergedChangelog{
+		{Version: "2.2.2", En: "above target"},
+		{Version: "2.2.1", En: "target", De: "ziel"},
+		{Version: "2.2.0", En: "minor"},
+		{Version: "2.1.1", En: "patch 1"},
+		{Version: "2.1.0", En: "installed"},
+	}
+	d.Changelog = changelogsBetween(mcs, *d.OldVersion, *d.NewVersion)
 
 	require.Len(t, d.Changelog, 3)
 	got := []string{d.Changelog[0].Version, d.Changelog[1].Version, d.Changelog[2].Version}

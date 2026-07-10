@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"math"
 	"sync"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
-	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goqueue "github.com/shyim/go-queue"
 	"go.opentelemetry.io/otel"
@@ -34,16 +32,17 @@ var statusWeight = map[string]int{
 
 // EnvironmentScrapeHandler handles scraping of environments.
 type EnvironmentScrapeHandler struct {
-	pool    *pgxpool.Pool
-	queries *queries.Queries
-	cfg     *config.Config
-	bus     *goqueue.Bus
-	mail    mail.Sender
+	pool      *pgxpool.Pool
+	queries   *queries.Queries
+	cfg       *config.Config
+	bus       *goqueue.Bus
+	mail      mail.Sender
+	storeSync *StoreExtensionSyncHandler
 }
 
 // NewEnvironmentScrapeHandler creates a new EnvironmentScrapeHandler.
-func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, bus *goqueue.Bus, mail mail.Sender) *EnvironmentScrapeHandler {
-	return &EnvironmentScrapeHandler{pool: pool, queries: q, cfg: cfg, bus: bus, mail: mail}
+func NewEnvironmentScrapeHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, bus *goqueue.Bus, mail mail.Sender, storeSync *StoreExtensionSyncHandler) *EnvironmentScrapeHandler {
+	return &EnvironmentScrapeHandler{pool: pool, queries: q, cfg: cfg, bus: bus, mail: mail, storeSync: storeSync}
 }
 
 // HandleScrape scrapes a single environment by ID from the message payload.
@@ -240,30 +239,28 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 		}
 	}
 
-	// storeOK reports whether the store membership is known this scrape. It stays
-	// true when there are no extensions to enrich (nothing to misclassify).
-	storeOK := true
-	if len(extensions) > 0 {
-		_, enrichSpan := tracer.Start(ctx, "environment.scrape.enrich_extensions",
-			trace.WithAttributes(attribute.Int("extension.count", len(extensions))),
-		)
-		storeOK = h.enrichExtensionsFromStore(extensions, shopConfig.Version)
-		enrichSpan.End()
-	}
-
 	oldExtensions := h.loadExistingExtensions(ctx, env.ID)
 
-	// oldStoreLatest maps the names of extensions that were store-known before this
-	// scrape to their prior compatible latest version. Used to preserve the store
-	// classification (and link data) when the store API is unreachable.
-	oldStoreLatest := make(map[string]*string)
-	for _, e := range oldExtensions {
-		if e.IsStore {
-			oldStoreLatest[e.Name] = e.LatestVersion
-		}
+	// Force-sync store extensions whose scraped version is missing from the
+	// catalog (typically right after an extension update), so the changelog for
+	// the update notification below comes out of the catalog in the same scrape.
+	if h.storeSync != nil {
+		h.syncUpdatedExtensions(ctx, oldExtensions, extensions, shopConfig.Version)
+	}
+
+	// Classify extensions and resolve their compatible latest version from the
+	// local catalog. The scrape never talks to the store API itself; missing or
+	// stale catalog data is refreshed by the StoreExtensionSync job dispatched
+	// after the persist.
+	catalog, err := h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, shopConfig.Version)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	extensionsDiff := calculateExtensionDiff(oldExtensions, extensions)
+	h.attachStoreChangelogs(ctx, extensionsDiff, extensions)
 
 	var ignores []string
 	if env.Ignores != nil {
@@ -337,263 +334,28 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	newStatus := string(checkerResult.Status)
 	h.handleStatusChange(ctx, env, newStatus)
 
-	ctx, persistSpan := tracer.Start(ctx, "environment.scrape.persist",
-		trace.WithAttributes(
-			attribute.String("environment.status", newStatus),
-			attribute.Int("extension.count", len(extensions)),
-			attribute.Int("check.count", len(checkerResult.Checks)),
-		),
-	)
-	tx, err := h.pool.Begin(ctx)
-	if err != nil {
-		persistSpan.RecordError(err)
-		persistSpan.SetStatus(codes.Error, err.Error())
-		persistSpan.End()
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	// Fetch the favicon before opening the persist transaction: it is an HTTP
+	// call with its own timeout and must not run while holding row locks.
+	favicon := getFavicon(ctx, env.Url)
 
-	txQueries := h.queries.WithTx(tx)
-
-	if err := txQueries.DeleteEnvironmentChecks(ctx, env.ID); err != nil {
-		persistSpan.RecordError(err)
-		persistSpan.SetStatus(codes.Error, err.Error())
-		persistSpan.End()
-		return fmt.Errorf("delete environment checks: %w", err)
-	}
-
-	// Split extensions into store-known (normalized store_extension* tables) and
-	// unknown (environment_extension), then prune rows no longer present. Skipped
-	// entirely when the shop returned no extensions (likely a fetch error) so a
-	// transient failure does not wipe stored extensions.
-	if len(extensions) > 0 {
-		storeNames := make([]string, 0, len(extensions))
-		unknownNames := make([]string, 0, len(extensions))
-		for _, ext := range extensions {
-			oldLatest, wasStore := oldStoreLatest[ext.Name]
-			switch {
-			case ext.Store != nil && ext.Store.primary() != nil:
-				storeNames = append(storeNames, ext.Name)
-				if err := h.persistStoreExtension(ctx, txQueries, env.ID, ext); err != nil {
-					persistSpan.RecordError(err)
-					persistSpan.SetStatus(codes.Error, err.Error())
-					persistSpan.End()
-					return err
-				}
-			case !storeOK && wasStore:
-				// Store API unreachable but this was a store extension: keep it as a
-				// store link and refresh only the shop-side fields, so a transient
-				// outage neither wipes the link nor duplicates it into the unknown table.
-				storeNames = append(storeNames, ext.Name)
-				if err := txQueries.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
-					EnvironmentID: env.ID,
-					ExtensionName: ext.Name,
-					Label:         ext.Label,
-					Version:       ext.Version,
-					LatestVersion: oldLatest,
-					Active:        ext.Active,
-					Installed:     ext.Installed,
-					InstalledAt:   ext.InstalledAt,
-				}); err != nil {
-					persistSpan.RecordError(err)
-					persistSpan.SetStatus(codes.Error, err.Error())
-					persistSpan.End()
-					return fmt.Errorf("upsert environment store extension %s: %w", ext.Name, err)
-				}
-			default:
-				unknownNames = append(unknownNames, ext.Name)
-				if err := txQueries.UpsertEnvironmentExtension(ctx, queries.UpsertEnvironmentExtensionParams{
-					EnvironmentID: env.ID,
-					Name:          ext.Name,
-					Label:         ext.Label,
-					Active:        ext.Active,
-					Version:       ext.Version,
-					LatestVersion: ext.LatestVersion,
-					Installed:     ext.Installed,
-					InstalledAt:   ext.InstalledAt,
-				}); err != nil {
-					persistSpan.RecordError(err)
-					persistSpan.SetStatus(codes.Error, err.Error())
-					persistSpan.End()
-					return fmt.Errorf("upsert environment extension %s: %w", ext.Name, err)
-				}
-			}
-		}
-
-		if err := txQueries.DeleteEnvironmentStoreExtensionsNotIn(ctx, queries.DeleteEnvironmentStoreExtensionsNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       storeNames,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("delete stale store extensions: %w", err)
-		}
-		if err := txQueries.DeleteEnvironmentExtensionsNotIn(ctx, queries.DeleteEnvironmentExtensionsNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       unknownNames,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("delete stale environment extensions: %w", err)
-		}
-	}
-
-	taskIDs := make([]string, 0, len(scheduledTasks))
-	for _, st := range scheduledTasks {
-		taskIDs = append(taskIDs, st.ID)
-		overdue := isScheduledTaskOverdue(st)
-		if err := txQueries.UpsertEnvironmentScheduledTask(ctx, queries.UpsertEnvironmentScheduledTaskParams{
-			EnvironmentID:     env.ID,
-			TaskID:            st.ID,
-			Name:              st.Name,
-			Status:            st.Status,
-			Interval:          st.RunInterval,
-			Overdue:           overdue,
-			LastExecutionTime: st.LastExecutionTime,
-			NextExecutionTime: st.NextExecutionTime,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("upsert scheduled task %s: %w", st.ID, err)
-		}
-	}
-	if len(taskIDs) > 0 {
-		if err := txQueries.DeleteEnvironmentScheduledTasksNotIn(ctx, queries.DeleteEnvironmentScheduledTasksNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       taskIDs,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("delete stale scheduled tasks: %w", err)
-		}
-	}
-
-	queueNames := make([]string, 0, len(queueEntries))
-	for _, q := range queueEntries {
-		queueNames = append(queueNames, q.Name)
-		size, _ := q.Size.Int64()
-		if err := txQueries.UpsertEnvironmentQueue(ctx, queries.UpsertEnvironmentQueueParams{
-			EnvironmentID: env.ID,
-			Name:          q.Name,
-			Size:          int32(size),
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("upsert environment queue %s: %w", q.Name, err)
-		}
-	}
-	if len(queueNames) > 0 {
-		if err := txQueries.DeleteEnvironmentQueuesNotIn(ctx, queries.DeleteEnvironmentQueuesNotInParams{
-			EnvironmentID: env.ID,
-			Column2:       queueNames,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("delete stale environment queues: %w", err)
-		}
-	}
-
-	cacheAdapter := cacheInfo.CacheAdapter
-	if cacheAdapter == "" {
-		cacheAdapter = "filesystem"
-	}
-	if err := txQueries.UpsertEnvironmentCache(ctx, queries.UpsertEnvironmentCacheParams{
-		EnvironmentID: env.ID,
-		Environment:   cacheInfo.Environment,
-		HttpCache:     cacheInfo.HttpCache,
-		CacheAdapter:  cacheAdapter,
+	if err := h.persistScrapeResult(ctx, env, scrapeResult{
+		status:          newStatus,
+		shopwareVersion: shopConfig.Version,
+		extensions:      extensions,
+		scheduledTasks:  scheduledTasks,
+		queueEntries:    queueEntries,
+		cacheInfo:       cacheInfo,
+		checks:          checkerResult.Checks,
+		extensionsDiff:  extensionsDiff,
+		favicon:         favicon,
 	}); err != nil {
-		persistSpan.RecordError(err)
-		persistSpan.SetStatus(codes.Error, err.Error())
-		persistSpan.End()
-		return fmt.Errorf("upsert environment cache: %w", err)
+		return err
 	}
 
-	for _, c := range checkerResult.Checks {
-		var link *string
-		if c.Link != "" {
-			link = &c.Link
-		}
-		if err := txQueries.InsertEnvironmentCheck(ctx, queries.InsertEnvironmentCheckParams{
-			EnvironmentID: env.ID,
-			CheckID:       c.ID,
-			Level:         string(c.Level),
-			Message:       c.Message,
-			Source:        c.Source,
-			Link:          link,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("insert environment check %s: %w", c.ID, err)
-		}
-	}
+	h.dispatchStoreExtensionSync(ctx, extensions, shopConfig.Version, catalog)
 
 	hasShopwareUpdate := env.ShopwareVersion != shopConfig.Version
 	hasExtensionChanges := len(extensionsDiff) > 0
-
-	var lastChangelogJSON []byte
-	if hasShopwareUpdate {
-		lastChangelogJSON, _ = json.Marshal(map[string]interface{}{
-			"date": time.Now().Format(time.RFC3339),
-			"from": env.ShopwareVersion,
-			"to":   shopConfig.Version,
-		})
-	}
-
-	if hasExtensionChanges || hasShopwareUpdate {
-		extensionsDiffJSON, _ := json.Marshal(extensionsDiff)
-
-		var oldVersion, newVersion *string
-		if hasShopwareUpdate {
-			oldVersion = &env.ShopwareVersion
-			newVersion = &shopConfig.Version
-		}
-
-		envID := env.ID
-		if err := txQueries.InsertEnvironmentChangelog(ctx, queries.InsertEnvironmentChangelogParams{
-			EnvironmentID:      &envID,
-			Extensions:         extensionsDiffJSON,
-			OldShopwareVersion: oldVersion,
-			NewShopwareVersion: newVersion,
-		}); err != nil {
-			persistSpan.RecordError(err)
-			persistSpan.SetStatus(codes.Error, err.Error())
-			persistSpan.End()
-			return fmt.Errorf("insert environment changelog: %w", err)
-		}
-	}
-
-	favicon := getFavicon(ctx, env.Url)
-
-	if err := txQueries.UpdateEnvironmentAfterScrape(ctx, queries.UpdateEnvironmentAfterScrapeParams{
-		Status:           newStatus,
-		ShopwareVersion:  shopConfig.Version,
-		LastScrapedError: nil,
-		Favicon:          favicon,
-		EnvironmentImage: nil,
-		LastChangelog:    lastChangelogJSON,
-		ID:               env.ID,
-	}); err != nil {
-		persistSpan.RecordError(err)
-		persistSpan.SetStatus(codes.Error, err.Error())
-		persistSpan.End()
-		return fmt.Errorf("update environment after scrape: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		persistSpan.RecordError(err)
-		persistSpan.SetStatus(codes.Error, err.Error())
-		persistSpan.End()
-		return fmt.Errorf("commit transaction: %w", err)
-	}
-	persistSpan.End()
 
 	span.SetAttributes(attribute.String("environment.version", shopConfig.Version))
 	log.Info("scrape completed", "version", shopConfig.Version)
@@ -611,120 +373,411 @@ func (h *EnvironmentScrapeHandler) scrapeEnvironment(ctx context.Context, env qu
 	return nil
 }
 
-// persistStoreExtension writes a store-known extension into the normalized
-// catalog (store_extension), its per-version changelogs (store_extension_version),
-// its listing images (store_extension_image), and the per-environment link
-// (environment_store_extension).
-func (h *EnvironmentScrapeHandler) persistStoreExtension(ctx context.Context, q *queries.Queries, envID int32, ext extensionEntry) error {
-	sd := ext.Store
-	p := sd.primary()
+// scrapeResult bundles everything a scrape produced for one environment, ready
+// to be written to the database. Extensions must already be classified and
+// resolved against the store catalog (isStore, LatestVersion).
+type scrapeResult struct {
+	status          string
+	shopwareVersion string
+	extensions      []extensionEntry
+	scheduledTasks  []shopwareScheduledTask
+	queueEntries    []shopwareQueueEntry
+	cacheInfo       shopwareCacheInfo
+	checks          []checker.Check
+	extensionsDiff  []extensionDiff
+	favicon         *string
+}
 
-	var storeID *int32
-	if p.ID != 0 {
-		v := int32(p.ID)
-		storeID = &v
-	}
-	var rating *int32
-	if p.RatingAverage != 0 {
-		v := int32(math.Round(p.RatingAverage))
-		rating = &v
-	}
-
-	if err := q.UpsertStoreExtension(ctx, queries.UpsertStoreExtensionParams{
-		Name:            ext.Name,
-		StoreID:         storeID,
-		IconUrl:         nilIfEmpty(p.IconPath),
-		ProducerName:    nilIfEmpty(p.ProducerName),
-		ProducerWebsite: nilIfEmpty(p.ProducerWebsite),
-		RatingAverage:   rating,
-		StoreLink:       nilIfEmpty(p.StoreLink),
-		ReleaseDate:     nilIfEmpty(p.ReleaseDate),
-		// The catalog row is shared across environments, so it stores the
-		// environment-independent global latest version rather than the
-		// Shopware-version-capped value (which lives on the link row).
-		LatestVersion: nilIfEmpty(sd.globalLatestVersion()),
-	}); err != nil {
-		return fmt.Errorf("upsert store extension %s: %w", ext.Name, err)
-	}
-
-	// Persist one translation row per locale the store returned.
-	for lang, resp := range map[string]*shopwareaccount.StorePlugin{"en": sd.en, "de": sd.de} {
-		if resp == nil {
-			continue
-		}
-		if err := q.UpsertStoreExtensionTranslation(ctx, queries.UpsertStoreExtensionTranslationParams{
-			ExtensionName:      ext.Name,
-			Language:           lang,
-			Label:              nilIfEmpty(resp.Label),
-			ShortDescription:   nilIfEmpty(resp.ShortDescription),
-			Description:        nilIfEmpty(resp.Description),
-			InstallationManual: nilIfEmpty(resp.InstallationManual),
-		}); err != nil {
-			return fmt.Errorf("upsert store extension translation %s/%s: %w", ext.Name, lang, err)
-		}
-	}
-
-	for _, mc := range sd.mergedChangelogs() {
-		versionID, err := q.UpsertStoreExtensionVersion(ctx, queries.UpsertStoreExtensionVersionParams{
-			ExtensionName: ext.Name,
-			Version:       mc.Version,
-			ReleasedAt:    nilIfEmpty(mc.ReleasedAt),
-		})
+// persistScrapeResult writes a scrape result in a single transaction. All
+// writes are structured to avoid WAL churn on unchanged data: upserts carry
+// change guards. The shared store catalog is not written here; it is owned by
+// the StoreExtensionSync job, and scrapes only link against it.
+func (h *EnvironmentScrapeHandler) persistScrapeResult(ctx context.Context, env queries.GetAllEnvironmentsRow, res scrapeResult) (err error) {
+	ctx, span := tracer.Start(ctx, "environment.scrape.persist",
+		trace.WithAttributes(
+			attribute.String("environment.status", res.status),
+			attribute.Int("extension.count", len(res.extensions)),
+			attribute.Int("check.count", len(res.checks)),
+		),
+	)
+	defer func() {
 		if err != nil {
-			return fmt.Errorf("upsert store extension version %s@%s: %w", ext.Name, mc.Version, err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 		}
-		for lang, text := range map[string]string{"en": mc.En, "de": mc.De} {
-			if text == "" {
-				continue
+		span.End()
+	}()
+
+	tx, err := h.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	txQueries := h.queries.WithTx(tx)
+
+	// Split extensions into store-known (linked to the shared catalog) and
+	// unknown (environment_extension), then prune rows no longer present. Skipped
+	// entirely when the shop returned no extensions (likely a fetch error) so a
+	// transient failure does not wipe stored extensions. The catalog itself is
+	// never written here; that is the StoreExtensionSync job's responsibility.
+	if len(res.extensions) > 0 {
+		storeNames := make([]string, 0, len(res.extensions))
+		unknownNames := make([]string, 0, len(res.extensions))
+		for _, ext := range res.extensions {
+			if ext.isStore {
+				storeNames = append(storeNames, ext.Name)
+				if err := txQueries.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
+					EnvironmentID: env.ID,
+					ExtensionName: ext.Name,
+					Label:         ext.Label,
+					Version:       ext.Version,
+					LatestVersion: ext.LatestVersion,
+					Active:        ext.Active,
+					Installed:     ext.Installed,
+					InstalledAt:   ext.InstalledAt,
+				}); err != nil {
+					return fmt.Errorf("upsert environment store extension %s: %w", ext.Name, err)
+				}
+			} else {
+				unknownNames = append(unknownNames, ext.Name)
+				if err := txQueries.UpsertEnvironmentExtension(ctx, queries.UpsertEnvironmentExtensionParams{
+					EnvironmentID: env.ID,
+					Name:          ext.Name,
+					Label:         ext.Label,
+					Active:        ext.Active,
+					Version:       ext.Version,
+					LatestVersion: ext.LatestVersion,
+					Installed:     ext.Installed,
+					InstalledAt:   ext.InstalledAt,
+				}); err != nil {
+					return fmt.Errorf("upsert environment extension %s: %w", ext.Name, err)
+				}
 			}
-			if err := q.UpsertStoreExtensionVersionTranslation(ctx, queries.UpsertStoreExtensionVersionTranslationParams{
-				ExtensionVersionID: versionID,
-				Language:           lang,
-				Changelog:          nilIfEmpty(text),
-			}); err != nil {
-				return fmt.Errorf("upsert store extension version translation %s@%s/%s: %w", ext.Name, mc.Version, lang, err)
-			}
+		}
+
+		if err := txQueries.DeleteEnvironmentStoreExtensionsNotIn(ctx, queries.DeleteEnvironmentStoreExtensionsNotInParams{
+			EnvironmentID: env.ID,
+			Column2:       storeNames,
+		}); err != nil {
+			return fmt.Errorf("delete stale store extensions: %w", err)
+		}
+		if err := txQueries.DeleteEnvironmentExtensionsNotIn(ctx, queries.DeleteEnvironmentExtensionsNotInParams{
+			EnvironmentID: env.ID,
+			Column2:       unknownNames,
+		}); err != nil {
+			return fmt.Errorf("delete stale environment extensions: %w", err)
 		}
 	}
 
-	imageURLs := make([]string, 0, len(p.Pictures))
-	for _, pic := range p.Pictures {
-		imageURLs = append(imageURLs, pic.URL)
-		if err := q.UpsertStoreExtensionImage(ctx, queries.UpsertStoreExtensionImageParams{
-			ExtensionName: ext.Name,
-			Url:           pic.URL,
-			Preview:       pic.Preview,
-			Priority:      int32(pic.Priority),
+	taskIDs := make([]string, 0, len(res.scheduledTasks))
+	for _, st := range res.scheduledTasks {
+		taskIDs = append(taskIDs, st.ID)
+		overdue := isScheduledTaskOverdue(st)
+		if err := txQueries.UpsertEnvironmentScheduledTask(ctx, queries.UpsertEnvironmentScheduledTaskParams{
+			EnvironmentID:     env.ID,
+			TaskID:            st.ID,
+			Name:              st.Name,
+			Status:            st.Status,
+			Interval:          st.RunInterval,
+			Overdue:           overdue,
+			LastExecutionTime: st.LastExecutionTime,
+			NextExecutionTime: st.NextExecutionTime,
 		}); err != nil {
-			return fmt.Errorf("upsert store extension image %s: %w", ext.Name, err)
+			return fmt.Errorf("upsert scheduled task %s: %w", st.ID, err)
 		}
 	}
-	// Only prune when the store returned pictures: an empty list would make
-	// "url != ALL('{}')" match every row and wipe all stored images on a scrape
-	// that momentarily returned no pictures.
-	if len(imageURLs) > 0 {
-		if err := q.DeleteStoreExtensionImagesNotIn(ctx, queries.DeleteStoreExtensionImagesNotInParams{
-			ExtensionName: ext.Name,
-			Column2:       imageURLs,
+	if len(taskIDs) > 0 {
+		if err := txQueries.DeleteEnvironmentScheduledTasksNotIn(ctx, queries.DeleteEnvironmentScheduledTasksNotInParams{
+			EnvironmentID: env.ID,
+			Column2:       taskIDs,
 		}); err != nil {
-			return fmt.Errorf("delete stale store extension images %s: %w", ext.Name, err)
+			return fmt.Errorf("delete stale scheduled tasks: %w", err)
 		}
 	}
 
-	if err := q.UpsertEnvironmentStoreExtension(ctx, queries.UpsertEnvironmentStoreExtensionParams{
-		EnvironmentID: envID,
-		ExtensionName: ext.Name,
-		Label:         ext.Label,
-		Version:       ext.Version,
-		LatestVersion: ext.LatestVersion,
-		Active:        ext.Active,
-		Installed:     ext.Installed,
-		InstalledAt:   ext.InstalledAt,
+	queueNames := make([]string, 0, len(res.queueEntries))
+	for _, q := range res.queueEntries {
+		queueNames = append(queueNames, q.Name)
+		size, _ := q.Size.Int64()
+		if err := txQueries.UpsertEnvironmentQueue(ctx, queries.UpsertEnvironmentQueueParams{
+			EnvironmentID: env.ID,
+			Name:          q.Name,
+			Size:          int32(size),
+		}); err != nil {
+			return fmt.Errorf("upsert environment queue %s: %w", q.Name, err)
+		}
+	}
+	if len(queueNames) > 0 {
+		if err := txQueries.DeleteEnvironmentQueuesNotIn(ctx, queries.DeleteEnvironmentQueuesNotInParams{
+			EnvironmentID: env.ID,
+			Column2:       queueNames,
+		}); err != nil {
+			return fmt.Errorf("delete stale environment queues: %w", err)
+		}
+	}
+
+	cacheAdapter := res.cacheInfo.CacheAdapter
+	if cacheAdapter == "" {
+		cacheAdapter = "filesystem"
+	}
+	if err := txQueries.UpsertEnvironmentCache(ctx, queries.UpsertEnvironmentCacheParams{
+		EnvironmentID: env.ID,
+		Environment:   res.cacheInfo.Environment,
+		HttpCache:     res.cacheInfo.HttpCache,
+		CacheAdapter:  cacheAdapter,
 	}); err != nil {
-		return fmt.Errorf("upsert environment store extension %s: %w", ext.Name, err)
+		return fmt.Errorf("upsert environment cache: %w", err)
+	}
+
+	// Upsert checks and prune the ones no longer reported, instead of the previous
+	// delete-all + re-insert which rewrote every check row each scrape.
+	checkIDs := make([]string, 0, len(res.checks))
+	for _, c := range res.checks {
+		checkIDs = append(checkIDs, c.ID)
+		var link *string
+		if c.Link != "" {
+			link = &c.Link
+		}
+		if err := txQueries.InsertEnvironmentCheck(ctx, queries.InsertEnvironmentCheckParams{
+			EnvironmentID: env.ID,
+			CheckID:       c.ID,
+			Level:         string(c.Level),
+			Message:       c.Message,
+			Source:        c.Source,
+			Link:          link,
+		}); err != nil {
+			return fmt.Errorf("insert environment check %s: %w", c.ID, err)
+		}
+	}
+	if err := txQueries.DeleteEnvironmentChecksNotIn(ctx, queries.DeleteEnvironmentChecksNotInParams{
+		EnvironmentID: env.ID,
+		Column2:       checkIDs,
+	}); err != nil {
+		return fmt.Errorf("delete stale environment checks: %w", err)
+	}
+
+	hasShopwareUpdate := env.ShopwareVersion != res.shopwareVersion
+	hasExtensionChanges := len(res.extensionsDiff) > 0
+
+	var lastChangelogJSON []byte
+	if hasShopwareUpdate {
+		lastChangelogJSON, _ = json.Marshal(map[string]interface{}{
+			"date": time.Now().Format(time.RFC3339),
+			"from": env.ShopwareVersion,
+			"to":   res.shopwareVersion,
+		})
+	}
+
+	if hasExtensionChanges || hasShopwareUpdate {
+		extensionsDiffJSON, _ := json.Marshal(res.extensionsDiff)
+
+		var oldVersion, newVersion *string
+		if hasShopwareUpdate {
+			oldVersion = &env.ShopwareVersion
+			newVersion = &res.shopwareVersion
+		}
+
+		envID := env.ID
+		if err := txQueries.InsertEnvironmentChangelog(ctx, queries.InsertEnvironmentChangelogParams{
+			EnvironmentID:      &envID,
+			Extensions:         extensionsDiffJSON,
+			OldShopwareVersion: oldVersion,
+			NewShopwareVersion: newVersion,
+		}); err != nil {
+			return fmt.Errorf("insert environment changelog: %w", err)
+		}
+	}
+
+	if err := txQueries.UpdateEnvironmentAfterScrape(ctx, queries.UpdateEnvironmentAfterScrapeParams{
+		Status:           res.status,
+		ShopwareVersion:  res.shopwareVersion,
+		LastScrapedError: nil,
+		Favicon:          res.favicon,
+		EnvironmentImage: nil,
+		LastChangelog:    lastChangelogJSON,
+		ID:               env.ID,
+	}); err != nil {
+		return fmt.Errorf("update environment after scrape: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return nil
+}
+
+// resolveExtensionsFromCatalog classifies extensions as store-known (catalog
+// membership) and resolves their compatible latest version from the local
+// compatibility table. When a compatibility entry is not there yet (sync still
+// pending), the shop-reported upgrade version is kept and, failing that, the
+// prior link value is carried over so the update hint does not flicker away.
+func (h *EnvironmentScrapeHandler) resolveExtensionsFromCatalog(ctx context.Context, extensions []extensionEntry, oldExtensions []existingExtension, shopwareVersion string) (catalogState, error) {
+	if len(extensions) == 0 {
+		return catalogState{}, nil
+	}
+
+	names := make([]string, 0, len(extensions))
+	for _, ext := range extensions {
+		names = append(names, ext.Name)
+	}
+
+	memberNames, err := h.queries.GetStoreExtensionNamesIn(ctx, names)
+	if err != nil {
+		return catalogState{}, fmt.Errorf("get store extension names: %w", err)
+	}
+	member := make(map[string]bool, len(memberNames))
+	for _, n := range memberNames {
+		member[n] = true
+	}
+
+	compatRows, err := h.queries.GetStoreExtensionCompatibility(ctx, queries.GetStoreExtensionCompatibilityParams{
+		Column1:         names,
+		ShopwareVersion: shopwareVersion,
+	})
+	if err != nil {
+		return catalogState{}, fmt.Errorf("get store extension compatibility: %w", err)
+	}
+	compat := make(map[string]*string, len(compatRows))
+	for _, row := range compatRows {
+		compat[row.ExtensionName] = row.LatestVersion
+	}
+
+	oldStoreLatest := make(map[string]*string)
+	for _, e := range oldExtensions {
+		if e.IsStore {
+			oldStoreLatest[e.Name] = e.LatestVersion
+		}
+	}
+
+	for i := range extensions {
+		ext := &extensions[i]
+		if !member[ext.Name] {
+			continue
+		}
+		ext.isStore = true
+		if latest, ok := compat[ext.Name]; ok {
+			// A present row with NULL latest means "checked, no compatible
+			// release"; keep the shop-reported upgrade version in that case.
+			if latest != nil {
+				v := *latest
+				ext.LatestVersion = &v
+			}
+		} else if ext.LatestVersion == nil {
+			ext.LatestVersion = oldStoreLatest[ext.Name]
+		}
+	}
+
+	return catalogState{member: member, compatKnown: compat}, nil
+}
+
+// syncUpdatedExtensions force-syncs store extensions whose freshly scraped
+// version is missing from the catalog — typically right after an extension
+// update — so the changelog for the update notification is available in the
+// same scrape. Errors only cost the changelog text of one notification, so
+// they are logged, not propagated.
+func (h *EnvironmentScrapeHandler) syncUpdatedExtensions(ctx context.Context, oldExtensions []existingExtension, extensions []extensionEntry, shopwareVersion string) {
+	oldByName := make(map[string]existingExtension, len(oldExtensions))
+	for _, e := range oldExtensions {
+		oldByName[e.Name] = e
+	}
+
+	var stale []string
+	for _, ext := range extensions {
+		old, ok := oldByName[ext.Name]
+		if !ok || !old.IsStore || old.Version == ext.Version {
+			continue
+		}
+		versions, err := h.queries.GetStoreExtensionVersionsByName(ctx, ext.Name)
+		if err != nil {
+			slog.Warn("failed to load catalog versions", "extension", ext.Name, "error", err)
+			continue
+		}
+		known := false
+		for _, v := range versions {
+			if v.Version == ext.Version {
+				known = true
+				break
+			}
+		}
+		if !known {
+			stale = append(stale, ext.Name)
+		}
+	}
+	if len(stale) == 0 {
+		return
+	}
+
+	if err := h.storeSync.SyncNames(ctx, stale, shopwareVersion, true); err != nil {
+		slog.Warn("failed to sync updated store extensions", "extensions", stale, "error", err)
+	}
+}
+
+// attachStoreChangelogs fills in the changelog entries of "updated" diffs of
+// store-known extensions from the local catalog.
+func (h *EnvironmentScrapeHandler) attachStoreChangelogs(ctx context.Context, diffs []extensionDiff, extensions []extensionEntry) {
+	isStore := make(map[string]bool, len(extensions))
+	for _, ext := range extensions {
+		if ext.isStore {
+			isStore[ext.Name] = true
+		}
+	}
+
+	for i := range diffs {
+		d := &diffs[i]
+		if d.State != "updated" || !isStore[d.Name] || d.OldVersion == nil || d.NewVersion == nil {
+			continue
+		}
+		rows, err := h.queries.GetStoreExtensionChangelogs(ctx, d.Name)
+		if err != nil {
+			slog.Warn("failed to load store changelogs", "extension", d.Name, "error", err)
+			continue
+		}
+		mcs := make([]mergedChangelog, 0, len(rows))
+		for _, r := range rows {
+			mc := mergedChangelog{Version: r.Version}
+			if r.ChangelogEn != nil {
+				mc.En = *r.ChangelogEn
+			}
+			if r.ChangelogDe != nil {
+				mc.De = *r.ChangelogDe
+			}
+			if r.ReleasedAt != nil {
+				mc.ReleasedAt = *r.ReleasedAt
+			}
+			mcs = append(mcs, mc)
+		}
+		d.Changelog = changelogsBetween(mcs, *d.OldVersion, *d.NewVersion)
+	}
+}
+
+// dispatchStoreExtensionSync enqueues a catalog sync for the environment's
+// extensions whose catalog data is missing or stale. It reuses the membership
+// and compatibility maps already resolved by resolveExtensionsFromCatalog, so
+// only the freshness state is queried here. The sync job re-applies the same
+// filter, so overlapping dispatches from other environments are cheap.
+func (h *EnvironmentScrapeHandler) dispatchStoreExtensionSync(ctx context.Context, extensions []extensionEntry, shopwareVersion string, catalog catalogState) {
+	if h.bus == nil || h.storeSync == nil || len(extensions) == 0 {
+		return
+	}
+
+	names := make([]string, 0, len(extensions))
+	for _, ext := range extensions {
+		names = append(names, ext.Name)
+	}
+	needing, err := h.storeSync.namesNeedingSyncWith(ctx, names, shopwareVersion, catalog)
+	if err != nil {
+		slog.Warn("failed to determine extensions needing store sync", "error", err)
+		return
+	}
+	if len(needing) == 0 {
+		return
+	}
+
+	if err := goqueue.Dispatch(ctx, h.bus, StoreExtensionSync{Names: needing, ShopwareVersion: shopwareVersion}); err != nil {
+		slog.Warn("failed to dispatch store extension sync", "error", err)
+	}
 }
 
 func nilIfEmpty(s string) *string {

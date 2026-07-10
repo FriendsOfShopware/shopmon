@@ -62,19 +62,19 @@ type shopwareCacheInfo struct {
 	CacheAdapter string `json:"cacheAdapter"`
 }
 
-// extensionEntry is a combined representation of plugins and apps. Store is set
-// when the extension is known to the Shopware store (api.shopware.com); such
-// extensions are persisted into the normalized store_extension* tables, while
-// the rest land in environment_extension.
+// extensionEntry is a combined representation of plugins and apps. isStore is
+// set when the extension exists in the shared store catalog (store_extension);
+// such extensions are linked via environment_store_extension, while the rest
+// land in environment_extension.
 type extensionEntry struct {
-	Name          string              `json:"name"`
-	Label         string              `json:"label"`
-	Active        bool                `json:"active"`
-	Version       string              `json:"version"`
-	LatestVersion *string             `json:"latestVersion"`
-	Installed     bool                `json:"installed"`
-	InstalledAt   *string             `json:"installedAt"`
-	Store         *storeExtensionData `json:"-"`
+	Name          string  `json:"name"`
+	Label         string  `json:"label"`
+	Active        bool    `json:"active"`
+	Version       string  `json:"version"`
+	LatestVersion *string `json:"latestVersion"`
+	Installed     bool    `json:"installed"`
+	InstalledAt   *string `json:"installedAt"`
+	isStore       bool
 }
 
 // storeExtensionData holds the per-locale store metadata fetched for an

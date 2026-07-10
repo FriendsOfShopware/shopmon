@@ -6,9 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -21,15 +18,13 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
+	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/shyim/go-mailer/mailertest"
 	goqueue "github.com/shyim/go-queue"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/modules/redis"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 // TestEnv holds all test dependencies.
@@ -44,10 +39,10 @@ type TestEnv struct {
 	Mail *mailertest.RecordingTransport
 }
 
-// shared holds the singleton containers shared across tests.
+// shared holds the singleton Redis container shared across tests. Postgres is
+// provided by the testdb package.
 var shared struct {
 	once     sync.Once
-	pgConn   string
 	redisURL string
 	err      error
 }
@@ -55,29 +50,6 @@ var shared struct {
 func initContainers() {
 	ctx := context.Background()
 
-	// Start Postgres
-	pgContainer, err := postgres.Run(ctx,
-		"postgres:17-alpine",
-		postgres.WithDatabase("shopmon_test"),
-		postgres.WithUsername("test"),
-		postgres.WithPassword("test"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(30*time.Second),
-		),
-	)
-	if err != nil {
-		shared.err = fmt.Errorf("start postgres: %w", err)
-		return
-	}
-	shared.pgConn, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		shared.err = fmt.Errorf("postgres conn string: %w", err)
-		return
-	}
-
-	// Start Redis
 	redisContainer, err := redis.Run(ctx, "redis:7-alpine")
 	if err != nil {
 		shared.err = fmt.Errorf("start redis: %w", err)
@@ -89,24 +61,6 @@ func initContainers() {
 		return
 	}
 	shared.redisURL = redisEndpoint
-
-	// Apply schema once
-	pool, err := pgxpool.New(ctx, shared.pgConn)
-	if err != nil {
-		shared.err = fmt.Errorf("pool for schema: %w", err)
-		return
-	}
-	defer pool.Close()
-
-	schemaSQL, err := os.ReadFile(schemaPath())
-	if err != nil {
-		shared.err = fmt.Errorf("read schema: %w", err)
-		return
-	}
-	if _, err := pool.Exec(ctx, string(schemaSQL)); err != nil {
-		shared.err = fmt.Errorf("apply schema: %w", err)
-		return
-	}
 }
 
 // Setup creates a new TestEnv using shared Postgres and Redis containers.
@@ -121,13 +75,13 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		t.Fatalf("failed to start containers: %v", shared.err)
 	}
 
-	pool, err := pgxpool.New(ctx, shared.pgConn)
+	pool, err := pgxpool.New(ctx, testdb.ConnString(t))
 	if err != nil {
 		t.Fatalf("failed to create pool: %v", err)
 	}
 
 	// Truncate all data for a clean slate
-	truncateAll(t, pool)
+	testdb.TruncateAll(t, pool)
 	flushRedis(t, shared.redisURL)
 
 	q := queries.New(pool)
@@ -163,6 +117,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.InvitationCleanup) error { return nil })
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.OldDataCleanup) error { return nil })
 	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.ShopwareChangelogSync) error { return nil })
+	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.StoreExtensionSync) error { return nil })
 	h := handler.New(pool, q, nil, cfg, mailSender, bus)
 
 	// Build chi router matching production setup
@@ -189,30 +144,6 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Server:  srv,
 		Cfg:     cfg,
 		Mail:    mailRecorder,
-	}
-}
-
-// schemaPath returns the absolute path to sql/schema.sql relative to this file.
-func schemaPath() string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), "..", "..", "sql", "schema.sql")
-}
-
-func truncateAll(t *testing.T, pool *pgxpool.Pool) {
-	t.Helper()
-	ctx := context.Background()
-
-	_, err := pool.Exec(ctx, `
-		DO $$
-		DECLARE r RECORD;
-		BEGIN
-			FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-				EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE';
-			END LOOP;
-		END $$;
-	`)
-	if err != nil {
-		t.Fatalf("failed to truncate tables: %v", err)
 	}
 }
 

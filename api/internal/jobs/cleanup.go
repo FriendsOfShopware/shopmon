@@ -47,6 +47,17 @@ func (h *CleanupHandler) HandleOldDataCleanup(ctx context.Context, _ OldDataClea
 	if err := h.queries.CleanupExpiredBans(ctx); err != nil {
 		return fmt.Errorf("cleanup expired bans: %w", err)
 	}
-	slog.Info("cleaned up old data: sessions, notifications, sitespeed, bans")
+	// The store catalog itself (store_extension and its versions, changelogs and
+	// images) is retained even once no environment links it, so historical
+	// changelog data survives. Only the internal bookkeeping is pruned: sync
+	// state for names no environment has anymore, and compatibility rows for
+	// Shopware versions no environment runs. Both rebuild on the next sync.
+	if err := h.queries.CleanupOrphanedStoreExtensionSyncStates(ctx); err != nil {
+		return fmt.Errorf("cleanup orphaned store extension sync states: %w", err)
+	}
+	if err := h.queries.CleanupUnusedStoreExtensionCompatibility(ctx); err != nil {
+		return fmt.Errorf("cleanup unused store extension compatibility: %w", err)
+	}
+	slog.Info("cleaned up old data: sessions, notifications, sitespeed, bans, store bookkeeping")
 	return nil
 }

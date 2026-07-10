@@ -28,6 +28,14 @@ type InvitationCleanup struct{}
 type OldDataCleanup struct{}
 type ShopwareChangelogSync struct{}
 
+// StoreExtensionSync refreshes the shared store extension catalog for a set of
+// extension names. ShopwareVersion is the version of the environment that
+// requested the sync; it is included in the compatibility probing.
+type StoreExtensionSync struct {
+	Names           []string `json:"names"`
+	ShopwareVersion string   `json:"shopware_version"`
+}
+
 // NewBus creates a go-queue Bus backed by PostgreSQL and registers all job handlers.
 func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mailSvc mail.Sender) (*goqueue.Bus, error) {
 	transport := postgres.NewTransportFromPool(pool, postgres.Config{
@@ -44,12 +52,14 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, q *queries.Queries, cfg *co
 
 	bus.AddTransport(TransportName, transport)
 
-	envScrape := NewEnvironmentScrapeHandler(pool, q, cfg, bus, mailSvc)
+	storeSync := NewStoreExtensionSyncHandler(pool, q, cfg)
+	envScrape := NewEnvironmentScrapeHandler(pool, q, cfg, bus, mailSvc, storeSync)
 	sitespeed := NewSitespeedScrapeHandler(pool, q, cfg)
 	cleanup := NewCleanupHandler(q)
 	changelog := NewShopwareChangelogHandler(q, cfg)
 
 	goqueue.HandleFunc(bus, TransportName, envScrape.HandleScrape)
+	goqueue.HandleFunc(bus, TransportName, storeSync.HandleSync)
 	goqueue.HandleFunc(bus, TransportName, sitespeed.HandleScrape)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleLockCleanup)
 	goqueue.HandleFunc(bus, TransportName, cleanup.HandleInvitationCleanup)

@@ -269,12 +269,23 @@ type StoreExtension struct {
 	LastRefreshedAt pgtype.Timestamp `json:"last_refreshed_at"`
 }
 
+type StoreExtensionCompatibility struct {
+	ExtensionName   string  `json:"extension_name"`
+	ShopwareVersion string  `json:"shopware_version"`
+	LatestVersion   *string `json:"latest_version"`
+}
+
 type StoreExtensionImage struct {
 	ID            int32  `json:"id"`
 	ExtensionName string `json:"extension_name"`
 	Url           string `json:"url"`
 	Preview       bool   `json:"preview"`
 	Priority      int32  `json:"priority"`
+}
+
+type StoreExtensionSync struct {
+	ExtensionName string           `json:"extension_name"`
+	LastSyncedAt  pgtype.Timestamp `json:"last_synced_at"`
 }
 
 type StoreExtensionTranslation struct {
