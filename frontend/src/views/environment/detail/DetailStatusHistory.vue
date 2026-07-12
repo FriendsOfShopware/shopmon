@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { api } from "@/helpers/api";
@@ -61,16 +61,22 @@ const { error } = useAlert();
 const events = ref<components["schemas"]["StatusEvent"][]>([]);
 const loading = ref(true);
 
-onMounted(async () => {
-  try {
-    const { data } = await api.GET("/environments/{environmentId}/status-events", {
-      params: { path: { environmentId: Number(route.params.environmentId) } },
-    });
-    events.value = data ?? [];
-  } catch (err) {
-    error(err instanceof Error ? err.message : String(err));
-  } finally {
-    loading.value = false;
-  }
-});
+watch(
+  () => route.params.environmentId,
+  async (newId) => {
+    if (!newId) return;
+    loading.value = true;
+    try {
+      const { data } = await api.GET("/environments/{environmentId}/status-events", {
+        params: { path: { environmentId: Number(newId) } },
+      });
+      events.value = data ?? [];
+    } catch (err) {
+      error(err instanceof Error ? err.message : String(err));
+    } finally {
+      loading.value = false;
+    }
+  },
+  { immediate: true }
+);
 </script>

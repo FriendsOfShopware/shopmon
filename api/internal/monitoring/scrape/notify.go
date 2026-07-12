@@ -157,9 +157,13 @@ func computeStatusReasons(oldChecks []queries.EnvironmentCheck, newChecks []chec
 			next = "green"
 		}
 		if c.Level != "green" && checkWeight(c.Level) > checkWeight(next) {
+			key := c.Message
+			if c.MessageKey != nil {
+				key = *c.MessageKey
+			}
 			reasons = append(reasons, notify.StatusReason{
 				Level:  c.Level,
-				Key:    derefString(c.MessageKey),
+				Key:    key,
 				Params: decodeParams(c.Params),
 				Source: c.Source,
 			})
