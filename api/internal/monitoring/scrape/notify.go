@@ -172,13 +172,6 @@ func computeStatusReasons(oldChecks []queries.EnvironmentCheck, newChecks []chec
 	return reasons
 }
 
-func derefString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
 func decodeParams(raw []byte) map[string]any {
 	if len(raw) == 0 {
 		return nil
