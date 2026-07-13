@@ -2940,6 +2940,7 @@ components:
       required:
         - environmentId
         - environmentName
+        - environmentShopName
         - environmentOrganizationName
         - environmentOrganizationId
         - environmentUrl
@@ -2953,6 +2954,8 @@ components:
         environmentId:
           type: integer
         environmentName:
+          type: string
+        environmentShopName:
           type: string
         environmentOrganizationName:
           type: string
@@ -3086,6 +3089,7 @@ components:
         - newShopwareVersion
         - date
         - environmentName
+        - environmentShopName
         - environmentOrganizationName
         - environmentOrganizationId
       properties:
@@ -3108,6 +3112,8 @@ components:
           type: string
           format: date-time
         environmentName:
+          type: string
+        environmentShopName:
           type: string
         environmentOrganizationName:
           type: string

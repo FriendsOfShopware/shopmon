@@ -102,14 +102,19 @@ UPDATE environment SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3
 -- name: GetAllEnvironments :many
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
-       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls
-FROM environment e;
+       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       s.name AS shop_name
+FROM environment e
+LEFT JOIN shop s ON s.id = e.shop_id;
 
 -- name: GetEnvironmentForScrape :one
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
-       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls
-FROM environment e WHERE e.id = $1;
+       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       s.name AS shop_name
+FROM environment e
+LEFT JOIN shop s ON s.id = e.shop_id
+WHERE e.id = $1;
 
 -- name: UpdateEnvironmentAfterScrape :exec
 UPDATE environment SET status = $1, shopware_version = $2, last_scraped_at = NOW(), last_scraped_error = $3,

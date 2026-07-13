@@ -76,6 +76,7 @@ const mockChangelogs = [
     id: 1,
     environmentId: 1,
     environmentName: "Test Environment 1",
+    environmentShopName: "Test Shop 1",
     environmentOrganizationName: "Test Org",
     environmentOrganizationId: "org-1",
     extensions: [
@@ -243,7 +244,7 @@ describe("Dashboard", () => {
   it("displays changelog data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Environment 1");
+    expect(wrapper.text()).toContain("Test Shop 1 · Test Environment 1");
   });
 
   it("displays correct environment links", async () => {

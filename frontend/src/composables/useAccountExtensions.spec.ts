@@ -11,6 +11,7 @@ function env(overrides: Partial<AccountExtensionEnvironment> = {}): AccountExten
   return {
     environmentId: 1,
     environmentName: "prod",
+    environmentShopName: "Shop",
     environmentOrganizationName: "org",
     environmentOrganizationId: "org-1",
     environmentUrl: "https://example.com",

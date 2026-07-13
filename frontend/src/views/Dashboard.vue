@@ -205,7 +205,7 @@
                   formatDate(log.date)
                 }}</span>
                 <Separator orientation="vertical" class="h-4" />
-                <span class="min-w-0 truncate text-sm font-medium">{{ log.environmentName }}</span>
+                <span class="min-w-0 truncate text-sm font-medium">{{ changelogTitle(log) }}</span>
               </div>
               <span class="min-w-0 truncate text-xs text-muted-foreground sm:flex-1">{{
                 sumChanges(log)
@@ -320,6 +320,11 @@ const errorCount = computed(
 // the extensions list, which counts an extension as outdated when any of its
 // environments runs a version behind the latest.
 const outdatedExtensionCount = computed(() => extensions.value.filter((e) => hasUpdate(e)).length);
+
+function changelogTitle(log: components["schemas"]["AccountChangelog"]) {
+  if (!log.environmentShopName) return log.environmentName;
+  return `${log.environmentShopName} · ${log.environmentName}`;
+}
 
 // Shopware version distribution (still per-environment for accuracy)
 const versionDistribution = computed(() => {

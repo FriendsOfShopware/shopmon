@@ -1764,6 +1764,7 @@ export interface components {
     AccountExtensionEnvironment: {
       environmentId: number;
       environmentName: string;
+      environmentShopName: string;
       environmentOrganizationName: string;
       environmentOrganizationId: string;
       environmentUrl: string;
@@ -1819,6 +1820,7 @@ export interface components {
       /** Format: date-time */
       date: string;
       environmentName: string;
+      environmentShopName: string;
       environmentOrganizationName: string;
       environmentOrganizationId: string;
     };
