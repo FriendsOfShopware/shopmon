@@ -4,80 +4,94 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/access"
+	"github.com/friendsofshopware/shopmon/api/internal/audit"
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
-	"github.com/friendsofshopware/shopmon/api/internal/config"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
+	identitypasskey "github.com/friendsofshopware/shopmon/api/internal/identity/passkey"
+	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Compile-time check that AuthHandler implements the generated ServerInterface.
 var _ authapi.ServerInterface = (*AuthHandler)(nil)
 
 type AuthHandler struct {
-	pool       *pgxpool.Pool
-	queries    *queries.Queries
-	cfg        *config.Config
-	mail       mail.Sender
-	wan        *webauthn.WebAuthn
-	challenges *ChallengeStore
+	config        HandlerConfig
+	challenges    StateStore
+	organizations *organization.Service
+	sso           *organizationsso.Service
+	accounts      *identity.AccountService
+	adminUsers    *identity.AdminService
+	credentials   *identity.CredentialService
+	sessions      *identity.SessionService
+	federated     *identity.FederatedService
+	passkeys      *identitypasskey.Service
+	audit         *audit.Service
 }
 
-func NewAuthHandler(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mail mail.Sender) *AuthHandler {
-	var wan *webauthn.WebAuthn
-	if cfg.WebAuthnRPID != "" {
-		var err error
-		wan, err = webauthn.New(&webauthn.Config{
-			RPID:          cfg.WebAuthnRPID,
-			RPDisplayName: cfg.WebAuthnRPName,
-			RPOrigins:     cfg.WebAuthnRPOrigins,
-		})
-		if err != nil {
-			panic("failed to create webauthn: " + err.Error())
-		}
-	}
+type StateStore interface {
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+	Get(ctx context.Context, key string, destination interface{}) error
+}
 
-	challenges := NewChallengeStore(cfg.RedisURL, "shopmon:challenge:")
+type HandlerConfig struct {
+	FrontendURL        string
+	GitHubClientID     string
+	GitHubClientSecret string
+}
 
+type Dependencies struct {
+	Organizations *organization.Service
+	SSO           *organizationsso.Service
+	Accounts      *identity.AccountService
+	AdminUsers    *identity.AdminService
+	Credentials   *identity.CredentialService
+	Sessions      *identity.SessionService
+	Federated     *identity.FederatedService
+	Passkeys      *identitypasskey.Service
+	Audit         *audit.Service
+	State         StateStore
+	Config        HandlerConfig
+}
+
+func NewAuthHandler(dependencies Dependencies) *AuthHandler {
 	return &AuthHandler{
-		pool:       pool,
-		queries:    q,
-		cfg:        cfg,
-		mail:       mail,
-		wan:        wan,
-		challenges: challenges,
+		config:        dependencies.Config,
+		challenges:    dependencies.State,
+		organizations: dependencies.Organizations,
+		sso:           dependencies.SSO,
+		accounts:      dependencies.Accounts,
+		adminUsers:    dependencies.AdminUsers,
+		credentials:   dependencies.Credentials,
+		sessions:      dependencies.Sessions,
+		federated:     dependencies.Federated,
+		passkeys:      dependencies.Passkeys,
+		audit:         dependencies.Audit,
 	}
 }
 
-// requireAuth extracts and validates the session token from the request.
+// requireAuth returns the principal validated by the request middleware.
 // Returns nil and writes an error response if authentication fails.
-func (h *AuthHandler) requireAuth(w http.ResponseWriter, r *http.Request) *SessionUser {
-	token := httputil.ExtractToken(r)
-	if token == "" {
+func (h *AuthHandler) requireAuth(w http.ResponseWriter, r *http.Request) *access.Principal {
+	principal := access.PrincipalFromContext(r.Context())
+	if principal == nil {
 		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
 		return nil
 	}
-	su, err := ValidateSession(r.Context(), h.queries, token)
-	if err != nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
-		return nil
-	}
-	return su
+	return principal
 }
 
 // requireAdmin extracts and validates the session token, then checks for admin role.
 // Returns nil and writes an error response if authentication or authorization fails.
-func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *SessionUser {
+func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *access.Principal {
 	su := h.requireAuth(w, r)
 	if su == nil {
 		return nil
@@ -87,52 +101,6 @@ func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *Sess
 		return nil
 	}
 	return su
-}
-
-func (h *AuthHandler) requireOrgRole(w http.ResponseWriter, r *http.Request, userID, organizationID string, allowedRoles ...string) string {
-	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: organizationID,
-		UserID:         userID,
-	})
-	if err != nil {
-		httputil.WriteForbidden(w)
-		return ""
-	}
-
-	for _, allowedRole := range allowedRoles {
-		if role == allowedRole {
-			return role
-		}
-	}
-
-	httputil.WriteForbidden(w)
-	return ""
-}
-
-func (h *AuthHandler) requireOrgMembership(w http.ResponseWriter, r *http.Request, userID, organizationID string) bool {
-	err := h.requireOrganization(r.Context(), organizationID)
-	if err != nil {
-		if errors.Is(err, errOrganizationNotFound) {
-			httputil.WriteError(w, http.StatusNotFound, "organization not found")
-			return false
-		}
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to load organization")
-		return false
-	}
-
-	role := h.requireOrgRole(w, r, userID, organizationID, "owner", "admin", "member")
-	return role != ""
-}
-
-var errOrganizationNotFound = errors.New("organization not found")
-
-func (h *AuthHandler) requireOrganization(ctx context.Context, organizationID string) error {
-	_, err := h.queries.GetOrganizationByID(ctx, organizationID)
-	if err != nil {
-		return errOrganizationNotFound
-	}
-
-	return nil
 }
 
 // validateCallbackURL checks that the callback URL is either empty (will default
@@ -145,7 +113,7 @@ func (h *AuthHandler) validateCallbackURL(callbackURL string) bool {
 	if err != nil {
 		return false
 	}
-	frontendParsed, err := url.Parse(h.cfg.FrontendURL)
+	frontendParsed, err := url.Parse(h.config.FrontendURL)
 	if err != nil {
 		return false
 	}
@@ -157,10 +125,12 @@ func NewRateLimiter(ctx context.Context, window time.Duration, max int) *rateLim
 	return newRateLimiter(ctx, window, max)
 }
 
-func generateToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return hex.EncodeToString(b)
+func generateToken() (string, error) {
+	value := make([]byte, 32)
+	if _, err := rand.Read(value); err != nil {
+		return "", fmt.Errorf("generate secure token: %w", err)
+	}
+	return hex.EncodeToString(value), nil
 }
 
 // createOneTimeCode creates a session and stores the token behind a short-lived
@@ -171,7 +141,10 @@ func (h *AuthHandler) createOneTimeCode(r *http.Request, userID string) (string,
 		return "", err
 	}
 
-	code := generateToken()
+	code, err := generateToken()
+	if err != nil {
+		return "", err
+	}
 	if err = h.challenges.Set(r.Context(), "auth-code:"+code, sessionToken, 60*time.Second); err != nil {
 		return "", err
 	}
@@ -195,30 +168,20 @@ func (h *AuthHandler) ExchangeCode(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, exchangeCodeResponse{Token: sessionToken})
 }
 
-// createSession creates a new session. Its expiry slides forward on use via
-// ValidateSession (see sessionLifetime), so an actively used session stays
-// valid while an abandoned one still lapses.
+// createSession captures transport metadata and delegates session issuance to
+// the identity capability. OAuth, SSO and passkey callbacks share this path.
 func (h *AuthHandler) createSession(r *http.Request, userID string) (string, error) {
-	token := generateToken()
-	sessionID := uuid.New().String()
+	return h.sessions.Issue(r.Context(), userID, sessionMetadata(r))
+}
 
+func sessionMetadata(r *http.Request) identity.SessionMetadata {
 	userAgent := r.UserAgent()
 	ipAddress := chimiddleware.GetClientIP(r.Context())
 	if ipAddress == "" {
 		ipAddress = r.RemoteAddr
 	}
-
-	_, err := h.queries.CreateSession(r.Context(), queries.CreateSessionParams{
-		ID:        sessionID,
-		ExpiresAt: pgtype.Timestamp{Time: time.Now().Add(sessionLifetime), Valid: true},
-		Token:     token,
-		IpAddress: &ipAddress,
-		UserAgent: &userAgent,
-		UserID:    userID,
-	})
-	if err != nil {
-		return "", err
+	return identity.SessionMetadata{
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
 	}
-
-	return token, nil
 }

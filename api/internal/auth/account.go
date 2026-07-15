@@ -3,14 +3,16 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
+	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 )
 
 // GetFullOrganization returns an organization with members and invitations.
@@ -26,33 +28,37 @@ func (h *AuthHandler) GetFullOrganization(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if !h.requireOrgMembership(w, r, su.User.ID, orgID) {
+	full, err := h.organizations.Full(r.Context(), su.User.ID, orgID)
+	if err != nil {
+		h.writeOrganizationError(w, r, "get full organization", err)
 		return
 	}
-
-	org, err := h.queries.GetOrganizationByID(r.Context(), orgID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "organization not found")
-		return
+	members := make([]organizationMemberResponse, 0, len(full.Members))
+	for _, member := range full.Members {
+		members = append(members, organizationMemberResponse{
+			ID: member.ID, UserID: member.UserID, Role: string(member.Role),
+			Name: member.Name, Email: member.Email, Image: member.Image,
+		})
 	}
-
-	members, err := h.queries.ListMembers(r.Context(), org.ID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list members")
-		return
-	}
-	invitations, err := h.queries.ListInvitations(r.Context(), org.ID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list invitations")
-		return
+	invitations := make([]organizationInvitationResponse, 0, len(full.Invitations))
+	for _, invitation := range full.Invitations {
+		var role *string
+		if invitation.Role != nil {
+			value := string(*invitation.Role)
+			role = &value
+		}
+		invitations = append(invitations, organizationInvitationResponse{
+			ID: invitation.ID, Email: invitation.Email, Role: role, Status: invitation.Status,
+			ExpiresAt: invitation.ExpiresAt, InviterName: invitation.InviterName,
+		})
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, fullOrganizationResponse{
-		ID:          org.ID,
-		Name:        org.Name,
-		Logo:        org.Logo,
-		Members:     mapOrganizationMembers(members),
-		Invitations: mapOrganizationInvitations(invitations),
+		ID:          full.Organization.ID,
+		Name:        full.Organization.Name,
+		Logo:        full.Organization.Logo,
+		Members:     members,
+		Invitations: invitations,
 	})
 }
 
@@ -63,13 +69,19 @@ func (h *AuthHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessions, err := h.queries.ListUserSessions(r.Context(), su.User.ID)
+	sessions, err := h.accounts.ListSessions(r.Context(), su.User.ID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list sessions")
+		h.writeIdentityAccountError(w, r, "list sessions", err)
 		return
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, mapUserSessions(sessions))
+	response := make([]sessionResponse, 0, len(sessions))
+	for _, session := range sessions {
+		response = append(response, sessionResponse{
+			ID: session.ID, ExpiresAt: session.ExpiresAt, CreatedAt: session.CreatedAt,
+			IPAddress: session.IPAddress, UserAgent: session.UserAgent, ImpersonatedBy: session.ImpersonatedBy,
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // RevokeSession revokes a specific session.
@@ -85,11 +97,8 @@ func (h *AuthHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.queries.DeleteSessionByID(r.Context(), queries.DeleteSessionByIDParams{
-		ID:     req.SessionID,
-		UserID: su.User.ID,
-	}); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to revoke session")
+	if err := h.accounts.RevokeSession(r.Context(), su.User.ID, req.SessionID); err != nil {
+		h.writeIdentityAccountError(w, r, "revoke session", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -102,13 +111,18 @@ func (h *AuthHandler) ListAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accounts, err := h.queries.ListUserAccounts(r.Context(), su.User.ID)
+	accounts, err := h.accounts.ListLinkedAccounts(r.Context(), su.User.ID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list accounts")
+		h.writeIdentityAccountError(w, r, "list linked accounts", err)
 		return
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, mapLinkedAccounts(accounts))
+	response := make([]linkedAccountResponse, 0, len(accounts))
+	for _, account := range accounts {
+		response = append(response, linkedAccountResponse{
+			ID: account.ID, Provider: account.Provider, AccountID: account.AccountID, CreatedAt: account.CreatedAt,
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // UnlinkAccount removes a linked auth provider.
@@ -124,26 +138,8 @@ func (h *AuthHandler) UnlinkAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accounts, err := h.queries.ListUserAccounts(r.Context(), su.User.ID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list accounts")
-		return
-	}
-	passkeys, err := h.queries.ListUserPasskeys(r.Context(), su.User.ID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list passkeys")
-		return
-	}
-	if len(accounts)+len(passkeys) <= 1 {
-		httputil.WriteError(w, http.StatusBadRequest, "cannot remove your last authentication method")
-		return
-	}
-
-	if err := h.queries.DeleteAccountByProviderAndUser(r.Context(), queries.DeleteAccountByProviderAndUserParams{
-		ProviderID: req.ProviderID,
-		UserID:     su.User.ID,
-	}); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to unlink account")
+	if err := h.accounts.UnlinkAccount(r.Context(), su.User.ID, req.ProviderID); err != nil {
+		h.writeIdentityAccountError(w, r, "unlink account", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -167,32 +163,10 @@ func (h *AuthHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.queries.GetAccountByProviderAndUser(r.Context(), queries.GetAccountByProviderAndUserParams{
-		ProviderID: "credential",
-		UserID:     su.User.ID,
-	})
-	if err != nil || account.Password == nil {
-		httputil.WriteError(w, http.StatusBadRequest, "no password set for this account")
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(*account.Password), []byte(req.CurrentPassword)); err != nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "current password is incorrect")
-		return
-	}
-
-	_, err = h.queries.GetUserByEmail(r.Context(), req.NewEmail)
-	if err == nil {
-		httputil.WriteError(w, http.StatusConflict, "email already in use")
-		return
-	}
-
-	if err := h.queries.UpdateUserEmail(r.Context(), queries.UpdateUserEmailParams{
-		Email: req.NewEmail,
-		ID:    su.User.ID,
+	if err := h.accounts.ChangeEmail(r.Context(), identity.ChangeEmailCommand{
+		UserID: su.User.ID, Email: req.NewEmail, CurrentPassword: req.CurrentPassword,
 	}); err != nil {
-		slog.Error("failed to update user email", "error", err, "userID", su.User.ID)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update email")
+		h.writeIdentityAccountError(w, r, "change email", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -211,15 +185,9 @@ func (h *AuthHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name != "" {
-		if err := h.queries.UpdateUserName(r.Context(), queries.UpdateUserNameParams{
-			Name: req.Name,
-			ID:   su.User.ID,
-		}); err != nil {
-			slog.Error("failed to update user name", "error", err, "userID", su.User.ID)
-			httputil.WriteError(w, http.StatusInternalServerError, "failed to update user")
-			return
-		}
+	if err := h.accounts.UpdateName(r.Context(), su.User.ID, req.Name); err != nil {
+		h.writeIdentityAccountError(w, r, "update user", err)
+		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
@@ -237,37 +205,10 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.NewPassword) < 8 {
-		httputil.WriteError(w, http.StatusBadRequest, "password must be at least 8 characters")
-		return
-	}
-
-	account, err := h.queries.GetAccountByProviderAndUser(r.Context(), queries.GetAccountByProviderAndUserParams{
-		ProviderID: "credential",
-		UserID:     su.User.ID,
-	})
-	if err != nil || account.Password == nil {
-		httputil.WriteError(w, http.StatusBadRequest, "no password set for this account")
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(*account.Password), []byte(req.CurrentPassword)); err != nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "current password is incorrect")
-		return
-	}
-
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 12)
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to hash password")
-		return
-	}
-	pw := string(hashed)
-	if err := h.queries.UpdateUserPassword(r.Context(), queries.UpdateUserPasswordParams{
-		Password: &pw,
-		UserID:   su.User.ID,
+	if err := h.accounts.ChangePassword(r.Context(), identity.ChangePasswordCommand{
+		UserID: su.User.ID, CurrentPassword: req.CurrentPassword, NewPassword: req.NewPassword,
 	}); err != nil {
-		slog.Error("failed to update user password", "error", err, "userID", su.User.ID)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update password")
+		h.writeIdentityAccountError(w, r, "change password", err)
 		return
 	}
 
@@ -283,9 +224,8 @@ func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.queries.DeleteUser(r.Context(), su.User.ID); err != nil {
-		slog.Error("failed to delete user", "error", err, "userID", su.User.ID)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete account")
+	if err := h.accounts.DeleteUser(r.Context(), su.User.ID); err != nil {
+		h.writeIdentityAccountError(w, r, "delete user", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -331,13 +271,19 @@ func (h *AuthHandler) ListUserPasskeys(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passkeys, err := h.queries.ListUserPasskeys(r.Context(), su.User.ID)
+	passkeys, err := h.accounts.ListPasskeys(r.Context(), su.User.ID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list passkeys")
+		h.writeIdentityAccountError(w, r, "list passkeys", err)
 		return
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, mapUserPasskeys(passkeys))
+	response := make([]passkeyResponse, 0, len(passkeys))
+	for _, passkey := range passkeys {
+		response = append(response, passkeyResponse{
+			ID: passkey.ID, Name: passkey.Name, DeviceType: passkey.DeviceType,
+			BackedUp: passkey.BackedUp, CreatedAt: passkey.CreatedAt,
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // DeletePasskey deletes a passkey.
@@ -353,11 +299,8 @@ func (h *AuthHandler) DeletePasskey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.queries.DeletePasskey(r.Context(), queries.DeletePasskeyParams{
-		ID:     req.ID,
-		UserID: su.User.ID,
-	}); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete passkey")
+	if err := h.accounts.DeletePasskey(r.Context(), su.User.ID, req.ID); err != nil {
+		h.writeIdentityAccountError(w, r, "delete passkey", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -370,13 +313,20 @@ func (h *AuthHandler) ListUserOrganizations(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	orgs, err := h.queries.ListUserOrganizations(r.Context(), su.User.ID)
+	memberships, err := h.organizations.ListForUser(r.Context(), su.User.ID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list organizations")
+		h.writeOrganizationError(w, r, "list user organizations", err)
 		return
 	}
-
-	httputil.WriteJSON(w, http.StatusOK, mapUserOrganizations(orgs))
+	response := make([]userOrganizationResponse, 0, len(memberships))
+	for _, membership := range memberships {
+		response = append(response, userOrganizationResponse{
+			ID: membership.Organization.ID, Name: membership.Organization.Name,
+			Logo: membership.Organization.Logo, CreatedAt: membership.Organization.CreatedAt,
+			Role: string(membership.Role),
+		})
+	}
+	httputil.WriteJSON(w, http.StatusOK, response)
 }
 
 // HasPermission checks if the user has a specific permission in an organization.
@@ -392,12 +342,11 @@ func (h *AuthHandler) HasPermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	role, err := h.queries.GetMemberRole(r.Context(), queries.GetMemberRoleParams{
-		OrganizationID: req.OrganizationID,
-		UserID:         su.User.ID,
-	})
-
-	hasPermission := err == nil && (role == "owner" || role == "admin")
+	hasPermission, err := h.organizations.HasAdministrativePermission(r.Context(), su.User.ID, req.OrganizationID)
+	if err != nil {
+		h.writeOrganizationError(w, r, "check organization permission", err)
+		return
+	}
 	httputil.WriteJSON(w, http.StatusOK, permissionResponse{Success: hasPermission})
 }
 
@@ -414,19 +363,8 @@ func (h *AuthHandler) CancelInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get invitation to check org
-	invitation, err := h.queries.GetInvitationByID(r.Context(), req.InvitationID)
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "invitation not found")
-		return
-	}
-
-	if h.requireOrgRole(w, r, su.User.ID, invitation.OrganizationID, "owner", "admin") == "" {
-		return
-	}
-
-	if err := h.queries.DeleteInvitationByID(r.Context(), req.InvitationID); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to cancel invitation")
+	if err := h.organizations.CancelInvitation(r.Context(), su.User.ID, req.InvitationID); err != nil {
+		h.writeOrganizationError(w, r, "cancel organization invitation", err)
 		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
@@ -439,13 +377,9 @@ func (h *AuthHandler) AdminStopImpersonating(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Delete the current impersonation session
-	token := httputil.ExtractToken(r)
-	if token != "" {
-		if err := h.queries.DeleteSession(r.Context(), token); err != nil {
-			httputil.WriteError(w, http.StatusInternalServerError, "failed to stop impersonation")
-			return
-		}
+	if err := h.accounts.StopImpersonating(r.Context(), httputil.ExtractToken(r)); err != nil {
+		h.writeIdentityAccountError(w, r, "stop impersonating", err)
+		return
 	}
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
 }
@@ -463,45 +397,54 @@ func (h *AuthHandler) RegisterSSOProvider(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if h.requireOrgRole(w, r, su.User.ID, req.OrganizationID, "owner", "admin") == "" {
-		return
-	}
-
-	// Validate the tenant-supplied OIDC endpoints up front so the login flow
-	// never issues server-side requests to internal/private targets.
-	for _, endpoint := range []string{req.Issuer, req.AuthorizationEndpoint, req.TokenEndpoint, req.JwksEndpoint} {
-		if err := httputil.ValidateHTTPSEndpoint(endpoint); err != nil {
-			httputil.WriteError(w, http.StatusBadRequest, "invalid OIDC endpoint: "+err.Error())
-			return
-		}
-	}
-
-	providerID := "sso-" + req.Domain
-
-	oidcConfig, err := json.Marshal(map[string]string{
-		"authorizationEndpoint": req.AuthorizationEndpoint,
-		"tokenEndpoint":         req.TokenEndpoint,
-		"jwksEndpoint":          req.JwksEndpoint,
-		"clientId":              req.ClientID,
-		"clientSecret":          req.ClientSecret,
-	})
-	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to serialize OIDC config")
-		return
-	}
-	oidcConfigStr := string(oidcConfig)
-
-	if err := h.queries.CreateSSOProvider(r.Context(), queries.CreateSSOProviderParams{
-		ID:             "sso-" + generateToken()[:16],
+	clientSecret := req.ClientSecret
+	if err := h.sso.Create(r.Context(), organizationsso.CreateCommand{
+		UserID:         su.User.ID,
+		OrganizationID: req.OrganizationID,
 		Issuer:         req.Issuer,
-		OidcConfig:     &oidcConfigStr,
-		ProviderID:     providerID,
-		OrganizationID: &req.OrganizationID,
 		Domain:         req.Domain,
+		Configuration: organizationsso.ProviderConfiguration{
+			AuthorizationEndpoint: req.AuthorizationEndpoint,
+			TokenEndpoint:         req.TokenEndpoint,
+			JWKSEndpoint:          req.JwksEndpoint,
+			ClientID:              req.ClientID,
+			ClientSecret:          &clientSecret,
+		},
 	}); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create SSO provider")
+		h.writeAuthSSOError(w, r, "register SSO provider", err)
 		return
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+}
+
+func (h *AuthHandler) writeAuthSSOError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+	var validationError *organizationsso.ValidationError
+	switch {
+	case errors.Is(err, organization.ErrMembershipNotFound), errors.Is(err, organization.ErrRoleNotAllowed):
+		httputil.WriteForbidden(w)
+	case errors.As(err, &validationError):
+		httputil.WriteError(w, http.StatusBadRequest, validationError.Error())
+	default:
+		slog.ErrorContext(r.Context(), "SSO operation failed", "operation", operation, "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "SSO operation failed")
+	}
+}
+
+func (h *AuthHandler) writeIdentityAccountError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+	switch {
+	case errors.Is(err, identity.ErrLastAuthenticationMethod):
+		httputil.WriteError(w, http.StatusBadRequest, "cannot remove your last authentication method")
+	case errors.Is(err, identity.ErrPasswordNotSet):
+		httputil.WriteError(w, http.StatusBadRequest, "no password set for this account")
+	case errors.Is(err, identity.ErrIncorrectPassword):
+		httputil.WriteError(w, http.StatusUnauthorized, "current password is incorrect")
+	case errors.Is(err, identity.ErrEmailInUse):
+		httputil.WriteError(w, http.StatusConflict, "email already in use")
+	case errors.Is(err, identity.ErrPasswordTooShort):
+		httputil.WriteError(w, http.StatusBadRequest, "password must be at least 8 characters")
+	default:
+		slog.ErrorContext(r.Context(), "identity account operation failed", "operation", operation, "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "account operation failed")
+	}
 }

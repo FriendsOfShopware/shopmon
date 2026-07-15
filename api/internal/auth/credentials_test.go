@@ -243,6 +243,37 @@ func TestGetSession_NoToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
+func TestGetSession_ExpiredBan(t *testing.T) {
+	env := testutil.Setup(t)
+
+	body, _ := json.Marshal(map[string]string{
+		"email": "expired-session-ban@example.com", "password": "password123!", "name": "Expired Ban User",
+	})
+	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
+	require.NoError(t, err)
+
+	var signUpResult map[string]interface{}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
+	_ = resp.Body.Close()
+	token := signUpResult["token"].(string)
+	require.NotEmpty(t, token)
+
+	_, err = env.Pool.Exec(t.Context(), `
+		UPDATE "user"
+		SET banned = true, ban_reason = 'expired test ban', ban_expires = NOW() - INTERVAL '1 hour'
+		WHERE email = $1
+	`, "expired-session-ban@example.com")
+	require.NoError(t, err)
+
+	req := testutil.NewRequest(t, http.MethodGet, env.Server.URL+"/api/auth/session", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
 func TestSignOut(t *testing.T) {
 	env := testutil.Setup(t)
 

@@ -90,6 +90,8 @@ See [SELF_HOSTING.md](SELF_HOSTING.md) for a complete self-hosting guide with Do
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and development workflow.
+The Go API's package boundaries and extension workflow are documented in
+[api/ARCHITECTURE.md](api/ARCHITECTURE.md).
 
 ## License
 

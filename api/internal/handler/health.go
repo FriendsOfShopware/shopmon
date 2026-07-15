@@ -9,7 +9,7 @@ import (
 // GetHealth handles the health check endpoint.
 func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	// Check database connection
-	if err := h.pool.Ping(r.Context()); err != nil {
+	if err := h.database.Ping(r.Context()); err != nil {
 		httputil.WriteError(w, http.StatusServiceUnavailable, "database connection failed")
 		return
 	}

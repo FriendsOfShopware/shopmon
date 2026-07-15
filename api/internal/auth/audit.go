@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/audit"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
@@ -41,12 +41,12 @@ func (h *AuthHandler) recordAudit(r *http.Request, actorUserID, action, targetUs
 		ipPtr = &ip
 	}
 
-	if err := h.queries.CreateAuditLog(r.Context(), queries.CreateAuditLogParams{
+	if err := h.audit.Record(r.Context(), audit.Event{
 		ActorUserID:  actor,
 		Action:       action,
 		TargetUserID: target,
 		Detail:       det,
-		IpAddress:    ipPtr,
+		IPAddress:    ipPtr,
 	}); err != nil {
 		slog.Error("failed to write audit log", "error", err, "action", action)
 	}

@@ -11,9 +11,8 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/google/uuid"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
 )
 
 type oauthState struct {
@@ -39,7 +38,7 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.cfg.GithubClientID == "" {
+	if h.config.GitHubClientID == "" {
 		httputil.WriteError(w, http.StatusNotFound, "GitHub OAuth not configured")
 		return
 	}
@@ -49,7 +48,12 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state := generateToken()
+	state, err := generateToken()
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to generate OAuth state", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to generate OAuth state")
+		return
+	}
 	if err := h.challenges.Set(r.Context(), "oauth:"+state, oauthState{
 		CallbackURL: req.CallbackURL,
 	}, 10*time.Minute); err != nil {
@@ -58,7 +62,7 @@ func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authURL := fmt.Sprintf("%s/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
-		githubOAuthBaseURL, url.QueryEscape(h.cfg.GithubClientID), url.QueryEscape(state))
+		githubOAuthBaseURL, url.QueryEscape(h.config.GitHubClientID), url.QueryEscape(state))
 
 	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
 }
@@ -73,8 +77,8 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 
 	// Exchange code for access token
 	tokenForm := url.Values{
-		"client_id":     {h.cfg.GithubClientID},
-		"client_secret": {h.cfg.GithubClientSecret},
+		"client_id":     {h.config.GitHubClientID},
+		"client_secret": {h.config.GitHubClientSecret},
 		"code":          {params.Code},
 	}
 	tokenReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
@@ -92,8 +96,16 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 	}
 	defer func() { _ = tokenResp.Body.Close() }()
 
-	body, _ := io.ReadAll(tokenResp.Body)
-	tokenParams, _ := url.ParseQuery(string(body))
+	body, err := io.ReadAll(io.LimitReader(tokenResp.Body, 1<<20))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadGateway, "failed to read token response")
+		return
+	}
+	tokenParams, err := url.ParseQuery(string(body))
+	if err != nil {
+		httputil.WriteError(w, http.StatusBadGateway, "failed to parse token response")
+		return
+	}
 	accessToken := tokenParams.Get("access_token")
 	if accessToken == "" {
 		httputil.WriteError(w, http.StatusBadGateway, "failed to get access token")
@@ -101,7 +113,11 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 	}
 
 	// Fetch GitHub user info
-	ghReq, _ := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user", nil)
+	ghReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user", nil)
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to build GitHub user request")
+		return
+	}
 	ghReq.Header.Set("Authorization", "Bearer "+accessToken)
 	ghReq.Header.Set("Accept", "application/json")
 
@@ -126,7 +142,11 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 
 	// If no public email, fetch from emails API
 	if ghUser.Email == "" {
-		emailReq, _ := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user/emails", nil)
+		emailReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user/emails", nil)
+		if err != nil {
+			httputil.WriteError(w, http.StatusInternalServerError, "failed to build GitHub email request")
+			return
+		}
 		emailReq.Header.Set("Authorization", "Bearer "+accessToken)
 		emailReq.Header.Set("Accept", "application/json")
 
@@ -147,6 +167,8 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 					break
 				}
 			}
+		} else {
+			slog.ErrorContext(r.Context(), "failed to fetch GitHub emails", "error", err)
 		}
 	}
 
@@ -159,64 +181,14 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 		ghUser.Name = ghUser.Login
 	}
 
-	githubAccountID := fmt.Sprintf("%d", ghUser.ID)
-
-	existingAccount, err := h.queries.GetAccountByProviderAndAccountID(r.Context(), queries.GetAccountByProviderAndAccountIDParams{
-		ProviderID: "github",
-		AccountID:  githubAccountID,
+	userID, err := h.federated.Provision(r.Context(), identity.FederatedProfile{
+		Provider: "github", AccountID: fmt.Sprintf("%d", ghUser.ID),
+		Email: ghUser.Email, EmailVerified: true, Name: ghUser.Name, ImageURL: ghUser.AvatarURL,
 	})
-
-	var userID string
-
-	if err == nil {
-		// Account exists, use existing user
-		userID = existingAccount.UserID
-	} else {
-		// Try to find user by email for account linking
-		existingUser, err := h.queries.GetUserByEmail(r.Context(), ghUser.Email)
-		if err == nil {
-			// Link GitHub account to existing user
-			userID = existingUser.ID
-		} else {
-			// Create new user
-			userID = uuid.New().String()
-			_, err = h.queries.CreateUser(r.Context(), queries.CreateUserParams{
-				ID:    userID,
-				Name:  ghUser.Name,
-				Email: ghUser.Email,
-			})
-			if err != nil {
-				slog.Error("failed to create user from GitHub", "error", err)
-				httputil.WriteError(w, http.StatusInternalServerError, "failed to create user")
-				return
-			}
-			// Mark email as verified (GitHub verified it)
-			if err := h.queries.UpdateUserEmailVerified(r.Context(), userID); err != nil {
-				slog.Warn("failed to mark email as verified for GitHub user", "error", err, "userID", userID)
-			}
-		}
-
-		// Create GitHub account link
-		if err := h.queries.CreateAccount(r.Context(), queries.CreateAccountParams{
-			ID:         uuid.New().String(),
-			AccountID:  githubAccountID,
-			ProviderID: "github",
-			UserID:     userID,
-			Password:   nil,
-		}); err != nil {
-			slog.Warn("failed to link GitHub account", "error", err, "userID", userID)
-		}
-	}
-
-	// Update user avatar if not set
-	if ghUser.AvatarURL != "" {
-		if err := h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
-			Name:  ghUser.Name,
-			Image: &ghUser.AvatarURL,
-			ID:    userID,
-		}); err != nil {
-			slog.Error("failed to update user profile from GitHub", "error", err, "userID", userID)
-		}
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to provision GitHub identity", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create user")
+		return
 	}
 
 	// Create a one-time code (not the token itself, for security)
