@@ -20,14 +20,14 @@ func NewDispatcher(bus *goqueue.Bus) *Dispatcher {
 }
 
 func (d *Dispatcher) DispatchEnvironmentScrape(ctx context.Context, environmentID int32) error {
-	if err := goqueue.Dispatch(ctx, d.bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
+	if err := jobs.Dispatch(ctx, d.bus, jobs.EnvironmentScrape{EnvironmentID: environmentID}); err != nil {
 		return fmt.Errorf("dispatch environment scrape: %w", err)
 	}
 	return nil
 }
 
 func (d *Dispatcher) DispatchSitespeedScrape(ctx context.Context, environmentID int32) error {
-	if err := goqueue.Dispatch(ctx, d.bus, jobs.SitespeedScrape{EnvironmentID: environmentID}); err != nil {
+	if err := jobs.Dispatch(ctx, d.bus, jobs.SitespeedScrape{EnvironmentID: environmentID}); err != nil {
 		return fmt.Errorf("dispatch sitespeed scrape: %w", err)
 	}
 	return nil

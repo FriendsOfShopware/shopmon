@@ -14,11 +14,9 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
-	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	goqueue "github.com/shyim/go-queue"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -327,20 +325,12 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 // dispatchEnvironmentScrapes enqueues an initial scrape for each environment so
 // the worker populates them immediately.
 func (s *seeder) dispatchEnvironmentScrapes(environmentIDs []int32) error {
-	mailSvc, err := mail.NewService(mail.Config{
-		DSN: s.cfg.MailDSN, From: s.cfg.MailFrom, ReplyTo: s.cfg.SMTPReplyTo,
-		FrontendURL: s.cfg.FrontendURL,
-	})
-	if err != nil {
-		return fmt.Errorf("create mail service: %w", err)
-	}
-	defer func() { _ = mailSvc.Close() }()
-	bus, err := jobs.NewBus(s.ctx, s.pool, s.q, s.cfg, mailSvc)
+	bus, err := jobs.NewBus(s.ctx, s.pool, jobs.BusConfig{OTelEnabled: s.cfg.OtelEnabled})
 	if err != nil {
 		return fmt.Errorf("create queue bus: %w", err)
 	}
 	for _, envID := range environmentIDs {
-		if err := goqueue.Dispatch(s.ctx, bus, jobs.EnvironmentScrape{EnvironmentID: envID}); err != nil {
+		if err := jobs.Dispatch(s.ctx, bus, jobs.EnvironmentScrape{EnvironmentID: envID}); err != nil {
 			slog.Warn("failed to dispatch environment scrape", "environmentId", envID, "error", err)
 		} else {
 			slog.Info("dispatched environment scrape task", "environmentId", envID)

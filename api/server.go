@@ -119,8 +119,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = mailSvc.Close() }()
 
-	// Queue bus with all handlers registered
-	bus, err := jobs.NewBus(ctx, pool, q, cfg, mailSvc)
+	// Dispatch-only queue bus. Executable handlers are registered exclusively by
+	// the worker process.
+	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
 	if err != nil {
 		return err
 	}

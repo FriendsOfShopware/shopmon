@@ -141,17 +141,9 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	}
 
 	bus := goqueue.NewBus()
-	// Register an in-memory transport and route the dispatchable job types to it
-	// so handlers that enqueue work (e.g. RefreshEnvironment) succeed without a
-	// real broker. No worker is run, so dispatched messages are simply recorded.
+	// Handlers that enqueue work only need a transport: jobs.Dispatch supplies
+	// the explicit route, so tests do not construct fake worker handlers.
 	bus.AddTransport(jobs.TransportName, &noopTransport{})
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.EnvironmentScrape) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.SitespeedScrape) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.LockCleanup) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.InvitationCleanup) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.OldDataCleanup) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.ShopwareChangelogSync) error { return nil })
-	goqueue.HandleFunc(bus, jobs.TransportName, func(context.Context, jobs.StoreExtensionSync) error { return nil })
 	organizationRepository := organizationpostgres.NewAuthorizationRepository(q)
 	organizationAuthorizer := organization.NewAuthorizer(organizationRepository)
 	organizationStore := organizationpostgres.NewRepository(pool, q)
