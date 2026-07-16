@@ -98,8 +98,16 @@ func (r *stubRepository) UpdateSitespeedSettings(_ context.Context, _ int32, ena
 	return r.sitespeedErr
 }
 
-func (r *stubRepository) UpdateUserEnvironmentSubscriptions(context.Context, string, []string) error {
+func (r *stubRepository) SubscribeEnvironment(context.Context, string, int32) error {
 	return nil
+}
+
+func (r *stubRepository) UnsubscribeEnvironment(context.Context, string, int32) error {
+	return nil
+}
+
+func (r *stubRepository) IsEnvironmentSubscribed(context.Context, string, int32) (bool, error) {
+	return false, nil
 }
 
 type stubAuthorizer struct {

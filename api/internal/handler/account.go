@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -154,7 +153,7 @@ func (h *Handler) GetAccountSubscribedEnvironments(w http.ResponseWriter, r *htt
 	if user == nil {
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, h.account.SubscribedEnvironments(r.Context(), user.Notifications))
+	httputil.WriteJSON(w, http.StatusOK, h.account.SubscribedEnvironments(r.Context(), user.ID))
 }
 
 func (h *Handler) writeAccountReadError(w http.ResponseWriter, r *http.Request, operation string, err error) {
@@ -164,8 +163,4 @@ func (h *Handler) writeAccountReadError(w http.ResponseWriter, r *http.Request, 
 	}
 	slog.ErrorContext(r.Context(), "account read failed", "operation", operation, "error", err)
 	httputil.WriteError(w, http.StatusInternalServerError, "failed to load account data")
-}
-
-func environmentNotificationKey(environmentID int) string {
-	return fmt.Sprintf("environment-%d", environmentID)
 }

@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/friendsofshopware/shopmon/api/internal/access"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
@@ -39,7 +38,12 @@ func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environ
 		s := string(*params.Language)
 		langStr = &s
 	}
-	detail, err := h.environments.Detail(r.Context(), user.ID, int32(environmentId), langStr, userSubscribedToEnvironment(user, environmentId))
+	subscribed, err := h.monitoring.IsEnvironmentSubscribed(r.Context(), user.ID, int32(environmentId))
+	if err != nil {
+		slog.Error("failed to check environment subscription", "environmentId", environmentId, "error", err)
+		subscribed = false
+	}
+	detail, err := h.environments.Detail(r.Context(), user.ID, int32(environmentId), langStr, subscribed)
 	if err != nil {
 		h.writeEnvironmentReadError(w, r, "get environment detail", err)
 		return
@@ -277,19 +281,6 @@ func (h *Handler) RescheduleTask(w http.ResponseWriter, r *http.Request, environ
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// userSubscribedToEnvironment reports whether the user is subscribed to the
-// environment's notifications. user.Notifications is already loaded on every
-// authenticated request, so this is an in-memory check with no extra DB query.
-func userSubscribedToEnvironment(user *access.User, environmentID int) bool {
-	key := environmentNotificationKey(environmentID)
-	for _, n := range user.Notifications {
-		if n == key {
-			return true
-		}
-	}
-	return false
 }
 
 // SubscribeToEnvironment subscribes the user to environment notifications.

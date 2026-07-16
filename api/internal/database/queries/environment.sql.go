@@ -467,11 +467,15 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 }
 
 const getEnvironmentNotificationSubscribers = `-- name: GetEnvironmentNotificationSubscribers :many
-SELECT u.id, u.name, u.email
+SELECT u.id, u.name, u.email, u.locale
 FROM "user" u
 JOIN member m ON m.user_id = u.id
+JOIN notification_preference np ON np.user_id = u.id
 WHERE m.organization_id = $1
-  AND u.notifications @> to_jsonb(ARRAY['environment-' || $2::text])::jsonb
+  AND np.scope_type = 'environment'
+  AND np.scope_id = $2::text
+  AND np.channel = ''
+  AND np.enabled = true
 `
 
 type GetEnvironmentNotificationSubscribersParams struct {
@@ -480,9 +484,10 @@ type GetEnvironmentNotificationSubscribersParams struct {
 }
 
 type GetEnvironmentNotificationSubscribersRow struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Locale string `json:"locale"`
 }
 
 func (q *Queries) GetEnvironmentNotificationSubscribers(ctx context.Context, arg GetEnvironmentNotificationSubscribersParams) ([]GetEnvironmentNotificationSubscribersRow, error) {
@@ -494,7 +499,7 @@ func (q *Queries) GetEnvironmentNotificationSubscribers(ctx context.Context, arg
 	items := []GetEnvironmentNotificationSubscribersRow{}
 	for rows.Next() {
 		var i GetEnvironmentNotificationSubscribersRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name, &i.Email, &i.Locale); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

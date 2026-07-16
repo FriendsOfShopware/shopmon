@@ -257,8 +257,12 @@ INSERT INTO environment_sitespeed (environment_id, deployment_id, created_at, tt
 VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8);
 
 -- name: GetEnvironmentNotificationSubscribers :many
-SELECT u.id, u.name, u.email
+SELECT u.id, u.name, u.email, u.locale
 FROM "user" u
 JOIN member m ON m.user_id = u.id
+JOIN notification_preference np ON np.user_id = u.id
 WHERE m.organization_id = @organization_id
-  AND u.notifications @> to_jsonb(ARRAY['environment-' || @environment_id::text])::jsonb;
+  AND np.scope_type = 'environment'
+  AND np.scope_id = @environment_id::text
+  AND np.channel = ''
+  AND np.enabled = true;
