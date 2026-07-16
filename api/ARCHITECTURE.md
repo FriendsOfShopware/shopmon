@@ -20,10 +20,9 @@ ports (interfaces owned by the consuming capability)
 PostgreSQL, queue, Shopware, mail, Redis, and S3 adapters
 ```
 
-`server.go`, `worker.go`, and `internal/jobs/register.go` are composition
-roots. They are the places where concrete adapters are constructed and passed
-to services. Business packages must not reach back into a composition root or
-HTTP package.
+`server.go` and `worker.go` are composition roots. They are the places where
+concrete adapters are constructed and passed to services. Business packages
+must not reach back into a composition root or HTTP package.
 
 ## Package roles
 
@@ -46,8 +45,10 @@ HTTP package.
   policy.
 - Capability-owned worker packages such as `monitoring/scrape`,
   `monitoring/sitespeed`, `catalog/sync`, and `catalog/changelog` implement job
-  behavior. `internal/jobs` contains queue message contracts, registration,
-  and dispatch adapters rather than business workflows.
+  behavior. `internal/jobs` contains stable queue message contracts, the
+  dispatch-only bus, worker handler registration, and recurring scheduling
+  rather than business workflows. Only the worker registers executable
+  handlers; the API and fixture processes merely dispatch messages.
 - `internal/api`, `internal/authapi`, and `internal/database/queries` are
   generated code. Change their OpenAPI or SQL sources and regenerate them; do
   not edit generated files.
@@ -85,10 +86,10 @@ boundaries.
 
 ## Job lifecycle
 
-1. Cron or a capability service dispatches a typed message defined by
-   `internal/jobs`.
-2. `internal/jobs/register.go` maps the message to a capability-owned worker
-   service.
+1. The scheduler or a capability service explicitly dispatches a typed message
+   defined by `internal/jobs` to the stable asynchronous transport.
+2. The worker composition root registers capability-owned services for those
+   message types; dispatch-only processes do not construct worker services.
 3. go-queue supplies the context and OpenTelemetry span; the worker service
    performs the workflow and returns a contextual error for retry handling.
 

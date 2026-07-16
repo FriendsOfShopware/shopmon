@@ -7,13 +7,18 @@ import (
 	"syscall"
 	"time"
 
+	catalogchangelog "github.com/friendsofshopware/shopmon/api/internal/catalog/changelog"
+	catalogsync "github.com/friendsofshopware/shopmon/api/internal/catalog/sync"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
+	jobspostgres "github.com/friendsofshopware/shopmon/api/internal/jobs/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
+	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
-	cron "github.com/robfig/cron/v3"
 	goqueue "github.com/shyim/go-queue"
 	queueotel "github.com/shyim/go-queue/middleware/otel"
 	"github.com/spf13/cobra"
@@ -61,90 +66,42 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = mailSvc.Close() }()
 
-	// Queue bus with all handlers registered
-	bus, err := jobs.NewBus(ctx, pool, q, cfg, mailSvc)
+	// The worker owns executable handlers; API and fixture processes use the
+	// same bus strictly for dispatch.
+	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
 	if err != nil {
 		return err
 	}
 
-	// Cron scheduler for recurring tasks.
-	// Aggregate scrapes fan out into one per-environment queue task each so the
-	// queue can retry and parallelise individual environments independently.
-	c := cron.New()
-	if _, err := c.AddFunc("0 * * * *", func() {
-		ctx := context.Background()
-		environments, err := q.GetAllEnvironments(ctx)
-		if err != nil {
-			slog.Error("failed to list environments for scrape", "error", err)
-			return
-		}
-		for _, env := range environments {
-			// Skip environments that have failed to connect repeatedly so we
-			// back off instead of hammering an unreachable shop every hour.
-			if env.ConnectionIssueCount >= 3 {
-				continue
-			}
-			if err := goqueue.Dispatch(ctx, bus, jobs.EnvironmentScrape{EnvironmentID: env.ID}); err != nil {
-				slog.Error("failed to dispatch environment scrape", "environmentId", env.ID, "error", err)
-			}
-		}
+	storeSync := catalogsync.NewService(pool, q, cfg)
+	jobDispatcher := jobs.NewDispatcher(bus)
+	environmentScrape := monitoringscrape.NewService(pool, q, cfg, mailSvc, storeSync, jobDispatcher)
+	sitespeedScrape := sitespeed.NewService(q, cfg)
+	cleanup := maintenance.NewService(q)
+	changelog := catalogchangelog.NewService(q, cfg)
+	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
+		EnvironmentScraper:         environmentScrape,
+		StoreExtensionSynchronizer: storeSync,
+		SitespeedScraper:           sitespeedScrape,
+		Cleanup:                    cleanup,
+		ChangelogSynchronizer:      changelog,
 	}); err != nil {
-		slog.Error("failed to add environment scrape cron", "error", err)
+		return err
 	}
-	if _, err := c.AddFunc("0 3 * * *", func() {
-		if cfg.SitespeedEndpoint == "" || cfg.SitespeedAPIKey == "" {
-			return
-		}
-		ctx := context.Background()
-		environments, err := q.GetEnvironmentsWithSitespeedEnabled(ctx)
-		if err != nil {
-			slog.Error("failed to list environments for sitespeed scrape", "error", err)
-			return
-		}
-		for _, env := range environments {
-			if err := goqueue.Dispatch(ctx, bus, jobs.SitespeedScrape{EnvironmentID: env.ID}); err != nil {
-				slog.Error("failed to dispatch sitespeed scrape", "environmentId", env.ID, "error", err)
-			}
-		}
-	}); err != nil {
-		slog.Error("failed to add sitespeed scrape cron", "error", err)
+
+	scheduleRepository := jobspostgres.NewScheduleRepository(q)
+	scheduler, err := jobs.NewScheduler(scheduleRepository, jobDispatcher, jobs.SchedulerConfig{
+		SitespeedEnabled: cfg.SitespeedEndpoint != "" && cfg.SitespeedAPIKey != "",
+	})
+	if err != nil {
+		return err
 	}
-	if _, err := c.AddFunc("0 4 * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.LockCleanup{}); err != nil {
-			slog.Error("failed to dispatch lock cleanup", "error", err)
-		}
-	}); err != nil {
-		slog.Error("failed to add lock cleanup cron", "error", err)
-	}
-	if _, err := c.AddFunc("0 5 * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.InvitationCleanup{}); err != nil {
-			slog.Error("failed to dispatch invitation cleanup", "error", err)
-		}
-	}); err != nil {
-		slog.Error("failed to add invitation cleanup cron", "error", err)
-	}
-	if _, err := c.AddFunc("30 4 * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.OldDataCleanup{}); err != nil {
-			slog.Error("failed to dispatch old data cleanup", "error", err)
-		}
-	}); err != nil {
-		slog.Error("failed to add old data cleanup cron", "error", err)
-	}
-	// Crawl the Shopware release changelog hourly so version lookups are served
-	// from our own database instead of an external service.
-	if _, err := c.AddFunc("15 * * * *", func() {
-		if err := goqueue.Dispatch(context.Background(), bus, jobs.ShopwareChangelogSync{}); err != nil {
-			slog.Error("failed to dispatch shopware changelog sync", "error", err)
-		}
-	}); err != nil {
-		slog.Error("failed to add shopware changelog sync cron", "error", err)
-	}
-	c.Start()
+	scheduler.Start()
 
 	// Populate the Shopware version cache immediately on startup so the data is
 	// available without waiting for the first hourly tick. Only versions not yet
 	// stored are fetched, so this is cheap once the cache is warm.
-	if err := goqueue.Dispatch(ctx, bus, jobs.ShopwareChangelogSync{}); err != nil {
+	if err := jobDispatcher.EnqueueShopwareChangelogSync(ctx); err != nil {
 		slog.Error("failed to dispatch initial shopware changelog sync", "error", err)
 	}
 
@@ -182,8 +139,8 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	<-ctx.Done()
 	slog.Info("shutting down worker, draining in-flight jobs...")
 
-	// Stop scheduling new cron tasks and wait for any running cron job to finish.
-	cronCtx := c.Stop()
+	// Stop scheduling new tasks and wait for any active schedule to finish.
+	schedulerCtx := scheduler.Stop()
 
 	// worker.Run drains in-flight jobs (bounded by ShutdownTimeout) once ctx is
 	// cancelled. Wait for it to finish before deferred resources (pool, otel) are
@@ -199,9 +156,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	}
 
 	select {
-	case <-cronCtx.Done():
+	case <-schedulerCtx.Done():
 	case <-drainCtx.Done():
-		slog.Warn("cron drain timed out")
+		slog.Warn("scheduler drain timed out")
 	}
 
 	slog.Info("worker stopped")
