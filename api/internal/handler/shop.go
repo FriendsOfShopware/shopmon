@@ -1,44 +1,32 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
+	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 )
 
 // GetOrganizationShops returns all shops in an organization.
-func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
+func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgID api.OrgId) {
 	user := h.requireUser(w, r)
 	if user == nil {
 		return
 	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
+	result, err := h.environments.OrganizationShops(r.Context(), user.ID, orgID)
+	if errors.Is(err, environmentread.ErrNotAuthorized) {
+		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
 		return
 	}
-
-	rows, err := h.queries.ListShopsByOrganization(r.Context(), orgId)
 	if err != nil {
-		slog.Error("failed to list shops", "error", err)
+		slog.ErrorContext(r.Context(), "failed to list shops", "organizationID", orgID, "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get shops")
 		return
 	}
-
-	result := make([]api.Shop, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, api.Shop{
-			Id:                   int(row.ID),
-			Name:                 row.Name,
-			Description:          row.Description,
-			GitUrl:               row.GitUrl,
-			OrganizationId:       row.OrganizationID,
-			DefaultEnvironmentId: int32PtrToIntPtr(row.DefaultEnvironmentID),
-		})
-	}
-
 	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
@@ -46,9 +34,6 @@ func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, o
 func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
 	user := h.requireUser(w, r)
 	if user == nil {
-		return
-	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
 		return
 	}
 
@@ -63,68 +48,39 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		return
 	}
 
-	// Validate the shop connection before opening a transaction so we never do
-	// network I/O while holding a DB transaction open. The discovered version is
-	// threaded into insertEnvironment so it does not re-validate inside the tx.
-	shopInfo, err := h.validateShopConnection(r.Context(), req.EnvironmentUrl, req.ClientId, req.ClientSecret, "")
-	if err != nil {
+	result, err := h.monitoring.CreateShop(r.Context(), monitoring.CreateShopCommand{
+		UserID:          user.ID,
+		OrganizationID:  orgId,
+		Name:            req.Name,
+		Description:     req.Description,
+		GitURL:          req.GitUrl,
+		EnvironmentName: req.EnvironmentName,
+		EnvironmentURL:  req.EnvironmentUrl,
+		ClientID:        req.ClientId,
+		ClientSecret:    req.ClientSecret,
+	})
+	if errors.Is(err, monitoring.ErrNotAuthorized) {
+		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return
+	}
+	if errors.Is(err, monitoring.ErrConnectionFailed) {
 		slog.Error("failed to validate shop connection for new shop", "error", err)
 		httputil.WriteError(w, http.StatusBadRequest, "Cannot reach shop. Check your credentials and shop URL.")
 		return
 	}
-
-	// Shop insert, first environment insert and default-environment assignment must
-	// be atomic so a crash cannot leave an orphaned shop or an environment without
-	// a default. The initial scrape is enqueued only after the transaction commits.
-	var shopID, environmentID int32
-	if err := h.withTx(r.Context(), func(txq *queries.Queries) error {
-		var err error
-		shopID, err = txq.CreateShop(r.Context(), queries.CreateShopParams{
-			OrganizationID: orgId,
-			Name:           req.Name,
-			Description:    req.Description,
-			GitUrl:         req.GitUrl,
-		})
-		if err != nil {
-			return fmt.Errorf("create shop: %w", err)
-		}
-
-		environmentID, err = h.insertEnvironment(r.Context(), txq, orgId, createEnvironmentCommand{
-			Name:            req.EnvironmentName,
-			ShopURL:         req.EnvironmentUrl,
-			ClientID:        req.ClientId,
-			ClientSecret:    req.ClientSecret,
-			ShopID:          shopID,
-			ShopwareVersion: shopInfo.Version,
-		})
-		if err != nil {
-			return err
-		}
-
-		if err := txq.SetShopDefaultEnvironment(r.Context(), queries.SetShopDefaultEnvironmentParams{
-			DefaultEnvironmentID: &environmentID,
-			ID:                   shopID,
-			OrganizationID:       orgId,
-		}); err != nil {
-			return fmt.Errorf("set default environment: %w", err)
-		}
-
-		return nil
-	}); err != nil {
+	if err != nil {
 		slog.Error("failed to create shop with environment", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to create shop")
 		return
 	}
 
-	h.enqueueInitialScrape(r.Context(), environmentID)
-
 	httputil.WriteJSON(w, http.StatusCreated, api.Shop{
-		Id:                   int(shopID),
+		Id:                   int(result.ShopID),
 		Name:                 req.Name,
 		Description:          req.Description,
 		GitUrl:               req.GitUrl,
 		OrganizationId:       orgId,
-		DefaultEnvironmentId: int32PtrToIntPtr(&environmentID),
+		DefaultEnvironmentId: int32PtrToIntPtr(&result.EnvironmentID),
 	})
 }
 
@@ -134,20 +90,6 @@ func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 	if user == nil {
 		return
 	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
-		return
-	}
-
-	shop, err := h.queries.GetShopByID(r.Context(), int32(shopId))
-	if err != nil {
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
-	}
-
-	if shop.OrganizationID != orgId {
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
-		return
-	}
 
 	var req api.UpdateShopRequest
 	if err := httputil.DecodeBody(r, &req); err != nil {
@@ -155,53 +97,40 @@ func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		return
 	}
 
-	name := shop.Name
-	if req.Name != nil {
-		name = *req.Name
+	var defaultEnvironmentID *int32
+	if req.DefaultEnvironmentId != nil {
+		value := int32(*req.DefaultEnvironmentId)
+		defaultEnvironmentID = &value
 	}
-	description := shop.Description
-	if req.Description != nil {
-		description = req.Description
-	}
-	gitUrl := shop.GitUrl
-	if req.GitUrl != nil {
-		gitUrl = req.GitUrl
-	}
-
-	if err := h.queries.UpdateShop(r.Context(), queries.UpdateShopParams{
-		Name:           name,
-		Description:    description,
-		GitUrl:         gitUrl,
-		ID:             int32(shopId),
-		OrganizationID: orgId,
-	}); err != nil {
+	err := h.monitoring.UpdateShop(r.Context(), monitoring.UpdateShopCommand{
+		UserID:               user.ID,
+		OrganizationID:       orgId,
+		ShopID:               int32(shopId),
+		Name:                 req.Name,
+		Description:          req.Description,
+		GitURL:               req.GitUrl,
+		DefaultEnvironmentID: defaultEnvironmentID,
+	})
+	switch {
+	case errors.Is(err, monitoring.ErrNotAuthorized):
+		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return
+	case errors.Is(err, monitoring.ErrShopNotFound):
+		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return
+	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
+		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
+		return
+	case errors.Is(err, monitoring.ErrDefaultEnvironmentNotFound):
+		httputil.WriteError(w, http.StatusBadRequest, "default environment not found")
+		return
+	case errors.Is(err, monitoring.ErrDefaultEnvironmentMismatch):
+		httputil.WriteError(w, http.StatusForbidden, "default environment does not belong to this shop")
+		return
+	case err != nil:
 		slog.Error("failed to update shop", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update shop")
 		return
-	}
-
-	if req.DefaultEnvironmentId != nil {
-		v := int32(*req.DefaultEnvironmentId)
-
-		env, err := h.queries.GetEnvironmentByID(r.Context(), v)
-		if err != nil {
-			httputil.WriteError(w, http.StatusBadRequest, "default environment not found")
-			return
-		}
-		if env.ShopID != int32(shopId) || env.OrganizationID != orgId {
-			httputil.WriteError(w, http.StatusForbidden, "default environment does not belong to this shop")
-			return
-		}
-
-		if err := h.queries.SetShopDefaultEnvironment(r.Context(), queries.SetShopDefaultEnvironmentParams{
-			DefaultEnvironmentID: &v,
-			ID:                   int32(shopId),
-			OrganizationID:       orgId,
-		}); err != nil {
-			slog.Error("failed to set default environment", "error", err)
-			httputil.WriteError(w, http.StatusInternalServerError, "failed to set default environment")
-			return
-		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -213,32 +142,21 @@ func (h *Handler) DeleteShop(w http.ResponseWriter, r *http.Request, orgId api.O
 	if user == nil {
 		return
 	}
-	if !h.requireOrgMembership(w, r, user, orgId) {
+	err := h.monitoring.DeleteShop(r.Context(), user.ID, orgId, int32(shopId))
+	switch {
+	case errors.Is(err, monitoring.ErrNotAuthorized):
+		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
 		return
-	}
-
-	// Check that the shop belongs to this organization
-	shop, err := h.queries.GetShopByID(r.Context(), int32(shopId))
-	if err != nil {
+	case errors.Is(err, monitoring.ErrShopNotFound):
 		httputil.WriteError(w, http.StatusNotFound, "shop not found")
 		return
-	}
-
-	if shop.OrganizationID != orgId {
+	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
 		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
 		return
-	}
-
-	environmentCount, err := h.queries.CountEnvironmentsInShop(r.Context(), int32(shopId))
-	if err == nil && environmentCount > 0 {
+	case errors.Is(err, monitoring.ErrShopHasEnvironments):
 		httputil.WriteError(w, http.StatusConflict, "cannot delete shop with existing environments")
 		return
-	}
-
-	if err := h.queries.DeleteShop(r.Context(), queries.DeleteShopParams{
-		ID:             int32(shopId),
-		OrganizationID: orgId,
-	}); err != nil {
+	case err != nil:
 		slog.Error("failed to delete shop", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete shop")
 		return

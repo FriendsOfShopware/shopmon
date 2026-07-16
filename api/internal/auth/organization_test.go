@@ -388,3 +388,45 @@ func TestOrgListMembers(t *testing.T) {
 	assert.Equal(t, "Alice", members[0]["name"])
 	assert.Equal(t, "alice@example.com", members[0]["email"])
 }
+
+func TestOrgListMembers_MissingOrganization(t *testing.T) {
+	env := testutil.Setup(t)
+	token := signUp(t, env.Server.URL, "alice@example.com", "password123", "Alice")
+
+	resp := authGet(t, env.Server.URL, "/api/auth/organizations/missing-org/members", token)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+func TestOrganizationPermissionByRole(t *testing.T) {
+	env := testutil.Setup(t)
+	ownerToken := signUp(t, env.Server.URL, "owner@example.com", "password123", "Owner")
+	memberToken := signUp(t, env.Server.URL, "member@example.com", "password123", "Member")
+
+	org := createOrg(t, env.Server.URL, ownerToken, "Permission Org")
+	orgID := org["id"].(string)
+	inviteAndAccept(t, env.Server.URL, ownerToken, orgID, "member@example.com", memberToken)
+
+	tests := []struct {
+		name       string
+		token      string
+		wantAccess bool
+	}{
+		{name: "owner", token: ownerToken, wantAccess: true},
+		{name: "member", token: memberToken, wantAccess: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := authPost(t, env.Server.URL, "/api/auth/has-permission", tt.token, map[string]string{
+				"organizationId": orgID,
+			})
+			defer func() { _ = resp.Body.Close() }()
+
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			result := decodeJSON(t, resp)
+			assert.Equal(t, tt.wantAccess, result["success"])
+		})
+	}
+}

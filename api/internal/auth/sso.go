@@ -12,9 +12,8 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/google/uuid"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
 )
 
 // isTrue interprets an OIDC claim value (which may be a bool or a string) as a
@@ -28,14 +27,6 @@ func isTrue(v interface{}) bool {
 	default:
 		return false
 	}
-}
-
-type oidcConfig struct {
-	AuthorizationEndpoint string `json:"authorizationEndpoint"`
-	TokenEndpoint         string `json:"tokenEndpoint"`
-	JwksEndpoint          string `json:"jwksEndpoint"`
-	ClientID              string `json:"clientId"`
-	ClientSecret          string `json:"clientSecret,omitempty"`
 }
 
 type ssoState struct {
@@ -66,22 +57,12 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 	domain := strings.ToLower(parts[1])
 
 	// Look up SSO provider by domain
-	provider, err := h.queries.GetSSOProviderByDomain(r.Context(), domain)
+	provider, err := h.sso.FindByDomain(r.Context(), domain)
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "no SSO provider configured for this domain")
 		return
 	}
-
-	if provider.OidcConfig == nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "SSO provider has no OIDC configuration")
-		return
-	}
-
-	var cfg oidcConfig
-	if err := json.Unmarshal([]byte(*provider.OidcConfig), &cfg); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "invalid OIDC configuration")
-		return
-	}
+	cfg := provider.Configuration
 
 	if !h.validateCallbackURL(req.CallbackURL) {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid callback URL")
@@ -89,12 +70,22 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate state and nonce
-	state := generateToken()
-	nonce := generateToken()
+	state, err := generateToken()
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to generate SSO state", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to generate SSO state")
+		return
+	}
+	nonce, err := generateToken()
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to generate SSO nonce", "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to generate SSO nonce")
+		return
+	}
 
 	// Store state in Redis
 	if err := h.challenges.Set(r.Context(), "sso:"+state, ssoState{
-		ProviderID:  provider.ProviderID,
+		ProviderID:  provider.ID,
 		CallbackURL: req.CallbackURL,
 		Nonce:       nonce,
 	}, 10*time.Minute); err != nil {
@@ -103,7 +94,7 @@ func (h *AuthHandler) SignInSSO(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build authorization URL
-	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.cfg.FrontendURL, provider.ProviderID)
+	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.config.FrontendURL, provider.ID)
 
 	authURL := fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s&nonce=%s",
 		cfg.AuthorizationEndpoint,
@@ -131,28 +122,18 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 		return
 	}
 
-	provider, err := h.queries.GetSSOProviderByProviderID(r.Context(), providerId)
+	provider, err := h.sso.FindByID(r.Context(), providerId)
 	if err != nil {
 		httputil.WriteError(w, http.StatusNotFound, "SSO provider not found")
 		return
 	}
-
-	if provider.OidcConfig == nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "SSO provider has no OIDC configuration")
-		return
-	}
-
-	var cfg oidcConfig
-	if err := json.Unmarshal([]byte(*provider.OidcConfig), &cfg); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "invalid OIDC configuration")
-		return
-	}
+	cfg := provider.Configuration
 
 	// Re-validate the stored endpoints before issuing any server-side request.
 	// Create/update validation can be bypassed by pre-existing or out-of-band
 	// rows, so a row with an http:// non-loopback or private/loopback endpoint
 	// must be rejected here (loopback dev URLs are still allowed).
-	for _, endpoint := range []string{cfg.TokenEndpoint, cfg.JwksEndpoint, provider.Issuer} {
+	for _, endpoint := range []string{cfg.TokenEndpoint, cfg.JWKSEndpoint, provider.Issuer} {
 		if err := httputil.ValidateSSOEndpoint(endpoint); err != nil {
 			slog.Error("stored SSO endpoint failed validation", "error", err, "provider", providerId)
 			httputil.WriteError(w, http.StatusBadGateway, "SSO provider has an invalid endpoint configured")
@@ -161,11 +142,15 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 	}
 
 	// Exchange code for tokens
-	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.cfg.FrontendURL, providerId)
+	callbackURL := fmt.Sprintf("%s/auth/sso/callback/%s", h.config.FrontendURL, providerId)
 
+	clientSecret := ""
+	if cfg.ClientSecret != nil {
+		clientSecret = *cfg.ClientSecret
+	}
 	tokenForm := url.Values{
 		"client_id":     {cfg.ClientID},
-		"client_secret": {cfg.ClientSecret},
+		"client_secret": {clientSecret},
 		"code":          {params.Code},
 		"grant_type":    {"authorization_code"},
 		"redirect_uri":  {callbackURL},
@@ -189,7 +174,12 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 	}
 	defer func() { _ = tokenResp.Body.Close() }()
 
-	body, _ := io.ReadAll(tokenResp.Body)
+	body, err := io.ReadAll(io.LimitReader(tokenResp.Body, 1<<20))
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to read SSO token response", "provider", providerId, "error", err)
+		httputil.WriteError(w, http.StatusBadGateway, "failed to read token response")
+		return
+	}
 	if tokenResp.StatusCode != http.StatusOK {
 		slog.Error("SSO token endpoint error", "status", tokenResp.StatusCode, "body", string(body))
 		httputil.WriteError(w, http.StatusBadGateway, "token endpoint returned error")
@@ -212,7 +202,7 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 		return
 	}
 
-	if cfg.JwksEndpoint == "" {
+	if cfg.JWKSEndpoint == "" {
 		slog.Error("SSO provider has no JWKS endpoint configured", "provider", providerId)
 		httputil.WriteError(w, http.StatusInternalServerError, "SSO provider has no JWKS endpoint configured")
 		return
@@ -221,8 +211,8 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 	// Verify the ID token's RS256 signature against the provider's JWKS and
 	// validate the issuer, audience (client id), and expiry. Also enforces that
 	// sub and iat are present.
-	jwksClient := httputil.ClientForURL(cfg.JwksEndpoint, 15*time.Second)
-	idToken, claims, err := verifyIDToken(r.Context(), jwksClient, tokenData.IDToken, cfg.JwksEndpoint, provider.Issuer, cfg.ClientID)
+	jwksClient := httputil.ClientForURL(cfg.JWKSEndpoint, 15*time.Second)
+	idToken, claims, err := verifyIDToken(r.Context(), jwksClient, tokenData.IDToken, cfg.JWKSEndpoint, provider.Issuer, cfg.ClientID)
 	if err != nil {
 		slog.Error("failed to verify ID token", "error", err, "provider", providerId)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to verify ID token")
@@ -302,80 +292,15 @@ func (h *AuthHandler) SsoCallback(w http.ResponseWriter, r *http.Request, provid
 		name = email
 	}
 
-	// Find or create user
-	ssoAccountID := fmt.Sprintf("sso-%s:%s", providerId, sub)
-	var userID string
-
-	existingAccount, err := h.queries.GetAccountByProviderAndAccountID(r.Context(), queries.GetAccountByProviderAndAccountIDParams{
-		ProviderID: "sso-" + providerId,
-		AccountID:  ssoAccountID,
+	userID, err := h.federated.Provision(r.Context(), identity.FederatedProfile{
+		Provider: "sso-" + providerId, AccountID: fmt.Sprintf("sso-%s:%s", providerId, sub),
+		Email: email, EmailVerified: emailVerified, Name: name, ImageURL: picture,
+		OrganizationID: provider.OrganizationID,
 	})
-
-	if err == nil {
-		userID = existingAccount.UserID
-	} else {
-		// Try to find user by email
-		existingUser, err := h.queries.GetUserByEmail(r.Context(), email)
-		if err == nil {
-			userID = existingUser.ID
-		} else {
-			// Create new user
-			userID = uuid.New().String()
-			_, err = h.queries.CreateUser(r.Context(), queries.CreateUserParams{
-				ID:    userID,
-				Name:  name,
-				Email: email,
-			})
-			if err != nil {
-				slog.Error("failed to create SSO user", "error", err)
-				httputil.WriteError(w, http.StatusInternalServerError, "failed to create user")
-				return
-			}
-			// Email verified by SSO provider
-			if err := h.queries.UpdateUserEmailVerified(r.Context(), userID); err != nil {
-				slog.Warn("failed to mark email as verified for SSO user", "error", err, "userID", userID)
-			}
-		}
-
-		// Link SSO account
-		if err := h.queries.CreateAccount(r.Context(), queries.CreateAccountParams{
-			ID:         uuid.New().String(),
-			AccountID:  ssoAccountID,
-			ProviderID: "sso-" + providerId,
-			UserID:     userID,
-			Password:   nil,
-		}); err != nil {
-			slog.Warn("failed to link SSO account", "error", err, "userID", userID, "provider", providerId)
-		}
-	}
-
-	// Update profile picture if available
-	if picture != "" {
-		if err := h.queries.UpdateUserProfile(r.Context(), queries.UpdateUserProfileParams{
-			Name:  name,
-			Image: &picture,
-			ID:    userID,
-		}); err != nil {
-			slog.Error("failed to update user profile from SSO", "error", err, "userID", userID)
-		}
-	}
-
-	// Organization auto-provisioning
-	if provider.OrganizationID != nil && *provider.OrganizationID != "" {
-		isMember, _ := h.queries.IsOrgMember(r.Context(), queries.IsOrgMemberParams{
-			OrganizationID: *provider.OrganizationID,
-			UserID:         userID,
-		})
-		if !isMember {
-			if err := h.queries.CreateMember(r.Context(), queries.CreateMemberParams{
-				ID:             uuid.New().String(),
-				OrganizationID: *provider.OrganizationID,
-				UserID:         userID,
-				Role:           "member",
-			}); err != nil {
-				slog.Error("failed to auto-provision SSO org membership", "error", err, "userID", userID, "orgID", *provider.OrganizationID)
-			}
-		}
+	if err != nil {
+		slog.ErrorContext(r.Context(), "failed to provision SSO identity", "provider", providerId, "error", err)
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to create user")
+		return
 	}
 
 	// Create a one-time code (not the token itself, for security)

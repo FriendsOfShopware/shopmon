@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/friendsofshopware/shopmon/api/internal/auth"
+	"github.com/friendsofshopware/shopmon/api/internal/access"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
+	identitypostgres "github.com/friendsofshopware/shopmon/api/internal/identity/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +23,7 @@ func TestValidateSessionRotatesExpiry(t *testing.T) {
 	// window, so validating it must extend the expiry to ~30 days out.
 	token := env.SeedUser(t, "rot-user", "Rot User", "rot@example.com", "user")
 
-	su, err := auth.ValidateSession(context.Background(), env.Queries, token)
+	su, err := authenticateSession(context.Background(), env, token)
 	require.NoError(t, err)
 
 	assert.WithinDuration(t, time.Now().Add(30*24*time.Hour), su.Session.ExpiresAt, time.Minute,
@@ -42,7 +44,7 @@ func TestValidateSessionKeepsFreshExpiry(t *testing.T) {
 		`UPDATE session SET expires_at = $1 WHERE user_id = $2`, freshExpiry, "fresh-user")
 	require.NoError(t, err)
 
-	su, err := auth.ValidateSession(context.Background(), env.Queries, token)
+	su, err := authenticateSession(context.Background(), env, token)
 	require.NoError(t, err)
 
 	assert.WithinDuration(t, freshExpiry, su.Session.ExpiresAt.UTC(), time.Minute,
@@ -67,9 +69,14 @@ func TestValidateSessionDoesNotRotateImpersonation(t *testing.T) {
 	`, "imp-session", impExpiry, "imp-token", now, "imp-target", "some-admin")
 	require.NoError(t, err)
 
-	su, err := auth.ValidateSession(context.Background(), env.Queries, "imp-token")
+	su, err := authenticateSession(context.Background(), env, "imp-token")
 	require.NoError(t, err)
 
 	assert.WithinDuration(t, impExpiry, su.Session.ExpiresAt.UTC(), time.Minute,
 		"an impersonation session must not be rotated")
+}
+
+func authenticateSession(ctx context.Context, env *testutil.TestEnv, token string) (*access.Principal, error) {
+	repository := identitypostgres.NewSessionRepository(env.Queries)
+	return identity.NewSessionAuthenticator(repository).Authenticate(ctx, token)
 }

@@ -11,15 +11,50 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/apirouter"
+	"github.com/friendsofshopware/shopmon/api/internal/audit"
+	auditpostgres "github.com/friendsofshopware/shopmon/api/internal/audit/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/authapi"
+	"github.com/friendsofshopware/shopmon/api/internal/catalog"
+	catalogpostgres "github.com/friendsofshopware/shopmon/api/internal/catalog/postgres"
+	catalogshopware "github.com/friendsofshopware/shopmon/api/internal/catalog/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/deployment"
+	deploymentpostgres "github.com/friendsofshopware/shopmon/api/internal/deployment/postgres"
+	deploymentqueue "github.com/friendsofshopware/shopmon/api/internal/deployment/queue"
+	deployments3 "github.com/friendsofshopware/shopmon/api/internal/deployment/s3output"
 	"github.com/friendsofshopware/shopmon/api/internal/handler"
+	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/identity"
+	credentialmail "github.com/friendsofshopware/shopmon/api/internal/identity/credentialmail"
+	identitypasskey "github.com/friendsofshopware/shopmon/api/internal/identity/passkey"
+	passkeypostgres "github.com/friendsofshopware/shopmon/api/internal/identity/passkey/postgres"
+	identitypostgres "github.com/friendsofshopware/shopmon/api/internal/identity/postgres"
+	"github.com/friendsofshopware/shopmon/api/internal/identity/redisstate"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
+	monitoringpostgres "github.com/friendsofshopware/shopmon/api/internal/monitoring/postgres"
+	monitoringqueue "github.com/friendsofshopware/shopmon/api/internal/monitoring/queue"
+	monitoringshopware "github.com/friendsofshopware/shopmon/api/internal/monitoring/shopware"
+	"github.com/friendsofshopware/shopmon/api/internal/notification"
+	notificationpostgres "github.com/friendsofshopware/shopmon/api/internal/notification/postgres"
+	"github.com/friendsofshopware/shopmon/api/internal/organization"
+	organizationmail "github.com/friendsofshopware/shopmon/api/internal/organization/invitationmail"
+	organizationpostgres "github.com/friendsofshopware/shopmon/api/internal/organization/postgres"
+	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
+	ssooidc "github.com/friendsofshopware/shopmon/api/internal/organization/sso/oidc"
+	ssopostgres "github.com/friendsofshopware/shopmon/api/internal/organization/sso/postgres"
+	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
+	packagesapi "github.com/friendsofshopware/shopmon/api/internal/packagesmirror/packagesapi"
+	packagespostgres "github.com/friendsofshopware/shopmon/api/internal/packagesmirror/postgres"
+	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
+	adminread "github.com/friendsofshopware/shopmon/api/internal/readmodel/admin"
+	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/storage"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	"github.com/friendsofshopware/shopmon/api/internal/webui"
@@ -90,8 +125,94 @@ func runServer(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	organizationRepository := organizationpostgres.NewAuthorizationRepository(q)
+	organizationAuthorizer := organization.NewAuthorizer(organizationRepository)
+	organizationStore := organizationpostgres.NewRepository(pool, q)
+	organizationMailer := organizationmail.New(mailSvc, cfg.FrontendURL)
+	organizationService := organization.NewService(organizationStore, organizationAuthorizer, organizationMailer)
+	monitoringRepository := monitoringpostgres.NewRepository(pool, q)
+	monitoringGateway := monitoringshopware.NewGateway(cfg.AppSecret)
+	monitoringDispatcher := monitoringqueue.NewDispatcher(bus)
+	var monitoringOutputs monitoring.DeploymentOutputStore
+	if s3 != nil {
+		monitoringOutputs = s3
+	}
+	monitoringService := monitoring.NewService(monitoringRepository, organizationAuthorizer, monitoringGateway, monitoringDispatcher, monitoringOutputs)
+	notificationRepository := notificationpostgres.NewRepository(q)
+	notificationService := notification.NewService(notificationRepository)
+	packagesRepository := packagespostgres.NewShopRepository(q)
+	packagesClient := packagesapi.NewClient(cfg.PackagesAPIURL, cfg.PackagesAPIToken, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second)))
+	packagesService := packagesmirror.NewService(packagesRepository, organizationAuthorizer, packagesClient, packagesmirror.Config{
+		BaseURL: cfg.PackagesAPIURL,
+		Token:   cfg.PackagesAPIToken,
+	})
+	deploymentRepository := deploymentpostgres.NewRepository(pool, q)
+	deploymentDispatcher := deploymentqueue.NewDispatcher(bus)
+	var deploymentOutputs deployment.OutputStore
+	if s3 != nil {
+		deploymentOutputs = deployments3.NewStore(s3)
+	}
+	deploymentService := deployment.NewService(deploymentRepository, organizationAuthorizer, deploymentOutputs, deploymentDispatcher, cfg.FrontendURL, cfg.DeploymentScrapeDelay)
+	catalogRepository := catalogpostgres.NewVersionRepository(q)
+	catalogGateway := catalogshopware.NewGateway(shopwareaccount.NewClient(cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
+	catalogService := catalog.NewService(catalogRepository, catalogGateway)
+	accountReadModel := accountread.NewService(q)
+	adminReadModel := adminread.NewService(q)
+	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
+	ssoRepository := ssopostgres.NewRepository(q)
+	ssoGateway := ssooidc.NewGateway(15 * time.Second)
+	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
+	identityAccountRepository := identitypostgres.NewAccountRepository(q)
+	identityAccountService := identity.NewAccountService(identityAccountRepository)
+	identityAdminRepository := identitypostgres.NewAdminRepository(pool, q)
+	identityAdminService := identity.NewAdminService(identityAdminRepository)
+	sessionLifecycleRepository := identitypostgres.NewSessionLifecycleRepository(q)
+	sessionService := identity.NewSessionService(sessionLifecycleRepository)
+	credentialRepository := identitypostgres.NewCredentialRepository(pool, q)
+	credentialMailer := credentialmail.New(mailSvc, cfg.FrontendURL)
+	credentialService := identity.NewCredentialService(credentialRepository, sessionService, credentialMailer, identity.CredentialConfig{
+		RegistrationEnabled: !cfg.DisableRegistration,
+	})
+	federatedRepository := identitypostgres.NewFederatedRepository(pool, q)
+	federatedService := identity.NewFederatedService(federatedRepository)
+	challengeStore, err := redisstate.New(cfg.RedisURL, "shopmon:challenge:")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := challengeStore.Close(); err != nil {
+			slog.Error("failed to close identity state store", "error", err)
+		}
+	}()
+	passkeyRepository := passkeypostgres.NewRepository(q)
+	passkeyService, err := identitypasskey.NewService(identitypasskey.Config{
+		RPID: cfg.WebAuthnRPID, RPName: cfg.WebAuthnRPName, RPOrigins: cfg.WebAuthnRPOrigins,
+	}, passkeyRepository, challengeStore, sessionService)
+	if err != nil {
+		return err
+	}
+	auditRepository := auditpostgres.NewRepository(q)
+	auditService := audit.NewService(auditRepository)
+
 	// Handler
-	h := handler.New(pool, q, s3, cfg, mailSvc, bus)
+	h := handler.New(handler.Dependencies{
+		Database: pool,
+		Features: handler.InstanceFeatures{
+			RegistrationEnabled:  !cfg.DisableRegistration,
+			GithubAuthEnabled:    cfg.GithubClientID != "" && cfg.GithubClientSecret != "",
+			SitespeedEnabled:     cfg.SitespeedEndpoint != "",
+			PackageMirrorEnabled: cfg.PackagesAPIURL != "" && cfg.PackagesAPIToken != "",
+		},
+		Monitoring:    monitoringService,
+		Notifications: notificationService,
+		Packages:      packagesService,
+		Deployments:   deploymentService,
+		Catalog:       catalogService,
+		SSO:           ssoService,
+		Account:       accountReadModel,
+		Admin:         adminReadModel,
+		Environments:  environmentReadModel,
+	})
 
 	// Router
 	r := chi.NewRouter()
@@ -122,11 +243,29 @@ func runServer(cmd *cobra.Command, args []string) error {
 	r.Use(middleware.TraceIDHeader)
 
 	// Auth handler
-	authHandler := auth.NewAuthHandler(pool, q, cfg, mailSvc)
+	authHandler := auth.NewAuthHandler(auth.Dependencies{
+		Organizations: organizationService,
+		SSO:           ssoService,
+		Accounts:      identityAccountService,
+		AdminUsers:    identityAdminService,
+		Credentials:   credentialService,
+		Sessions:      sessionService,
+		Federated:     federatedService,
+		Passkeys:      passkeyService,
+		Audit:         auditService,
+		State:         challengeStore,
+		Config: auth.HandlerConfig{
+			FrontendURL:        cfg.FrontendURL,
+			GitHubClientID:     cfg.GithubClientID,
+			GitHubClientSecret: cfg.GithubClientSecret,
+		},
+	})
+	sessionRepository := identitypostgres.NewSessionRepository(q)
+	sessionAuthenticator := identity.NewSessionAuthenticator(sessionRepository)
 
 	// API routes
 	r.Route("/api", func(apiRouter chi.Router) {
-		apiRouter.Use(middleware.OptionalAuthMiddleware(q))
+		apiRouter.Use(middleware.OptionalAuthMiddleware(sessionAuthenticator))
 
 		// OpenAPI spec & docs
 		apiRouter.Get("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {

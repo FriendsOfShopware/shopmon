@@ -1,22 +1,21 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/catalog"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 )
 
 // GetInstanceConfig returns the feature configuration for this instance.
 func (h *Handler) GetInstanceConfig(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteJSON(w, http.StatusOK, api.InstanceConfig{
-		RegistrationEnabled:  !h.cfg.DisableRegistration,
-		GithubAuthEnabled:    h.cfg.GithubClientID != "" && h.cfg.GithubClientSecret != "",
-		SitespeedEnabled:     h.cfg.SitespeedEndpoint != "",
-		PackageMirrorEnabled: h.cfg.PackagesAPIURL != "" && h.cfg.PackagesAPIToken != "",
+		RegistrationEnabled:  h.features.RegistrationEnabled,
+		GithubAuthEnabled:    h.features.GithubAuthEnabled,
+		SitespeedEnabled:     h.features.SitespeedEnabled,
+		PackageMirrorEnabled: h.features.PackageMirrorEnabled,
 	})
 }
 
@@ -29,58 +28,13 @@ func (h *Handler) GetEcosystemStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	environmentRows, err := h.queries.AdminGetGrowthEnvironments(r.Context())
+	result, err := h.admin.EcosystemStats(r.Context())
 	if err != nil {
-		slog.Error("failed to get environment growth", "error", err)
+		slog.ErrorContext(r.Context(), "failed to get ecosystem stats", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
 		return
 	}
-
-	userRows, err := h.queries.AdminGetGrowthUsers(r.Context())
-	if err != nil {
-		slog.Error("failed to get user growth", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
-		return
-	}
-
-	versionRows, err := h.queries.AdminGetShopwareVersions(r.Context())
-	if err != nil {
-		slog.Error("failed to get shopware versions", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get ecosystem stats")
-		return
-	}
-
-	environmentGrowth := make([]api.GrowthDataPoint, 0, len(environmentRows))
-	for _, row := range environmentRows {
-		environmentGrowth = append(environmentGrowth, api.GrowthDataPoint{
-			Month: row.Month,
-			Count: int(row.Count),
-		})
-	}
-
-	userGrowth := make([]api.GrowthDataPoint, 0, len(userRows))
-	for _, row := range userRows {
-		userGrowth = append(userGrowth, api.GrowthDataPoint{
-			Month: row.Month,
-			Count: int(row.Count),
-		})
-	}
-
-	versions := make([]api.ShopwareVersionCount, 0, len(versionRows))
-	for _, row := range versionRows {
-		versions = append(versions, api.ShopwareVersionCount{
-			Version: row.Version,
-			Count:   int(row.Count),
-		})
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, api.EcosystemStats{
-		Growth: api.AdminGrowth{
-			Environments: environmentGrowth,
-			Users:        userGrowth,
-		},
-		ShopwareVersions: versions,
-	})
+	httputil.WriteJSON(w, http.StatusOK, result)
 }
 
 // CheckExtensionCompatibility checks extension compatibility between Shopware versions.
@@ -91,38 +45,27 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	extensions := make([]shopwareaccount.CompatibilityExtension, 0, len(req.Extensions))
+	extensions := make([]catalog.Extension, 0, len(req.Extensions))
 	for _, ext := range req.Extensions {
-		extensions = append(extensions, shopwareaccount.CompatibilityExtension{
+		extensions = append(extensions, catalog.Extension{
 			Name:    ext.Name,
 			Version: ext.Version,
 		})
 	}
 
-	client := shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, httputil.NewHTTPClient())
-	resp, err := client.CheckExtensionCompatibility(r.Context(), req.CurrentVersion, req.FutureVersion, extensions)
+	result, err := h.catalog.CheckCompatibility(r.Context(), catalog.CompatibilityCommand{
+		CurrentVersion: req.CurrentVersion,
+		FutureVersion:  req.FutureVersion,
+		Extensions:     extensions,
+	})
 	if err != nil {
-		slog.Error("failed to check extension compatibility", "error", err)
+		slog.ErrorContext(r.Context(), "failed to check extension compatibility", "error", err)
 		httputil.WriteError(w, http.StatusBadGateway, "failed to check extension compatibility")
 		return
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		slog.Error("shopware account API returned non-200", "status", resp.StatusCode, "body", string(resp.Body))
-		httputil.WriteError(w, http.StatusBadGateway, "shopware account API returned an error")
-		return
-	}
-
-	var results []api.ExtensionCompatibilityResult
-	if err := json.Unmarshal(resp.Body, &results); err != nil {
-		// Pass through raw response if it doesn't match our type
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(resp.Body)
-		return
-	}
-
-	httputil.WriteJSON(w, http.StatusOK, results)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(result)
 }
 
 // GetShopwareVersions returns all known Shopware versions, newest first. Each
@@ -131,7 +74,7 @@ func (h *Handler) CheckExtensionCompatibility(w http.ResponseWriter, r *http.Req
 // the worker refreshes hourly from the Shopware release changelog, so no
 // external call is made at request time.
 func (h *Handler) GetShopwareVersions(w http.ResponseWriter, r *http.Request) {
-	names, err := h.queries.ListShopwareVersions(r.Context())
+	names, err := h.catalog.ListShopwareVersions(r.Context())
 	if err != nil {
 		slog.Error("failed to list shopware versions", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to load shopware versions")

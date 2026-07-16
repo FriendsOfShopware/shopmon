@@ -16,7 +16,7 @@ import (
 )
 
 // encryptEnvironmentSecret replaces an environment's stored client_secret with an
-// AES-GCM encrypted value so that newShopwareClientFromCredentials can decrypt it.
+// AES-GCM encrypted value so that the monitoring Shopware gateway can decrypt it.
 // SeedEnvironment stores a plaintext secret, which the Shopware-calling handlers
 // cannot decrypt, so tests that actually reach Shopware must call this.
 func encryptEnvironmentSecret(t *testing.T, env *testutil.TestEnv, environmentID int, secret string) {
@@ -96,6 +96,45 @@ func TestGetEnvironment_NotMember(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestCreateEnvironment(t *testing.T) {
+	mockShopware := testutil.NewMockShopwareServer(t)
+	defer mockShopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	body, _ := json.Marshal(api.CreateEnvironmentRequest{
+		Name:         "Staging",
+		ShopUrl:      mockShopware.URL,
+		ClientId:     "client-id",
+		ClientSecret: "client-secret",
+		ShopId:       shopID,
+	})
+
+	req := testutil.NewRequest(t, http.MethodPost, env.Server.URL+"/api/environments", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	var result struct {
+		ID int32 `json:"id"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.NotZero(t, result.ID)
+
+	var encryptedSecret, version string
+	err = env.Pool.QueryRow(t.Context(), `SELECT client_secret, shopware_version FROM environment WHERE id = $1`, result.ID).Scan(&encryptedSecret, &version)
+	require.NoError(t, err)
+	decryptedSecret, err := crypto.Decrypt(encryptedSecret, env.Cfg.AppSecret)
+	require.NoError(t, err)
+	assert.Equal(t, "client-secret", decryptedSecret)
+	assert.Equal(t, "6.5.0.0", version)
 }
 
 func TestDeleteEnvironment(t *testing.T) {

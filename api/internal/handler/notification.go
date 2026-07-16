@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
@@ -17,7 +15,7 @@ func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := h.queries.ListNotifications(r.Context(), user.ID)
+	rows, err := h.notifications.List(r.Context(), user.ID)
 	if err != nil {
 		slog.Error("failed to list notifications", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to get notifications")
@@ -34,14 +32,11 @@ func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 			Title:     row.Title,
 			Message:   row.Message,
 			Read:      row.Read,
-			CreatedAt: pgtimeToTime(row.CreatedAt),
+			CreatedAt: row.CreatedAt,
 		}
 
-		if len(row.Link) > 0 {
-			var link api.NotificationLink
-			if err := json.Unmarshal(row.Link, &link); err == nil && link.Url != "" {
-				n.Link = &link
-			}
+		if row.Link != nil {
+			n.Link = &api.NotificationLink{Url: row.Link.URL, Label: row.Link.Label}
 		}
 
 		result = append(result, n)
@@ -57,7 +52,7 @@ func (h *Handler) DeleteAllNotifications(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.queries.DeleteAllNotifications(r.Context(), user.ID); err != nil {
+	if err := h.notifications.DeleteAll(r.Context(), user.ID); err != nil {
 		slog.Error("failed to delete all notifications", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete notifications")
 		return
@@ -73,10 +68,7 @@ func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request, id 
 		return
 	}
 
-	if err := h.queries.DeleteNotification(r.Context(), queries.DeleteNotificationParams{
-		ID:     int32(id),
-		UserID: user.ID,
-	}); err != nil {
+	if err := h.notifications.Delete(r.Context(), user.ID, int32(id)); err != nil {
 		slog.Error("failed to delete notification", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete notification")
 		return
@@ -92,7 +84,7 @@ func (h *Handler) MarkNotificationsRead(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := h.queries.MarkAllNotificationsRead(r.Context(), user.ID); err != nil {
+	if err := h.notifications.MarkAllRead(r.Context(), user.ID); err != nil {
 		slog.Error("failed to mark notifications read", "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to mark notifications read")
 		return
