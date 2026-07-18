@@ -162,6 +162,21 @@ mise run migrate         # Apply migrations
 mise run load-fixtures   # Reset DB + migrate + seed fixtures
 mise run dev             # Run API server + worker + frontend
 mise run dev:worker      # Run background worker only
-mise run test            # Run integration tests
+mise run test            # Run API integration tests
+mise run lint            # Lint/format/typecheck API + frontend (includes frontend unit tests)
 mise run generate        # Regenerate sqlc + oapi-codegen
 ```
+
+## Verification
+
+Before considering a change complete (and before opening or updating a PR), always run:
+
+```bash
+mise run lint
+mise run test
+```
+
+- **`mise run lint`** — API (`golangci-lint`) + frontend (oxlint, `vue-tsc`, oxfmt check, Vitest unit tests)
+- **`mise run test`** — API integration tests (`go test ./internal/...`)
+
+Do not rely only on targeted package/file test runs. Fix any failures (including format drift from oxfmt) and re-run both commands until they pass. If format check fails, run `cd frontend && npm run format:fix` (or `npx oxfmt <file>`) and include the formatting fix in the change.

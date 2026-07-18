@@ -199,6 +199,8 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
+import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { fetchAccountShops } from "@/composables/useAccountShops";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { useForm } from "vee-validate";
@@ -304,6 +306,9 @@ const onSubmit = handleSubmit(async (values) => {
       error(apiError.message);
       return;
     }
+
+    // Keep sidebar shop links/status in sync without a full page reload.
+    await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
 
     router.push({ name: "account.shop.list" });
   } catch (e) {

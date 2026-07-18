@@ -283,6 +283,7 @@ import { useLocale } from "@/composables/useLocale";
 import { useNotifications } from "@/composables/useNotifications";
 import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { useAccountShops } from "@/composables/useAccountShops";
 import { api, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
 import {
@@ -325,17 +326,13 @@ import {
 const router = useRouter();
 const { session, activeOrganizationId } = useSession();
 const { environments } = useAccountEnvironments();
+const { shops, fetchAccountShops } = useAccountShops();
 
 type AccountShop = components["schemas"]["AccountShop"];
-const shops = ref<AccountShop[]>([]);
 
-function loadShops() {
-  api.GET("/account/shops").then(({ data }) => {
-    shops.value = data ?? [];
-  });
-}
-loadShops();
-watch(activeOrganizationId, () => loadShops());
+watch(activeOrganizationId, () => {
+  void fetchAccountShops();
+});
 
 function shopLink(shop: AccountShop) {
   // A shop without a default environment (e.g. its last environment was deleted)
