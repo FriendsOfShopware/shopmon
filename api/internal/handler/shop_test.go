@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
+
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -62,7 +64,7 @@ func TestCreateShop(t *testing.T) {
 
 	body, _ := json.Marshal(api.CreateShopRequest{
 		Name:            "New Shop",
-		Description:     strPtr("A test shop"),
+		Description:     ptr.Of("A test shop"),
 		EnvironmentName: "Production",
 		EnvironmentUrl:  mockShopware.URL,
 		ClientId:        "test-client-id",
@@ -149,8 +151,4 @@ func TestDeleteShop_WithEnvironments_Fails(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
-}
-
-func strPtr(s string) *string {
-	return &s
 }

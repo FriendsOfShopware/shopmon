@@ -101,13 +101,3 @@ func (h *Handler) getActiveOrganizationID(r *http.Request) *string {
 	}
 	return session.ActiveOrganizationID
 }
-
-// int32PtrToIntPtr preserves nullability while mapping storage identifiers to
-// their OpenAPI representation.
-func int32PtrToIntPtr(value *int32) *int {
-	if value == nil {
-		return nil
-	}
-	converted := int(*value)
-	return &converted
-}

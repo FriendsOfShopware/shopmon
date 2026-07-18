@@ -8,7 +8,9 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
 )
@@ -89,7 +91,7 @@ func (s *Service) Detail(ctx context.Context, userID string, environmentID int32
 		return api.EnvironmentDetail{}, ErrNotAuthorized
 	}
 
-	aggregate, err := s.loadAggregate(ctx, environmentID, resolveLanguage(requestedLanguage))
+	aggregate, err := s.loadAggregate(ctx, environmentID, shopware.ContentLanguage(requestedLanguage))
 	if err != nil {
 		return api.EnvironmentDetail{}, err
 	}
@@ -253,7 +255,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Favicon:            environment.Favicon,
 		Status:             environment.Status,
 		ShopwareVersion:    environment.ShopwareVersion,
-		LastScrapedAt:      pgtimeToTimePtr(environment.LastScrapedAt),
+		LastScrapedAt:      database.TimePtr(environment.LastScrapedAt),
 		LastScrapedError:   environment.LastScrapedError,
 		OrganizationId:     environment.OrganizationID,
 		OrganizationName:   environment.OrganizationName,
@@ -263,7 +265,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		EnvironmentImage:   environment.EnvironmentImage,
 		EnvironmentToken:   environment.EnvironmentToken,
 		Ignores:            ignores,
-		CreatedAt:          pgtimeToTime(environment.CreatedAt),
+		CreatedAt:          database.Time(environment.CreatedAt),
 		SitespeedEnabled:   environment.SitespeedEnabled,
 		SitespeedDetailUrl: sitespeedDetailURL(s.config, environment.ID, environment.SitespeedEnabled),
 		SitespeedUrls:      sitespeedURLs,
@@ -331,7 +333,7 @@ func (s *Service) StatusEvents(ctx context.Context, userID string, environmentID
 			OldStatus: row.OldStatus,
 			NewStatus: row.NewStatus,
 			Reasons:   reasons,
-			CreatedAt: pgtimeToTime(row.CreatedAt),
+			CreatedAt: database.Time(row.CreatedAt),
 		})
 	}
 	return events, nil

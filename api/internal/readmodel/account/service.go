@@ -11,9 +11,11 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
-	"github.com/jackc/pgx/v5/pgtype"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -36,7 +38,7 @@ func (s *Service) Profile(ctx context.Context, userID string) (api.UserProfile, 
 		Id:          dbUser.ID,
 		DisplayName: dbUser.Name,
 		Email:       openapi_types.Email(dbUser.Email),
-		CreatedAt:   pgtimeToTime(dbUser.CreatedAt),
+		CreatedAt:   database.Time(dbUser.CreatedAt),
 		Locale:      dbUser.Locale,
 	}, nil
 }
@@ -53,7 +55,7 @@ func (s *Service) UpdateLocale(ctx context.Context, userID, locale string) error
 }
 
 func (s *Service) Extensions(ctx context.Context, userID string, activeOrgID, requestedLanguage *string) ([]api.AccountExtension, error) {
-	language := resolveLanguage(requestedLanguage)
+	language := shopware.ContentLanguage(requestedLanguage)
 	if activeOrgID == nil {
 		return []api.AccountExtension{}, nil
 	}
@@ -86,8 +88,8 @@ func (s *Service) Extensions(ctx context.Context, userID string, activeOrgID, re
 	for _, r := range changelogRows {
 		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
 			Version:    r.Version,
-			Text:       deref(r.Changelog),
-			ReleasedAt: deref(r.ReleasedAt),
+			Text:       ptr.Deref(r.Changelog),
+			ReleasedAt: ptr.Deref(r.ReleasedAt),
 		})
 	}
 
@@ -143,7 +145,7 @@ func (s *Service) Extensions(ctx context.Context, userID string, activeOrgID, re
 // queries rows for the requested extension, so the detail view does not transfer
 // the whole catalog.
 func (s *Service) Extension(ctx context.Context, userID string, activeOrgID *string, name string, requestedLanguage *string) (api.AccountExtension, error) {
-	language := resolveLanguage(requestedLanguage)
+	language := shopware.ContentLanguage(requestedLanguage)
 	if activeOrgID == nil {
 		return api.AccountExtension{}, ErrExtensionNotFound
 	}
@@ -179,8 +181,8 @@ func (s *Service) Extension(ctx context.Context, userID string, activeOrgID *str
 	for _, r := range changelogRows {
 		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
 			Version:    r.Version,
-			Text:       deref(r.Changelog),
-			ReleasedAt: deref(r.ReleasedAt),
+			Text:       ptr.Deref(r.Changelog),
+			ReleasedAt: ptr.Deref(r.ReleasedAt),
 		})
 	}
 
@@ -277,13 +279,13 @@ func aggregateAccountExtensions(
 				Name:          row.Name,
 				Label:         row.Label,
 				Version:       row.Version,
-				LatestVersion: deref(row.LatestVersion),
+				LatestVersion: ptr.Deref(row.LatestVersion),
 				Active:        row.Active,
 				Installed:     row.Installed,
 				StoreLink:     row.StoreLink,
 				RatingAverage: ratingAvg,
 				Changelog:     changelog,
-				InstalledAt:   parseInstalledAt(row.InstalledAt),
+				InstalledAt:   ptr.ParseTime(row.InstalledAt, time.RFC3339),
 				Environments:  []api.AccountExtensionEnvironment{},
 			}
 			if row.isStore {
@@ -311,7 +313,7 @@ func aggregateAccountExtensions(
 			ShopId:                      int(row.EnvironmentShopID),
 			ShopName:                    row.EnvironmentShopName,
 			Version:                     row.Version,
-			LatestVersion:               deref(row.LatestVersion),
+			LatestVersion:               ptr.Deref(row.LatestVersion),
 			Active:                      row.Active,
 			Installed:                   row.Installed,
 		}
@@ -366,7 +368,7 @@ func (s *Service) Organizations(ctx context.Context, userID string) ([]api.Accou
 			Id:               row.ID,
 			Name:             row.Name,
 			Logo:             row.Logo,
-			CreatedAt:        pgtimeToTime(row.CreatedAt),
+			CreatedAt:        database.Time(row.CreatedAt),
 			EnvironmentCount: int(row.EnvironmentCount),
 			MemberCount:      int(row.MemberCount),
 		})
@@ -398,7 +400,7 @@ func (s *Service) Environments(ctx context.Context, userID string, activeOrgID *
 		result = append(result, api.AccountEnvironment{
 			Id: int(row.ID), Name: row.Name, Url: row.Url, Favicon: row.Favicon,
 			Status: row.Status, ShopwareVersion: row.ShopwareVersion,
-			LastScrapedAt: pgtimeToTimePtr(row.LastScrapedAt), LastScrapedError: row.LastScrapedError,
+			LastScrapedAt: database.TimePtr(row.LastScrapedAt), LastScrapedError: row.LastScrapedError,
 			OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
 			ShopId: shopId, ShopName: row.ShopName,
 		})
@@ -425,7 +427,7 @@ func (s *Service) Shops(ctx context.Context, userID string, activeOrgID *string)
 		result = append(result, api.AccountShop{
 			Id: int(row.ID), Name: row.Name, Description: row.Description,
 			GitUrl: row.GitUrl, OrganizationId: row.OrganizationID, OrganizationName: row.OrganizationName,
-			DefaultEnvironmentId: int32PtrToIntPtr(row.DefaultEnvironmentID),
+			DefaultEnvironmentId: ptr.Int(row.DefaultEnvironmentID),
 		})
 	}
 
@@ -471,7 +473,7 @@ func (s *Service) Changelogs(ctx context.Context, userID string, activeOrgID *st
 			Extensions:                  extensions,
 			OldShopwareVersion:          row.OldShopwareVersion,
 			NewShopwareVersion:          row.NewShopwareVersion,
-			Date:                        pgtimeToTime(row.Date),
+			Date:                        database.Time(row.Date),
 		})
 	}
 
@@ -539,48 +541,4 @@ func buildFullChangelog(versions []changelogVersion) *[]api.ExtensionChangelogEn
 		return version.Compare(entries[i].Version, entries[j].Version) > 0
 	})
 	return &entries
-}
-
-func resolveLanguage(language *string) string {
-	if language != nil && *language == "de" {
-		return "de"
-	}
-	return "en"
-}
-
-func parseInstalledAt(value *string) *time.Time {
-	if value == nil {
-		return nil
-	}
-	parsed, err := time.Parse(time.RFC3339, *value)
-	if err != nil {
-		return nil
-	}
-	return &parsed
-}
-
-func deref(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
-}
-
-func pgtimeToTime(value pgtype.Timestamp) time.Time {
-	return value.Time
-}
-
-func pgtimeToTimePtr(value pgtype.Timestamp) *time.Time {
-	if !value.Valid {
-		return nil
-	}
-	return &value.Time
-}
-
-func int32PtrToIntPtr(value *int32) *int {
-	if value == nil {
-		return nil
-	}
-	converted := int(*value)
-	return &converted
 }

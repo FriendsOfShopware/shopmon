@@ -8,6 +8,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 )
 
@@ -80,7 +81,7 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		Description:          req.Description,
 		GitUrl:               req.GitUrl,
 		OrganizationId:       orgId,
-		DefaultEnvironmentId: int32PtrToIntPtr(&result.EnvironmentID),
+		DefaultEnvironmentId: ptr.Int(&result.EnvironmentID),
 	})
 }
 

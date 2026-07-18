@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // toAccountEnvironment maps a single organization environment row to its API DTO.
@@ -26,7 +27,7 @@ func toAccountEnvironment(row queries.ListEnvironmentsByOrganizationRow) api.Acc
 		Favicon:          row.Favicon,
 		Status:           row.Status,
 		ShopwareVersion:  row.ShopwareVersion,
-		LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
+		LastScrapedAt:    database.TimePtr(row.LastScrapedAt),
 		LastScrapedError: row.LastScrapedError,
 		OrganizationId:   row.OrganizationID,
 		OrganizationName: row.OrganizationName,
@@ -59,8 +60,8 @@ func mergeEnvironmentExtensions(
 	for _, r := range changelogRows {
 		changelogByExt[r.ExtensionName] = append(changelogByExt[r.ExtensionName], changelogVersion{
 			Version:    r.Version,
-			Text:       deref(r.Changelog),
-			ReleasedAt: deref(r.ReleasedAt),
+			Text:       ptr.Deref(r.Changelog),
+			ReleasedAt: ptr.Deref(r.ReleasedAt),
 		})
 	}
 
@@ -73,7 +74,7 @@ func mergeEnvironmentExtensions(
 			ratingAvg = &v
 		}
 
-		latestVersion := deref(row.LatestVersion)
+		latestVersion := ptr.Deref(row.LatestVersion)
 		changelog := buildCompatibleChangelog(changelogByExt[row.ExtensionName], row.Version, latestVersion)
 
 		extensions = append(extensions, api.EnvironmentExtension{
@@ -86,7 +87,7 @@ func mergeEnvironmentExtensions(
 			StoreLink:     row.StoreLink,
 			RatingAverage: ratingAvg,
 			Changelog:     changelog,
-			InstalledAt:   parseInstalledAt(row.InstalledAt),
+			InstalledAt:   ptr.ParseTime(row.InstalledAt, time.RFC3339),
 		})
 	}
 
@@ -95,10 +96,10 @@ func mergeEnvironmentExtensions(
 			Name:          row.Name,
 			Label:         row.Label,
 			Version:       row.Version,
-			LatestVersion: deref(row.LatestVersion),
+			LatestVersion: ptr.Deref(row.LatestVersion),
 			Active:        row.Active,
 			Installed:     row.Installed,
-			InstalledAt:   parseInstalledAt(row.InstalledAt),
+			InstalledAt:   ptr.ParseTime(row.InstalledAt, time.RFC3339),
 		})
 	}
 
@@ -146,36 +147,6 @@ func buildCompatibleChangelog(versions []changelogVersion, installedVersion, lat
 		return version.Compare(entries[i].Version, entries[j].Version) < 0
 	})
 	return &entries
-}
-
-// resolveLanguage normalizes an optional request language to a supported store
-// language code, defaulting to English. The query layer already falls back to
-// English for any field missing in the requested language, so an unsupported
-// value simply behaves like English.
-func resolveLanguage(lang *string) string {
-	if lang != nil && *lang == "de" {
-		return "de"
-	}
-	return "en"
-}
-
-// parseInstalledAt parses the RFC3339 installed-at timestamp, returning nil when
-// absent or unparseable.
-func parseInstalledAt(s *string) *time.Time {
-	if s == nil {
-		return nil
-	}
-	if t, err := time.Parse(time.RFC3339, *s); err == nil {
-		return &t
-	}
-	return nil
-}
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }
 
 func mapEnvironmentScheduledTasks(rows []queries.EnvironmentScheduledTask) []api.ScheduledTask {
@@ -262,7 +233,7 @@ func mapEnvironmentChecks(rows []queries.EnvironmentCheck) []api.EnvironmentChec
 func mapEnvironmentSitespeeds(rows []queries.EnvironmentSitespeed) []api.Sitespeed {
 	sitespeeds := make([]api.Sitespeed, 0, len(rows))
 	for _, row := range rows {
-		createdAt := pgtimeToTime(row.CreatedAt)
+		createdAt := database.Time(row.CreatedAt)
 
 		var ttfb, fullyLoaded, largestContentfulPaint, firstContentfulPaint, transferSize *float32
 		var cumulativeLayoutShift *float32
@@ -340,20 +311,9 @@ func mapEnvironmentChangelogs(environment *queries.GetEnvironmentByIDRow, rows [
 			Extensions:                  extensions,
 			OldShopwareVersion:          row.OldShopwareVersion,
 			NewShopwareVersion:          row.NewShopwareVersion,
-			Date:                        pgtimeToTime(row.Date),
+			Date:                        database.Time(row.Date),
 		})
 	}
 
 	return changelogs, nil
-}
-
-func pgtimeToTime(value pgtype.Timestamp) time.Time {
-	return value.Time
-}
-
-func pgtimeToTimePtr(value pgtype.Timestamp) *time.Time {
-	if !value.Valid {
-		return nil
-	}
-	return &value.Time
 }
