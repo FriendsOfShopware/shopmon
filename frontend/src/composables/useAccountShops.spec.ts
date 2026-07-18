@@ -7,11 +7,7 @@ vi.mock("@/helpers/api", () => ({
 }));
 
 import { api } from "@/helpers/api";
-import {
-  fetchAccountShops,
-  resetAccountShops,
-  useAccountShops,
-} from "./useAccountShops";
+import { fetchAccountShops, resetAccountShops, useAccountShops } from "./useAccountShops";
 
 describe("useAccountShops", () => {
   beforeEach(() => {
