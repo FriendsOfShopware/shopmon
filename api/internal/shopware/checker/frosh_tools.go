@@ -78,76 +78,37 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 			continue
 		}
 
-		id := "frosh." + c.Snippet
-		if c.Snippet == "" {
-			id = "frosh." + c.ID
+		key := c.Snippet
+		if key == "" {
+			key = c.ID
 		}
 
-		message := getFroshMessage(c.Snippet)
-		if message == "" {
-			message = c.Snippet
+		id := "frosh." + key
+		// messageKey resolves to a catalog entry per snippet. The snippet is also
+		// passed as a param so an unknown snippet degrades to its raw name rather
+		// than a bare key. current/recommended (when present) drive the generic
+		// recommendation suffix appended at render time.
+		messageKey := "check.frosh." + key
+		params := map[string]any{"snippet": key}
+		if c.Current != nil {
+			params["current"] = *c.Current
 		}
-
-		if c.Current != nil && c.Recommended != nil {
-			message += " (Current: " + *c.Current + ", Recommended: " + *c.Recommended + ")"
+		if c.Recommended != nil {
+			params["recommended"] = *c.Recommended
 		}
 
 		if ignoredFroshChecks[c.Snippet] {
-			output.Success(id, message, "FroshTools", c.URL)
+			output.Success(id, messageKey, params, "FroshTools", c.URL)
 			continue
 		}
 
 		switch c.State {
 		case "STATE_OK":
-			output.Success(id, message, "FroshTools", c.URL)
+			output.Success(id, messageKey, params, "FroshTools", c.URL)
 		case "STATE_WARNING":
-			output.Warning(id, message, "FroshTools", c.URL)
+			output.Warning(id, messageKey, params, "FroshTools", c.URL)
 		case "STATE_ERROR":
-			output.Error(id, message, "FroshTools", c.URL)
+			output.Error(id, messageKey, params, "FroshTools", c.URL)
 		}
 	}
-}
-
-func getFroshMessage(snippet string) string {
-	messages := map[string]string{
-		"phpGood":                  "PHP version is up to date",
-		"phpOutdated":              "PHP version is outdated",
-		"mysqlGood":                "MySQL version is up to date",
-		"mysqlOutdated":            "MySQL version is outdated",
-		"opcacheGood":              "OPcache is enabled",
-		"opcacheDisabled":          "OPcache is disabled",
-		"opcacheNoJit":             "OPcache JIT is not enabled",
-		"scheduledTaskGood":        "All scheduled tasks are running",
-		"scheduledTaskWarning":     "Some scheduled tasks are overdue",
-		"queuesGood":               "Message queue is empty",
-		"queuesWarning":            "Message queue has pending messages",
-		"prodGood":                 "Environment is set to production",
-		"not-prod":                 "Environment is not set to production",
-		"adminWorkerGood":          "Admin worker is disabled",
-		"adminWorkerWarning":       "Admin worker is enabled",
-		"publicFilesystemGood":     "Public filesystem is using a proper adapter",
-		"publicFilesystemWarning":  "Public filesystem is using local adapter",
-		"privateFilesystemGood":    "Private filesystem is using a proper adapter",
-		"privateFilesystemWarning": "Private filesystem is using local adapter",
-		"queueConnectionGood":      "Queue connection is properly configured",
-		"queueConnectionWarning":   "Queue connection is using sync adapter",
-		"sessionConnectionGood":    "Session storage is properly configured",
-		"sessionConnectionWarning": "Session storage is using default file adapter",
-		"mailerGood":               "Mailer is properly configured",
-		"mailerWarning":            "Mailer is using null transport",
-		"incrementGood":            "Increment storage is properly configured",
-		"incrementWarning":         "Increment storage is using default adapter",
-		"numberRangeGood":          "Number range storage is properly configured",
-		"numberRangeWarning":       "Number range storage is using default adapter",
-		"lockGood":                 "Lock storage is properly configured",
-		"lockWarning":              "Lock storage is using default flock adapter",
-		"cacheGood":                "Cache adapter is properly configured",
-		"cacheWarning":             "Cache is using filesystem adapter",
-		"puppeteerGood":            "Puppeteer/Chrome is available",
-		"puppeteerWarning":         "Puppeteer/Chrome is not available",
-	}
-	if msg, ok := messages[snippet]; ok {
-		return msg
-	}
-	return ""
 }

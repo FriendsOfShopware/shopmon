@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
@@ -38,7 +37,19 @@ func (s *Service) Profile(ctx context.Context, userID string) (api.UserProfile, 
 		DisplayName: dbUser.Name,
 		Email:       openapi_types.Email(dbUser.Email),
 		CreatedAt:   pgtimeToTime(dbUser.CreatedAt),
+		Locale:      dbUser.Locale,
 	}, nil
+}
+
+// UpdateLocale persists the user's preferred UI/email locale.
+func (s *Service) UpdateLocale(ctx context.Context, userID, locale string) error {
+	if err := s.queries.UpdateUserLocale(ctx, queries.UpdateUserLocaleParams{
+		Locale: locale,
+		ID:     userID,
+	}); err != nil {
+		return fmt.Errorf("update user locale: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) Extensions(ctx context.Context, userID string, activeOrgID, requestedLanguage *string) ([]api.AccountExtension, error) {
@@ -467,31 +478,38 @@ func (s *Service) Changelogs(ctx context.Context, userID string, activeOrgID *st
 	return result, nil
 }
 
-// SubscribedEnvironments resolves environment notification keys to display names.
-func (s *Service) SubscribedEnvironments(ctx context.Context, notifications []string) []api.SubscribedEnvironment {
-	// User notifications is a list of strings like "environment-123"
-	subscribedEnvironments := []api.SubscribedEnvironment{}
+// SubscribedEnvironments resolves the user's environment subscription markers
+// (notification_preference rows) to display names.
+func (s *Service) SubscribedEnvironments(ctx context.Context, userID string) []api.SubscribedEnvironment {
+	scopeIDs, err := s.queries.ListSubscribedEnvironmentIDs(ctx, userID)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to list subscribed environments", "userId", userID, "error", err)
+		return []api.SubscribedEnvironment{}
+	}
 
-	for _, notification := range notifications {
-		if strings.HasPrefix(notification, "environment-") {
-			idStr := strings.TrimPrefix(notification, "environment-")
-			environmentID, err := strconv.Atoi(idStr)
-			if err != nil {
-				continue
-			}
-
-			// Fetch environment name
-			environment, err := s.queries.GetEnvironmentByID(ctx, int32(environmentID))
-			if err != nil {
-				slog.WarnContext(ctx, "failed to get subscribed environment", "environmentId", environmentID, "error", err)
-				continue
-			}
-
-			subscribedEnvironments = append(subscribedEnvironments, api.SubscribedEnvironment{
-				Id:   environmentID,
-				Name: environment.Name,
-			})
+	subscribedEnvironments := make([]api.SubscribedEnvironment, 0, len(scopeIDs))
+	for _, idStr := range scopeIDs {
+		environmentID, err := strconv.Atoi(idStr)
+		if err != nil {
+			continue
 		}
+
+		environment, err := s.queries.GetEnvironmentByID(ctx, int32(environmentID))
+		if err != nil {
+			slog.WarnContext(ctx, "failed to get subscribed environment", "environmentId", environmentID, "error", err)
+			continue
+		}
+
+		sub := api.SubscribedEnvironment{
+			Id:       environmentID,
+			Name:     environment.Name,
+			ShopName: environment.ShopName,
+		}
+		if environment.ShopID > 0 {
+			shopID := int(environment.ShopID)
+			sub.ShopId = &shopID
+		}
+		subscribedEnvironments = append(subscribedEnvironments, sub)
 	}
 
 	return subscribedEnvironments

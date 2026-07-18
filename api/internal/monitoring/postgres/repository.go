@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
@@ -203,6 +204,16 @@ func (r *Repository) DeleteEnvironment(ctx context.Context, environmentID int32)
 	if err := txq.ReassignShopDefaultEnvironment(ctx, environmentID); err != nil {
 		return fmt.Errorf("reassign shop default environment: %w", err)
 	}
+	// notification_preference / user_notification reference the environment by a
+	// text scope_id / link param, not a foreign key, so they are not cascaded by
+	// the environment delete; clean them up explicitly.
+	envIDStr := strconv.Itoa(int(environmentID))
+	if err := txq.DeleteEnvironmentNotificationPreferences(ctx, envIDStr); err != nil {
+		return fmt.Errorf("delete environment notification preferences: %w", err)
+	}
+	if err := txq.DeleteEnvironmentNotifications(ctx, envIDStr); err != nil {
+		return fmt.Errorf("delete environment notifications: %w", err)
+	}
 	if err := txq.DeleteEnvironment(ctx, environmentID); err != nil {
 		return fmt.Errorf("delete environment: %w", err)
 	}
@@ -243,16 +254,33 @@ func (r *Repository) UpdateSitespeedSettings(ctx context.Context, environmentID 
 	return nil
 }
 
-func (r *Repository) UpdateUserEnvironmentSubscriptions(ctx context.Context, userID string, subscriptions []string) error {
-	payload, err := json.Marshal(subscriptions)
-	if err != nil {
-		return fmt.Errorf("encode environment subscriptions: %w", err)
-	}
-	if err := r.queries.UpdateUserNotifications(ctx, queries.UpdateUserNotificationsParams{
-		Notifications: payload,
-		ID:            userID,
+func (r *Repository) SubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
+	if err := r.queries.SubscribeEnvironment(ctx, queries.SubscribeEnvironmentParams{
+		UserID:  userID,
+		ScopeID: strconv.Itoa(int(environmentID)),
 	}); err != nil {
-		return fmt.Errorf("update user environment subscriptions: %w", err)
+		return fmt.Errorf("subscribe environment preference: %w", err)
 	}
 	return nil
+}
+
+func (r *Repository) UnsubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error {
+	if err := r.queries.UnsubscribeEnvironment(ctx, queries.UnsubscribeEnvironmentParams{
+		UserID:  userID,
+		ScopeID: strconv.Itoa(int(environmentID)),
+	}); err != nil {
+		return fmt.Errorf("unsubscribe environment preference: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error) {
+	subscribed, err := r.queries.IsEnvironmentSubscribed(ctx, queries.IsEnvironmentSubscribedParams{
+		UserID:  userID,
+		ScopeID: strconv.Itoa(int(environmentID)),
+	})
+	if err != nil {
+		return false, fmt.Errorf("check environment subscription: %w", err)
+	}
+	return subscribed, nil
 }

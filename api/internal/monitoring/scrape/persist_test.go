@@ -120,8 +120,8 @@ func baseScrapeResult() scrapeResult {
 		},
 		cacheInfo: shopwareCacheInfo{Environment: "prod", HttpCache: true, CacheAdapter: "redis"},
 		checks: []checker.Check{
-			{ID: "check.a", Level: checker.StatusGreen, Message: "all good", Source: "env"},
-			{ID: "check.b", Level: checker.StatusYellow, Message: "queue growing", Source: "worker", Link: "https://docs.example.com"},
+			{ID: "check.a", Level: checker.StatusGreen, MessageKey: "check.a", Source: "env"},
+			{ID: "check.b", Level: checker.StatusYellow, MessageKey: "check.b", Source: "worker", Link: "https://docs.example.com"},
 		},
 		favicon: strPtr("https://shop.example.com/favicon.ico"),
 	}

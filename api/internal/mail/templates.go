@@ -131,6 +131,21 @@ func shopAlertBody(userName, shopName, alertMessage string) hermes.Email {
 	}
 }
 
+// BuildAlertEmail renders a notification alert email. The subject, intro and
+// message are already localized by the caller; this only wraps them in the
+// branded template.
+func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string) Email {
+	return s.generate(subject, hermes.Email{
+		Body: hermes.Body{
+			Name: userName,
+			Intros: []string{
+				intro,
+				alertMessage,
+			},
+		},
+	})
+}
+
 // generate renders an email with the given subject into its plain-text and HTML
 // representations. On render errors it logs and falls back to whatever was
 // produced.

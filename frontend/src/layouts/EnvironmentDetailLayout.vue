@@ -103,11 +103,8 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          :title="
-            isSubscribed ? $t('environment.unwatchEnvironment') : $t('environment.watchEnvironment')
-          "
-          :disabled="isSubscribing"
-          @click="toggleNotificationSubscription"
+          :title="$t('environment.notificationSettings')"
+          @click="showNotificationModal = true"
         >
           <icon-fa6-solid:bell
             v-if="isSubscribed"
@@ -259,18 +256,21 @@
         </template>
       </DialogContent>
     </Dialog>
+
+    <EnvironmentNotificationModal v-model:open="showNotificationModal" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import Breadcrumbs from "@/components/layout/Breadcrumbs.vue";
 import StatusIcon from "@/components/StatusIcon.vue";
+import EnvironmentNotificationModal from "@/components/EnvironmentNotificationModal.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CircleX } from "lucide-vue-next";
 import type { BreadcrumbItem } from "@/components/layout/breadcrumbs";
@@ -304,6 +304,7 @@ import FaRotate from "~icons/fa6-solid/rotate";
 
 import FaShop from "~icons/fa6-solid/shop";
 import FaCircleCheck from "~icons/fa6-solid/circle-check";
+import FaClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 import FaPlug from "~icons/fa6-solid/plug";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaRocket from "~icons/fa6-solid/rocket";
@@ -323,11 +324,12 @@ const {
   showEnvironmentRefreshModal,
   onRefresh,
   onCacheClear,
-  toggleNotificationSubscription,
 } = useEnvironmentDetail();
 
 const { environments: allEnvironments } = useAccountEnvironments();
 const { config: instanceConfig } = useInstanceConfig();
+
+const showNotificationModal = ref(false);
 
 // Environments in the same project (same shopId)
 const siblingEnvironments = computed(() => {
@@ -368,6 +370,12 @@ const tabs = computed(() => {
       label: t("nav.checks"),
       icon: FaCircleCheck,
       count: environment.value?.checks?.length ?? 0,
+    },
+    {
+      route: "account.environments.detail.statusHistory",
+      label: t("nav.statusHistory"),
+      icon: FaClockRotateLeft,
+      count: 0,
     },
     {
       route: "account.environments.detail.extensions",

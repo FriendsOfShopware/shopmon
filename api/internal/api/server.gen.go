@@ -574,6 +574,12 @@ type EnvironmentCheck struct {
 	Level   string  `json:"level"`
 	Link    *string `json:"link,omitempty"`
 	Message string  `json:"message"`
+
+	// MessageKey Translation key for the message; render with params client-side. Falls back to message.
+	MessageKey *string `json:"messageKey,omitempty"`
+
+	// Params Structured params for interpolating messageKey.
+	Params *map[string]interface{} `json:"params,omitempty"`
 }
 
 // EnvironmentDetail defines model for EnvironmentDetail.
@@ -703,15 +709,58 @@ type Notification struct {
 	Level     string            `json:"level"`
 	Link      *NotificationLink `json:"link"`
 	Message   string            `json:"message"`
-	Read      bool              `json:"read"`
-	Title     string            `json:"title"`
-	UserId    string            `json:"userId"`
+
+	// MessageKey Translation key for the message; render with params client-side. Falls back to message.
+	MessageKey *string `json:"messageKey,omitempty"`
+
+	// Params Structured params for interpolating titleKey/messageKey.
+	Params *map[string]interface{} `json:"params,omitempty"`
+	Read   bool                    `json:"read"`
+	Title  string                  `json:"title"`
+
+	// TitleKey Translation key for the title; render with params client-side. Falls back to title.
+	TitleKey *string `json:"titleKey,omitempty"`
+	UserId   string  `json:"userId"`
+}
+
+// NotificationEventType defines model for NotificationEventType.
+type NotificationEventType struct {
+	// DefaultChannels Channels this event is delivered on by default.
+	DefaultChannels []string `json:"defaultChannels"`
+
+	// Type Stable event type identifier (e.g. status_degraded).
+	Type string `json:"type"`
 }
 
 // NotificationLink defines model for NotificationLink.
 type NotificationLink struct {
 	Label string `json:"label"`
 	Url   string `json:"url"`
+}
+
+// NotificationPreference defines model for NotificationPreference.
+type NotificationPreference struct {
+	// Channel Empty is a subscription marker; otherwise in_app or email.
+	Channel string `json:"channel"`
+	Enabled bool   `json:"enabled"`
+
+	// EventType Empty matches all event types; otherwise a specific event type.
+	EventType string `json:"eventType"`
+
+	// ScopeId Empty for global; organization or environment id otherwise.
+	ScopeId string `json:"scopeId"`
+
+	// ScopeType Scope of the preference: global, organization, or environment.
+	ScopeType string `json:"scopeType"`
+}
+
+// NotificationPreferenceInput defines model for NotificationPreferenceInput.
+type NotificationPreferenceInput struct {
+	Channel   string  `json:"channel"`
+	Enabled   bool    `json:"enabled"`
+	EventType *string `json:"eventType,omitempty"`
+	ScopeId   *string `json:"scopeId,omitempty"`
+	ScopeType string  `json:"scopeType"`
 }
 
 // PackagesToken defines model for PackagesToken.
@@ -812,10 +861,31 @@ type SsoProvider struct {
 	TokenEndpoint         string `json:"tokenEndpoint"`
 }
 
+// StatusEvent defines model for StatusEvent.
+type StatusEvent struct {
+	CreatedAt time.Time      `json:"createdAt"`
+	Id        int            `json:"id"`
+	NewStatus string         `json:"newStatus"`
+	OldStatus string         `json:"oldStatus"`
+	Reasons   []StatusReason `json:"reasons"`
+}
+
+// StatusReason defines model for StatusReason.
+type StatusReason struct {
+	Level      string                  `json:"level"`
+	MessageKey string                  `json:"messageKey"`
+	Params     *map[string]interface{} `json:"params,omitempty"`
+	Source     *string                 `json:"source,omitempty"`
+}
+
 // SubscribedEnvironment defines model for SubscribedEnvironment.
 type SubscribedEnvironment struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
+
+	// ShopId The shop this environment belongs to, if any.
+	ShopId   *int    `json:"shopId,omitempty"`
+	ShopName *string `json:"shopName,omitempty"`
 }
 
 // UpdateEnvironmentRequest defines model for UpdateEnvironmentRequest.
@@ -853,6 +923,9 @@ type UserProfile struct {
 	DisplayName string              `json:"displayName"`
 	Email       openapi_types.Email `json:"email"`
 	Id          string              `json:"id"`
+
+	// Locale The user's preferred language, used to localize notification emails.
+	Locale string `json:"locale"`
 }
 
 // DeploymentId defines model for DeploymentId.
@@ -917,6 +990,20 @@ type GetAccountExtensionParams struct {
 
 // GetAccountExtensionParamsLanguage defines parameters for GetAccountExtension.
 type GetAccountExtensionParamsLanguage string
+
+// UpdateAccountMeJSONBody defines parameters for UpdateAccountMe.
+type UpdateAccountMeJSONBody struct {
+	// Locale Preferred language (e.g. "en", "de").
+	Locale *string `json:"locale,omitempty"`
+}
+
+// DeleteNotificationPreferenceParams defines parameters for DeleteNotificationPreference.
+type DeleteNotificationPreferenceParams struct {
+	ScopeType string  `form:"scopeType" json:"scopeType"`
+	ScopeId   *string `form:"scopeId,omitempty" json:"scopeId,omitempty"`
+	EventType *string `form:"eventType,omitempty" json:"eventType,omitempty"`
+	Channel   string  `form:"channel" json:"channel"`
+}
 
 // AdminGetAuditLogParams defines parameters for AdminGetAuditLog.
 type AdminGetAuditLogParams struct {
@@ -990,6 +1077,12 @@ type DiscoverSsoParams struct {
 	Issuer string `form:"issuer" json:"issuer"`
 }
 
+// UpdateAccountMeJSONRequestBody defines body for UpdateAccountMe for application/json ContentType.
+type UpdateAccountMeJSONRequestBody UpdateAccountMeJSONBody
+
+// SetNotificationPreferenceJSONRequestBody defines body for SetNotificationPreference for application/json ContentType.
+type SetNotificationPreferenceJSONRequestBody = NotificationPreferenceInput
+
 // CreateCliDeploymentJSONRequestBody defines body for CreateCliDeployment for application/json ContentType.
 type CreateCliDeploymentJSONRequestBody = CreateCliDeploymentRequest
 
@@ -1040,6 +1133,18 @@ type ServerInterface interface {
 	// Get current user profile
 	// (GET /account/me)
 	GetAccountMe(w http.ResponseWriter, r *http.Request)
+	// Update current user preferences
+	// (PATCH /account/me)
+	UpdateAccountMe(w http.ResponseWriter, r *http.Request)
+	// Delete a single notification preference (revert to inherited/default)
+	// (DELETE /account/notification-preferences)
+	DeleteNotificationPreference(w http.ResponseWriter, r *http.Request, params DeleteNotificationPreferenceParams)
+	// Get the current user's notification preferences
+	// (GET /account/notification-preferences)
+	GetNotificationPreferences(w http.ResponseWriter, r *http.Request)
+	// Create or update a single notification preference
+	// (PUT /account/notification-preferences)
+	SetNotificationPreference(w http.ResponseWriter, r *http.Request)
 	// Get organizations the user belongs to
 	// (GET /account/organizations)
 	GetAccountOrganizations(w http.ResponseWriter, r *http.Request)
@@ -1112,6 +1217,9 @@ type ServerInterface interface {
 	// Update sitespeed settings for an environment
 	// (PUT /environments/{environmentId}/sitespeed-settings)
 	UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// Get the status change history for an environment
+	// (GET /environments/{environmentId}/status-events)
+	GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
 	// Unsubscribe from environment notifications
 	// (DELETE /environments/{environmentId}/subscribe)
 	UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
@@ -1142,6 +1250,9 @@ type ServerInterface interface {
 	// Get all notifications for the current user
 	// (GET /notifications)
 	GetNotifications(w http.ResponseWriter, r *http.Request)
+	// List the notifiable event types and their default channels
+	// (GET /notifications/event-types)
+	GetNotificationEventTypes(w http.ResponseWriter, r *http.Request)
 	// Mark all notifications as read
 	// (POST /notifications/mark-read)
 	MarkNotificationsRead(w http.ResponseWriter, r *http.Request)
@@ -1232,6 +1343,30 @@ func (_ Unimplemented) GetAccountExtension(w http.ResponseWriter, r *http.Reques
 // Get current user profile
 // (GET /account/me)
 func (_ Unimplemented) GetAccountMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update current user preferences
+// (PATCH /account/me)
+func (_ Unimplemented) UpdateAccountMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete a single notification preference (revert to inherited/default)
+// (DELETE /account/notification-preferences)
+func (_ Unimplemented) DeleteNotificationPreference(w http.ResponseWriter, r *http.Request, params DeleteNotificationPreferenceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get the current user's notification preferences
+// (GET /account/notification-preferences)
+func (_ Unimplemented) GetNotificationPreferences(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create or update a single notification preference
+// (PUT /account/notification-preferences)
+func (_ Unimplemented) SetNotificationPreference(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1379,6 +1514,12 @@ func (_ Unimplemented) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Get the status change history for an environment
+// (GET /environments/{environmentId}/status-events)
+func (_ Unimplemented) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Unsubscribe from environment notifications
 // (DELETE /environments/{environmentId}/subscribe)
 func (_ Unimplemented) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
@@ -1436,6 +1577,12 @@ func (_ Unimplemented) DeleteAllNotifications(w http.ResponseWriter, r *http.Req
 // Get all notifications for the current user
 // (GET /notifications)
 func (_ Unimplemented) GetNotifications(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List the notifiable event types and their default channels
+// (GET /notifications/event-types)
+func (_ Unimplemented) GetNotificationEventTypes(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1700,6 +1847,144 @@ func (siw *ServerInterfaceWrapper) GetAccountMe(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateAccountMe operation middleware
+func (siw *ServerInterfaceWrapper) UpdateAccountMe(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateAccountMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNotificationPreference operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNotificationPreference(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteNotificationPreferenceParams
+
+	// ------------- Required query parameter "scopeType" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "scopeType", r.URL.Query(), &params.ScopeType, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "scopeType"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "scopeType", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "scopeId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "scopeId", r.URL.Query(), &params.ScopeId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "scopeId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "scopeId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "eventType" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "eventType", r.URL.Query(), &params.EventType, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "eventType"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "eventType", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "channel" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "channel", r.URL.Query(), &params.Channel, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "channel"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "channel", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNotificationPreference(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNotificationPreferences operation middleware
+func (siw *ServerInterfaceWrapper) GetNotificationPreferences(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotificationPreferences(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetNotificationPreference operation middleware
+func (siw *ServerInterfaceWrapper) SetNotificationPreference(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetNotificationPreference(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2721,6 +3006,38 @@ func (siw *ServerInterfaceWrapper) UpdateSitespeedSettings(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// GetEnvironmentStatusEvents operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEnvironmentStatusEvents(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UnsubscribeFromEnvironment operation middleware
 func (siw *ServerInterfaceWrapper) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request) {
 
@@ -2933,6 +3250,26 @@ func (siw *ServerInterfaceWrapper) GetNotifications(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetNotifications(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNotificationEventTypes operation middleware
+func (siw *ServerInterfaceWrapper) GetNotificationEventTypes(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotificationEventTypes(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3788,6 +4125,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/me", wrapper.GetAccountMe)
 	})
 	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/account/me", wrapper.UpdateAccountMe)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/account/notification-preferences", wrapper.DeleteNotificationPreference)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/account/notification-preferences", wrapper.GetNotificationPreferences)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/account/notification-preferences", wrapper.SetNotificationPreference)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/account/organizations", wrapper.GetAccountOrganizations)
 	})
 	r.Group(func(r chi.Router) {
@@ -3860,6 +4209,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/environments/{environmentId}/sitespeed-settings", wrapper.UpdateSitespeedSettings)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/status-events", wrapper.GetEnvironmentStatusEvents)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/environments/{environmentId}/subscribe", wrapper.UnsubscribeFromEnvironment)
 	})
 	r.Group(func(r chi.Router) {
@@ -3888,6 +4240,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/notifications", wrapper.GetNotifications)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/notifications/event-types", wrapper.GetNotificationEventTypes)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/notifications/mark-read", wrapper.MarkNotificationsRead)

@@ -35,7 +35,8 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /** Update current user preferences */
+    patch: operations["updateAccountMe"];
     trace?: never;
   };
   "/account/extensions": {
@@ -157,6 +158,25 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/account/notification-preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the current user's notification preferences */
+    get: operations["getNotificationPreferences"];
+    /** Create or update a single notification preference */
+    put: operations["setNotificationPreference"];
+    post?: never;
+    /** Delete a single notification preference (revert to inherited/default) */
+    delete: operations["deleteNotificationPreference"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/notifications": {
     parameters: {
       query?: never;
@@ -170,6 +190,23 @@ export interface paths {
     post?: never;
     /** Delete all notifications */
     delete: operations["deleteAllNotifications"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/event-types": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List the notifiable event types and their default channels */
+    get: operations["getNotificationEventTypes"];
+    put?: never;
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -326,6 +363,23 @@ export interface paths {
     post: operations["subscribeToEnvironment"];
     /** Unsubscribe from environment notifications */
     delete: operations["unsubscribeFromEnvironment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/environments/{environmentId}/status-events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the status change history for an environment */
+    get: operations["getEnvironmentStatusEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -1672,6 +1726,8 @@ export interface components {
       email: string;
       /** Format: date-time */
       createdAt: string;
+      /** @description The user's preferred language, used to localize notification emails. */
+      locale: string;
     };
     AccountExtension: {
       name: string;
@@ -1787,6 +1843,49 @@ export interface components {
     SubscribedEnvironment: {
       id: number;
       name: string;
+      /** @description The shop this environment belongs to, if any. */
+      shopId?: number | null;
+      shopName?: string | null;
+    };
+    StatusReason: {
+      level: string;
+      messageKey: string;
+      params?: {
+        [key: string]: unknown;
+      };
+      source?: string;
+    };
+    StatusEvent: {
+      id: number;
+      oldStatus: string;
+      newStatus: string;
+      reasons: components["schemas"]["StatusReason"][];
+      /** Format: date-time */
+      createdAt: string;
+    };
+    NotificationEventType: {
+      /** @description Stable event type identifier (e.g. status_degraded). */
+      type: string;
+      /** @description Channels this event is delivered on by default. */
+      defaultChannels: string[];
+    };
+    NotificationPreference: {
+      /** @description Scope of the preference: global, organization, or environment. */
+      scopeType: string;
+      /** @description Empty for global; organization or environment id otherwise. */
+      scopeId: string;
+      /** @description Empty matches all event types; otherwise a specific event type. */
+      eventType: string;
+      /** @description Empty is a subscription marker; otherwise in_app or email. */
+      channel: string;
+      enabled: boolean;
+    };
+    NotificationPreferenceInput: {
+      scopeType: string;
+      scopeId?: string;
+      eventType?: string;
+      channel: string;
+      enabled: boolean;
     };
     Notification: {
       id: number;
@@ -1795,6 +1894,14 @@ export interface components {
       level: string;
       title: string;
       message: string;
+      /** @description Translation key for the title; render with params client-side. Falls back to title. */
+      titleKey?: string | null;
+      /** @description Translation key for the message; render with params client-side. Falls back to message. */
+      messageKey?: string | null;
+      /** @description Structured params for interpolating titleKey/messageKey. */
+      params?: {
+        [key: string]: unknown;
+      };
       link: components["schemas"]["NotificationLink"] | null;
       read: boolean;
       /** Format: date-time */
@@ -1892,6 +1999,12 @@ export interface components {
       id: string;
       level: string;
       message: string;
+      /** @description Translation key for the message; render with params client-side. Falls back to message. */
+      messageKey?: string | null;
+      /** @description Structured params for interpolating messageKey. */
+      params?: {
+        [key: string]: unknown;
+      };
       link?: string | null;
     };
     Sitespeed: {
@@ -2431,6 +2544,35 @@ export interface operations {
       401: components["responses"]["Unauthorized"];
     };
   };
+  updateAccountMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Preferred language (e.g. "en", "de"). */
+          locale?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Updated user profile */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserProfile"];
+        };
+      };
+      400: components["responses"]["ValidationError"];
+      401: components["responses"]["Unauthorized"];
+    };
+  };
   getAccountExtensions: {
     parameters: {
       query?: {
@@ -2588,6 +2730,76 @@ export interface operations {
       401: components["responses"]["Unauthorized"];
     };
   };
+  getNotificationPreferences: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notification preferences */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationPreference"][];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  setNotificationPreference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NotificationPreferenceInput"];
+      };
+    };
+    responses: {
+      /** @description Preference saved */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["ValidationError"];
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  deleteNotificationPreference: {
+    parameters: {
+      query: {
+        scopeType: string;
+        scopeId?: string;
+        eventType?: string;
+        channel: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Preference deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["ValidationError"];
+      401: components["responses"]["Unauthorized"];
+    };
+  };
   getNotifications: {
     parameters: {
       query?: never;
@@ -2624,6 +2836,27 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  getNotificationEventTypes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of event types */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationEventType"][];
+        };
       };
       401: components["responses"]["Unauthorized"];
     };
@@ -2923,6 +3156,31 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+    };
+  };
+  getEnvironmentStatusEvents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Environment ID */
+        environmentId: components["parameters"]["EnvironmentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of status events (most recent first) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StatusEvent"][];
+        };
       };
       401: components["responses"]["Unauthorized"];
       403: components["responses"]["Forbidden"];

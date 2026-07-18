@@ -19,6 +19,17 @@ func (q *Queries) DeleteAllNotifications(ctx context.Context, userID string) err
 	return err
 }
 
+const deleteEnvironmentNotifications = `-- name: DeleteEnvironmentNotifications :exec
+DELETE FROM user_notification
+WHERE (link->'params'->>'environmentId') = $1::text
+`
+
+// Removes all users' inbox notifications tied to a single environment.
+func (q *Queries) DeleteEnvironmentNotifications(ctx context.Context, environmentID string) error {
+	_, err := q.db.Exec(ctx, deleteEnvironmentNotifications, environmentID)
+	return err
+}
+
 const deleteNotification = `-- name: DeleteNotification :exec
 DELETE FROM user_notification WHERE id = $1 AND user_id = $2
 `
@@ -33,8 +44,27 @@ func (q *Queries) DeleteNotification(ctx context.Context, arg DeleteNotification
 	return err
 }
 
+const deleteUserOrgNotifications = `-- name: DeleteUserOrgNotifications :exec
+DELETE FROM user_notification
+WHERE user_id = $1
+  AND (link->'params'->>'environmentId') IN (
+    SELECT id::text FROM environment WHERE organization_id = $2
+  )
+`
+
+type DeleteUserOrgNotificationsParams struct {
+	UserID         string `json:"user_id"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// Removes a user's inbox notifications tied to environments of an organization.
+func (q *Queries) DeleteUserOrgNotifications(ctx context.Context, arg DeleteUserOrgNotificationsParams) error {
+	_, err := q.db.Exec(ctx, deleteUserOrgNotifications, arg.UserID, arg.OrganizationID)
+	return err
+}
+
 const listNotifications = `-- name: ListNotifications :many
-SELECT id, user_id, key, level, title, message, link, read, created_at
+SELECT id, user_id, key, level, title, message, title_key, message_key, params, link, read, created_at
 FROM user_notification WHERE user_id = $1 ORDER BY created_at DESC
 `
 
@@ -54,6 +84,9 @@ func (q *Queries) ListNotifications(ctx context.Context, userID string) ([]UserN
 			&i.Level,
 			&i.Title,
 			&i.Message,
+			&i.TitleKey,
+			&i.MessageKey,
+			&i.Params,
 			&i.Link,
 			&i.Read,
 			&i.CreatedAt,
@@ -78,18 +111,22 @@ func (q *Queries) MarkAllNotificationsRead(ctx context.Context, userID string) e
 }
 
 const upsertNotification = `-- name: UpsertNotification :exec
-INSERT INTO user_notification (user_id, key, level, title, message, link, read, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
-ON CONFLICT (user_id, key) DO UPDATE SET level = $3, title = $4, message = $5, link = $6, read = false, created_at = NOW()
+INSERT INTO user_notification (user_id, key, level, title, message, title_key, message_key, params, link, read, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, NOW())
+ON CONFLICT (user_id, key) DO UPDATE SET
+  level = $3, title = $4, message = $5, title_key = $6, message_key = $7, params = $8, link = $9, read = false, created_at = NOW()
 `
 
 type UpsertNotificationParams struct {
-	UserID  string          `json:"user_id"`
-	Key     string          `json:"key"`
-	Level   string          `json:"level"`
-	Title   string          `json:"title"`
-	Message string          `json:"message"`
-	Link    json.RawMessage `json:"link"`
+	UserID     string          `json:"user_id"`
+	Key        string          `json:"key"`
+	Level      string          `json:"level"`
+	Title      string          `json:"title"`
+	Message    string          `json:"message"`
+	TitleKey   *string         `json:"title_key"`
+	MessageKey *string         `json:"message_key"`
+	Params     json.RawMessage `json:"params"`
+	Link       json.RawMessage `json:"link"`
 }
 
 func (q *Queries) UpsertNotification(ctx context.Context, arg UpsertNotificationParams) error {
@@ -99,6 +136,9 @@ func (q *Queries) UpsertNotification(ctx context.Context, arg UpsertNotification
 		arg.Level,
 		arg.Title,
 		arg.Message,
+		arg.TitleKey,
+		arg.MessageKey,
+		arg.Params,
 		arg.Link,
 	)
 	return err

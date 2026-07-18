@@ -75,7 +75,9 @@ type Repository interface {
 	DeleteEnvironment(ctx context.Context, environmentID int32) error
 	ListDeploymentIDs(ctx context.Context, environmentID int32) ([]int32, error)
 	UpdateSitespeedSettings(ctx context.Context, environmentID int32, enabled bool, urls []string) error
-	UpdateUserEnvironmentSubscriptions(ctx context.Context, userID string, subscriptions []string) error
+	SubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error
+	UnsubscribeEnvironment(ctx context.Context, userID string, environmentID int32) error
+	IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error)
 }
 
 type MembershipAuthorizer interface {
@@ -451,42 +453,28 @@ func (s *Service) UpdateSitespeedSettings(ctx context.Context, userID string, en
 	return nil
 }
 
-func (s *Service) SubscribeToEnvironment(ctx context.Context, userID string, environmentID int32, current []string) error {
+func (s *Service) SubscribeToEnvironment(ctx context.Context, userID string, environmentID int32, _ []string) error {
 	if _, err := s.authorizedEnvironment(ctx, userID, environmentID); err != nil {
 		return err
 	}
-	key := environmentSubscriptionKey(environmentID)
-	for _, subscription := range current {
-		if subscription == key {
-			return nil
-		}
-	}
-	updated := append(append([]string(nil), current...), key)
-	if err := s.repository.UpdateUserEnvironmentSubscriptions(ctx, userID, updated); err != nil {
+	if err := s.repository.SubscribeEnvironment(ctx, userID, environmentID); err != nil {
 		return fmt.Errorf("subscribe to environment: %w", err)
 	}
 	return nil
 }
 
-func (s *Service) UnsubscribeFromEnvironment(ctx context.Context, userID string, environmentID int32, current []string) error {
+func (s *Service) UnsubscribeFromEnvironment(ctx context.Context, userID string, environmentID int32, _ []string) error {
 	if _, err := s.authorizedEnvironment(ctx, userID, environmentID); err != nil {
 		return err
 	}
-	key := environmentSubscriptionKey(environmentID)
-	updated := make([]string, 0, len(current))
-	for _, subscription := range current {
-		if subscription != key {
-			updated = append(updated, subscription)
-		}
-	}
-	if err := s.repository.UpdateUserEnvironmentSubscriptions(ctx, userID, updated); err != nil {
+	if err := s.repository.UnsubscribeEnvironment(ctx, userID, environmentID); err != nil {
 		return fmt.Errorf("unsubscribe from environment: %w", err)
 	}
 	return nil
 }
 
-func environmentSubscriptionKey(environmentID int32) string {
-	return fmt.Sprintf("environment-%d", environmentID)
+func (s *Service) IsEnvironmentSubscribed(ctx context.Context, userID string, environmentID int32) (bool, error) {
+	return s.repository.IsEnvironmentSubscribed(ctx, userID, environmentID)
 }
 
 func (s *Service) authorizedEnvironment(ctx context.Context, userID string, environmentID int32) (Environment, error) {

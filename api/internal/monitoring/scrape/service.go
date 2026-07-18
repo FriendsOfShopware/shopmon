@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -38,6 +39,7 @@ type Service struct {
 	mail       mail.Sender
 	catalog    CatalogSynchronizer
 	dispatcher Dispatcher
+	notifier   *notify.Dispatcher
 }
 
 type CatalogSynchronizer interface {
@@ -51,7 +53,15 @@ type Dispatcher interface {
 
 // NewService creates an environment scrape service.
 func NewService(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config, mail mail.Sender, catalog CatalogSynchronizer, dispatcher Dispatcher) *Service {
-	return &Service{pool: pool, queries: q, cfg: cfg, mail: mail, catalog: catalog, dispatcher: dispatcher}
+	return &Service{
+		pool:       pool,
+		queries:    q,
+		cfg:        cfg,
+		mail:       mail,
+		catalog:    catalog,
+		dispatcher: dispatcher,
+		notifier:   notify.NewDispatcher(q, mail),
+	}
 }
 
 // Scrape refreshes a single environment by ID.
@@ -357,7 +367,15 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	checkSpan.End()
 
 	newStatus := string(checkerResult.Status)
-	h.handleStatusChange(ctx, env, newStatus)
+
+	// Capture the previously persisted checks before they are replaced so the
+	// status transition can be explained by the specific checks that changed.
+	oldChecks, err := h.queries.GetEnvironmentChecks(ctx, env.ID)
+	if err != nil {
+		slog.Warn("failed to load previous checks for status diff", "environmentId", env.ID, "error", err)
+		oldChecks = nil
+	}
+	transition := h.handleStatusTransition(ctx, env, oldChecks, checkerResult.Checks, newStatus)
 
 	// Fetch the favicon before opening the persist transaction: it is an HTTP
 	// call with its own timeout and must not run while holding row locks.
@@ -373,6 +391,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		checks:          checkerResult.Checks,
 		extensionsDiff:  extensionsDiff,
 		favicon:         favicon,
+		transition:      transition,
 	}); err != nil {
 		return err
 	}
@@ -411,6 +430,7 @@ type scrapeResult struct {
 	checks          []checker.Check
 	extensionsDiff  []extensionDiff
 	favicon         *string
+	transition      *statusTransition
 }
 
 // persistScrapeResult writes a scrape result in a single transaction. All
@@ -560,6 +580,7 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 
 	// Upsert checks and prune the ones no longer reported, instead of the previous
 	// delete-all + re-insert which rewrote every check row each scrape.
+	translator := h.notifier.Translator()
 	checkIDs := make([]string, 0, len(res.checks))
 	for _, c := range res.checks {
 		checkIDs = append(checkIDs, c.ID)
@@ -567,11 +588,29 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 		if c.Link != "" {
 			link = &c.Link
 		}
+
+		// Persist key + params for per-viewer rendering, plus an English-rendered
+		// fallback in the message column for legacy/non-i18n consumers.
+		params := []byte("{}")
+		if len(c.MessageParams) > 0 {
+			if b, err := json.Marshal(c.MessageParams); err == nil {
+				params = b
+			}
+		}
+		var messageKey *string
+		if c.MessageKey != "" {
+			mk := c.MessageKey
+			messageKey = &mk
+		}
+		message := translator.RenderCheck(notify.DefaultLocale, c.MessageKey, c.MessageParams)
+
 		if err := txQueries.InsertEnvironmentCheck(ctx, queries.InsertEnvironmentCheckParams{
 			EnvironmentID: env.ID,
 			CheckID:       c.ID,
 			Level:         string(c.Level),
-			Message:       c.Message,
+			Message:       message,
+			MessageKey:    messageKey,
+			Params:        params,
 			Source:        c.Source,
 			Link:          link,
 		}); err != nil {
@@ -583,6 +622,22 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 		Column2:       checkIDs,
 	}); err != nil {
 		return fmt.Errorf("delete stale environment checks: %w", err)
+	}
+
+	// Record the status transition on the timeline (alongside the new checks).
+	if res.transition != nil {
+		reasonsJSON, err := json.Marshal(res.transition.reasons)
+		if err != nil || len(res.transition.reasons) == 0 {
+			reasonsJSON = []byte("[]")
+		}
+		if err := txQueries.InsertEnvironmentStatusEvent(ctx, queries.InsertEnvironmentStatusEventParams{
+			EnvironmentID: env.ID,
+			OldStatus:     res.transition.oldStatus,
+			NewStatus:     res.transition.newStatus,
+			Reasons:       reasonsJSON,
+		}); err != nil {
+			return fmt.Errorf("insert environment status event: %w", err)
+		}
 	}
 
 	hasShopwareUpdate := env.ShopwareVersion != res.shopwareVersion

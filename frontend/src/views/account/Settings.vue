@@ -214,6 +214,17 @@
 
     <!-- Notifications -->
     <CardSection :icon="IconBell" :title="$t('settings.notifications')">
+      <!-- Global event x channel matrix -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium">{{ $t("settings.notificationMatrix") }}</h3>
+        <p class="mb-3 text-sm text-muted-foreground">
+          {{ $t("settings.notificationMatrixHint") }}
+        </p>
+        <NotificationMatrix />
+      </div>
+
+      <!-- Watched environments -->
+      <h3 class="mb-3 text-sm font-medium">{{ $t("settings.watchedEnvironments") }}</h3>
       <EmptyState
         v-if="!subscribedShops?.length"
         :icon="IconBellSlash"
@@ -221,22 +232,40 @@
         :description="$t('settings.notSubscribedHint')"
         size="sm"
       />
-      <div v-else class="space-y-2">
-        <div
-          v-for="env in subscribedShops"
-          :key="env.id"
-          class="flex items-center justify-between rounded-xl border px-4 py-3"
-        >
-          <div class="text-sm font-medium">{{ env.name }}</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-7 text-muted-foreground hover:text-destructive"
-            :title="$t('settings.unsubscribe')"
-            @click="unsubscribeFromEnvironment(env.id)"
-          >
-            <icon-fa6-solid:bell-slash class="size-3" />
-          </Button>
+      <div v-else class="space-y-4">
+        <div v-for="group in groupedSubscribedShops" :key="group.key" class="space-y-2">
+          <h4 class="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {{ group.shopName ?? $t("settings.otherEnvironments") }}
+          </h4>
+          <div v-for="env in group.environments" :key="env.id" class="rounded-xl border">
+            <div class="flex items-center justify-between px-4 py-3">
+              <button
+                type="button"
+                class="flex min-w-0 flex-1 items-center gap-2 text-left"
+                @click="toggleEnvExpanded(env.id)"
+              >
+                <icon-fa6-solid:chevron-right
+                  class="size-3 shrink-0 text-muted-foreground transition-transform"
+                  :class="{ 'rotate-90': expandedEnv === env.id }"
+                />
+                <span class="truncate text-sm font-medium">{{ env.name }}</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="size-7 text-muted-foreground hover:text-destructive"
+                :title="$t('settings.unsubscribe')"
+                @click="unsubscribeFromEnvironment(env.id)"
+              >
+                <icon-fa6-solid:bell-slash class="size-3" />
+              </Button>
+            </div>
+
+            <div v-if="expandedEnv === env.id" class="space-y-3 border-t px-4 py-3">
+              <p class="text-xs text-muted-foreground">{{ $t("settings.perEnvHint") }}</p>
+              <NotificationMatrix :environment-id="env.id" />
+            </div>
+          </div>
         </div>
       </div>
     </CardSection>
@@ -314,6 +343,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CardSection from "@/components/CardSection.vue";
+import NotificationMatrix from "@/components/NotificationMatrix.vue";
 import PasswordInput from "@/components/PasswordInput.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import {
@@ -337,6 +367,7 @@ import IconBell from "~icons/fa6-solid/bell";
 import IconBellSlash from "~icons/fa6-regular/bell-slash";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
+import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -344,6 +375,10 @@ import { startRegistration } from "@simplewebauthn/browser";
 const { t } = useI18n();
 const { session: sessionData } = useSession();
 const alert = useAlert();
+
+// The notification matrix UI lives in NotificationMatrix; here we only need to
+// load the shared preference state once on mount.
+const { loadAll: loadNotificationPreferences } = useNotificationPreferences();
 
 const passKeyName = ref("");
 
@@ -364,6 +399,29 @@ const passkeys = ref<PasskeyEntry[] | null>([]);
 const sessions = ref<SessionEntry[] | null>([]);
 const connectedProviders = ref<string[]>([]);
 const subscribedShops = ref<components["schemas"]["SubscribedEnvironment"][] | null>(null);
+const expandedEnv = ref<number | null>(null);
+
+type SubscribedEnvironment = components["schemas"]["SubscribedEnvironment"];
+
+// Watched environments grouped by the shop they belong to, so multiple
+// environments of the same shop (e.g. Production, Staging) appear together.
+const groupedSubscribedShops = computed(() => {
+  const groups = new Map<
+    string,
+    { key: string; shopName: string | null; environments: SubscribedEnvironment[] }
+  >();
+  for (const env of subscribedShops.value ?? []) {
+    const key = env.shopId != null ? `shop-${env.shopId}` : "no-shop";
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, shopName: env.shopName ?? null, environments: [] };
+      groups.set(key, group);
+    }
+    group.environments.push(env);
+  }
+  return Array.from(groups.values());
+});
+
 const organizations = ref<{ id: string; name: string }[]>([]);
 const deleteCurrentPassword = ref("");
 
@@ -467,6 +525,10 @@ async function loadSubscribedEnvironments() {
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
   }
+}
+
+function toggleEnvExpanded(environmentId: number) {
+  expandedEnv.value = expandedEnv.value === environmentId ? null : environmentId;
 }
 
 const showAccountDeletionModal = ref(false);
@@ -585,5 +647,6 @@ onMounted(() => {
   loadLinkedAccounts();
   loadOrganizations();
   loadSubscribedEnvironments();
+  loadNotificationPreferences();
 });
 </script>
