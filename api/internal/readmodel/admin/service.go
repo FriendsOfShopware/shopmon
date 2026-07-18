@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -83,7 +82,7 @@ func (s *Service) Organizations(ctx context.Context, params api.AdminGetOrganiza
 			Id:               row.ID,
 			Name:             row.Name,
 			Logo:             row.Logo,
-			CreatedAt:        pgtimeToTime(row.CreatedAt),
+			CreatedAt:        database.Time(row.CreatedAt),
 			EnvironmentCount: int(row.EnvironmentCount),
 			MemberCount:      int(row.MemberCount),
 		})
@@ -134,7 +133,7 @@ func (s *Service) Environments(ctx context.Context, params api.AdminGetEnvironme
 			Url:              row.Url,
 			Status:           row.Status,
 			ShopwareVersion:  row.ShopwareVersion,
-			LastScrapedAt:    pgtimeToTimePtr(row.LastScrapedAt),
+			LastScrapedAt:    database.TimePtr(row.LastScrapedAt),
 			OrganizationId:   row.OrganizationID,
 			OrganizationName: row.OrganizationName,
 			ShopId:           &shopID,
@@ -248,7 +247,7 @@ func (s *Service) RecentActivity(ctx context.Context) (api.AdminRecentActivity, 
 			Id:          row.ID,
 			DisplayName: row.Name,
 			Email:       openapi_types.Email(row.Email),
-			CreatedAt:   pgtimeToTime(row.CreatedAt),
+			CreatedAt:   database.Time(row.CreatedAt),
 		})
 	}
 
@@ -310,7 +309,7 @@ func (s *Service) OrganizationDetail(ctx context.Context, orgID string) (api.Adm
 		Name:             org.Name,
 		Slug:             org.Slug,
 		Logo:             org.Logo,
-		CreatedAt:        pgtimeToTime(org.CreatedAt),
+		CreatedAt:        database.Time(org.CreatedAt),
 		MemberCount:      int(org.MemberCount),
 		EnvironmentCount: int(org.EnvironmentCount),
 		Members:          make([]api.AdminOrganizationMember, 0, len(members)),
@@ -327,7 +326,7 @@ func (s *Service) OrganizationDetail(ctx context.Context, orgID string) (api.Adm
 			Email:     m.Email,
 			Image:     m.Image,
 			Role:      m.Role,
-			CreatedAt: pgtimeToTime(m.CreatedAt),
+			CreatedAt: database.Time(m.CreatedAt),
 		})
 	}
 	for _, e := range environments {
@@ -337,7 +336,7 @@ func (s *Service) OrganizationDetail(ctx context.Context, orgID string) (api.Adm
 			Url:             e.Url,
 			Status:          e.Status,
 			ShopwareVersion: e.ShopwareVersion,
-			LastScrapedAt:   pgtimeToTimePtr(e.LastScrapedAt),
+			LastScrapedAt:   database.TimePtr(e.LastScrapedAt),
 			ShopId:          int(e.ShopID),
 			ShopName:        e.ShopName,
 		})
@@ -348,8 +347,8 @@ func (s *Service) OrganizationDetail(ctx context.Context, orgID string) (api.Adm
 			Email:        i.Email,
 			Role:         i.Role,
 			Status:       i.Status,
-			ExpiresAt:    pgtimeToTime(i.ExpiresAt),
-			CreatedAt:    pgtimeToTime(i.CreatedAt),
+			ExpiresAt:    database.Time(i.ExpiresAt),
+			CreatedAt:    database.Time(i.CreatedAt),
 			InviterName:  i.InviterName,
 			InviterEmail: i.InviterEmail,
 		})
@@ -367,7 +366,7 @@ func (s *Service) OrganizationDetail(ctx context.Context, orgID string) (api.Adm
 			Id:          int(s.ID),
 			Name:        s.Name,
 			Description: s.Description,
-			CreatedAt:   pgtimeToTime(s.CreatedAt),
+			CreatedAt:   database.Time(s.CreatedAt),
 		}
 		if s.DefaultEnvironmentID != nil {
 			id := int(*s.DefaultEnvironmentID)
@@ -409,8 +408,8 @@ func (s *Service) EnvironmentDetail(ctx context.Context, environmentID int) (api
 		Url:                  env.Url,
 		Status:               env.Status,
 		ShopwareVersion:      env.ShopwareVersion,
-		CreatedAt:            pgtimeToTime(env.CreatedAt),
-		LastScrapedAt:        pgtimeToTimePtr(env.LastScrapedAt),
+		CreatedAt:            database.Time(env.CreatedAt),
+		LastScrapedAt:        database.TimePtr(env.LastScrapedAt),
 		LastScrapedError:     env.LastScrapedError,
 		ConnectionIssueCount: int(env.ConnectionIssueCount),
 		OrganizationId:       env.OrganizationID,
@@ -465,7 +464,7 @@ func (s *Service) EnvironmentDetail(ctx context.Context, environmentID int) (api
 			ReturnCode:    int(dep.ReturnCode),
 			ExecutionTime: dep.ExecutionTime,
 			Reference:     dep.Reference,
-			CreatedAt:     pgtimeToTime(dep.CreatedAt),
+			CreatedAt:     database.Time(dep.CreatedAt),
 		}
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return api.AdminEnvironmentDetail{}, fmt.Errorf("get environment last deployment: %w", err)
@@ -521,7 +520,7 @@ func (s *Service) AuditLog(ctx context.Context, params api.AdminGetAuditLogParam
 			TargetEmail:  a.TargetEmail,
 			Detail:       a.Detail,
 			IpAddress:    a.IpAddress,
-			CreatedAt:    pgtimeToTime(a.CreatedAt),
+			CreatedAt:    database.Time(a.CreatedAt),
 		})
 	}
 
@@ -529,15 +528,4 @@ func (s *Service) AuditLog(ctx context.Context, params api.AdminGetAuditLogParam
 		Entries: entries,
 		Total:   int(total),
 	}, nil
-}
-
-func pgtimeToTime(value pgtype.Timestamp) time.Time {
-	return value.Time
-}
-
-func pgtimeToTimePtr(value pgtype.Timestamp) *time.Time {
-	if !value.Valid {
-		return nil
-	}
-	return &value.Time
 }

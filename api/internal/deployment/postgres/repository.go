@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/deployment"
 	"github.com/jackc/pgx/v5"
@@ -155,7 +155,7 @@ func (r *Repository) ListAPIKeys(ctx context.Context, shopID int32) ([]deploymen
 			Name:       row.Name,
 			Scopes:     scopes,
 			CreatedAt:  row.CreatedAt.Time,
-			LastUsedAt: timestampPtr(row.LastUsedAt),
+			LastUsedAt: database.TimePtr(row.LastUsedAt),
 		})
 	}
 	return result, nil
@@ -205,7 +205,7 @@ func (r *Repository) FindAPIKeyByTokenHash(ctx context.Context, tokenHash string
 		TokenHash:      row.Token,
 		Scopes:         scopes,
 		CreatedAt:      row.CreatedAt.Time,
-		LastUsedAt:     timestampPtr(row.LastUsedAt),
+		LastUsedAt:     database.TimePtr(row.LastUsedAt),
 	}, nil
 }
 
@@ -228,11 +228,4 @@ func decodeScopes(raw json.RawMessage) ([]string, error) {
 		return []string{}, nil
 	}
 	return scopes, nil
-}
-
-func timestampPtr(value pgtype.Timestamp) *time.Time {
-	if !value.Valid {
-		return nil
-	}
-	return &value.Time
 }

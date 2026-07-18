@@ -13,6 +13,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 )
 
 // existingExtension is the unified prior state of an extension (store-known or
@@ -90,7 +91,7 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 				Name:       old.Name,
 				Label:      old.Label,
 				State:      "removed",
-				OldVersion: strPtr(old.Version),
+				OldVersion: ptr.Of(old.Version),
 				Active:     old.Active,
 			})
 			continue
@@ -112,8 +113,8 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 			Name:       newExt.Name,
 			Label:      newExt.Label,
 			State:      state,
-			OldVersion: strPtr(old.Version),
-			NewVersion: strPtr(newExt.Version),
+			OldVersion: ptr.Of(old.Version),
+			NewVersion: ptr.Of(newExt.Version),
 			Active:     newExt.Active,
 		})
 	}
@@ -127,7 +128,7 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 			Name:       ne.Name,
 			Label:      ne.Label,
 			State:      "installed",
-			NewVersion: strPtr(ne.Version),
+			NewVersion: ptr.Of(ne.Version),
 			Active:     ne.Active,
 		})
 	}
@@ -219,8 +220,4 @@ func getFavicon(ctx context.Context, shopURL string) *string {
 	}
 
 	return nil
-}
-
-func strPtr(s string) *string {
-	return &s
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -123,7 +124,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			log.Warn("authentication failed", "error", err)
 			h.notifyAuthError(ctx, env, err)
 			if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-				LastScrapedError: strPtr(fmt.Sprintf("Authentication failed: %v", err)),
+				LastScrapedError: ptr.Of(fmt.Sprintf("Authentication failed: %v", err)),
 				ID:               env.ID,
 			}); err != nil {
 				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
@@ -185,7 +186,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		errMsg := fmt.Sprintf("failed to fetch environment config: %v", fr.configErr)
 		h.notifyDataFetchError(ctx, env, errMsg)
 		if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-			LastScrapedError: strPtr(errMsg),
+			LastScrapedError: ptr.Of(errMsg),
 			ID:               env.ID,
 		}); err != nil {
 			slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
@@ -236,7 +237,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 					Active:      a.Active,
 					Version:     a.Version,
 					Installed:   true,
-					InstalledAt: strPtr(a.CreatedAt),
+					InstalledAt: ptr.Of(a.CreatedAt),
 				})
 			}
 		}

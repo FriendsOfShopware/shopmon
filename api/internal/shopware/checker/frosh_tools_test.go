@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,8 +25,6 @@ func (m *mockHTTPClient) Get(_ context.Context, path string) ([]byte, error) {
 	}
 	return nil, errors.New("unexpected path: " + path)
 }
-
-func strPtr(s string) *string { return &s }
 
 func findCheck(checks []Check, id string) (Check, bool) {
 	for _, c := range checks {
@@ -89,7 +88,7 @@ func TestMapFroshChecks(t *testing.T) {
 		},
 		{
 			name:            "current and recommended carried as params",
-			check:           froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: strPtr("7.4"), Recommended: strPtr("8.2")},
+			check:           froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: ptr.Of("7.4"), Recommended: ptr.Of("8.2")},
 			wantEmitted:     true,
 			wantID:          "frosh.phpOutdated",
 			wantLevel:       StatusYellow,
