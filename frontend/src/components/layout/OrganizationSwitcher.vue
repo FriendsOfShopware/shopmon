@@ -26,6 +26,7 @@ import {
   resetAccountEnvironments,
   fetchAccountEnvironments,
 } from "@/composables/useAccountEnvironments";
+import { resetAccountShops, fetchAccountShops } from "@/composables/useAccountShops";
 import { api } from "@/helpers/api";
 import {
   Select,
@@ -67,6 +68,8 @@ async function switchOrganization(orgId: AcceptableValue) {
   if (orgId === activeOrganizationId.value) return;
   await setActiveOrganization(orgId);
   resetAccountEnvironments();
+  resetAccountShops();
   fetchAccountEnvironments();
+  fetchAccountShops();
 }
 </script>

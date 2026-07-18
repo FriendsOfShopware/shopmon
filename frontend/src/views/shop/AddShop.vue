@@ -188,6 +188,8 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
+import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { fetchAccountShops } from "@/composables/useAccountShops";
 import { api } from "@/helpers/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -304,6 +306,9 @@ const onSubmit = handleSubmit(async (values) => {
       error(apiError.message);
       return;
     }
+
+    // Keep sidebar (and other shared lists) in sync without a full page reload.
+    await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
 
     if (route.query.redirect) {
       router.push(route.query.redirect as string);

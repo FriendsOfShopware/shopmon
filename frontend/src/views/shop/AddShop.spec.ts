@@ -37,6 +37,14 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
+vi.mock("@/composables/useAccountShops", () => ({
+  fetchAccountShops: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock("@/composables/useAccountEnvironments", () => ({
+  fetchAccountEnvironments: vi.fn(() => Promise.resolve([])),
+}));
+
 import { api } from "@/helpers/api";
 
 describe("AddShop", () => {

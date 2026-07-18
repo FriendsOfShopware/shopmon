@@ -245,6 +245,7 @@ import PackagesTokensCard from "@/components/shop/PackagesTokensCard.vue";
 import { useAlert } from "@/composables/useAlert";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
+import { fetchAccountShops } from "@/composables/useAccountShops";
 import { api } from "@/helpers/api";
 import type { components } from "@/types/api";
 import { Button } from "@/components/ui/button";
@@ -332,7 +333,7 @@ async function setDefaultEnvironment(envId: number) {
       alert.error((error as { message?: string }).message ?? t("shop.defaultEnvSet"));
       return;
     }
-    await loadShopSummary();
+    await Promise.all([loadShopSummary(), fetchAccountShops()]);
     alert.success(t("shop.defaultEnvSet"));
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -374,7 +375,7 @@ const onSubmitShop = handleShopSubmit(async (values) => {
       );
       return;
     }
-    await loadShopSummary();
+    await Promise.all([loadShopSummary(), fetchAccountShops()]);
     alert.success(t("shop.shopUpdated"));
   } catch (error) {
     alert.error(
@@ -398,6 +399,7 @@ async function deleteShop() {
       );
       return;
     }
+    await Promise.all([fetchAccountShops(), fetchAccountEnvironments()]);
     alert.success(t("shop.shopDeleted"));
     router.push({ name: "account.shop.list" });
   } catch (error) {
