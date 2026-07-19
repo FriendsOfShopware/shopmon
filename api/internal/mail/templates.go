@@ -2,9 +2,11 @@ package mail
 
 import (
 	"fmt"
+	"html"
 	"log/slog"
 
 	"github.com/matcornic/hermes"
+	"github.com/russross/blackfriday/v2"
 )
 
 // defaultProductLink is used as the email product link when the service has no
@@ -18,11 +20,12 @@ func (s *Service) newHermes() hermes.Hermes {
 		link = defaultProductLink
 	}
 	return hermes.Hermes{
+		Theme: &shopmonTheme{},
 		Product: hermes.Product{
 			Name:      "Shopmon",
 			Link:      link,
-			Copyright: "Best Regards, FriendsOfShopware",
-			Logo:      fmt.Sprintf("%s/shopmon-logo.svg", link),
+			Copyright: "Shopmon · FriendsOfShopware",
+			Logo:      fmt.Sprintf("%s/shopmon-logo.png", link),
 		},
 	}
 }
@@ -31,7 +34,8 @@ func (s *Service) newHermes() hermes.Hermes {
 func (s *Service) BuildConfirmationEmail(name, verifyURL string) Email {
 	return s.generate("Confirm your email address", hermes.Email{
 		Body: hermes.Body{
-			Name: name,
+			Name:      name,
+			Signature: "Best regards,",
 			Intros: []string{
 				"Thank you for registering with us. Please confirm your email address by clicking the button below.",
 			},
@@ -55,7 +59,8 @@ func (s *Service) BuildConfirmationEmail(name, verifyURL string) Email {
 func (s *Service) BuildPasswordResetEmail(name, resetURL string) Email {
 	return s.generate("Reset your password", hermes.Email{
 		Body: hermes.Body{
-			Name: name,
+			Name:      name,
+			Signature: "Best regards,",
 			Intros: []string{
 				"We received a request to reset your password. Please click the button below to set a new password.",
 			},
@@ -79,7 +84,8 @@ func (s *Service) BuildPasswordResetEmail(name, resetURL string) Email {
 func (s *Service) BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) Email {
 	return s.generate("You have been invited to join "+orgName+" at Shopmon", hermes.Email{
 		Body: hermes.Body{
-			Intros: []string{inviterName + " has invited you to join **" + orgName + "** on Shopmon."},
+			Signature: "Best regards,",
+			Intros:    []string{inviterName + " has invited you to join **" + orgName + "** on Shopmon."},
 			Actions: []hermes.Action{
 				{
 					Button: hermes.Button{
@@ -90,7 +96,7 @@ func (s *Service) BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL
 				},
 				{
 					Button: hermes.Button{
-						Color: "#6b7280",
+						Color: "#64748b",
 						Text:  "Decline",
 						Link:  rejectURL,
 					},
@@ -122,9 +128,10 @@ func (s *Service) BuildConnectionFailedEmail(userName, envName, alertMessage str
 func shopAlertBody(userName, shopName, alertMessage string) hermes.Email {
 	return hermes.Email{
 		Body: hermes.Body{
-			Name: userName,
+			Name:      userName,
+			Signature: "Best regards,",
 			Intros: []string{
-				"There is an alert for shop **" + shopName + "**:",
+				"There is an alert for environment **" + shopName + "**:",
 				alertMessage,
 			},
 		},
@@ -137,7 +144,8 @@ func shopAlertBody(userName, shopName, alertMessage string) hermes.Email {
 func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string) Email {
 	return s.generate(subject, hermes.Email{
 		Body: hermes.Body{
-			Name: userName,
+			Name:      userName,
+			Signature: "Best regards,",
 			Intros: []string{
 				intro,
 				alertMessage,
@@ -152,7 +160,26 @@ func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string)
 func (s *Service) generate(subject string, email hermes.Email) Email {
 	h := s.newHermes()
 
-	html, err := h.GenerateHTML(email)
+	// Make a shallow copy of email and deep copy Intros/Outros for HTML generation.
+	// This ensures blackfriday HTML transformations do not contaminate the plain-text output.
+	htmlEmail := email
+	htmlEmail.Body.Intros = make([]string, len(email.Body.Intros))
+	copy(htmlEmail.Body.Intros, email.Body.Intros)
+	htmlEmail.Body.Outros = make([]string, len(email.Body.Outros))
+	copy(htmlEmail.Body.Outros, email.Body.Outros)
+
+	// Pre-process markdown formatting in Intros and Outros for rich HTML email rendering.
+	// We escape HTML first to prevent raw HTML injection from user inputs (e.g. orgName, shopName).
+	for i, intro := range htmlEmail.Body.Intros {
+		escaped := html.EscapeString(intro)
+		htmlEmail.Body.Intros[i] = string(blackfriday.Run([]byte(escaped)))
+	}
+	for i, outro := range htmlEmail.Body.Outros {
+		escaped := html.EscapeString(outro)
+		htmlEmail.Body.Outros[i] = string(blackfriday.Run([]byte(escaped)))
+	}
+
+	html, err := h.GenerateHTML(htmlEmail)
 	if err != nil {
 		slog.Error("generate html email", "error", err)
 	}
