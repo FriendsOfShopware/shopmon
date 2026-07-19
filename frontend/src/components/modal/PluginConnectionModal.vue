@@ -64,7 +64,6 @@
         rows="3"
         class="font-mono text-xs"
         placeholder="eyJ1cmwiOiJodHRwczovL215LXNob3AuZXhhbXBsZS5jb20iLC..."
-        @input="$emit('update:base64', pluginBase64Value)"
       />
 
       <Alert v-if="error" variant="destructive">
@@ -109,7 +108,7 @@ const props = withDefaults(defineProps<Props>(), {
   error: "",
 });
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
   import: [];
   "update:base64": [value: string];
@@ -123,6 +122,10 @@ watch(
     pluginBase64Value.value = newValue;
   },
 );
+
+watch(pluginBase64Value, (newValue) => {
+  emit("update:base64", newValue);
+});
 
 watch(
   () => props.show,
