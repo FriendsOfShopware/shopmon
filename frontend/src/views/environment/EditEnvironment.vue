@@ -279,6 +279,7 @@ import {
 } from "@/components/ui/select";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import PluginConnectionModal from "@/components/modal/PluginConnectionModal.vue";
+import { parsePluginData } from "@/helpers/pluginData";
 
 const { t } = useI18n();
 const { error, success } = useAlert();
@@ -448,29 +449,22 @@ const closePluginModal = () => {
 };
 
 function processPluginData() {
+  pluginError.value = "";
   try {
-    pluginError.value = "";
-
-    if (!pluginBase64.value.trim()) {
-      pluginError.value = t("environment.base64Error");
-      return;
-    }
-
-    const decodedString = window.atob(pluginBase64.value.trim());
-    const data = JSON.parse(decodedString);
-
-    if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t("environment.base64InvalidData");
-      return;
-    }
-
+    const data = parsePluginData(pluginBase64.value);
     setFieldValue("shopUrl", data.url);
     setFieldValue("clientId", data.clientId);
     setFieldValue("clientSecret", data.clientSecret);
-
     closePluginModal();
-  } catch (_e) {
-    pluginError.value = t("environment.base64InvalidFormat");
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "";
+    if (message === "EMPTY_INPUT") {
+      pluginError.value = t("environment.base64Error");
+    } else if (message === "INVALID_DATA") {
+      pluginError.value = t("environment.base64InvalidData");
+    } else {
+      pluginError.value = t("environment.base64InvalidFormat");
+    }
   }
 }
 </script>

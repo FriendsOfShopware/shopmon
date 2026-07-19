@@ -211,6 +211,7 @@ import { z } from "zod";
 import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+import { parsePluginData } from "@/helpers/pluginData";
 
 const { t } = useI18n();
 const { error } = useAlert();
@@ -333,29 +334,22 @@ function closePluginModal() {
 }
 
 function processPluginData() {
+  pluginError.value = "";
   try {
-    pluginError.value = "";
-
-    if (!pluginBase64.value.trim()) {
-      pluginError.value = t("environment.base64Error");
-      return;
-    }
-
-    const decodedString = window.atob(pluginBase64.value.trim());
-    const data = JSON.parse(decodedString);
-
-    if (!data.url || !data.clientId || !data.clientSecret) {
-      pluginError.value = t("environment.base64InvalidData");
-      return;
-    }
-
+    const data = parsePluginData(pluginBase64.value);
     setFieldValue("environmentUrl", data.url);
     setFieldValue("clientId", data.clientId);
     setFieldValue("clientSecret", data.clientSecret);
-
     closePluginModal();
-  } catch (_e) {
-    pluginError.value = t("environment.base64InvalidFormat");
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "";
+    if (message === "EMPTY_INPUT") {
+      pluginError.value = t("environment.base64Error");
+    } else if (message === "INVALID_DATA") {
+      pluginError.value = t("environment.base64InvalidData");
+    } else {
+      pluginError.value = t("environment.base64InvalidFormat");
+    }
   }
 }
 
