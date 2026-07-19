@@ -307,6 +307,7 @@ func aggregateAccountExtensions(
 		env := api.AccountExtensionEnvironment{
 			EnvironmentId:               int(row.EnvironmentID),
 			EnvironmentName:             row.EnvironmentName,
+			EnvironmentShopName:         row.EnvironmentShopName,
 			EnvironmentUrl:              row.EnvironmentUrl,
 			EnvironmentOrganizationName: row.EnvironmentOrganizationName,
 			EnvironmentOrganizationId:   row.EnvironmentOrganizationID,
@@ -468,6 +469,7 @@ func (s *Service) Changelogs(ctx context.Context, userID string, activeOrgID *st
 			Id:                          int(row.ID),
 			EnvironmentId:               environmentID,
 			EnvironmentName:             row.EnvironmentName,
+			EnvironmentShopName:         row.EnvironmentShopName,
 			EnvironmentOrganizationName: row.EnvironmentOrganizationName,
 			EnvironmentOrganizationId:   row.EnvironmentOrganizationID,
 			Extensions:                  extensions,

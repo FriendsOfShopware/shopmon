@@ -152,8 +152,10 @@ func (q *Queries) DeleteStoreExtensionImagesNotIn(ctx context.Context, arg Delet
 const getAllEnvironments = `-- name: GetAllEnvironments :many
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
-       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls
+       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       s.name AS shop_name
 FROM environment e
+LEFT JOIN shop s ON s.id = e.shop_id
 `
 
 type GetAllEnvironmentsRow struct {
@@ -171,6 +173,7 @@ type GetAllEnvironmentsRow struct {
 	EnvironmentToken     string           `json:"environment_token"`
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
+	ShopName             *string          `json:"shop_name"`
 }
 
 func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsRow, error) {
@@ -197,6 +200,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 			&i.EnvironmentToken,
 			&i.SitespeedEnabled,
 			&i.SitespeedUrls,
+			&i.ShopName,
 		); err != nil {
 			return nil, err
 		}
@@ -423,8 +427,11 @@ func (q *Queries) GetEnvironmentExtensions(ctx context.Context, environmentID in
 const getEnvironmentForScrape = `-- name: GetEnvironmentForScrape :one
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
-       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls
-FROM environment e WHERE e.id = $1
+       e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       s.name AS shop_name
+FROM environment e
+LEFT JOIN shop s ON s.id = e.shop_id
+WHERE e.id = $1
 `
 
 type GetEnvironmentForScrapeRow struct {
@@ -442,6 +449,7 @@ type GetEnvironmentForScrapeRow struct {
 	EnvironmentToken     string           `json:"environment_token"`
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
+	ShopName             *string          `json:"shop_name"`
 }
 
 func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnvironmentForScrapeRow, error) {
@@ -462,6 +470,7 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 		&i.EnvironmentToken,
 		&i.SitespeedEnabled,
 		&i.SitespeedUrls,
+		&i.ShopName,
 	)
 	return i, err
 }
@@ -499,7 +508,12 @@ func (q *Queries) GetEnvironmentNotificationSubscribers(ctx context.Context, arg
 	items := []GetEnvironmentNotificationSubscribersRow{}
 	for rows.Next() {
 		var i GetEnvironmentNotificationSubscribersRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email, &i.Locale); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Locale,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

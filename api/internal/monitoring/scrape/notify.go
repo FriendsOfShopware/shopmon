@@ -47,6 +47,13 @@ func (h *Service) environmentRecipients(ctx context.Context, env queries.GetAllE
 	return recipients
 }
 
+func environmentDisplayName(name string, shopName *string) string {
+	if shopName != nil && *shopName != "" {
+		return *shopName + " · " + name
+	}
+	return name
+}
+
 // statusTransition captures a recorded status change so the caller can persist
 // it to the timeline within the scrape transaction.
 type statusTransition struct {
@@ -76,13 +83,18 @@ func (h *Service) handleStatusTransition(ctx context.Context, env queries.GetAll
 	degraded := newWeight > oldWeight
 	reasons := computeStatusReasons(oldChecks, newChecks, degraded)
 
+	shopName := env.ShopName
+	if envDetail.ShopName != nil && *envDetail.ShopName != "" {
+		shopName = envDetail.ShopName
+	}
+
 	ev := notify.Event{
 		Level:     notify.LevelInfo,
 		ScopeType: notify.ScopeEnvironment,
 		ScopeID:   strconv.Itoa(int(env.ID)),
 		OrgID:     env.OrganizationID,
 		Params: map[string]any{
-			"name": env.Name,
+			"name": environmentDisplayName(env.Name, shopName),
 			"from": oldStatus,
 			"to":   newStatus,
 		},
@@ -200,7 +212,7 @@ func (h *Service) notifyAuthError(ctx context.Context, env queries.GetAllEnviron
 		TitleKey:   "notification.authError.title",
 		MessageKey: "notification.authError.message",
 		Params: map[string]any{
-			"name":  env.Name,
+			"name":  environmentDisplayName(env.Name, env.ShopName),
 			"error": errMsg,
 		},
 		Link: environmentLink(env.ID),
@@ -219,7 +231,7 @@ func (h *Service) notifyDataFetchError(ctx context.Context, env queries.GetAllEn
 		TitleKey:   "notification.dataFetchError.title",
 		MessageKey: "notification.dataFetchError.message",
 		Params: map[string]any{
-			"name": env.Name,
+			"name": environmentDisplayName(env.Name, env.ShopName),
 		},
 		Link: environmentLink(env.ID),
 	}, h.environmentRecipients(ctx, env))

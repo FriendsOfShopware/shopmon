@@ -306,6 +306,7 @@ func mapEnvironmentChangelogs(environment *queries.GetEnvironmentByIDRow, rows [
 			Id:                          int(row.ID),
 			EnvironmentId:               environmentID,
 			EnvironmentName:             environment.Name,
+			EnvironmentShopName:         ptr.Deref(environment.ShopName),
 			EnvironmentOrganizationName: environment.OrganizationName,
 			EnvironmentOrganizationId:   environment.OrganizationID,
 			Extensions:                  extensions,

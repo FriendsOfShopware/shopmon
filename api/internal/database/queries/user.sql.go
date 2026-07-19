@@ -97,9 +97,10 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 
 const getUserChangelogs = `-- name: GetUserChangelogs :many
 SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
-       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       e.name AS environment_name, s.name AS environment_shop_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
 FROM environment_changelog ec
 JOIN environment e ON e.id = ec.environment_id
+JOIN shop s ON s.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1
@@ -115,6 +116,7 @@ type GetUserChangelogsRow struct {
 	NewShopwareVersion          *string          `json:"new_shopware_version"`
 	Date                        pgtype.Timestamp `json:"date"`
 	EnvironmentName             string           `json:"environment_name"`
+	EnvironmentShopName         string           `json:"environment_shop_name"`
 	EnvironmentOrganizationName string           `json:"environment_organization_name"`
 	EnvironmentOrganizationID   string           `json:"environment_organization_id"`
 }
@@ -136,6 +138,7 @@ func (q *Queries) GetUserChangelogs(ctx context.Context, userID string) ([]GetUs
 			&i.NewShopwareVersion,
 			&i.Date,
 			&i.EnvironmentName,
+			&i.EnvironmentShopName,
 			&i.EnvironmentOrganizationName,
 			&i.EnvironmentOrganizationID,
 		); err != nil {
@@ -151,9 +154,10 @@ func (q *Queries) GetUserChangelogs(ctx context.Context, userID string) ([]GetUs
 
 const getUserChangelogsByOrg = `-- name: GetUserChangelogsByOrg :many
 SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
-       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       e.name AS environment_name, s.name AS environment_shop_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
 FROM environment_changelog ec
 JOIN environment e ON e.id = ec.environment_id
+JOIN shop s ON s.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2
@@ -174,6 +178,7 @@ type GetUserChangelogsByOrgRow struct {
 	NewShopwareVersion          *string          `json:"new_shopware_version"`
 	Date                        pgtype.Timestamp `json:"date"`
 	EnvironmentName             string           `json:"environment_name"`
+	EnvironmentShopName         string           `json:"environment_shop_name"`
 	EnvironmentOrganizationName string           `json:"environment_organization_name"`
 	EnvironmentOrganizationID   string           `json:"environment_organization_id"`
 }
@@ -195,6 +200,7 @@ func (q *Queries) GetUserChangelogsByOrg(ctx context.Context, arg GetUserChangel
 			&i.NewShopwareVersion,
 			&i.Date,
 			&i.EnvironmentName,
+			&i.EnvironmentShopName,
 			&i.EnvironmentOrganizationName,
 			&i.EnvironmentOrganizationID,
 		); err != nil {

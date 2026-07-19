@@ -127,6 +127,35 @@ func TestGetAccountChangelogs_Empty(t *testing.T) {
 	assert.Empty(t, changelogs)
 }
 
+func TestGetAccountChangelogs_IncludesShopName(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "Production", "https://prod.example.com")
+
+	_, err := env.Pool.Exec(t.Context(), `
+		INSERT INTO environment_changelog (environment_id, extensions, old_shopware_version, new_shopware_version, date)
+		VALUES ($1, '[]'::jsonb, '6.5.0.0', '6.6.0.0', NOW())
+	`, environmentID)
+	require.NoError(t, err)
+
+	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/account/changelogs", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var changelogs []api.AccountChangelog
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&changelogs))
+	require.Len(t, changelogs, 1)
+	assert.Equal(t, "Production", changelogs[0].EnvironmentName)
+	assert.Equal(t, "Test Shop", changelogs[0].EnvironmentShopName)
+}
+
 func TestGetAccountSubscribedEnvironments_Empty(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")

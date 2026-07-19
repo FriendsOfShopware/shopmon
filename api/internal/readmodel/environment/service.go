@@ -10,6 +10,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
@@ -234,6 +235,9 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 			return api.EnvironmentDetail{}, fmt.Errorf("decode last changelog: %w", err)
 		}
 		if !changelog.Date.IsZero() {
+			if changelog.EnvironmentShopName == "" {
+				changelog.EnvironmentShopName = ptr.Deref(environment.ShopName)
+			}
 			lastChangelog = &changelog
 		}
 	}

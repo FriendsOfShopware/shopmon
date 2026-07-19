@@ -46,9 +46,10 @@ ORDER BY s.name;
 
 -- name: GetUserChangelogs :many
 SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
-       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       e.name AS environment_name, s.name AS environment_shop_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
 FROM environment_changelog ec
 JOIN environment e ON e.id = ec.environment_id
+JOIN shop s ON s.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1
@@ -75,9 +76,10 @@ ORDER BY s.name;
 
 -- name: GetUserChangelogsByOrg :many
 SELECT ec.id, ec.environment_id, ec.extensions, ec.old_shopware_version, ec.new_shopware_version, ec.date,
-       e.name AS environment_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
+       e.name AS environment_name, s.name AS environment_shop_name, o.name AS environment_organization_name, e.organization_id AS environment_organization_id
 FROM environment_changelog ec
 JOIN environment e ON e.id = ec.environment_id
+JOIN shop s ON s.id = e.shop_id
 JOIN organization o ON o.id = e.organization_id
 JOIN member m ON m.organization_id = e.organization_id
 WHERE m.user_id = $1 AND e.organization_id = $2

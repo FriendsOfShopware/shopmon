@@ -158,6 +158,7 @@ type AccountChangelog struct {
 	EnvironmentName             string    `json:"environmentName"`
 	EnvironmentOrganizationId   string    `json:"environmentOrganizationId"`
 	EnvironmentOrganizationName string    `json:"environmentOrganizationName"`
+	EnvironmentShopName         string    `json:"environmentShopName"`
 
 	// Extensions JSON data describing extension changes
 	Extensions         []ExtensionDiff `json:"extensions"`
@@ -222,6 +223,7 @@ type AccountExtensionEnvironment struct {
 	EnvironmentName             string `json:"environmentName"`
 	EnvironmentOrganizationId   string `json:"environmentOrganizationId"`
 	EnvironmentOrganizationName string `json:"environmentOrganizationName"`
+	EnvironmentShopName         string `json:"environmentShopName"`
 	EnvironmentUrl              string `json:"environmentUrl"`
 	Installed                   bool   `json:"installed"`
 	LatestVersion               string `json:"latestVersion"`

@@ -191,7 +191,11 @@
                             class="flex items-center gap-2.5 pl-4 font-medium hover:text-primary"
                           >
                             <StatusIcon :status="envState(env)" class="shrink-0" />
-                            {{ env.environmentName }}
+                            {{
+                              env.environmentShopName
+                                ? `${env.environmentShopName} · ${env.environmentName}`
+                                : env.environmentName
+                            }}
                           </RouterLink>
                         </TableCell>
                         <TableCell>
