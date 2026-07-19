@@ -75,7 +75,7 @@
         <Button variant="ghost" @click="$emit('close')">
           {{ $t("common.cancel") }}
         </Button>
-        <Button @click="$emit('import')" :disabled="!pluginBase64Value.trim()">
+        <Button @click="handleImport" :disabled="!pluginBase64Value.trim()">
           <icon-fa6-solid:file-import class="mr-1.5 size-3" />
           {{ $t("pluginModal.importData") }}
         </Button>
@@ -110,7 +110,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   close: [];
-  import: [];
+  import: [value: string];
   "update:base64": [value: string];
 }>();
 
@@ -126,6 +126,11 @@ watch(
 watch(pluginBase64Value, (newValue) => {
   emit("update:base64", newValue);
 });
+
+function handleImport() {
+  emit("update:base64", pluginBase64Value.value);
+  emit("import", pluginBase64Value.value);
+}
 
 watch(
   () => props.show,

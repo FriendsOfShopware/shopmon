@@ -333,10 +333,12 @@ function closePluginModal() {
   pluginError.value = "";
 }
 
-function processPluginData() {
+function processPluginData(rawInput?: string) {
   pluginError.value = "";
+  const inputToParse =
+    typeof rawInput === "string" && rawInput.trim() ? rawInput : pluginBase64.value;
   try {
-    const data = parsePluginData(pluginBase64.value);
+    const data = parsePluginData(inputToParse);
     setFieldValue("environmentUrl", data.url);
     setFieldValue("clientId", data.clientId);
     setFieldValue("clientSecret", data.clientSecret);
