@@ -2,6 +2,7 @@ package mail
 
 import (
 	"fmt"
+	"html"
 	"log/slog"
 
 	"github.com/matcornic/hermes"
@@ -159,15 +160,26 @@ func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string)
 func (s *Service) generate(subject string, email hermes.Email) Email {
 	h := s.newHermes()
 
-	// Pre-process markdown formatting in Intros and Outros for rich HTML email rendering
-	for i, intro := range email.Body.Intros {
-		email.Body.Intros[i] = string(blackfriday.Run([]byte(intro)))
+	// Make a shallow copy of email and deep copy Intros/Outros for HTML generation.
+	// This ensures blackfriday HTML transformations do not contaminate the plain-text output.
+	htmlEmail := email
+	htmlEmail.Body.Intros = make([]string, len(email.Body.Intros))
+	copy(htmlEmail.Body.Intros, email.Body.Intros)
+	htmlEmail.Body.Outros = make([]string, len(email.Body.Outros))
+	copy(htmlEmail.Body.Outros, email.Body.Outros)
+
+	// Pre-process markdown formatting in Intros and Outros for rich HTML email rendering.
+	// We escape HTML first to prevent raw HTML injection from user inputs (e.g. orgName, shopName).
+	for i, intro := range htmlEmail.Body.Intros {
+		escaped := html.EscapeString(intro)
+		htmlEmail.Body.Intros[i] = string(blackfriday.Run([]byte(escaped)))
 	}
-	for i, outro := range email.Body.Outros {
-		email.Body.Outros[i] = string(blackfriday.Run([]byte(outro)))
+	for i, outro := range htmlEmail.Body.Outros {
+		escaped := html.EscapeString(outro)
+		htmlEmail.Body.Outros[i] = string(blackfriday.Run([]byte(escaped)))
 	}
 
-	html, err := h.GenerateHTML(email)
+	html, err := h.GenerateHTML(htmlEmail)
 	if err != nil {
 		slog.Error("generate html email", "error", err)
 	}

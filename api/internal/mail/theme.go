@@ -76,9 +76,9 @@ func (t *shopmonTheme) HTMLTemplate() string {
 
           <!-- Main Card -->
           <tr>
-            <td class="email-body" width="100%" style="width: 100%; margin: 0; padding: 0; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); overflow: hidden;">
+            <td class="email-body" width="100%" style="width: 100%; margin: 0; padding: 0; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
               <!-- Top Accent Bar -->
-              <div style="height: 4px; background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);"></div>
+              <div style="height: 4px; background-color: #2563eb; border-top-left-radius: 11px; border-top-right-radius: 11px;"></div>
               
               <table class="email-body_inner" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="width: 100%; margin: 0 auto; padding: 32px 28px;">
                 <tr>

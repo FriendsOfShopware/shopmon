@@ -123,7 +123,34 @@ func TestBuildAlertEmailHTML(t *testing.T) {
 	message := "Status improved from yellow to green\n\n- PHP value opcache.enable_file_override (current: 0, recommended: 1)\n- The queue storage in database does not scale well with multiple workers (current: doctrine, recommended: redis or rabbitmq)"
 
 	email := svc.BuildAlertEmail("Shyim", "Environment Production recovered", intro, message)
-	t.Log(email.HTML)
+
+	// Verify HTML output contains rendered markdown tags and branded layout elements
+	assert.Contains(t, email.HTML, "<strong style=\"color:#0f172a;font-weight:600\">Production</strong>")
+	assert.Contains(t, email.HTML, "<ul style=\"margin-top:8px;margin-bottom:16px;padding-left:20px\">")
+	assert.Contains(t, email.HTML, "PHP value opcache.enable_file_override")
+	assert.Contains(t, email.HTML, "Best regards,")
+	assert.Contains(t, email.HTML, "Shopmon Team")
+
+	// Verify plain-text output remains free of raw HTML tags
+	assert.NotContains(t, email.Text, "<p>")
+	assert.NotContains(t, email.Text, "<strong>")
+	assert.NotContains(t, email.Text, "<ul>")
+	assert.NotContains(t, email.Text, "<li>")
+	assert.Contains(t, email.Text, "There is an alert for environment **Production**:")
+	assert.Contains(t, email.Text, "Status improved from yellow to green")
+}
+
+func TestEmailHTMLInjectionPrevention(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "https://app.example.com")
+	require.NoError(t, err)
+
+	maliciousShop := "<script>alert('xss')</script>"
+	email := svc.BuildAlertEmail("Attacker", "Alert", "Alert for **"+maliciousShop+"**", "message")
+
+	// Verify raw HTML tags are escaped and cannot inject script/HTML elements
+	assert.NotContains(t, email.HTML, "<script>")
+	assert.Contains(t, email.HTML, "&lt;script&gt;")
 }
 
 func TestBuildEmailDefaultProductLink(t *testing.T) {
