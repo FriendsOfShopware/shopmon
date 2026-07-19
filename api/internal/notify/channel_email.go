@@ -31,11 +31,15 @@ func (c *emailChannel) Send(ctx context.Context, r Recipient, ev Event, msg Rend
 
 	intro := c.tr.T(r.Locale, "email.alertIntro", ev.Params)
 
-	// Append the reasons (the checks that changed) as a localized list so the
-	// email explains *why* the status changed.
 	message := msg.Body
-	for _, reason := range ev.Reasons {
-		message += "\n- " + c.tr.RenderCheck(r.Locale, reason.Key, reason.Params)
+	if len(ev.Reasons) > 0 {
+		message += "\n\n"
+		for i, reason := range ev.Reasons {
+			if i > 0 {
+				message += "\n"
+			}
+			message += "- " + c.tr.RenderCheck(r.Locale, reason.Key, reason.Params)
+		}
 	}
 
 	email := c.mail.BuildAlertEmail(r.Name, subject, intro, message)

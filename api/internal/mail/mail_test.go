@@ -114,6 +114,18 @@ func TestBuildEmailUsesFrontendURL(t *testing.T) {
 	assert.Contains(t, email.HTML, "https://app.example.test")
 }
 
+func TestBuildAlertEmailHTML(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "https://app.example.com")
+	require.NoError(t, err)
+
+	intro := "There is an alert for environment **Production**:"
+	message := "Status improved from yellow to green\n\n- PHP value opcache.enable_file_override (current: 0, recommended: 1)\n- The queue storage in database does not scale well with multiple workers (current: doctrine, recommended: redis or rabbitmq)"
+
+	email := svc.BuildAlertEmail("Shyim", "Environment Production recovered", intro, message)
+	t.Log(email.HTML)
+}
+
 func TestBuildEmailDefaultProductLink(t *testing.T) {
 	rec := mailertest.NewRecordingTransport("")
 	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "")
