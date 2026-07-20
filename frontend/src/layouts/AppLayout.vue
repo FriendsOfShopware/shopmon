@@ -63,7 +63,7 @@
                       class="size-4 rounded"
                     />
                     <icon-fa6-solid:folder v-else class="opacity-40" />
-                    <span>{{ shop.name }}</span>
+                    <span class="truncate pr-4">{{ shop.name }}</span>
                   </RouterLink>
                 </SidebarMenuButton>
                 <SidebarMenuBadge v-if="defaultEnvStatus(shop)"
