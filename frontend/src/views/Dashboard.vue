@@ -8,15 +8,29 @@
         <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("dashboard.title") }}</h1>
         <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
       </div>
-      <div v-if="shops.length > 0" class="hidden items-center gap-6 sm:flex">
-        <div class="text-right">
+      <div v-if="shops.length > 0" class="hidden items-center gap-2 sm:flex">
+        <button
+          type="button"
+          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent"
+          :class="{ 'bg-accent': statusFilter === null }"
+          :aria-pressed="statusFilter === null"
+          :title="$t('dashboard.shops')"
+          @click="statusFilter = null"
+        >
           <div class="text-2xl font-bold tabular-nums" data-testid="dashboard-stat-shops">
             {{ shops.length }}
           </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.shops") }}</div>
-        </div>
+        </button>
         <Separator orientation="vertical" class="h-10" />
-        <div class="text-right">
+        <button
+          type="button"
+          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+          :class="{ 'bg-accent': statusFilter === 'green' }"
+          :aria-pressed="statusFilter === 'green'"
+          :disabled="greenCount === 0"
+          @click="statusFilter = statusFilter === 'green' ? null : 'green'"
+        >
           <div
             class="text-2xl font-bold tabular-nums text-success"
             data-testid="dashboard-stat-healthy"
@@ -24,8 +38,15 @@
             {{ greenCount }}
           </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.healthy") }}</div>
-        </div>
-        <div class="text-right">
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+          :class="{ 'bg-accent': statusFilter === 'yellow' }"
+          :aria-pressed="statusFilter === 'yellow'"
+          :disabled="warnCount === 0"
+          @click="statusFilter = statusFilter === 'yellow' ? null : 'yellow'"
+        >
           <div
             class="text-2xl font-bold tabular-nums"
             :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'"
@@ -34,8 +55,15 @@
             {{ warnCount }}
           </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.warnings") }}</div>
-        </div>
-        <div class="text-right">
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+          :class="{ 'bg-accent': statusFilter === 'red' }"
+          :aria-pressed="statusFilter === 'red'"
+          :disabled="errorCount === 0"
+          @click="statusFilter = statusFilter === 'red' ? null : 'red'"
+        >
           <div
             class="text-2xl font-bold tabular-nums"
             :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'"
@@ -44,7 +72,7 @@
             {{ errorCount }}
           </div>
           <div class="text-xs text-muted-foreground">{{ $t("dashboard.errors") }}</div>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -112,7 +140,7 @@
       <section class="mb-8">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <RouterLink
-            v-for="shop in shops"
+            v-for="shop in filteredShops"
             :key="shop.id"
             :to="shopLink(shop)"
             class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
@@ -315,6 +343,13 @@ const warnCount = computed(
 const errorCount = computed(
   () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "red").length,
 );
+
+// Header stats double as filters for the shops grid
+const statusFilter = ref<"green" | "yellow" | "red" | null>(null);
+const filteredShops = computed(() => {
+  if (!statusFilter.value) return shops.value ?? [];
+  return (shops.value ?? []).filter((s) => defaultEnv(s)?.status === statusFilter.value);
+});
 
 // Outdated extensions count. Uses the shared helper so it stays consistent with
 // the extensions list, which counts an extension as outdated when any of its

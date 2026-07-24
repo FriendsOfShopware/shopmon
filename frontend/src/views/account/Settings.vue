@@ -10,7 +10,7 @@
     >
       <div class="space-y-4">
         <div>
-          <Label for="name">{{ $t("common.name") }}</Label>
+          <Label for="name">{{ $t("settings.displayName") }}</Label>
           <Input id="name" v-model="profileName" type="text" autocomplete="name" class="mt-1.5" />
         </div>
       </div>

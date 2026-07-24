@@ -199,6 +199,11 @@
     "loading": "Ökosystem-Statistiken werden geladen...",
     "groupByMinor": "Nach Minor-Version gruppieren"
   },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "backHome": "Zurück zur Startseite"
+  },
   "home": {
     "title": "Shopmon - Das Open-Source-Dashboard für Shopware-Entwickler",
     "subtitle": "Alles auf einen Blick",
@@ -218,7 +223,7 @@
     "sitespeedTitle": "Automatische sitespeed.io-Prüfungen",
     "sitespeedDesc": "Auf Wunsch führen wir tägliche Sitespeed-Prüfungen für bis zu 5 URLs Ihrer Umgebung durch und zeigen Ihnen die wichtigsten Informationen direkt in einer Übersicht.",
     "andMore": "Und vieles mehr ...",
-    "featureList": "Passkey-Anmeldung | GitHub-Anmeldung | Remote Cache leeren | Übersicht geplanter Aufgaben | Remote-Aufgaben-Neuplanung | Warteschlangen-Übersicht | Umgebungs-Änderungsprotokolle | Weitere Funktionen in Entwicklung",
+    "featureList": "Passkey-Anmeldung {'|'} GitHub-Anmeldung {'|'} Remote Cache leeren {'|'} Übersicht geplanter Aufgaben {'|'} Remote-Aufgaben-Neuplanung {'|'} Warteschlangen-Übersicht {'|'} Umgebungs-Änderungsprotokolle {'|'} Weitere Funktionen in Entwicklung",
     "readyTitle": "Bereit, Ihr Shopware zu überwachen?",
     "readyDesc": "Treten Sie Shopmon bei, um Ihre Umgebungen zu überwachen. Beginnen Sie die Überwachung Ihres ersten Shops in unter 2 Minuten – keine Kreditkarte erforderlich, keine Verpflichtungen, nur reine Überwachung.",
     "startFree": "Kostenlos mit der Überwachung starten",
@@ -765,6 +770,7 @@
     "composerPackages": "Composer-Pakete",
     "package": "Paket",
     "output": "Ausgabe",
+    "noOutput": "Für dieses Deployment wurde keine Ausgabe erfasst.",
     "cliIntro": "Verwenden Sie die {cliLink}, um Deployments zu melden.",
     "cliGitHint": "Die CLI verwendet die lokale {gitHead} Commit-SHA. Setzen Sie {referenceVariable}, um sie zu überschreiben. Konfigurieren Sie die Git-URL in den {shopSettings}.",
     "count": "{count} Deployment | {count} Deployments"
