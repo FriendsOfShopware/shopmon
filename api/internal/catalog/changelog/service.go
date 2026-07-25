@@ -19,6 +19,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/version"
 )
 
 // maxChangelogResponseBytes bounds how much we read from a single changelog
@@ -30,6 +31,25 @@ const maxChangelogResponseBytes = 10 << 20 // 10 MB
 // isn't a plain dotted version with an optional pre-release suffix (e.g.
 // 6.7.11.1 or 6.7.0.0-rc1).
 var shopwareVersionRe = regexp.MustCompile(`^\d+(\.\d+){1,3}(-[0-9A-Za-z.]+)?$`)
+
+// minChangelogVersion is the lowest Shopware version for which we fetch and
+// store changelog entries. Older releases are no longer served by the
+// upstream changelog API (they return 403) and aren't relevant to shopmon, so
+// skipping them avoids needless requests and warning noise.
+const minChangelogVersion = "6.5.0.0"
+
+// shouldFetchChangelog reports whether a version from the changelog index
+// should be fetched and persisted. It rejects malformed versions (which are
+// already warned about by the caller) and anything below minChangelogVersion.
+// Pre-release suffixes are stripped before the comparison, so a release like
+// "6.5.0.0-rc1" is kept even though semver ranks pre-releases below the
+// stable "6.5.0.0".
+func shouldFetchChangelog(ver string) bool {
+	if !shopwareVersionRe.MatchString(ver) {
+		return false
+	}
+	return version.Compare(strings.SplitN(ver, "-", 2)[0], minChangelogVersion) >= 0
+}
 
 var tracer = otel.Tracer("shopmon/catalog/changelog")
 
@@ -82,35 +102,39 @@ func (s *Service) Sync(ctx context.Context) error {
 	}
 
 	var added, failed int
-	for _, version := range versions {
-		if _, ok := known[version]; ok {
+	for _, ver := range versions {
+		if _, ok := known[ver]; ok {
 			continue
 		}
 
-		if !shopwareVersionRe.MatchString(version) {
-			slog.Warn("skipping malformed shopware version", "version", version)
+		if !shopwareVersionRe.MatchString(ver) {
+			slog.Warn("skipping malformed shopware version", "version", ver)
 			failed++
 			continue
 		}
 
-		entry, err := s.fetchVersion(ctx, version)
+		if !shouldFetchChangelog(ver) {
+			continue
+		}
+
+		entry, err := s.fetchVersion(ctx, ver)
 		if err != nil {
 			// Don't fail the whole job for a single bad release; log and move on
 			// so the next run can retry it.
-			slog.Warn("failed to fetch shopware changelog entry", "version", version, "error", err)
+			slog.Warn("failed to fetch shopware changelog entry", "version", ver, "error", err)
 			failed++
 			continue
 		}
 
 		if err := s.queries.UpsertShopwareVersion(ctx, queries.UpsertShopwareVersionParams{
-			Version:     version,
+			Version:     ver,
 			ReleaseDate: pgtype.Timestamp{Time: entry.Date, Valid: true},
 			Title:       entry.Title,
 			Body:        entry.Body,
 		}); err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("upsert shopware version %s: %w", version, err)
+			return fmt.Errorf("upsert shopware version %s: %w", ver, err)
 		}
 		added++
 	}
