@@ -184,7 +184,8 @@
     "changelog": "Changelog",
     "deployments": "Deployments",
     "deploymentDetails": "Deployment Details",
-    "environmentInformation": "Environment informations",
+    "environmentInformation": "Environment information",
+    "environmentTabs": "Environment sections",
     "editShop": "Edit Shop",
     "documentation": "Documentation",
     "ecosystem": "Ecosystem",
@@ -198,6 +199,11 @@
     "description": "Aggregate growth and Shopware version statistics across all of Shopmon.",
     "loading": "Loading ecosystem statistics...",
     "groupByMinor": "Group by minor version"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for doesn't exist or has been moved.",
+    "backHome": "Back to home"
   },
   "home": {
     "title": "Shopmon - The Open-Source Dashboard for Shopware Developers",
@@ -218,7 +224,7 @@
     "sitespeedTitle": "Automatic sitespeed.io checks",
     "sitespeedDesc": "If you want, we perform daily sitespeed checks on up to 5 URLs of your environment and show you the most important information directly in an overview.",
     "andMore": "And much more ...",
-    "featureList": "Passkey Login | GitHub Login | Remote Cache Clear | Scheduled Task Overview | Remote Task Rescheduling | Queue Overview | Environment Changelogs | More Features in Development",
+    "featureList": "Passkey Login {'|'} GitHub Login {'|'} Remote Cache Clear {'|'} Scheduled Task Overview {'|'} Remote Task Rescheduling {'|'} Queue Overview {'|'} Environment Changelogs {'|'} More Features in Development",
     "readyTitle": "Ready to monitor your Shopware?",
     "readyDesc": "Join Shopmon to monitor your environments. Start monitoring your first environment in under 2 minutes - no credit card required, no commitments, just pure monitoring.",
     "startFree": "Start monitoring for free",
@@ -765,6 +771,7 @@
     "composerPackages": "Composer Packages",
     "package": "Package",
     "output": "Output",
+    "noOutput": "No output was captured for this deployment.",
     "cliIntro": "Use the {cliLink} to report deployments.",
     "cliGitHint": "The CLI uses the local {gitHead} commit SHA. Set {referenceVariable} to override. Configure the git URL in {shopSettings}.",
     "count": "{count} deployment | {count} deployments"

@@ -40,6 +40,11 @@ export const routes: RouteRecordRaw[] = [
         name: "imprint",
         component: () => import("@/views/Imprint.vue"),
       },
+      {
+        path: ":pathMatch(.*)*",
+        name: "not-found",
+        component: () => import("@/views/NotFound.vue"),
+      },
     ],
   },
   {
@@ -324,10 +329,4 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   ...adminRoutes,
-  // catch all redirect to home page
-  {
-    path: "/:pathMatch(.*)*",
-    name: "not-found",
-    redirect: () => ({ name: "home" }),
-  },
 ];

@@ -95,8 +95,9 @@
         <div
           v-if="ext.installedAt"
           class="hidden shrink-0 text-xs tabular-nums text-muted-foreground xl:block"
+          :title="$t('shopDetail.installedAt')"
         >
-          {{ formatDate(ext.installedAt) }}
+          {{ $t("shopDetail.installedAt") }}: {{ formatDate(ext.installedAt) }}
         </div>
       </div>
     </div>

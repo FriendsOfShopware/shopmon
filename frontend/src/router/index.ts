@@ -42,6 +42,7 @@ export function setupRouterGuards(router: Router) {
       "home",
       "privacy",
       "imprint",
+      "not-found",
       "account.login",
       "account.register",
       "account.confirm",

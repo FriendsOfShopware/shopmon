@@ -103,7 +103,7 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          :title="$t('environment.notificationSettings')"
+          :aria-label="$t('environment.notificationSettings')"
           @click="showNotificationModal = true"
         >
           <icon-fa6-solid:bell
@@ -117,7 +117,7 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          :title="$t('environment.clearCache')"
+          :aria-label="$t('environment.clearCache')"
           :disabled="isCacheClearing"
           @click="onCacheClear"
         >
@@ -130,7 +130,7 @@
           variant="ghost"
           size="icon"
           class="size-8"
-          :title="$t('environment.refreshData')"
+          :aria-label="$t('environment.refreshData')"
           :disabled="isRefreshing"
           @click="showEnvironmentRefreshModal = true"
         >
@@ -191,7 +191,10 @@
       </div>
 
       <!-- Desktop: tab bar -->
-      <nav class="hidden sm:flex gap-1 overflow-x-auto border-b">
+      <nav
+        class="hidden sm:flex gap-1 overflow-x-auto border-b"
+        :aria-label="$t('nav.environmentTabs')"
+      >
         <RouterLink
           v-for="tab in tabs"
           :key="tab.route"

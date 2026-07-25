@@ -1,5 +1,5 @@
 <template>
-  <div v-if="deployment" class="max-w-[1200px] space-y-6">
+  <div v-if="deployment" class="space-y-6">
     <h2 class="text-2xl font-semibold">{{ deployment.name }}</h2>
 
     <Card>
@@ -113,13 +113,14 @@
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div class="bg-[#0d1117] overflow-hidden p-4 rounded-md">
+        <div v-if="deployment.output" class="bg-[#0d1117] overflow-hidden p-4 rounded-md">
           <pre
             class="m-0 p-0 overflow-x-auto font-mono text-[0.8125rem] leading-relaxed text-[#c9d1d9] whitespace-pre break-normal"
             style="tab-size: 4"
             v-html="formattedOutput"
           ></pre>
         </div>
+        <p v-else class="text-sm text-muted-foreground">{{ $t("deployments.noOutput") }}</p>
       </CardContent>
     </Card>
   </div>
@@ -167,6 +168,9 @@ const formatDuration = (seconds: string) => {
   return `${minutes}m ${secs}s`;
 };
 
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 const ansiToHtml = (text: string) => {
   if (!text) return "";
 
@@ -200,7 +204,7 @@ const ansiToHtml = (text: string) => {
 
   for (let i = 0; i < parts.length; i++) {
     if (i === 0) {
-      html += parts[i];
+      html += escapeHtml(parts[i]);
       continue;
     }
 
@@ -224,9 +228,9 @@ const ansiToHtml = (text: string) => {
         }
       }
 
-      html += content;
+      html += escapeHtml(content);
     } else {
-      html += parts[i];
+      html += escapeHtml(parts[i]);
     }
   }
 

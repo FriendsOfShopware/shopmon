@@ -7,11 +7,13 @@ test.describe("dashboard", () => {
   });
 
   test("renders the summary stat cards", async ({ page }) => {
-    // Seeded fixtures: 1 shop, 1 warning environment.
-    await expect(page.getByTestId("dashboard-stat-shops")).toHaveText("1");
-    await expect(page.getByTestId("dashboard-stat-healthy")).toBeVisible();
-    await expect(page.getByTestId("dashboard-stat-warnings")).toBeVisible();
-    await expect(page.getByTestId("dashboard-stat-errors")).toBeVisible();
+    // Seeded fixtures always create 1 shop. Healthy/warnings/errors depend on
+    // scrape results and are often zero in CI (no demo shop), so only assert
+    // the filter toggles exist as real buttons named by their labels.
+    await expect(page.getByRole("button", { name: /Shops/ })).toContainText("1");
+    await expect(page.getByRole("button", { name: /Healthy/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Warnings/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Errors/ })).toBeVisible();
   });
 
   test("shows the seeded shop and its environment widgets", async ({ page }) => {

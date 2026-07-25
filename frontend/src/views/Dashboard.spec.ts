@@ -127,11 +127,13 @@ vi.mock("@/composables/useAccountEnvironments", () => ({
   fetchAccountEnvironments: vi.fn(),
 }));
 
-// Mock useSession
+// Mock useSession — keep activeOrganizationId as a shared ref so tests can
+// simulate org switches (which should clear the dashboard status filter).
+const mockActiveOrganizationId = ref<string | null>(null);
 vi.mock("@/composables/useSession", () => ({
   useSession: () => ({
     session: ref({ user: { id: "1" } }),
-    activeOrganizationId: ref(null),
+    activeOrganizationId: mockActiveOrganizationId,
   }),
 }));
 
@@ -140,6 +142,7 @@ import { api } from "@/helpers/api";
 describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveOrganizationId.value = null;
     // Populate the environments ref for useAccountEnvironments mock
     mockEnvironmentsRef.value = mockEnvironments;
     // Reset mock data
@@ -254,5 +257,97 @@ describe("Dashboard", () => {
     // Shop cards link to the default environment; find one containing the shop name
     const shopLink = links.find((l) => l.text().includes("Test Shop 1"));
     expect(shopLink).toBeTruthy();
+  });
+
+  it("clears the status filter when the active organization changes", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    // Filter to error shops only (mock env 2 is red) — healthy shop leaves the grid.
+    const errorFilter = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("Errors") && b.attributes("aria-pressed") !== undefined);
+    expect(errorFilter).toBeTruthy();
+    await errorFilter!.trigger("click");
+    await flushPromises();
+    expect(errorFilter!.attributes("aria-pressed")).toBe("true");
+    // Scope to the shops grid so changelog rows (also mention shop names) don't interfere.
+    const shopGrid = wrapper.find("section");
+    expect(shopGrid.text()).not.toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
+
+    // Org switch should reset the filter so all shops for the new org show.
+    mockActiveOrganizationId.value = "org-2";
+    await flushPromises();
+    expect(errorFilter!.attributes("aria-pressed")).toBe("false");
+    expect(shopGrid.text()).toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
+  });
+
+  it("ignores stale dashboard responses after an organization switch", async () => {
+    type Deferred<T> = {
+      promise: Promise<T>;
+      resolve: (value: T) => void;
+    };
+    function deferred<T>(): Deferred<T> {
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    }
+
+    const firstShops = deferred<any>();
+    const secondShops = deferred<any>();
+    let shopsCalls = 0;
+
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/shops") {
+        shopsCalls += 1;
+        return shopsCalls === 1 ? firstShops.promise : secondShops.promise;
+      }
+      if (path === "/account/changelogs" || path === "/account/extensions") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
+
+    const wrapper = mountComponent();
+    // Initial load is in flight (generation 1). Switch org to start generation 2.
+    mockActiveOrganizationId.value = "org-2";
+    await flushPromises();
+
+    const laterOrgShops = [
+      {
+        id: 99,
+        name: "Later Org Shop",
+        description: null,
+        gitUrl: null,
+        organizationId: "org-2",
+        organizationName: "Org 2",
+        defaultEnvironmentId: null,
+      },
+    ];
+    const earlierOrgShops = [
+      {
+        id: 1,
+        name: "Stale Org Shop",
+        description: null,
+        gitUrl: null,
+        organizationId: "org-1",
+        organizationName: "Org 1",
+        defaultEnvironmentId: null,
+      },
+    ];
+
+    // Newest request resolves first, then the stale one — UI must keep the newest.
+    secondShops.resolve({ data: laterOrgShops, error: null, response: new Response() });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Later Org Shop");
+
+    firstShops.resolve({ data: earlierOrgShops, error: null, response: new Response() });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Later Org Shop");
+    expect(wrapper.text()).not.toContain("Stale Org Shop");
   });
 });
