@@ -1,18 +1,23 @@
+import type { Page } from "@playwright/test";
 import { test, expect } from "./support/test";
 import { ENVIRONMENTS } from "./support/constants";
 
 const BASE = `/app/environments/${ENVIRONMENTS.production.id}`;
 
+/** Tab bar is a named landmark so queries don't collide with other links. */
+const tabNav = (page: Page) => page.getByRole("navigation", { name: "Environment sections" });
+const tab = (page: Page, name: string | RegExp) => tabNav(page).getByRole("link", { name });
+
 test.describe("environment detail tabs", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(BASE);
     // Wait for the tab bar so we don't race the session guard / initial load.
-    await expect(page.getByRole("link", { name: /Environment informations/ })).toBeVisible();
+    await expect(tab(page, /Environment information/)).toBeVisible();
   });
 
   test("loads the environment information tab", async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`${BASE}$`));
-    await expect(page.getByRole("link", { name: /Environment informations/ })).toBeVisible();
+    await expect(tab(page, /Environment information/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Security & Health Checks" })).toBeVisible();
   });
 
@@ -27,10 +32,10 @@ test.describe("environment detail tabs", () => {
     { name: "Deployments", segment: "/deployments" },
   ];
 
-  for (const tab of tabs) {
-    test(`"${tab.name}" tab navigates to its route`, async ({ page }) => {
-      await page.getByRole("link", { name: new RegExp(`^${tab.name}`) }).click();
-      await expect(page).toHaveURL(new RegExp(`${BASE}${tab.segment}`));
+  for (const tabDef of tabs) {
+    test(`"${tabDef.name}" tab navigates to its route`, async ({ page }) => {
+      await tab(page, new RegExp(`^${tabDef.name}`)).click();
+      await expect(page).toHaveURL(new RegExp(`${BASE}${tabDef.segment}`));
     });
   }
 
@@ -44,7 +49,7 @@ test.describe("environment detail tabs", () => {
   // canvas stayed blank until a full reload. Assert the charts actually paint
   // when navigating in via the tab bar (the broken path).
   test("Sitespeed tab renders charts when navigated to via the tab bar", async ({ page }) => {
-    await page.getByRole("link", { name: /^Sitespeed/ }).click();
+    await tab(page, /^Sitespeed/).click();
     await expect(page).toHaveURL(new RegExp(`${BASE}/sitespeed`));
 
     // The "not enabled" alert must not be shown — the fixture enables sitespeed.

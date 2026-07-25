@@ -51,11 +51,20 @@ frontend. The HTML report is uploaded as a build artifact.
 
 ## Conventions
 
-- Prefer role/label/text locators (`getByRole`, `getByLabel`) — they double as
-  accessibility coverage.
-- Reach for `data-testid` only when no good accessible name exists (e.g. the
-  dashboard summary numbers: `dashboard-stat-shops` / `-healthy` / `-warnings` /
-  `-errors`).
-- Specs that log in/out themselves opt out of the shared session with
-  `test.use({ storageState: { cookies: [], origins: [] } })` so they don't
-  invalidate the token other specs reuse.
+Locator priority (aligned with [Testing Library / role-based testing](https://tkdodo.eu/blog/test-ids-are-an-a11y-smell)):
+
+1. **`getByRole` / `getByLabel`** — preferred. Tests what users and assistive
+   tech can actually find; broken semantics fail the test.
+2. **`getByText`** — fine for non-interactive copy (headings, empty states).
+3. **Landmarks** — scope first when the page has several similar controls:
+   `page.getByRole("navigation", { name: "Environment sections" }).getByRole("link", …)`.
+4. **Do not add `data-testid`.** If a control has no accessible name, fix the
+   component (`aria-label`, visible label, heading, named landmark) rather than
+   papering over it in the test.
+
+User-visible English copy is intentional (default locale in e2e). Renames should
+update the specs — that is a feature, not flakiness.
+
+Specs that log in/out themselves opt out of the shared session with
+`test.use({ storageState: { cookies: [], origins: [] } })` so they don't
+invalidate the token other specs reuse.
