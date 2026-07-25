@@ -70,6 +70,7 @@ ${ssgRoutes.map((route) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <las
     },
   },
   server: {
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: process.env.SHOPMON_API_URL || "https://shopmon.fos.gg",
