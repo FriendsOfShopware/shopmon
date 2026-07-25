@@ -117,7 +117,7 @@
                 </Button>
               </div>
               <code class="mt-2 block rounded bg-muted px-3 py-2 font-mono text-xs break-all">{{
-                shopToken
+                environmentToken
               }}</code>
             </div>
 
@@ -230,17 +230,17 @@ const { error, success } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-function generateShopToken(): string {
+function generateEnvironmentToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 
-const shopToken = generateShopToken();
+const environmentToken = generateEnvironmentToken();
 
 async function copyToken() {
-  await navigator.clipboard.writeText(shopToken);
+  await navigator.clipboard.writeText(environmentToken);
   success(t("environment.tokenCopied"));
 }
 
@@ -299,7 +299,7 @@ const onSubmit = handleSubmit(async (values) => {
         clientId: values.clientId,
         clientSecret: values.clientSecret,
         shopId: Number(values.shopId),
-        shopToken,
+        environmentToken,
       },
     });
 

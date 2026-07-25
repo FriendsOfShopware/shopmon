@@ -128,13 +128,64 @@ func TestCreateEnvironment(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	require.NotZero(t, result.ID)
 
-	var encryptedSecret, version string
-	err = env.Pool.QueryRow(t.Context(), `SELECT client_secret, shopware_version FROM environment WHERE id = $1`, result.ID).Scan(&encryptedSecret, &version)
+	var encryptedSecret, version, environmentToken string
+	err = env.Pool.QueryRow(t.Context(), `SELECT client_secret, shopware_version, environment_token FROM environment WHERE id = $1`, result.ID).Scan(&encryptedSecret, &version, &environmentToken)
 	require.NoError(t, err)
 	decryptedSecret, err := crypto.Decrypt(encryptedSecret, env.Cfg.AppSecret)
 	require.NoError(t, err)
 	assert.Equal(t, "client-secret", decryptedSecret)
 	assert.Equal(t, "6.5.0.0", version)
+	assert.NotEmpty(t, environmentToken, "environment token should be auto-generated when omitted")
+	assert.Len(t, environmentToken, 64)
+}
+
+func TestCreateEnvironmentWithProvidedToken(t *testing.T) {
+	mockShopware := testutil.NewMockShopwareServer(t)
+	defer mockShopware.Close()
+
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	providedToken := "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+	body, _ := json.Marshal(api.CreateEnvironmentRequest{
+		Name:             "Staging",
+		ShopUrl:          mockShopware.URL,
+		ClientId:         "client-id",
+		ClientSecret:     "client-secret",
+		ShopId:           shopID,
+		EnvironmentToken: &providedToken,
+	})
+
+	req := testutil.NewRequest(t, http.MethodPost, env.Server.URL+"/api/environments", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	var result struct {
+		ID int32 `json:"id"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+
+	var environmentToken string
+	err = env.Pool.QueryRow(t.Context(), `SELECT environment_token FROM environment WHERE id = $1`, result.ID).Scan(&environmentToken)
+	require.NoError(t, err)
+	assert.Equal(t, providedToken, environmentToken)
+
+	// Token must appear on environment detail for the bypass-auth header UI.
+	detailReq := testutil.NewRequest(t, http.MethodGet, fmt.Sprintf("%s/api/environments/%d", env.Server.URL, result.ID), nil)
+	detailReq.Header.Set("Authorization", "Bearer "+token)
+	detailResp, err := http.DefaultClient.Do(detailReq)
+	require.NoError(t, err)
+	defer func() { _ = detailResp.Body.Close() }()
+	require.Equal(t, http.StatusOK, detailResp.StatusCode)
+
+	var detail api.EnvironmentDetail
+	require.NoError(t, json.NewDecoder(detailResp.Body).Decode(&detail))
+	assert.Equal(t, providedToken, detail.EnvironmentToken)
 }
 
 func TestDeleteEnvironment(t *testing.T) {

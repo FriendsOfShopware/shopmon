@@ -2,6 +2,8 @@ package monitoring
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -159,11 +161,16 @@ func (s *Service) CreateShop(ctx context.Context, cmd CreateShopCommand) (Create
 		return CreateShopResult{}, err
 	}
 
+	environmentToken, err := resolveEnvironmentToken(cmd.EnvironmentToken)
+	if err != nil {
+		return CreateShopResult{}, err
+	}
+
 	shopInfo, err := s.environments.ValidateConnection(ctx, ConnectionCredentials{
 		URL:              cmd.EnvironmentURL,
 		ClientID:         cmd.ClientID,
 		ClientSecret:     cmd.ClientSecret,
-		EnvironmentToken: cmd.EnvironmentToken,
+		EnvironmentToken: environmentToken,
 	})
 	if err != nil {
 		return CreateShopResult{}, fmt.Errorf("%w: %w", ErrConnectionFailed, err)
@@ -186,7 +193,7 @@ func (s *Service) CreateShop(ctx context.Context, cmd CreateShopCommand) (Create
 		ClientID:              cmd.ClientID,
 		EncryptedClientSecret: encryptedSecret,
 		ShopwareVersion:       shopInfo.Version,
-		EnvironmentToken:      cmd.EnvironmentToken,
+		EnvironmentToken:      environmentToken,
 	})
 	if err != nil {
 		return CreateShopResult{}, fmt.Errorf("create shop with environment: %w", err)
@@ -215,11 +222,16 @@ func (s *Service) CreateEnvironment(ctx context.Context, cmd CreateEnvironmentCo
 		return 0, err
 	}
 
+	environmentToken, err := resolveEnvironmentToken(cmd.EnvironmentToken)
+	if err != nil {
+		return 0, err
+	}
+
 	shopInfo, err := s.environments.ValidateConnection(ctx, ConnectionCredentials{
 		URL:              cmd.URL,
 		ClientID:         cmd.ClientID,
 		ClientSecret:     cmd.ClientSecret,
-		EnvironmentToken: cmd.EnvironmentToken,
+		EnvironmentToken: environmentToken,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("%w: %w", ErrConnectionFailed, err)
@@ -237,7 +249,7 @@ func (s *Service) CreateEnvironment(ctx context.Context, cmd CreateEnvironmentCo
 		ClientID:              cmd.ClientID,
 		EncryptedClientSecret: encryptedSecret,
 		ShopwareVersion:       shopInfo.Version,
-		EnvironmentToken:      cmd.EnvironmentToken,
+		EnvironmentToken:      environmentToken,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("create environment: %w", err)
@@ -245,6 +257,27 @@ func (s *Service) CreateEnvironment(ctx context.Context, cmd CreateEnvironmentCo
 
 	s.dispatchInitialScrape(ctx, environmentID)
 	return environmentID, nil
+}
+
+// resolveEnvironmentToken returns the provided token, or generates a 32-byte hex
+// token when the client omits one (e.g. CreateShop or a misnamed request field).
+func resolveEnvironmentToken(token string) (string, error) {
+	if token != "" {
+		return token, nil
+	}
+	generated, err := generateEnvironmentToken()
+	if err != nil {
+		return "", fmt.Errorf("generate environment token: %w", err)
+	}
+	return generated, nil
+}
+
+func generateEnvironmentToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 type UpdateShopCommand struct {

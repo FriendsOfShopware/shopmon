@@ -84,6 +84,18 @@ func TestCreateShop(t *testing.T) {
 	var result map[string]interface{}
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.NotNil(t, result["id"])
+
+	// CreateShop does not accept a client-supplied token; backend must generate one.
+	var environmentToken string
+	err = env.Pool.QueryRow(t.Context(), `
+		SELECT e.environment_token
+		FROM environment e
+		JOIN shop s ON s.id = e.shop_id
+		WHERE s.organization_id = $1 AND s.name = $2
+	`, "org-1", "New Shop").Scan(&environmentToken)
+	require.NoError(t, err)
+	assert.NotEmpty(t, environmentToken)
+	assert.Len(t, environmentToken, 64)
 }
 
 func TestUpdateShop(t *testing.T) {
