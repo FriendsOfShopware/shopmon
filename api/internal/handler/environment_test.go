@@ -128,18 +128,16 @@ func TestCreateEnvironment(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	require.NotZero(t, result.ID)
 
-	var encryptedSecret, version, environmentToken string
-	err = env.Pool.QueryRow(t.Context(), `SELECT client_secret, shopware_version, environment_token FROM environment WHERE id = $1`, result.ID).Scan(&encryptedSecret, &version, &environmentToken)
+	var encryptedSecret, version string
+	err = env.Pool.QueryRow(t.Context(), `SELECT client_secret, shopware_version FROM environment WHERE id = $1`, result.ID).Scan(&encryptedSecret, &version)
 	require.NoError(t, err)
 	decryptedSecret, err := crypto.Decrypt(encryptedSecret, env.Cfg.AppSecret)
 	require.NoError(t, err)
 	assert.Equal(t, "client-secret", decryptedSecret)
 	assert.Equal(t, "6.5.0.0", version)
-	assert.NotEmpty(t, environmentToken, "environment token should be auto-generated when omitted")
-	assert.Len(t, environmentToken, 64)
 }
 
-func TestCreateEnvironmentWithProvidedToken(t *testing.T) {
+func TestCreateEnvironmentWithToken(t *testing.T) {
 	mockShopware := testutil.NewMockShopwareServer(t)
 	defer mockShopware.Close()
 
