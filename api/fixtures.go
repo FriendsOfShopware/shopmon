@@ -14,6 +14,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -78,8 +79,6 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 		return err
 	}
 
-	s.seedNotifications(org)
-
 	slog.Info("created users and organization",
 		"org", "Acme Corp",
 		"owner", "owner@fos.gg",
@@ -89,6 +88,9 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 	)
 
 	if skipShop {
+		// Still seed the inbox with plausible environment IDs so the UI has
+		// something to render when shops are omitted (e.g. preview clusters).
+		s.seedNotifications(org, 1, 2)
 		slog.Info("skipping shop creation (--skip-shop)")
 		fmt.Println("Fixtures applied. All users have password: password")
 		return nil
@@ -98,6 +100,8 @@ func runFixtures(ctx context.Context, skipShop bool) error {
 	if err != nil {
 		return err
 	}
+
+	s.seedNotifications(org, environmentIDs[0], environmentIDs[1])
 
 	if err := s.dispatchEnvironmentScrapes(environmentIDs); err != nil {
 		return err
@@ -198,60 +202,175 @@ func (s *seeder) seedUsersAndOrganization() (orgFixture, error) {
 	return org, nil
 }
 
-// seedNotifications creates a spread of read/unread notifications across the
-// three org members to populate the notification feed.
-func (s *seeder) seedNotifications(org orgFixture) {
-	link := func(label, url string) json.RawMessage {
-		return mustJSON(map[string]interface{}{"label": label, "url": url})
+// seedNotifications creates a spread of read/unread notifications that mirror
+// the real notify.Event types (status degraded/recovered, auth error, data-fetch
+// error) so the inbox looks like production data, not invented event kinds.
+//
+// envIDs are the Production and Staging environment IDs (in that order). When
+// shops are skipped, pass 1 and 2 so the inbox still has plausible links.
+func (s *seeder) seedNotifications(org orgFixture, prodEnvID, stagingEnvID int32) {
+	tr := notify.NewTranslator()
+
+	// environmentLink matches scrape.environmentLink storage shape plus the
+	// url/label fields the list API and top-bar UI currently read.
+	environmentLink := func(envID int32) json.RawMessage {
+		return mustJSON(map[string]any{
+			"name": "account.environments.detail",
+			"params": map[string]string{
+				"environmentId": fmt.Sprintf("%d", envID),
+			},
+			"url":   fmt.Sprintf("/account/environments/%d", envID),
+			"label": "View Environment",
+		})
 	}
 
-	notifications := []struct {
-		userID  string
-		key     string
-		level   string
-		title   string
-		message string
-		link    json.RawMessage
-		read    bool
-	}{
-		{org.user1ID, "environment.change-status.1", "warning", "Environment: Production status changed", "Status changed from green to yellow", link("View Environment", "/environments/1"), false},
-		{org.user1ID, "environment.update-auth-error.2", "error", "Environment: Staging could not be updated", "Could not connect to environment. Please check your credentials and try again.", link("View Environment", "/environments/2"), false},
-		{org.user1ID, "deployment.completed.1", "info", "Deployment completed", "Theme Update deployment finished successfully.", link("View Deployment", "/environments/1"), true},
-		{org.user2ID, "environment.change-status.1", "warning", "Environment: Production status changed", "Status changed from green to yellow", link("View Environment", "/environments/1"), false},
-		{org.user2ID, "deployment.failed.1", "error", "Deployment failed", "Hotfix Login deployment failed with exit code 1.", link("View Deployment", "/environments/1"), false},
-		{org.user3ID, "environment.not.updated_2", "error", "Environment: Staging could not be updated", "Could not connect to environment. Please check your credentials and try again.", link("View Environment", "/environments/2"), false},
-		{org.user1ID, "environment.cache-cleared.1", "info", "Cache cleared", "Production environment cache has been cleared successfully.", link("View Environment", "/environments/1"), true},
-		{org.user1ID, "environment.extension-update.1", "info", "Extension update available", "SwagPayPal has a new version 6.1.0 available for Production.", link("View Extensions", "/environments/1"), true},
-		{org.user1ID, "deployment.completed.2", "info", "Deployment completed", "Cache Warmup deployment finished successfully.", link("View Deployment", "/environments/1"), true},
-		{org.user1ID, "environment.shopware-update.2", "info", "Shopware version updated", "Staging environment updated from Shopware 6.5.1.0 to 6.5.2.0.", link("View Environment", "/environments/2"), true},
-		{org.user2ID, "environment.extension-update.2", "info", "Extension update available", "FroshTools has a new version 1.2.0 available for Staging.", link("View Extensions", "/environments/2"), true},
-		{org.user2ID, "deployment.completed.3", "info", "Deployment completed", "v6.5.8.0 Release deployment finished successfully.", link("View Deployment", "/environments/1"), true},
-		{org.user2ID, "environment.change-status.2", "warning", "Environment: Staging status changed", "Status changed from green to yellow", link("View Environment", "/environments/2"), false},
-		{org.user3ID, "deployment.completed.4", "info", "Deployment completed", "Index Rebuild deployment finished successfully.", link("View Deployment", "/environments/1"), true},
-		{org.user3ID, "environment.extension-deactivated.2", "warning", "Extension deactivated", "SwagCmsExtensions was deactivated on Staging.", link("View Extensions", "/environments/2"), false},
+	type fixtureNotification struct {
+		userID     string
+		dedupKey   string
+		level      notify.Level
+		titleKey   string
+		messageKey string
+		params     map[string]any
+		link       json.RawMessage
+		read       bool
+	}
+
+	prodName := "Acme Shop · Production"
+	stagingName := "Acme Shop · Staging"
+
+	// Reasons mirror StatusReason payloads embedded in params by channel_inapp.
+	prodDegradeReasons := []notify.StatusReason{
+		{
+			Level:  "red",
+			Key:    "check.worker.enabled",
+			Source: "env",
+		},
+		{
+			Level:  "yellow",
+			Key:    "check.frosh.phpOutdated",
+			Params: map[string]any{"current": "8.1", "recommended": "8.3"},
+			Source: "FroshTools",
+		},
+	}
+	stagingDegradeReasons := []notify.StatusReason{
+		{
+			Level:  "yellow",
+			Key:    "check.task.overdue",
+			Params: map[string]any{"name": "log_cleanup"},
+			Source: "env",
+		},
+	}
+	prodRecoverReasons := []notify.StatusReason{
+		{
+			Level:  "red",
+			Key:    "check.worker.enabled",
+			Source: "env",
+		},
+	}
+
+	notifications := []fixtureNotification{
+		// Owner: open production degradation with check reasons
+		{
+			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.change-status.%d", prodEnvID),
+			level: notify.LevelWarning,
+			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
+			params: map[string]any{"name": prodName, "from": "green", "to": "yellow", "reasons": prodDegradeReasons},
+			link: environmentLink(prodEnvID), read: false,
+		},
+		// Owner: open staging auth failure
+		{
+			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.update-auth-error.%d", stagingEnvID),
+			level: notify.LevelError,
+			titleKey: "notification.authError.title", messageKey: "notification.authError.message",
+			params: map[string]any{"name": stagingName, "error": "invalid_client: Client authentication failed"},
+			link: environmentLink(stagingEnvID), read: false,
+		},
+		// Owner: read recovery on production (earlier alert, already dismissed)
+		{
+			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.recover-status.%d", prodEnvID),
+			level: notify.LevelInfo,
+			titleKey: "notification.statusRecovered.title", messageKey: "notification.statusRecovered.message",
+			params: map[string]any{"name": prodName, "from": "red", "to": "green", "reasons": prodRecoverReasons},
+			link: environmentLink(prodEnvID), read: true,
+		},
+		// Admin: same production degradation (multi-subscriber)
+		{
+			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.change-status.%d", prodEnvID),
+			level: notify.LevelWarning,
+			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
+			params: map[string]any{"name": prodName, "from": "green", "to": "yellow", "reasons": prodDegradeReasons},
+			link: environmentLink(prodEnvID), read: false,
+		},
+		// Admin: open staging data-fetch failure
+		{
+			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.not.updated_%d", stagingEnvID),
+			level: notify.LevelError,
+			titleKey: "notification.dataFetchError.title", messageKey: "notification.dataFetchError.message",
+			params: map[string]any{"name": stagingName},
+			link: environmentLink(stagingEnvID), read: false,
+		},
+		// Admin: open staging degradation
+		{
+			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.change-status.%d", stagingEnvID),
+			level: notify.LevelWarning,
+			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
+			params: map[string]any{"name": stagingName, "from": "green", "to": "yellow", "reasons": stagingDegradeReasons},
+			link: environmentLink(stagingEnvID), read: false,
+		},
+		// Member: open staging data-fetch failure
+		{
+			userID: org.user3ID, dedupKey: fmt.Sprintf("environment.not.updated_%d", stagingEnvID),
+			level: notify.LevelError,
+			titleKey: "notification.dataFetchError.title", messageKey: "notification.dataFetchError.message",
+			params: map[string]any{"name": stagingName},
+			link: environmentLink(stagingEnvID), read: false,
+		},
+		// Member: read recovery on staging
+		{
+			userID: org.user3ID, dedupKey: fmt.Sprintf("environment.recover-status.%d", stagingEnvID),
+			level: notify.LevelInfo,
+			titleKey: "notification.statusRecovered.title", messageKey: "notification.statusRecovered.message",
+			params: map[string]any{"name": stagingName, "from": "yellow", "to": "green"},
+			link: environmentLink(stagingEnvID), read: true,
+		},
+		// Owner: read auth error on production (credentials fixed)
+		{
+			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.update-auth-error.%d", prodEnvID),
+			level: notify.LevelError,
+			titleKey: "notification.authError.title", messageKey: "notification.authError.message",
+			params: map[string]any{"name": prodName, "error": "401 Unauthorized"},
+			link: environmentLink(prodEnvID), read: true,
+		},
 	}
 
 	for i, n := range notifications {
+		titleKey := n.titleKey
+		messageKey := n.messageKey
+		params := mustJSON(n.params)
+
 		if err := s.q.UpsertNotification(s.ctx, queries.UpsertNotificationParams{
-			UserID:  n.userID,
-			Key:     n.key,
-			Level:   n.level,
-			Title:   n.title,
-			Message: n.message,
-			Link:    n.link,
+			UserID:     n.userID,
+			Key:        n.dedupKey,
+			Level:      string(n.level),
+			Title:      tr.T(notify.DefaultLocale, n.titleKey, n.params),
+			Message:    tr.T(notify.DefaultLocale, n.messageKey, n.params),
+			TitleKey:   &titleKey,
+			MessageKey: &messageKey,
+			Params:     params,
+			Link:       n.link,
 		}); err != nil {
-			slog.Warn("failed to create notification", "key", n.key, "error", err)
+			slog.Warn("failed to create notification", "key", n.dedupKey, "error", err)
 			continue
 		}
 		if n.read {
 			if _, err := s.pool.Exec(s.ctx,
 				`UPDATE user_notification SET read = true WHERE user_id = $1 AND key = $2`,
-				n.userID, n.key,
+				n.userID, n.dedupKey,
 			); err != nil {
-				slog.Warn("failed to mark notification as read", "key", n.key, "error", err)
+				slog.Warn("failed to mark notification as read", "key", n.dedupKey, "error", err)
 			}
 		}
-		slog.Info("created notification", "key", n.key, "read", n.read, "userIndex", i)
+		slog.Info("created notification", "key", n.dedupKey, "read", n.read, "userIndex", i)
 	}
 }
 
