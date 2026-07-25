@@ -302,7 +302,13 @@ loadDashboardData();
 
 const { environments } = useAccountEnvironments();
 
+// Header stats double as filters for the shops grid
+const statusFilter = ref<"green" | "yellow" | "red" | null>(null);
+
 watch(activeOrganizationId, () => {
+  // Drop status filter so a selection from the previous org (e.g. "Warnings")
+  // cannot hide every shop in the newly loaded organization.
+  statusFilter.value = null;
   fetchAccountEnvironments();
   loadDashboardData();
 });
@@ -338,8 +344,6 @@ const errorCount = computed(
   () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "red").length,
 );
 
-// Header stats double as filters for the shops grid
-const statusFilter = ref<"green" | "yellow" | "red" | null>(null);
 const filteredShops = computed(() => {
   if (!statusFilter.value) return shops.value ?? [];
   return (shops.value ?? []).filter((s) => defaultEnv(s)?.status === statusFilter.value);

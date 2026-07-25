@@ -127,11 +127,13 @@ vi.mock("@/composables/useAccountEnvironments", () => ({
   fetchAccountEnvironments: vi.fn(),
 }));
 
-// Mock useSession
+// Mock useSession — keep activeOrganizationId as a shared ref so tests can
+// simulate org switches (which should clear the dashboard status filter).
+const mockActiveOrganizationId = ref<string | null>(null);
 vi.mock("@/composables/useSession", () => ({
   useSession: () => ({
     session: ref({ user: { id: "1" } }),
-    activeOrganizationId: ref(null),
+    activeOrganizationId: mockActiveOrganizationId,
   }),
 }));
 
@@ -140,6 +142,7 @@ import { api } from "@/helpers/api";
 describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveOrganizationId.value = null;
     // Populate the environments ref for useAccountEnvironments mock
     mockEnvironmentsRef.value = mockEnvironments;
     // Reset mock data
@@ -254,5 +257,30 @@ describe("Dashboard", () => {
     // Shop cards link to the default environment; find one containing the shop name
     const shopLink = links.find((l) => l.text().includes("Test Shop 1"));
     expect(shopLink).toBeTruthy();
+  });
+
+  it("clears the status filter when the active organization changes", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    // Filter to error shops only (mock env 2 is red) — healthy shop leaves the grid.
+    const errorFilter = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("Errors") && b.attributes("aria-pressed") !== undefined);
+    expect(errorFilter).toBeTruthy();
+    await errorFilter!.trigger("click");
+    await flushPromises();
+    expect(errorFilter!.attributes("aria-pressed")).toBe("true");
+    // Scope to the shops grid so changelog rows (also mention shop names) don't interfere.
+    const shopGrid = wrapper.find("section");
+    expect(shopGrid.text()).not.toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
+
+    // Org switch should reset the filter so all shops for the new org show.
+    mockActiveOrganizationId.value = "org-2";
+    await flushPromises();
+    expect(errorFilter!.attributes("aria-pressed")).toBe("false");
+    expect(shopGrid.text()).toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
   });
 });
