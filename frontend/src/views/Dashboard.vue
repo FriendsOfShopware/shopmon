@@ -286,14 +286,22 @@ const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
 const extensions = ref<components["schemas"]["AccountExtension"][]>([]);
 const shops = ref<AccountShop[] | null>(null);
 
+// Bumped on every load so a slow response from a previous organization
+// cannot overwrite shops/changelogs/extensions after the user switched.
+let loadGeneration = 0;
+
 function loadDashboardData() {
+  const generation = ++loadGeneration;
   api.GET("/account/changelogs").then(({ data }) => {
+    if (generation !== loadGeneration) return;
     if (data) changelogs.value = data;
   });
   api.GET("/account/extensions").then(({ data }) => {
+    if (generation !== loadGeneration) return;
     if (data) extensions.value = data;
   });
   api.GET("/account/shops").then(({ data }) => {
+    if (generation !== loadGeneration) return;
     shops.value = data ?? [];
   });
 }

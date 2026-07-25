@@ -283,4 +283,71 @@ describe("Dashboard", () => {
     expect(shopGrid.text()).toContain("Test Shop 1");
     expect(shopGrid.text()).toContain("Test Shop 2");
   });
+
+  it("ignores stale dashboard responses after an organization switch", async () => {
+    type Deferred<T> = {
+      promise: Promise<T>;
+      resolve: (value: T) => void;
+    };
+    function deferred<T>(): Deferred<T> {
+      let resolve!: (value: T) => void;
+      const promise = new Promise<T>((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    }
+
+    const firstShops = deferred<any>();
+    const secondShops = deferred<any>();
+    let shopsCalls = 0;
+
+    vi.mocked(api.GET).mockImplementation(((path: string) => {
+      if (path === "/account/shops") {
+        shopsCalls += 1;
+        return shopsCalls === 1 ? firstShops.promise : secondShops.promise;
+      }
+      if (path === "/account/changelogs" || path === "/account/extensions") {
+        return Promise.resolve({ data: [], error: null, response: new Response() });
+      }
+      return Promise.resolve({ data: null, error: null, response: new Response() });
+    }) as any);
+
+    const wrapper = mountComponent();
+    // Initial load is in flight (generation 1). Switch org to start generation 2.
+    mockActiveOrganizationId.value = "org-2";
+    await flushPromises();
+
+    const laterOrgShops = [
+      {
+        id: 99,
+        name: "Later Org Shop",
+        description: null,
+        gitUrl: null,
+        organizationId: "org-2",
+        organizationName: "Org 2",
+        defaultEnvironmentId: null,
+      },
+    ];
+    const earlierOrgShops = [
+      {
+        id: 1,
+        name: "Stale Org Shop",
+        description: null,
+        gitUrl: null,
+        organizationId: "org-1",
+        organizationName: "Org 1",
+        defaultEnvironmentId: null,
+      },
+    ];
+
+    // Newest request resolves first, then the stale one — UI must keep the newest.
+    secondShops.resolve({ data: laterOrgShops, error: null, response: new Response() });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Later Org Shop");
+
+    firstShops.resolve({ data: earlierOrgShops, error: null, response: new Response() });
+    await flushPromises();
+    expect(wrapper.text()).toContain("Later Org Shop");
+    expect(wrapper.text()).not.toContain("Stale Org Shop");
+  });
 });
