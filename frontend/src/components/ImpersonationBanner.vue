@@ -23,7 +23,7 @@
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
-import { api } from "@/helpers/api";
+import { api, restoreAdminToken, setToken } from "@/helpers/api";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 
@@ -44,7 +44,15 @@ async function stopImpersonating() {
       throw new Error("Failed to stop impersonating");
     }
 
-    window.location.reload();
+    const adminToken = restoreAdminToken();
+    if (!adminToken) {
+      // Impersonation session is gone; without a stashed admin token, log out.
+      setToken(null);
+      window.location.href = "/account/login";
+      return;
+    }
+
+    window.location.href = "/admin";
   } catch (error) {
     alert.error(
       t("impersonation.failedStop", {

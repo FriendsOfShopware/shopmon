@@ -123,6 +123,7 @@ type currentSessionResponse struct {
 	UserID               string    `json:"userId"`
 	ExpiresAt            time.Time `json:"expiresAt"`
 	ActiveOrganizationID *string   `json:"activeOrganizationId"`
+	ImpersonatedBy       *string   `json:"impersonatedBy,omitempty"`
 }
 
 type tokenUserResponse struct {

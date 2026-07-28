@@ -11,11 +11,38 @@
 
     <!-- Content -->
     <template v-else>
-      <PageHeader :title="user.name">
-        <Button variant="outline" size="sm" @click="router.back()">
-          <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
-          {{ t("admin.back") }}
-        </Button>
+      <PageHeader :title="user.name" :description="user.email">
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <Button v-if="!isSelf" size="sm" :disabled="actionLoading" @click="impersonateUser">
+            <icon-fa6-solid:user-secret class="mr-1.5 size-3" />
+            {{ t("admin.impersonate") }}
+          </Button>
+          <Button
+            v-if="!isSelf && !user.banned"
+            variant="outline"
+            size="sm"
+            class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            :disabled="actionLoading"
+            @click="banUser"
+          >
+            <icon-fa6-solid:ban class="mr-1.5 size-3" />
+            {{ t("admin.ban") }}
+          </Button>
+          <Button
+            v-else-if="!isSelf && user.banned"
+            variant="outline"
+            size="sm"
+            :disabled="actionLoading"
+            @click="unbanUser"
+          >
+            <icon-fa6-solid:rotate-left class="mr-1.5 size-3" />
+            {{ t("admin.unban") }}
+          </Button>
+          <Button variant="outline" size="sm" @click="router.back()">
+            <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
+            {{ t("admin.back") }}
+          </Button>
+        </div>
       </PageHeader>
 
       <Alert v-if="error" variant="destructive">
@@ -195,8 +222,9 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import { api } from "@/helpers/api";
+import { api, setToken, stashAdminToken } from "@/helpers/api";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
+import { useSession } from "@/composables/useSession";
 import type { components } from "@/types/api";
 
 import PageHeader from "@/components/PageHeader.vue";
@@ -219,12 +247,16 @@ import IconUserSlash from "~icons/fa6-solid/user-slash";
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { session } = useSession();
 
 const id = route.params.id as string;
 
 const user = ref<components["schemas"]["AdminUserDetail"] | null>(null);
 const loading = ref(true);
+const actionLoading = ref(false);
 const error = ref("");
+
+const isSelf = computed(() => !!user.value && user.value.id === session.value?.user?.id);
 
 const statusLabel = computed(() => {
   if (!user.value) return "";
@@ -266,6 +298,90 @@ async function loadUser() {
     user.value = null;
   } finally {
     loading.value = false;
+  }
+}
+
+async function impersonateUser() {
+  if (!user.value || isSelf.value) return;
+  actionLoading.value = true;
+  error.value = "";
+  try {
+    const { data, error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
+      params: { path: { userId: user.value.id } },
+    });
+    if (respError) {
+      error.value =
+        (respError as unknown as { message?: string })?.message ??
+        t("admin.failedImpersonate", { error: "Unknown error" });
+      return;
+    }
+
+    if (!data?.token) {
+      error.value = t("admin.failedImpersonate", { error: "No token returned" });
+      return;
+    }
+
+    stashAdminToken();
+    setToken(data.token);
+    window.location.href = "/app/dashboard";
+  } catch (err) {
+    error.value = t("admin.failedImpersonate", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function banUser() {
+  if (!user.value || isSelf.value) return;
+  const reason = window.prompt(t("admin.banReason"));
+  if (!reason) return;
+
+  actionLoading.value = true;
+  error.value = "";
+  try {
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
+      params: { path: { userId: user.value.id } },
+      body: { banReason: reason },
+    });
+    if (respError) {
+      error.value =
+        (respError as unknown as { message?: string })?.message ??
+        t("admin.failedBan", { error: "Unknown error" });
+      return;
+    }
+    await loadUser();
+  } catch (err) {
+    error.value = t("admin.failedBan", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function unbanUser() {
+  if (!user.value || isSelf.value) return;
+  actionLoading.value = true;
+  error.value = "";
+  try {
+    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
+      params: { path: { userId: user.value.id } },
+    });
+    if (respError) {
+      error.value =
+        (respError as unknown as { message?: string })?.message ??
+        t("admin.failedUnban", { error: "Unknown error" });
+      return;
+    }
+    await loadUser();
+  } catch (err) {
+    error.value = t("admin.failedUnban", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    actionLoading.value = false;
   }
 }
 
