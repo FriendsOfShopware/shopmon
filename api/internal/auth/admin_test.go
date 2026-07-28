@@ -324,4 +324,9 @@ func TestAdminImpersonate(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp2.Body).Decode(&sessionResp))
 	user := sessionResp["user"].(map[string]interface{})
 	assert.Equal(t, "user@example.com", user["email"])
+
+	// Banner visibility depends on session.impersonatedBy being present
+	sessionInfo, ok := sessionResp["session"].(map[string]interface{})
+	require.True(t, ok)
+	assert.NotEmpty(t, sessionInfo["impersonatedBy"])
 }

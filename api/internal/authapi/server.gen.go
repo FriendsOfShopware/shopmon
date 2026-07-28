@@ -231,7 +231,10 @@ type SessionInfo struct {
 	ActiveOrganizationId *string    `json:"activeOrganizationId,omitempty"`
 	ExpiresAt            *time.Time `json:"expiresAt,omitempty"`
 	Id                   *string    `json:"id,omitempty"`
-	UserId               *string    `json:"userId,omitempty"`
+
+	// ImpersonatedBy Admin user ID when this session is an impersonation
+	ImpersonatedBy *string `json:"impersonatedBy,omitempty"`
+	UserId         *string `json:"userId,omitempty"`
 }
 
 // NotFound defines model for NotFound.

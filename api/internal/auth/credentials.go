@@ -101,6 +101,7 @@ func (h *AuthHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 		Session: currentSessionResponse{
 			ID: principal.Session.ID, UserID: principal.Session.UserID, ExpiresAt: principal.Session.ExpiresAt,
 			ActiveOrganizationID: principal.Session.ActiveOrganizationID,
+			ImpersonatedBy:       principal.Session.ImpersonatedBy,
 		},
 	})
 }

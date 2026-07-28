@@ -1,9 +1,14 @@
 import createClient from "openapi-fetch";
 import type { paths } from "../types/api";
 
+const TOKEN_KEY = "shopmon_token";
+// Saved while an admin is impersonating so stop-impersonating can restore the
+// original session after the short-lived impersonation token is deleted.
+const ADMIN_TOKEN_KEY = "shopmon_admin_token";
+
 export function getToken(): string | null {
   if (import.meta.env.SSR) return null;
-  return localStorage.getItem("shopmon_token");
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 // The supported API content languages. Server-side localized store text resolves
@@ -21,10 +26,38 @@ export function apiLanguage(): ApiLanguage {
 export function setToken(token: string | null) {
   if (import.meta.env.SSR) return;
   if (token) {
-    localStorage.setItem("shopmon_token", token);
+    localStorage.setItem(TOKEN_KEY, token);
   } else {
-    localStorage.removeItem("shopmon_token");
+    localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+/** Stash the current session token before switching to an impersonation token. */
+export function stashAdminToken(): void {
+  if (import.meta.env.SSR) return;
+  const token = getToken();
+  if (token) {
+    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  }
+}
+
+/**
+ * Restore the admin session after stop-impersonating.
+ * Returns the restored token, or null if none was stashed.
+ */
+export function restoreAdminToken(): string | null {
+  if (import.meta.env.SSR) return null;
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  if (token) {
+    setToken(token);
+  }
+  return token;
+}
+
+export function clearAdminToken(): void {
+  if (import.meta.env.SSR) return;
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
 }
 
 export const api = createClient<paths>({

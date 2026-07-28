@@ -2192,6 +2192,22 @@ paths:
       responses:
         "200":
           description: Impersonation session created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, session]
+                properties:
+                  token:
+                    type: string
+                  session:
+                    type: object
+                    required: [token, impersonatedBy]
+                    properties:
+                      token:
+                        type: string
+                      impersonatedBy:
+                        type: string
 
   # ──────────────────────────────────────────────
   # Auth – Additional Endpoints
@@ -4825,6 +4841,10 @@ components:
         activeOrganizationId:
           type: string
           nullable: true
+        impersonatedBy:
+          type: string
+          nullable: true
+          description: Admin user ID when this session is an impersonation
 
     InstanceConfig:
       type: object

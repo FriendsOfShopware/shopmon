@@ -284,7 +284,7 @@ import { useNotifications } from "@/composables/useNotifications";
 import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { useAccountShops } from "@/composables/useAccountShops";
-import { api, setToken } from "@/helpers/api";
+import { api, clearAdminToken, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
 import {
   notificationReasons,
@@ -409,6 +409,7 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
 async function logout() {
   await api.POST("/auth/sign-out");
   setToken(null);
+  clearAdminToken();
   clearSession();
   router.push({ name: "home" });
 }

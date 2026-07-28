@@ -2431,6 +2431,8 @@ export interface components {
       /** Format: date-time */
       expiresAt?: string;
       activeOrganizationId?: string | null;
+      /** @description Admin user ID when this session is an impersonation */
+      impersonatedBy?: string | null;
     };
     InstanceConfig: {
       registrationEnabled: boolean;
@@ -4960,7 +4962,15 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": {
+            token: string;
+            session: {
+              token: string;
+              impersonatedBy: string;
+            };
+          };
+        };
       };
     };
   };
