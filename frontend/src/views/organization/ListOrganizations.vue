@@ -51,7 +51,7 @@ import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import IconBuilding from "~icons/fa6-solid/building";
-import { api } from "@/helpers/api";
+import { getAccountOrganizations } from "@/api/generated";
 import { setActiveOrganization } from "@/composables/useSession";
 import { onMounted, ref } from "vue";
 
@@ -65,7 +65,7 @@ const loaded = ref(false);
 
 async function loadOrganizations() {
   try {
-    const { data } = await api.GET("/auth/list-organizations");
+    const { data } = await getAccountOrganizations();
     if (data) {
       organizations.value = data;
     }

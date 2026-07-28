@@ -65,7 +65,8 @@ import { toTypedSchema } from "@vee-validate/zod";
 
 import { useRouter } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
-import { api, setToken } from "@/helpers/api";
+import { setToken } from "@/helpers/api";
+import { signUpEmail } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -91,7 +92,7 @@ const { handleSubmit, isSubmitting } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { data, error } = await api.POST("/auth/sign-up/email", {
+  const { data, error } = await signUpEmail({
     body: {
       email: values.email,
       password: values.password,
@@ -104,8 +105,8 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
-  if ((data as { token?: string })?.token) {
-    setToken((data as { token: string }).token);
+  if (data?.token) {
+    setToken(data.token);
   }
 
   await router.push({ name: "account.login" });

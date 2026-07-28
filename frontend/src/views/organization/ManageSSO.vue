@@ -251,7 +251,14 @@
 import { useAlert } from "@/composables/useAlert";
 import { usePermissions } from "@/composables/usePermissions";
 import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
-import { api } from "@/helpers/api";
+import {
+  deleteSsoProvider,
+  discoverSso,
+  getFullOrganization,
+  getSsoProviders,
+  registerSsoProvider,
+  updateSsoProvider,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -376,8 +383,8 @@ const callbackUrl = computed(() => {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: activeOrganizationId.value! } },
+    const { data } = await getFullOrganization({
+      query: { organizationId: activeOrganizationId.value! },
     });
     if (!data) {
       alert.error("Failed to load organization");
@@ -394,8 +401,8 @@ async function loadProviders() {
   if (!organization.value) return;
   isLoading.value = true;
   try {
-    const { data: providers } = await api.GET("/organizations/{orgId}/sso-providers", {
-      params: { path: { orgId: organization.value.id } },
+    const { data: providers } = await getSsoProviders({
+      path: { orgId: organization.value.id },
     });
     ssoProviders.value = (providers ?? []) as unknown as SSOProvider[];
   } catch (error) {
@@ -457,8 +464,8 @@ async function discoverOpenIdConfig() {
   }
   isDiscovering.value = true;
   try {
-    const { data: config } = await api.GET("/sso/discover", {
-      params: { query: { issuer: issuerUrl.value } },
+    const { data: config } = await discoverSso({
+      query: { issuer: issuerUrl.value },
     });
     if (!config) {
       alert.error("Failed to discover OpenID configuration");
@@ -482,10 +489,8 @@ const onSubmitProvider = handleProviderSubmit(async (values) => {
   isSubmitting.value = true;
   try {
     if (isEditMode.value && editingProvider.value) {
-      await api.PUT("/organizations/{orgId}/sso-providers/{providerId}", {
-        params: {
-          path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
-        },
+      await updateSsoProvider({
+        path: { orgId: organization.value!.id, providerId: editingProvider.value.providerId },
         body: {
           domain: values.domain,
           issuer: values.issuer,
@@ -498,7 +503,7 @@ const onSubmitProvider = handleProviderSubmit(async (values) => {
       });
       alert.success(t("sso.providerUpdated"));
     } else {
-      const { error: ssoError } = await api.POST("/auth/sso/register", {
+      const { error: ssoError } = await registerSsoProvider({
         body: {
           domain: values.domain,
           issuer: values.issuer,
@@ -537,10 +542,8 @@ async function deleteProvider() {
   if (!deletingProvider.value) return;
   isDeleting.value = true;
   try {
-    await api.DELETE("/organizations/{orgId}/sso-providers/{providerId}", {
-      params: {
-        path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
-      },
+    await deleteSsoProvider({
+      path: { orgId: organization.value!.id, providerId: deletingProvider.value.providerId },
     });
     alert.success(t("sso.providerDeleted"));
     showDeleteModal.value = false;

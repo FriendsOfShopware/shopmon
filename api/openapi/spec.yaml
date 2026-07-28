@@ -1470,6 +1470,8 @@ paths:
               schema:
                 type: object
                 properties:
+                  token:
+                    type: string
                   user:
                     $ref: "#/components/schemas/AuthUser"
         "400":
@@ -1508,6 +1510,8 @@ paths:
               schema:
                 type: object
                 properties:
+                  token:
+                    type: string
                   user:
                     $ref: "#/components/schemas/AuthUser"
         "401":

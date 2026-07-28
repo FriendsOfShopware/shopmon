@@ -23,7 +23,8 @@
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
-import { api, restoreAdminToken, setToken } from "@/helpers/api";
+import { restoreAdminToken, setToken } from "@/helpers/api";
+import { adminStopImpersonating } from "@/api/generated";
 import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +39,7 @@ const isImpersonating = computed(() => {
 
 async function stopImpersonating() {
   try {
-    const { error } = await api.POST("/auth/admin/stop-impersonating");
+    const { error } = await adminStopImpersonating();
 
     if (error) {
       throw new Error("Failed to stop impersonating");

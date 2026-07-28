@@ -368,8 +368,25 @@ import IconBellSlash from "~icons/fa6-regular/bell-slash";
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
 import { useNotificationPreferences } from "@/composables/useNotificationPreferences";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  changeEmail,
+  changePassword,
+  deletePasskey,
+  deleteUser as apiDeleteUser,
+  getAccountOrganizations,
+  getAccountSubscribedEnvironments,
+  linkSocial as apiLinkSocial,
+  listAccounts,
+  listSessions,
+  listUserPasskeys,
+  passkeyRegister,
+  passkeyRegisterOptions,
+  revokeSession,
+  type SubscribedEnvironment,
+  unlinkAccount,
+  unsubscribeFromEnvironment as apiUnsubscribeFromEnvironment,
+  updateUser,
+} from "@/api/generated";
 import { startRegistration } from "@simplewebauthn/browser";
 
 const { t } = useI18n();
@@ -398,10 +415,8 @@ interface SessionEntry {
 const passkeys = ref<PasskeyEntry[] | null>([]);
 const sessions = ref<SessionEntry[] | null>([]);
 const connectedProviders = ref<string[]>([]);
-const subscribedShops = ref<components["schemas"]["SubscribedEnvironment"][] | null>(null);
+const subscribedShops = ref<SubscribedEnvironment[] | null>(null);
 const expandedEnv = ref<number | null>(null);
-
-type SubscribedEnvironment = components["schemas"]["SubscribedEnvironment"];
 
 // Watched environments grouped by the shop they belong to, so multiple
 // environments of the same shop (e.g. Production, Staging) appear together.
@@ -435,7 +450,7 @@ async function saveProfile() {
     alert.error(t("settings.nameMinLength"));
     return;
   }
-  const { error } = await api.POST("/auth/update-user", { body: { name: profileName.value } });
+  const { error } = await updateUser({ body: { name: profileName.value } });
   if (error) {
     alert.error((error as { message?: string }).message ?? t("settings.updateNameFailed"));
     return;
@@ -452,7 +467,7 @@ async function saveEmail() {
     alert.error(t("settings.currentPasswordRequired"));
     return;
   }
-  const { error } = await api.POST("/auth/change-email", {
+  const { error } = await changeEmail({
     body: { newEmail: emailAddress.value, currentPassword: emailCurrentPassword.value },
   });
   if (error) {
@@ -481,7 +496,7 @@ async function savePassword() {
     alert.error(t("settings.passwordsDoNotMatch"));
     return;
   }
-  const { error } = await api.POST("/auth/change-password", {
+  const { error } = await changePassword({
     body: { currentPassword: currentPassword.value, newPassword: newPassword.value },
   });
   if (error) {
@@ -496,31 +511,31 @@ async function savePassword() {
 
 async function loadPasskeys() {
   try {
-    const { data } = await api.GET("/auth/passkey/list-user-passkeys");
+    const { data } = await listUserPasskeys();
     if (data) passkeys.value = data;
   } catch {}
 }
 async function loadSessions() {
   try {
-    const { data } = await api.GET("/auth/list-sessions");
+    const { data } = await listSessions();
     if (data) sessions.value = data;
   } catch {}
 }
 async function loadLinkedAccounts() {
   try {
-    const { data } = await api.GET("/auth/list-accounts");
+    const { data } = await listAccounts();
     if (data && Array.isArray(data)) connectedProviders.value = data.map((a) => a.provider);
   } catch {}
 }
 async function loadOrganizations() {
   try {
-    const { data } = await api.GET("/auth/list-organizations");
+    const { data } = await getAccountOrganizations();
     if (data) organizations.value = data;
   } catch {}
 }
 async function loadSubscribedEnvironments() {
   try {
-    const { data } = await api.GET("/account/subscribed-environments");
+    const { data } = await getAccountSubscribedEnvironments();
     subscribedShops.value = data ?? null;
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -540,7 +555,7 @@ async function deleteUser() {
     return;
   }
   try {
-    const { error } = await api.POST("/auth/delete-user");
+    const { error } = await apiDeleteUser();
     if (error) {
       alert.error(t("settings.errorDeleteAccount"));
       return;
@@ -561,9 +576,7 @@ async function createPasskey() {
     return;
   }
   try {
-    const { data: optionsData, error: optionsError } = await api.POST(
-      "/auth/passkey/register-options",
-    );
+    const { data: optionsData, error: optionsError } = await passkeyRegisterOptions();
     if (optionsError || !optionsData) {
       alert.error(t("settings.passkeyOptionsFailed"));
       return;
@@ -573,7 +586,7 @@ async function createPasskey() {
       challengeKey: string;
     };
     const attestation = await startRegistration({ optionsJSON: options.publicKey });
-    const { error: registerError } = await api.POST("/auth/passkey/register", {
+    const { error: registerError } = await passkeyRegister({
       body: { challengeKey, name: passKeyName.value, ...attestation } as never,
     });
     if (registerError) {
@@ -589,7 +602,7 @@ async function createPasskey() {
 
 async function removePasskey(id: string) {
   try {
-    await api.POST("/auth/passkey/delete-passkey", { body: { id } });
+    await deletePasskey({ body: { id } });
     await loadPasskeys();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -597,7 +610,7 @@ async function removePasskey(id: string) {
 }
 async function removeSession(session: SessionEntry) {
   try {
-    await api.POST("/auth/revoke-session", { body: { sessionId: session.id } });
+    await revokeSession({ body: { sessionId: session.id } });
     await loadSessions();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -606,7 +619,7 @@ async function removeSession(session: SessionEntry) {
 
 async function linkSocial(provider: "github") {
   try {
-    const { data } = await api.POST("/auth/link-social", {
+    const { data } = await apiLinkSocial({
       body: { provider, callbackURL: window.location.href },
     });
     if (data?.url) window.location.href = data.url;
@@ -617,7 +630,7 @@ async function linkSocial(provider: "github") {
 
 async function unlinkSocial(providerId: string) {
   try {
-    const { error } = await api.POST("/auth/unlink-account", { body: { providerId } });
+    const { error } = await unlinkAccount({ body: { providerId } });
     if (!error) {
       await loadLinkedAccounts();
       alert.success(t("settings.unlinkedProvider", { providerId }));
@@ -631,8 +644,8 @@ async function unlinkSocial(providerId: string) {
 
 async function unsubscribeFromEnvironment(environmentId: number) {
   try {
-    await api.DELETE("/environments/{environmentId}/subscribe", {
-      params: { path: { environmentId } },
+    await apiUnsubscribeFromEnvironment({
+      path: { environmentId },
     });
     await loadSubscribedEnvironments();
     alert.success(t("settings.unsubscribedEnvironment"));

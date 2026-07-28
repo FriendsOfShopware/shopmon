@@ -124,13 +124,10 @@ import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { api } from "@/helpers/api";
+import { adminListUsers, type AdminListUsersData, type AdminUser as User } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
-import type { components } from "@/types/api";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
-
-type User = components["schemas"]["AdminUser"];
 
 const users = ref<User[]>([]);
 const loading = ref(true);
@@ -141,8 +138,8 @@ const pageSize = ref(20);
 const totalUsers = ref(0);
 
 const filters = ref<Record<string, string>>({
-  role: "",
-  status: "",
+  role: "all",
+  status: "all",
   sortBy: "createdAt",
 });
 
@@ -153,9 +150,9 @@ const filterGroups = computed<FilterGroup[]>(() => [
   {
     key: "role",
     label: t("admin.filterRole"),
-    defaultValue: "",
+    defaultValue: "all",
     options: [
-      { label: t("admin.allRoles"), value: "" },
+      { label: t("admin.allRoles"), value: "all" },
       { label: t("admin.roleAdmin"), value: "admin" },
       { label: t("admin.roleUser"), value: "user" },
     ],
@@ -163,9 +160,9 @@ const filterGroups = computed<FilterGroup[]>(() => [
   {
     key: "status",
     label: t("admin.filterStatus"),
-    defaultValue: "",
+    defaultValue: "all",
     options: [
-      { label: t("admin.allStatuses"), value: "" },
+      { label: t("admin.allStatuses"), value: "all" },
       { label: t("admin.active"), value: "active" },
       { label: t("admin.banned"), value: "banned" },
       { label: t("admin.unverified"), value: "unverified" },
@@ -201,15 +198,7 @@ async function loadUsers() {
     const status = filters.value.status;
     const sortBy = filters.value.sortBy;
 
-    const query: {
-      limit: number;
-      offset: number;
-      search?: string;
-      role?: "user" | "admin";
-      status?: "active" | "banned" | "unverified";
-      sortBy?: "createdAt" | "name" | "email";
-      sortDirection?: "asc" | "desc";
-    } = {
+    const query: AdminListUsersData["query"] = {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
     };
@@ -228,9 +217,7 @@ async function loadUsers() {
       query.sortDirection = "asc";
     }
 
-    const { data, error: respError } = await api.GET("/auth/admin/users", {
-      params: { query },
-    });
+    const { data, error: respError } = await adminListUsers({ query });
 
     if (!respError && data) {
       users.value = data.users ?? [];

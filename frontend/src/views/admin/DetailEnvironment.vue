@@ -224,8 +224,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  adminGetEnvironmentDetail,
+  type AdminEnvironmentDetail,
+  type AdminEnvironmentExtension,
+} from "@/api/generated";
 import { formatDateTime } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 
@@ -246,9 +249,6 @@ import IconListCheck from "~icons/fa6-solid/list-check";
 import IconRocket from "~icons/fa6-solid/rocket";
 import IconCircleCheck from "~icons/fa6-solid/circle-check";
 import IconEarthAmericas from "~icons/fa6-solid/earth-americas";
-
-type AdminEnvironmentDetail = components["schemas"]["AdminEnvironmentDetail"];
-type AdminEnvironmentExtension = components["schemas"]["AdminEnvironmentExtension"];
 
 const { t } = useI18n();
 const route = useRoute();
@@ -289,8 +289,8 @@ async function loadEnvironment(id: number) {
   error.value = "";
   environment.value = null;
 
-  const { data, error: respError } = await api.GET("/admin/environments/{envId}", {
-    params: { path: { envId: id } },
+  const { data, error: respError } = await adminGetEnvironmentDetail({
+    path: { envId: id },
   });
 
   if (respError) {

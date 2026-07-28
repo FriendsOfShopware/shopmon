@@ -172,12 +172,8 @@
 import { reactive } from "vue";
 import { formatDate } from "@/helpers/formatter";
 import { useChangelogText } from "@/helpers/changelog";
-import type { components } from "@/types/api";
+import type { AccountChangelog } from "@/api/generated";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
-
-import { Badge } from "@/components/ui/badge";
-
-type AccountChangelog = components["schemas"]["AccountChangelog"];
 
 const { environment } = useEnvironmentDetail();
 const changelogText = useChangelogText();

@@ -1,12 +1,14 @@
 import { ref } from "vue";
-
-import { api } from "@/helpers/api";
 import { i18n } from "@/i18n";
 import { useAlert } from "@/composables/useAlert";
-import type { components } from "@/types/api";
-
-type NotificationPreference = components["schemas"]["NotificationPreference"];
-type NotificationEventType = components["schemas"]["NotificationEventType"];
+import {
+  deleteNotificationPreference,
+  getNotificationEventTypes,
+  getNotificationPreferences,
+  setNotificationPreference as apiSetNotificationPreference,
+  type NotificationEventType,
+  type NotificationPreference,
+} from "@/api/generated";
 
 export type TriState = "inherit" | "on" | "off";
 export type ChannelName = "in_app" | "email";
@@ -47,12 +49,12 @@ export function useNotificationPreferences() {
   const { error: showError } = useAlert();
 
   async function loadPreferences() {
-    const { data } = await api.GET("/account/notification-preferences");
+    const { data } = await getNotificationPreferences();
     preferences.value = data ?? [];
   }
 
   async function loadEventTypes() {
-    const { data } = await api.GET("/notifications/event-types");
+    const { data } = await getNotificationEventTypes();
     eventTypes.value = data ?? [];
   }
 
@@ -89,7 +91,7 @@ export function useNotificationPreferences() {
   }
 
   async function setEventChannel(eventType: string, channel: ChannelName, enabled: boolean) {
-    const { error } = await api.PUT("/account/notification-preferences", {
+    const { error } = await apiSetNotificationPreference({
       body: { scopeType: "global", scopeId: "", eventType, channel, enabled },
     });
     reportFirstError([error]);
@@ -124,10 +126,10 @@ export function useNotificationPreferences() {
     const scopeId = String(environmentId);
     const { error } =
       state === "inherit"
-        ? await api.DELETE("/account/notification-preferences", {
-            params: { query: { scopeType: "environment", scopeId, eventType, channel } },
+        ? await deleteNotificationPreference({
+            query: { scopeType: "environment", scopeId, eventType, channel },
           })
-        : await api.PUT("/account/notification-preferences", {
+        : await apiSetNotificationPreference({
             body: {
               scopeType: "environment",
               scopeId,

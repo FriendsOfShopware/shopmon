@@ -91,13 +91,9 @@ import StatusIcon from "@/components/StatusIcon.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import IconFolder from "~icons/fa6-solid/folder";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import { getAccountShops, type AccountEnvironment, type AccountShop } from "@/api/generated";
 import { ref } from "vue";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
-
-type AccountShop = components["schemas"]["AccountShop"];
-type AccountEnvironment = components["schemas"]["AccountEnvironment"];
 
 const loading = ref(true);
 const { environments } = useAccountEnvironments();
@@ -123,13 +119,11 @@ function shopLink(shop: AccountShop) {
   };
 }
 
-api
-  .GET("/account/shops")
+getAccountShops()
   .then((shopsRes) => {
     if (shopsRes.data) shops.value = shopsRes.data;
-    loading.value = false;
   })
-  .catch(() => {
+  .finally(() => {
     loading.value = false;
   });
 </script>

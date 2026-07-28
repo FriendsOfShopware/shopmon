@@ -107,7 +107,7 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
+import { updateEnvironment } from "@/api/generated";
 import { translateCheckMessage } from "@/helpers/i18n";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 
@@ -174,8 +174,8 @@ async function ignoreCheck(id: string) {
 
   const updatedIgnores = [...(environment.value.ignores ?? []), id];
 
-  await api.PATCH("/environments/{environmentId}", {
-    params: { path: { environmentId: environment.value.id } },
+  await updateEnvironment({
+    path: { environmentId: environment.value.id },
     body: {
       shopId: environment.value.shopId ?? 0,
       ignores: updatedIgnores,
@@ -191,8 +191,8 @@ async function removeIgnore(id: string) {
 
   const updatedIgnores = (environment.value.ignores ?? []).filter((aid: string) => aid !== id);
 
-  await api.PATCH("/environments/{environmentId}", {
-    params: { path: { environmentId: environment.value.id } },
+  await updateEnvironment({
+    path: { environmentId: environment.value.id },
     body: {
       shopId: environment.value.shopId ?? 0,
       ignores: updatedIgnores,

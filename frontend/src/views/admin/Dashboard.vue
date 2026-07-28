@@ -193,8 +193,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusIcon from "@/components/StatusIcon.vue";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  adminGetGrowth,
+  adminGetRecentActivity,
+  adminGetShopwareVersions,
+  adminGetStats,
+  type AdminGrowth,
+  type AdminRecentActivity,
+  type AdminStats,
+  type ShopwareVersionCount,
+} from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { onMounted, onUnmounted, ref, nextTick, watch, computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -208,10 +216,10 @@ Chart.register(...registerables);
 
 const { t } = useI18n();
 
-type Stats = components["schemas"]["AdminStats"];
-type GrowthData = components["schemas"]["AdminGrowth"];
-type Activity = components["schemas"]["AdminRecentActivity"];
-type VersionData = components["schemas"]["ShopwareVersionCount"][];
+type Stats = AdminStats;
+type GrowthData = AdminGrowth;
+type Activity = AdminRecentActivity;
+type VersionData = ShopwareVersionCount[];
 
 const stats = ref<Stats | null>(null);
 const growthData = ref<GrowthData | null>(null);
@@ -300,10 +308,10 @@ async function loadStats() {
 
   try {
     const [statsRes, growthRes, activityRes, versionRes] = await Promise.all([
-      api.GET("/admin/stats"),
-      api.GET("/admin/growth"),
-      api.GET("/admin/recent-activity"),
-      api.GET("/admin/shopware-versions"),
+      adminGetStats(),
+      adminGetGrowth(),
+      adminGetRecentActivity(),
+      adminGetShopwareVersions(),
     ]);
     stats.value = statsRes.data ?? null;
     growthData.value = growthRes.data ?? null;

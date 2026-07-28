@@ -15,17 +15,13 @@ vi.mock("vue-router", () => ({
   },
 }));
 
-// Mock api client
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  signInEmail: vi.fn(),
+  signInSocial: vi.fn(),
+  signInSso: vi.fn(),
+  passkeyLoginOptions: vi.fn(),
+  passkeyLogin: vi.fn(),
 }));
 
 // Mock useSession composable

@@ -3,7 +3,8 @@ import type { RouteLocationNormalized, Router } from "vue-router";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { useSession, fetchSession } from "@/composables/useSession";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
-import { api, setToken } from "@/helpers/api";
+import { setToken } from "@/helpers/api";
+import { exchangeCode } from "@/api/generated";
 
 export { routes } from "./routes";
 
@@ -13,7 +14,7 @@ export function setupRouterGuards(router: Router) {
   router.beforeEach(async (to: RouteLocationNormalized) => {
     // Handle OAuth/SSO callback code — exchange for token
     if (to.query.code && !to.query.state) {
-      const { data } = await api.POST("/auth/exchange-code" as any, {
+      const { data } = await exchangeCode({
         body: { code: to.query.code as string },
       });
       if (data?.token) {

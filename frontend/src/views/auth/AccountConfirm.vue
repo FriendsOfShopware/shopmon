@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
+import { verifyEmail } from "@/api/generated";
 import { useI18n } from "vue-i18n";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -55,8 +55,8 @@ const isLoading = ref(true);
 const confirmSuccess = ref(false);
 
 onMounted(async () => {
-  const resp = await api.GET("/auth/verify-email", {
-    params: { query: { token: route.params.token as string } },
+  const resp = await verifyEmail({
+    query: { token: route.params.token as string },
   });
 
   if (resp.error) {

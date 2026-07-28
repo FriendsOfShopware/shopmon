@@ -132,7 +132,8 @@ import FilterSearchBar from "@/components/FilterSearchBar.vue";
 import ExtensionIcon from "@/components/ExtensionIcon.vue";
 import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconMagnifyingGlass from "~icons/fa6-solid/magnifying-glass";
-import { api, apiLanguage } from "@/helpers/api";
+import { apiLanguage } from "@/helpers/api";
+import { getAccountExtensions } from "@/api/generated";
 import {
   type AccountExtension,
   hasUpdate,
@@ -153,10 +154,11 @@ const filters = [
   { label: t("extensions.filterInactive"), value: "inactive" },
 ];
 
-api
-  .GET("/account/extensions", { params: { query: { language: apiLanguage() } } })
+getAccountExtensions({ query: { language: apiLanguage() } })
   .then(({ data }) => {
     if (data) extensions.value = data;
+  })
+  .finally(() => {
     loading.value = false;
   });
 

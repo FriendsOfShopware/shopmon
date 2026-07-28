@@ -2,13 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import ListOrganizations from "./ListOrganizations.vue";
 
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-  },
-  getToken: vi.fn(() => "test-token"),
-  setToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountOrganizations: vi.fn(),
 }));
 
 vi.mock("@/composables/useSession", () => ({
@@ -28,7 +24,7 @@ vi.mock("vue-router", () => ({
   },
 }));
 
-import { api } from "@/helpers/api";
+import { getAccountOrganizations } from "@/api/generated";
 
 const mockOrganizations = [
   { id: "1", name: "Test Organization", role: "owner", createdAt: "2024-01-01" },
@@ -38,16 +34,11 @@ const mockOrganizations = [
 describe("ListOrganizations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/auth/list-organizations") {
-        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
-      }
-      return Promise.resolve({
-        data: null,
-        error: { message: "not found" },
-        response: new Response(),
-      });
-    }) as any);
+    vi.mocked(getAccountOrganizations).mockResolvedValue({
+      data: mockOrganizations,
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -87,18 +78,23 @@ describe("ListOrganizations", () => {
   });
 
   it("displays empty state when no organizations exist", async () => {
-    vi.mocked(api.GET).mockImplementation((() =>
-      Promise.resolve({ data: [], error: null, response: new Response() })) as any);
+    vi.mocked(getAccountOrganizations).mockResolvedValueOnce({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     const wrapper = mountComponent();
     await flushPromises();
-    // The empty state now uses inline Card content with a "No Organizations" message
     expect(wrapper.text()).toContain("No Organization");
   });
 
   it("shows add organization button in empty state", async () => {
-    vi.mocked(api.GET).mockImplementation((() =>
-      Promise.resolve({ data: [], error: null, response: new Response() })) as any);
+    vi.mocked(getAccountOrganizations).mockResolvedValueOnce({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     const wrapper = mountComponent();
     await flushPromises();

@@ -1,8 +1,5 @@
 import { ref } from "vue";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
-
-type AccountEnvironment = components["schemas"]["AccountEnvironment"];
+import { getAccountEnvironments, type AccountEnvironment } from "@/api/generated";
 
 const environments = ref<AccountEnvironment[]>([]);
 const _fetched = ref(false);
@@ -13,7 +10,7 @@ export function fetchAccountEnvironments(): Promise<AccountEnvironment[]> {
     return _pending;
   }
 
-  _pending = api.GET("/account/environments").then(({ data }) => {
+  _pending = getAccountEnvironments().then(({ data }) => {
     environments.value = data ?? [];
     _fetched.value = true;
     _pending = null;

@@ -114,13 +114,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatusIcon from "@/components/StatusIcon.vue";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  adminGetEnvironments,
+  type AdminGetEnvironmentsData,
+  type AccountEnvironment as Environment,
+} from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
 
-type Environment = components["schemas"]["AccountEnvironment"];
 type SortBy =
   | "createdAt"
   | "name"
@@ -139,23 +141,26 @@ const currentPage = ref(1);
 const pageSize = ref(20);
 const totalEnvironments = ref(0);
 
+const { t } = useI18n();
+
+const totalPages = computed(() => Math.ceil(totalEnvironments.value / pageSize.value));
+
 const filters = ref<Record<string, string>>({
   sortBy: "createdAt",
 });
 
-const totalPages = computed(() => Math.ceil(totalEnvironments.value / pageSize.value));
-const { t } = useI18n();
-
 const filterGroups = computed<FilterGroup[]>(() => [
   {
     key: "sortBy",
-    label: t("admin.filterSortBy"),
+    label: t("admin.sortBy"),
     defaultValue: "createdAt",
     options: [
-      { label: t("admin.sortByCreated"), value: "createdAt" },
-      { label: t("admin.sortByName"), value: "name" },
-      { label: t("admin.sortByStatus"), value: "status" },
-      { label: t("admin.sortByOrg"), value: "organizationName" },
+      { label: t("admin.createdDate"), value: "createdAt" },
+      { label: t("admin.environmentName"), value: "name" },
+      { label: t("admin.url"), value: "url" },
+      { label: t("admin.status"), value: "status" },
+      { label: t("admin.shopwareVersion"), value: "shopwareVersion" },
+      { label: t("admin.organizationName"), value: "organizationName" },
     ],
   },
 ]);
@@ -174,15 +179,7 @@ async function loadEnvironments() {
   error.value = "";
 
   try {
-    const query: {
-      limit: number;
-      offset: number;
-      sortBy: SortBy;
-      sortDirection: "asc" | "desc";
-      searchField?: "name" | "url";
-      searchOperator?: "contains";
-      searchValue?: string;
-    } = {
+    const query: AdminGetEnvironmentsData["query"] = {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
       sortBy: filters.value.sortBy as SortBy,
@@ -196,7 +193,7 @@ async function loadEnvironments() {
       query.searchValue = searchQuery.value;
     }
 
-    const { data: response } = await api.GET("/admin/environments", { params: { query } });
+    const { data: response } = await adminGetEnvironments({ query });
 
     if (response) {
       environments.value = response.environments;

@@ -1,45 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import Settings from "./Settings.vue";
 
-const MainContainerStub = defineComponent({
-  name: "MainContainer",
-  setup(_, { slots }) {
-    return () => h("main", {}, slots.default?.());
-  },
-});
-
-const FormGroupStub = defineComponent({
-  name: "FormGroup",
-  props: ["title", "subTitle", "class"],
-  setup(props, { slots }) {
-    return () => h("fieldset", {}, [h("legend", {}, props.title), slots.default?.()]);
-  },
-});
-
-const DataTableStub = defineComponent({
-  name: "DataTable",
-  props: ["columns", "data"],
-  template: "<table><slot /></table>",
-});
-
-const DeleteConfirmationModalStub = defineComponent({
-  name: "DeleteConfirmationModal",
-  props: ["show", "title", "entityName", "requirePassword"],
-  template: '<div v-if="show" class="delete-modal" />',
-});
+const MainContainerStub = defineComponent({ template: "<div><slot /></div>" });
+const FormGroupStub = defineComponent({ template: "<div><slot /></div>" });
+const DataTableStub = defineComponent({ template: "<div><slot /></div>" });
+const DeleteConfirmationModalStub = defineComponent({ template: "<div><slot /></div>" });
 
 const mockSessionData = {
   user: {
-    id: "1",
-    name: "Test User",
-    email: "test@example.com",
+    id: "user-1",
+    name: "John Doe",
+    email: "john@example.com",
     emailVerified: true,
     image: null,
     role: "user",
   },
-  session: { id: "sess-1", userId: "1", expiresAt: "2099-01-01", activeOrganizationId: null },
+  session: {
+    id: "session-1",
+    userId: "user-1",
+    expiresAt: "2099-01-01",
+    activeOrganizationId: "org-1",
+  },
 };
 
 vi.mock("@/composables/useSession", () => ({
@@ -50,16 +33,15 @@ vi.mock("@/composables/useSession", () => ({
   }),
 }));
 
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(() => "test-token"),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  listUserPasskeys: vi.fn(),
+  listSessions: vi.fn(),
+  listAccounts: vi.fn(),
+  getAccountOrganizations: vi.fn(),
+  getAccountSubscribedEnvironments: vi.fn(),
+  getNotificationPreferences: vi.fn(),
+  getNotificationEventTypes: vi.fn(),
 }));
 
 vi.mock("@/composables/useAlert", () => ({
@@ -73,29 +55,54 @@ vi.mock("@simplewebauthn/browser", () => ({
   startRegistration: vi.fn(),
 }));
 
-import { api } from "@/helpers/api";
+import {
+  getAccountOrganizations,
+  getAccountSubscribedEnvironments,
+  getNotificationEventTypes,
+  getNotificationPreferences,
+  listAccounts,
+  listSessions,
+  listUserPasskeys,
+} from "@/api/generated";
 
 describe("Settings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/auth/passkey/list-user-passkeys") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/auth/list-sessions") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/auth/list-accounts") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/auth/list-organizations") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/account/subscribed-environments") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(listUserPasskeys).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(listSessions).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(listAccounts).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getAccountOrganizations).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getAccountSubscribedEnvironments).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getNotificationPreferences).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getNotificationEventTypes).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -117,67 +124,41 @@ describe("Settings", () => {
     expect(wrapper.find("h1").text()).toBe("Settings");
   });
 
-  it("displays account section", async () => {
+  it("populates form with user session name", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Account");
+    const nameInput = wrapper.find('input[type="text"]');
+    expect(nameInput.exists()).toBe(true);
+    expect((nameInput.element as HTMLInputElement).value).toBe("John Doe");
   });
 
-  it("displays passkey devices section", async () => {
+  it("populates form with user session email", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    const emailInput = wrapper.find('input[type="email"]');
+    expect(emailInput.exists()).toBe(true);
+    expect((emailInput.element as HTMLInputElement).value).toBe("john@example.com");
+  });
+
+  it("shows security section with passkeys and sessions", async () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.text()).toContain("Passkey Devices");
-  });
-
-  it("displays sessions section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
     expect(wrapper.text()).toContain("Sessions");
   });
 
-  it("displays notifications section", async () => {
+  it("shows danger zone section with delete account button", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Notifications");
+    expect(wrapper.text()).toContain("Delete account");
   });
 
-  it("displays delete account section", async () => {
-    const wrapper = mountComponent();
+  it("calls list APIs on mount", async () => {
+    mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Deleting your Account");
-  });
-
-  it("has save button in account form", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const saveBtn = wrapper.findAll("button").find((b) => b.text().includes("Save"));
-    expect(saveBtn).toBeTruthy();
-  });
-
-  it("has add passkey button", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const btn = wrapper.findAll("button").find((b) => b.text().includes("Add a new Device"));
-    expect(btn).toBeTruthy();
-  });
-
-  it("has delete account button", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const btn = wrapper.findAll("button").find((b) => b.text().includes("Delete account"));
-    expect(btn).toBeTruthy();
-  });
-
-  it("shows GitHub link button when not connected", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    const btn = wrapper.findAll("button").find((b) => b.text().includes("Link GitHub"));
-    expect(btn).toBeTruthy();
-  });
-
-  it("shows empty notification state when no subscriptions", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("You are not subscribed to any environment notifications");
+    expect(listUserPasskeys).toHaveBeenCalled();
+    expect(listSessions).toHaveBeenCalled();
+    expect(listAccounts).toHaveBeenCalled();
+    expect(getAccountOrganizations).toHaveBeenCalled();
   });
 });

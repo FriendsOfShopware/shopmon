@@ -45,17 +45,9 @@ const mockEnvironments = [
   },
 ];
 
-// Mock api client
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountShops: vi.fn(),
 }));
 
 // Mock formatter
@@ -78,17 +70,16 @@ vi.mock("@/composables/useAccountEnvironments", () => ({
   }),
 }));
 
-import { api } from "@/helpers/api";
+import { getAccountShops } from "@/api/generated";
 
 describe("ListShops", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountShops).mockResolvedValue({
+      data: mockShops,
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -120,13 +111,11 @@ describe("ListShops", () => {
   });
 
   it("displays empty state when no projects exist", async () => {
-    // Override mock to return empty shops
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountShops).mockResolvedValueOnce({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     const wrapper = mountComponent();
     await flushPromises();
@@ -152,7 +141,6 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // The component displays the shop name and the default environment's Shopware version badge
     expect(wrapper.text()).toContain("Test Shop");
     expect(wrapper.text()).toContain("6.5.0");
   });
@@ -169,19 +157,17 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // The StatusIconStub renders <span :class="status">{{ status }}</span>
     const statusIcon = wrapper.findComponent(StatusIconStub);
     expect(statusIcon.exists()).toBe(true);
     expect(statusIcon.props("status")).toBe("green");
   });
 
   it("shows empty state CTA when no projects", async () => {
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountShops).mockResolvedValueOnce({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
 
     const wrapper = mountComponent();
     await flushPromises();
@@ -193,7 +179,6 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // The edit button renders as a span with only an icon and a title attribute
     const editBtn = wrapper.find('[title="Edit Shop"]');
     expect(editBtn.exists()).toBe(true);
   });
@@ -202,7 +187,6 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // Each shop card shows the default environment's Shopware version as a badge
     expect(wrapper.text()).toContain("6.5.0");
   });
 
@@ -210,7 +194,6 @@ describe("ListShops", () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // Shop should be displayed
     expect(wrapper.text()).toContain("Test Shop");
   });
 });

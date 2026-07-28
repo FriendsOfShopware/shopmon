@@ -105,13 +105,14 @@ import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFi
 import AdminListLayout from "@/components/admin/AdminListLayout.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  adminGetOrganizations,
+  type AdminGetOrganizationsData,
+  type AccountOrganization as Organization,
+} from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
-
-type Organization = components["schemas"]["AccountOrganization"];
 
 const organizations = ref<Organization[]>([]);
 const loading = ref(true);
@@ -158,15 +159,7 @@ async function loadOrganizations() {
   try {
     const sortBy = filters.value.sortBy as "createdAt" | "name" | "shopCount" | "memberCount";
 
-    const query: {
-      limit: number;
-      offset: number;
-      sortBy: "createdAt" | "name" | "shopCount" | "memberCount";
-      sortDirection: "asc" | "desc";
-      searchField?: "name";
-      searchOperator?: "contains";
-      searchValue?: string;
-    } = {
+    const query: AdminGetOrganizationsData["query"] = {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
       sortBy,
@@ -179,7 +172,7 @@ async function loadOrganizations() {
       query.searchValue = searchQuery.value;
     }
 
-    const { data: response } = await api.GET("/admin/organizations", { params: { query } });
+    const { data: response } = await adminGetOrganizations({ query });
 
     if (response) {
       organizations.value = response.organizations;

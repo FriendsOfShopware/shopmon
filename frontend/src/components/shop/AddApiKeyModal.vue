@@ -1,52 +1,62 @@
 <template>
-  <Dialog :open="open" @update:open="(v: boolean) => !v && emit('update:open', false)">
-    <DialogContent>
+  <Dialog :open="open" @update:open="$emit('update:open', $event)">
+    <DialogContent class="sm:max-w-[485px]">
       <DialogHeader>
-        <DialogTitle>{{ $t("shop.createApiKeyTitle") }}</DialogTitle>
+        <DialogTitle>{{ $t("shop.createApiKey") }}</DialogTitle>
       </DialogHeader>
-      <form id="apiKeyForm" class="space-y-4" @submit="onSubmit">
+
+      <form @submit="onSubmit" class="space-y-4">
         <FormField v-slot="{ componentField }" name="apiKeyName">
           <FormItem>
             <FormLabel>{{ $t("common.name") }}</FormLabel>
             <FormControl>
-              <Input v-bind="componentField" :placeholder="$t('shop.apiKeyPlaceholder')" />
+              <Input
+                v-bind="componentField"
+                :placeholder="$t('shop.apiKeyNamePlaceholder')"
+                autocomplete="off"
+              />
             </FormControl>
             <FormMessage />
-            <p class="text-xs text-muted-foreground">{{ $t("packages.apiKeyHelp") }}</p>
           </FormItem>
         </FormField>
 
         <div>
-          <label class="text-sm font-medium">{{ $t("shop.scopes") }}</label>
-          <p class="mb-2 text-xs text-muted-foreground">{{ $t("shop.scopesHelp") }}</p>
-          <div class="mt-2 flex flex-col gap-2">
-            <label
+          <FormLabel class="mb-2 block">{{ $t("shop.scopes") }}</FormLabel>
+          <div class="space-y-2 rounded-md border p-3">
+            <div
               v-for="scope in availableScopes"
               :key="scope.value"
-              class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted"
+              class="flex items-start space-x-2"
             >
               <input
                 type="checkbox"
+                :id="`scope-${scope.value}`"
                 :value="scope.value"
-                class="mt-1"
                 :checked="selectedScopes.includes(scope.value)"
                 @change="toggleScope(scope.value)"
+                class="mt-1 size-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <div>
-                <span class="text-sm font-medium">{{ scope.label }}</span>
-                <p class="text-xs text-muted-foreground">{{ scope.description }}</p>
-              </div>
-            </label>
+              <label
+                :for="`scope-${scope.value}`"
+                class="cursor-pointer text-sm leading-tight select-none"
+              >
+                <div class="font-medium text-foreground">{{ scope.label }}</div>
+                <div class="text-xs text-muted-foreground">{{ scope.description }}</div>
+              </label>
+            </div>
           </div>
-          <p v-if="scopeError" class="mt-1 text-sm text-destructive">{{ scopeError }}</p>
+          <p v-if="scopeError" class="mt-1 text-xs font-medium text-destructive">
+            {{ scopeError }}
+          </p>
         </div>
       </form>
+
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">{{
-          $t("common.cancel")
-        }}</Button>
-        <Button type="submit" form="apiKeyForm" :disabled="isCreating">
-          <icon-fa6-solid:key v-if="!isCreating" class="mr-1.5 size-3.5" />
+        <Button variant="outline" @click="$emit('update:open', false)">
+          {{ $t("common.cancel") }}
+        </Button>
+        <Button :disabled="isCreating" @click="onSubmit">
+          <icon-fa6-solid:plus v-if="!isCreating" class="mr-1.5 size-3.5" />
           <icon-line-md:loading-twotone-loop v-else class="mr-1.5 size-3.5" />
           {{ $t("shop.createApiKey") }}
         </Button>
@@ -57,8 +67,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import { createApiKey, type ApiKeyScope } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -75,7 +84,7 @@ import { z } from "zod";
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-type AvailableScope = components["schemas"]["ApiKeyScope"];
+type AvailableScope = ApiKeyScope;
 
 const props = defineProps<{
   open: boolean;
@@ -139,13 +148,10 @@ const onSubmit = handleSubmit(async (values) => {
   }
   isCreating.value = true;
   try {
-    const { data: result, error } = await api.POST(
-      "/organizations/{orgId}/shops/{shopId}/api-keys",
-      {
-        params: { path: { orgId: props.orgId, shopId: props.shopId } },
-        body: { name: values.apiKeyName, scopes: selectedScopes.value },
-      },
-    );
+    const { data: result, error } = await createApiKey({
+      path: { orgId: props.orgId, shopId: props.shopId },
+      body: { name: values.apiKeyName, scopes: selectedScopes.value },
+    });
     if (error) {
       alert.error(
         `${t("shop.failedCreateApiKey")}: ${(error as { message?: string }).message ?? ""}`,

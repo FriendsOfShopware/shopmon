@@ -147,15 +147,18 @@ import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.
 import AddPackagesTokenModal from "@/components/shop/AddPackagesTokenModal.vue";
 import { useAlert } from "@/composables/useAlert";
 import { timeAgo } from "@/helpers/formatter";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  deletePackagesToken as apiDeletePackagesToken,
+  getPackagesTokenConfiguration,
+  getPackagesTokens,
+  syncPackagesToken as apiSyncPackagesToken,
+  type PackagesToken,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-
-type PackagesToken = components["schemas"]["PackagesToken"];
 
 const props = defineProps<{
   orgId: string;
@@ -186,7 +189,7 @@ const packagesComposerHost = computed(() => {
 
 async function checkPackagesConfigured() {
   try {
-    const { data: config } = await api.GET("/packages-token/configuration");
+    const { data: config } = await getPackagesTokenConfiguration();
     isPackagesConfigured.value = config?.configured ?? false;
     packagesComposerUrl.value = config?.composerUrl ?? null;
   } catch {
@@ -198,8 +201,8 @@ async function loadPackagesTokens() {
   if (!isPackagesConfigured.value) return;
   isPackagesTokensLoading.value = true;
   try {
-    const { data } = await api.GET("/organizations/{orgId}/shops/{shopId}/packages-tokens", {
-      params: { path: { orgId: props.orgId, shopId: props.shopId } },
+    const { data } = await getPackagesTokens({
+      path: { orgId: props.orgId, shopId: props.shopId },
     });
     packagesTokens.value = data ?? [];
   } catch (error) {
@@ -229,18 +232,13 @@ async function deletePackagesToken() {
   if (!deletingPackagesToken.value) return;
   isDeletingPackagesToken.value = true;
   try {
-    const { error } = await api.DELETE(
-      "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}",
-      {
-        params: {
-          path: {
-            orgId: props.orgId,
-            shopId: props.shopId,
-            tokenId: deletingPackagesToken.value.id,
-          },
-        },
+    const { error } = await apiDeletePackagesToken({
+      path: {
+        orgId: props.orgId,
+        shopId: props.shopId,
+        tokenId: deletingPackagesToken.value.id,
       },
-    );
+    });
     if (error) {
       alert.error(
         `${t("packages.failedDelete")}: ${(error as { message?: string }).message ?? ""}`,
@@ -263,14 +261,9 @@ async function deletePackagesToken() {
 async function syncPackagesToken(pt: PackagesToken) {
   isSyncingPackagesToken.value = pt.id;
   try {
-    const { error } = await api.POST(
-      "/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync",
-      {
-        params: {
-          path: { orgId: props.orgId, shopId: props.shopId, tokenId: pt.id },
-        },
-      },
-    );
+    const { error } = await apiSyncPackagesToken({
+      path: { orgId: props.orgId, shopId: props.shopId, tokenId: pt.id },
+    });
     if (error) {
       alert.error(`${t("packages.failedSync")}: ${(error as { message?: string }).message ?? ""}`);
       return;

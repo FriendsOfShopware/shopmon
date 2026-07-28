@@ -1,8 +1,10 @@
-import type { components } from "@/types/api";
+import type {
+  AccountExtension,
+  AccountExtensionEnvironment,
+  ExtensionScreenshot,
+} from "@/api/generated";
 
-export type AccountExtension = components["schemas"]["AccountExtension"];
-export type AccountExtensionEnvironment = components["schemas"]["AccountExtensionEnvironment"];
-export type ExtensionScreenshot = components["schemas"]["ExtensionScreenshot"];
+export type { AccountExtension, AccountExtensionEnvironment, ExtensionScreenshot };
 
 // Normalizes a possibly protocol-relative producer website URL (the store often
 // returns "//example.com") into an absolute https URL safe for an href.

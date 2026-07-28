@@ -195,9 +195,11 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import { api } from "@/helpers/api";
+import {
+  adminGetOrganizationDetail,
+  type AdminOrganizationDetail as OrgDetail,
+} from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
-import type { components } from "@/types/api";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -220,7 +222,6 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
-type OrgDetail = components["schemas"]["AdminOrganizationDetail"];
 type OrgEnvironment = OrgDetail["environments"][number];
 
 const organization = ref<OrgDetail | null>(null);
@@ -252,8 +253,8 @@ async function loadOrganization() {
   loading.value = true;
   error.value = "";
 
-  const { data, error: respError } = await api.GET("/admin/organizations/{orgId}", {
-    params: { path: { orgId: String(route.params.id) } },
+  const { data, error: respError } = await adminGetOrganizationDetail({
+    path: { orgId: String(route.params.id) },
   });
 
   if (respError) {

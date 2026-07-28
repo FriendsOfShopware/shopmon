@@ -1,8 +1,5 @@
 import { ref } from "vue";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
-
-type AccountShop = components["schemas"]["AccountShop"];
+import { getAccountShops, type AccountShop } from "@/api/generated";
 
 const shops = ref<AccountShop[]>([]);
 const _fetched = ref(false);
@@ -13,7 +10,7 @@ export function fetchAccountShops(): Promise<AccountShop[]> {
     return _pending;
   }
 
-  _pending = api.GET("/account/shops").then(({ data }) => {
+  _pending = getAccountShops().then(({ data }) => {
     shops.value = data ?? [];
     _fetched.value = true;
     _pending = null;

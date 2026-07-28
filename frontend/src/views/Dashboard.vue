@@ -1,264 +1,303 @@
 <template>
-  <div v-if="shops">
-    <!-- Page header -->
-    <div
-      class="mb-8 flex items-end justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4"
-    >
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $t("dashboard.title") }}</h1>
-        <p class="mt-1 text-muted-foreground">{{ $t("dashboard.myEnvironments") }}</p>
-      </div>
-      <div v-if="shops.length > 0" class="hidden items-center gap-2 sm:flex">
-        <button
-          type="button"
-          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent"
-          :class="{ 'bg-accent': statusFilter === null }"
-          :aria-pressed="statusFilter === null"
-          @click="statusFilter = null"
-        >
-          <div class="text-2xl font-bold tabular-nums">
-            {{ shops.length }}
-          </div>
-          <div class="text-xs text-muted-foreground">{{ $t("dashboard.shops") }}</div>
-        </button>
-        <Separator orientation="vertical" class="h-10" />
-        <button
-          type="button"
-          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-          :class="{ 'bg-accent': statusFilter === 'green' }"
-          :aria-pressed="statusFilter === 'green'"
-          :disabled="greenCount === 0"
-          @click="statusFilter = statusFilter === 'green' ? null : 'green'"
-        >
-          <div class="text-2xl font-bold tabular-nums text-success">
-            {{ greenCount }}
-          </div>
-          <div class="text-xs text-muted-foreground">{{ $t("dashboard.healthy") }}</div>
-        </button>
-        <button
-          type="button"
-          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-          :class="{ 'bg-accent': statusFilter === 'yellow' }"
-          :aria-pressed="statusFilter === 'yellow'"
-          :disabled="warnCount === 0"
-          @click="statusFilter = statusFilter === 'yellow' ? null : 'yellow'"
-        >
-          <div
-            class="text-2xl font-bold tabular-nums"
-            :class="warnCount > 0 ? 'text-warning' : 'text-muted-foreground'"
+  <div class="space-y-6">
+    <PageHeader :title="$t('dashboard.title')" />
+    <!-- KPI Header -->
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <button
+        type="button"
+        @click="toggleStatusFilter('green')"
+        class="group flex flex-col justify-between rounded-xl border p-4 text-left transition-all hover:border-emerald-500/50 hover:shadow-sm"
+        :class="statusFilter === 'green' ? 'border-emerald-500 bg-emerald-500/10' : 'bg-card'"
+      >
+        <div class="flex items-center justify-between text-muted-foreground">
+          <span class="text-xs font-semibold uppercase tracking-wider">{{
+            $t("dashboard.statHealthy")
+          }}</span>
+          <StatusIcon status="green" class="size-4 text-emerald-500" />
+        </div>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span class="text-2xl font-bold tracking-tight">{{ healthyCount }}</span>
+          <span class="text-xs text-muted-foreground" v-if="totalEnvironmentsCount > 0"
+            >{{ Math.round((healthyCount / totalEnvironmentsCount) * 100) }}%</span
           >
-            {{ warnCount }}
-          </div>
-          <div class="text-xs text-muted-foreground">{{ $t("dashboard.warnings") }}</div>
-        </button>
-        <button
-          type="button"
-          class="rounded-lg px-2 py-1 text-right transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
-          :class="{ 'bg-accent': statusFilter === 'red' }"
-          :aria-pressed="statusFilter === 'red'"
-          :disabled="errorCount === 0"
-          @click="statusFilter = statusFilter === 'red' ? null : 'red'"
-        >
-          <div
-            class="text-2xl font-bold tabular-nums"
-            :class="errorCount > 0 ? 'text-destructive' : 'text-muted-foreground'"
+        </div>
+      </button>
+
+      <button
+        type="button"
+        @click="toggleStatusFilter('yellow')"
+        class="group flex flex-col justify-between rounded-xl border p-4 text-left transition-all hover:border-amber-500/50 hover:shadow-sm"
+        :class="statusFilter === 'yellow' ? 'border-amber-500 bg-amber-500/10' : 'bg-card'"
+      >
+        <div class="flex items-center justify-between text-muted-foreground">
+          <span class="text-xs font-semibold uppercase tracking-wider">{{
+            $t("dashboard.statWarning")
+          }}</span>
+          <StatusIcon status="yellow" class="size-4 text-amber-500" />
+        </div>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span class="text-2xl font-bold tracking-tight">{{ warningCount }}</span>
+          <span class="text-xs text-muted-foreground" v-if="warningCount > 0">{{
+            $t("dashboard.statAttention")
+          }}</span>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        @click="toggleStatusFilter('red')"
+        class="group flex flex-col justify-between rounded-xl border p-4 text-left transition-all hover:border-rose-500/50 hover:shadow-sm"
+        :class="statusFilter === 'red' ? 'border-rose-500 bg-rose-500/10' : 'bg-card'"
+      >
+        <div class="flex items-center justify-between text-muted-foreground">
+          <span class="text-xs font-semibold uppercase tracking-wider">{{
+            $t("dashboard.statCritical")
+          }}</span>
+          <StatusIcon status="red" class="size-4 text-rose-500" />
+        </div>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span
+            class="text-2xl font-bold tracking-tight"
+            :class="{ 'text-rose-500': redCount > 0 }"
+            >{{ redCount }}</span
           >
-            {{ errorCount }}
-          </div>
-          <div class="text-xs text-muted-foreground">{{ $t("dashboard.errors") }}</div>
-        </button>
-      </div>
+          <span class="text-xs text-rose-500 font-medium" v-if="redCount > 0">{{
+            $t("dashboard.statActionRequired")
+          }}</span>
+        </div>
+      </button>
+
+      <RouterLink
+        :to="{ name: 'account.extension.list', query: { hasUpdate: 'true' } }"
+        class="group flex flex-col justify-between rounded-xl border bg-card p-4 text-left transition-all hover:border-primary/50 hover:shadow-sm"
+      >
+        <div class="flex items-center justify-between text-muted-foreground">
+          <span class="text-xs font-semibold uppercase tracking-wider">{{
+            $t("dashboard.statUpdates")
+          }}</span>
+          <icon-fa6-solid:arrows-rotate class="size-4 text-primary" />
+        </div>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span class="text-2xl font-bold tracking-tight">{{ pendingUpdatesCount }}</span>
+          <span class="text-xs text-muted-foreground">{{ $t("dashboard.statExtensions") }}</span>
+        </div>
+      </RouterLink>
     </div>
 
-    <!-- Empty state -->
-    <EmptyState
-      v-if="shops.length === 0"
-      :icon="IconFolder"
-      :title="$t('shop.noShops')"
-      :description="$t('shop.getStarted')"
+    <!-- Active Filter Banner -->
+    <div
+      v-if="statusFilter"
+      class="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2 text-sm"
     >
-      <Button as-child>
-        <RouterLink :to="{ name: 'account.shops.new' }">
-          <icon-fa6-solid:plus class="mr-1.5 size-3" />
-          {{ $t("shop.addShop") }}
-        </RouterLink>
+      <span class="text-muted-foreground">
+        <i18n-t keypath="dashboard.filterActive" tag="span">
+          <template #status>
+            <span class="font-medium text-foreground capitalize">{{
+              statusFilter === "green"
+                ? $t("dashboard.statHealthy")
+                : statusFilter === "yellow"
+                  ? $t("dashboard.statWarning")
+                  : $t("dashboard.statCritical")
+            }}</span>
+          </template>
+        </i18n-t>
+      </span>
+      <Button variant="ghost" size="sm" class="h-7 text-xs" @click="statusFilter = null">
+        {{ $t("dashboard.filterClear") }}
       </Button>
-    </EmptyState>
+    </div>
 
-    <template v-else>
-      <!-- Alerts row -->
-      <div
-        v-if="outdatedExtensionCount > 0 || errorCount > 0"
-        class="mb-6 grid gap-3 sm:grid-cols-2"
-      >
-        <!-- Outdated extensions alert -->
-        <RouterLink
-          v-if="outdatedExtensionCount > 0"
-          :to="{ name: 'account.extension.list' }"
-          class="flex items-center gap-3 rounded-xl border border-warning/20 bg-warning/5 p-4 transition-colors hover:bg-warning/10"
-        >
-          <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10">
-            <icon-fa6-solid:arrow-up class="size-4 text-warning" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="text-sm font-semibold">
-              {{ $t("dashboard.extensionUpdatesAvailable", { count: outdatedExtensionCount }) }}
-            </div>
-            <div class="text-xs text-muted-foreground">{{ $t("dashboard.acrossYourShops") }}</div>
-          </div>
-          <icon-fa6-solid:chevron-right class="size-3 shrink-0 text-muted-foreground" />
-        </RouterLink>
+    <!-- Layout Container: Left (Shops) / Right (Insights) -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <!-- Left 2 Cols: Shops Grid -->
+      <div class="space-y-6 lg:col-span-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold tracking-tight">{{ $t("dashboard.shopsHeading") }}</h2>
+          <Button variant="outline" size="sm" as-child>
+            <RouterLink :to="{ name: 'account.shops.new' }">
+              <icon-fa6-solid:plus class="mr-1.5 size-3.5" />
+              {{ $t("dashboard.addShop") }}
+            </RouterLink>
+          </Button>
+        </div>
 
-        <!-- Error shops alert -->
-        <div
-          v-if="errorCount > 0"
-          class="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4"
-        >
-          <div
-            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10"
-          >
-            <icon-fa6-solid:circle-xmark class="size-4 text-destructive" />
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="text-sm font-semibold">
-              {{ $t("dashboard.shopsNeedAttention", { count: errorCount }) }}
+        <!-- Skeleton loader -->
+        <div v-if="shops === null" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div v-for="i in 4" :key="i" class="rounded-xl border bg-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <Skeleton class="h-5 w-32" />
+              <Skeleton class="h-4 w-12" />
             </div>
-            <div class="text-xs text-muted-foreground">
-              {{ $t("dashboard.healthChecksFailing") }}
-            </div>
+            <Skeleton class="h-4 w-full" />
+            <Skeleton class="h-4 w-2/3" />
           </div>
         </div>
-      </div>
 
-      <!-- Shops grid -->
-      <section class="mb-8">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <RouterLink
+        <!-- Empty state -->
+        <EmptyState
+          v-else-if="shops.length === 0"
+          :title="$t('dashboard.noShopsTitle')"
+          :description="$t('dashboard.noShopsDesc')"
+          :action-label="$t('dashboard.createShop')"
+          :action-to="{ name: 'account.shops.new' }"
+          :icon="IconStore"
+        />
+
+        <!-- Filtered Empty State -->
+        <EmptyState
+          v-else-if="filteredShops.length === 0"
+          :title="$t('dashboard.noMatchingShopsTitle')"
+          :description="$t('dashboard.noMatchingShopsDesc')"
+          :action-label="$t('dashboard.filterClear')"
+          @action="statusFilter = null"
+          :icon="IconFilter"
+        />
+
+        <!-- Shop Cards Grid -->
+        <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <CardSection
             v-for="shop in filteredShops"
             :key="shop.id"
-            :to="shopLink(shop)"
-            class="group relative flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md"
+            :title="shop.name"
+            :icon="IconFolder"
+            :to="{ name: 'account.shops.edit', params: { shopId: shop.id } }"
           >
-            <div
-              class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted"
-            >
-              <img
-                v-if="defaultEnv(shop)?.favicon"
-                :src="defaultEnv(shop)!.favicon!"
-                alt=""
-                class="size-5 rounded"
-              />
-              <icon-fa6-solid:folder v-else class="size-4 text-muted-foreground/50" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span
-                  class="truncate font-semibold leading-tight transition-colors group-hover:text-primary"
-                  >{{ shop.name }}</span
-                >
-                <StatusIcon v-if="defaultEnv(shop)" :status="defaultEnv(shop)!.status" />
+            <template #actions>
+              <Badge variant="outline" class="text-xs font-medium">
+                {{ $t("dashboard.envCount", { count: getShopEnvironments(shop.id).length }) }}
+              </Badge>
+            </template>
+
+            <div class="space-y-2">
+              <div
+                v-if="getShopEnvironments(shop.id).length === 0"
+                class="text-xs text-muted-foreground py-2 italic"
+              >
+                {{ $t("dashboard.noEnvironmentsInShop") }}
               </div>
-              <div class="mt-1.5 flex items-center gap-2">
-                <Badge v-if="defaultEnv(shop)" variant="secondary" class="font-mono text-xs">
-                  {{ defaultEnv(shop)!.shopwareVersion }}
-                </Badge>
-                <span v-if="envCount(shop) > 1" class="text-xs text-muted-foreground">
-                  {{ $t("shop.envCount", { count: envCount(shop) }) }}
+              <div
+                v-for="env in getShopEnvironments(shop.id)"
+                :key="env.id"
+                class="group flex items-center justify-between rounded-lg border bg-muted/20 p-2.5 transition-colors hover:bg-accent"
+              >
+                <RouterLink
+                  :to="{ name: 'account.environments.detail', params: { environmentId: env.id } }"
+                  class="flex items-center gap-2.5 min-w-0 flex-1"
+                >
+                  <StatusIcon :status="env.status" class="size-3.5 shrink-0" />
+                  <span
+                    class="truncate text-sm font-medium group-hover:text-primary transition-colors"
+                  >
+                    {{ env.name }}
+                  </span>
+                </RouterLink>
+                <span class="text-xs text-muted-foreground shrink-0 font-mono ml-2">
+                  v{{ env.shopwareVersion || "?" }}
                 </span>
               </div>
             </div>
-          </RouterLink>
+          </CardSection>
         </div>
-      </section>
+      </div>
 
-      <!-- Shopware version overview + recent changes -->
-      <div class="mb-8 grid items-start gap-6 lg:grid-cols-3">
-        <!-- Version distribution -->
-        <CardSection :icon="IconCodeBranch" :title="$t('dashboard.shopwareVersions')">
-          <div class="space-y-2">
+      <!-- Right Col: Activity & Updates -->
+      <div class="space-y-6">
+        <!-- Extension Updates Card -->
+        <CardSection
+          :title="$t('dashboard.extensionUpdates')"
+          :icon="IconCodeBranch"
+          :to="{ name: 'account.extension.list', query: { hasUpdate: 'true' } }"
+          :link-text="$t('dashboard.viewAll')"
+        >
+          <div
+            v-if="extensionsNeedingUpdate.length === 0"
+            class="text-sm text-muted-foreground py-4 text-center"
+          >
+            {{ $t("dashboard.allExtensionsUpToDate") }}
+          </div>
+          <div v-else class="space-y-3">
             <div
-              v-for="version in versionDistribution"
-              :key="version.version"
-              class="flex min-w-0 items-center gap-3"
+              v-for="ext in extensionsNeedingUpdate.slice(0, 5)"
+              :key="ext.name"
+              class="flex items-center justify-between border-b pb-2.5 last:border-0 last:pb-0"
             >
-              <Badge variant="secondary" class="min-w-20 shrink-0 justify-center font-mono text-xs">
-                {{ version.version }}
-              </Badge>
-              <div class="min-w-0 flex-1">
-                <div class="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    class="h-full rounded-full bg-primary transition-all"
-                    :style="{ width: `${(version.count / environments.length) * 100}%` }"
-                  />
+              <div class="min-w-0 pr-2">
+                <RouterLink
+                  :to="{ name: 'account.extension.detail', params: { name: ext.name } }"
+                  class="truncate text-sm font-medium hover:underline block"
+                >
+                  {{ ext.label || ext.name }}
+                </RouterLink>
+                <div class="text-xs text-muted-foreground truncate">
+                  {{ $t("dashboard.affectedEnvs", { count: updateCount(ext) }) }}
                 </div>
               </div>
-              <span class="w-6 text-right text-xs tabular-nums text-muted-foreground">{{
-                version.count
-              }}</span>
+              <Badge variant="secondary" class="shrink-0 text-xs">
+                {{ $t("dashboard.updateAvailable") }}
+              </Badge>
             </div>
           </div>
         </CardSection>
 
-        <!-- Recent changes -->
-        <CardSection
-          :icon="IconClockRotateLeft"
-          :title="$t('dashboard.lastChanges')"
-          class="lg:col-span-2"
-        >
+        <!-- Recent Changes Card -->
+        <CardSection :title="$t('dashboard.recentChanges')" :icon="IconClockRotateLeft">
           <div
             v-if="changelogs.length === 0"
-            class="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground"
+            class="text-sm text-muted-foreground py-4 text-center"
           >
-            <icon-fa6-solid:clock-rotate-left class="size-8 opacity-30" />
-            <p class="text-sm">{{ $t("dashboard.noRecentChanges") }}</p>
+            {{ $t("dashboard.noRecentChanges") }}
           </div>
-          <div v-else class="space-y-1.5">
-            <RouterLink
-              v-for="log in changelogs.slice(0, 8)"
-              :key="log.id"
-              :to="{
-                name: 'account.environments.detail',
-                params: { environmentId: log.environmentId },
-              }"
-              class="flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:gap-3"
+          <div v-else class="space-y-3">
+            <div
+              v-for="cl in changelogs.slice(0, 5)"
+              :key="cl.id"
+              class="flex items-start justify-between border-b pb-2.5 last:border-0 last:pb-0 gap-2"
             >
-              <div class="flex min-w-0 items-center gap-3">
-                <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{
-                  formatDate(log.date)
-                }}</span>
-                <Separator orientation="vertical" class="h-4" />
-                <span class="min-w-0 truncate text-sm font-medium">{{ changelogTitle(log) }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="text-sm font-medium truncate">{{ cl.environmentName }}</div>
+                <div class="text-xs text-muted-foreground truncate">
+                  {{ sumChanges(cl) }}
+                </div>
               </div>
-              <span class="min-w-0 truncate text-xs text-muted-foreground sm:flex-1">{{
-                sumChanges(log)
-              }}</span>
-            </RouterLink>
+              <button
+                type="button"
+                @click="openEnvironmentChangelog(cl)"
+                class="shrink-0 text-xs text-primary hover:underline font-medium"
+              >
+                {{ $t("dashboard.details") }}
+              </button>
+            </div>
           </div>
         </CardSection>
       </div>
-    </template>
-  </div>
+    </div>
 
-  <!-- Loading skeleton -->
-  <div v-else class="space-y-8">
-    <div>
-      <Skeleton class="mb-2 h-9 w-48" />
-      <Skeleton class="h-5 w-64" />
-    </div>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      <Skeleton v-for="i in 4" :key="i" class="h-24 rounded-xl" />
-    </div>
+    <!-- Environment Changelog Modal -->
+    <ShopChangelog
+      :show="viewEnvironmentChangelogDialog"
+      :changelog="dialogEnvironmentChangelog"
+      @close="closeEnvironmentChangelog"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { sumChanges } from "@/helpers/changelog";
-import { formatDate } from "@/helpers/formatter";
-import { api } from "@/helpers/api";
-import { hasUpdate } from "@/composables/useAccountExtensions";
-import type { components } from "@/types/api";
+import { RouterLink } from "vue-router";
+import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
+import ShopChangelog from "@/components/modal/ShopChangelog.vue";
+import { sumChanges, useChangelogText } from "@/helpers/changelog";
+import { hasUpdate, updateCount } from "@/composables/useAccountExtensions";
+import {
+  getAccountChangelogs,
+  getAccountExtensions,
+  getAccountShops,
+  type AccountChangelog,
+  type AccountEnvironment,
+  type AccountExtension,
+  type AccountShop,
+} from "@/api/generated";
 import {
   useAccountEnvironments,
   fetchAccountEnvironments,
@@ -266,24 +305,23 @@ import {
 import { useSession } from "@/composables/useSession";
 
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import StatusIcon from "@/components/StatusIcon.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import CardSection from "@/components/CardSection.vue";
+import PageHeader from "@/components/PageHeader.vue";
 import IconFolder from "~icons/fa6-solid/folder";
 import IconCodeBranch from "~icons/fa6-solid/code-branch";
 import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
-
-type AccountShop = components["schemas"]["AccountShop"];
-type AccountEnvironment = components["schemas"]["AccountEnvironment"];
+import IconStore from "~icons/fa6-solid/store";
+import IconFilter from "~icons/fa6-solid/filter";
 
 const { t } = useI18n();
 const { activeOrganizationId } = useSession();
 
-const changelogs = ref<components["schemas"]["AccountChangelog"][]>([]);
-const extensions = ref<components["schemas"]["AccountExtension"][]>([]);
+const changelogs = ref<AccountChangelog[]>([]);
+const extensions = ref<AccountExtension[]>([]);
 const shops = ref<AccountShop[] | null>(null);
 
 // Bumped on every load so a slow response from a previous organization
@@ -292,15 +330,15 @@ let loadGeneration = 0;
 
 function loadDashboardData() {
   const generation = ++loadGeneration;
-  api.GET("/account/changelogs").then(({ data }) => {
+  getAccountChangelogs().then(({ data }) => {
     if (generation !== loadGeneration) return;
     if (data) changelogs.value = data;
   });
-  api.GET("/account/extensions").then(({ data }) => {
+  getAccountExtensions().then(({ data }) => {
     if (generation !== loadGeneration) return;
     if (data) extensions.value = data;
   });
-  api.GET("/account/shops").then(({ data }) => {
+  getAccountShops().then(({ data }) => {
     if (generation !== loadGeneration) return;
     shops.value = data ?? [];
   });
@@ -321,60 +359,37 @@ watch(activeOrganizationId, () => {
   loadDashboardData();
 });
 
-function defaultEnv(shop: AccountShop): AccountEnvironment | undefined {
-  return environments.value.find((e) => e.id === shop.defaultEnvironmentId);
+const totalEnvironmentsCount = computed(() => environments.value.length);
+const healthyCount = computed(() => environments.value.filter((e) => e.status === "green").length);
+const warningCount = computed(() => environments.value.filter((e) => e.status === "yellow").length);
+const redCount = computed(() => environments.value.filter((e) => e.status === "red").length);
+
+const extensionsNeedingUpdate = computed(() => extensions.value.filter(hasUpdate));
+const pendingUpdatesCount = computed(() => extensionsNeedingUpdate.value.length);
+
+function toggleStatusFilter(status: "green" | "yellow" | "red") {
+  statusFilter.value = statusFilter.value === status ? null : status;
 }
 
-function envCount(shop: AccountShop): number {
-  return environments.value.filter((e) => e.shopId === shop.id).length;
-}
-
-function shopLink(shop: AccountShop) {
-  // A shop without a default environment (e.g. its last environment was deleted)
-  // has nowhere to point an environment link, so send the user to the shop itself.
-  if (shop.defaultEnvironmentId == null) {
-    return { name: "account.shops.edit", params: { shopId: shop.id } };
-  }
-  return {
-    name: "account.environments.detail",
-    params: { environmentId: shop.defaultEnvironmentId },
-  };
-}
-
-// Status counts based on default environments
-const greenCount = computed(
-  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "green").length,
-);
-const warnCount = computed(
-  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "yellow").length,
-);
-const errorCount = computed(
-  () => (shops.value ?? []).filter((s) => defaultEnv(s)?.status === "red").length,
-);
+const getShopEnvironments = (shopId: number): AccountEnvironment[] => {
+  return environments.value.filter((e) => e.shopId === shopId);
+};
 
 const filteredShops = computed(() => {
-  if (!statusFilter.value) return shops.value ?? [];
-  return (shops.value ?? []).filter((s) => defaultEnv(s)?.status === statusFilter.value);
+  if (!shops.value) return [];
+  if (!statusFilter.value) return shops.value;
+
+  return shops.value.filter((shop) => {
+    const shopEnvs = getShopEnvironments(shop.id);
+    return shopEnvs.some((e) => e.status === statusFilter.value);
+  });
 });
 
-// Outdated extensions count. Uses the shared helper so it stays consistent with
-// the extensions list, which counts an extension as outdated when any of its
-// environments runs a version behind the latest.
-const outdatedExtensionCount = computed(() => extensions.value.filter((e) => hasUpdate(e)).length);
-
-function changelogTitle(log: components["schemas"]["AccountChangelog"]) {
-  if (!log.environmentShopName) return log.environmentName;
-  return `${log.environmentShopName} · ${log.environmentName}`;
-}
-
-// Shopware version distribution (still per-environment for accuracy)
-const versionDistribution = computed(() => {
-  const counts = new Map<string, number>();
-  for (const env of environments.value ?? []) {
-    counts.set(env.shopwareVersion, (counts.get(env.shopwareVersion) ?? 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .map(([version, count]) => ({ version, count }))
-    .sort((a, b) => b.count - a.count);
-});
+const changelogText = useChangelogText();
+const {
+  viewEnvironmentChangelogDialog,
+  dialogEnvironmentChangelog,
+  openEnvironmentChangelog,
+  closeEnvironmentChangelog,
+} = useEnvironmentChangelogModal();
 </script>

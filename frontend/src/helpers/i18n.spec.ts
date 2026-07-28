@@ -23,10 +23,7 @@ import {
   translateNotificationTitle,
   translateReason,
 } from "@/helpers/i18n";
-import type { components } from "@/types/api";
-
-type Check = components["schemas"]["EnvironmentCheck"];
-type Notification = components["schemas"]["Notification"];
+import type { EnvironmentCheck as Check, Notification } from "@/api/generated";
 
 function check(partial: Partial<Check>): Check {
   return { id: "x", level: "green", message: "", ...partial } as Check;

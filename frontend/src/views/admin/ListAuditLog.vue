@@ -104,15 +104,12 @@ import EmptyState from "@/components/EmptyState.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { api } from "@/helpers/api";
+import { adminGetAuditLog, type AdminAuditLogEntry as AuditLogEntry } from "@/api/generated";
 import { formatDateTime } from "@/helpers/formatter";
-import type { components } from "@/types/api";
 import IconClock from "~icons/fa6-solid/clock-rotate-left";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
-
-type AuditLogEntry = components["schemas"]["AdminAuditLogEntry"];
 
 const { t } = useI18n();
 
@@ -185,9 +182,7 @@ async function loadEntries() {
     query.action = filters.value.action;
   }
 
-  const { data, error: respError } = await api.GET("/admin/audit-log", {
-    params: { query },
-  });
+  const { data, error: respError } = await adminGetAuditLog({ query });
 
   if (respError || !data) {
     error.value = t("admin.failedLoadAuditLog", {

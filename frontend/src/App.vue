@@ -10,7 +10,8 @@ import { useRoute } from "vue-router";
 
 import { useDarkMode } from "./composables/useDarkMode";
 import { useLocale } from "./composables/useLocale";
-import { api, getToken } from "./helpers/api";
+import { getToken } from "./helpers/api";
+import { getAccountMe } from "@/api/generated";
 
 const DEFAULT_TITLE = "Shopmon";
 const route = useRoute();
@@ -36,7 +37,7 @@ onMounted(async () => {
   if (!getToken()) {
     return;
   }
-  const { data } = await api.GET("/account/me");
+  const { data } = await getAccountMe();
   if (!data) {
     return;
   }

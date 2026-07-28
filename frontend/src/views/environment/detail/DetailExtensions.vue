@@ -130,7 +130,7 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatDate } from "@/helpers/formatter";
-import type { components } from "@/types/api";
+import type { EnvironmentExtension as Extension } from "@/api/generated";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import ExtensionChangelog from "@/components/modal/ExtensionChangelog.vue";
@@ -146,8 +146,6 @@ import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconCircleCheck from "~icons/fa6-solid/circle-check";
 import IconArrowUp from "~icons/fa6-solid/arrow-up";
 import IconPowerOff from "~icons/fa6-solid/power-off";
-
-type Extension = components["schemas"]["EnvironmentExtension"];
 
 const { t } = useI18n();
 const { environment } = useEnvironmentDetail();

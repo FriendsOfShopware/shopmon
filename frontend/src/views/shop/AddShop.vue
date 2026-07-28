@@ -190,7 +190,11 @@
 import { useAlert } from "@/composables/useAlert";
 import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { fetchAccountShops } from "@/composables/useAccountShops";
-import { api } from "@/helpers/api";
+import {
+  createShop,
+  getAccountOrganizations,
+  type AccountOrganization as Organization,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -218,11 +222,6 @@ const { error } = useAlert();
 const router = useRouter();
 const route = useRoute();
 
-interface Organization {
-  id: string;
-  name: string;
-}
-
 const organizations = ref<Organization[]>([]);
 const isLoadingOrgs = ref(true);
 
@@ -233,7 +232,7 @@ const pluginError = ref("");
 async function loadOrganizations() {
   isLoadingOrgs.value = true;
   try {
-    const { data } = await api.GET("/auth/list-organizations");
+    const { data } = await getAccountOrganizations();
     if (data) {
       organizations.value = data;
     }
@@ -290,8 +289,8 @@ watch(organizations, (orgs) => {
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    const { error: apiError } = await api.POST("/organizations/{orgId}/shops", {
-      params: { path: { orgId: values.organizationId } },
+    const { error: apiError } = await createShop({
+      path: { orgId: values.organizationId },
       body: {
         name: values.name,
         description: values.description ?? undefined,

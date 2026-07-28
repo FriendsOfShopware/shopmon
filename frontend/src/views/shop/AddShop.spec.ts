@@ -18,16 +18,10 @@ vi.mock("vue-router", () => ({
   },
 }));
 
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountOrganizations: vi.fn(),
+  createShop: vi.fn(),
 }));
 
 vi.mock("@/composables/useAlert", () => ({
@@ -45,17 +39,21 @@ vi.mock("@/composables/useAccountEnvironments", () => ({
   fetchAccountEnvironments: vi.fn(() => Promise.resolve([])),
 }));
 
-import { api } from "@/helpers/api";
+import { createShop, getAccountOrganizations } from "@/api/generated";
 
 describe("AddShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/auth/list-organizations") {
-        return Promise.resolve({ data: mockOrganizations, error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountOrganizations).mockResolvedValue({
+      data: mockOrganizations,
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(createShop).mockResolvedValue({
+      data: {},
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -101,7 +99,6 @@ describe("AddShop", () => {
   it("has organization select area", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // The component uses shadcn Select which renders a trigger button, not a native <select>
     expect(wrapper.text()).toContain("Organization");
   });
 

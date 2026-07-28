@@ -36,16 +36,17 @@ vi.mock("vue-router", () => ({
   },
 }));
 
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountShops: vi.fn(),
+  updateShop: vi.fn(),
+  deleteShop: vi.fn(),
+  getApiKeys: vi.fn(() => Promise.resolve({ data: [] })),
+  getApiKeyScopes: vi.fn(() => Promise.resolve({ data: [] })),
+  getPackagesTokenConfiguration: vi.fn(() =>
+    Promise.resolve({ data: { configured: false, composerUrl: null } }),
+  ),
+  getPackagesTokens: vi.fn(() => Promise.resolve({ data: [] })),
 }));
 
 vi.mock("@/composables/useAccountEnvironments", () => ({
@@ -68,27 +69,16 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-import { api } from "@/helpers/api";
+import { getAccountShops } from "@/api/generated";
 
 describe("EditShop", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: [mockShop], error: null, response: new Response() });
-      }
-      if (path === "/api-key-scopes") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/packages-token/configuration") {
-        return Promise.resolve({
-          data: { configured: false, composerUrl: null },
-          error: null,
-          response: new Response(),
-        });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountShops).mockResolvedValue({
+      data: [mockShop],
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {

@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { useSession, fetchSession } from "@/composables/useSession";
-import { api } from "@/helpers/api";
+import { createOrganization } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -70,7 +70,7 @@ const { handleSubmit, isSubmitting } = useForm({
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    const { error: respError } = await api.POST("/auth/organizations", {
+    const { error: respError } = await createOrganization({
       body: {
         name: values.name,
       },

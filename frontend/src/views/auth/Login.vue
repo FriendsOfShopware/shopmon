@@ -138,7 +138,14 @@ import { useAlert } from "@/composables/useAlert";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
-import { api, setToken } from "@/helpers/api";
+import { setToken } from "@/helpers/api";
+import {
+  passkeyLogin,
+  passkeyLoginOptions,
+  signInEmail,
+  signInSocial,
+  signInSso,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -174,7 +181,7 @@ async function goToDashboard() {
 }
 
 const onSubmit = handleSubmit(async (values) => {
-  const { data, error } = await api.POST("/auth/sign-in/email", {
+  const { data, error } = await signInEmail({
     body: { email: values.email, password: values.password },
   });
 
@@ -183,8 +190,8 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
-  if ((data as { token?: string })?.token) {
-    setToken((data as { token: string }).token);
+  if (data?.token) {
+    setToken(data.token);
   }
 
   await goToDashboard();
@@ -195,9 +202,7 @@ async function webauthnLogin() {
 
   try {
     // Get login options from server
-    const { data: optionsData, error: optionsError } = await api.POST(
-      "/auth/passkey/login-options",
-    );
+    const { data: optionsData, error: optionsError } = await passkeyLoginOptions();
 
     if (optionsError || !optionsData) {
       alert.error(t("auth.failedSignInPasskey"));
@@ -214,7 +219,7 @@ async function webauthnLogin() {
     const assertion = await startAuthentication({ optionsJSON: options.publicKey });
 
     // Send assertion to server
-    const { data: loginData, error } = await api.POST("/auth/passkey/login", {
+    const { data: loginData, error } = await passkeyLogin({
       body: { challengeKey, ...assertion } as never,
     });
 
@@ -224,8 +229,9 @@ async function webauthnLogin() {
       return;
     }
 
-    if ((loginData as unknown as { token?: string })?.token) {
-      setToken((loginData as unknown as { token: string }).token);
+    const passkeyToken = (loginData as { token?: string })?.token;
+    if (passkeyToken) {
+      setToken(passkeyToken);
     }
 
     await goToDashboard();
@@ -240,7 +246,7 @@ async function githubLogin() {
 
   try {
     const redirectUrl = returnUrl.value ?? "/";
-    const { data, error } = await api.POST("/auth/sign-in/social", {
+    const { data, error } = await signInSocial({
       body: { provider: "github", callbackURL: `${window.location.origin}${redirectUrl}` },
     });
 
@@ -260,7 +266,7 @@ async function githubLogin() {
     // Redirect to the OAuth provider
     window.location.href = data.url;
   } catch (e: unknown) {
-    alert.error(e instanceof Error ? e.message : String(e));
+    alert.error(e instanceof Error ? e.message : t("auth.failedSignInGithub"));
     isGithubLoading.value = false;
   }
 }
@@ -275,7 +281,7 @@ async function ssoLogin() {
 
   try {
     const redirectUrl = returnUrl.value ?? "/";
-    const { data, error } = await api.POST("/auth/sign-in/sso", {
+    const { data, error } = await signInSso({
       body: {
         email: ssoEmail.value,
         callbackURL: `${window.location.origin}${redirectUrl}`,

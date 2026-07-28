@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
+import { createPackagesToken } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,8 +87,8 @@ watch(
 const onSubmit = handleSubmit(async (values) => {
   isCreating.value = true;
   try {
-    const { error } = await api.POST("/organizations/{orgId}/shops/{shopId}/packages-tokens", {
-      params: { path: { orgId: props.orgId, shopId: props.shopId } },
+    const { error } = await createPackagesToken({
+      path: { orgId: props.orgId, shopId: props.shopId },
       body: { token: values.packagesToken },
     });
     if (error) {
