@@ -6,16 +6,109 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// NewHTTPClient returns an HTTP client with OpenTelemetry transport instrumentation.
+// UserAgent identifies Shopmon in outbound HTTP requests so operators can
+// whitelist monitoring traffic without relying on Go's default client UA.
+// Prefer UserAgentString() when a versioned value is needed.
+const UserAgent = "Shopmon"
+
+var (
+	userAgentOnce   sync.Once
+	userAgentCached string
+)
+
+// UserAgentString returns "Shopmon/<version>" when a build version is available,
+// otherwise the bare "Shopmon" product name. The version comes from the same
+// VCS revision embedded by the Go toolchain that config.buildVersion uses.
+func UserAgentString() string {
+	userAgentOnce.Do(func() {
+		userAgentCached = buildUserAgent(buildVersion())
+	})
+	return userAgentCached
+}
+
+func buildUserAgent(version string) string {
+	if version == "" {
+		return UserAgent
+	}
+	return UserAgent + "/" + version
+}
+
+// buildVersion returns the short VCS revision the binary was built from, or ""
+// when build info is unavailable (e.g. go run / tests without -buildvcs).
+func buildVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+
+	var revision string
+	var modified bool
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+		case "vcs.modified":
+			modified = s.Value == "true"
+		}
+	}
+	if revision == "" {
+		return ""
+	}
+	if len(revision) > 12 {
+		revision = revision[:12]
+	}
+	if modified {
+		revision += "-dirty"
+	}
+	return revision
+}
+
+// userAgentTransport injects the Shopmon User-Agent on every outbound request
+// unless the caller already set one explicitly.
+type userAgentTransport struct {
+	base http.RoundTripper
+	ua   string
+}
+
+func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Header.Get("User-Agent") == "" {
+		// Clone so we never mutate a request the caller still holds.
+		req = req.Clone(req.Context())
+		req.Header.Set("User-Agent", t.ua)
+	}
+	base := t.base
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	return base.RoundTrip(req)
+}
+
+// wrapTransport adds the Shopmon User-Agent and OpenTelemetry instrumentation.
+// Order: application -> userAgent -> otelhttp -> base, so the User-Agent is set
+// before tracing observes the request and still applies when a custom base is used.
+func wrapTransport(base http.RoundTripper) http.RoundTripper {
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	return &userAgentTransport{
+		base: otelhttp.NewTransport(base),
+		ua:   UserAgentString(),
+	}
+}
+
+// NewHTTPClient returns an HTTP client with OpenTelemetry transport
+// instrumentation and the Shopmon User-Agent set on every request.
 func NewHTTPClient(opts ...func(*http.Client)) *http.Client {
 	c := &http.Client{
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Transport: wrapTransport(http.DefaultTransport),
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -87,7 +180,7 @@ func NewSSRFSafeHTTPClient(timeout time.Duration) *http.Client {
 
 	return &http.Client{
 		Timeout:   timeout,
-		Transport: otelhttp.NewTransport(transport),
+		Transport: wrapTransport(transport),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return fmt.Errorf("too many redirects")

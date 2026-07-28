@@ -1,7 +1,11 @@
 package httputil
 
 import (
+	"context"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -87,4 +91,95 @@ func TestClientForURL_PerURLSelection(t *testing.T) {
 		// ClientForURL must return a non-nil client for every URL.
 		assert.NotNil(t, ClientForURL(c.url, 0), "ClientForURL(%q) returned nil", c.url)
 	}
+}
+
+func TestBuildUserAgent(t *testing.T) {
+	assert.Equal(t, "Shopmon", buildUserAgent(""))
+	assert.Equal(t, "Shopmon/1.2.3", buildUserAgent("1.2.3"))
+	assert.Equal(t, "Shopmon/abcdef012345", buildUserAgent("abcdef012345"))
+}
+
+func TestUserAgentStringFormat(t *testing.T) {
+	ua := UserAgentString()
+	require.True(t, strings.HasPrefix(ua, "Shopmon"), "User-Agent must start with Shopmon, got %q", ua)
+	// Either bare product name or Shopmon/<version> — never the Go default.
+	assert.NotContains(t, ua, "Go-http-client")
+	if strings.Contains(ua, "/") {
+		parts := strings.SplitN(ua, "/", 2)
+		require.Len(t, parts, 2)
+		assert.Equal(t, "Shopmon", parts[0])
+		assert.NotEmpty(t, parts[1])
+	} else {
+		assert.Equal(t, "Shopmon", ua)
+	}
+}
+
+func TestNewHTTPClientSetsUserAgent(t *testing.T) {
+	var gotUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotUA = r.Header.Get("User-Agent")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+	require.NoError(t, err)
+	resp, err := NewHTTPClient().Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.NotEmpty(t, gotUA, "expected User-Agent header on outbound request")
+	assert.True(t, strings.HasPrefix(gotUA, "Shopmon"), "got User-Agent %q", gotUA)
+	assert.NotContains(t, gotUA, "Go-http-client")
+	assert.Equal(t, UserAgentString(), gotUA)
+}
+
+func TestNewHTTPClientPreservesExplicitUserAgent(t *testing.T) {
+	var gotUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotUA = r.Header.Get("User-Agent")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+	require.NoError(t, err)
+	req.Header.Set("User-Agent", "CustomAgent/9.9")
+
+	resp, err := NewHTTPClient().Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, "CustomAgent/9.9", gotUA)
+}
+
+func TestUserAgentTransportInjectsHeader(t *testing.T) {
+	var gotUA string
+	base := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		gotUA = req.Header.Get("User-Agent")
+		return &http.Response{
+			StatusCode: http.StatusNoContent,
+			Body:       http.NoBody,
+			Header:     make(http.Header),
+			Request:    req,
+		}, nil
+	})
+
+	rt := &userAgentTransport{base: base, ua: "Shopmon/test"}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://example.com/", nil)
+	require.NoError(t, err)
+	resp, err := rt.RoundTrip(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, "Shopmon/test", gotUA)
+	// Original request must not be mutated.
+	assert.Empty(t, req.Header.Get("User-Agent"))
+}
+
+// roundTripFunc is a test helper implementing http.RoundTripper.
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }
