@@ -139,13 +139,14 @@ import { Button } from "@/components/ui/button";
 import { adminListUsers, type AdminListUsersData, type AdminUser as User } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useAdminListQuery } from "@/composables/useAdminListQuery";
 
 const {
   search: searchQuery,
   page: currentPage,
   filters,
+  revision,
   syncToUrl,
 } = useAdminListQuery({
   search: "",
@@ -253,7 +254,10 @@ async function loadUsers() {
   }
 }
 
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
+
 function onFilterChange() {
+  clearTimeout(searchTimeout);
   currentPage.value = 1;
   syncToUrl();
   loadUsers();
@@ -265,7 +269,6 @@ function changePage(page: number) {
   loadUsers();
 }
 
-let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -274,6 +277,10 @@ function debouncedSearch() {
     loadUsers();
   }, 300);
 }
+
+watch(revision, () => {
+  loadUsers();
+});
 
 onMounted(() => {
   loadUsers();

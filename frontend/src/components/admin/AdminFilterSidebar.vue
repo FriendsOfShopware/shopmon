@@ -139,7 +139,6 @@ function select(key: string, value: string) {
 
 function clearSearch() {
   emit("update:search", "");
-  emit("change");
 }
 
 function clearAll() {

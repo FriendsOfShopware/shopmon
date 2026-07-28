@@ -121,13 +121,14 @@ import {
 } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useAdminListQuery } from "@/composables/useAdminListQuery";
 
 const {
   search: searchQuery,
   page: currentPage,
   filters,
+  revision,
   syncToUrl,
 } = useAdminListQuery({
   search: "",
@@ -202,7 +203,10 @@ async function loadOrganizations() {
   }
 }
 
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
+
 function onFilterChange() {
+  clearTimeout(searchTimeout);
   currentPage.value = 1;
   syncToUrl();
   loadOrganizations();
@@ -214,7 +218,6 @@ function changePage(page: number) {
   loadOrganizations();
 }
 
-let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -223,6 +226,10 @@ function debouncedSearch() {
     loadOrganizations();
   }, 300);
 }
+
+watch(revision, () => {
+  loadOrganizations();
+});
 
 onMounted(() => {
   loadOrganizations();

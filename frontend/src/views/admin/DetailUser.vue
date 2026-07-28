@@ -22,7 +22,7 @@
           </RouterLink>
           <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
           <RouterLink :to="{ name: 'admin.users' }" class="hover:text-primary transition-colors">
-            {{ t("admin.users") }}
+            {{ t("common.users") }}
           </RouterLink>
           <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
           <span class="font-medium text-foreground">{{ user.name }}</span>

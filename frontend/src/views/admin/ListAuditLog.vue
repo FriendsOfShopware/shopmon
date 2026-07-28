@@ -115,7 +115,7 @@ import { Button } from "@/components/ui/button";
 import { adminGetAuditLog, type AdminAuditLogEntry as AuditLogEntry } from "@/api/generated";
 import { formatDateTime } from "@/helpers/formatter";
 import IconClock from "~icons/fa6-solid/clock-rotate-left";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import { useAdminListQuery } from "@/composables/useAdminListQuery";
@@ -125,6 +125,7 @@ const { t } = useI18n();
 const {
   page: currentPage,
   filters,
+  revision,
   syncToUrl,
 } = useAdminListQuery({
   page: 1,
@@ -223,6 +224,10 @@ function changePage(page: number) {
   syncToUrl();
   loadEntries();
 }
+
+watch(revision, () => {
+  loadEntries();
+});
 
 onMounted(() => {
   loadEntries();
