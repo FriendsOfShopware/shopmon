@@ -336,9 +336,13 @@ async function onAddMember(values: { email: string; role: "member" | "admin" }) 
 async function onRemoveMember(userId: string) {
   if (!organization.value) return;
   try {
-    await removeMember({
+    const { error: respError } = await removeMember({
       path: { organizationId: organization.value.id, userId },
     });
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to remove member");
+      return;
+    }
     await loadOrganization();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -348,7 +352,11 @@ async function onRemoveMember(userId: string) {
 async function cancelInvitation(invitationId: string) {
   if (!organization.value) return;
   try {
-    await apiCancelInvitation({ body: { invitationId } });
+    const { error: respError } = await apiCancelInvitation({ body: { invitationId } });
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to cancel invitation");
+      return;
+    }
     await loadOrganization();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));

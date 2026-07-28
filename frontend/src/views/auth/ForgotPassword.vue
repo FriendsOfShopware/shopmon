@@ -66,9 +66,13 @@ const onSubmit = handleSubmit(async (values) => {
   const { success, error } = useAlert();
 
   try {
-    await forgetPassword({
+    const { error: apiError } = await forgetPassword({
       body: { email: values.email },
     });
+    if (apiError) {
+      error((apiError as { message?: string }).message ?? t("auth.failedSendReset"));
+      return;
+    }
     success(t("auth.resetEmailSent"));
   } catch (e) {
     error(e instanceof Error ? e.message : t("auth.failedSendReset"));

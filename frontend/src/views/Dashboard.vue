@@ -287,7 +287,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import ShopChangelog from "@/components/modal/ShopChangelog.vue";
-import { sumChanges, useChangelogText } from "@/helpers/changelog";
+import { sumChanges } from "@/helpers/changelog";
 import { hasUpdate, updateCount } from "@/composables/useAccountExtensions";
 import {
   getAccountChangelogs,
@@ -385,7 +385,6 @@ const filteredShops = computed(() => {
   });
 });
 
-const changelogText = useChangelogText();
 const {
   viewEnvironmentChangelogDialog,
   dialogEnvironmentChangelog,

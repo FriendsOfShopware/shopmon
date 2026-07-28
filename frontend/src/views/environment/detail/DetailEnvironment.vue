@@ -326,7 +326,10 @@
 </template>
 
 <script setup lang="ts">
-import { checkExtensionCompatibility, type AccountExtension as Extension } from "@/api/generated";
+import {
+  checkExtensionCompatibility,
+  type EnvironmentExtension as Extension,
+} from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";

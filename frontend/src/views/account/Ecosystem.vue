@@ -208,11 +208,11 @@ async function loadStats() {
     growthData.value = data.growth;
     versionData.value = data.shopwareVersions;
 
+    loading.value = false;
     await nextTick();
     renderCharts();
   } catch {
     error.value = "Failed to load ecosystem statistics";
-  } finally {
     loading.value = false;
   }
 }
