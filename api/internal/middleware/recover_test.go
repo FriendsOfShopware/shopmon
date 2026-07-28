@@ -9,6 +9,8 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 func panicHandler() http.Handler {
@@ -58,4 +60,24 @@ func TestRecovererNoPanicPassesThrough(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "fine", rec.Body.String())
+}
+
+func TestRecovererRecordsSpanError(t *testing.T) {
+	h := middleware.Recoverer(panicHandler())
+
+	tp := sdktrace.NewTracerProvider()
+	tracer := tp.Tracer("test")
+	ctx, span := tracer.Start(t.Context(), "test-span")
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/api/environments/1", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+
+	ro := span.(sdktrace.ReadOnlySpan)
+	errs := ro.Events()
+	require.Len(t, errs, 1)
+	assert.Equal(t, "exception", errs[0].Name)
+	assert.Contains(t, ro.Status().Description, "boom")
+	assert.Equal(t, codes.Error, ro.Status().Code)
 }

@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Recoverer recovers from panics in downstream handlers. For API requests
@@ -28,6 +31,11 @@ func Recoverer(next http.Handler) http.Handler {
 			if rec == http.ErrAbortHandler {
 				panic(rec)
 			}
+
+			panicErr := fmt.Errorf("panic: %v", rec)
+			span := trace.SpanFromContext(r.Context())
+			span.RecordError(panicErr)
+			span.SetStatus(codes.Error, panicErr.Error())
 
 			slog.ErrorContext(r.Context(), "panic recovered", "panic", rec, "stack", string(debug.Stack()))
 

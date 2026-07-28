@@ -58,8 +58,7 @@ func (h *Handler) writeEnvironmentReadError(w http.ResponseWriter, r *http.Reque
 	case errors.Is(err, environmentread.ErrNotAuthorized):
 		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
 	default:
-		slog.ErrorContext(r.Context(), "environment read failed", "operation", operation, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to load environment")
+		httputil.WriteInternalError(w, r, err, "failed to load environment")
 	}
 }
 
