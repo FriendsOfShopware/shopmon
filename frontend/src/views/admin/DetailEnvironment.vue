@@ -20,24 +20,51 @@
 
     <!-- Detail -->
     <template v-else>
-      <PageHeader :title="environment.name">
-        <Button variant="outline" size="sm" @click="router.back()">
-          <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
-          {{ t("admin.back") }}
-        </Button>
-        <Button size="sm" as-child>
-          <a :href="environment.url" target="_blank" rel="noopener noreferrer">
-            <icon-fa6-solid:arrow-up-right-from-square class="mr-1.5 size-3" />
-            {{ environment.url }}
-          </a>
-        </Button>
-      </PageHeader>
+      <div class="space-y-4">
+        <!-- Breadcrumb nav -->
+        <nav class="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <RouterLink
+            :to="{ name: 'admin.dashboard' }"
+            class="hover:text-primary transition-colors"
+          >
+            {{ t("admin.dashboard") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <RouterLink
+            :to="{ name: 'admin.environments' }"
+            class="hover:text-primary transition-colors"
+          >
+            {{ t("common.environments") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <span class="font-medium text-foreground">{{ environment.name }}</span>
+        </nav>
+
+        <PageHeader :title="environment.name">
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="router.push({ name: 'admin.environments' })"
+            >
+              <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
+              {{ t("admin.back") }}
+            </Button>
+            <Button size="sm" as-child class="gap-1.5 shadow-xs">
+              <a :href="environment.url" target="_blank" rel="noopener noreferrer">
+                <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
+                {{ t("admin.openEnvironment") }}
+              </a>
+            </Button>
+          </div>
+        </PageHeader>
+      </div>
 
       <!-- Stat cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           :icon="IconHeartPulse"
-          :value="environment.status"
+          :value="friendlyStatusLabel"
           :label="t('common.status')"
           :color="statusColor"
         />
@@ -45,36 +72,64 @@
           :icon="IconTag"
           :value="environment.shopwareVersion"
           :label="t('admin.shopwareVersion')"
+          color="primary"
         />
         <StatCard
           :icon="IconPuzzlePiece"
           :value="environment.extensions.length"
           :label="t('admin.extensions')"
+          color="primary"
         />
         <StatCard
           :icon="IconClock"
           :value="environment.lastScrapedAt ? formatDateTime(environment.lastScrapedAt) : '—'"
           :label="t('admin.lastScraped')"
+          color="muted"
         />
       </div>
 
       <!-- Scrape error -->
-      <Alert v-if="environment.lastScrapedError" variant="destructive">
-        <AlertTitle>{{ t("admin.lastScrapedError") }}</AlertTitle>
+      <Alert
+        v-if="environment.lastScrapedError"
+        variant="destructive"
+        class="border-destructive/30 bg-destructive/10"
+      >
+        <AlertTitle class="font-semibold">{{ t("admin.lastScrapedError") }}</AlertTitle>
         <AlertDescription>{{ environment.lastScrapedError }}</AlertDescription>
       </Alert>
 
+      <!-- Connection issue warning -->
+      <Alert
+        v-if="environment.connectionIssueCount > 0"
+        variant="destructive"
+        class="border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+      >
+        <icon-fa6-solid:triangle-exclamation class="size-4 text-amber-600 dark:text-amber-400" />
+        <AlertTitle class="font-semibold text-amber-700 dark:text-amber-300"
+          >Unstable Connection</AlertTitle
+        >
+        <AlertDescription class="text-amber-800 dark:text-amber-300">
+          This environment has recorded {{ environment.connectionIssueCount }} consecutive
+          connection issue(s) during background monitoring.
+        </AlertDescription>
+      </Alert>
+
       <!-- Org / shop info -->
-      <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <icon-fa6-solid:building class="size-3" />
+      <div
+        class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground rounded-lg border bg-card/50 px-3.5 py-2"
+      >
+        <icon-fa6-solid:building class="size-3.5 text-primary" />
         <RouterLink
           :to="{ name: 'admin.organizations.detail', params: { id: environment.organizationId } }"
-          class="font-medium text-foreground hover:text-primary transition-colors"
+          class="font-semibold text-foreground hover:text-primary transition-colors"
         >
           {{ environment.organizationName }}
         </RouterLink>
-        <span class="text-muted-foreground/50">/</span>
-        <span>{{ environment.shopName }}</span>
+        <span class="text-muted-foreground/40">/</span>
+        <span class="flex items-center gap-1.5 font-medium text-foreground">
+          <icon-fa6-solid:store class="size-3 text-muted-foreground" />
+          {{ environment.shopName }}
+        </span>
       </div>
 
       <!-- Bento grid -->
@@ -87,25 +142,45 @@
             :title="t('admin.noChecks')"
             size="sm"
           />
-          <div v-else class="space-y-2">
+          <div v-else class="space-y-2 max-h-96 overflow-y-auto pr-1">
             <div
               v-for="check in environment.checks"
               :key="check.id"
-              class="flex items-start gap-3 rounded-xl border bg-card px-4 py-3"
+              class="group flex items-start gap-3 rounded-xl border bg-card px-4 py-3 transition-all hover:border-primary/30"
             >
-              <Badge :class="checkLevelClass(check.level)" class="shrink-0 capitalize">{{
-                check.level
-              }}</Badge>
+              <Badge
+                v-if="check.level === 'green'"
+                class="inline-flex items-center gap-1 shrink-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs px-2 py-0.5 font-medium"
+              >
+                <span class="size-1.5 rounded-full bg-emerald-500" />
+                Pass
+              </Badge>
+              <Badge
+                v-else-if="check.level === 'yellow'"
+                class="inline-flex items-center gap-1 shrink-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs px-2 py-0.5 font-medium"
+              >
+                <span class="size-1.5 rounded-full bg-amber-500" />
+                Warning
+              </Badge>
+              <Badge
+                v-else
+                class="inline-flex items-center gap-1 shrink-0 bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-xs px-2 py-0.5 font-medium"
+              >
+                <span class="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+                Error
+              </Badge>
               <div class="min-w-0 flex-1">
-                <div class="text-sm">{{ check.message }}</div>
-                <div class="mt-0.5 text-xs text-muted-foreground">{{ check.source }}</div>
+                <div class="text-sm font-medium leading-snug">{{ check.message }}</div>
+                <div class="mt-0.5 text-xs text-muted-foreground font-mono text-[11px]">
+                  {{ check.source }}
+                </div>
               </div>
               <a
                 v-if="check.link"
                 :href="check.link"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="shrink-0 text-muted-foreground hover:text-foreground"
+                class="shrink-0 p-1 text-muted-foreground hover:text-primary transition-colors"
               >
                 <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
               </a>
@@ -266,6 +341,19 @@ const statusColor = computed(() => {
       return "warning" as const;
     default:
       return "destructive" as const;
+  }
+});
+
+const friendlyStatusLabel = computed(() => {
+  switch (environment.value?.status) {
+    case "green":
+      return t("admin.statusGreen");
+    case "yellow":
+      return t("admin.statusYellow");
+    case "red":
+      return t("admin.statusRed");
+    default:
+      return environment.value?.status ?? "";
   }
 });
 

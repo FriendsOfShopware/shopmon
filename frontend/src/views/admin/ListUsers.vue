@@ -16,6 +16,10 @@
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
+    <div v-if="!loading && !error" class="mb-3 text-sm text-muted-foreground">
+      {{ $t("admin.resultCount", { count: totalUsers }) }}
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
       <icon-line-md:loading-twotone-loop class="size-5" />
@@ -28,22 +32,24 @@
         v-for="user in users"
         :key="user.id"
         :to="{ name: 'admin.users.detail', params: { id: user.id } }"
-        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
       >
         <!-- Avatar -->
-        <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <icon-fa6-solid:user class="size-3.5 text-primary" />
+        <div
+          class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 transition-transform group-hover:scale-105"
+        >
+          <icon-fa6-solid:user class="size-4 text-primary" />
         </div>
 
         <!-- Info -->
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <span class="truncate font-medium transition-colors group-hover:text-primary">{{
+            <span class="truncate font-semibold transition-colors group-hover:text-primary">{{
               user.name
             }}</span>
             <Badge
               v-if="user.role === 'admin'"
-              class="bg-primary/10 text-primary border-primary/20 text-[10px]"
+              class="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold uppercase tracking-wider"
               >{{ $t("admin.roleAdmin") }}</Badge
             >
           </div>
@@ -59,24 +65,30 @@
         <div class="hidden shrink-0 sm:block">
           <Badge
             v-if="user.banned"
-            class="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+            class="inline-flex items-center gap-1.5 bg-destructive/10 text-destructive border-destructive/20 text-xs px-2.5 py-0.5"
           >
+            <span class="size-1.5 rounded-full bg-destructive animate-pulse" />
             {{ $t("admin.banned") }}
           </Badge>
           <Badge
             v-else-if="!user.emailVerified"
-            class="bg-warning/10 text-warning border-warning/20 text-xs"
+            class="inline-flex items-center gap-1.5 bg-warning/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs px-2.5 py-0.5"
           >
+            <span class="size-1.5 rounded-full bg-amber-500" />
             {{ $t("admin.unverified") }}
           </Badge>
-          <Badge v-else class="bg-success/10 text-success border-success/20 text-xs">
+          <Badge
+            v-else
+            class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs px-2.5 py-0.5"
+          >
+            <span class="size-1.5 rounded-full bg-emerald-500" />
             {{ $t("admin.active") }}
           </Badge>
         </div>
 
         <!-- Chevron -->
         <icon-fa6-solid:chevron-right
-          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          class="size-3.5 shrink-0 text-muted-foreground opacity-30 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:text-primary"
         />
       </RouterLink>
     </div>
@@ -128,20 +140,28 @@ import { adminListUsers, type AdminListUsersData, type AdminUser as User } from 
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
+import { useAdminListQuery } from "@/composables/useAdminListQuery";
+
+const {
+  search: searchQuery,
+  page: currentPage,
+  filters,
+  syncToUrl,
+} = useAdminListQuery({
+  search: "",
+  page: 1,
+  filters: {
+    role: "all",
+    status: "all",
+    sortBy: "createdAt",
+  },
+});
 
 const users = ref<User[]>([]);
 const loading = ref(true);
 const error = ref("");
-const searchQuery = ref("");
-const currentPage = ref(1);
 const pageSize = ref(20);
 const totalUsers = ref(0);
-
-const filters = ref<Record<string, string>>({
-  role: "all",
-  status: "all",
-  sortBy: "createdAt",
-});
 
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value));
 const { t } = useI18n();
@@ -235,11 +255,13 @@ async function loadUsers() {
 
 function onFilterChange() {
   currentPage.value = 1;
+  syncToUrl();
   loadUsers();
 }
 
 function changePage(page: number) {
   currentPage.value = page;
+  syncToUrl();
   loadUsers();
 }
 
@@ -248,6 +270,7 @@ function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     currentPage.value = 1;
+    syncToUrl();
     loadUsers();
   }, 300);
 }

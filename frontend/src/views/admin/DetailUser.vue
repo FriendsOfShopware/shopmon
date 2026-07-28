@@ -11,49 +11,118 @@
 
     <!-- Content -->
     <template v-else>
-      <PageHeader :title="user.name" :description="user.email">
-        <div class="flex flex-wrap items-center justify-end gap-2">
-          <Button v-if="!isSelf" size="sm" :disabled="actionLoading" @click="impersonateUser">
-            <icon-fa6-solid:user-secret class="mr-1.5 size-3" />
-            {{ t("admin.impersonate") }}
-          </Button>
-          <Button
-            v-if="!isSelf && !user.banned"
-            variant="outline"
-            size="sm"
-            class="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            :disabled="actionLoading"
-            @click="banUser"
+      <div class="space-y-4">
+        <!-- Breadcrumb nav -->
+        <nav class="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <RouterLink
+            :to="{ name: 'admin.dashboard' }"
+            class="hover:text-primary transition-colors"
           >
-            <icon-fa6-solid:ban class="mr-1.5 size-3" />
-            {{ t("admin.ban") }}
-          </Button>
-          <Button
-            v-else-if="!isSelf && user.banned"
-            variant="outline"
-            size="sm"
-            :disabled="actionLoading"
-            @click="unbanUser"
-          >
-            <icon-fa6-solid:rotate-left class="mr-1.5 size-3" />
-            {{ t("admin.unban") }}
-          </Button>
-          <Button variant="outline" size="sm" @click="router.back()">
-            <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
-            {{ t("admin.back") }}
-          </Button>
-        </div>
-      </PageHeader>
+            {{ t("admin.dashboard") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <RouterLink :to="{ name: 'admin.users' }" class="hover:text-primary transition-colors">
+            {{ t("admin.users") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <span class="font-medium text-foreground">{{ user.name }}</span>
+        </nav>
 
-      <Alert v-if="error" variant="destructive">
+        <PageHeader :title="user.name">
+          <template #description>
+            <div class="flex items-center gap-2">
+              <span>{{ user.email }}</span>
+              <Badge
+                v-if="user.emailVerified"
+                class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-semibold"
+              >
+                Verified
+              </Badge>
+              <Badge
+                v-else
+                class="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px] font-semibold"
+              >
+                Unverified
+              </Badge>
+            </div>
+          </template>
+
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              v-if="!isSelf"
+              size="sm"
+              :disabled="actionLoading"
+              class="gap-1.5 shadow-xs"
+              @click="impersonateUser"
+            >
+              <icon-fa6-solid:user-secret class="size-3" />
+              {{ t("admin.impersonate") }}
+            </Button>
+            <Button
+              v-if="!isSelf && !user.banned"
+              variant="outline"
+              size="sm"
+              class="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5"
+              :disabled="actionLoading"
+              @click="banUser"
+            >
+              <icon-fa6-solid:ban class="size-3" />
+              {{ t("admin.ban") }}
+            </Button>
+            <Button
+              v-else-if="!isSelf && user.banned"
+              variant="outline"
+              size="sm"
+              class="gap-1.5"
+              :disabled="actionLoading"
+              @click="unbanUser"
+            >
+              <icon-fa6-solid:rotate-left class="size-3" />
+              {{ t("admin.unban") }}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              class="gap-1.5"
+              @click="router.push({ name: 'admin.users' })"
+            >
+              <icon-fa6-solid:arrow-left class="size-3" />
+              {{ t("admin.back") }}
+            </Button>
+          </div>
+        </PageHeader>
+      </div>
+
+      <Alert v-if="error" variant="destructive" class="border-destructive/30 bg-destructive/10">
         <AlertDescription>{{ error }}</AlertDescription>
+      </Alert>
+
+      <!-- Ban info banner if banned -->
+      <Alert
+        v-if="user.banned"
+        variant="destructive"
+        class="border-destructive/40 bg-destructive/10"
+      >
+        <icon-fa6-solid:ban class="size-4 text-destructive" />
+        <AlertTitle class="font-semibold text-destructive">{{ t("admin.banned") }}</AlertTitle>
+        <AlertDescription class="mt-1 space-y-1 text-sm">
+          <p v-if="user.banReason">
+            <span class="font-semibold">Reason:</span> {{ user.banReason }}
+          </p>
+          <p v-if="user.banExpires">
+            <span class="font-semibold">Expires:</span> {{ formatDateTime(user.banExpires) }}
+          </p>
+          <p v-if="!user.banReason && !user.banExpires">
+            This user account is currently suspended from accessing the platform.
+          </p>
+        </AlertDescription>
       </Alert>
 
       <!-- Stat cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           :icon="IconUserShield"
-          :value="user.role"
+          :value="roleLabel"
           :label="t('common.role')"
           :color="user.role === 'admin' ? 'primary' : 'muted'"
         />
@@ -67,11 +136,13 @@
           :icon="IconBuilding"
           :value="user.memberships.length"
           :label="t('admin.memberships')"
+          color="primary"
         />
         <StatCard
           :icon="IconCalendar"
           :value="formatDate(user.createdAt)"
           :label="t('admin.memberSince')"
+          color="muted"
         />
       </div>
 
@@ -118,7 +189,7 @@
             :title="t('admin.noSessions')"
             size="sm"
           />
-          <div v-else class="space-y-2">
+          <div v-else class="space-y-2 max-h-80 overflow-y-auto">
             <div
               v-for="s in user.sessions"
               :key="s.id"
@@ -237,7 +308,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import StatCard from "@/components/StatCard.vue";
 import CardSection from "@/components/CardSection.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -269,6 +340,13 @@ const statusLabel = computed(() => {
   if (user.value.banned) return t("admin.banned");
   if (!user.value.emailVerified) return t("admin.unverified");
   return t("admin.active");
+});
+
+const roleLabel = computed(() => {
+  if (!user.value) return "";
+  if (user.value.role === "admin") return t("admin.roleAdmin");
+  if (user.value.role === "user") return t("admin.roleUser");
+  return user.value.role.charAt(0).toUpperCase() + user.value.role.slice(1);
 });
 
 const actionLabels: Record<string, string> = {

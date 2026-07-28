@@ -20,32 +20,59 @@
 
     <!-- Detail -->
     <template v-else>
-      <PageHeader :title="organization.name">
-        <Button variant="outline" size="sm" @click="router.back()">
-          <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
-          {{ t("admin.back") }}
-        </Button>
-      </PageHeader>
+      <div class="space-y-4">
+        <!-- Breadcrumb nav -->
+        <nav class="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <RouterLink
+            :to="{ name: 'admin.dashboard' }"
+            class="hover:text-primary transition-colors"
+          >
+            {{ t("admin.dashboard") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <RouterLink
+            :to="{ name: 'admin.organizations' }"
+            class="hover:text-primary transition-colors"
+          >
+            {{ t("common.organizations") }}
+          </RouterLink>
+          <icon-fa6-solid:chevron-right class="size-2.5 opacity-50" />
+          <span class="font-medium text-foreground">{{ organization.name }}</span>
+        </nav>
 
-      <p class="-mt-4 text-sm text-muted-foreground">{{ organization.slug }}</p>
+        <PageHeader :title="organization.name" :description="organization.slug">
+          <Button variant="outline" size="sm" @click="router.push({ name: 'admin.organizations' })">
+            <icon-fa6-solid:arrow-left class="mr-1.5 size-3" />
+            {{ t("admin.back") }}
+          </Button>
+        </PageHeader>
+      </div>
 
       <!-- Stats -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard :icon="IconUsers" :value="organization.memberCount" :label="t('admin.members')" />
+        <StatCard
+          :icon="IconUsers"
+          :value="organization.memberCount"
+          :label="t('admin.members')"
+          color="primary"
+        />
         <StatCard
           :icon="IconEarthAmericas"
           :value="organization.environmentCount"
           :label="t('common.environments')"
+          color="success"
         />
         <StatCard
           :icon="IconEnvelope"
           :value="organization.invitations.length"
           :label="t('admin.invitations')"
+          color="warning"
         />
         <StatCard
           :icon="IconCalendar"
           :value="formatDate(organization.createdAt)"
           :label="t('admin.created')"
+          color="muted"
         />
       </div>
 

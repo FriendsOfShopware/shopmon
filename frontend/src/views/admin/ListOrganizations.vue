@@ -16,6 +16,10 @@
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
+    <div v-if="!loading && !error" class="mb-3 text-sm text-muted-foreground">
+      {{ $t("admin.resultCount", { count: totalOrganizations }) }}
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
       <icon-line-md:loading-twotone-loop class="size-5" />
@@ -28,29 +32,34 @@
         v-for="org in organizations"
         :key="org.id"
         :to="{ name: 'admin.organizations.detail', params: { id: org.id } }"
-        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-sm"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
       >
-        <div class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted">
+        <div
+          class="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted transition-transform group-hover:scale-105"
+        >
           <img
             v-if="org.logo"
             :src="org.logo"
             :alt="org.name"
             class="size-7 rounded object-cover"
           />
-          <icon-fa6-solid:building v-else class="size-4 text-muted-foreground" />
+          <icon-fa6-solid:building
+            v-else
+            class="size-4 text-muted-foreground group-hover:text-primary transition-colors"
+          />
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="truncate font-medium transition-colors group-hover:text-primary">
+          <div class="truncate font-semibold transition-colors group-hover:text-primary">
             {{ org.name }}
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-            <span class="flex items-center gap-1">
-              <icon-fa6-solid:earth-americas class="size-2.5" />
+            <span class="flex items-center gap-1 font-medium">
+              <icon-fa6-solid:earth-americas class="size-3 text-emerald-500" />
               {{ org.environmentCount }}
             </span>
-            <span class="flex items-center gap-1">
-              <icon-fa6-solid:users class="size-2.5" />
+            <span class="flex items-center gap-1 font-medium">
+              <icon-fa6-solid:users class="size-3 text-indigo-500" />
               {{ org.memberCount }}
             </span>
             <span class="hidden tabular-nums sm:inline">{{ formatDate(org.createdAt) }}</span>
@@ -58,7 +67,7 @@
         </div>
 
         <icon-fa6-solid:chevron-right
-          class="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          class="size-3.5 shrink-0 text-muted-foreground opacity-30 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:text-primary"
         />
       </RouterLink>
     </div>
@@ -113,19 +122,27 @@ import {
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref } from "vue";
+import { useAdminListQuery } from "@/composables/useAdminListQuery";
+
+const {
+  search: searchQuery,
+  page: currentPage,
+  filters,
+  syncToUrl,
+} = useAdminListQuery({
+  search: "",
+  page: 1,
+  filters: {
+    sortBy: "createdAt",
+  },
+});
 
 const organizations = ref<Organization[]>([]);
 const loading = ref(true);
 const error = ref("");
-const searchQuery = ref("");
 const sortDirection = ref<"asc" | "desc">("desc");
-const currentPage = ref(1);
 const pageSize = ref(20);
 const totalOrganizations = ref(0);
-
-const filters = ref<Record<string, string>>({
-  sortBy: "createdAt",
-});
 
 const totalPages = computed(() => Math.ceil(totalOrganizations.value / pageSize.value));
 const { t } = useI18n();
@@ -187,11 +204,13 @@ async function loadOrganizations() {
 
 function onFilterChange() {
   currentPage.value = 1;
+  syncToUrl();
   loadOrganizations();
 }
 
 function changePage(page: number) {
   currentPage.value = page;
+  syncToUrl();
   loadOrganizations();
 }
 
@@ -200,6 +219,7 @@ function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     currentPage.value = 1;
+    syncToUrl();
     loadOrganizations();
   }, 300);
 }

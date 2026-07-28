@@ -29,7 +29,7 @@
 
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
       <!-- Desktop: sticky sidebar -->
-      <aside class="hidden w-64 shrink-0 lg:block">
+      <aside class="hidden w-72 shrink-0 lg:block">
         <div class="sticky top-16 rounded-xl border bg-card py-4">
           <div class="px-4 pb-3">
             <span class="flex items-center gap-1.5 text-sm font-semibold">

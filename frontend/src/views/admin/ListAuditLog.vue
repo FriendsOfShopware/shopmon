@@ -8,6 +8,10 @@
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
+    <div v-if="!loading && !error" class="mb-3 text-sm text-muted-foreground">
+      {{ $t("admin.resultCount", { count: total }) }}
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
       <icon-line-md:loading-twotone-loop class="size-5" />
@@ -19,13 +23,13 @@
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="flex flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3"
+        class="group flex flex-wrap items-center gap-3.5 rounded-xl border bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
       >
         <Badge
           :class="
             entry.action.startsWith('admin.')
-              ? 'bg-destructive/10 text-destructive border-destructive/20 text-xs'
-              : 'bg-warning/10 text-warning border-warning/20 text-xs'
+              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-xs px-2.5 py-0.5 font-medium'
+              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs px-2.5 py-0.5 font-medium'
           "
         >
           {{ actionLabel(entry.action) }}
@@ -36,7 +40,7 @@
             <RouterLink
               v-if="entry.actorUserId"
               :to="{ name: 'admin.users.detail', params: { id: entry.actorUserId } }"
-              class="font-medium hover:text-primary"
+              class="font-semibold text-foreground hover:text-primary transition-colors"
             >
               {{ entry.actorName ?? entry.actorEmail }}
             </RouterLink>
@@ -47,11 +51,11 @@
               <RouterLink
                 v-if="entry.targetUserId"
                 :to="{ name: 'admin.users.detail', params: { id: entry.targetUserId } }"
-                class="hover:text-primary"
+                class="font-medium text-foreground hover:text-primary transition-colors"
               >
                 {{ entry.targetName ?? entry.targetEmail }}
               </RouterLink>
-              <span v-else>{{ entry.targetName ?? entry.targetEmail }}</span>
+              <span v-else class="font-medium">{{ entry.targetName ?? entry.targetEmail }}</span>
             </template>
           </div>
           <div
@@ -59,11 +63,15 @@
             class="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground"
           >
             <span v-if="entry.detail" class="truncate">{{ entry.detail }}</span>
-            <span v-if="entry.ipAddress" class="shrink-0 tabular-nums">{{ entry.ipAddress }}</span>
+            <span
+              v-if="entry.ipAddress"
+              class="shrink-0 tabular-nums font-mono text-[11px] bg-muted/60 px-1.5 py-0.5 rounded"
+              >{{ entry.ipAddress }}</span
+            >
           </div>
         </div>
 
-        <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+        <span class="shrink-0 text-xs text-muted-foreground tabular-nums font-medium">
           {{ formatDateTime(entry.createdAt) }}
         </span>
       </div>
@@ -110,19 +118,26 @@ import IconClock from "~icons/fa6-solid/clock-rotate-left";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
+import { useAdminListQuery } from "@/composables/useAdminListQuery";
 
 const { t } = useI18n();
+
+const {
+  page: currentPage,
+  filters,
+  syncToUrl,
+} = useAdminListQuery({
+  page: 1,
+  filters: {
+    action: "",
+  },
+});
 
 const entries = ref<AuditLogEntry[]>([]);
 const loading = ref(true);
 const error = ref("");
-const currentPage = ref(1);
 const pageSize = 50;
 const total = ref(0);
-
-const filters = ref<Record<string, string>>({
-  action: "",
-});
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize));
 
@@ -199,11 +214,13 @@ async function loadEntries() {
 
 function onFilterChange() {
   currentPage.value = 1;
+  syncToUrl();
   loadEntries();
 }
 
 function changePage(page: number) {
   currentPage.value = page;
+  syncToUrl();
   loadEntries();
 }
 
