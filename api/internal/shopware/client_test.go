@@ -250,8 +250,8 @@ func TestRequestHonorsContextCancellation(t *testing.T) {
 func TestClientSendsShopmonUserAgent(t *testing.T) {
 	var tokenUA, apiUA string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/oauth/token":
+		switch r.URL.Path {
+		case "/api/oauth/token":
 			tokenUA = r.Header.Get("User-Agent")
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(tokenResponse{AccessToken: "tok", ExpiresIn: 3600})

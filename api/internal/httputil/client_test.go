@@ -1,6 +1,7 @@
 package httputil
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -121,8 +122,9 @@ func TestNewHTTPClientSetsUserAgent(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	client := NewHTTPClient()
-	resp, err := client.Get(srv.URL)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+	require.NoError(t, err)
+	resp, err := NewHTTPClient().Do(req)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
@@ -140,7 +142,7 @@ func TestNewHTTPClientPreservesExplicitUserAgent(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
 	require.NoError(t, err)
 	req.Header.Set("User-Agent", "CustomAgent/9.9")
 
@@ -164,7 +166,7 @@ func TestUserAgentTransportInjectsHeader(t *testing.T) {
 	})
 
 	rt := &userAgentTransport{base: base, ua: "Shopmon/test"}
-	req, err := http.NewRequest(http.MethodGet, "https://example.com/", nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://example.com/", nil)
 	require.NoError(t, err)
 	resp, err := rt.RoundTrip(req)
 	require.NoError(t, err)
