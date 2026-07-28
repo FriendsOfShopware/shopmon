@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -244,4 +245,30 @@ func TestRequestHonorsContextCancellation(t *testing.T) {
 
 	_, err := c.Get(ctx, "/_info/config")
 	require.Error(t, err, "expected error from cancelled context")
+}
+
+func TestClientSendsShopmonUserAgent(t *testing.T) {
+	var tokenUA, apiUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/api/oauth/token":
+			tokenUA = r.Header.Get("User-Agent")
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(tokenResponse{AccessToken: "tok", ExpiresIn: 3600})
+		default:
+			apiUA = r.Header.Get("User-Agent")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		}
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL)
+	_, err := c.Get(context.Background(), "/_info/config")
+	require.NoError(t, err)
+
+	require.True(t, strings.HasPrefix(tokenUA, "Shopmon"), "token request User-Agent = %q", tokenUA)
+	require.True(t, strings.HasPrefix(apiUA, "Shopmon"), "API request User-Agent = %q", apiUA)
+	assert.NotContains(t, tokenUA, "Go-http-client")
+	assert.NotContains(t, apiUA, "Go-http-client")
 }
