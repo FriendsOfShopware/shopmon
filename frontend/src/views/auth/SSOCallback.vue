@@ -10,7 +10,8 @@ import { useRoute, useRouter } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
-import { api, setToken } from "@/helpers/api";
+import { setToken } from "@/helpers/api";
+import { exchangeCode, ssoCallback } from "@/api/generated";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -33,12 +34,10 @@ async function handleCallback() {
   }
 
   try {
-    const { data: callbackData, error: callbackError } = await api.GET(
-      "/auth/sso/callback/{providerId}",
-      {
-        params: { path: { providerId }, query: { code, state } },
-      },
-    );
+    const { data: callbackData, error: callbackError } = await ssoCallback({
+      path: { providerId },
+      query: { code, state },
+    });
 
     if (callbackError || !callbackData?.code) {
       alert.error(
@@ -48,7 +47,7 @@ async function handleCallback() {
       return;
     }
 
-    const { data, error } = await api.POST("/auth/exchange-code", {
+    const { data, error } = await exchangeCode({
       body: { code: callbackData.code },
     });
 

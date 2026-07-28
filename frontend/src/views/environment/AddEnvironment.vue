@@ -201,14 +201,13 @@
 import { useAlert } from "@/composables/useAlert";
 import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { fetchAccountShops } from "@/composables/useAccountShops";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import { createEnvironment, getAccountShops, type AccountShop } from "@/api/generated";
 import { useForm } from "vee-validate";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { toTypedSchema } from "@vee-validate/zod";
-import { z } from "zod";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -244,7 +243,7 @@ async function copyToken() {
   success(t("environment.tokenCopied"));
 }
 
-const shops = ref<components["schemas"]["AccountShop"][]>([]);
+const shops = ref<AccountShop[]>([]);
 const shopsLoaded = ref(false);
 const selectedShopId = ref<number>(route.query.shopId ? Number(route.query.shopId) : 0);
 
@@ -252,7 +251,7 @@ const showPluginModal = ref(false);
 const pluginBase64 = ref("");
 const pluginError = ref("");
 
-api.GET("/account/shops").then(({ data }) => {
+getAccountShops().then(({ data }) => {
   if (data) {
     shops.value = data;
     if (!selectedShopId.value && data.length > 0) {
@@ -292,7 +291,7 @@ const { handleSubmit, isSubmitting, setFieldValue } = useForm({
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    const { error: apiError } = await api.POST("/environments", {
+    const { error: apiError } = await createEnvironment({
       body: {
         name: values.name,
         shopUrl: values.shopUrl.replace(/\/+$/, ""),

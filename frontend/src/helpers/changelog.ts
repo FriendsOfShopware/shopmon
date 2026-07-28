@@ -25,7 +25,7 @@ export function useChangelogText() {
 export function sumChanges(changes: {
   oldShopwareVersion?: string | null;
   newShopwareVersion?: string | null;
-  extensions: { state: string }[];
+  extensions?: { state: string }[] | null;
 }) {
   const messages: string[] = [];
 
@@ -36,7 +36,7 @@ export function sumChanges(changes: {
   }
 
   const stateCounts: Record<string, number> = {};
-  for (const extension of changes.extensions) {
+  for (const extension of changes.extensions ?? []) {
     if (stateCounts[extension.state] !== undefined) {
       stateCounts[extension.state] = stateCounts[extension.state] + 1;
     } else {

@@ -284,7 +284,7 @@ import { useNotifications } from "@/composables/useNotifications";
 import { useSession, clearSession } from "@/composables/useSession";
 import { useAccountEnvironments } from "@/composables/useAccountEnvironments";
 import { useAccountShops } from "@/composables/useAccountShops";
-import { api, clearAdminToken, setToken } from "@/helpers/api";
+import { clearAdminToken, setToken } from "@/helpers/api";
 import { formatDateTime } from "@/helpers/formatter";
 import {
   notificationReasons,
@@ -292,7 +292,7 @@ import {
   translateNotificationTitle,
   translateReason,
 } from "@/helpers/i18n";
-import type { components } from "@/types/api";
+import { signOut, type AccountShop } from "@/api/generated";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -327,8 +327,6 @@ const router = useRouter();
 const { session, activeOrganizationId } = useSession();
 const { environments } = useAccountEnvironments();
 const { shops, fetchAccountShops } = useAccountShops();
-
-type AccountShop = components["schemas"]["AccountShop"];
 
 watch(activeOrganizationId, () => {
   void fetchAccountShops();
@@ -407,10 +405,15 @@ function isActive(item: { route: string; active?: string }, $route: RouteLocatio
 }
 
 async function logout() {
-  await api.POST("/auth/sign-out");
-  setToken(null);
-  clearAdminToken();
-  clearSession();
-  router.push({ name: "home" });
+  try {
+    await signOut();
+  } catch {
+    /* ignore network/server error on signout */
+  } finally {
+    setToken(null);
+    clearAdminToken();
+    clearSession();
+    router.push({ name: "home" });
+  }
 }
 </script>

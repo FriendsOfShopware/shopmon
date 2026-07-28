@@ -46,7 +46,7 @@ import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
+import { forgetPassword } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,9 +66,13 @@ const onSubmit = handleSubmit(async (values) => {
   const { success, error } = useAlert();
 
   try {
-    await api.POST("/auth/forget-password", {
+    const { error: apiError } = await forgetPassword({
       body: { email: values.email },
     });
+    if (apiError) {
+      error((apiError as { message?: string }).message ?? t("auth.failedSendReset"));
+      return;
+    }
     success(t("auth.resetEmailSent"));
   } catch (e) {
     error(e instanceof Error ? e.message : t("auth.failedSendReset"));

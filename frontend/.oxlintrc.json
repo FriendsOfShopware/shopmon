@@ -9,5 +9,5 @@
     "typeCheck": true,
     "typeAware": true
   },
-  "ignorePatterns": []
+  "ignorePatterns": ["src/api/generated/**"]
 }

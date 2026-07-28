@@ -3,15 +3,23 @@ import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { compareVersions } from "compare-versions";
-import { api, apiLanguage } from "@/helpers/api";
-import type { components } from "@/types/api";
+import { apiLanguage } from "@/helpers/api";
+import {
+  clearEnvironmentCache,
+  getEnvironment,
+  getShopwareVersions,
+  refreshEnvironment,
+  subscribeToEnvironment,
+  unsubscribeFromEnvironment,
+  type EnvironmentDetail,
+} from "@/api/generated";
 import { useAlert } from "@/composables/useAlert";
 
 // Shared state across all callers. The composable is used by both the
 // environment detail layout and the route child views; without a single shared
 // instance each caller would fetch the same endpoints independently, firing
 // every request (e.g. /info/shopware-versions) once per consumer.
-const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);
+const environment = ref<EnvironmentDetail | null>(null);
 const isLoading = ref(false);
 const isRefreshing = ref(false);
 const isCacheClearing = ref(false);
@@ -54,14 +62,15 @@ export function useEnvironmentDetail() {
   async function fetchEnvironment(id: number) {
     isLoading.value = true;
     try {
-      const { data } = await api.GET("/environments/{environmentId}", {
-        params: { path: { environmentId: id }, query: { language: apiLanguage() } },
+      const { data } = await getEnvironment({
+        path: { environmentId: id },
+        query: { language: apiLanguage() },
       });
       environment.value = data ?? null;
       // Subscription status ships with the environment payload, no extra request.
       isSubscribed.value = data?.subscribed ?? false;
 
-      const { data: shopwareVersionsData } = await api.GET("/info/shopware-versions");
+      const { data: shopwareVersionsData } = await getShopwareVersions();
       if (shopwareVersionsData) {
         // The endpoint returns versions newest-first already.
         shopwareVersions.value = shopwareVersionsData
@@ -103,8 +112,8 @@ export function useEnvironmentDetail() {
     if (environment.value?.organizationId && environment.value?.id) {
       try {
         isRefreshing.value = true;
-        await api.POST("/environments/{environmentId}/refresh", {
-          params: { path: { environmentId: environment.value.id } },
+        await refreshEnvironment({
+          path: { environmentId: environment.value.id },
           body: { sitespeed },
         });
         isRefreshing.value = false;
@@ -121,8 +130,8 @@ export function useEnvironmentDetail() {
     if (environment.value?.organizationId && environment.value?.id) {
       try {
         isCacheClearing.value = true;
-        await api.POST("/environments/{environmentId}/clear-cache", {
-          params: { path: { environmentId: environment.value.id } },
+        await clearEnvironmentCache({
+          path: { environmentId: environment.value.id },
         });
         isCacheClearing.value = false;
         await loadEnvironment(true);
@@ -141,14 +150,14 @@ export function useEnvironmentDetail() {
       isSubscribing.value = true;
 
       if (isSubscribed.value) {
-        await api.DELETE("/environments/{environmentId}/subscribe", {
-          params: { path: { environmentId: environment.value.id } },
+        await unsubscribeFromEnvironment({
+          path: { environmentId: environment.value.id },
         });
         isSubscribed.value = false;
         success(t("environment.unsubscribed"));
       } else {
-        await api.POST("/environments/{environmentId}/subscribe", {
-          params: { path: { environmentId: environment.value.id } },
+        await subscribeToEnvironment({
+          path: { environmentId: environment.value.id },
         });
         isSubscribed.value = true;
         success(t("environment.subscribed"));

@@ -1,11 +1,7 @@
 import { i18n } from "@/i18n";
-import type { components } from "@/types/api";
+import type { EnvironmentCheck, Notification, StatusReason } from "@/api/generated";
 
 type Params = Record<string, unknown>;
-
-type Notification = components["schemas"]["Notification"];
-type EnvironmentCheck = components["schemas"]["EnvironmentCheck"];
-type StatusReason = components["schemas"]["StatusReason"];
 
 function tx(key: string, params: Params): string {
   return i18n.global.t(key, params);

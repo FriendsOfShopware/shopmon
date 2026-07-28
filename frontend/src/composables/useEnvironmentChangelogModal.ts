@@ -1,7 +1,5 @@
 import { ref, type Ref } from "vue";
-import type { components } from "@/types/api";
-
-type AccountChangelog = components["schemas"]["AccountChangelog"];
+import type { AccountChangelog } from "@/api/generated";
 
 export function useEnvironmentChangelogModal() {
   const viewEnvironmentChangelogDialog: Ref<boolean> = ref(false);

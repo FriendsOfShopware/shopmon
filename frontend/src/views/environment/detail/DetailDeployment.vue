@@ -132,7 +132,7 @@ import { ref, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { formatDateTime } from "@/helpers/formatter";
-import { api } from "@/helpers/api";
+import { getDeployment } from "@/api/generated";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -146,8 +146,8 @@ const loadDeployment = async () => {
 
   try {
     const deploymentId = parseInt(route.params.deploymentId as string, 10);
-    const { data } = await api.GET("/environments/{environmentId}/deployments/{deploymentId}", {
-      params: { path: { environmentId: environment.value.id, deploymentId } },
+    const { data } = await getDeployment({
+      path: { environmentId: environment.value.id, deploymentId },
     });
     deployment.value = data ?? null;
   } catch (error) {

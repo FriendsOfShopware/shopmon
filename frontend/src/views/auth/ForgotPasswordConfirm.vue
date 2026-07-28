@@ -52,7 +52,7 @@ import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
+import { resetPassword } from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
@@ -78,7 +78,7 @@ const router = useRouter();
 const { success, error } = useAlert();
 
 const onSubmit = handleSubmit(async (values) => {
-  const resp = await api.POST("/auth/reset-password", {
+  const resp = await resetPassword({
     body: {
       token: route.params.token as string,
       newPassword: values.password,

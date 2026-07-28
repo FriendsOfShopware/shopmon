@@ -193,8 +193,17 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { useSession } from "@/composables/useSession";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  cancelInvitation as apiCancelInvitation,
+  getFullOrganization,
+  getSsoProviders,
+  hasPermission,
+  inviteMember,
+  leaveOrganization as apiLeaveOrganization,
+  removeMember,
+  setMemberRole,
+  type SsoProvider,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -238,14 +247,14 @@ interface Invitation {
 const organization = ref<OrganizationData | null>(null);
 const members = ref<OrganizationMember[]>([]);
 const invitations = ref<Invitation[]>([]);
-const ssoProviders = ref<components["schemas"]["SsoProvider"][]>([]);
+const ssoProviders = ref<SsoProvider[]>([]);
 const allowedToManageMembers = ref(false);
 
 async function leaveOrganization() {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.POST("/auth/organizations/{organizationId}/leave", {
-      params: { path: { organizationId: organization.value.id } },
+    const { error: respError } = await apiLeaveOrganization({
+      path: { organizationId: organization.value.id },
     });
     if (respError) {
       alert.error((respError as { message?: string }).message ?? t("organization.failedLeaveOrg"));
@@ -260,8 +269,8 @@ async function leaveOrganization() {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: activeOrganizationId.value! } },
+    const { data } = await getFullOrganization({
+      query: { organizationId: activeOrganizationId.value! },
     });
     if (!data) {
       alert.error("Failed to load organization");
@@ -273,7 +282,7 @@ async function loadOrganization() {
     invitations.value = (data as unknown as { invitations?: Invitation[] }).invitations ?? [];
 
     try {
-      const { data: permData } = await api.POST("/auth/has-permission", {
+      const { data: permData } = await hasPermission({
         body: { organizationId: (data as unknown as OrganizationData).id },
       });
       allowedToManageMembers.value = permData?.success ?? false;
@@ -282,10 +291,9 @@ async function loadOrganization() {
     }
 
     if (organization.value?.id) {
-      api
-        .GET("/organizations/{orgId}/sso-providers", {
-          params: { path: { orgId: organization.value.id } },
-        })
+      getSsoProviders({
+        path: { orgId: organization.value.id },
+      })
         .then(({ data }) => {
           if (data) ssoProviders.value = data;
         })
@@ -308,13 +316,10 @@ async function onAddMember(values: { email: string; role: "member" | "admin" }) 
   if (!organization.value) return;
   isAddMemberSubmitting.value = true;
   try {
-    const { error: respError } = await api.POST(
-      "/auth/organizations/{organizationId}/invitations",
-      {
-        params: { path: { organizationId: organization.value.id } },
-        body: { email: values.email, role: values.role },
-      },
-    );
+    const { error: respError } = await inviteMember({
+      path: { organizationId: organization.value.id },
+      body: { email: values.email, role: values.role },
+    });
     if (respError) {
       alert.error((respError as { message?: string }).message ?? "Failed to invite member");
     } else {
@@ -331,9 +336,13 @@ async function onAddMember(values: { email: string; role: "member" | "admin" }) 
 async function onRemoveMember(userId: string) {
   if (!organization.value) return;
   try {
-    await api.DELETE("/auth/organizations/{organizationId}/members/{userId}", {
-      params: { path: { organizationId: organization.value.id, userId } },
+    const { error: respError } = await removeMember({
+      path: { organizationId: organization.value.id, userId },
     });
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to remove member");
+      return;
+    }
     await loadOrganization();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -343,7 +352,11 @@ async function onRemoveMember(userId: string) {
 async function cancelInvitation(invitationId: string) {
   if (!organization.value) return;
   try {
-    await api.POST("/auth/cancel-invitation", { body: { invitationId } });
+    const { error: respError } = await apiCancelInvitation({ body: { invitationId } });
+    if (respError) {
+      alert.error((respError as { message?: string }).message ?? "Failed to cancel invitation");
+      return;
+    }
     await loadOrganization();
   } catch (err) {
     alert.error(err instanceof Error ? err.message : String(err));
@@ -359,15 +372,10 @@ async function onChangeRole(role: "member" | "admin") {
   if (!organization.value || !selectedMember.value) return;
   isChangingRole.value = true;
   try {
-    const { error: respError } = await api.PATCH(
-      "/auth/organizations/{organizationId}/members/{userId}",
-      {
-        params: {
-          path: { organizationId: organization.value.id, userId: selectedMember.value.userId },
-        },
-        body: { role },
-      },
-    );
+    const { error: respError } = await setMemberRole({
+      path: { organizationId: organization.value.id, userId: selectedMember.value.userId },
+      body: { role },
+    });
     if (respError) {
       alert.error(
         (respError as { message?: string }).message ?? t("organization.failedUpdateMemberRole"),

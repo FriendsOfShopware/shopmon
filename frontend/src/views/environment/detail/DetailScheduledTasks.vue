@@ -116,8 +116,7 @@ import { useI18n } from "vue-i18n";
 import { useAlert } from "@/composables/useAlert";
 import { formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import { rescheduleTask, type ScheduledTask } from "@/api/generated";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -135,8 +134,6 @@ import FaRotate from "~icons/fa6-solid/rotate";
 import FaClock from "~icons/fa6-solid/clock";
 import FaPause from "~icons/fa6-solid/pause";
 import FaXmark from "~icons/fa6-solid/xmark";
-
-type ScheduledTask = components["schemas"]["ScheduledTask"];
 
 const { t } = useI18n();
 const { success, error } = useAlert();
@@ -230,8 +227,8 @@ const filteredTasks = computed(() => {
 
 async function onReScheduleTask(taskId: string) {
   try {
-    await api.POST("/environments/{environmentId}/tasks/{taskId}/reschedule", {
-      params: { path: { environmentId: environment.value?.id ?? 0, taskId } },
+    await rescheduleTask({
+      path: { environmentId: environment.value?.id ?? 0, taskId },
     });
     success(t("shopDetail.taskRescheduled"));
   } catch (e) {

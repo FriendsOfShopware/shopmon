@@ -127,8 +127,13 @@ import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.
 import AddApiKeyModal from "@/components/shop/AddApiKeyModal.vue";
 import { useAlert } from "@/composables/useAlert";
 import { formatDate } from "@/helpers/formatter";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  deleteApiKey as apiDeleteApiKey,
+  getApiKeys,
+  getApiKeyScopes,
+  type ApiKey,
+  type ApiKeyScope as AvailableScope,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -143,9 +148,6 @@ import {
 import { nextTick, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
-
-type ApiKey = components["schemas"]["ApiKey"];
-type AvailableScope = components["schemas"]["ApiKeyScope"];
 
 const props = defineProps<{
   orgId: string;
@@ -170,8 +172,8 @@ const newToken = ref("");
 async function loadApiKeys() {
   isApiKeysLoading.value = true;
   try {
-    const { data } = await api.GET("/organizations/{orgId}/shops/{shopId}/api-keys", {
-      params: { path: { orgId: props.orgId, shopId: props.shopId } },
+    const { data } = await getApiKeys({
+      path: { orgId: props.orgId, shopId: props.shopId },
     });
     apiKeys.value = data ?? [];
   } catch (error) {
@@ -185,7 +187,7 @@ async function loadApiKeys() {
 
 async function loadAvailableScopes() {
   try {
-    const { data } = await api.GET("/api-key-scopes");
+    const { data } = await getApiKeyScopes();
     availableScopes.value = data ?? [];
   } catch (error) {
     alert.error(
@@ -227,13 +229,11 @@ async function deleteApiKey() {
   if (!deletingApiKey.value) return;
   isDeletingApiKey.value = true;
   try {
-    const { error } = await api.DELETE("/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}", {
-      params: {
-        path: {
-          orgId: props.orgId,
-          shopId: props.shopId,
-          keyId: deletingApiKey.value.id,
-        },
+    const { error } = await apiDeleteApiKey({
+      path: {
+        orgId: props.orgId,
+        shopId: props.shopId,
+        keyId: deletingApiKey.value.id,
       },
     });
     if (error) {

@@ -76,24 +76,29 @@
 
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
-import { api } from "@/helpers/api";
-import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
+import { useSession } from "@/composables/useSession";
+import {
+  deleteOrganization as apiDeleteOrganization,
+  getFullOrganization,
+  hasPermission,
+  updateOrganization,
+} from "@/api/generated";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
-import { useI18n } from "vue-i18n";
 import { ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useSession } from "@/composables/useSession";
+import { useI18n } from "vue-i18n";
+import { RouterLink, useRouter } from "vue-router";
 
 const { t } = useI18n();
+const { activeOrganizationId } = useSession();
 const { error } = useAlert();
 const router = useRouter();
-const { activeOrganizationId } = useSession();
 
 interface OrganizationData {
   id: string;
@@ -117,14 +122,14 @@ watch(organization, (org) => {
 
 async function loadOrganization() {
   try {
-    const { data } = await api.GET("/auth/get-full-organization", {
-      params: { query: { organizationId: activeOrganizationId.value! } },
+    const { data } = await getFullOrganization({
+      query: { organizationId: activeOrganizationId.value! },
     });
     if (!data) return;
     organization.value = data as unknown as OrganizationData;
 
     try {
-      const { data: permData } = await api.POST("/auth/has-permission", {
+      const { data: permData } = await hasPermission({
         body: { organizationId: (data as unknown as OrganizationData).id },
       });
       canDeleteOrganization.value = permData?.success ?? false;
@@ -143,8 +148,8 @@ const showOrganizationDeletionModal = ref(false);
 const onSubmit = handleSubmit(async (values) => {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.PATCH("/auth/organizations/{organizationId}", {
-      params: { path: { organizationId: organization.value.id } },
+    const { error: respError } = await updateOrganization({
+      path: { organizationId: organization.value.id },
       body: { name: values.name },
     });
     if (respError) {
@@ -162,8 +167,8 @@ const onSubmit = handleSubmit(async (values) => {
 async function deleteOrganization() {
   if (!organization.value) return;
   try {
-    const { error: respError } = await api.DELETE("/auth/organizations/{organizationId}", {
-      params: { path: { organizationId: organization.value.id } },
+    const { error: respError } = await apiDeleteOrganization({
+      path: { organizationId: organization.value.id },
     });
     if (respError) {
       error((respError as { message?: string }).message ?? t("organization.failedDeleteOrg"));

@@ -1,5 +1,5 @@
 import { type Ref, ref, watch } from "vue";
-import { api } from "@/helpers/api";
+import { hasPermission } from "@/api/generated";
 
 // Cache for permission results
 const permissionCache = new Map<string, { allowed: boolean; timestamp: number }>();
@@ -69,7 +69,7 @@ export function usePermissions(permissionCheck: Ref<PermissionCheck> | Permissio
     isLoading.value = true;
 
     try {
-      const { data } = await api.POST("/auth/has-permission", {
+      const { data } = await hasPermission({
         body: {
           organizationId: currentCheck.organizationId,
         },

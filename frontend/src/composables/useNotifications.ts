@@ -1,11 +1,16 @@
 import { useSession } from "@/composables/useSession";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  deleteAllNotifications as apiDeleteAllNotifications,
+  deleteNotification as apiDeleteNotification,
+  getNotifications,
+  markNotificationsRead as apiMarkNotificationsRead,
+  type Notification,
+} from "@/api/generated";
 import { computed, ref } from "vue";
 
 const isLoading = ref(false);
 const isRefreshing = ref(false);
-const notifications = ref<components["schemas"]["Notification"][]>([]);
+const notifications = ref<Notification[]>([]);
 
 export function useNotifications() {
   const { session } = useSession();
@@ -20,7 +25,7 @@ export function useNotifications() {
 
   async function loadNotifications() {
     isLoading.value = true;
-    const { data } = await api.GET("/notifications");
+    const { data } = await getNotifications();
     notifications.value = data ?? [];
     isLoading.value = false;
   }
@@ -38,7 +43,7 @@ export function useNotifications() {
       return;
     }
 
-    await api.POST("/notifications/mark-read");
+    await apiMarkNotificationsRead();
 
     for (const notification of notifications.value) {
       notification.read = true;
@@ -46,13 +51,13 @@ export function useNotifications() {
   }
 
   async function deleteAllNotifications() {
-    await api.DELETE("/notifications");
+    await apiDeleteAllNotifications();
     notifications.value = [];
   }
 
   async function deleteNotification(id: number) {
-    await api.DELETE("/notifications/{id}", {
-      params: { path: { id } },
+    await apiDeleteNotification({
+      path: { id },
     });
     notifications.value = notifications.value.filter((e) => e.id !== id);
   }

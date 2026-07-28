@@ -254,11 +254,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { formatDateTime } from "@/helpers/formatter";
-import { api } from "@/helpers/api";
+import { deleteDeployment as apiDeleteDeployment, getDeployments } from "@/api/generated";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -309,8 +309,9 @@ const latestDeployment = computed(() => deployments.value[0] ?? null);
 const loadDeployments = async () => {
   if (!environment.value) return;
   try {
-    const { data } = await api.GET("/environments/{environmentId}/deployments", {
-      params: { path: { environmentId: environment.value.id }, query: { limit: 50, offset: 0 } },
+    const { data } = await getDeployments({
+      path: { environmentId: environment.value.id },
+      query: { limit: 50, offset: 0 },
     });
     deployments.value = data ?? [];
   } catch (error) {
@@ -327,10 +328,8 @@ const deleteDeployment = async () => {
   if (!environment.value || !deploymentToDelete.value) return;
   isDeletingDeployment.value = true;
   try {
-    await api.DELETE("/environments/{environmentId}/deployments/{deploymentId}", {
-      params: {
-        path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id },
-      },
+    await apiDeleteDeployment({
+      path: { environmentId: environment.value.id, deploymentId: deploymentToDelete.value.id },
     });
     await loadDeployments();
     showDeleteDeploymentDialog.value = false;

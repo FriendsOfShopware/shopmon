@@ -1,8 +1,5 @@
 import { ref } from "vue";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
-
-type InstanceConfig = components["schemas"]["InstanceConfig"];
+import { getInstanceConfig, type InstanceConfig } from "@/api/generated";
 
 const config = ref<InstanceConfig | null>(null);
 let fetchPromise: Promise<void> | null = null;
@@ -15,8 +12,7 @@ export function useInstanceConfig() {
       return;
     }
 
-    fetchPromise = api
-      .GET("/info/config")
+    fetchPromise = getInstanceConfig()
       .then(({ data }) => {
         if (data) {
           config.value = data;

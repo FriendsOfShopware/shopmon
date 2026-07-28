@@ -319,7 +319,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
-import { api, apiLanguage } from "@/helpers/api";
+import { apiLanguage } from "@/helpers/api";
+import { getAccountExtension } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useChangelogText } from "@/helpers/changelog";
 import { sanitizeHtml } from "@/helpers/sanitize";
@@ -360,14 +361,13 @@ const loading = ref(true);
 
 const name = computed(() => String(route.params.name));
 
-api
-  .GET("/account/extensions/{name}", {
-    params: { path: { name: name.value }, query: { language: apiLanguage() } },
-  })
-  .then(({ data }) => {
-    extension.value = data ?? null;
-    loading.value = false;
-  });
+getAccountExtension({
+  path: { name: name.value },
+  query: { language: apiLanguage() },
+}).then(({ data }) => {
+  extension.value = data ?? null;
+  loading.value = false;
+});
 
 const environments = computed(() => {
   const list = [...(extension.value?.environments ?? [])];

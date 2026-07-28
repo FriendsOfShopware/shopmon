@@ -239,31 +239,40 @@
 </template>
 
 <script setup lang="ts">
-import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
+import { useAlert } from "@/composables/useAlert";
+import {
+  fetchAccountEnvironments,
+  useAccountEnvironments,
+} from "@/composables/useAccountEnvironments";
+import { fetchAccountShops } from "@/composables/useAccountShops";
+import { useInstanceConfig } from "@/composables/useInstanceConfig";
+import {
+  deleteShop as apiDeleteShop,
+  getAccountShops,
+  type AccountEnvironment,
+  type AccountShop as Shop,
+  updateShop,
+} from "@/api/generated";
 import ApiKeysCard from "@/components/shop/ApiKeysCard.vue";
 import PackagesTokensCard from "@/components/shop/PackagesTokensCard.vue";
-import { useAlert } from "@/composables/useAlert";
-import { useInstanceConfig } from "@/composables/useInstanceConfig";
-import { fetchAccountEnvironments } from "@/composables/useAccountEnvironments";
-import { fetchAccountShops } from "@/composables/useAccountShops";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import DeleteConfirmationModal from "@/components/modal/DeleteConfirmationModal.vue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import StatusIcon from "@/components/StatusIcon.vue";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import PageHeader from "@/components/PageHeader.vue";
+import StatusIcon from "@/components/StatusIcon.vue";
+
+import IconShop from "~icons/fa6-solid/store";
+import IconEarthAmericas from "~icons/fa6-solid/earth-americas";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
-import { computed, onMounted, ref, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-
-type Shop = components["schemas"]["AccountShop"];
-type AccountEnvironment = components["schemas"]["AccountEnvironment"];
 
 const { t } = useI18n();
 const route = useRoute();
@@ -298,20 +307,21 @@ const {
   handleSubmit: handleShopSubmit,
   isSubmitting: isShopSubmitting,
   setValues: setShopValues,
-} = useForm({
-  validationSchema: shopValidationSchema,
-  initialValues: { name: "", description: "", gitUrl: "" },
-});
+} = useForm({ validationSchema: shopValidationSchema });
 
 watch(shop, (s) => {
   if (s) {
-    setShopValues({ name: s.name ?? "", description: s.description ?? "", gitUrl: s.gitUrl ?? "" });
+    setShopValues({
+      name: s.name,
+      description: s.description ?? "",
+      gitUrl: s.gitUrl ?? "",
+    });
   }
 });
 
 async function loadShopSummary() {
   const [shopsRes, environmentsData] = await Promise.all([
-    api.GET("/account/shops"),
+    getAccountShops(),
     fetchAccountEnvironments(),
   ]);
   const shopsData = shopsRes.data ?? [];
@@ -325,8 +335,8 @@ async function setDefaultEnvironment(envId: number) {
   if (!shop.value) return;
   isSettingDefaultEnv.value = envId;
   try {
-    const { error } = await api.PATCH("/organizations/{orgId}/shops/{shopId}", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { error } = await updateShop({
+      path: { orgId: shop.value.organizationId, shopId: shop.value.id },
       body: { defaultEnvironmentId: envId },
     });
     if (error) {
@@ -361,8 +371,8 @@ const onSubmitShop = handleShopSubmit(async (values) => {
   if (!shop.value) return;
   isSavingShop.value = true;
   try {
-    const { error } = await api.PATCH("/organizations/{orgId}/shops/{shopId}", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { error } = await updateShop({
+      path: { orgId: shop.value.organizationId, shopId: shop.value.id },
       body: {
         name: values.name,
         description: values.description ?? "",
@@ -390,8 +400,8 @@ async function deleteShop() {
   if (!shop.value) return;
   isDeletingShop.value = true;
   try {
-    const { error } = await api.DELETE("/organizations/{orgId}/shops/{shopId}", {
-      params: { path: { orgId: shop.value.organizationId, shopId: shop.value.id } },
+    const { error } = await apiDeleteShop({
+      path: { orgId: shop.value.organizationId, shopId: shop.value.id },
     });
     if (error) {
       alert.error(

@@ -80,9 +80,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDateTime } from "@/helpers/formatter";
 import { useChangelogText } from "@/helpers/changelog";
-import type { components } from "@/types/api";
-
-type AccountChangelog = components["schemas"]["AccountChangelog"];
+import type { AccountChangelog } from "@/api/generated";
 
 const changelogText = useChangelogText();
 

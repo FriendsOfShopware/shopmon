@@ -27,7 +27,7 @@ import {
   fetchAccountEnvironments,
 } from "@/composables/useAccountEnvironments";
 import { resetAccountShops, fetchAccountShops } from "@/composables/useAccountShops";
-import { api } from "@/helpers/api";
+import { getAccountOrganizations } from "@/api/generated";
 import {
   Select,
   SelectContent,
@@ -49,7 +49,7 @@ interface Organization {
 const organizations = ref<Organization[]>([]);
 
 onMounted(async () => {
-  const { data } = await api.GET("/auth/list-organizations");
+  const { data } = await getAccountOrganizations();
   if (data) {
     organizations.value = data as Organization[];
   }

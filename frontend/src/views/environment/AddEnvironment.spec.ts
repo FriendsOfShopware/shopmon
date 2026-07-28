@@ -52,17 +52,10 @@ const mockShops = [
   { id: 2, name: "Shop B", organizationName: "Org B" },
 ];
 
-// Mock api client
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountShops: vi.fn(),
+  createEnvironment: vi.fn(),
 }));
 
 // Mock useAlert
@@ -73,21 +66,20 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-import { api } from "@/helpers/api";
+import { createEnvironment, getAccountShops } from "@/api/generated";
 
 describe("AddEnvironment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRoute.query = {};
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
-    vi.mocked(api.POST).mockResolvedValue({
+    vi.mocked(getAccountShops).mockResolvedValue({
+      data: mockShops,
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(createEnvironment).mockResolvedValue({
       data: {},
-      error: null,
+      error: undefined,
       response: new Response(),
     } as any);
   });
@@ -131,15 +123,12 @@ describe("AddEnvironment", () => {
   it("has shop selection area", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // The component uses $t('environment.shop') which renders "Shop"
     expect(wrapper.text()).toContain("Shop");
   });
 
   it("populates shop dropdown with shops", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // The shops data should be loaded
-    // Verify the component structure exists
     expect(wrapper.find("form").exists()).toBe(true);
   });
 
@@ -203,7 +192,6 @@ describe("AddEnvironment", () => {
   it("has shop area with select trigger", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // shadcn Select uses a trigger button, not a native <select>
     expect(wrapper.text()).toContain("Shop");
   });
 
@@ -211,7 +199,6 @@ describe("AddEnvironment", () => {
     mockRoute.query = { shopId: "2" };
     const wrapper = mountComponent();
     await flushPromises();
-    // Just verify the component mounts without error
     expect(wrapper.exists()).toBe(true);
   });
 });

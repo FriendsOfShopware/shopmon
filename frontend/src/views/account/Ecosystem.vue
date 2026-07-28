@@ -1,72 +1,88 @@
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">{{ $t("ecosystem.title") }}</h1>
-      <p class="text-sm text-muted-foreground">{{ $t("ecosystem.description") }}</p>
+    <h1 class="text-2xl font-bold tracking-tight">{{ $t("ecosystem.title") }}</h1>
+
+    <div v-if="loading" class="grid gap-6 md:grid-cols-2">
+      <Card v-for="i in 3" :key="i" class="animate-pulse">
+        <CardHeader class="h-16" />
+        <CardContent class="h-48" />
+      </Card>
     </div>
 
-    <Alert v-if="error" variant="destructive">
-      <AlertDescription>{{ error }}</AlertDescription>
-    </Alert>
-
-    <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-      <icon-line-md:loading-twotone-loop class="size-5" />
-      {{ $t("ecosystem.loading") }}
+    <div
+      v-else-if="error"
+      class="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-destructive"
+    >
+      {{ error }}
     </div>
 
-    <template v-if="!loading && !error">
-      <!-- Growth charts -->
-      <div v-if="growthData" class="grid gap-4 lg:grid-cols-2">
+    <template v-else>
+      <div class="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader class="pb-2">
-            <CardTitle class="text-base">{{ $t("admin.userGrowth") }}</CardTitle>
+          <CardHeader>
+            <CardTitle class="flex items-center justify-between text-lg">
+              <span>{{ $t("ecosystem.environmentsGrowth") }}</span>
+              <span
+                v-if="growthData?.environments.length"
+                class="text-2xl font-bold text-emerald-500"
+              >
+                {{ growthData.environments[growthData.environments.length - 1]?.count ?? 0 }}
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="h-56">
-              <canvas ref="userChartCanvas" />
+            <div class="h-64">
+              <canvas ref="shopChartCanvas" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader class="pb-2">
-            <CardTitle class="text-base">{{ $t("admin.environmentGrowth") }}</CardTitle>
+          <CardHeader>
+            <CardTitle class="flex items-center justify-between text-lg">
+              <span>{{ $t("ecosystem.userGrowth") }}</span>
+              <span v-if="growthData?.users.length" class="text-2xl font-bold text-indigo-500">
+                {{ growthData.users[growthData.users.length - 1]?.count ?? 0 }}
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="h-56">
-              <canvas ref="shopChartCanvas" />
+            <div class="h-64">
+              <canvas ref="userChartCanvas" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <!-- Version distribution -->
-      <Card v-if="versionData?.length">
-        <CardHeader class="flex-row items-center justify-between gap-4 space-y-0 pb-3">
-          <CardTitle class="text-base">{{ $t("admin.shopwareVersions") }}</CardTitle>
-          <label class="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-            <Switch v-model="groupByMinor" />
-            {{ $t("ecosystem.groupByMinor") }}
-          </label>
+      <Card>
+        <CardHeader class="pb-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle class="text-lg">{{ $t("ecosystem.shopwareDistribution") }}</CardTitle>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted-foreground">{{ $t("ecosystem.groupByMinor") }}</span>
+              <Switch v-model:checked="groupByMinor" />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div class="space-y-2">
-            <div v-for="v in aggregatedVersions" :key="v.version" class="flex items-center gap-3">
-              <Badge variant="secondary" class="min-w-20 justify-center font-mono text-xs">{{
-                v.version
-              }}</Badge>
-              <div class="flex-1">
-                <div class="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    class="h-full rounded-full bg-primary transition-all"
-                    :style="{ width: `${(v.count / totalVersionCount) * 100}%` }"
-                  />
-                </div>
+          <div v-if="!versionData?.length" class="py-6 text-center text-muted-foreground">
+            {{ $t("ecosystem.noVersionData") }}
+          </div>
+
+          <div v-else class="space-y-3">
+            <div v-for="v in aggregatedVersions" :key="v.version" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="font-mono font-medium">Shopware {{ v.version }}</span>
+                <span class="text-xs text-muted-foreground">
+                  {{ v.count }} ({{ Math.round((v.count / totalVersionCount) * 100) }}%)
+                </span>
               </div>
-              <span class="w-10 text-right text-xs tabular-nums text-muted-foreground">{{
-                v.count
-              }}</span>
+              <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  class="h-full bg-primary transition-all duration-300"
+                  :style="{ width: `${(v.count / totalVersionCount) * 100}%` }"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -76,19 +92,16 @@
 </template>
 
 <script setup lang="ts">
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
-import { onMounted, onUnmounted, ref, nextTick, watch, computed } from "vue";
+import { getEcosystemStats, type AdminGrowth, type ShopwareVersionCount } from "@/api/generated";
+import { onMounted, onUnmounted, ref, nextTick, computed } from "vue";
 import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
 
-type GrowthData = components["schemas"]["AdminGrowth"];
-type VersionData = components["schemas"]["ShopwareVersionCount"][];
+type GrowthData = AdminGrowth;
+type VersionData = ShopwareVersionCount[];
 
 const growthData = ref<GrowthData | null>(null);
 const versionData = ref<VersionData | null>(null);
@@ -188,28 +201,24 @@ async function loadStats() {
   error.value = "";
 
   try {
-    const { data, error: resError } = await api.GET("/info/ecosystem");
+    const { data, error: resError } = await getEcosystemStats();
     if (resError || !data) {
       throw new Error("request failed");
     }
     growthData.value = data.growth;
     versionData.value = data.shopwareVersions;
-  } catch (err) {
-    error.value = `Failed to load ecosystem stats: ${err instanceof Error ? err.message : String(err)}`;
-  } finally {
+
+    loading.value = false;
+    await nextTick();
+    renderCharts();
+  } catch {
+    error.value = "Failed to load ecosystem statistics";
     loading.value = false;
   }
 }
 
-onMounted(async () => {
-  await loadStats();
-  await nextTick();
-  renderCharts();
-});
-
-watch(growthData, async () => {
-  await nextTick();
-  renderCharts();
+onMounted(() => {
+  loadStats();
 });
 
 onUnmounted(() => {

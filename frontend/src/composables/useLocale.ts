@@ -1,5 +1,6 @@
 import { useI18n } from "vue-i18n";
-import { api, getToken } from "@/helpers/api";
+import { getToken } from "@/helpers/api";
+import { updateAccountMe } from "@/api/generated";
 
 const LOCALE_STORAGE_KEY = "shopmon-locale";
 
@@ -15,7 +16,7 @@ export function useLocale() {
       // Persist to the server so notification emails are sent in the same
       // language. Fire-and-forget: a failure here must not block the UI switch.
       if (persist && getToken()) {
-        void api.PATCH("/account/me", { body: { locale: lang } });
+        void updateAccountMe({ body: { locale: lang } });
       }
     }
   }

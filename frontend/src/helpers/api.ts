@@ -1,5 +1,4 @@
-import createClient from "openapi-fetch";
-import type { paths } from "../types/api";
+import { client } from "../api/generated/client.gen";
 
 const TOKEN_KEY = "shopmon_token";
 // Saved while an admin is impersonating so stop-impersonating can restore the
@@ -60,18 +59,18 @@ export function clearAdminToken(): void {
   localStorage.removeItem(ADMIN_TOKEN_KEY);
 }
 
-export const api = createClient<paths>({
+client.setConfig({
   baseUrl: "/api",
-  headers: {},
 });
 
-// Add auth header to every request via middleware
-api.use({
-  async onRequest({ request }) {
-    const token = getToken();
-    if (token) {
-      request.headers.set("Authorization", `Bearer ${token}`);
-    }
-    return request;
-  },
+// Add auth header to every request via interceptor
+client.interceptors.request.use((request) => {
+  const token = getToken();
+  if (token) {
+    request.headers.set("Authorization", `Bearer ${token}`);
+  }
+  return request;
 });
+
+export { client };
+export * from "../api/generated";

@@ -222,10 +222,16 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import { api, setToken, stashAdminToken } from "@/helpers/api";
+import { setToken, stashAdminToken } from "@/helpers/api";
+import {
+  adminBanUser as apiAdminBanUser,
+  adminGetUserDetail,
+  adminImpersonate,
+  adminUnbanUser as apiAdminUnbanUser,
+  type AdminUserDetail,
+} from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { useSession } from "@/composables/useSession";
-import type { components } from "@/types/api";
 
 import PageHeader from "@/components/PageHeader.vue";
 import StatCard from "@/components/StatCard.vue";
@@ -251,7 +257,7 @@ const { session } = useSession();
 
 const id = route.params.id as string;
 
-const user = ref<components["schemas"]["AdminUserDetail"] | null>(null);
+const user = ref<AdminUserDetail | null>(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const error = ref("");
@@ -283,8 +289,8 @@ async function loadUser() {
   loading.value = true;
   error.value = "";
   try {
-    const { data, error: respError } = await api.GET("/auth/admin/users/{userId}", {
-      params: { path: { userId: id } },
+    const { data, error: respError } = await adminGetUserDetail({
+      path: { userId: id },
     });
     if (respError) {
       error.value =
@@ -306,8 +312,8 @@ async function impersonateUser() {
   actionLoading.value = true;
   error.value = "";
   try {
-    const { data, error: respError } = await api.POST("/auth/admin/users/{userId}/impersonate", {
-      params: { path: { userId: user.value.id } },
+    const { data, error: respError } = await adminImpersonate({
+      path: { userId: user.value.id },
     });
     if (respError) {
       error.value =
@@ -341,8 +347,8 @@ async function banUser() {
   actionLoading.value = true;
   error.value = "";
   try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/ban", {
-      params: { path: { userId: user.value.id } },
+    const { error: respError } = await apiAdminBanUser({
+      path: { userId: user.value.id },
       body: { banReason: reason },
     });
     if (respError) {
@@ -366,8 +372,8 @@ async function unbanUser() {
   actionLoading.value = true;
   error.value = "";
   try {
-    const { error: respError } = await api.POST("/auth/admin/users/{userId}/unban", {
-      params: { path: { userId: user.value.id } },
+    const { error: respError } = await apiAdminUnbanUser({
+      path: { userId: user.value.id },
     });
     if (respError) {
       error.value =

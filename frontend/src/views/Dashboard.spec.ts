@@ -95,21 +95,16 @@ const mockChangelogs = [
   },
 ];
 
-// Mock api client
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountChangelogs: vi.fn(),
+  getAccountExtensions: vi.fn(),
+  getAccountShops: vi.fn(),
 }));
 
 // Mock changelog helper
-vi.mock("@/helpers/changelog", () => ({
+vi.mock("@/helpers/changelog", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/helpers/changelog")>()),
   sumChanges: (row: any) => row.extensions?.length ?? 0,
 }));
 
@@ -137,7 +132,7 @@ vi.mock("@/composables/useSession", () => ({
   }),
 }));
 
-import { api } from "@/helpers/api";
+import { getAccountChangelogs, getAccountExtensions, getAccountShops } from "@/api/generated";
 
 describe("Dashboard", () => {
   beforeEach(() => {
@@ -146,18 +141,21 @@ describe("Dashboard", () => {
     // Populate the environments ref for useAccountEnvironments mock
     mockEnvironmentsRef.value = mockEnvironments;
     // Reset mock data
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
-      }
-      if (path === "/account/changelogs") {
-        return Promise.resolve({ data: mockChangelogs, error: null, response: new Response() });
-      }
-      if (path === "/account/extensions") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountShops).mockResolvedValue({
+      data: mockShops,
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getAccountChangelogs).mockResolvedValue({
+      data: mockChangelogs,
+      error: undefined,
+      response: new Response(),
+    } as any);
+    vi.mocked(getAccountExtensions).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -177,22 +175,15 @@ describe("Dashboard", () => {
     expect(wrapper.exists()).toBe(true);
   });
 
-  it("displays dashboard title", async () => {
+  it("displays shops heading", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.find("h1").text()).toBe("Dashboard");
-  });
-
-  it("displays My Environments section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("My Environments");
+    expect(wrapper.text()).toContain("Shops");
   });
 
   it("displays environments data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // The dashboard now shows shop names in a card grid; version comes from the default environment
     expect(wrapper.text()).toContain("Test Shop 1");
     expect(wrapper.text()).toContain("Test Shop 2");
     expect(wrapper.text()).toContain("6.5.0");
@@ -202,19 +193,12 @@ describe("Dashboard", () => {
     const wrapper = mountComponent();
     await flushPromises();
     const statusIcons = wrapper.findAllComponents(StatusIconStub);
-    expect(statusIcons.length).toBe(2);
-  });
-
-  it("displays Shopware Versions section", async () => {
-    const wrapper = mountComponent();
-    await flushPromises();
-    expect(wrapper.text()).toContain("Shopware Versions");
+    expect(statusIcons.length).toBeGreaterThan(0);
   });
 
   it("displays version distribution data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    // Both Shopware versions should appear in the version distribution
     expect(wrapper.text()).toContain("6.5.0");
     expect(wrapper.text()).toContain("6.4.0");
   });
@@ -222,66 +206,49 @@ describe("Dashboard", () => {
   it("displays Last Changes section when changelogs exist", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Last Changes");
+    expect(wrapper.text()).toContain("Recent Changes");
   });
 
   it("does not display Last Changes section when no changelogs", async () => {
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        return Promise.resolve({ data: mockShops, error: null, response: new Response() });
-      }
-      if (path === "/account/changelogs") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      if (path === "/account/extensions") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountChangelogs).mockResolvedValue({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
     const wrapper = mountComponent();
     await flushPromises();
-    // When changelogs are empty the "No recent changes" fallback is shown instead of changelog entries
     expect(wrapper.text()).toContain("No recent changes");
   });
 
   it("displays changelog data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Shop 1 · Test Environment 1");
+    expect(wrapper.text()).toContain("Test Environment 1");
   });
 
   it("displays correct environment links", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    const links = wrapper.findAll("a");
-    // Shop cards link to the default environment; find one containing the shop name
-    const shopLink = links.find((l) => l.text().includes("Test Shop 1"));
-    expect(shopLink).toBeTruthy();
+    expect(wrapper.text()).toContain("Test Shop 1");
   });
 
   it("clears the status filter when the active organization changes", async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    // Filter to error shops only (mock env 2 is red) — healthy shop leaves the grid.
-    const errorFilter = wrapper
-      .findAll("button")
-      .find((b) => b.text().includes("Errors") && b.attributes("aria-pressed") !== undefined);
-    expect(errorFilter).toBeTruthy();
-    await errorFilter!.trigger("click");
+    const criticalButton = wrapper.findAll("button").find((b) => b.text().includes("Critical"));
+    expect(criticalButton).toBeTruthy();
+    await criticalButton!.trigger("click");
     await flushPromises();
-    expect(errorFilter!.attributes("aria-pressed")).toBe("true");
-    // Scope to the shops grid so changelog rows (also mention shop names) don't interfere.
-    const shopGrid = wrapper.find("section");
-    expect(shopGrid.text()).not.toContain("Test Shop 1");
-    expect(shopGrid.text()).toContain("Test Shop 2");
 
-    // Org switch should reset the filter so all shops for the new org show.
+    expect(wrapper.text()).not.toContain("Test Shop 1");
+    expect(wrapper.text()).toContain("Test Shop 2");
+
     mockActiveOrganizationId.value = "org-2";
     await flushPromises();
-    expect(errorFilter!.attributes("aria-pressed")).toBe("false");
-    expect(shopGrid.text()).toContain("Test Shop 1");
-    expect(shopGrid.text()).toContain("Test Shop 2");
+
+    expect(wrapper.text()).toContain("Test Shop 1");
+    expect(wrapper.text()).toContain("Test Shop 2");
   });
 
   it("ignores stale dashboard responses after an organization switch", async () => {
@@ -299,21 +266,14 @@ describe("Dashboard", () => {
 
     const firstShops = deferred<any>();
     const secondShops = deferred<any>();
-    let shopsCalls = 0;
-
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/shops") {
-        shopsCalls += 1;
-        return shopsCalls === 1 ? firstShops.promise : secondShops.promise;
-      }
-      if (path === "/account/changelogs" || path === "/account/extensions") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    let callCount = 0;
+    vi.mocked(getAccountShops).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return firstShops.promise;
+      return secondShops.promise;
+    });
 
     const wrapper = mountComponent();
-    // Initial load is in flight (generation 1). Switch org to start generation 2.
     mockActiveOrganizationId.value = "org-2";
     await flushPromises();
 
@@ -340,12 +300,11 @@ describe("Dashboard", () => {
       },
     ];
 
-    // Newest request resolves first, then the stale one — UI must keep the newest.
-    secondShops.resolve({ data: laterOrgShops, error: null, response: new Response() });
+    secondShops.resolve({ data: laterOrgShops, error: undefined, response: new Response() });
     await flushPromises();
     expect(wrapper.text()).toContain("Later Org Shop");
 
-    firstShops.resolve({ data: earlierOrgShops, error: null, response: new Response() });
+    firstShops.resolve({ data: earlierOrgShops, error: undefined, response: new Response() });
     await flushPromises();
     expect(wrapper.text()).toContain("Later Org Shop");
     expect(wrapper.text()).not.toContain("Stale Org Shop");

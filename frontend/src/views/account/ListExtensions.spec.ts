@@ -29,20 +29,12 @@ const mockExtensions = [
   },
 ];
 
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
-  apiLanguage: vi.fn(() => "en"),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  getAccountExtensions: vi.fn(),
 }));
 
-import { api } from "@/helpers/api";
+import { getAccountExtensions } from "@/api/generated";
 
 const stubs = {
   RouterLink: defineComponent({ template: "<a><slot /></a>" }),
@@ -52,12 +44,11 @@ const stubs = {
 describe("ListExtensions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/extensions") {
-        return Promise.resolve({ data: mockExtensions, error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountExtensions).mockResolvedValue({
+      data: mockExtensions,
+      error: undefined,
+      response: new Response(),
+    } as any);
   });
 
   function mountComponent() {
@@ -71,12 +62,11 @@ describe("ListExtensions", () => {
   });
 
   it("shows empty state when no extensions", async () => {
-    vi.mocked(api.GET).mockImplementation(((path: string) => {
-      if (path === "/account/extensions") {
-        return Promise.resolve({ data: [], error: null, response: new Response() });
-      }
-      return Promise.resolve({ data: null, error: null, response: new Response() });
-    }) as any);
+    vi.mocked(getAccountExtensions).mockResolvedValueOnce({
+      data: [],
+      error: undefined,
+      response: new Response(),
+    } as any);
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find(".border-dashed").exists()).toBe(true);

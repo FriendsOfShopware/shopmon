@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
-import { api, getToken } from "../helpers/api";
+import { getToken } from "../helpers/api";
+import { getSession, setActiveOrganization as apiSetActiveOrganization } from "@/api/generated";
 
 interface SessionUser {
   id: string;
@@ -44,7 +45,7 @@ export async function fetchSession(): Promise<SessionData | null> {
   }
 
   loading.value = true;
-  _pending = api.GET("/auth/session").then(({ data, error }) => {
+  _pending = getSession().then(({ data, error }) => {
     if (error || !data?.user) {
       session.value = null;
     } else {
@@ -59,7 +60,7 @@ export async function fetchSession(): Promise<SessionData | null> {
 }
 
 export async function setActiveOrganization(organizationId: string): Promise<void> {
-  await api.POST("/auth/set-active-organization" as any, {
+  await apiSetActiveOrganization({
     body: { organizationId },
   });
   _fetched.value = false;

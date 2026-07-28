@@ -23,17 +23,9 @@ const mockCalls = {
   error: [] as string[],
 };
 
-// Mock api client
-vi.mock("@/helpers/api", () => ({
-  api: {
-    GET: vi.fn(),
-    POST: vi.fn(),
-    PATCH: vi.fn(),
-    DELETE: vi.fn(),
-    PUT: vi.fn(),
-  },
-  setToken: vi.fn(),
-  getToken: vi.fn(),
+vi.mock("@/api/generated", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/generated")>()),
+  verifyEmail: vi.fn(),
 }));
 
 // Mock useAlert composable
@@ -45,8 +37,7 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-// Import after mocks
-import { api } from "@/helpers/api";
+import { verifyEmail } from "@/api/generated";
 
 describe("AccountConfirm", () => {
   beforeEach(() => {
@@ -56,7 +47,7 @@ describe("AccountConfirm", () => {
 
   it("renders loading state initially", () => {
     // Override the mock to return a pending promise
-    vi.mocked(api.GET).mockImplementationOnce(() => new Promise(() => {}));
+    vi.mocked(verifyEmail).mockImplementationOnce(() => new Promise(() => {}) as any);
 
     const wrapper = mount(AccountConfirm);
 
@@ -67,7 +58,7 @@ describe("AccountConfirm", () => {
   });
 
   it("renders success state when email verification succeeds", async () => {
-    vi.mocked(api.GET).mockResolvedValueOnce({
+    vi.mocked(verifyEmail).mockResolvedValueOnce({
       data: {},
       error: undefined,
       response: new Response(),
@@ -93,7 +84,7 @@ describe("AccountConfirm", () => {
   });
 
   it("renders error state when token is expired", async () => {
-    vi.mocked(api.GET).mockResolvedValueOnce({
+    vi.mocked(verifyEmail).mockResolvedValueOnce({
       data: undefined,
       error: { message: "Token expired" },
       response: new Response(),
@@ -111,7 +102,7 @@ describe("AccountConfirm", () => {
   });
 
   it("renders error state with default message when error has no message", async () => {
-    vi.mocked(api.GET).mockResolvedValueOnce({
+    vi.mocked(verifyEmail).mockResolvedValueOnce({
       data: undefined,
       error: {},
       response: new Response(),
@@ -127,8 +118,8 @@ describe("AccountConfirm", () => {
     expect(mockCalls.error).toContain("Failed to verify email");
   });
 
-  it("calls api.GET with correct path and token on mount", async () => {
-    vi.mocked(api.GET).mockResolvedValueOnce({
+  it("calls verifyEmail with correct token on mount", async () => {
+    vi.mocked(verifyEmail).mockResolvedValueOnce({
       data: {},
       error: undefined,
       response: new Response(),
@@ -138,8 +129,8 @@ describe("AccountConfirm", () => {
 
     await flushPromises();
 
-    expect(api.GET).toHaveBeenCalledWith("/auth/verify-email", {
-      params: { query: { token: "test-token-123" } },
+    expect(verifyEmail).toHaveBeenCalledWith({
+      query: { token: "test-token-123" },
     });
   });
 });

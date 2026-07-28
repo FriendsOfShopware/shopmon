@@ -326,6 +326,10 @@
 </template>
 
 <script setup lang="ts">
+import {
+  checkExtensionCompatibility,
+  type EnvironmentExtension as Extension,
+} from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
@@ -333,8 +337,6 @@ import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogM
 import EnvironmentChangelog from "@/components/modal/ShopChangelog.vue";
 import { ref, computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
 import { useI18n } from "vue-i18n";
@@ -348,12 +350,12 @@ import StatusIcon from "@/components/StatusIcon.vue";
 import CardSection from "@/components/CardSection.vue";
 
 import IconShieldHalved from "~icons/fa6-solid/shield-halved";
-import IconPlug from "~icons/fa6-solid/plug";
 import IconListCheck from "~icons/fa6-solid/list-check";
+import IconPuzzlePiece from "~icons/fa6-solid/puzzle-piece";
 import IconClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
+import IconPlug from "~icons/fa6-solid/plug";
 import IconCircleInfo from "~icons/fa6-solid/circle-info";
 
-type Extension = components["schemas"]["EnvironmentExtension"];
 type ExtensionWithCompatibility = Extension & {
   compatibility?: { name: string; label: string; type: string };
 };
@@ -515,7 +517,7 @@ async function loadUpdateWizard(version: string) {
   loadingUpdateWizard.value = true;
 
   try {
-    const { data: pluginCompatibility } = await api.POST("/info/extension-compatibility", {
+    const { data: pluginCompatibility } = await checkExtensionCompatibility({
       body: {
         currentVersion: environment.value.shopwareVersion,
         futureVersion: version,

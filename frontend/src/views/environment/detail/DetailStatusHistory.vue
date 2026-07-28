@@ -45,11 +45,10 @@
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
-import { api } from "@/helpers/api";
+import { getEnvironmentStatusEvents, type StatusEvent } from "@/api/generated";
 import { formatDateTime } from "@/helpers/formatter";
 import { translateReason } from "@/helpers/i18n";
 import { useAlert } from "@/composables/useAlert";
-import type { components } from "@/types/api";
 
 import StatusIcon from "@/components/StatusIcon.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -58,7 +57,7 @@ import IconClock from "~icons/fa6-solid/clock-rotate-left";
 const route = useRoute();
 const { error } = useAlert();
 
-const events = ref<components["schemas"]["StatusEvent"][]>([]);
+const events = ref<StatusEvent[]>([]);
 const loading = ref(true);
 
 watch(
@@ -67,8 +66,8 @@ watch(
     if (!newId) return;
     loading.value = true;
     try {
-      const { data } = await api.GET("/environments/{environmentId}/status-events", {
-        params: { path: { environmentId: Number(newId) } },
+      const { data } = await getEnvironmentStatusEvents({
+        path: { environmentId: Number(newId) },
       });
       events.value = data ?? [];
     } catch (err) {

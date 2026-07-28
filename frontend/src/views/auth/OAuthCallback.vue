@@ -11,7 +11,8 @@
 import { useRouter } from "vue-router";
 import { useReturnUrl } from "@/composables/useReturnUrl";
 import { fetchSession } from "@/composables/useSession";
-import { api, setToken } from "@/helpers/api";
+import { setToken } from "@/helpers/api";
+import { exchangeCode, githubCallback } from "@/api/generated";
 import { Card, CardContent } from "@/components/ui/card";
 
 const router = useRouter();
@@ -30,8 +31,8 @@ async function handleCallback() {
   }
 
   try {
-    const { data: callbackData } = await api.GET("/auth/callback/github", {
-      params: { query: { code, state } },
+    const { data: callbackData } = await githubCallback({
+      query: { code, state },
     });
 
     if (!callbackData?.code) {
@@ -39,7 +40,7 @@ async function handleCallback() {
       return;
     }
 
-    const { data } = await api.POST("/auth/exchange-code", {
+    const { data } = await exchangeCode({
       body: { code: callbackData.code },
     });
 

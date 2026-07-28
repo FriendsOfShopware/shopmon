@@ -255,8 +255,15 @@
 <script setup lang="ts">
 import { useAlert } from "@/composables/useAlert";
 import { useInstanceConfig } from "@/composables/useInstanceConfig";
-import { api } from "@/helpers/api";
-import type { components } from "@/types/api";
+import {
+  deleteEnvironment as apiDeleteEnvironment,
+  getAccountShops,
+  getEnvironment,
+  type AccountShop,
+  type EnvironmentDetail,
+  updateEnvironment,
+  updateSitespeedSettings,
+} from "@/api/generated";
 import { useForm } from "vee-validate";
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -286,26 +293,26 @@ const { error, success } = useAlert();
 const { config: instanceConfig } = useInstanceConfig();
 const router = useRouter();
 const route = useRoute();
-const environment = ref<components["schemas"]["EnvironmentDetail"] | null>(null);
+const environment = ref<EnvironmentDetail | null>(null);
 const isLoading = ref(false);
-const shops = ref<components["schemas"]["AccountShop"][]>([]);
+const shops = ref<AccountShop[]>([]);
 const selectedShopId = ref<number>(0);
 
 const environmentId = Number.parseInt(route.params.environmentId as string, 10);
 
-api.GET("/account/shops").then(({ data }) => {
+getAccountShops().then(({ data }) => {
   if (data) shops.value = data;
 });
 
 async function loadEnvironment() {
   isLoading.value = true;
-  const { data } = await api.GET("/environments/{environmentId}", {
-    params: { path: { environmentId } },
+  const { data } = await getEnvironment({
+    path: { environmentId },
   });
   environment.value = data ?? null;
 
   if (environment.value?.organizationId) {
-    const { data: shopsData } = await api.GET("/account/shops");
+    const { data: shopsData } = await getAccountShops();
     if (shopsData) shops.value = shopsData;
     selectedShopId.value = environment.value.shopId ?? 0;
   }
@@ -364,8 +371,8 @@ const onSubmit = handleSubmit(async (values) => {
       if (shopUrl) {
         shopUrl = shopUrl.replace(/\/+$/, "");
       }
-      await api.PATCH("/environments/{environmentId}", {
-        params: { path: { environmentId: environment.value.id } },
+      await updateEnvironment({
+        path: { environmentId: environment.value.id },
         body: {
           name: values.name,
           shopUrl,
@@ -390,8 +397,8 @@ const onSubmit = handleSubmit(async (values) => {
 async function deleteEnvironment() {
   if (environment.value) {
     try {
-      await api.DELETE("/environments/{environmentId}", {
-        params: { path: { environmentId: environment.value.id } },
+      await apiDeleteEnvironment({
+        path: { environmentId: environment.value.id },
       });
       router.push({ name: "account.shop.list" });
     } catch (err) {
@@ -418,8 +425,8 @@ async function onSitespeedSubmit() {
         return;
       }
 
-      await api.PUT("/environments/{environmentId}/sitespeed-settings", {
-        params: { path: { environmentId: environment.value.id } },
+      await updateSitespeedSettings({
+        path: { environmentId: environment.value.id },
         body: {
           enabled: sitespeedEnabled.value,
           urls: sitespeedUrls.value,
