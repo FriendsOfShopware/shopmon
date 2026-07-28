@@ -34,7 +34,7 @@ func Recoverer(next http.Handler) http.Handler {
 
 			panicErr := fmt.Errorf("panic: %v", rec)
 			span := trace.SpanFromContext(r.Context())
-			span.RecordError(panicErr)
+			span.RecordError(panicErr, trace.WithStackTrace(true))
 			span.SetStatus(codes.Error, panicErr.Error())
 
 			slog.ErrorContext(r.Context(), "panic recovered", "panic", rec, "stack", string(debug.Stack()))

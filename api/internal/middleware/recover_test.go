@@ -78,6 +78,16 @@ func TestRecovererRecordsSpanError(t *testing.T) {
 	errs := ro.Events()
 	require.Len(t, errs, 1)
 	assert.Equal(t, "exception", errs[0].Name)
+
+	var hasStacktrace bool
+	for _, attr := range errs[0].Attributes {
+		if string(attr.Key) == "exception.stacktrace" && attr.Value.Type() != 0 {
+			hasStacktrace = true
+			break
+		}
+	}
+	assert.True(t, hasStacktrace, "expected exception.stacktrace attribute to be set")
+
 	assert.Contains(t, ro.Status().Description, "boom")
 	assert.Equal(t, codes.Error, ro.Status().Code)
 }
