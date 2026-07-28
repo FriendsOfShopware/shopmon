@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ErrorResponse is the standard error response shape for all endpoints.
@@ -57,6 +59,26 @@ func WriteJSON(w http.ResponseWriter, status int, v interface{}) {
 // WriteError writes a standardized JSON error response.
 func WriteError(w http.ResponseWriter, status int, message string) {
 	WriteJSON(w, status, ErrorResponse{Message: message})
+}
+
+// WriteInternalError records err on the active OpenTelemetry span, logs it, and
+// writes a generic 500 JSON response. Use this at the HTTP handler boundary for
+// unexpected errors so traces capture error.message and error.stack.
+func WriteInternalError(w http.ResponseWriter, r *http.Request, err error, clientMsg string, attrs ...slog.Attr) {
+	span := trace.SpanFromContext(r.Context())
+	span.RecordError(err, trace.WithStackTrace(true))
+	span.SetStatus(codes.Error, err.Error())
+
+	slog.ErrorContext(r.Context(), clientMsg, append([]any{"error", err}, attrsToAny(attrs)...)...)
+	WriteError(w, http.StatusInternalServerError, clientMsg)
+}
+
+func attrsToAny(attrs []slog.Attr) []any {
+	out := make([]any, 0, len(attrs)*2)
+	for _, attr := range attrs {
+		out = append(out, attr.Key, attr.Value.Any())
+	}
+	return out
 }
 
 // WriteErrorAuto inspects err and writes an appropriate HTTP error response.
