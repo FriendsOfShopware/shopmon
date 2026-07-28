@@ -1,4 +1,5 @@
 /.idea
+/.agents
 /http-client.private.env.json
 /api/.env
 /api/shopmon*.db*

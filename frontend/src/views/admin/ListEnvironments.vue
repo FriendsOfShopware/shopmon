@@ -16,6 +16,10 @@
       <AlertDescription>{{ error }}</AlertDescription>
     </Alert>
 
+    <div v-if="!loading && !error" class="mb-3 text-sm text-muted-foreground">
+      {{ $t("admin.resultCount", { count: totalEnvironments }) }}
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
       <icon-line-md:loading-twotone-loop class="size-5" />
@@ -27,31 +31,34 @@
       <div
         v-for="env in environments"
         :key="env.id"
-        class="flex items-center gap-4 rounded-xl border bg-card px-4 py-3"
+        class="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
       >
-        <StatusIcon :status="env.status" class="shrink-0" />
+        <StatusIcon
+          :status="env.status"
+          class="shrink-0 transition-transform group-hover:scale-110"
+        />
 
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <RouterLink
               :to="{ name: 'admin.environments.detail', params: { id: env.id } }"
-              class="truncate font-medium hover:text-primary transition-colors"
+              class="truncate font-semibold hover:text-primary transition-colors"
             >
               {{ env.name }}
             </RouterLink>
-            <Badge variant="secondary" class="font-mono text-[10px]">{{
+            <Badge variant="secondary" class="font-mono text-[10px] font-semibold">{{
               env.shopwareVersion
             }}</Badge>
           </div>
           <div class="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
             <RouterLink
               :to="{ name: 'admin.organizations.detail', params: { id: env.organizationId } }"
-              class="hover:text-primary transition-colors"
+              class="font-medium hover:text-primary transition-colors"
             >
               {{ env.organizationName }}
             </RouterLink>
             <span v-if="env.shopName" class="flex items-center gap-1">
-              <icon-fa6-solid:store class="size-2.5" />
+              <icon-fa6-solid:store class="size-3 text-muted-foreground" />
               {{ env.shopName }}
             </span>
             <span v-if="env.lastScrapedAt" class="hidden tabular-nums sm:inline">{{
@@ -63,9 +70,10 @@
         <a
           :href="env.url"
           target="_blank"
-          class="shrink-0 text-muted-foreground hover:text-foreground"
+          class="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-primary transition-colors"
+          title="Open environment URL"
         >
-          <icon-fa6-solid:arrow-up-right-from-square class="size-3" />
+          <icon-fa6-solid:arrow-up-right-from-square class="size-3.5" />
         </a>
       </div>
     </div>
@@ -121,7 +129,8 @@ import {
 } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { useI18n } from "vue-i18n";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useAdminListQuery } from "@/composables/useAdminListQuery";
 
 type SortBy =
   | "createdAt"
@@ -132,22 +141,30 @@ type SortBy =
   | "lastScrapedAt"
   | "organizationName";
 
+const {
+  search: searchQuery,
+  page: currentPage,
+  filters,
+  revision,
+  syncToUrl,
+} = useAdminListQuery({
+  search: "",
+  page: 1,
+  filters: {
+    sortBy: "createdAt",
+  },
+});
+
 const environments = ref<Environment[]>([]);
 const loading = ref(true);
 const error = ref("");
-const searchQuery = ref("");
 const sortDirection = ref<"asc" | "desc">("desc");
-const currentPage = ref(1);
 const pageSize = ref(20);
 const totalEnvironments = ref(0);
 
 const { t } = useI18n();
 
 const totalPages = computed(() => Math.ceil(totalEnvironments.value / pageSize.value));
-
-const filters = ref<Record<string, string>>({
-  sortBy: "createdAt",
-});
 
 const filterGroups = computed<FilterGroup[]>(() => [
   {
@@ -206,24 +223,33 @@ async function loadEnvironments() {
   }
 }
 
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
+
 function onFilterChange() {
+  clearTimeout(searchTimeout);
   currentPage.value = 1;
+  syncToUrl();
   loadEnvironments();
 }
 
 function changePage(page: number) {
   currentPage.value = page;
+  syncToUrl();
   loadEnvironments();
 }
 
-let searchTimeout: ReturnType<typeof setTimeout>;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     currentPage.value = 1;
+    syncToUrl();
     loadEnvironments();
   }, 300);
 }
+
+watch(revision, () => {
+  loadEnvironments();
+});
 
 onMounted(() => {
   loadEnvironments();

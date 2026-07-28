@@ -730,8 +730,12 @@ WHERE ($3::text IS NULL OR e.name ILIKE '%' || $3 || '%' OR e.url ILIKE '%' || $
 ORDER BY
   CASE WHEN $4::text = 'name' AND $5::text = 'asc' THEN e.name END ASC,
   CASE WHEN $4::text = 'name' AND $5::text = 'desc' THEN e.name END DESC,
+  CASE WHEN $4::text = 'url' AND $5::text = 'asc' THEN e.url END ASC,
+  CASE WHEN $4::text = 'url' AND $5::text = 'desc' THEN e.url END DESC,
   CASE WHEN $4::text = 'status' AND $5::text = 'asc' THEN e.status END ASC,
   CASE WHEN $4::text = 'status' AND $5::text = 'desc' THEN e.status END DESC,
+  CASE WHEN $4::text = 'shopwareVersion' AND $5::text = 'asc' THEN e.shopware_version END ASC,
+  CASE WHEN $4::text = 'shopwareVersion' AND $5::text = 'desc' THEN e.shopware_version END DESC,
   CASE WHEN $4::text = 'organizationName' AND $5::text = 'asc' THEN o.name END ASC,
   CASE WHEN $4::text = 'organizationName' AND $5::text = 'desc' THEN o.name END DESC,
   CASE WHEN $4::text = 'createdAt' AND $5::text = 'asc' THEN e.created_at END ASC,

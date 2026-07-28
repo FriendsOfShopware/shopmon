@@ -905,7 +905,7 @@
     "recentEnvironments": "Letzte Umgebungen",
     "noRecentSignups": "Keine aktuellen Registrierungen",
     "noRecentEnvironments": "Keine aktuellen Umgebungen",
-    "environmentHealth": "Umgebungs-Zustand:",
+    "environmentHealth": "Umgebungs-Zustand",
     "backToDashboard": "Zurück zum Dashboard",
     "noEnvironmentsFound": "Keine Umgebungen gefunden",
     "noEnvironmentsMatch": "Keine Umgebungen entsprechen \"{query}\"",
@@ -985,7 +985,17 @@
     "actionUnbanUser": "Benutzersperre aufgehoben",
     "actionImpersonate": "Identität angenommen",
     "actionPasswordChange": "Passwort geändert",
-    "actionPasswordReset": "Passwort zurückgesetzt"
+    "actionPasswordReset": "Passwort zurückgesetzt",
+    "createdDate": "Erstellungsdatum",
+    "environmentName": "Umgebungsname",
+    "organizationName": "Organisationsname",
+    "resultCount": "{count} Ergebnisse",
+    "sortBy": "Sortieren nach",
+    "url": "URL",
+    "statusGreen": "Gesund",
+    "statusYellow": "Warnung",
+    "statusRed": "Kritisch",
+    "openEnvironment": "Shop öffnen"
   },
   "privacy": {
     "title": "Datenschutzerklärung",

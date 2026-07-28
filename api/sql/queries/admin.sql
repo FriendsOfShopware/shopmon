@@ -37,8 +37,12 @@ WHERE (sqlc.narg('search')::text IS NULL OR e.name ILIKE '%' || sqlc.narg('searc
 ORDER BY
   CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.name END ASC,
   CASE WHEN sqlc.arg('sort_by')::text = 'name' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.name END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'url' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.url END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'url' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.url END DESC,
   CASE WHEN sqlc.arg('sort_by')::text = 'status' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.status END ASC,
   CASE WHEN sqlc.arg('sort_by')::text = 'status' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.status END DESC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'shopwareVersion' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.shopware_version END ASC,
+  CASE WHEN sqlc.arg('sort_by')::text = 'shopwareVersion' AND sqlc.arg('sort_dir')::text = 'desc' THEN e.shopware_version END DESC,
   CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'asc' THEN o.name END ASC,
   CASE WHEN sqlc.arg('sort_by')::text = 'organizationName' AND sqlc.arg('sort_dir')::text = 'desc' THEN o.name END DESC,
   CASE WHEN sqlc.arg('sort_by')::text = 'createdAt' AND sqlc.arg('sort_dir')::text = 'asc' THEN e.created_at END ASC,

@@ -891,7 +891,7 @@
     "recentEnvironments": "Recent Environments",
     "noRecentSignups": "No recent signups",
     "noRecentEnvironments": "No recent environments",
-    "environmentHealth": "Environment health:",
+    "environmentHealth": "Environment Health",
     "environmentManagement": "Environment Management",
     "searchEnvironments": "Search environments by name or URL...",
     "sortByUrl": "Sort by URL",
@@ -985,7 +985,17 @@
     "actionUnbanUser": "User unbanned",
     "actionImpersonate": "Impersonated",
     "actionPasswordChange": "Password changed",
-    "actionPasswordReset": "Password reset"
+    "actionPasswordReset": "Password reset",
+    "createdDate": "Created Date",
+    "environmentName": "Environment Name",
+    "organizationName": "Organization Name",
+    "resultCount": "{count} results",
+    "sortBy": "Sort by",
+    "url": "URL",
+    "statusGreen": "Healthy",
+    "statusYellow": "Warning",
+    "statusRed": "Critical",
+    "openEnvironment": "Open shop"
   },
   "privacy": {
     "title": "Privacy Policy",
