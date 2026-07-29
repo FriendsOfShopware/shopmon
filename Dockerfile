@@ -17,6 +17,9 @@ RUN npm run build && cp -R dist/. /out/
 
 FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS api-build
 
+ARG TARGETOS
+ARG TARGETARCH
+
 WORKDIR /src/api
 COPY api/go.mod api/go.sum ./
 RUN go mod download
