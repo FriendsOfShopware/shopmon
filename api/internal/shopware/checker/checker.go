@@ -76,6 +76,24 @@ type Input struct {
 	CacheInfo      CacheInfo
 	Client         HTTPClient
 	Ignores        []string
+	// SecurityAdvisories is the local Packagist catalog snapshot used by
+	// checkSecurity. Empty means the security check is skipped (e.g. catalog
+	// not synced yet).
+	SecurityAdvisories []SecurityAdvisory
+	// InstalledPackages maps Composer package name (lowercased) to the
+	// installed version, taken from the FroshTools CycloneDX SBOM. Empty when
+	// the shop cannot serve an SBOM; checkSecurity then falls back to matching
+	// shopware/* constraints against the core version alone.
+	InstalledPackages map[string]string
+	// SecurityPluginFixes maps each advisory to the minimum SwagPlatformSecurity
+	// version backporting it, per plugin branch. Empty means the map has not
+	// been derived yet, in which case every advisory resolves to unknown and is
+	// reported as before — never silently suppressed.
+	SecurityPluginFixes []PluginFix
+	// SecurityPluginCoverage records how many advisory references each plugin
+	// branch yielded when parsed, so an unparsed branch is distinguishable from
+	// one that genuinely backports nothing.
+	SecurityPluginCoverage PluginCoverage
 }
 
 type Result struct {

@@ -16,6 +16,11 @@ const (
 	invitationCleanupSchedule = "0 5 * * *"
 	oldDataCleanupSchedule    = "30 4 * * *"
 	changelogSyncSchedule     = "15 * * * *"
+	// Offset from the hour so we do not pile onto Packagist's :00 peaks.
+	advisorySyncSchedule = "17 * * * *"
+	// Offset from the advisory sync so the backport map is refreshed before the
+	// next advisory pass rather than racing it.
+	securityPluginSyncSchedule = "37 * * * *"
 )
 
 type ScheduledEnvironment struct {
@@ -35,6 +40,8 @@ type ScheduleDispatcher interface {
 	EnqueueInvitationCleanup(ctx context.Context) error
 	EnqueueOldDataCleanup(ctx context.Context) error
 	EnqueueShopwareChangelogSync(ctx context.Context) error
+	EnqueueComposerAdvisorySync(ctx context.Context) error
+	EnqueueSecurityPluginSync(ctx context.Context) error
 }
 
 type SchedulerConfig struct {
@@ -118,6 +125,22 @@ func (s *Scheduler) register() error {
 			run: func() {
 				ctx := context.Background()
 				s.logDispatchError(ctx, "shopware changelog sync", s.dispatcher.EnqueueShopwareChangelogSync(ctx))
+			},
+		},
+		{
+			name:     "security plugin sync",
+			schedule: securityPluginSyncSchedule,
+			run: func() {
+				ctx := context.Background()
+				s.logDispatchError(ctx, "security plugin sync", s.dispatcher.EnqueueSecurityPluginSync(ctx))
+			},
+		},
+		{
+			name:     "composer advisory sync",
+			schedule: advisorySyncSchedule,
+			run: func() {
+				ctx := context.Background()
+				s.logDispatchError(ctx, "composer advisory sync", s.dispatcher.EnqueueComposerAdvisorySync(ctx))
 			},
 		},
 	}

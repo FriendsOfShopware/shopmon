@@ -13,9 +13,11 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-      <icon-line-md:loading-twotone-loop class="size-5" />
-      {{ $t("admin.loadingAuditLog") }}
+    <div v-if="loading" class="space-y-2" aria-hidden="true">
+      <div v-for="i in 8" :key="i" class="space-y-2 rounded-xl border bg-card p-4">
+        <Skeleton class="h-4 w-1/2" />
+        <Skeleton class="h-3 w-1/3" />
+      </div>
     </div>
 
     <!-- Entries list -->
@@ -112,6 +114,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { adminGetAuditLog, type AdminAuditLogEntry as AuditLogEntry } from "@/api/generated";
 import { formatDateTime } from "@/helpers/formatter";
 import IconClock from "~icons/fa6-solid/clock-rotate-left";

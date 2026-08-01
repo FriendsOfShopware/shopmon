@@ -13,3 +13,7 @@ litestream.yml
 /.jj
 .soulforge
 .design-sync/
+/.mise.local.toml
+/.coder.compose.yml
+/coder/.terraform/
+*.tfstate*

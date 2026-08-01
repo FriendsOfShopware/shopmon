@@ -815,6 +815,266 @@ export type InstanceConfig = {
     packageMirrorEnabled: boolean;
 };
 
+export type SeverityLevel = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+export type AdvisorySource = {
+    name: string;
+    remoteId: string;
+};
+
+export type AdvisoryAffectedPackage = {
+    /**
+     * Composer package name (e.g. shopware/core)
+     */
+    packageName: string;
+    /**
+     * Composer constraint for this package
+     */
+    affectedVersions: string;
+    /**
+     * Original Packagist PKSA id for this package row
+     */
+    packagistAdvisoryId: string;
+};
+
+export type Advisory = {
+    /**
+     * Canonical id (CVE, else GHSA, else Packagist PKSA)
+     */
+    advisoryId: string;
+    /**
+     * Affected Composer packages (one CVE may span multiple packages)
+     */
+    packages: Array<AdvisoryAffectedPackage>;
+    title: string;
+    link?: string | null;
+    cve?: string | null;
+    ghsaId?: string | null;
+    severity?: SeverityLevel | null;
+    severityOverride?: SeverityLevel | null;
+    effectiveSeverity: SeverityLevel | null;
+    sources: Array<AdvisorySource>;
+    reportedAt?: string | null;
+    composerRepository?: string | null;
+    /**
+     * Short summary from the disclosure source (e.g. GitHub Advisory)
+     */
+    summary?: string | null;
+    /**
+     * Full advisory write-up in Markdown (source form)
+     */
+    description?: string | null;
+    /**
+     * description rendered as HTML for safe display after client sanitization
+     */
+    descriptionHtml?: string | null;
+    cvssScore?: number | null;
+    cvssVector?: string | null;
+    cwes?: Array<AdvisoryCwe>;
+    /**
+     * External reference URLs (GHSA page, commits, etc.)
+     */
+    externalReferences?: Array<string>;
+    /**
+     * Where disclosure details were loaded from (e.g. github)
+     */
+    detailsSource?: string | null;
+    isVisible: boolean;
+    notesPublic?: string | null;
+    remediationSummary?: string | null;
+    remediationUrl?: string | null;
+    recommendedUpgrade?: string | null;
+    shopwareImpactSummary?: string | null;
+    affectedComponents: Array<string>;
+    tags: Array<string>;
+    /**
+     * Number of the caller's environments whose Composer package inventory matches this advisory and that are not suppressed. Null when no SBOM data has been collected.
+     *
+     */
+    affectedEnvironmentCount?: number | null;
+    /**
+     * Which SwagPlatformSecurity releases backport this advisory, per branch. Empty when it is not backportable or not yet derived.
+     *
+     */
+    securityPluginFixes?: Array<AdvisorySecurityPluginFix>;
+    /**
+     * First Shopware release per line that closes this advisory, e.g. {"6.7": "6.7.10.1"}. Machine-derived from the GitHub advisory.
+     *
+     */
+    firstPatchedVersions?: {
+        [key: string]: string;
+    };
+    /**
+     * Number of the caller's environments where this advisory has been acknowledged via an active suppression.
+     *
+     */
+    suppressedEnvironmentCount?: number | null;
+    syncedAt: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type AdvisorySecurityPluginFix = {
+    /**
+     * SwagPlatformSecurity major version, e.g. "4"
+     */
+    pluginBranch: string;
+    /**
+     * Lowest plugin version on this branch that backports the fix
+     */
+    pluginVersion: string;
+    /**
+     * Shopware line this branch serves, e.g. "6.7"
+     */
+    shopwareBranch: string;
+};
+
+export type AdvisorySuppression = {
+    id: number;
+    advisoryId: string;
+    organizationId: string;
+    shopId: number;
+    shopName: string;
+    /**
+     * Null means every environment of the shop
+     */
+    environmentId?: number | null;
+    environmentName?: string | null;
+    reason: string;
+    /**
+     * Null means the suppression does not expire
+     */
+    expiresAt?: string | null;
+    createdBy?: string | null;
+    createdByName?: string | null;
+    createdAt: string;
+    revokedAt?: string | null;
+};
+
+export type CreateAdvisorySuppressionRequest = {
+    shopId: number;
+    /**
+     * Omit to suppress across every environment of the shop
+     */
+    environmentId?: number | null;
+    /**
+     * Why the advisory is accepted or how it is mitigated
+     */
+    reason: string;
+    /**
+     * Omit for a suppression that does not expire
+     */
+    expiresAt?: string | null;
+};
+
+export type AdvisorySuppressionListResponse = {
+    suppressions: Array<AdvisorySuppression>;
+};
+
+export type AdvisoryAffectedEnvironment = {
+    environmentId: number;
+    environmentName: string;
+    environmentStatus: string;
+    shopId: number;
+    shopName: string;
+    organizationId: string;
+    organizationName: string;
+    shopwareVersion?: string | null;
+    /**
+     * Installed Composer package that matched the advisory
+     */
+    packageName: string;
+    installedVersion: string;
+    /**
+     * The advisory constraint the installed version falls into
+     */
+    affectedVersions: string;
+    /**
+     * Whether an active suppression covers this environment
+     */
+    suppressed: boolean;
+    matchedAt: string;
+};
+
+export type AdvisoryAffectedResponse = {
+    /**
+     * Affected environments within the caller's organizations
+     */
+    environments: Array<AdvisoryAffectedEnvironment>;
+    /**
+     * Number of affected environments visible to the caller
+     */
+    total: number;
+    /**
+     * Fleet-wide affected environment count; admins only
+     */
+    globalTotal?: number | null;
+};
+
+export type AdvisoryCwe = {
+    /**
+     * CWE identifier, e.g. CWE-918
+     */
+    id: string;
+    name: string;
+};
+
+export type AdvisoryListResponse = {
+    advisories: Array<Advisory>;
+    /**
+     * Advisories matching the current scope and filters
+     */
+    total: number;
+    /**
+     * Totals per scope, ignoring the scope filter, for tab badges
+     */
+    scopeCounts?: AdvisoryScopeCounts | null;
+};
+
+export type AdvisoryScopeCounts = {
+    /**
+     * All visible advisories matching the non-scope filters
+     */
+    all: number;
+    /**
+     * Of those, how many affect the caller's environments and are not suppressed
+     *
+     */
+    affected: number;
+    /**
+     * Of those, how many the caller has acknowledged
+     */
+    suppressed: number;
+};
+
+export type AdminAdvisory = Advisory & {
+    notesInternal?: string | null;
+    enrichedAt?: string | null;
+    enrichedBy?: string | null;
+};
+
+export type AdminAdvisoryListResponse = {
+    advisories: Array<AdminAdvisory>;
+    total: number;
+};
+
+export type UpdateAdvisoryEnrichmentRequest = {
+    severityOverride?: SeverityLevel | null;
+    isVisible?: boolean;
+    notesPublic?: string | null;
+    notesInternal?: string | null;
+    remediationSummary?: string | null;
+    remediationUrl?: string | null;
+    recommendedUpgrade?: string | null;
+    shopwareImpactSummary?: string | null;
+    affectedComponents?: Array<string>;
+    tags?: Array<string>;
+};
+
+export type AdminAdvisorySyncResponse = {
+    enqueued: boolean;
+};
+
 /**
  * Organization ID
  */
@@ -864,6 +1124,47 @@ export type ProviderId = string;
  * Notification ID
  */
 export type NotificationId = number;
+
+/**
+ * Packagist security advisory ID (PKSA-…)
+ */
+export type AdvisoryId = string;
+
+export type AdvisoryLimit = number;
+
+export type AdvisoryOffset = number;
+
+/**
+ * Filter by Composer package name (e.g. shopware/core)
+ */
+export type AdvisoryPackage = string;
+
+/**
+ * Filter by effective severity
+ */
+export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+/**
+ * Filter by admin tag
+ */
+export type AdvisoryTag = string;
+
+/**
+ * Search title, CVE, GHSA, package, or advisory ID
+ */
+export type AdvisorySearch = string;
+
+/**
+ * "affected" limits results to advisories matching the Composer inventory of the caller's own environments, excluding suppressed ones; "suppressed" returns only those the caller has acknowledged; "all" returns the full catalog.
+ *
+ */
+export type AdvisoryScope = 'all' | 'affected' | 'suppressed';
+
+/**
+ * Sort order: "reported" newest first, "severity" most severe first, "affected" most affected environments first, "cvss" highest score first.
+ *
+ */
+export type AdvisorySort = 'reported' | 'severity' | 'affected' | 'cvss';
 
 export type GetHealthData = {
     body?: never;
@@ -2897,6 +3198,417 @@ export type AdminGetShopwareVersionsResponses = {
 };
 
 export type AdminGetShopwareVersionsResponse = AdminGetShopwareVersionsResponses[keyof AdminGetShopwareVersionsResponses];
+
+export type AdminListAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        /**
+         * Filter by Composer package name (e.g. shopware/core)
+         */
+        package?: string;
+        /**
+         * Filter by effective severity
+         */
+        severity?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+        /**
+         * Filter by admin tag
+         */
+        tag?: string;
+        /**
+         * Search title, CVE, GHSA, package, or advisory ID
+         */
+        q?: string;
+        /**
+         * When set, filter by visibility
+         */
+        visible?: boolean;
+    };
+    url: '/admin/advisories';
+};
+
+export type AdminListAdvisoriesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+};
+
+export type AdminListAdvisoriesError = AdminListAdvisoriesErrors[keyof AdminListAdvisoriesErrors];
+
+export type AdminListAdvisoriesResponses = {
+    /**
+     * Paginated advisories
+     */
+    200: AdminAdvisoryListResponse;
+};
+
+export type AdminListAdvisoriesResponse = AdminListAdvisoriesResponses[keyof AdminListAdvisoriesResponses];
+
+export type AdminSyncAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories/sync';
+};
+
+export type AdminSyncAdvisoriesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+};
+
+export type AdminSyncAdvisoriesError = AdminSyncAdvisoriesErrors[keyof AdminSyncAdvisoriesErrors];
+
+export type AdminSyncAdvisoriesResponses = {
+    /**
+     * Sync job enqueued
+     */
+    202: AdminAdvisorySyncResponse;
+};
+
+export type AdminSyncAdvisoriesResponse = AdminSyncAdvisoriesResponses[keyof AdminSyncAdvisoriesResponses];
+
+export type AdminGetAdvisoryData = {
+    body?: never;
+    path: {
+        /**
+         * Packagist security advisory ID (PKSA-…)
+         */
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/admin/advisories/{advisoryId}';
+};
+
+export type AdminGetAdvisoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type AdminGetAdvisoryError = AdminGetAdvisoryErrors[keyof AdminGetAdvisoryErrors];
+
+export type AdminGetAdvisoryResponses = {
+    /**
+     * Advisory detail
+     */
+    200: AdminAdvisory;
+};
+
+export type AdminGetAdvisoryResponse = AdminGetAdvisoryResponses[keyof AdminGetAdvisoryResponses];
+
+export type AdminUpdateAdvisoryData = {
+    body: UpdateAdvisoryEnrichmentRequest;
+    path: {
+        /**
+         * Packagist security advisory ID (PKSA-…)
+         */
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/admin/advisories/{advisoryId}';
+};
+
+export type AdminUpdateAdvisoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type AdminUpdateAdvisoryError = AdminUpdateAdvisoryErrors[keyof AdminUpdateAdvisoryErrors];
+
+export type AdminUpdateAdvisoryResponses = {
+    /**
+     * Updated advisory
+     */
+    200: AdminAdvisory;
+};
+
+export type AdminUpdateAdvisoryResponse = AdminUpdateAdvisoryResponses[keyof AdminUpdateAdvisoryResponses];
+
+export type ListAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        /**
+         * Filter by Composer package name (e.g. shopware/core)
+         */
+        package?: string;
+        /**
+         * Filter by effective severity
+         */
+        severity?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+        /**
+         * Filter by admin tag
+         */
+        tag?: string;
+        /**
+         * Search title, CVE, GHSA, package, or advisory ID
+         */
+        q?: string;
+        /**
+         * "affected" limits results to advisories matching the Composer inventory of the caller's own environments, excluding suppressed ones; "suppressed" returns only those the caller has acknowledged; "all" returns the full catalog.
+         *
+         */
+        scope?: 'all' | 'affected' | 'suppressed';
+        /**
+         * Sort order: "reported" newest first, "severity" most severe first, "affected" most affected environments first, "cvss" highest score first.
+         *
+         */
+        sort?: 'reported' | 'severity' | 'affected' | 'cvss';
+    };
+    url: '/advisories';
+};
+
+export type ListAdvisoriesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListAdvisoriesError = ListAdvisoriesErrors[keyof ListAdvisoriesErrors];
+
+export type ListAdvisoriesResponses = {
+    /**
+     * Paginated visible advisories
+     */
+    200: AdvisoryListResponse;
+};
+
+export type ListAdvisoriesResponse = ListAdvisoriesResponses[keyof ListAdvisoriesResponses];
+
+export type ListAdvisoryPackagesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisories/packages';
+};
+
+export type ListAdvisoryPackagesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListAdvisoryPackagesError = ListAdvisoryPackagesErrors[keyof ListAdvisoryPackagesErrors];
+
+export type ListAdvisoryPackagesResponses = {
+    /**
+     * Package names
+     */
+    200: Array<string>;
+};
+
+export type ListAdvisoryPackagesResponse = ListAdvisoryPackagesResponses[keyof ListAdvisoryPackagesResponses];
+
+export type GetAdvisoryData = {
+    body?: never;
+    path: {
+        /**
+         * Packagist security advisory ID (PKSA-…)
+         */
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}';
+};
+
+export type GetAdvisoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetAdvisoryError = GetAdvisoryErrors[keyof GetAdvisoryErrors];
+
+export type GetAdvisoryResponses = {
+    /**
+     * Advisory detail
+     */
+    200: Advisory;
+};
+
+export type GetAdvisoryResponse = GetAdvisoryResponses[keyof GetAdvisoryResponses];
+
+export type CreateAdvisorySuppressionData = {
+    body: CreateAdvisorySuppressionRequest;
+    path: {
+        /**
+         * Packagist security advisory ID (PKSA-…)
+         */
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}/suppressions';
+};
+
+export type CreateAdvisorySuppressionErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+    /**
+     * An active suppression already covers this scope
+     */
+    409: unknown;
+};
+
+export type CreateAdvisorySuppressionError = CreateAdvisorySuppressionErrors[keyof CreateAdvisorySuppressionErrors];
+
+export type CreateAdvisorySuppressionResponses = {
+    /**
+     * Suppression recorded
+     */
+    201: AdvisorySuppression;
+};
+
+export type CreateAdvisorySuppressionResponse = CreateAdvisorySuppressionResponses[keyof CreateAdvisorySuppressionResponses];
+
+export type ListSuppressionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Include revoked and expired suppressions
+         */
+        includeInactive?: boolean;
+    };
+    url: '/suppressions';
+};
+
+export type ListSuppressionsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListSuppressionsError = ListSuppressionsErrors[keyof ListSuppressionsErrors];
+
+export type ListSuppressionsResponses = {
+    /**
+     * Suppressions
+     */
+    200: AdvisorySuppressionListResponse;
+};
+
+export type ListSuppressionsResponse = ListSuppressionsResponses[keyof ListSuppressionsResponses];
+
+export type RevokeAdvisorySuppressionData = {
+    body?: never;
+    path: {
+        suppressionId: number;
+    };
+    query?: never;
+    url: '/suppressions/{suppressionId}';
+};
+
+export type RevokeAdvisorySuppressionErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type RevokeAdvisorySuppressionError = RevokeAdvisorySuppressionErrors[keyof RevokeAdvisorySuppressionErrors];
+
+export type RevokeAdvisorySuppressionResponses = {
+    /**
+     * Suppression revoked
+     */
+    204: void;
+};
+
+export type RevokeAdvisorySuppressionResponse = RevokeAdvisorySuppressionResponses[keyof RevokeAdvisorySuppressionResponses];
+
+export type ListAdvisoryAffectedEnvironmentsData = {
+    body?: never;
+    path: {
+        /**
+         * Packagist security advisory ID (PKSA-…)
+         */
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}/affected';
+};
+
+export type ListAdvisoryAffectedEnvironmentsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListAdvisoryAffectedEnvironmentsError = ListAdvisoryAffectedEnvironmentsErrors[keyof ListAdvisoryAffectedEnvironmentsErrors];
+
+export type ListAdvisoryAffectedEnvironmentsResponses = {
+    /**
+     * Affected environments
+     */
+    200: AdvisoryAffectedResponse;
+};
+
+export type ListAdvisoryAffectedEnvironmentsResponse = ListAdvisoryAffectedEnvironmentsResponses[keyof ListAdvisoryAffectedEnvironmentsResponses];
 
 export type CheckExtensionCompatibilityData = {
     body: ExtensionCompatibilityRequest;

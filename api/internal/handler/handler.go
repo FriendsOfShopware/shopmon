@@ -13,10 +13,17 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
+	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
 	adminread "github.com/friendsofshopware/shopmon/api/internal/readmodel/admin"
+	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 )
+
+// AdvisorySyncDispatcher enqueues a Packagist advisory sync job.
+type AdvisorySyncDispatcher interface {
+	EnqueueComposerAdvisorySync(ctx context.Context) error
+}
 
 // Ensure Handler implements ServerInterface at compile time.
 var _ api.ServerInterface = (*Handler)(nil)
@@ -50,6 +57,9 @@ type Dependencies struct {
 	Account       *accountread.Service
 	Admin         *adminread.Service
 	Environments  *environmentread.Service
+	Advisories    *advisoryread.Service
+	AdvisorySync  AdvisorySyncDispatcher
+	Suppressions  *suppression.Service
 }
 
 type Handler struct {
@@ -64,6 +74,9 @@ type Handler struct {
 	account       *accountread.Service
 	admin         *adminread.Service
 	environments  *environmentread.Service
+	advisories    *advisoryread.Service
+	advisorySync  AdvisorySyncDispatcher
+	suppressions  *suppression.Service
 }
 
 func New(dependencies Dependencies) *Handler {
@@ -79,6 +92,9 @@ func New(dependencies Dependencies) *Handler {
 		account:       dependencies.Account,
 		admin:         dependencies.Admin,
 		environments:  dependencies.Environments,
+		advisories:    dependencies.Advisories,
+		advisorySync:  dependencies.AdvisorySync,
+		suppressions:  dependencies.Suppressions,
 	}
 }
 

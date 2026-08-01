@@ -15,5 +15,6 @@ output-options:
     - Deployments
     - CLI
     - SSO
+    - Advisories
     - Admin
     - Info

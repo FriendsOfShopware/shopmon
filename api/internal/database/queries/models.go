@@ -26,6 +26,20 @@ type Account struct {
 	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
 }
 
+type AdvisorySuppression struct {
+	ID             int64            `json:"id"`
+	OrganizationID string           `json:"organization_id"`
+	ShopID         int32            `json:"shop_id"`
+	EnvironmentID  *int32           `json:"environment_id"`
+	AdvisoryID     string           `json:"advisory_id"`
+	Reason         string           `json:"reason"`
+	ExpiresAt      pgtype.Timestamp `json:"expires_at"`
+	CreatedBy      *string          `json:"created_by"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	RevokedAt      pgtype.Timestamp `json:"revoked_at"`
+	RevokedBy      *string          `json:"revoked_by"`
+}
+
 type AuditLog struct {
 	ID           int64            `json:"id"`
 	ActorUserID  *string          `json:"actor_user_id"`
@@ -34,6 +48,61 @@ type AuditLog struct {
 	Detail       *string          `json:"detail"`
 	IpAddress    *string          `json:"ip_address"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
+}
+
+type ComposerAdvisory struct {
+	AdvisoryID            string           `json:"advisory_id"`
+	Title                 string           `json:"title"`
+	Link                  *string          `json:"link"`
+	Cve                   *string          `json:"cve"`
+	GhsaID                *string          `json:"ghsa_id"`
+	Severity              *string          `json:"severity"`
+	Sources               json.RawMessage  `json:"sources"`
+	ReportedAt            pgtype.Timestamp `json:"reported_at"`
+	ComposerRepository    *string          `json:"composer_repository"`
+	SyncedAt              pgtype.Timestamp `json:"synced_at"`
+	CreatedAt             pgtype.Timestamp `json:"created_at"`
+	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
+	Summary               *string          `json:"summary"`
+	Description           *string          `json:"description"`
+	CvssScore             *float64         `json:"cvss_score"`
+	CvssVector            *string          `json:"cvss_vector"`
+	Cwes                  json.RawMessage  `json:"cwes"`
+	ExternalReferences    json.RawMessage  `json:"external_references"`
+	DetailsSource         *string          `json:"details_source"`
+	DetailsSyncedAt       pgtype.Timestamp `json:"details_synced_at"`
+	GithubSyncedAt        pgtype.Timestamp `json:"github_synced_at"`
+	DetailsAttemptedAt    pgtype.Timestamp `json:"details_attempted_at"`
+	SeverityOverride      *string          `json:"severity_override"`
+	IsVisible             bool             `json:"is_visible"`
+	NotesPublic           *string          `json:"notes_public"`
+	NotesInternal         *string          `json:"notes_internal"`
+	RemediationSummary    *string          `json:"remediation_summary"`
+	RemediationUrl        *string          `json:"remediation_url"`
+	RecommendedUpgrade    *string          `json:"recommended_upgrade"`
+	ShopwareImpactSummary *string          `json:"shopware_impact_summary"`
+	AffectedComponents    []string         `json:"affected_components"`
+	Tags                  []string         `json:"tags"`
+	EnrichedAt            pgtype.Timestamp `json:"enriched_at"`
+	EnrichedBy            *string          `json:"enriched_by"`
+	FirstPatchedVersions  json.RawMessage  `json:"first_patched_versions"`
+}
+
+type ComposerAdvisoryPackage struct {
+	AdvisoryID          string           `json:"advisory_id"`
+	PackageName         string           `json:"package_name"`
+	PackagistAdvisoryID string           `json:"packagist_advisory_id"`
+	AffectedVersions    string           `json:"affected_versions"`
+	SyncedAt            pgtype.Timestamp `json:"synced_at"`
+}
+
+type ComposerAdvisorySyncState struct {
+	ID                    int32            `json:"id"`
+	LastUpdatedSince      *int64           `json:"last_updated_since"`
+	LastFullSyncAt        pgtype.Timestamp `json:"last_full_sync_at"`
+	LastIncrementalSyncAt pgtype.Timestamp `json:"last_incremental_sync_at"`
+	LastError             *string          `json:"last_error"`
+	UpdatedAt             pgtype.Timestamp `json:"updated_at"`
 }
 
 type Deployment struct {
@@ -72,6 +141,15 @@ type Environment struct {
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
 	EnvironmentToken     string           `json:"environment_token"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
+}
+
+type EnvironmentAdvisoryMatch struct {
+	EnvironmentID    int32            `json:"environment_id"`
+	AdvisoryID       string           `json:"advisory_id"`
+	PackageName      string           `json:"package_name"`
+	InstalledVersion string           `json:"installed_version"`
+	AffectedVersions string           `json:"affected_versions"`
+	MatchedAt        pgtype.Timestamp `json:"matched_at"`
 }
 
 type EnvironmentCache struct {
@@ -120,6 +198,27 @@ type EnvironmentQueue struct {
 	EnvironmentID int32  `json:"environment_id"`
 	Name          string `json:"name"`
 	Size          int32  `json:"size"`
+}
+
+type EnvironmentSbomComponent struct {
+	EnvironmentID int32            `json:"environment_id"`
+	PackageName   string           `json:"package_name"`
+	Version       string           `json:"version"`
+	PackageType   *string          `json:"package_type"`
+	Purl          *string          `json:"purl"`
+	IsDev         bool             `json:"is_dev"`
+	SyncedAt      pgtype.Timestamp `json:"synced_at"`
+}
+
+type EnvironmentSbomState struct {
+	EnvironmentID  int32            `json:"environment_id"`
+	Supported      bool             `json:"supported"`
+	ComponentCount int32            `json:"component_count"`
+	SpecVersion    *string          `json:"spec_version"`
+	SerialNumber   *string          `json:"serial_number"`
+	GeneratedAt    pgtype.Timestamp `json:"generated_at"`
+	LastSyncedAt   pgtype.Timestamp `json:"last_synced_at"`
+	LastError      *string          `json:"last_error"`
 }
 
 type EnvironmentScheduledTask struct {
@@ -224,6 +323,24 @@ type Passkey struct {
 	Transports   *string          `json:"transports"`
 	CreatedAt    pgtype.Timestamp `json:"created_at"`
 	Aaguid       *string          `json:"aaguid"`
+}
+
+type SecurityPluginCoverage struct {
+	PluginBranch     string           `json:"plugin_branch"`
+	MinParsedVersion string           `json:"min_parsed_version"`
+	MaxParsedVersion string           `json:"max_parsed_version"`
+	GhsaCount        int32            `json:"ghsa_count"`
+	ParsedAt         pgtype.Timestamp `json:"parsed_at"`
+	LastError        *string          `json:"last_error"`
+}
+
+type SecurityPluginFix struct {
+	GhsaID         string           `json:"ghsa_id"`
+	PluginBranch   string           `json:"plugin_branch"`
+	PluginVersion  string           `json:"plugin_version"`
+	ShopwareBranch string           `json:"shopware_branch"`
+	ReleasedAt     pgtype.Timestamp `json:"released_at"`
+	SyncedAt       pgtype.Timestamp `json:"synced_at"`
 }
 
 type Session struct {

@@ -50,8 +50,11 @@ import (
 	packagespostgres "github.com/friendsofshopware/shopmon/api/internal/packagesmirror/postgres"
 	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
 	adminread "github.com/friendsofshopware/shopmon/api/internal/readmodel/admin"
+	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/suppression"
+	suppressionpostgres "github.com/friendsofshopware/shopmon/api/internal/suppression/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -169,7 +172,10 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	catalogService := catalog.NewService(catalogRepository, catalogGateway)
 	accountReadModel := accountread.NewService(q)
 	adminReadModel := adminread.NewService(q)
+	advisoryReadModel := advisoryread.NewService(q)
+	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
+	jobDispatcher := jobs.NewDispatcher(bus)
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)
 	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
@@ -217,6 +223,9 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,
+		Advisories:    advisoryReadModel,
+		Suppressions:  suppressionService,
+		AdvisorySync:  jobDispatcher,
 	})
 
 	// Build chi router matching production setup

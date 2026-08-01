@@ -66,6 +66,10 @@ mise run build           # Build the API binary
 
 Run `mise tasks` to see all available tasks.
 
+### Coder
+
+A ready-to-publish Coder workspace template is available in [`coder/`](coder/README.md). It provisions an isolated Compose stack, installs the project toolchain and dependencies, loads fixtures on first start, and starts the development servers automatically.
+
 ### Dev Services
 
 | Service | URL | Notes |

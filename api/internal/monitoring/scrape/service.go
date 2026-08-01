@@ -304,6 +304,11 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			slog.Error("failed to unmarshal environment ignores", "environmentId", env.ID, "error", err)
 		}
 	}
+	// Advisory suppressions live in their own table but suppress the same way as
+	// a legacy ignore: the check is still emitted and persisted, it just stops
+	// escalating the environment status. Unioning here keeps both mechanisms on
+	// one code path, so existing ignores keep working untouched.
+	ignores = append(ignores, h.suppressedCheckIDs(ctx, env.ID)...)
 
 	checkerExtensions := make([]checker.Extension, len(extensions))
 	for i, ext := range extensions {
@@ -341,6 +346,14 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}
 	}
 
+	securityAdvisories := loadSecurityAdvisories(ctx, h.queries)
+	securityPluginFixes, securityPluginCoverage := loadSecurityPluginFixes(ctx, h.queries)
+
+	// The SBOM needs the extension list to know whether FroshTools is present,
+	// so it is fetched after the parallel block rather than inside it. Failures
+	// are absorbed by fetchSbom and never fail the scrape.
+	sbomRes := h.fetchSbom(ctx, env, client, extensions)
+
 	checkerInput := checker.Input{
 		Extensions: checkerExtensions,
 		Config: checker.ShopConfig{
@@ -358,8 +371,15 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			HttpCache:    cacheInfo.HttpCache,
 			CacheAdapter: cacheInfo.CacheAdapter,
 		},
-		Client:  client,
-		Ignores: ignores,
+		Client:             client,
+		Ignores:            ignores,
+		SecurityAdvisories: securityAdvisories,
+		// Composer package inventory from the FroshTools SBOM. Empty when the
+		// shop cannot serve one, in which case checkSecurity falls back to
+		// matching the Shopware core version only.
+		InstalledPackages:      sbomPackageVersions(sbomRes),
+		SecurityPluginFixes:    securityPluginFixes,
+		SecurityPluginCoverage: securityPluginCoverage,
 	}
 
 	_, checkSpan := tracer.Start(ctx, "environment.scrape.run_checks")
@@ -393,6 +413,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		extensionsDiff:  extensionsDiff,
 		favicon:         favicon,
 		transition:      transition,
+		sbom:            sbomRes,
 	}); err != nil {
 		return err
 	}
@@ -418,6 +439,71 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	return nil
 }
 
+// loadSecurityAdvisories loads the visible Packagist advisory catalog for the
+// security checker. Failures are logged and return an empty list so a stale or
+// empty catalog never blocks the rest of the scrape.
+func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) []checker.SecurityAdvisory {
+	rows, err := q.ListVisibleComposerAdvisories(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to load security advisories for checks", "error", err)
+		return nil
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	ids := make([]string, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.AdvisoryID)
+	}
+	pkgRows, err := q.ListComposerAdvisoryPackagesForAdvisories(ctx, ids)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to load advisory packages for checks", "error", err)
+		return nil
+	}
+	pkgsByID := make(map[string][]checker.SecurityAdvisoryPackage, len(ids))
+	for _, p := range pkgRows {
+		pkgsByID[p.AdvisoryID] = append(pkgsByID[p.AdvisoryID], checker.SecurityAdvisoryPackage{
+			PackageName:      p.PackageName,
+			AffectedVersions: p.AffectedVersions,
+		})
+	}
+
+	out := make([]checker.SecurityAdvisory, 0, len(rows))
+	for _, row := range rows {
+		sev := ""
+		if row.SeverityOverride != nil && *row.SeverityOverride != "" {
+			sev = *row.SeverityOverride
+		} else if row.Severity != nil {
+			sev = *row.Severity
+		}
+		link := ""
+		if row.RemediationUrl != nil && *row.RemediationUrl != "" {
+			link = *row.RemediationUrl
+		} else if row.Link != nil {
+			link = *row.Link
+		}
+		cve := ""
+		if row.Cve != nil {
+			cve = *row.Cve
+		}
+		ghsa := ""
+		if row.GhsaID != nil {
+			ghsa = *row.GhsaID
+		}
+		out = append(out, checker.SecurityAdvisory{
+			ID:       row.AdvisoryID,
+			Title:    row.Title,
+			CVE:      cve,
+			GHSA:     ghsa,
+			Link:     link,
+			Severity: sev,
+			Packages: pkgsByID[row.AdvisoryID],
+		})
+	}
+	return out
+}
+
 // scrapeResult bundles everything a scrape produced for one environment, ready
 // to be written to the database. Extensions must already be classified and
 // resolved against the store catalog (isStore, LatestVersion).
@@ -432,6 +518,7 @@ type scrapeResult struct {
 	extensionsDiff  []extensionDiff
 	favicon         *string
 	transition      *statusTransition
+	sbom            sbomResult
 }
 
 // persistScrapeResult writes a scrape result in a single transaction. All
@@ -577,6 +664,10 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 		CacheAdapter:  cacheAdapter,
 	}); err != nil {
 		return fmt.Errorf("upsert environment cache: %w", err)
+	}
+
+	if err := persistSbom(ctx, txQueries, env.ID, res.sbom); err != nil {
+		return fmt.Errorf("persist sbom: %w", err)
 	}
 
 	// Upsert checks and prune the ones no longer reported, instead of the previous

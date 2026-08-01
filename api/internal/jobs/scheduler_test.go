@@ -12,7 +12,7 @@ import (
 func TestSchedulerRegistersRecurringJobs(t *testing.T) {
 	scheduler, err := NewScheduler(&scheduleRepositoryStub{}, &scheduleDispatcherStub{}, SchedulerConfig{})
 	require.NoError(t, err)
-	assert.Len(t, scheduler.cron.Entries(), 6)
+	assert.Len(t, scheduler.cron.Entries(), 8)
 }
 
 func TestSchedulerFiltersRepeatedConnectionFailures(t *testing.T) {
@@ -105,3 +105,6 @@ func (d *scheduleDispatcherStub) EnqueueInvitationCleanup(context.Context) error
 func (d *scheduleDispatcherStub) EnqueueOldDataCleanup(context.Context) error { return nil }
 
 func (d *scheduleDispatcherStub) EnqueueShopwareChangelogSync(context.Context) error { return nil }
+
+func (d *scheduleDispatcherStub) EnqueueComposerAdvisorySync(context.Context) error { return nil }
+func (d *scheduleDispatcherStub) EnqueueSecurityPluginSync(context.Context) error   { return nil }

@@ -35,6 +35,12 @@ type Config struct {
 
 	GithubClientID     string
 	GithubClientSecret string
+	// GithubToken is an optional personal access token used for GitHub API
+	// calls that enrich security advisories without a CVE (higher rate limits).
+	GithubToken string
+	// NVDAPIKey is an optional NIST NVD API key for higher rate limits when
+	// enriching CVE descriptions from services.nvd.nist.gov.
+	NVDAPIKey string
 
 	PackagesAPIURL   string
 	PackagesAPIToken string
@@ -99,6 +105,8 @@ func Load() *Config {
 
 		GithubClientID:     getEnv("APP_OAUTH_GITHUB_CLIENT_ID", ""),
 		GithubClientSecret: getEnv("APP_OAUTH_GITHUB_CLIENT_SECRET", ""),
+		GithubToken:        getEnv("GITHUB_TOKEN", getEnv("APP_GITHUB_TOKEN", "")),
+		NVDAPIKey:          getEnv("NVD_API_KEY", getEnv("APP_NVD_API_KEY", "")),
 
 		PackagesAPIURL:   getEnv("PACKAGES_API_URL", ""),
 		PackagesAPIToken: getEnv("PACKAGES_API_TOKEN", ""),

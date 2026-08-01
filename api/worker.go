@@ -7,17 +7,21 @@ import (
 	"syscall"
 	"time"
 
+	catalogadvisory "github.com/friendsofshopware/shopmon/api/internal/catalog/advisory"
 	catalogchangelog "github.com/friendsofshopware/shopmon/api/internal/catalog/changelog"
+	"github.com/friendsofshopware/shopmon/api/internal/catalog/securityplugin"
 	catalogsync "github.com/friendsofshopware/shopmon/api/internal/catalog/sync"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	jobspostgres "github.com/friendsofshopware/shopmon/api/internal/jobs/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	goqueue "github.com/shyim/go-queue"
 	queueotel "github.com/shyim/go-queue/middleware/otel"
@@ -79,12 +83,21 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	sitespeedScrape := sitespeed.NewService(q, cfg)
 	cleanup := maintenance.NewService(q)
 	changelog := catalogchangelog.NewService(q, cfg)
+	advisorySync := catalogadvisory.NewService(pool, q, catalogadvisory.Config{
+		GithubToken: cfg.GithubToken,
+		NVDAPIKey:   cfg.NVDAPIKey,
+		Mailer:      mailSvc,
+	})
+	securityPluginSync := securityplugin.NewService(q, shopwareaccount.NewClient(
+		cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
 		EnvironmentScraper:         environmentScrape,
 		StoreExtensionSynchronizer: storeSync,
 		SitespeedScraper:           sitespeedScrape,
 		Cleanup:                    cleanup,
 		ChangelogSynchronizer:      changelog,
+		AdvisorySynchronizer:       advisorySync,
+		SecurityPluginSynchronizer: securityPluginSync,
 	}); err != nil {
 		return err
 	}
@@ -103,6 +116,16 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	// stored are fetched, so this is cheap once the cache is warm.
 	if err := jobDispatcher.EnqueueShopwareChangelogSync(ctx); err != nil {
 		slog.Error("failed to dispatch initial shopware changelog sync", "error", err)
+	}
+	// The backport map is dispatched before the advisory sync so a cold instance
+	// resolves advisories against a populated map rather than reporting every one
+	// as unknown on first boot.
+	if err := jobDispatcher.EnqueueSecurityPluginSync(ctx); err != nil {
+		slog.Error("failed to dispatch initial security plugin sync", "error", err)
+	}
+	// Same for Packagist advisories — first boot should not wait for :17.
+	if err := jobDispatcher.EnqueueComposerAdvisorySync(ctx); err != nil {
+		slog.Error("failed to dispatch initial composer advisory sync", "error", err)
 	}
 
 	// Worker

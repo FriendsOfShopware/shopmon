@@ -19,6 +19,7 @@ import FaFolder from "~icons/fa6-solid/folder";
 import FaBuilding from "~icons/fa6-solid/building";
 import FaBook from "~icons/fa6-solid/book";
 import FaChartLine from "~icons/fa6-solid/chart-line";
+import FaShield from "~icons/fa6-solid/shield-halved";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -299,6 +300,23 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           titleKey: "nav.ecosystem",
           icon: FaChartLine,
+        },
+      },
+      {
+        name: "account.advisories.list",
+        path: "advisories",
+        component: () => import("@/views/advisories/ListAdvisories.vue"),
+        meta: {
+          titleKey: "nav.advisories",
+          icon: FaShield,
+        },
+      },
+      {
+        name: "account.advisories.detail",
+        path: "advisories/:id",
+        component: () => import("@/views/advisories/DetailAdvisory.vue"),
+        meta: {
+          titleKey: "nav.advisories",
         },
       },
       {
