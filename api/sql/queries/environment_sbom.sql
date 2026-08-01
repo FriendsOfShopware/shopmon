@@ -63,6 +63,28 @@ WHERE (environment_advisory_match.installed_version, environment_advisory_match.
 -- name: DeleteEnvironmentAdvisoryMatches :exec
 DELETE FROM environment_advisory_match WHERE environment_id = $1;
 
+-- Advisories this environment's subscribers have already been alerted about.
+-- The rematch uses this — not the presence of a match row — to decide what is
+-- new, so an alert that failed to dispatch is retried on the next pass.
+-- name: ListNotifiedAdvisoryIDsForEnvironment :many
+SELECT advisory_id FROM environment_advisory_notified WHERE environment_id = $1;
+
+-- name: MarkEnvironmentAdvisoriesNotified :exec
+INSERT INTO environment_advisory_notified (environment_id, advisory_id, notified_at)
+SELECT $1, unnest($2::text[]), NOW()
+ON CONFLICT (environment_id, advisory_id) DO NOTHING;
+
+-- Drops markers for advisories the environment no longer matches, so an
+-- advisory that reappears later (package downgraded, range widened) alerts
+-- again instead of being silently treated as already-seen.
+-- name: DeleteStaleEnvironmentAdvisoryNotifications :exec
+DELETE FROM environment_advisory_notified n
+WHERE n.environment_id = $1
+  AND NOT EXISTS (
+    SELECT 1 FROM environment_advisory_match m
+    WHERE m.environment_id = n.environment_id AND m.advisory_id = n.advisory_id
+  );
+
 -- Consumed by the rematch pass as its "already known" snapshot for
 -- notification dedup. Deliberately ignores suppressions (notify filters those
 -- itself); anything user-facing must add the suppression predicate the

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,6 +72,49 @@ func (c *packagistClient) listVendorPackages(ctx context.Context, vendor string)
 		return nil, fmt.Errorf("list packages for vendor %s: %w", vendor, err)
 	}
 	return resp.PackageNames, nil
+}
+
+// publicPackagesOf returns the subset of names that Packagist actually
+// publishes, established by listing the vendor's public packages and
+// intersecting locally.
+//
+// This is deliberately not a per-package existence probe: monitored shops run
+// in-house Composer packages, and asking Packagist about "acme/secret-billing"
+// would disclose that name whatever the answer. A vendor listing reveals only
+// the vendor segment — which for a private package is typically the customer's
+// own already-public brand — and never the package segment.
+func (c *packagistClient) publicPackagesOf(ctx context.Context, names []string) []string {
+	byVendor := make(map[string][]string)
+	for _, name := range names {
+		vendor, _, ok := strings.Cut(name, "/")
+		if !ok || vendor == "" {
+			continue
+		}
+		byVendor[vendor] = append(byVendor[vendor], name)
+	}
+
+	out := make([]string, 0, len(names))
+	for vendor, candidates := range byVendor {
+		published, err := c.listVendorPackages(ctx, vendor)
+		if err != nil {
+			// Unverifiable means excluded: the whole point is to not transmit a
+			// name we have not confirmed is already public.
+			slog.WarnContext(ctx, "failed to verify vendor packages, skipping",
+				"vendor", vendor, "error", err)
+			continue
+		}
+
+		public := make(map[string]bool, len(published))
+		for _, name := range published {
+			public[strings.ToLower(name)] = true
+		}
+		for _, name := range candidates {
+			if public[strings.ToLower(name)] {
+				out = append(out, name)
+			}
+		}
+	}
+	return out
 }
 
 // advisoriesForPackages fetches full security advisories via go-composer's

@@ -1,6 +1,10 @@
 package advisory
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -55,4 +59,65 @@ func TestCanonicalAdvisoryID(t *testing.T) {
 	assert.Equal(t, "CVE-2026-1", canonicalAdvisoryID("cve-2026-1", "GHSA-x", "PKSA-1"))
 	assert.Equal(t, "GHSA-x", canonicalAdvisoryID("", "GHSA-x", "PKSA-1"))
 	assert.Equal(t, "PKSA-1", canonicalAdvisoryID("", "", "PKSA-1"))
+}
+
+// A monitored shop's in-house Composer packages are the tenant's information.
+// Only names Packagist already publishes may be sent to it, and publicness is
+// established from vendor listings so an unpublished package name is never
+// transmitted — not even to ask whether it exists.
+func TestPublicPackagesOfExcludesPrivateNames(t *testing.T) {
+	t.Parallel()
+
+	var probed []string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/packages/list.json", func(w http.ResponseWriter, r *http.Request) {
+		vendor := r.URL.Query().Get("vendor")
+		probed = append(probed, r.URL.RequestURI())
+		switch vendor {
+		case "symfony":
+			_, _ = io.WriteString(w, `{"packageNames":["symfony/http-kernel","symfony/console"]}`)
+		case "acme":
+			// Vendor exists on Packagist, but this shop's package does not.
+			_, _ = io.WriteString(w, `{"packageNames":["acme/public-widget"]}`)
+		default:
+			_, _ = io.WriteString(w, `{"packageNames":[]}`)
+		}
+	})
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	client := newPackagistClient(server.URL, defaultUserAgent, server.Client())
+	got := client.publicPackagesOf(context.Background(), []string{
+		"symfony/http-kernel",
+		"acme/secret-billing",
+		"acme/public-widget",
+		"internal/tooling",
+	})
+
+	assert.ElementsMatch(t, []string{"symfony/http-kernel", "acme/public-widget"}, got)
+	assert.NotContains(t, got, "acme/secret-billing")
+	assert.NotContains(t, got, "internal/tooling")
+
+	// The private package segment must not appear in any outbound request.
+	for _, uri := range probed {
+		assert.NotContains(t, uri, "secret-billing")
+		assert.NotContains(t, uri, "tooling")
+	}
+}
+
+// An unverifiable vendor is excluded rather than assumed public: the guarantee
+// is that nothing unconfirmed is transmitted.
+func TestPublicPackagesOfExcludesUnverifiableVendors(t *testing.T) {
+	t.Parallel()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/packages/list.json", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	})
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	client := newPackagistClient(server.URL, defaultUserAgent, server.Client())
+	got := client.publicPackagesOf(context.Background(), []string{"symfony/http-kernel"})
+	assert.Empty(t, got)
 }

@@ -169,13 +169,25 @@ func (s *Service) syncFromPackagist(ctx context.Context) (int, error) {
 	// monitored shops (collected from their FroshTools SBOMs). Most real
 	// vulnerabilities live in transitive dependencies like symfony/* or twig/*,
 	// which the shopware/* vendor listing alone never surfaces.
+	//
+	// Only packages Packagist already publishes are included. A monitored shop
+	// may run in-house packages, and their names are the tenant's information:
+	// sending "acme/secret-billing" to a third party would disclose it even
+	// though no advisory could ever come back. publicPackagesOf establishes
+	// publicness from vendor listings, so an unpublished package name never
+	// leaves Shopmon.
 	installed, err := s.queries.ListDistinctSbomPackageNames(ctx)
 	if err != nil {
 		// The SBOM inventory is an enhancement; a failure here must not stop
 		// the shopware/* sync that shops already depend on.
 		slog.WarnContext(ctx, "failed to list sbom packages for advisory sync", "error", err)
 	} else {
-		wanted = mergePackageNames(wanted, installed)
+		public := s.client.publicPackagesOf(ctx, installed)
+		if skipped := len(installed) - len(public); skipped > 0 {
+			slog.InfoContext(ctx, "excluded non-public packages from advisory sync",
+				"skipped", skipped, "checked", len(installed))
+		}
+		wanted = mergePackageNames(wanted, public)
 	}
 
 	advisoriesByPkg, err := s.client.advisoriesForPackages(ctx, wanted)

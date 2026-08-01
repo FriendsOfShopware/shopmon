@@ -23,6 +23,10 @@ const maxNotifiedTitles = 3
 //
 // Suppressed advisories are filtered out before dispatch. An acknowledged
 // advisory that still emails would defeat the point of acknowledging it.
+//
+// Every early return here leaves the advisory unmarked, so the next pass
+// retries it: the caller has already committed the match rows, and a transient
+// failure below must not cost the alert permanently.
 func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, matches []sbom.Match, known map[string]bool) {
 	if s.notifier == nil || len(matches) == 0 {
 		return
@@ -67,6 +71,10 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		return
 	}
 	if len(subscribers) == 0 {
+		// Nobody to tell. Mark them anyway: there is nothing to retry, and
+		// leaving them unmarked would re-evaluate the same advisories on every
+		// pass forever.
+		s.markNotified(ctx, environmentID, fresh)
 		return
 	}
 
@@ -111,6 +119,26 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 			Params: map[string]string{"environmentId": strconv.Itoa(int(environmentID))},
 		},
 	}, recipients)
+
+	s.markNotified(ctx, environmentID, fresh)
+}
+
+// markNotified records that subscribers have been told about these advisories.
+// Written only after dispatch, so an alert lost to a transient failure is
+// retried on the next pass rather than being silently swallowed.
+func (s *Service) markNotified(ctx context.Context, environmentID int32, advisoryIDs []string) {
+	if len(advisoryIDs) == 0 {
+		return
+	}
+	if err := s.queries.MarkEnvironmentAdvisoriesNotified(ctx, queries.MarkEnvironmentAdvisoriesNotifiedParams{
+		EnvironmentID: environmentID,
+		Column2:       advisoryIDs,
+	}); err != nil {
+		// The alert went out; failing to record it means the next pass repeats
+		// it. Noisy, but strictly better than losing it.
+		slog.WarnContext(ctx, "failed to record advisory notification",
+			"environmentId", environmentID, "error", err)
+	}
 }
 
 func (s *Service) suppressedAdvisoryIDs(ctx context.Context, environmentID int32) (map[string]bool, error) {

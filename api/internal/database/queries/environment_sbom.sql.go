@@ -213,6 +213,23 @@ func (q *Queries) DeleteEnvironmentSbomComponentsNotIn(ctx context.Context, arg 
 	return err
 }
 
+const deleteStaleEnvironmentAdvisoryNotifications = `-- name: DeleteStaleEnvironmentAdvisoryNotifications :exec
+DELETE FROM environment_advisory_notified n
+WHERE n.environment_id = $1
+  AND NOT EXISTS (
+    SELECT 1 FROM environment_advisory_match m
+    WHERE m.environment_id = n.environment_id AND m.advisory_id = n.advisory_id
+  )
+`
+
+// Drops markers for advisories the environment no longer matches, so an
+// advisory that reappears later (package downgraded, range widened) alerts
+// again instead of being silently treated as already-seen.
+func (q *Queries) DeleteStaleEnvironmentAdvisoryNotifications(ctx context.Context, environmentID int32) error {
+	_, err := q.db.Exec(ctx, deleteStaleEnvironmentAdvisoryNotifications, environmentID)
+	return err
+}
+
 const getEnvironmentAdvisoryMatches = `-- name: GetEnvironmentAdvisoryMatches :many
 SELECT m.advisory_id, m.package_name, m.installed_version, m.affected_versions, m.matched_at,
        a.title, a.cve, a.ghsa_id, a.severity, a.severity_override, a.link, a.remediation_url,
@@ -685,6 +702,49 @@ func (q *Queries) ListEnvironmentIDsWithSbom(ctx context.Context) ([]int32, erro
 		return nil, err
 	}
 	return items, nil
+}
+
+const listNotifiedAdvisoryIDsForEnvironment = `-- name: ListNotifiedAdvisoryIDsForEnvironment :many
+SELECT advisory_id FROM environment_advisory_notified WHERE environment_id = $1
+`
+
+// Advisories this environment's subscribers have already been alerted about.
+// The rematch uses this — not the presence of a match row — to decide what is
+// new, so an alert that failed to dispatch is retried on the next pass.
+func (q *Queries) ListNotifiedAdvisoryIDsForEnvironment(ctx context.Context, environmentID int32) ([]string, error) {
+	rows, err := q.db.Query(ctx, listNotifiedAdvisoryIDsForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var advisory_id string
+		if err := rows.Scan(&advisory_id); err != nil {
+			return nil, err
+		}
+		items = append(items, advisory_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markEnvironmentAdvisoriesNotified = `-- name: MarkEnvironmentAdvisoriesNotified :exec
+INSERT INTO environment_advisory_notified (environment_id, advisory_id, notified_at)
+SELECT $1, unnest($2::text[]), NOW()
+ON CONFLICT (environment_id, advisory_id) DO NOTHING
+`
+
+type MarkEnvironmentAdvisoriesNotifiedParams struct {
+	EnvironmentID int32    `json:"environment_id"`
+	Column2       []string `json:"column_2"`
+}
+
+func (q *Queries) MarkEnvironmentAdvisoriesNotified(ctx context.Context, arg MarkEnvironmentAdvisoriesNotifiedParams) error {
+	_, err := q.db.Exec(ctx, markEnvironmentAdvisoriesNotified, arg.EnvironmentID, arg.Column2)
+	return err
 }
 
 const upsertEnvironmentAdvisoryMatch = `-- name: UpsertEnvironmentAdvisoryMatch :exec

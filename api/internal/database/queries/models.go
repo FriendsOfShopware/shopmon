@@ -152,6 +152,12 @@ type EnvironmentAdvisoryMatch struct {
 	MatchedAt        pgtype.Timestamp `json:"matched_at"`
 }
 
+type EnvironmentAdvisoryNotified struct {
+	EnvironmentID int32            `json:"environment_id"`
+	AdvisoryID    string           `json:"advisory_id"`
+	NotifiedAt    pgtype.Timestamp `json:"notified_at"`
+}
+
 type EnvironmentCache struct {
 	ID            int32  `json:"id"`
 	EnvironmentID int32  `json:"environment_id"`

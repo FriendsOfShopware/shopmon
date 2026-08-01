@@ -63,16 +63,18 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 
 	matches := index.Match(installed)
 
-	// Snapshot what already matched, before the replace below, so only genuinely
-	// new advisories trigger an alert. Without this every sync would re-notify
-	// the same findings.
-	previous, err := s.queries.GetEnvironmentAdvisoryMatches(ctx, environmentID)
+	// "Already known" means "subscribers were already told", not "a match row
+	// exists". The match rows below must commit whether or not the alert
+	// succeeds — they drive the UI and shop status — so keying dedup on them
+	// would make any transient failure in the notify path permanent: the next
+	// pass would see the row and stay silent forever.
+	notified, err := s.queries.ListNotifiedAdvisoryIDsForEnvironment(ctx, environmentID)
 	if err != nil {
-		return 0, fmt.Errorf("get existing advisory matches: %w", err)
+		return 0, fmt.Errorf("list notified advisories: %w", err)
 	}
-	known := make(map[string]bool, len(previous))
-	for _, row := range previous {
-		known[row.AdvisoryID] = true
+	known := make(map[string]bool, len(notified))
+	for _, advisoryID := range notified {
+		known[advisoryID] = true
 	}
 
 	// Replace rather than merge: a package upgraded out of an affected range
@@ -103,6 +105,13 @@ func (s *Service) rematchEnvironment(ctx context.Context, environmentID int32, i
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return 0, fmt.Errorf("commit rematch transaction: %w", err)
+	}
+
+	// Retire markers for advisories that no longer match, so one that reappears
+	// later (package downgraded, affected range widened) alerts again.
+	if err := s.queries.DeleteStaleEnvironmentAdvisoryNotifications(ctx, environmentID); err != nil {
+		slog.WarnContext(ctx, "failed to prune stale advisory notification markers",
+			"environmentId", environmentID, "error", err)
 	}
 
 	s.notifyNewAdvisories(ctx, environmentID, matches, known)

@@ -574,6 +574,17 @@ CREATE INDEX idx_environment_advisory_match_advisory
 CREATE INDEX idx_environment_advisory_match_environment
   ON environment_advisory_match (environment_id);
 
+-- Which advisories an environment's subscribers were actually alerted about.
+-- Separate from environment_advisory_match because that table is rebuilt on
+-- every rematch: a marker there would be lost each pass, and a notification
+-- that failed after the match rows committed could never be retried.
+CREATE TABLE "environment_advisory_notified" (
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "advisory_id" text NOT NULL REFERENCES "composer_advisory"("advisory_id") ON DELETE cascade,
+  "notified_at" timestamp NOT NULL DEFAULT NOW(),
+  PRIMARY KEY ("environment_id", "advisory_id")
+);
+
 -- Shop-owner acknowledgement that a known advisory is accepted or mitigated
 -- outside Shopmon. Separate from environment.ignores, which cannot carry a
 -- reason, actor, expiry, or shop-wide scope; both coexist and are unioned at
