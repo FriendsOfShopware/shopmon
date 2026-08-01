@@ -3,6 +3,7 @@ package scrape
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -87,7 +88,16 @@ func (h *Service) fetchSbom(ctx context.Context, env queries.GetAllEnvironmentsR
 		result.generatedAt = pgtype.Timestamp{Time: ts, Valid: true}
 	}
 
-	result.matches = h.matchAdvisories(ctx, env.ID, doc.VersionMap())
+	matches, err := h.matchAdvisories(ctx, env.ID, doc.VersionMap())
+	if err != nil {
+		// Keep the previously stored inventory and matches: replacing them from
+		// an unreadable catalog would clear this environment's vulnerabilities.
+		slog.WarnContext(ctx, "failed to match sbom against advisory catalog, keeping previous matches",
+			"environmentId", env.ID, "error", err)
+		span.RecordError(err)
+		return sbomResult{supported: true, err: "advisory catalog unavailable: " + err.Error()}
+	}
+	result.matches = matches
 
 	span.SetAttributes(
 		attribute.Int("sbom.components", len(packages)),
@@ -100,18 +110,21 @@ func (h *Service) fetchSbom(ctx context.Context, env queries.GetAllEnvironmentsR
 
 // matchAdvisories evaluates an environment's installed package versions against
 // the advisory catalog.
-func (h *Service) matchAdvisories(ctx context.Context, environmentID int32, installed map[string]string) []sbom.Match {
+//
+// The error is returned rather than folded into an empty result: persistSbom
+// replaces the whole match set, so "the catalog could not be read" and "nothing
+// matches" must not look the same — the former would erase every known
+// vulnerability for the environment.
+func (h *Service) matchAdvisories(ctx context.Context, environmentID int32, installed map[string]string) ([]sbom.Match, error) {
 	if len(installed) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	index, err := loadAdvisoryIndex(ctx, h.queries)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to load advisory index for sbom matching",
-			"environmentId", environmentID, "error", err)
-		return nil
+		return nil, fmt.Errorf("load advisory index: %w", err)
 	}
-	return index.Match(installed)
+	return index.Match(installed), nil
 }
 
 // loadAdvisoryIndex builds a package-name-keyed index over the visible advisory

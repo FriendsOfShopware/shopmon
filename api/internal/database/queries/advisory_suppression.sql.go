@@ -65,6 +65,37 @@ func (q *Queries) CreateAdvisorySuppression(ctx context.Context, arg CreateAdvis
 	return i, err
 }
 
+const getAdvisorySuppressionInOrgs = `-- name: GetAdvisorySuppressionInOrgs :one
+SELECT id, organization_id, shop_id, environment_id, advisory_id, reason, expires_at, created_by, created_at, revoked_at, revoked_by FROM advisory_suppression
+WHERE id = $1 AND organization_id = ANY($2::text[])
+`
+
+type GetAdvisorySuppressionInOrgsParams struct {
+	ID              int64    `json:"id"`
+	OrganizationIds []string `json:"organization_ids"`
+}
+
+// Loaded before a revoke so the same role policy that governed creation can be
+// applied: the scope (shop-wide vs environment) decides which roles may act.
+func (q *Queries) GetAdvisorySuppressionInOrgs(ctx context.Context, arg GetAdvisorySuppressionInOrgsParams) (AdvisorySuppression, error) {
+	row := q.db.QueryRow(ctx, getAdvisorySuppressionInOrgs, arg.ID, arg.OrganizationIds)
+	var i AdvisorySuppression
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.ShopID,
+		&i.EnvironmentID,
+		&i.AdvisoryID,
+		&i.Reason,
+		&i.ExpiresAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.RevokedAt,
+		&i.RevokedBy,
+	)
+	return i, err
+}
+
 const listActiveSuppressionsForEnvironment = `-- name: ListActiveSuppressionsForEnvironment :many
 SELECT s.id, s.organization_id, s.shop_id, s.environment_id, s.advisory_id, s.reason, s.expires_at, s.created_by, s.created_at, s.revoked_at, s.revoked_by
 FROM advisory_suppression s

@@ -236,7 +236,7 @@ import {
 } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -321,17 +321,32 @@ async function save() {
   }
 }
 
-onMounted(async () => {
-  const id = String(route.params.id);
-  const { data, error: apiError } = await adminGetAdvisory({
-    path: { advisoryId: id },
-  });
-  loading.value = false;
-  if (apiError || !data) {
-    error.value = t("advisories.notFound");
-    return;
-  }
-  advisory.value = data;
-  loadForm(data);
-});
+// Watched rather than loaded once on mount: the router reuses this component
+// between /admin/advisories/:id routes, so onMounted alone would leave the
+// previous advisory on screen — and its form bound to the wrong row.
+watch(
+  () => route.params.id,
+  async (rawID) => {
+    const id = String(rawID ?? "");
+    if (!id) return;
+
+    loading.value = true;
+    error.value = "";
+    advisory.value = null;
+    saveError.value = "";
+    saveSuccess.value = false;
+
+    const { data, error: apiError } = await adminGetAdvisory({
+      path: { advisoryId: id },
+    });
+    loading.value = false;
+    if (apiError || !data) {
+      error.value = t("advisories.notFound");
+      return;
+    }
+    advisory.value = data;
+    loadForm(data);
+  },
+  { immediate: true },
+);
 </script>

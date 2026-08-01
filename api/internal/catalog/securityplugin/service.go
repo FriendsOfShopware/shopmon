@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -44,13 +45,16 @@ type StoreClient interface {
 // compatibility rows for a plugin nobody has installed would pollute the
 // extension catalog and its orphan-cleanup queries.
 type Service struct {
+	// pool backs the transaction that persist() needs: the map's upserts,
+	// prune, and coverage rows must land atomically.
+	pool    *pgxpool.Pool
 	queries *queries.Queries
 	client  StoreClient
 	now     func() time.Time
 }
 
-func NewService(q *queries.Queries, client StoreClient) *Service {
-	return &Service{queries: q, client: client, now: time.Now}
+func NewService(pool *pgxpool.Pool, q *queries.Queries, client StoreClient) *Service {
+	return &Service{pool: pool, queries: q, client: client, now: time.Now}
 }
 
 // Sync re-derives the whole map from the store changelog.
@@ -202,18 +206,36 @@ func (s *Service) previousCoverage(ctx context.Context) (map[string]int32, error
 	return out, nil
 }
 
+// fixKeepPair encodes one (branch, ghsa) survivor for the prune query's
+// keep-set. The sole writer of the encoding documented on
+// DeleteSecurityPluginFixesNotIn.
+func fixKeepPair(branch, ghsaID string) string {
+	return branch + " " + ghsaID
+}
+
+// persist writes the derived backport map inside one transaction: upserts,
+// prune, and coverage must land together, or a mid-loop failure would leave
+// shops evaluated against a half-applied map — some fixes recorded, stale ones
+// not yet pruned.
 func (s *Service) persist(ctx context.Context, fixes []Fix, coverage []Coverage, branches []string) error {
 	accepted := make(map[string]bool, len(branches))
 	for _, branch := range branches {
 		accepted[branch] = true
 	}
 
-	ghsaIDs := make([]string, 0, len(fixes))
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin security plugin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	q := s.queries.WithTx(tx)
+
+	keepPairs := make([]string, 0, len(fixes))
 	for _, fix := range fixes {
 		if !accepted[fix.Branch] {
 			continue
 		}
-		if err := s.queries.UpsertSecurityPluginFix(ctx, queries.UpsertSecurityPluginFixParams{
+		if err := q.UpsertSecurityPluginFix(ctx, queries.UpsertSecurityPluginFixParams{
 			GhsaID:         fix.GhsaID,
 			PluginBranch:   fix.Branch,
 			PluginVersion:  fix.PluginVersion,
@@ -222,13 +244,15 @@ func (s *Service) persist(ctx context.Context, fixes []Fix, coverage []Coverage,
 		}); err != nil {
 			return fmt.Errorf("upsert security plugin fix: %w", err)
 		}
-		ghsaIDs = append(ghsaIDs, fix.GhsaID)
+		// Keyed per (branch, ghsa): a flat GHSA list would let one branch's
+		// survivor shield another branch's stale row.
+		keepPairs = append(keepPairs, fixKeepPair(fix.Branch, fix.GhsaID))
 	}
 
 	if len(branches) > 0 {
-		if err := s.queries.DeleteSecurityPluginFixesNotIn(ctx, queries.DeleteSecurityPluginFixesNotInParams{
-			Branches: branches,
-			GhsaIds:  ghsaIDs,
+		if err := q.DeleteSecurityPluginFixesNotIn(ctx, queries.DeleteSecurityPluginFixesNotInParams{
+			Branches:  branches,
+			KeepPairs: keepPairs,
 		}); err != nil {
 			return fmt.Errorf("prune security plugin fixes: %w", err)
 		}
@@ -238,7 +262,7 @@ func (s *Service) persist(ctx context.Context, fixes []Fix, coverage []Coverage,
 		if !accepted[cov.Branch] {
 			continue
 		}
-		if err := s.queries.UpsertSecurityPluginCoverage(ctx, queries.UpsertSecurityPluginCoverageParams{
+		if err := q.UpsertSecurityPluginCoverage(ctx, queries.UpsertSecurityPluginCoverageParams{
 			PluginBranch:     cov.Branch,
 			MinParsedVersion: cov.MinParsedVersion,
 			MaxParsedVersion: cov.MaxParsedVersion,
@@ -246,6 +270,10 @@ func (s *Service) persist(ctx context.Context, fixes []Fix, coverage []Coverage,
 		}); err != nil {
 			return fmt.Errorf("upsert security plugin coverage: %w", err)
 		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit security plugin transaction: %w", err)
 	}
 	return nil
 }

@@ -38,6 +38,12 @@ WHERE shop_id = $1
   AND expires_at IS NOT NULL AND expires_at <= NOW();
 
 
+-- Loaded before a revoke so the same role policy that governed creation can be
+-- applied: the scope (shop-wide vs environment) decides which roles may act.
+-- name: GetAdvisorySuppressionInOrgs :one
+SELECT * FROM advisory_suppression
+WHERE id = $1 AND organization_id = ANY(sqlc.arg('organization_ids')::text[]);
+
 -- Active suppressions covering one environment: shop-wide rows plus rows
 -- narrowed to this environment.
 -- name: ListActiveSuppressionsForEnvironment :many

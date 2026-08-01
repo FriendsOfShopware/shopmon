@@ -346,7 +346,13 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}
 	}
 
-	securityAdvisories := loadSecurityAdvisories(ctx, h.queries)
+	// Fail the scrape rather than proceed with an unknown catalog: continuing
+	// would prune this environment's existing security findings and report it
+	// as healthy while the advisories that flagged it are merely unreadable.
+	securityAdvisories, err := loadSecurityAdvisories(ctx, h.queries)
+	if err != nil {
+		return fmt.Errorf("load security advisories: %w", err)
+	}
 	securityPluginFixes, securityPluginCoverage := loadSecurityPluginFixes(ctx, h.queries)
 
 	// The SBOM needs the extension list to know whether FroshTools is present,
@@ -440,16 +446,21 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 }
 
 // loadSecurityAdvisories loads the visible Packagist advisory catalog for the
-// security checker. Failures are logged and return an empty list so a stale or
-// empty catalog never blocks the rest of the scrape.
-func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) []checker.SecurityAdvisory {
+// security checker.
+//
+// A load failure is returned, never swallowed into an empty list. checkSecurity
+// emits no findings for an empty catalog and persistScrapeResult prunes the
+// security.* checks it no longer sees, so treating an outage as "no advisories"
+// would clear every existing finding and turn a vulnerable environment green —
+// a false negative on exactly the signal this feature exists to provide. An
+// empty catalog (not yet synced) is still a legitimate success.
+func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) ([]checker.SecurityAdvisory, error) {
 	rows, err := q.ListVisibleComposerAdvisories(ctx)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to load security advisories for checks", "error", err)
-		return nil
+		return nil, fmt.Errorf("list visible composer advisories: %w", err)
 	}
 	if len(rows) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	ids := make([]string, 0, len(rows))
@@ -458,8 +469,7 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) []checker.S
 	}
 	pkgRows, err := q.ListComposerAdvisoryPackagesForAdvisories(ctx, ids)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to load advisory packages for checks", "error", err)
-		return nil
+		return nil, fmt.Errorf("list advisory packages: %w", err)
 	}
 	pkgsByID := make(map[string][]checker.SecurityAdvisoryPackage, len(ids))
 	for _, p := range pkgRows {
@@ -501,7 +511,7 @@ func loadSecurityAdvisories(ctx context.Context, q *queries.Queries) []checker.S
 			Packages: pkgsByID[row.AdvisoryID],
 		})
 	}
-	return out
+	return out, nil
 }
 
 // scrapeResult bundles everything a scrape produced for one environment, ready

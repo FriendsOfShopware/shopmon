@@ -3,6 +3,7 @@ package advisory
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -85,4 +86,44 @@ func TestGitHubFetchAdvisoryStringReferences(t *testing.T) {
 	assert.Contains(t, details.References, "https://example.com/other")
 	assert.Contains(t, details.References, "https://github.com/shopware/platform/security/advisories/GHSA-string-refs")
 	assert.Equal(t, "https://github.com/advisories/GHSA-string-refs", details.References[0])
+}
+
+// GHSA ids come from Packagist source records — third-party data. A value that
+// could reshape the request path must be rejected before it is interpolated
+// into a URL carrying our GitHub token.
+func TestFetchAdvisoryRejectsMalformedGHSAID(t *testing.T) {
+	t.Parallel()
+
+	var called bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		_, _ = io.WriteString(w, "{}")
+	}))
+	t.Cleanup(server.Close)
+
+	client := newGitHubClient("token", defaultUserAgent, server.Client())
+	client.baseURL = server.URL
+
+	for _, id := range []string{
+		"GHSA-x/../../user/repo",
+		"GHSA-abcd?ref=x",
+		"GHSA-ab cd-efgh-ijkl",
+		"not-a-ghsa",
+		"GHSA-",
+	} {
+		if _, err := client.fetchAdvisory(context.Background(), id); err == nil {
+			t.Errorf("id %q was accepted, want rejection", id)
+		}
+	}
+	if called {
+		t.Error("a malformed id reached the network")
+	}
+
+	// A well-formed id still works.
+	if _, err := client.fetchAdvisory(context.Background(), "GHSA-xvhc-gm7j-mhmc"); err != nil {
+		t.Errorf("valid id rejected: %v", err)
+	}
+	if !called {
+		t.Error("a valid id should have been fetched")
+	}
 }

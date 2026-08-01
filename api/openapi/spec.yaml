@@ -1547,6 +1547,10 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: An active suppression already covers this scope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /suppressions:
     get:
@@ -3060,7 +3064,11 @@ components:
       required: true
       schema:
         type: string
-      description: Packagist security advisory ID (PKSA-…)
+      description: >
+        Canonical advisory ID as returned in Advisory.advisoryId: the CVE when
+        known, else the GHSA, else the Packagist PKSA ID. Detail and suppression
+        endpoints also accept a package row's PKSA ID as a legacy alias, but
+        affected-environment lookups resolve the canonical ID only.
 
     AdvisoryLimit:
       name: limit

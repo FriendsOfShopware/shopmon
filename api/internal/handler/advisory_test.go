@@ -390,6 +390,59 @@ func TestSuppressAdvisoryRenewableAfterExpiry(t *testing.T) {
 	assert.Equal(t, 1, revoked)
 }
 
+// Revoking carries the same role requirement as creating. A member who could
+// never have accepted a shop-wide risk must not be able to withdraw that
+// acceptance either — otherwise the audit trail records an end to a decision
+// nobody with the authority to make it chose to end.
+func TestRevokeShopWideSuppressionRequiresElevatedRole(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+	seedAdvisory(t, env.Queries, "CVE-REVOKE", []string{"shopware/core"}, true, nil)
+
+	ownerToken := env.SeedUser(t, "user-1", "Owner User", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Shop One")
+
+	memberToken := env.SeedUser(t, "user-2", "Member User", "member@example.com", "user")
+	env.SeedMember(t, "org-1", "user-2", "member")
+
+	// Owner creates a shop-wide suppression (member could not have).
+	payload, _ := json.Marshal(map[string]any{"shopId": shopID, "reason": "accepted"})
+	req := testutil.NewRequest(t, "POST", env.Server.URL+"/api/advisories/CVE-REVOKE/suppressions", bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer "+ownerToken)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	var created struct {
+		ID int64 `json:"id"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&created))
+	_ = resp.Body.Close()
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
+	require.NotZero(t, created.ID)
+
+	revoke := func(token string) int {
+		t.Helper()
+		req := testutil.NewRequest(t, "DELETE",
+			fmt.Sprintf("%s/api/suppressions/%d", env.Server.URL, created.ID), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		return resp.StatusCode
+	}
+
+	assert.Equal(t, http.StatusForbidden, revoke(memberToken),
+		"a member must not revoke a shop-wide suppression")
+
+	var revokedAt *time.Time
+	require.NoError(t, env.Pool.QueryRow(ctx,
+		`SELECT revoked_at FROM advisory_suppression WHERE id = $1`, created.ID).Scan(&revokedAt))
+	assert.Nil(t, revokedAt, "the suppression must still be active after the denied revoke")
+
+	assert.Equal(t, http.StatusNoContent, revoke(ownerToken))
+}
+
 // A member of another organization must not be able to suppress for this shop.
 func TestSuppressAdvisoryRejectsForeignOrganization(t *testing.T) {
 	env := testutil.Setup(t)
@@ -409,4 +462,76 @@ func TestSuppressAdvisoryRejectsForeignOrganization(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+// The admin update endpoint is a PATCH with every field optional, so a body
+// that sets one field must not clear the others — and must never republish an
+// advisory an admin deliberately hid.
+func TestAdminUpdateAdvisoryPreservesOmittedFields(t *testing.T) {
+	env := testutil.Setup(t)
+	seedAdvisory(t, env.Queries, "CVE-PATCH", []string{"shopware/core"}, true, nil)
+
+	token := env.SeedUser(t, "admin-1", "Admin", "admin@example.com", "admin")
+
+	patch := func(body map[string]any) *http.Response {
+		t.Helper()
+		payload, _ := json.Marshal(body)
+		req := testutil.NewRequest(t, "PATCH", env.Server.URL+"/api/admin/advisories/CVE-PATCH", bytes.NewReader(payload))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}
+
+	// Full enrichment, including hiding the advisory.
+	resp := patch(map[string]any{
+		"isVisible":     false,
+		"notesInternal": "under investigation",
+		"notesPublic":   "mitigated upstream",
+		"tags":          []string{"ssrf"},
+	})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	_ = resp.Body.Close()
+
+	// A partial follow-up touching only tags.
+	resp = patch(map[string]any{"tags": []string{"ssrf", "triaged"}})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var updated struct {
+		IsVisible     bool     `json:"isVisible"`
+		NotesInternal *string  `json:"notesInternal"`
+		NotesPublic   *string  `json:"notesPublic"`
+		Tags          []string `json:"tags"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&updated))
+	_ = resp.Body.Close()
+
+	assert.False(t, updated.IsVisible, "omitting isVisible must not republish a hidden advisory")
+	require.NotNil(t, updated.NotesInternal)
+	assert.Equal(t, "under investigation", *updated.NotesInternal)
+	require.NotNil(t, updated.NotesPublic)
+	assert.Equal(t, "mitigated upstream", *updated.NotesPublic)
+	assert.Equal(t, []string{"ssrf", "triaged"}, updated.Tags)
+
+	// An explicit empty string still clears a field. Decoded into a fresh
+	// struct: reusing `updated` would keep the previous value for a field the
+	// response omits, hiding exactly what this asserts.
+	resp = patch(map[string]any{"notesPublic": ""})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	var cleared struct {
+		NotesPublic   *string `json:"notesPublic"`
+		NotesInternal *string `json:"notesInternal"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&cleared))
+	_ = resp.Body.Close()
+	assert.Nil(t, cleared.NotesPublic, "an explicit empty value must clear the column")
+	require.NotNil(t, cleared.NotesInternal, "clearing one field must not clear its neighbours")
+	assert.Equal(t, "under investigation", *cleared.NotesInternal)
+
+	// An out-of-enum severity is rejected rather than stored and silently
+	// dropped on read.
+	resp = patch(map[string]any{"severityOverride": "catastrophic"})
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	_ = resp.Body.Close()
 }

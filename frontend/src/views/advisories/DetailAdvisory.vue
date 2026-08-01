@@ -69,11 +69,14 @@
           :label="$t('advisories.kpi.cvss')"
           :color="cvssStatColor(advisory.cvssScore)"
         />
+        <!-- "—" rather than 0 when the check failed: a confident zero here
+             would be a false all-clear. Counts distinct environments, which is
+             what the API returns, so the label says environments. -->
         <StatCard
           :icon="IconStore"
-          :value="affectedLoading ? '…' : affectedTotal"
-          :label="$t('advisories.kpi.affectedShops')"
-          :color="affectedTotal > 0 ? 'destructive' : 'success'"
+          :value="affectedLoading ? '…' : affectedError ? '—' : affectedTotal"
+          :label="$t('advisories.kpi.affectedEnvironments')"
+          :color="affectedError ? 'muted' : affectedTotal > 0 ? 'destructive' : 'success'"
         />
         <StatCard
           :icon="IconCalendar"
@@ -111,6 +114,16 @@
               <div v-if="affectedLoading" class="space-y-2" aria-hidden="true">
                 <Skeleton v-for="i in 2" :key="i" class="h-10 w-full" />
               </div>
+
+              <!-- A failed check must never render as "nothing affected". -->
+              <Alert v-else-if="affectedError" variant="destructive">
+                <AlertDescription class="flex flex-wrap items-center gap-3">
+                  {{ affectedError }}
+                  <Button variant="outline" size="sm" @click="reloadAffected">
+                    {{ $t("common.retry") }}
+                  </Button>
+                </AlertDescription>
+              </Alert>
 
               <p v-else-if="!affected.length" class="py-2 text-sm text-muted-foreground">
                 {{ $t("advisories.affected.none") }}
@@ -196,12 +209,39 @@
 
               <div class="space-y-4">
                 <div>
-                  <Label class="text-xs text-muted-foreground">
+                  <Label for="suppress-scope" class="text-xs text-muted-foreground">
                     {{ $t("advisories.suppressScope") }}
                   </Label>
-                  <p class="mt-1 text-sm font-medium">{{ suppressTarget?.shopName }}</p>
-                  <p class="text-xs text-muted-foreground">
-                    {{ $t("advisories.suppressScopeShop") }}
+                  <!-- The action starts from one environment row, so that is
+                       the default. Shop-wide is offered explicitly because it
+                       is the wider decision and requires an elevated role. -->
+                  <Select id="suppress-scope" v-model="suppressScope">
+                    <SelectTrigger class="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="environment">
+                        {{
+                          $t("advisories.suppressScopeEnvironment", {
+                            name: suppressTarget?.environmentName ?? "",
+                          })
+                        }}
+                      </SelectItem>
+                      <SelectItem value="shop">
+                        {{
+                          $t("advisories.suppressScopeShopOption", {
+                            name: suppressTarget?.shopName ?? "",
+                          })
+                        }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    {{
+                      suppressScope === "shop"
+                        ? $t("advisories.suppressScopeShop")
+                        : $t("advisories.suppressScopeEnvironmentHint")
+                    }}
                   </p>
                 </div>
 
@@ -285,6 +325,7 @@
                   {{ $t("advisories.remediationUrl") }}
                 </div>
                 <a
+                  v-if="isSafeHttpUrl(advisory.remediationUrl)"
                   :href="advisory.remediationUrl"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -293,6 +334,10 @@
                   {{ advisory.remediationUrl }}
                   <icon-fa6-solid:arrow-up-right-from-square class="size-3 shrink-0" />
                 </a>
+                <!-- Non-http(s) values are shown but never made clickable. -->
+                <span v-else class="mt-0.5 block break-all text-xs text-muted-foreground">
+                  {{ advisory.remediationUrl }}
+                </span>
               </div>
               <div v-if="advisory.affectedComponents?.length">
                 <div class="text-xs font-medium text-muted-foreground">
@@ -394,6 +439,7 @@
                 <ul class="mt-1 space-y-1.5">
                   <li v-for="(ref, i) in advisory.externalReferences" :key="i">
                     <a
+                      v-if="isSafeHttpUrl(ref)"
                       :href="ref"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -402,6 +448,9 @@
                       <icon-fa6-solid:arrow-up-right-from-square class="mt-0.5 size-3 shrink-0" />
                       {{ ref }}
                     </a>
+                    <span v-else class="block break-all text-xs text-muted-foreground">{{
+                      ref
+                    }}</span>
                   </li>
                 </ul>
               </div>
@@ -410,6 +459,7 @@
                   {{ $t("advisories.disclosure") }}
                 </div>
                 <a
+                  v-if="isSafeHttpUrl(advisory.link)"
                   :href="advisory.link"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -418,6 +468,9 @@
                   <icon-fa6-solid:arrow-up-right-from-square class="mt-0.5 size-3 shrink-0" />
                   {{ advisory.link }}
                 </a>
+                <span v-else class="mt-0.5 block break-all text-xs text-muted-foreground">{{
+                  advisory.link
+                }}</span>
               </div>
 
               <div v-if="advisory.sources?.length">
@@ -482,7 +535,7 @@ import {
   getAdvisory,
   listAdvisoryAffectedEnvironments,
 } from "@/api/generated";
-import { cvssStatColor, severityStatColor } from "@/helpers/advisory";
+import { cvssStatColor, isSafeHttpUrl, severityStatColor } from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
 import { computed, onMounted, ref } from "vue";
@@ -502,6 +555,7 @@ const loading = ref(true);
 const error = ref("");
 const affected = ref<AffectedEnvironment[]>([]);
 const affectedLoading = ref(true);
+const affectedError = ref("");
 const affectedTotal = ref(0);
 const globalTotal = ref<number | null>(null);
 
@@ -532,6 +586,10 @@ const suppressReason = ref("");
 // Default to a bounded snooze: an unbounded default is how "temporary"
 // mitigations quietly become permanent blind spots.
 const suppressExpiry = ref("30");
+// Default to the environment the action was started from: it is the narrower
+// decision, and shop-wide acceptance requires an owner/admin role that a
+// member does not have.
+const suppressScope = ref<"environment" | "shop">("environment");
 const suppressSaving = ref(false);
 const suppressError = ref("");
 
@@ -539,6 +597,7 @@ function openSuppress(row: AffectedEnvironment) {
   suppressTarget.value = row;
   suppressReason.value = "";
   suppressExpiry.value = "30";
+  suppressScope.value = "environment";
   suppressError.value = "";
   suppressOpen.value = true;
 }
@@ -558,35 +617,65 @@ async function submitSuppress() {
 
   suppressSaving.value = true;
   suppressError.value = "";
-  const { error: apiError } = await createAdvisorySuppression({
-    path: { advisoryId: id },
-    body: {
-      shopId: target.shopId,
-      reason: suppressReason.value.trim(),
-      expiresAt: expiryIso(),
-    },
-  });
-  suppressSaving.value = false;
+  try {
+    const { error: apiError, response } = await createAdvisorySuppression({
+      path: { advisoryId: id },
+      body: {
+        shopId: target.shopId,
+        // Omitted for shop-wide scope; set narrows it to this environment.
+        environmentId: suppressScope.value === "shop" ? undefined : target.environmentId,
+        reason: suppressReason.value.trim(),
+        expiresAt: expiryIso(),
+      },
+    });
 
-  if (apiError) {
-    suppressError.value = t("advisories.suppressFailed");
-    return;
+    if (apiError) {
+      // Distinguish the cases a user can act on: a member choosing shop-wide
+      // scope, or a scope already suppressed by someone else.
+      if (response?.status === 403) {
+        suppressError.value = t("advisories.suppressForbidden");
+      } else if (response?.status === 409) {
+        suppressError.value = t("advisories.suppressConflict");
+      } else {
+        suppressError.value = t("advisories.suppressFailed");
+      }
+      return;
+    }
+
+    suppressOpen.value = false;
+    await loadAffected(id);
+  } finally {
+    // Cleared in finally so a network throw cannot leave the dialog stuck.
+    suppressSaving.value = false;
   }
-
-  suppressOpen.value = false;
-  await loadAffected(id);
 }
 
 async function loadAffected(id: string) {
+  affectedLoading.value = true;
+  affectedError.value = "";
   const { data, error: apiError } = await listAdvisoryAffectedEnvironments({
     path: { advisoryId: id },
   });
   affectedLoading.value = false;
-  if (apiError || !data) return;
+  if (apiError || !data) {
+    // Never fall through to the empty state: on a security page, "we could not
+    // check" rendered as "none of your shops are affected" is the one wrong
+    // answer that matters.
+    affected.value = [];
+    affectedTotal.value = 0;
+    globalTotal.value = null;
+    affectedError.value = t("advisories.affectedLoadFailed");
+    return;
+  }
 
   affected.value = data.environments;
   affectedTotal.value = data.total;
   globalTotal.value = data.globalTotal ?? null;
+}
+
+function reloadAffected() {
+  const id = advisory.value?.advisoryId;
+  if (id) void loadAffected(id);
 }
 
 onMounted(async () => {

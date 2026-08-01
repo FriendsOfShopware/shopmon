@@ -132,6 +132,20 @@ func (r *Repository) insert(ctx context.Context, record suppression.Suppression)
 	})
 }
 
+func (r *Repository) Find(ctx context.Context, id int64, organizationIDs []string) (suppression.Suppression, error) {
+	row, err := r.queries.GetAdvisorySuppressionInOrgs(ctx, queries.GetAdvisorySuppressionInOrgsParams{
+		ID:              id,
+		OrganizationIds: organizationIDs,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return suppression.Suppression{}, suppression.ErrNotFound
+		}
+		return suppression.Suppression{}, fmt.Errorf("get suppression: %w", err)
+	}
+	return toDomain(row), nil
+}
+
 func (r *Repository) Revoke(ctx context.Context, id int64, userID string, organizationIDs []string) (suppression.Suppression, error) {
 	row, err := r.queries.RevokeAdvisorySuppression(ctx, queries.RevokeAdvisorySuppressionParams{
 		ID:              id,

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,4 +72,25 @@ func TestTruncateSummary(t *testing.T) {
 	assert.Equal(t, "Short.", truncateSummary("Short."))
 	long := "This is a long first sentence that should be kept whole. And more text after."
 	assert.Equal(t, "This is a long first sentence that should be kept whole.", truncateSummary(long))
+}
+
+// NVD descriptions are arbitrary UTF-8 and this client falls back to
+// non-English text, so truncation must cut on a rune boundary: invalid UTF-8
+// is rejected by Postgres and would fail enrichment for that CVE entirely.
+func TestTruncateSummaryKeepsValidUTF8(t *testing.T) {
+	t.Parallel()
+
+	// Multi-byte runes straddling the 197-byte cut, with no sentence break.
+	text := strings.Repeat("ä", 300)
+	got := truncateSummary(text)
+
+	if !utf8.ValidString(got) {
+		t.Fatalf("truncated summary is not valid UTF-8: %q", got)
+	}
+	if !strings.HasSuffix(got, "...") {
+		t.Errorf("expected an ellipsis, got %q", got)
+	}
+	if len(got) > 201 {
+		t.Errorf("truncated summary too long: %d bytes", len(got))
+	}
 }

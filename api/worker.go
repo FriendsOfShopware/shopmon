@@ -88,7 +88,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		NVDAPIKey:   cfg.NVDAPIKey,
 		Mailer:      mailSvc,
 	})
-	securityPluginSync := securityplugin.NewService(q, shopwareaccount.NewClient(
+	securityPluginSync := securityplugin.NewService(pool, q, shopwareaccount.NewClient(
 		cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
 		EnvironmentScraper:         environmentScrape,

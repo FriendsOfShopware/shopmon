@@ -142,7 +142,12 @@ func matchAdvisories(shopwareVersion string, installed map[string]string, adviso
 func advisoryMatch(shopwareVersion string, installed map[string]string, adv SecurityAdvisory) (string, string, bool) {
 	for _, pkg := range adv.Packages {
 		constraint := strings.TrimSpace(pkg.AffectedVersions)
-		if constraint == "" {
+		// Both empty and "*" mean "everything" to version.Satisfies, and "*" is
+		// what ingest stores when Packagist omits the range. Treating it as a
+		// real constraint would report every shop as vulnerable on the strength
+		// of an incomplete advisory row. sbom.affects rejects it for the same
+		// reason; the two matchers must agree.
+		if constraint == "" || constraint == "*" {
 			continue
 		}
 

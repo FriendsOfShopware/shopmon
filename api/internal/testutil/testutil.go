@@ -347,6 +347,29 @@ func (e *TestEnv) SeedOrganization(t *testing.T, orgID, name, slug, userID strin
 	}
 }
 
+// SeedMember adds a user to an existing organization with an explicit role.
+// SeedOrganization always creates an owner, so this is what makes role-gated
+// behaviour (member vs owner/admin) testable.
+func (e *TestEnv) SeedMember(t *testing.T, orgID, userID, role string) {
+	t.Helper()
+	ctx := context.Background()
+
+	_, err := e.Pool.Exec(ctx, `
+		INSERT INTO member (id, organization_id, user_id, role, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, fmt.Sprintf("member-%s-%s", orgID, userID), orgID, userID, role, time.Now())
+	if err != nil {
+		t.Fatalf("failed to seed member: %v", err)
+	}
+
+	_, err = e.Pool.Exec(ctx, `
+		UPDATE session SET active_organization_id = $1 WHERE user_id = $2 AND active_organization_id IS NULL
+	`, orgID, userID)
+	if err != nil {
+		t.Fatalf("failed to set active organization: %v", err)
+	}
+}
+
 // SeedShop creates a test shop in an organization.
 func (e *TestEnv) SeedShop(t *testing.T, orgID, name string) int {
 	t.Helper()

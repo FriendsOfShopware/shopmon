@@ -160,7 +160,8 @@
     "toggleSidebar": "Toggle Sidebar",
     "ratingOutOfFive": "{rating} out of 5",
     "organization": "Organization",
-    "project": "Project"
+    "project": "Project",
+    "retry": "Retry"
   },
   "alert": {
     "successTitle": "Action success",
@@ -272,8 +273,8 @@
     "kpi": {
       "severity": "Severity",
       "cvss": "CVSS score",
-      "affectedShops": "Affected shops",
-      "reported": "Reported"
+      "reported": "Reported",
+      "affectedEnvironments": "Affected environments"
     },
     "clearFilters": "Clear filters",
     "viewAll": "View all advisories",
@@ -301,7 +302,13 @@
     "suppressFailed": "Could not suppress this advisory",
     "unsuppress": "Remove suppression",
     "suppressedBadge": "Suppressed",
-    "suppressedUntil": "until {date}"
+    "suppressedUntil": "until {date}",
+    "affectedLoadFailed": "Could not check which of your environments are affected. The result below may be incomplete.",
+    "suppressForbidden": "You do not have permission to suppress this scope. Shop-wide suppression requires the owner or admin role.",
+    "suppressConflict": "An active suppression already covers this scope.",
+    "suppressScopeEnvironment": "This environment only ({name})",
+    "suppressScopeShopOption": "All environments of {name}",
+    "suppressScopeEnvironmentHint": "Other environments of this shop keep alerting."
   },
   "ecosystem": {
     "title": "Ecosystem",

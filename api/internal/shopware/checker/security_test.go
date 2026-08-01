@@ -342,3 +342,27 @@ func TestSecurityCheckID(t *testing.T) {
 	assert.Equal(t, "security.GHSA-abc", securityCheckID(SecurityAdvisory{GHSA: "GHSA-abc", ID: "x"}))
 	assert.Equal(t, "security.PKSA-1", securityCheckID(SecurityAdvisory{ID: "PKSA-1"}))
 }
+
+// Ingest stores "*" when Packagist omits an affected range. Both matchers must
+// reject it: treated as a constraint it means "every version", which would
+// report every shop as vulnerable on the strength of an incomplete row.
+func TestAdvisoryMatchIgnoresWildcardConstraint(t *testing.T) {
+	t.Parallel()
+
+	adv := SecurityAdvisory{
+		ID: "CVE-WILDCARD",
+		Packages: []SecurityAdvisoryPackage{
+			{PackageName: "shopware/core", AffectedVersions: "*"},
+		},
+	}
+
+	_, _, matched := advisoryMatch("6.7.8.2", map[string]string{"shopware/core": "6.7.8.2"}, adv)
+	assert.False(t, matched, "a wildcard range must never flag a shop")
+
+	// A real range on the same package still matches.
+	adv.Packages[0].AffectedVersions = ">=6.7.0.0,<6.7.10.1"
+	pkg, installed, matched := advisoryMatch("6.7.8.2", map[string]string{"shopware/core": "6.7.8.2"}, adv)
+	assert.True(t, matched)
+	assert.Equal(t, "shopware/core", pkg)
+	assert.Equal(t, "6.7.8.2", installed)
+}

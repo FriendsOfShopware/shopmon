@@ -12,20 +12,39 @@ import (
 )
 
 const deleteSecurityPluginFixesNotIn = `-- name: DeleteSecurityPluginFixesNotIn :exec
-DELETE FROM security_plugin_fix
-WHERE plugin_branch = ANY($1::text[])
-  AND ghsa_id != ALL($2::text[])
+DELETE FROM security_plugin_fix f
+WHERE f.plugin_branch = ANY($1::text[])
+  AND NOT EXISTS (
+    SELECT 1
+    FROM unnest($2::text[]) AS keep(pair)
+    WHERE keep.pair = concat_ws(' ', f.plugin_branch, f.ghsa_id)
+  )
 `
 
 type DeleteSecurityPluginFixesNotInParams struct {
-	Branches []string `json:"branches"`
-	GhsaIds  []string `json:"ghsa_ids"`
+	Branches  []string `json:"branches"`
+	KeepPairs []string `json:"keep_pairs"`
 }
 
-// Rows for branches that were re-derived but no longer name the GHSA. Scoped to
-// the observed branches so a partial sync never deletes another branch's map.
+// Rows for branches that were re-derived but no longer name the GHSA.
+//
+// The keep-set is (ghsa_id, plugin_branch) PAIRS, not a flat GHSA list: the
+// table is keyed per branch, and the same advisory is normally backported on
+// several. A flat list would let a GHSA still named by branch 4 protect the
+// stale row for branch 3, leaving shops on the 6.6 line credited with a
+// backport their plugin no longer carries.
+//
+// Scoped to the observed branches so a partial sync never deletes another
+// branch's map. Passing a branch with an empty keep-set deliberately clears
+// that branch (NOT EXISTS over an empty set is true for every row), so callers
+// must only include branches whose parse they accepted.
+//
+// Pairs are encoded as concat_ws(' ', branch, ghsa) because sqlc cannot type
+// the two-array unnest form. Safe as a composite key: branches are numeric
+// majors and GHSA ids match GHSA-[a-z0-9-]+, so neither component can contain
+// the separator. fixKeepPair is the single writer of this encoding.
 func (q *Queries) DeleteSecurityPluginFixesNotIn(ctx context.Context, arg DeleteSecurityPluginFixesNotInParams) error {
-	_, err := q.db.Exec(ctx, deleteSecurityPluginFixesNotIn, arg.Branches, arg.GhsaIds)
+	_, err := q.db.Exec(ctx, deleteSecurityPluginFixesNotIn, arg.Branches, arg.KeepPairs)
 	return err
 }
 

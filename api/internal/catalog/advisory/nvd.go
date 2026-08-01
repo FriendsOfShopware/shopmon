@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -233,7 +234,15 @@ func truncateSummary(text string) string {
 		return strings.TrimSpace(text[:i+1])
 	}
 	if len(text) > 200 {
-		return strings.TrimSpace(text[:197]) + "..."
+		// Cut on a rune boundary: NVD descriptions are arbitrary UTF-8 (this
+		// client even falls back to non-English text), and slicing mid-sequence
+		// would store invalid UTF-8 that Postgres rejects, failing enrichment
+		// for that CVE outright.
+		cut := 197
+		for cut > 0 && !utf8.RuneStart(text[cut]) {
+			cut--
+		}
+		return strings.TrimSpace(text[:cut]) + "..."
 	}
 	return text
 }

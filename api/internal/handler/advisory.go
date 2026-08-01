@@ -308,6 +308,10 @@ func (h *Handler) AdminUpdateAdvisory(w http.ResponseWriter, r *http.Request, ad
 			httputil.WriteError(w, http.StatusNotFound, "advisory not found")
 			return
 		}
+		if errors.Is(err, advisoryread.ErrInvalidInput) {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		slog.ErrorContext(r.Context(), "failed to update advisory", "advisoryId", advisoryID, "error", err)
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to update advisory")
 		return

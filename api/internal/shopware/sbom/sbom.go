@@ -80,9 +80,11 @@ func Fetch(ctx context.Context, client Fetcher) (*Document, error) {
 
 	raw, err := client.Get(ctx, Path)
 	if err != nil {
-		// A missing route is the expected answer from older FroshTools
-		// versions, so classify it rather than propagating a hard error.
-		if isNotFound(err) {
+		// Only a missing route means "this shop cannot serve an SBOM". A 403
+		// means the integration lacks the frosh_tools:read ACL — a fixable
+		// configuration problem that must surface as an error with last_error,
+		// not be filed away as a permanent capability gap nobody is told about.
+		if isMissingRoute(err) {
 			return nil, &ErrUnsupported{Reason: "endpoint not found"}
 		}
 		return nil, fmt.Errorf("fetch sbom: %w", err)
@@ -91,14 +93,27 @@ func Fetch(ctx context.Context, client Fetcher) (*Document, error) {
 	return Parse(raw)
 }
 
+// maxDocumentBytes caps the SBOM payload. The document is shop-controlled and
+// the admin client reads the body unbounded, so a hostile or runaway response
+// could otherwise allocate freely here and again when flattening components.
+// A real Shopware SBOM is a few hundred KB.
+const maxDocumentBytes = 8 << 20
+
 // Parse decodes a CycloneDX JSON document.
 func Parse(raw []byte) (*Document, error) {
+	if len(raw) > maxDocumentBytes {
+		return nil, fmt.Errorf("parse sbom: payload too large (%d bytes)", len(raw))
+	}
 	var doc Document
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		return nil, fmt.Errorf("parse sbom: %w", err)
 	}
 	if !strings.EqualFold(doc.BomFormat, "CycloneDX") {
-		return nil, &ErrUnsupported{Reason: fmt.Sprintf("unexpected bom format %q", doc.BomFormat)}
+		// The endpoint answered, so the shop is not "unsupported" — the payload
+		// is wrong. A real error keeps supported=true and records last_error,
+		// so a broken proxy or unexpected body is visible instead of looking
+		// like an absent plugin.
+		return nil, fmt.Errorf("parse sbom: unexpected bom format %q", doc.BomFormat)
 	}
 	return &doc, nil
 }
@@ -252,13 +267,15 @@ func SanitizeError(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// isNotFound reports whether the shop answered 404 (route missing because
-// FroshTools predates the SBOM endpoint) or 403 (the API key lacks the
-// frosh_tools:read ACL). Both mean "do not retry as an error".
-func isNotFound(err error) bool {
+// isMissingRoute reports whether the shop answered 404, which is how a
+// FroshTools release predating the SBOM endpoint replies. Deliberately not 403:
+// a permission failure is a configuration problem an operator can fix, and
+// classifying it as an absent capability would hide it behind a Debug log while
+// package-level advisory coverage stays silently disabled.
+func isMissingRoute(err error) bool {
 	var apiErr *shopware.ApiError
 	if errors.As(err, &apiErr) {
-		return apiErr.StatusCode == http.StatusNotFound || apiErr.StatusCode == http.StatusForbidden
+		return apiErr.StatusCode == http.StatusNotFound
 	}
 	return false
 }

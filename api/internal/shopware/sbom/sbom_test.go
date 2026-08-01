@@ -161,23 +161,45 @@ func TestVersionMapAndGeneratedAt(t *testing.T) {
 	}
 }
 
-func TestParseRejectsNonCycloneDX(t *testing.T) {
+// The endpoint answered, so the shop is not "unsupported" — the payload is
+// wrong. A real error keeps supported=true and records last_error instead of
+// silently filing the shop away as incapable.
+func TestParseRejectsNonCycloneDXAsError(t *testing.T) {
 	_, err := Parse([]byte(`{"bomFormat":"SPDX","components":[]}`))
+	if err == nil {
+		t.Fatal("expected an error for a non-CycloneDX document")
+	}
 	var unsupported *ErrUnsupported
-	if !errors.As(err, &unsupported) {
-		t.Fatalf("err = %v, want ErrUnsupported", err)
+	if errors.As(err, &unsupported) {
+		t.Fatalf("err = %v, want a plain parse error, not ErrUnsupported", err)
 	}
 }
 
-func TestFetchTreatsMissingRouteAsUnsupported(t *testing.T) {
-	for _, status := range []int{http.StatusNotFound, http.StatusForbidden} {
-		client := stubFetcher{err: &shopware.ApiError{StatusCode: status, Body: "nope"}}
-		_, err := Fetch(context.Background(), client)
+func TestParseRejectsOversizedPayload(t *testing.T) {
+	_, err := Parse(make([]byte, maxDocumentBytes+1))
+	if err == nil {
+		t.Fatal("expected an error for an oversized payload")
+	}
+	if !strings.Contains(err.Error(), "too large") {
+		t.Errorf("err = %v, want a size error", err)
+	}
+}
 
-		var unsupported *ErrUnsupported
-		if !errors.As(err, &unsupported) {
-			t.Errorf("status %d: err = %v, want ErrUnsupported", status, err)
-		}
+// Only 404 means "this FroshTools predates the SBOM route". A 403 is a missing
+// frosh_tools:read ACL — fixable configuration that must surface as an error,
+// not be hidden as an absent capability.
+func TestFetchTreatsOnly404AsUnsupported(t *testing.T) {
+	client := stubFetcher{err: &shopware.ApiError{StatusCode: http.StatusNotFound, Body: "nope"}}
+	_, err := Fetch(context.Background(), client)
+	var unsupported *ErrUnsupported
+	if !errors.As(err, &unsupported) {
+		t.Errorf("404: err = %v, want ErrUnsupported", err)
+	}
+
+	client = stubFetcher{err: &shopware.ApiError{StatusCode: http.StatusForbidden, Body: "missing acl"}}
+	_, err = Fetch(context.Background(), client)
+	if err == nil || errors.As(err, &unsupported) {
+		t.Errorf("403: err = %v, want a real error so the ACL problem is visible", err)
 	}
 }
 

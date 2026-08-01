@@ -1,4 +1,18 @@
-// Shared severity styling for the advisory list and detail pages.
+// Shared severity styling and link safety for the advisory pages.
+
+// Advisory URLs come from Packagist, NVD, and admin enrichment — none of which
+// Shopmon controls. rel="noopener noreferrer" does not stop a javascript: or
+// data: href from executing on click, so only http(s) links are ever rendered
+// as clickable.
+export function isSafeHttpUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const protocol = new URL(url).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export function severityBadgeClass(level: string | null | undefined): string {
   switch (level) {
@@ -49,7 +63,7 @@ export function severityStatColor(
 export function cvssStatColor(
   score: number | null | undefined,
 ): "destructive" | "warning" | "muted" {
-  if (score == null) return "muted";
+  if (score === null || score === undefined) return "muted";
   if (score >= 7) return "destructive";
   if (score >= 4) return "warning";
   return "muted";

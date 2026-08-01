@@ -1126,7 +1126,8 @@ export type ProviderId = string;
 export type NotificationId = number;
 
 /**
- * Packagist security advisory ID (PKSA-…)
+ * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+ *
  */
 export type AdvisoryId = string;
 
@@ -3284,7 +3285,8 @@ export type AdminGetAdvisoryData = {
     body?: never;
     path: {
         /**
-         * Packagist security advisory ID (PKSA-…)
+         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+         *
          */
         advisoryId: string;
     };
@@ -3322,7 +3324,8 @@ export type AdminUpdateAdvisoryData = {
     body: UpdateAdvisoryEnrichmentRequest;
     path: {
         /**
-         * Packagist security advisory ID (PKSA-…)
+         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+         *
          */
         advisoryId: string;
     };
@@ -3439,7 +3442,8 @@ export type GetAdvisoryData = {
     body?: never;
     path: {
         /**
-         * Packagist security advisory ID (PKSA-…)
+         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+         *
          */
         advisoryId: string;
     };
@@ -3473,7 +3477,8 @@ export type CreateAdvisorySuppressionData = {
     body: CreateAdvisorySuppressionRequest;
     path: {
         /**
-         * Packagist security advisory ID (PKSA-…)
+         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+         *
          */
         advisoryId: string;
     };
@@ -3501,7 +3506,7 @@ export type CreateAdvisorySuppressionErrors = {
     /**
      * An active suppression already covers this scope
      */
-    409: unknown;
+    409: ErrorResponse;
 };
 
 export type CreateAdvisorySuppressionError = CreateAdvisorySuppressionErrors[keyof CreateAdvisorySuppressionErrors];
@@ -3580,7 +3585,8 @@ export type ListAdvisoryAffectedEnvironmentsData = {
     body?: never;
     path: {
         /**
-         * Packagist security advisory ID (PKSA-…)
+         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
+         *
          */
         advisoryId: string;
     };

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -130,13 +132,29 @@ func newGitHubClient(token, userAgent string, httpClient *http.Client) *githubCl
 	}
 }
 
+// ghsaIDPattern constrains the id to GitHub's advisory shape. IDs reach us from
+// Packagist source records, which are third-party data: without this check a
+// value like "GHSA-x/../../user/repo" would be interpolated into the request
+// path and point an authenticated, token-bearing request at another endpoint.
+//
+// Deliberately shape-only (alphanumeric segments) rather than GitHub's exact
+// base32 alphabet: anything that could traverse or reshape a path is already
+// excluded, and a stricter rule would silently drop advisories if the id
+// encoding ever widens.
+var ghsaIDPattern = regexp.MustCompile(`^GHSA(-[A-Za-z0-9]{4,})+$`)
+
 func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githubAdvisoryDetails, error) {
 	ghsaID = strings.TrimSpace(ghsaID)
 	if ghsaID == "" {
 		return nil, fmt.Errorf("empty ghsa id")
 	}
+	if !ghsaIDPattern.MatchString(strings.ToUpper(ghsaID)) {
+		return nil, fmt.Errorf("malformed ghsa id %q", ghsaID)
+	}
 
-	endpoint := fmt.Sprintf("%s/advisories/%s", c.baseURL, ghsaID)
+	// Escaped as well as validated: defence in depth if the pattern is ever
+	// loosened.
+	endpoint := fmt.Sprintf("%s/advisories/%s", c.baseURL, url.PathEscape(ghsaID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create github advisory request: %w", err)

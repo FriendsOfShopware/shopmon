@@ -16,6 +16,10 @@ import (
 
 var ErrNotFound = errors.New("advisory not found")
 
+// ErrInvalidInput marks a rejected enrichment value, so the handler can answer
+// 400 rather than 500.
+var ErrInvalidInput = errors.New("invalid advisory input")
+
 type Service struct {
 	queries *queries.Queries
 }
@@ -189,60 +193,62 @@ type EnrichmentUpdate struct {
 	EnrichedBy            string
 }
 
-// UpdateEnrichment replaces all admin enrichment fields for an advisory.
-// Nil string pointers clear the column; nil slices become empty arrays.
-// IsVisible defaults to true when omitted.
+// UpdateEnrichment applies admin enrichment as a partial update: a field the
+// caller omitted keeps its stored value, and an explicitly empty string clears
+// it. The endpoint is a PATCH with every field optional, so treating omission
+// as "clear" would let a request that only sets tags silently wipe an
+// advisory's notes — or, worse, republish one an admin had deliberately hidden.
 func (s *Service) UpdateEnrichment(ctx context.Context, advisoryID string, update EnrichmentUpdate) (AdvisoryView, error) {
 	view, err := s.Get(ctx, advisoryID, false)
 	if err != nil {
 		return AdvisoryView{}, err
 	}
-	advisoryID = view.Advisory.AdvisoryID
+	current := view.Advisory
+	advisoryID = current.AdvisoryID
 
-	var severityOverride *string
-	if update.SeverityOverride != nil && strings.TrimSpace(*update.SeverityOverride) != "" {
-		v := strings.ToLower(strings.TrimSpace(*update.SeverityOverride))
-		severityOverride = &v
+	severityOverride := current.SeverityOverride
+	if update.SeverityOverride != nil {
+		trimmed := strings.ToLower(strings.TrimSpace(*update.SeverityOverride))
+		if trimmed == "" {
+			// An explicit empty value clears the override.
+			severityOverride = nil
+		} else {
+			// Reject unknown levels rather than storing a value that
+			// toSeverity would silently drop on read, leaving writes and
+			// reads disagreeing.
+			if !api.SeverityLevel(trimmed).Valid() {
+				return AdvisoryView{}, fmt.Errorf("%w: severity override %q", ErrInvalidInput, trimmed)
+			}
+			severityOverride = &trimmed
+		}
 	}
 
-	isVisible := true
+	isVisible := current.IsVisible
 	if update.IsVisible != nil {
 		isVisible = *update.IsVisible
 	}
 
-	components := []string{}
-	if update.AffectedComponents != nil && *update.AffectedComponents != nil {
+	components := current.AffectedComponents
+	if update.AffectedComponents != nil {
 		components = *update.AffectedComponents
 	}
-	tags := []string{}
-	if update.Tags != nil && *update.Tags != nil {
+	if components == nil {
+		components = []string{}
+	}
+	tags := current.Tags
+	if update.Tags != nil {
 		tags = *update.Tags
 	}
+	if tags == nil {
+		tags = []string{}
+	}
 
-	notesPublic := (*string)(nil)
-	if update.NotesPublic != nil {
-		notesPublic = nilIfEmpty(*update.NotesPublic)
-	}
-	notesInternal := (*string)(nil)
-	if update.NotesInternal != nil {
-		notesInternal = nilIfEmpty(*update.NotesInternal)
-	}
-	remediationSummary := (*string)(nil)
-	if update.RemediationSummary != nil {
-		remediationSummary = nilIfEmpty(*update.RemediationSummary)
-	}
-	remediationURL := (*string)(nil)
-	if update.RemediationUrl != nil {
-		remediationURL = nilIfEmpty(*update.RemediationUrl)
-	}
-	recommendedUpgrade := (*string)(nil)
-	if update.RecommendedUpgrade != nil {
-		recommendedUpgrade = nilIfEmpty(*update.RecommendedUpgrade)
-	}
-	impact := (*string)(nil)
-	if update.ShopwareImpactSummary != nil {
-		impact = nilIfEmpty(*update.ShopwareImpactSummary)
-	}
+	notesPublic := patchString(current.NotesPublic, update.NotesPublic)
+	notesInternal := patchString(current.NotesInternal, update.NotesInternal)
+	remediationSummary := patchString(current.RemediationSummary, update.RemediationSummary)
+	remediationURL := patchString(current.RemediationUrl, update.RemediationUrl)
+	recommendedUpgrade := patchString(current.RecommendedUpgrade, update.RecommendedUpgrade)
+	impact := patchString(current.ShopwareImpactSummary, update.ShopwareImpactSummary)
 
 	row, err := s.queries.UpdateComposerAdvisoryEnrichment(ctx, queries.UpdateComposerAdvisoryEnrichmentParams{
 		AdvisoryID:            advisoryID,
@@ -481,6 +487,15 @@ func emptyToNil(s *string) *string {
 	}
 	v := strings.TrimSpace(*s)
 	return &v
+}
+
+// patchString resolves one optional PATCH field: omitted keeps the stored
+// value, present-but-blank clears it, anything else replaces it.
+func patchString(current, update *string) *string {
+	if update == nil {
+		return current
+	}
+	return nilIfEmpty(*update)
 }
 
 func nilIfEmpty(s string) *string {

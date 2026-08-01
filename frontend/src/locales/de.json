@@ -160,7 +160,8 @@
     "toggleSidebar": "Seitenleiste umschalten",
     "ratingOutOfFive": "{rating} von 5",
     "organization": "Organisation",
-    "project": "Projekt"
+    "project": "Projekt",
+    "retry": "Erneut versuchen"
   },
   "alert": {
     "successTitle": "Aktion erfolgreich",
@@ -272,8 +273,8 @@
     "kpi": {
       "severity": "Schweregrad",
       "cvss": "CVSS-Wert",
-      "affectedShops": "Betroffene Shops",
-      "reported": "Gemeldet"
+      "reported": "Gemeldet",
+      "affectedEnvironments": "Betroffene Umgebungen"
     },
     "clearFilters": "Filter zurücksetzen",
     "viewAll": "Alle Meldungen anzeigen",
@@ -301,7 +302,13 @@
     "suppressFailed": "Meldung konnte nicht unterdrückt werden",
     "unsuppress": "Unterdrückung aufheben",
     "suppressedBadge": "Unterdrückt",
-    "suppressedUntil": "bis {date}"
+    "suppressedUntil": "bis {date}",
+    "affectedLoadFailed": "Es konnte nicht geprüft werden, welche Ihrer Umgebungen betroffen sind. Das Ergebnis unten ist möglicherweise unvollständig.",
+    "suppressForbidden": "Ihnen fehlt die Berechtigung für diesen Geltungsbereich. Eine shopweite Unterdrückung erfordert die Rolle Owner oder Admin.",
+    "suppressConflict": "Für diesen Geltungsbereich besteht bereits eine aktive Unterdrückung.",
+    "suppressScopeEnvironment": "Nur diese Umgebung ({name})",
+    "suppressScopeShopOption": "Alle Umgebungen von {name}",
+    "suppressScopeEnvironmentHint": "Andere Umgebungen dieses Shops melden weiterhin."
   },
   "ecosystem": {
     "title": "Ökosystem",
