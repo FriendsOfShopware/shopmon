@@ -298,7 +298,7 @@ func (q *Queries) GetEnvironmentCache(ctx context.Context, environmentID int32) 
 
 const getEnvironmentChangelogs = `-- name: GetEnvironmentChangelogs :many
 SELECT id, environment_id, extensions, old_shopware_version, new_shopware_version, date
-FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC LIMIT 10
+FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC
 `
 
 func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, environmentID *int32) ([]EnvironmentChangelog, error) {
