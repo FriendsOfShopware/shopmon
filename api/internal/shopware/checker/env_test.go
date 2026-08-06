@@ -47,5 +47,6 @@ func TestCheckEnv_MissingCacheInfo(t *testing.T) {
 
 	result := output.Result()
 	assert.Empty(t, result.Checks, "an unfetched cache info must not become an invalid-environment warning")
-	assert.Equal(t, []string{SourceShopware}, result.Unavailable)
+	assert.Equal(t, []UnavailableSource{{Source: SourceShopware, IDPrefix: prefixEnv}}, result.Unavailable,
+		"only the environment check is unknown; the other Shopware checks still ran")
 }

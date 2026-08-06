@@ -103,5 +103,6 @@ func TestCheckTasks_MissingScheduledTasks(t *testing.T) {
 
 	result := output.Result()
 	assert.Empty(t, result.Checks, "an unfetched task list must not report all tasks as running")
-	assert.Equal(t, []string{SourceShopware}, result.Unavailable)
+	assert.Equal(t, []UnavailableSource{{Source: SourceShopware, IDPrefix: prefixScheduledTask}}, result.Unavailable,
+		"only the task checks are unknown; the other Shopware checks still ran")
 }

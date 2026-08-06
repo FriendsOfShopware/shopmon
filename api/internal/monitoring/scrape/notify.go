@@ -121,20 +121,16 @@ func (h *Service) handleStatusTransition(ctx context.Context, env queries.GetAll
 }
 
 // carryOverChecks returns the previously persisted checks that belong to a
-// source the current run could not evaluate and that the run did not re-report.
+// check group the current run could not evaluate and that the run did not
+// re-report.
 //
 // A source is only reported unavailable when its data was unreachable, so its
 // findings are unknown rather than resolved. Dropping them would flip the
 // environment to green and mail out a recovery, then flip it back on the next
 // successful scrape — one upstream hiccup, two misleading emails.
-func carryOverChecks(oldChecks []queries.EnvironmentCheck, newChecks []checker.Check, unavailable []string) []checker.Check {
+func carryOverChecks(oldChecks []queries.EnvironmentCheck, newChecks []checker.Check, unavailable []checker.UnavailableSource) []checker.Check {
 	if len(oldChecks) == 0 || len(unavailable) == 0 {
 		return nil
-	}
-
-	unavailableSources := make(map[string]bool, len(unavailable))
-	for _, source := range unavailable {
-		unavailableSources[source] = true
 	}
 
 	reported := make(map[string]bool, len(newChecks))
@@ -142,16 +138,28 @@ func carryOverChecks(oldChecks []queries.EnvironmentCheck, newChecks []checker.C
 		reported[c.ID] = true
 	}
 
+	unevaluated := func(c queries.EnvironmentCheck) bool {
+		for _, u := range unavailable {
+			if u.Owns(c.Source, c.CheckID) {
+				return true
+			}
+		}
+		return false
+	}
+
 	carried := make([]checker.Check, 0, len(oldChecks))
 	for _, c := range oldChecks {
-		if !unavailableSources[c.Source] || reported[c.CheckID] {
+		if !unevaluated(c) || reported[c.CheckID] {
 			continue
 		}
 		link := ""
 		if c.Link != nil {
 			link = *c.Link
 		}
-		messageKey := ""
+		// Rows written before checks moved to translation keys carry only the
+		// rendered English message; fall back to it the way computeStatusReasons
+		// does, so a carry-over never blanks a check's text.
+		messageKey := c.Message
 		if c.MessageKey != nil {
 			messageKey = *c.MessageKey
 		}

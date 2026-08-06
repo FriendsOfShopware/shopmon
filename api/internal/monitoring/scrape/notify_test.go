@@ -78,6 +78,8 @@ func TestComputeStatusReasonsNoChange(t *testing.T) {
 	}
 }
 
+var froshUnavailable = checker.UnavailableSource{Source: checker.SourceFroshTools, IDPrefix: "frosh."}
+
 func sourcedCheck(id, level, source string) queries.EnvironmentCheck {
 	c := oldCheck(id, level)
 	c.Source = source
@@ -94,7 +96,7 @@ func TestCarryOverChecksKeepsUnavailableSourceFindings(t *testing.T) {
 	// The Shopware checks were re-evaluated; FroshTools timed out.
 	now := []checker.Check{newCheck("shopware.env", "green")}
 
-	carried := carryOverChecks(old, now, []string{checker.SourceFroshTools})
+	carried := carryOverChecks(old, now, []checker.UnavailableSource{froshUnavailable})
 	if len(carried) != 2 {
 		t.Fatalf("expected both FroshTools checks carried over, got %d: %+v", len(carried), carried)
 	}
@@ -134,7 +136,7 @@ func TestCarryOverChecksSkipsRereportedChecks(t *testing.T) {
 	// Health responded (phpGood now green), performance did not.
 	now := []checker.Check{newCheck("frosh.phpGood", "green")}
 
-	carried := carryOverChecks(old, now, []string{checker.SourceFroshTools})
+	carried := carryOverChecks(old, now, []checker.UnavailableSource{froshUnavailable})
 	if len(carried) != 1 || carried[0].ID != "frosh.cacheWarning" {
 		t.Fatalf("expected only the unreported check carried over, got %+v", carried)
 	}
@@ -145,5 +147,50 @@ func TestCarryOverChecksWithoutUnavailableSources(t *testing.T) {
 
 	if carried := carryOverChecks(old, nil, nil); len(carried) != 0 {
 		t.Fatalf("expected nothing carried over when every source was evaluated, got %+v", carried)
+	}
+}
+
+// Several checkers report under SourceShopware. When only one of them loses its
+// data, the others were still evaluated, so their vanished findings are real
+// resolutions and must not be resurrected.
+func TestCarryOverChecksDoesNotCrossDatasets(t *testing.T) {
+	old := []queries.EnvironmentCheck{
+		sourcedCheck("task.product_export", "yellow", checker.SourceShopware),
+		sourcedCheck("shopware.env", "yellow", checker.SourceShopware),
+		sourcedCheck("admin.worker", "yellow", checker.SourceShopware),
+	}
+	// The cache info fetch failed, so only shopware.env is unknown. The task
+	// checker ran and reported everything on schedule; the worker checker ran
+	// and reported the admin worker disabled.
+	now := []checker.Check{newCheck("task.all", "green"), newCheck("admin.worker", "green")}
+	unavailable := []checker.UnavailableSource{{Source: checker.SourceShopware, IDPrefix: "shopware.env"}}
+
+	carried := carryOverChecks(old, now, unavailable)
+	if len(carried) != 1 || carried[0].ID != "shopware.env" {
+		t.Fatalf("expected only the unevaluated environment check carried over, got %+v", carried)
+	}
+
+	// The resolved task and worker findings must not hold the status at yellow.
+	if status := checker.AggregateStatus(append(now, carried...), nil); status != checker.StatusYellow {
+		t.Fatalf("expected yellow from the carried environment check alone, got %q", status)
+	}
+	if status := checker.AggregateStatus(now, nil); status != checker.StatusGreen {
+		t.Fatalf("sanity: the evaluated checks alone should be green, got %q", status)
+	}
+}
+
+func TestCarryOverChecksFallsBackToRenderedMessage(t *testing.T) {
+	// A row written before checks moved to translation keys: message_key is NULL
+	// and only the rendered English text survives.
+	legacy := sourcedCheck("frosh.elasticsearch", "red", checker.SourceFroshTools)
+	legacy.MessageKey = nil
+	legacy.Message = "Elasticsearch is not reachable"
+
+	carried := carryOverChecks([]queries.EnvironmentCheck{legacy}, nil, []checker.UnavailableSource{froshUnavailable})
+	if len(carried) != 1 {
+		t.Fatalf("expected the legacy check carried over, got %+v", carried)
+	}
+	if carried[0].MessageKey != "Elasticsearch is not reachable" {
+		t.Fatalf("expected the rendered message kept as the fallback, got %q", carried[0].MessageKey)
 	}
 }

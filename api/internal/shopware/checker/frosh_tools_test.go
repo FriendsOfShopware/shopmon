@@ -216,7 +216,7 @@ func TestCheckFroshTools_HealthError(t *testing.T) {
 
 	result := output.Result()
 	assert.Empty(t, result.Checks, "expected no checks when health request errors")
-	assert.Equal(t, []string{SourceFroshTools}, result.Unavailable,
+	assert.Equal(t, []UnavailableSource{{Source: SourceFroshTools, IDPrefix: prefixFroshTools}}, result.Unavailable,
 		"a failed health request leaves the source unevaluated, not resolved")
 }
 
@@ -238,7 +238,7 @@ func TestCheckFroshTools_PerformanceError(t *testing.T) {
 
 	result := output.Result()
 	assert.Len(t, result.Checks, 1, "health checks that did arrive are kept")
-	assert.Equal(t, []string{SourceFroshTools}, result.Unavailable,
+	assert.Equal(t, []UnavailableSource{{Source: SourceFroshTools, IDPrefix: prefixFroshTools}}, result.Unavailable,
 		"the performance checks are missing, so the source stays unevaluated")
 }
 
@@ -251,7 +251,7 @@ func TestCheckFroshTools_MissingExtensions(t *testing.T) {
 
 	result := output.Result()
 	assert.Empty(t, result.Checks)
-	assert.Equal(t, []string{SourceFroshTools}, result.Unavailable,
+	assert.Equal(t, []UnavailableSource{{Source: SourceFroshTools, IDPrefix: prefixFroshTools}}, result.Unavailable,
 		"without the extension list FroshTools cannot be ruled in or out")
 }
 
@@ -270,6 +270,6 @@ func TestCheckFroshTools_InvalidHealthJSON(t *testing.T) {
 
 	result := output.Result()
 	assert.Empty(t, result.Checks, "expected no checks when health JSON invalid")
-	assert.Equal(t, []string{SourceFroshTools}, result.Unavailable,
+	assert.Equal(t, []UnavailableSource{{Source: SourceFroshTools, IDPrefix: prefixFroshTools}}, result.Unavailable,
 		"unparseable health data leaves the source unevaluated, not resolved")
 }

@@ -16,15 +16,15 @@ func checkEnv(_ context.Context, input Input, output *Output) {
 	// An unfetched cache info would look like an empty (and therefore invalid)
 	// environment name, which is a fabricated warning rather than a finding.
 	if input.Missing.CacheInfo {
-		output.MarkUnavailable(SourceShopware)
+		output.MarkUnavailable(SourceShopware, prefixEnv)
 		return
 	}
 
 	env := strings.ToLower(input.CacheInfo.Environment)
 	params := map[string]any{"environment": input.CacheInfo.Environment}
 	if !validEnvironments[env] {
-		output.Warning("shopware.env", "check.env.invalid", params, SourceShopware, "")
+		output.Warning(prefixEnv, "check.env.invalid", params, SourceShopware, "")
 	} else {
-		output.Success("shopware.env", "check.env.valid", params, SourceShopware, "")
+		output.Success(prefixEnv, "check.env.valid", params, SourceShopware, "")
 	}
 }

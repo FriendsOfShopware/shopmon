@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -16,13 +17,40 @@ const (
 	StatusRed    Status = "red"
 )
 
-// Check sources. Every check carries the source it originates from; it is also
-// the granularity at which a run can report that it could not collect data.
+// Check sources. Every check carries the source it originates from, which is
+// what the UI groups by.
 const (
 	SourceShopware   = "Shopware"
 	SourceFroshTools = "FroshTools"
 	SourceSecurity   = "Security"
 )
+
+// Check ID prefixes. Each checker names its checks after the data set it reads,
+// which is what makes a prefix a precise handle on the checks a single checker
+// owns — see UnavailableSource.
+const (
+	prefixEnv           = "shopware.env"
+	prefixScheduledTask = "task."
+	prefixFroshTools    = "frosh."
+	prefixSecurity      = "security."
+)
+
+// UnavailableSource marks one checker's checks as unevaluated for this run.
+//
+// The source alone is too coarse to act on: several checkers report under
+// SourceShopware, so a failed scheduled-task fetch must not imply that the
+// environment and worker checks are unknown too — those were evaluated, and
+// their findings disappearing is a real resolution. IDPrefix narrows an entry
+// to the checks the failing checker owns.
+type UnavailableSource struct {
+	Source   string
+	IDPrefix string
+}
+
+// Owns reports whether a persisted check falls under this entry.
+func (u UnavailableSource) Owns(source, checkID string) bool {
+	return source == u.Source && strings.HasPrefix(checkID, u.IDPrefix)
+}
 
 type Check struct {
 	ID    string `json:"id"`
@@ -101,17 +129,32 @@ type Input struct {
 type Result struct {
 	Status Status  `json:"status"`
 	Checks []Check `json:"checks"`
-	// Unavailable lists the sources whose checks could not be evaluated in this
+	// Unavailable lists the check groups that could not be evaluated in this
 	// run. Their checks are missing from Checks because the data was
 	// unreachable, not because the underlying problems went away.
-	Unavailable []string `json:"unavailable,omitempty"`
+	Unavailable []UnavailableSource `json:"unavailable,omitempty"`
+}
+
+// UnavailableNames returns the distinct source names of the unevaluated groups,
+// for logging and span attributes.
+func (r Result) UnavailableNames() []string {
+	seen := make(map[string]bool, len(r.Unavailable))
+	names := make([]string, 0, len(r.Unavailable))
+	for _, u := range r.Unavailable {
+		if seen[u.Source] {
+			continue
+		}
+		seen[u.Source] = true
+		names = append(names, u.Source)
+	}
+	return names
 }
 
 type Output struct {
 	mu          sync.Mutex
 	checks      []Check
 	ignores     map[string]bool
-	unavailable map[string]bool
+	unavailable map[UnavailableSource]bool
 }
 
 func NewOutput(ignores []string) *Output {
@@ -122,15 +165,16 @@ func NewOutput(ignores []string) *Output {
 	return &Output{
 		checks:      make([]Check, 0),
 		ignores:     ignoreMap,
-		unavailable: make(map[string]bool),
+		unavailable: make(map[UnavailableSource]bool),
 	}
 }
 
-// MarkUnavailable records that a source could not be evaluated in this run.
-func (o *Output) MarkUnavailable(source string) {
+// MarkUnavailable records that the checks named with idPrefix could not be
+// evaluated in this run.
+func (o *Output) MarkUnavailable(source, idPrefix string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	o.unavailable[source] = true
+	o.unavailable[UnavailableSource{Source: source, IDPrefix: idPrefix}] = true
 }
 
 func (o *Output) Success(id, messageKey string, params map[string]any, source, link string) {
@@ -176,11 +220,16 @@ func (o *Output) Result() Result {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	unavailable := make([]string, 0, len(o.unavailable))
-	for source := range o.unavailable {
-		unavailable = append(unavailable, source)
+	unavailable := make([]UnavailableSource, 0, len(o.unavailable))
+	for u := range o.unavailable {
+		unavailable = append(unavailable, u)
 	}
-	sort.Strings(unavailable)
+	sort.Slice(unavailable, func(i, j int) bool {
+		if unavailable[i].Source != unavailable[j].Source {
+			return unavailable[i].Source < unavailable[j].Source
+		}
+		return unavailable[i].IDPrefix < unavailable[j].IDPrefix
+	})
 
 	return Result{
 		Status:      aggregateStatus(o.checks, o.ignores),

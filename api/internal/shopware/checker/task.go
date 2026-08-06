@@ -10,7 +10,7 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 	// An unfetched task list is indistinguishable from "no tasks" here, and
 	// would resolve to the all-running success below.
 	if input.Missing.ScheduledTasks {
-		output.MarkUnavailable(SourceShopware)
+		output.MarkUnavailable(SourceShopware, prefixScheduledTask)
 		return
 	}
 
@@ -25,7 +25,7 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 		if isTaskOverdue(task) {
 			hasWarning = true
 			output.Warning(
-				fmt.Sprintf("task.%s", task.Name),
+				fmt.Sprintf("%s%s", prefixScheduledTask, task.Name),
 				"check.task.overdue",
 				map[string]any{"name": task.Name},
 				SourceShopware, "")
@@ -33,7 +33,7 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 	}
 
 	if !hasWarning {
-		output.Success("task.all", "check.task.allRunning", nil, SourceShopware, "")
+		output.Success(prefixScheduledTask+"all", "check.task.allRunning", nil, SourceShopware, "")
 	}
 }
 

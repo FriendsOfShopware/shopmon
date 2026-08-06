@@ -380,8 +380,9 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	_, checkSpan := tracer.Start(ctx, "environment.scrape.run_checks")
 	checkerResult := checker.RunAll(ctx, checkerInput)
 	checkSpan.SetAttributes(attribute.String("check.status", string(checkerResult.Status)))
-	if len(checkerResult.Unavailable) > 0 {
-		checkSpan.SetAttributes(attribute.StringSlice("check.unavailable_sources", checkerResult.Unavailable))
+	unavailableNames := checkerResult.UnavailableNames()
+	if len(unavailableNames) > 0 {
+		checkSpan.SetAttributes(attribute.StringSlice("check.unavailable_sources", unavailableNames))
 	}
 	checkSpan.End()
 
@@ -389,18 +390,29 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	// status transition can be explained by the specific checks that changed.
 	oldChecks, err := h.queries.GetEnvironmentChecks(ctx, env.ID)
 	if err != nil {
+		// With a check group unevaluated, the previous checks are the only
+		// record of its findings. Persisting without them would prune exactly
+		// those findings and mail out the false recovery this path exists to
+		// prevent, so fail the scrape and let it retry with the stored state
+		// intact. Without an unevaluated group the loss only costs the reasons
+		// attached to a transition, which is not worth failing over.
+		if len(checkerResult.Unavailable) > 0 {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			return fmt.Errorf("load previous checks while %v unavailable: %w", unavailableNames, err)
+		}
 		slog.Warn("failed to load previous checks for status diff", "environmentId", env.ID, "error", err)
 		oldChecks = nil
 	}
 
-	// Sources that could not be evaluated keep their last known checks, so an
-	// unreachable source does not silently resolve every finding it reported.
+	// Check groups that could not be evaluated keep their last known checks, so
+	// an unreachable source does not silently resolve every finding it reported.
 	finalChecks := checkerResult.Checks
 	if len(checkerResult.Unavailable) > 0 {
 		carried := carryOverChecks(oldChecks, checkerResult.Checks, checkerResult.Unavailable)
 		if len(carried) > 0 {
 			log.Warn("check sources unavailable, keeping last known checks",
-				"sources", checkerResult.Unavailable, "checks", len(carried))
+				"sources", unavailableNames, "checks", len(carried))
 			finalChecks = append(finalChecks, carried...)
 		}
 	}
