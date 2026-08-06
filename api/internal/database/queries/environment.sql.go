@@ -309,7 +309,7 @@ func (q *Queries) GetEnvironmentCache(ctx context.Context, environmentID int32) 
 
 const getEnvironmentChangelogs = `-- name: GetEnvironmentChangelogs :many
 SELECT id, environment_id, extensions, old_shopware_version, new_shopware_version, date
-FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC LIMIT $2 OFFSET $3
+FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC, id DESC LIMIT $2 OFFSET $3
 `
 
 type GetEnvironmentChangelogsParams struct {
@@ -318,6 +318,9 @@ type GetEnvironmentChangelogsParams struct {
 	Offset        int32  `json:"offset"`
 }
 
+// id breaks ties on date: inserts use NOW() (the transaction timestamp), so
+// entries written in one transaction share a date and would otherwise order
+// non-deterministically, letting offset pages overlap or skip entries.
 func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, arg GetEnvironmentChangelogsParams) ([]EnvironmentChangelog, error) {
 	rows, err := q.db.Query(ctx, getEnvironmentChangelogs, arg.EnvironmentID, arg.Limit, arg.Offset)
 	if err != nil {

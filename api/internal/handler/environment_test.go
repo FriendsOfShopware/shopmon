@@ -182,6 +182,82 @@ func TestGetEnvironmentChangelogs_Paginates(t *testing.T) {
 	assert.Empty(t, beyond.Entries)
 }
 
+// Inserts share a single NOW() per transaction, so entries with identical dates
+// are normal. Ordering must still be total or offset pages overlap/skip entries.
+func TestGetEnvironmentChangelogs_IdenticalDatesPaginateWithoutOverlap(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	for i := 0; i < 15; i++ {
+		_, err := env.Pool.Exec(t.Context(),
+			`INSERT INTO environment_changelog (environment_id, extensions, date)
+			 VALUES ($1, '[]'::jsonb, '2026-01-01 12:00:00')`, environmentID)
+		require.NoError(t, err)
+	}
+
+	fetchIDs := func(limit, offset int) []int {
+		t.Helper()
+		req := testutil.NewRequest(t, "GET",
+			fmt.Sprintf("%s/api/environments/%d/changelogs?limit=%d&offset=%d", env.Server.URL, environmentID, limit, offset), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var page api.EnvironmentChangelogsResponse
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&page))
+		ids := make([]int, 0, len(page.Entries))
+		for _, entry := range page.Entries {
+			ids = append(ids, entry.Id)
+		}
+		return ids
+	}
+
+	// With every date equal, a total ordering is what makes paging coherent: the
+	// pages must concatenate into exactly the same sequence as one unpaged read.
+	unpaged := fetchIDs(15, 0)
+	require.Len(t, unpaged, 15)
+	assert.IsDecreasing(t, unpaged, "entries sharing a date must fall back to a deterministic id order")
+
+	var paged []int
+	for offset := 0; offset < 15; offset += 5 {
+		page := fetchIDs(5, offset)
+		require.Len(t, page, 5)
+		paged = append(paged, page...)
+	}
+	assert.Equal(t, unpaged, paged, "paging must not overlap, skip, or reorder entries")
+}
+
+func TestGetEnvironmentChangelogs_RejectsOutOfRangePagination(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	for _, query := range []string{
+		"?limit=0",
+		"?limit=-1",
+		"?limit=101",
+		"?limit=2147483648",
+		"?offset=-1",
+	} {
+		req := testutil.NewRequest(t, "GET",
+			fmt.Sprintf("%s/api/environments/%d/changelogs%s", env.Server.URL, environmentID, query), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode, "query %q must be rejected", query)
+		_ = resp.Body.Close()
+	}
+}
+
 func TestGetEnvironmentChangelogs_NotMember(t *testing.T) {
 	env := testutil.Setup(t)
 	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")

@@ -201,10 +201,12 @@ import { Button } from "@/components/ui/button";
 import { getEnvironmentChangelogs, type AccountChangelog } from "@/api/generated";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useAlert } from "@/composables/useAlert";
+import { useI18n } from "vue-i18n";
 
 const { environment } = useEnvironmentDetail();
 const changelogText = useChangelogText();
 const { error } = useAlert();
+const { t } = useI18n();
 
 const PAGE_SIZE = 10;
 
@@ -217,32 +219,57 @@ const hasLoaded = ref(false);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)));
 
+// Page fetches can overlap (switching environments, or clicking through pages
+// quickly). Only the newest request may write to the state, so a slow earlier
+// response cannot replace it with another page — or another environment's history.
+let requestId = 0;
+
 async function loadPage(page: number) {
   const id = environment.value?.id;
   if (!id) return;
 
+  const request = ++requestId;
   isLoading.value = true;
   try {
-    const { data } = await getEnvironmentChangelogs({
+    const { data, error: responseError } = await getEnvironmentChangelogs({
       path: { environmentId: id },
       query: { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
     });
-    entries.value = data?.entries ?? [];
-    total.value = data?.total ?? 0;
+    if (request !== requestId) return;
+
+    // The client resolves with an error instead of throwing, so a failed
+    // request must not be rendered as an empty history.
+    if (responseError || !data) {
+      error(t("shopDetail.failedLoadChangelogs"));
+      return;
+    }
+
+    entries.value = data.entries;
+    total.value = data.total;
     currentPage.value = page;
     // Expansion state refers to entries of the previous page.
     expanded.clear();
   } catch (e) {
+    if (request !== requestId) return;
     error(e instanceof Error ? e.message : String(e));
   } finally {
-    isLoading.value = false;
-    hasLoaded.value = true;
+    if (request === requestId) {
+      isLoading.value = false;
+      hasLoaded.value = true;
+    }
   }
 }
 
 watch(
   () => environment.value?.id,
   (id) => {
+    // Drop the previous environment's history so it cannot be shown under the
+    // new one while its first page is still loading.
+    entries.value = [];
+    total.value = 0;
+    currentPage.value = 1;
+    hasLoaded.value = false;
+    expanded.clear();
     if (id) void loadPage(1);
   },
   { immediate: true },

@@ -366,6 +366,18 @@ func (h *Handler) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// The generated binder only parses integers, it does not enforce the bounds
+	// declared in the spec. Reject out-of-range values here so they cannot reach
+	// PostgreSQL or wrap during the int32 conversion.
+	if params.Limit != nil && (*params.Limit < 1 || *params.Limit > 100) {
+		httputil.WriteError(w, http.StatusBadRequest, "limit must be between 1 and 100")
+		return
+	}
+	if params.Offset != nil && *params.Offset < 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "offset must be greater than or equal to 0")
+		return
+	}
+
 	limit := int32(10)
 	offset := int32(0)
 	if params.Limit != nil {

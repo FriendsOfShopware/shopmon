@@ -491,21 +491,31 @@ const overdueTasks = computed(() => {
 });
 
 // The changelog history is paginated on its own tab, so the overview fetches
-// just the handful of entries it previews.
+// just the handful of entries it previews. Only the newest request may write to
+// the preview, so a slow response cannot show a previous environment's history.
 const recentChangelogs = ref<AccountChangelog[]>([]);
+let changelogRequestId = 0;
 
 watch(
   () => environment.value?.id,
   async (id) => {
-    if (!id) {
-      recentChangelogs.value = [];
-      return;
-    }
-    const { data } = await getEnvironmentChangelogs({
+    const request = ++changelogRequestId;
+    recentChangelogs.value = [];
+    if (!id) return;
+
+    const { data, error: responseError } = await getEnvironmentChangelogs({
       path: { environmentId: id },
       query: { limit: 5, offset: 0 },
     });
-    recentChangelogs.value = data?.entries ?? [];
+    if (request !== changelogRequestId) return;
+
+    // The client resolves with an error instead of throwing, so a failed
+    // request must not be rendered as an empty history.
+    if (responseError || !data) {
+      error(t("shopDetail.failedLoadChangelogs"));
+      return;
+    }
+    recentChangelogs.value = data.entries;
   },
   { immediate: true },
 );

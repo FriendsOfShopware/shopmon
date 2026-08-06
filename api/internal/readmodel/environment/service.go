@@ -347,7 +347,7 @@ func (s *Service) Changelogs(ctx context.Context, userID string, environmentID, 
 
 	entries, err := mapEnvironmentChangelogs(&environment, rows)
 	if err != nil {
-		return api.EnvironmentChangelogsResponse{}, err
+		return api.EnvironmentChangelogsResponse{}, fmt.Errorf("map environment changelogs: %w", err)
 	}
 	return api.EnvironmentChangelogsResponse{Entries: entries, Total: int(total)}, nil
 }
