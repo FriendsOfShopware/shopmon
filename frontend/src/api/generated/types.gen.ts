@@ -301,9 +301,17 @@ export type EnvironmentDetail = {
     cache: CacheInfo | null;
     checks: Array<EnvironmentCheck>;
     sitespeeds: Array<Sitespeed>;
-    changelogs: Array<AccountChangelog>;
+    /**
+     * Total number of recorded changelog entries. The entries themselves are paginated via GET /environments/{environmentId}/changelogs.
+     */
+    changelogsCount: number;
     deploymentsCount: number;
     subscribed: boolean;
+};
+
+export type EnvironmentChangelogsResponse = {
+    entries: Array<AccountChangelog>;
+    total: number;
 };
 
 export type EnvironmentExtension = {
@@ -1762,6 +1770,47 @@ export type GetEnvironmentStatusEventsResponses = {
 };
 
 export type GetEnvironmentStatusEventsResponse = GetEnvironmentStatusEventsResponses[keyof GetEnvironmentStatusEventsResponses];
+
+export type GetEnvironmentChangelogsData = {
+    body?: never;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: {
+        limit?: number;
+        offset?: number;
+    };
+    url: '/environments/{environmentId}/changelogs';
+};
+
+export type GetEnvironmentChangelogsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetEnvironmentChangelogsError = GetEnvironmentChangelogsErrors[keyof GetEnvironmentChangelogsErrors];
+
+export type GetEnvironmentChangelogsResponses = {
+    /**
+     * Paginated changelog entries (most recent first)
+     */
+    200: EnvironmentChangelogsResponse;
+};
+
+export type GetEnvironmentChangelogsResponse = GetEnvironmentChangelogsResponses[keyof GetEnvironmentChangelogsResponses];
 
 export type UpdateSitespeedSettingsData = {
     body: SitespeedSettingsRequest;

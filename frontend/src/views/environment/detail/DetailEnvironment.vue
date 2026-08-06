@@ -328,6 +328,8 @@
 <script setup lang="ts">
 import {
   checkExtensionCompatibility,
+  getEnvironmentChangelogs,
+  type AccountChangelog,
   type EnvironmentExtension as Extension,
 } from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
@@ -335,7 +337,7 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import EnvironmentChangelog from "@/components/modal/ShopChangelog.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
@@ -488,10 +490,25 @@ const overdueTasks = computed(() => {
     .slice(0, 5);
 });
 
-const recentChangelogs = computed(() => {
-  if (!environment.value?.changelogs) return [];
-  return environment.value.changelogs.slice(0, 5);
-});
+// The changelog history is paginated on its own tab, so the overview fetches
+// just the handful of entries it previews.
+const recentChangelogs = ref<AccountChangelog[]>([]);
+
+watch(
+  () => environment.value?.id,
+  async (id) => {
+    if (!id) {
+      recentChangelogs.value = [];
+      return;
+    }
+    const { data } = await getEnvironmentChangelogs({
+      path: { environmentId: id },
+      query: { limit: 5, offset: 0 },
+    });
+    recentChangelogs.value = data?.entries ?? [];
+  },
+  { immediate: true },
+);
 
 function getOverdueTime(nextExecutionTime: string): string {
   const diffMs = Date.now() - new Date(nextExecutionTime).getTime();

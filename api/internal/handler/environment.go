@@ -359,6 +359,30 @@ func (h *Handler) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetEnvironmentChangelogs returns a page of recorded changelog entries for an environment.
+func (h *Handler) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetEnvironmentChangelogsParams) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	limit := int32(10)
+	offset := int32(0)
+	if params.Limit != nil {
+		limit = int32(*params.Limit)
+	}
+	if params.Offset != nil {
+		offset = int32(*params.Offset)
+	}
+
+	result, err := h.environments.Changelogs(r.Context(), user.ID, int32(environmentId), limit, offset)
+	if err != nil {
+		h.writeEnvironmentReadError(w, r, "list environment changelogs", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
 // GetEnvironmentStatusEvents returns the status change history for an environment.
 func (h *Handler) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
 	user := h.requireUser(w, r)

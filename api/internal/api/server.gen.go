@@ -570,6 +570,12 @@ type EcosystemStats struct {
 	ShopwareVersions []ShopwareVersionCount `json:"shopwareVersions"`
 }
 
+// EnvironmentChangelogsResponse defines model for EnvironmentChangelogsResponse.
+type EnvironmentChangelogsResponse struct {
+	Entries []AccountChangelog `json:"entries"`
+	Total   int                `json:"total"`
+}
+
 // EnvironmentCheck defines model for EnvironmentCheck.
 type EnvironmentCheck struct {
 	Id      string  `json:"id"`
@@ -586,8 +592,10 @@ type EnvironmentCheck struct {
 
 // EnvironmentDetail defines model for EnvironmentDetail.
 type EnvironmentDetail struct {
-	Cache              *CacheInfo             `json:"cache"`
-	Changelogs         []AccountChangelog     `json:"changelogs"`
+	Cache *CacheInfo `json:"cache"`
+
+	// ChangelogsCount Total number of recorded changelog entries. The entries themselves are paginated via GET /environments/{environmentId}/changelogs.
+	ChangelogsCount    int                    `json:"changelogsCount"`
 	Checks             []EnvironmentCheck     `json:"checks"`
 	CreatedAt          time.Time              `json:"createdAt"`
 	DeploymentsCount   int                    `json:"deploymentsCount"`
@@ -1062,6 +1070,12 @@ type GetEnvironmentParams struct {
 // GetEnvironmentParamsLanguage defines parameters for GetEnvironment.
 type GetEnvironmentParamsLanguage string
 
+// GetEnvironmentChangelogsParams defines parameters for GetEnvironmentChangelogs.
+type GetEnvironmentChangelogsParams struct {
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // GetDeploymentsParams defines parameters for GetDeployments.
 type GetDeploymentsParams struct {
 	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1201,6 +1215,9 @@ type ServerInterface interface {
 	// Update an environment
 	// (PATCH /environments/{environmentId})
 	UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
+	// List recorded changelog entries for an environment
+	// (GET /environments/{environmentId}/changelogs)
+	GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentChangelogsParams)
 	// Clear Shopware cache for the environment
 	// (POST /environments/{environmentId}/clear-cache)
 	ClearEnvironmentCache(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
@@ -1477,6 +1494,12 @@ func (_ Unimplemented) GetEnvironment(w http.ResponseWriter, r *http.Request, en
 // Update an environment
 // (PATCH /environments/{environmentId})
 func (_ Unimplemented) UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List recorded changelog entries for an environment
+// (GET /environments/{environmentId}/changelogs)
+func (_ Unimplemented) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentChangelogsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2760,6 +2783,67 @@ func (siw *ServerInterfaceWrapper) UpdateEnvironment(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateEnvironment(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEnvironmentChangelogs operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEnvironmentChangelogsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEnvironmentChangelogs(w, r, environmentId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4191,6 +4275,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/environments/{environmentId}", wrapper.UpdateEnvironment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/changelogs", wrapper.GetEnvironmentChangelogs)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/environments/{environmentId}/clear-cache", wrapper.ClearEnvironmentCache)

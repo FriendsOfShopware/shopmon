@@ -56,6 +56,9 @@ func TestGetEnvironment(t *testing.T) {
 	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+	// The detail payload reports only the changelog count; the entries themselves
+	// are served paginated by GetEnvironmentChangelogs.
+	seedChangelogs(t, env, environmentID, 12)
 
 	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -68,6 +71,7 @@ func TestGetEnvironment(t *testing.T) {
 
 	var environment api.EnvironmentDetail
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environment))
+	assert.Equal(t, 12, environment.ChangelogsCount)
 	assert.Equal(t, "My Environment", environment.Name)
 	assert.Equal(t, "https://env.example.com", environment.Url)
 	assert.Equal(t, "6.5.0.0", environment.ShopwareVersion)
@@ -89,6 +93,106 @@ func TestGetEnvironment_NotMember(t *testing.T) {
 	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
 
 	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+// seedChangelogs inserts count changelog entries for an environment, oldest
+// first, so that the newest entry is the last one inserted.
+func seedChangelogs(t *testing.T, env *testutil.TestEnv, environmentID, count int) {
+	t.Helper()
+	for i := 0; i < count; i++ {
+		extensions := fmt.Sprintf(
+			`[{"name":"SwagPayPal","label":"PayPal","state":"updated","oldVersion":"1.%d.0","newVersion":"1.%d.0","active":true}]`,
+			i, i+1,
+		)
+		_, err := env.Pool.Exec(t.Context(),
+			`INSERT INTO environment_changelog (environment_id, extensions, date)
+			 VALUES ($1, $2, NOW() - make_interval(hours => $3))`,
+			environmentID, extensions, count-i,
+		)
+		require.NoError(t, err)
+	}
+}
+
+func TestGetEnvironmentChangelogs_Paginates(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+	seedChangelogs(t, env, environmentID, 25)
+
+	fetch := func(query string) api.EnvironmentChangelogsResponse {
+		t.Helper()
+		req := testutil.NewRequest(t, "GET",
+			fmt.Sprintf("%s/api/environments/%d/changelogs%s", env.Server.URL, environmentID, query), nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var result api.EnvironmentChangelogsResponse
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+		return result
+	}
+
+	// The total always reports the full history, independent of the page size.
+	first := fetch("?limit=10&offset=0")
+	assert.Equal(t, 25, first.Total)
+	require.Len(t, first.Entries, 10)
+
+	second := fetch("?limit=10&offset=10")
+	assert.Equal(t, 25, second.Total)
+	require.Len(t, second.Entries, 10)
+
+	last := fetch("?limit=10&offset=20")
+	assert.Equal(t, 25, last.Total)
+	assert.Len(t, last.Entries, 5)
+
+	// Entries are newest first and pages must not overlap.
+	assert.True(t, first.Entries[0].Date.After(first.Entries[9].Date))
+	assert.True(t, first.Entries[9].Date.After(second.Entries[0].Date))
+
+	seen := make(map[int]bool)
+	for _, page := range []api.EnvironmentChangelogsResponse{first, second, last} {
+		for _, entry := range page.Entries {
+			require.False(t, seen[entry.Id], "entry %d returned on more than one page", entry.Id)
+			seen[entry.Id] = true
+			assert.Equal(t, environmentID, entry.EnvironmentId)
+			assert.Equal(t, "My Environment", entry.EnvironmentName)
+			assert.Len(t, entry.Extensions, 1)
+		}
+	}
+	assert.Len(t, seen, 25)
+
+	// Omitting the query parameters falls back to the first page.
+	assert.Len(t, fetch("").Entries, 10)
+
+	// An offset past the end yields no entries but still reports the total.
+	beyond := fetch("?limit=10&offset=25")
+	assert.Equal(t, 25, beyond.Total)
+	assert.Empty(t, beyond.Entries)
+}
+
+func TestGetEnvironmentChangelogs_NotMember(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedUser(t, "user-2", "Other User", "other@example.com", "user")
+	env.SeedOrganization(t, "org-2", "Other Org", "other-org", "user-2")
+	shopID := env.SeedShop(t, "org-2", "Other Shop")
+	environmentID := env.SeedEnvironment(t, "org-2", shopID, "Other Environment", "https://other.example.com")
+	seedChangelogs(t, env, environmentID, 3)
+
+	req := testutil.NewRequest(t, "GET",
+		fmt.Sprintf("%s/api/environments/%d/changelogs", env.Server.URL, environmentID), nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
