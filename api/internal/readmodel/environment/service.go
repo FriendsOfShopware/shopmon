@@ -101,15 +101,15 @@ func (s *Service) Detail(ctx context.Context, userID string, environmentID int32
 }
 
 type detailAggregate struct {
-	extensions  []api.EnvironmentExtension
-	tasks       []queries.EnvironmentScheduledTask
-	queues      []queries.EnvironmentQueue
-	cache       *queries.EnvironmentCache
-	checks      []queries.EnvironmentCheck
-	sitespeeds  []queries.EnvironmentSitespeed
-	changelogs  []queries.EnvironmentChangelog
-	deployCount int32
-	subscribed  bool
+	extensions     []api.EnvironmentExtension
+	tasks          []queries.EnvironmentScheduledTask
+	queues         []queries.EnvironmentQueue
+	cache          *queries.EnvironmentCache
+	checks         []queries.EnvironmentCheck
+	sitespeeds     []queries.EnvironmentSitespeed
+	changelogCount int32
+	deployCount    int32
+	subscribed     bool
 }
 
 func (s *Service) loadAggregate(ctx context.Context, environmentID int32, language string) (detailAggregate, error) {
@@ -165,11 +165,11 @@ func (s *Service) loadAggregate(ctx context.Context, environmentID int32, langua
 		return nil
 	})
 	group.Go(func() error {
-		rows, err := s.queries.GetEnvironmentChangelogs(groupCtx, &environmentID)
+		count, err := s.queries.CountEnvironmentChangelogs(groupCtx, &environmentID)
 		if err != nil {
-			return fmt.Errorf("get environment changelogs: %w", err)
+			return fmt.Errorf("count environment changelogs: %w", err)
 		}
-		aggregate.changelogs = rows
+		aggregate.changelogCount = count
 		return nil
 	})
 	group.Go(func() error {
@@ -242,10 +242,6 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		}
 	}
 
-	changelogs, err := mapEnvironmentChangelogs(environment, aggregate.changelogs)
-	if err != nil {
-		return api.EnvironmentDetail{}, err
-	}
 	shopID := int(environment.ShopID)
 	var shopIDPointer *int
 	if environment.ShopID > 0 {
@@ -279,7 +275,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Cache:              mapEnvironmentCache(aggregate.cache),
 		Checks:             mapEnvironmentChecks(aggregate.checks),
 		Sitespeeds:         mapEnvironmentSitespeeds(aggregate.sitespeeds),
-		Changelogs:         changelogs,
+		ChangelogsCount:    int(aggregate.changelogCount),
 		DeploymentsCount:   int(aggregate.deployCount),
 		LastChangelog:      lastChangelog,
 		Subscribed:         aggregate.subscribed,
@@ -300,6 +296,60 @@ func int32PointerToInt(value *int32) *int {
 	}
 	converted := int(*value)
 	return &converted
+}
+
+// Changelogs returns a page of recorded changelog entries for an environment,
+// most recent first, alongside the total number of entries.
+func (s *Service) Changelogs(ctx context.Context, userID string, environmentID, limit, offset int32) (api.EnvironmentChangelogsResponse, error) {
+	environment, err := s.queries.GetEnvironmentByID(ctx, environmentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return api.EnvironmentChangelogsResponse{}, ErrNotFound
+		}
+		return api.EnvironmentChangelogsResponse{}, fmt.Errorf("get environment: %w", err)
+	}
+	member, err := s.authorizer.IsMember(ctx, userID, environment.OrganizationID)
+	if err != nil {
+		return api.EnvironmentChangelogsResponse{}, fmt.Errorf("authorize organization membership: %w", err)
+	}
+	if !member {
+		return api.EnvironmentChangelogsResponse{}, ErrNotAuthorized
+	}
+
+	var (
+		rows  []queries.EnvironmentChangelog
+		total int32
+	)
+	group, groupCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		result, err := s.queries.GetEnvironmentChangelogs(groupCtx, queries.GetEnvironmentChangelogsParams{
+			EnvironmentID: &environmentID,
+			Limit:         limit,
+			Offset:        offset,
+		})
+		if err != nil {
+			return fmt.Errorf("get environment changelogs: %w", err)
+		}
+		rows = result
+		return nil
+	})
+	group.Go(func() error {
+		count, err := s.queries.CountEnvironmentChangelogs(groupCtx, &environmentID)
+		if err != nil {
+			return fmt.Errorf("count environment changelogs: %w", err)
+		}
+		total = count
+		return nil
+	})
+	if err := group.Wait(); err != nil {
+		return api.EnvironmentChangelogsResponse{}, err
+	}
+
+	entries, err := mapEnvironmentChangelogs(&environment, rows)
+	if err != nil {
+		return api.EnvironmentChangelogsResponse{}, fmt.Errorf("map environment changelogs: %w", err)
+	}
+	return api.EnvironmentChangelogsResponse{Entries: entries, Total: int(total)}, nil
 }
 
 // StatusEvents returns the recent status change timeline for an environment.

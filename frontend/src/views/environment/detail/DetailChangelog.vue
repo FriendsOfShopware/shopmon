@@ -1,8 +1,9 @@
 <template>
   <div v-if="environment" class="space-y-6">
-    <!-- Empty state -->
+    <!-- Empty state — only once a page has actually been loaded, so the initial
+         fetch does not flash "no changes recorded". -->
     <div
-      v-if="!environment.changelogs?.length"
+      v-if="hasLoaded && !entries.length"
       class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
     >
       <icon-fa6-solid:clock-rotate-left class="size-10 text-muted-foreground" />
@@ -11,9 +12,9 @@
     </div>
 
     <!-- Timeline -->
-    <div v-else class="space-y-3">
+    <div v-if="entries.length" class="space-y-3" :class="{ 'opacity-60': isLoading }">
       <div
-        v-for="entry in environment.changelogs"
+        v-for="entry in entries"
         :key="entry.id"
         class="group rounded-xl border bg-card transition-colors hover:border-primary/20"
       >
@@ -165,21 +166,114 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === 1 || isLoading"
+        @click="loadPage(currentPage - 1)"
+      >
+        {{ $t("common.previous") }}
+      </Button>
+      <span class="text-sm text-muted-foreground tabular-nums">{{
+        $t("common.pageOf", { current: currentPage, total: totalPages })
+      }}</span>
+      <Button
+        size="sm"
+        variant="outline"
+        :disabled="currentPage === totalPages || isLoading"
+        @click="loadPage(currentPage + 1)"
+      >
+        {{ $t("common.next") }}
+      </Button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { formatDate } from "@/helpers/formatter";
 import { useChangelogText } from "@/helpers/changelog";
 import { Badge } from "@/components/ui/badge";
-import { type AccountChangelog } from "@/api/generated";
+import { Button } from "@/components/ui/button";
+import { getEnvironmentChangelogs, type AccountChangelog } from "@/api/generated";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
+import { useAlert } from "@/composables/useAlert";
+import { useI18n } from "vue-i18n";
 
 const { environment } = useEnvironmentDetail();
 const changelogText = useChangelogText();
+const { error } = useAlert();
+const { t } = useI18n();
+
+const PAGE_SIZE = 10;
 
 const expanded = reactive(new Set<number>());
+const entries = ref<AccountChangelog[]>([]);
+const total = ref(0);
+const currentPage = ref(1);
+const isLoading = ref(false);
+const hasLoaded = ref(false);
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)));
+
+// Page fetches can overlap (switching environments, or clicking through pages
+// quickly). Only the newest request may write to the state, so a slow earlier
+// response cannot replace it with another page — or another environment's history.
+let requestId = 0;
+
+async function loadPage(page: number) {
+  const id = environment.value?.id;
+  if (!id) return;
+
+  const request = ++requestId;
+  isLoading.value = true;
+  try {
+    const { data, error: responseError } = await getEnvironmentChangelogs({
+      path: { environmentId: id },
+      query: { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+    });
+    if (request !== requestId) return;
+
+    // The client resolves with an error instead of throwing, so a failed
+    // request must not be rendered as an empty history.
+    if (responseError || !data) {
+      error(t("shopDetail.failedLoadChangelogs"));
+      return;
+    }
+
+    entries.value = data.entries;
+    total.value = data.total;
+    currentPage.value = page;
+    // Expansion state refers to entries of the previous page.
+    expanded.clear();
+  } catch (e) {
+    if (request !== requestId) return;
+    error(e instanceof Error ? e.message : String(e));
+  } finally {
+    if (request === requestId) {
+      isLoading.value = false;
+      hasLoaded.value = true;
+    }
+  }
+}
+
+watch(
+  () => environment.value?.id,
+  (id) => {
+    // Drop the previous environment's history so it cannot be shown under the
+    // new one while its first page is still loading.
+    entries.value = [];
+    total.value = 0;
+    currentPage.value = 1;
+    hasLoaded.value = false;
+    expanded.clear();
+    if (id) void loadPage(1);
+  },
+  { immediate: true },
+);
 
 function toggle(id: number) {
   if (expanded.has(id)) {

@@ -585,6 +585,40 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /environments/{environmentId}/changelogs:
+    get:
+      operationId: getEnvironmentChangelogs
+      tags: [Environments]
+      summary: List recorded changelog entries for an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Paginated changelog entries (most recent first)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvironmentChangelogsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /environments/{environmentId}/sitespeed-settings:
     put:
       operationId: updateSitespeedSettings
@@ -3439,7 +3473,7 @@ components:
         - cache
         - checks
         - sitespeeds
-        - changelogs
+        - changelogsCount
         - deploymentsCount
         - subscribed
       properties:
@@ -3527,14 +3561,28 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Sitespeed"
-        changelogs:
-          type: array
-          items:
-            $ref: "#/components/schemas/AccountChangelog"
+        changelogsCount:
+          type: integer
+          description: >-
+            Total number of recorded changelog entries. The entries themselves
+            are paginated via GET /environments/{environmentId}/changelogs.
         deploymentsCount:
           type: integer
         subscribed:
           type: boolean
+
+    EnvironmentChangelogsResponse:
+      type: object
+      required:
+        - entries
+        - total
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountChangelog"
+        total:
+          type: integer
 
     EnvironmentExtension:
       type: object

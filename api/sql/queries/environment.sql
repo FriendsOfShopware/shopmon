@@ -91,7 +91,13 @@ FROM environment_sitespeed WHERE environment_id = $1 ORDER BY created_at DESC LI
 
 -- name: GetEnvironmentChangelogs :many
 SELECT id, environment_id, extensions, old_shopware_version, new_shopware_version, date
-FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC;
+-- id breaks ties on date: inserts use NOW() (the transaction timestamp), so
+-- entries written in one transaction share a date and would otherwise order
+-- non-deterministically, letting offset pages overlap or skip entries.
+FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC, id DESC LIMIT $2 OFFSET $3;
+
+-- name: CountEnvironmentChangelogs :one
+SELECT COUNT(*)::int FROM environment_changelog WHERE environment_id = $1;
 
 -- name: CountEnvironmentDeployments :one
 SELECT COUNT(*)::int FROM deployment WHERE environment_id = $1;

@@ -591,9 +591,12 @@ func (s *seeder) seedSitespeed(environmentID int32, deployments []deploymentRef)
 	slog.Info("created sitespeed entries", "environmentId", environmentID, "count", count)
 }
 
-// seedChangelogs creates a series of extension/Shopware-version changelog entries
-// over the last week.
+// seedChangelogs creates a series of extension/Shopware-version changelog entries.
+// The history spans several weeks and deliberately exceeds one page so the
+// changelog tab's pagination is exercised by the seeded data.
 func (s *seeder) seedChangelogs(environmentID int32) {
+	v640 := "6.4.18.0"
+	v6420 := "6.4.20.0"
 	v650 := "6.5.0.0"
 	v651 := "6.5.1.0"
 	v652 := "6.5.2.0"
@@ -605,6 +608,79 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 		newShopwareVersion *string
 		date               time.Time
 	}{
+		// ── Older history: the extension versions chain forward into the entries
+		// below, so PayPal walks 4.3.0 → 6.0.0 across the whole timeline.
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagPayPal", "label": "PayPal", "state": "installed", "newVersion": "4.3.0", "active": true},
+				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "installed", "newVersion": "3.0.0", "active": true},
+				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "installed", "newVersion": "2.0.0", "active": true},
+			}),
+			date: s.now.Add(-34 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.3.0", "newVersion": "4.4.0", "active": true},
+			}),
+			oldShopwareVersion: &v640,
+			newShopwareVersion: &v6420,
+			date:               s.now.Add(-30 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "deactivated", "active": false},
+				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "updated", "oldVersion": "3.0.0", "newVersion": "3.1.0", "active": true},
+			}),
+			date: s.now.Add(-27 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "removed", "oldVersion": "2.0.0", "active": false},
+			}),
+			date: s.now.Add(-24 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.4.0", "newVersion": "4.5.0", "active": true},
+				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "installed", "newVersion": "1.2.0", "active": true},
+			}),
+			date: s.now.Add(-21 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "updated", "oldVersion": "1.2.0", "newVersion": "1.3.0", "active": true},
+			}),
+			date: s.now.Add(-18 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "updated", "oldVersion": "3.1.0", "newVersion": "4.0.0", "active": true},
+				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.5.0", "newVersion": "4.6.0", "active": true},
+			}),
+			date: s.now.Add(-15 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "deactivated", "active": false},
+			}),
+			date: s.now.Add(-12 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.6.0", "newVersion": "5.0.0", "active": true},
+				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "deactivated", "active": false},
+			}),
+			oldShopwareVersion: &v6420,
+			newShopwareVersion: &v650,
+			date:               s.now.Add(-9 * 24 * time.Hour),
+		},
+		{
+			extensions: mustJSON([]map[string]interface{}{
+				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "activated", "active": true},
+			}),
+			date: s.now.Add(-8 * 24 * time.Hour),
+		},
+		// ── Recent history (the original fixtures).
 		{
 			extensions: mustJSON([]map[string]interface{}{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.0.0", "newVersion": "5.1.0", "active": true},

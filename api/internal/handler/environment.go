@@ -359,6 +359,42 @@ func (h *Handler) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetEnvironmentChangelogs returns a page of recorded changelog entries for an environment.
+func (h *Handler) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetEnvironmentChangelogsParams) {
+	user := h.requireUser(w, r)
+	if user == nil {
+		return
+	}
+
+	// The generated binder only parses integers, it does not enforce the bounds
+	// declared in the spec. Reject out-of-range values here so they cannot reach
+	// PostgreSQL or wrap during the int32 conversion.
+	if params.Limit != nil && (*params.Limit < 1 || *params.Limit > 100) {
+		httputil.WriteError(w, http.StatusBadRequest, "limit must be between 1 and 100")
+		return
+	}
+	if params.Offset != nil && *params.Offset < 0 {
+		httputil.WriteError(w, http.StatusBadRequest, "offset must be greater than or equal to 0")
+		return
+	}
+
+	limit := int32(10)
+	offset := int32(0)
+	if params.Limit != nil {
+		limit = int32(*params.Limit)
+	}
+	if params.Offset != nil {
+		offset = int32(*params.Offset)
+	}
+
+	result, err := h.environments.Changelogs(r.Context(), user.ID, int32(environmentId), limit, offset)
+	if err != nil {
+		h.writeEnvironmentReadError(w, r, "list environment changelogs", err)
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, result)
+}
+
 // GetEnvironmentStatusEvents returns the status change history for an environment.
 func (h *Handler) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
 	user := h.requireUser(w, r)
