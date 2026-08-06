@@ -40,3 +40,12 @@ func TestCheckEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckEnv_MissingCacheInfo(t *testing.T) {
+	output := NewOutput(nil)
+	checkEnv(context.Background(), Input{Missing: MissingData{CacheInfo: true}}, output)
+
+	result := output.Result()
+	assert.Empty(t, result.Checks, "an unfetched cache info must not become an invalid-environment warning")
+	assert.Equal(t, []string{SourceShopware}, result.Unavailable)
+}

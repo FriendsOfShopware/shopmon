@@ -26,33 +26,48 @@ type securityAdvisory struct {
 }
 
 func checkSecurity(ctx context.Context, input Input, output *Output) {
+	// The advisory suppression below needs the installed security plugin, so
+	// without the extension list the advisories cannot be judged either way.
+	if input.Missing.Extensions {
+		output.MarkUnavailable(SourceSecurity)
+		return
+	}
+
+	// A failure to reach or read the advisory feed leaves the shop's exposure
+	// unknown. Emitting no checks would look like the advisories were resolved,
+	// so the source is marked unavailable and the caller keeps what it had.
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://raw.githubusercontent.com/FriendsOfShopware/shopware-static-data/main/data/security.json", nil)
 	if err != nil {
 		slog.Warn("failed to create security advisories request", "error", err)
+		output.MarkUnavailable(SourceSecurity)
 		return
 	}
 
 	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(15 * time.Second)).Do(req)
 	if err != nil {
 		slog.Warn("failed to fetch security advisories", "error", err)
+		output.MarkUnavailable(SourceSecurity)
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		slog.Warn("security advisories endpoint returned non-200", "status", resp.StatusCode)
+		output.MarkUnavailable(SourceSecurity)
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		slog.Warn("failed to read security response", "error", err)
+		output.MarkUnavailable(SourceSecurity)
 		return
 	}
 
 	var data securityData
 	if err := json.Unmarshal(body, &data); err != nil {
 		slog.Warn("failed to parse security data", "error", err)
+		output.MarkUnavailable(SourceSecurity)
 		return
 	}
 
@@ -90,6 +105,6 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 			messageKey = "check.security.advisoryCve"
 		}
 
-		output.Error(id, messageKey, params, "Security", advisory.Link)
+		output.Error(id, messageKey, params, SourceSecurity, advisory.Link)
 	}
 }

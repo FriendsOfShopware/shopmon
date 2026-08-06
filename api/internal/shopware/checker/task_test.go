@@ -96,3 +96,12 @@ func TestCheckTasks(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckTasks_MissingScheduledTasks(t *testing.T) {
+	output := NewOutput(nil)
+	checkTasks(context.Background(), Input{Missing: MissingData{ScheduledTasks: true}}, output)
+
+	result := output.Result()
+	assert.Empty(t, result.Checks, "an unfetched task list must not report all tasks as running")
+	assert.Equal(t, []string{SourceShopware}, result.Unavailable)
+}

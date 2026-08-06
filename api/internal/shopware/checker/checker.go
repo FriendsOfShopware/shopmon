@@ -3,6 +3,7 @@ package checker
 import (
 	"context"
 	"log/slog"
+	"sort"
 	"sync"
 	"time"
 )
@@ -13,6 +14,14 @@ const (
 	StatusGreen  Status = "green"
 	StatusYellow Status = "yellow"
 	StatusRed    Status = "red"
+)
+
+// Check sources. Every check carries the source it originates from; it is also
+// the granularity at which a run can report that it could not collect data.
+const (
+	SourceShopware   = "Shopware"
+	SourceFroshTools = "FroshTools"
+	SourceSecurity   = "Security"
 )
 
 type Check struct {
@@ -68,6 +77,16 @@ type HTTPClient interface {
 	Get(ctx context.Context, path string) ([]byte, error)
 }
 
+// MissingData marks upstream data sets the caller failed to collect for this
+// run. A checker that depends on a missing data set must not derive checks from
+// it — absent data is not a passing check — and marks its source unavailable
+// instead, so the caller can carry the last known checks forward.
+type MissingData struct {
+	Extensions     bool
+	ScheduledTasks bool
+	CacheInfo      bool
+}
+
 type Input struct {
 	Extensions     []Extension
 	Config         ShopConfig
@@ -76,18 +95,23 @@ type Input struct {
 	CacheInfo      CacheInfo
 	Client         HTTPClient
 	Ignores        []string
+	Missing        MissingData
 }
 
 type Result struct {
 	Status Status  `json:"status"`
 	Checks []Check `json:"checks"`
+	// Unavailable lists the sources whose checks could not be evaluated in this
+	// run. Their checks are missing from Checks because the data was
+	// unreachable, not because the underlying problems went away.
+	Unavailable []string `json:"unavailable,omitempty"`
 }
 
 type Output struct {
-	mu      sync.Mutex
-	status  Status
-	checks  []Check
-	ignores map[string]bool
+	mu          sync.Mutex
+	checks      []Check
+	ignores     map[string]bool
+	unavailable map[string]bool
 }
 
 func NewOutput(ignores []string) *Output {
@@ -96,10 +120,17 @@ func NewOutput(ignores []string) *Output {
 		ignoreMap[id] = true
 	}
 	return &Output{
-		status:  StatusGreen,
-		checks:  make([]Check, 0),
-		ignores: ignoreMap,
+		checks:      make([]Check, 0),
+		ignores:     ignoreMap,
+		unavailable: make(map[string]bool),
 	}
+}
+
+// MarkUnavailable records that a source could not be evaluated in this run.
+func (o *Output) MarkUnavailable(source string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.unavailable[source] = true
 }
 
 func (o *Output) Success(id, messageKey string, params map[string]any, source, link string) {
@@ -126,9 +157,6 @@ func (o *Output) Warning(id, messageKey string, params map[string]any, source, l
 		Source:        source,
 		Link:          link,
 	})
-	if !o.ignores[id] && o.status != StatusRed {
-		o.status = StatusYellow
-	}
 }
 
 func (o *Output) Error(id, messageKey string, params map[string]any, source, link string) {
@@ -142,16 +170,51 @@ func (o *Output) Error(id, messageKey string, params map[string]any, source, lin
 		Source:        source,
 		Link:          link,
 	})
-	if !o.ignores[id] {
-		o.status = StatusRed
-	}
 }
 
 func (o *Output) Result() Result {
-	return Result{
-		Status: o.status,
-		Checks: o.checks,
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	unavailable := make([]string, 0, len(o.unavailable))
+	for source := range o.unavailable {
+		unavailable = append(unavailable, source)
 	}
+	sort.Strings(unavailable)
+
+	return Result{
+		Status:      aggregateStatus(o.checks, o.ignores),
+		Checks:      o.checks,
+		Unavailable: unavailable,
+	}
+}
+
+// AggregateStatus derives the environment status from a set of checks. Checks
+// whose ID is ignored never escalate the status. It is exported so callers that
+// combine a run's checks with carried-over ones can recompute the status the
+// same way the run itself does.
+func AggregateStatus(checks []Check, ignores []string) Status {
+	ignoreMap := make(map[string]bool, len(ignores))
+	for _, id := range ignores {
+		ignoreMap[id] = true
+	}
+	return aggregateStatus(checks, ignoreMap)
+}
+
+func aggregateStatus(checks []Check, ignores map[string]bool) Status {
+	status := StatusGreen
+	for _, c := range checks {
+		if ignores[c.ID] {
+			continue
+		}
+		switch c.Level {
+		case StatusRed:
+			return StatusRed
+		case StatusYellow:
+			status = StatusYellow
+		}
+	}
+	return status
 }
 
 // RunAll runs all checkers concurrently and returns the aggregated result.
