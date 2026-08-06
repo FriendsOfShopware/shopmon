@@ -177,7 +177,9 @@
 
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap">
-            <code class="font-mono text-xs font-semibold sm:min-w-[180px]">SHOPMON_SHOP_ID</code>
+            <code class="font-mono text-xs font-semibold sm:min-w-[180px]"
+              >SHOPMON_ENVIRONMENT_ID</code
+            >
             <Badge variant="secondary" class="font-mono text-xs break-all">{{
               environment.id
             }}</Badge>
@@ -288,7 +290,7 @@ const cliCommand = computed(() => {
   if (window.location.host !== "shopmon.fos.gg") {
     parts.push(`SHOPMON_BASE_URL=${window.location.protocol}//${window.location.host}`);
   }
-  parts.push(`SHOPMON_SHOP_ID=${environment.value?.id ?? ""}`);
+  parts.push(`SHOPMON_ENVIRONMENT_ID=${environment.value?.id ?? ""}`);
   parts.push("SHOPMON_API_KEY=your-api-key");
   parts.push("./shopmon-cli deploy -- vendor/bin/shopware-deployment-helper run");
   return parts.join(" ");
