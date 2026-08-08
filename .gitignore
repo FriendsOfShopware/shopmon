@@ -6,6 +6,8 @@
 /api/files
 /api/tmp
 /api/api
+/compose.override.yml
+/compose.override.yaml
 node_modules
 frontend/components.d.ts
 litestream.yml

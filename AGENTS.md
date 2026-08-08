@@ -5,7 +5,7 @@
 - **API**: Go (chi router, sqlc, oapi-codegen, go-queue)
 - **Frontend**: Vue.js + TypeScript
 - **Database**: PostgreSQL (pgx)
-- **Queue**: PostgreSQL (go-queue)
+- **Queue**: PostgreSQL (go-queue), optionally AMQP (LavinMQ/RabbitMQ) via `QUEUE_TRANSPORT=amqp`
 - **Storage**: S3-compatible (deployment outputs)
 - **Observability**: OpenTelemetry (traces + logs via OTLP)
 
@@ -125,6 +125,7 @@ Key rules:
 - Handlers follow: `func (h *Handler) HandleX(ctx context.Context, msg MsgType) error`
 - Always create OTel spans for top-level job handlers
 - Register handlers in `internal/jobs/register.go`
+- The transport is chosen in `internal/jobs/bus.go` (`QUEUE_TRANSPORT`): Postgres by default, AMQP when configured. Job code stays transport-agnostic — dispatch through `jobs.Dispatch`, never against a transport directly
 
 ### Testing
 

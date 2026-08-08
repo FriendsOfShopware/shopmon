@@ -19,6 +19,12 @@ type Config struct {
 	RedisURL    string
 	FrontendURL string
 
+	// QueueTransport selects the background job backend: "postgres" (default,
+	// jobs live in the app database) or "amqp" (RabbitMQ/LavinMQ broker).
+	QueueTransport string
+	// QueueAMQP is only read when QueueTransport is "amqp".
+	QueueAMQP QueueAMQPConfig
+
 	MailDSN     string
 	MailFrom    string
 	SMTPReplyTo string
@@ -70,6 +76,21 @@ type Config struct {
 	AuthRateLimitMax int
 }
 
+// QueueAMQPConfig holds the broker settings for the AMQP job transport.
+type QueueAMQPConfig struct {
+	DSN      string
+	Exchange string
+	Queue    string
+	// PrefetchCount bounds unacknowledged deliveries per consumer. Keep it at or
+	// above the worker concurrency so workers never idle waiting for messages.
+	PrefetchCount int
+	// DelayedExchange declares the exchange as x-delayed-message so delayed jobs
+	// (post-deployment scrapes, sitespeed reruns) are held by the broker instead
+	// of being delivered immediately. Needs LavinMQ (native) or the RabbitMQ
+	// delayed-message plugin.
+	DelayedExchange bool
+}
+
 func loadDotEnv() {
 	_ = godotenv.Load()
 }
@@ -82,6 +103,14 @@ func Load() *Config {
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://shopmon:shopmon@localhost:5432/shopmon"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
+
+		QueueTransport: strings.ToLower(strings.TrimSpace(getEnv("QUEUE_TRANSPORT", "postgres"))),
+		QueueAMQP: QueueAMQPConfig{
+			DSN:             getEnv("QUEUE_AMQP_DSN", "amqp://guest:guest@localhost:5672/"),
+			Exchange:        getEnv("QUEUE_AMQP_EXCHANGE", "shopmon"),
+			Queue:           getEnv("QUEUE_AMQP_QUEUE", "shopmon"),
+			DelayedExchange: getEnv("QUEUE_AMQP_DELAYED_EXCHANGE", "true") == "true",
+		},
 
 		MailDSN:     mailDSN(),
 		MailFrom:    getEnv("MAIL_FROM", "noreply@shopmon.io"),
@@ -138,6 +167,17 @@ func Load() *Config {
 			cfg.AuthRateLimitMax = n
 		} else {
 			slog.Warn("invalid AUTH_RATE_LIMIT_MAX, using default", "value", raw, "default", cfg.AuthRateLimitMax)
+		}
+	}
+
+	// Parse the AMQP consumer prefetch, falling back to 10 (the worker
+	// concurrency) on an empty or invalid value.
+	cfg.QueueAMQP.PrefetchCount = 10
+	if raw := getEnv("QUEUE_AMQP_PREFETCH", ""); raw != "" {
+		if n, err := strconv.Atoi(raw); err == nil && n > 0 {
+			cfg.QueueAMQP.PrefetchCount = n
+		} else {
+			slog.Warn("invalid QUEUE_AMQP_PREFETCH, using default", "value", raw, "default", cfg.QueueAMQP.PrefetchCount)
 		}
 	}
 

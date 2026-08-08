@@ -11,6 +11,17 @@ services:
     ports:
       - "6379:6379"
 
+  # Optional job queue broker. Jobs run on Postgres by default; set
+  # QUEUE_TRANSPORT=amqp to route them through LavinMQ instead. Management UI on
+  # http://localhost:15672 (guest/guest).
+  lavinmq:
+    image: cloudamqp/lavinmq:2.9.1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - lavinmq-data:/var/lib/lavinmq
+
   db:
     image: postgres:18.3
     environment:
@@ -75,3 +86,4 @@ services:
 
 volumes:
   db-data:
+  lavinmq-data:

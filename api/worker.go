@@ -68,10 +68,13 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	// The worker owns executable handlers; API and fixture processes use the
 	// same bus strictly for dispatch.
-	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
+	bus, closeBus, err := jobs.NewBus(ctx, pool, busConfig(cfg))
 	if err != nil {
 		return err
 	}
+	// Deferred after the in-flight drain below, so no job loses its ack because
+	// the broker connection went away early.
+	defer func() { _ = closeBus() }()
 
 	storeSync := catalogsync.NewService(pool, q, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)
