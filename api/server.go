@@ -121,10 +121,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Dispatch-only queue bus. Executable handlers are registered exclusively by
 	// the worker process.
-	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
+	bus, closeBus, err := jobs.NewBus(ctx, pool, busConfig(cfg))
 	if err != nil {
 		return err
 	}
+	defer func() { _ = closeBus() }()
 
 	organizationRepository := organizationpostgres.NewAuthorizationRepository(q)
 	organizationAuthorizer := organization.NewAuthorizer(organizationRepository)

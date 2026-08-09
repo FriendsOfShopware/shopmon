@@ -9,6 +9,7 @@ Shopmon is distributed as a single Docker image that bundles the API server, bac
 - **PostgreSQL** 18+
 - **Redis** 8+
 - A reverse proxy (Traefik, Caddy, nginx) for TLS termination
+- *Optional:* an AMQP broker (LavinMQ or RabbitMQ) if you want background jobs off PostgreSQL — see [Background Job Queue](#background-job-queue)
 
 ## Quick Start
 
@@ -155,6 +156,25 @@ When not set, the packages token management UI and documentation section are hid
 | `DISABLE_REGISTRATION` | `false` | Set to `true` to disable email/password registration |
 
 When enabled, the registration page is blocked, the "Create account" link is hidden from the login page, and the API returns 403 on sign-up attempts. Useful when you want to restrict access to invited users only.
+
+### Background Job Queue
+
+Background jobs run on PostgreSQL by default — no extra infrastructure needed. If you already operate a message broker, or want the queue off your database, switch the transport to AMQP (RabbitMQ or LavinMQ).
+
+| Variable | Default | Description |
+|---|---|---|
+| `QUEUE_TRANSPORT` | `postgres` | Job backend: `postgres` (jobs stored in the `queue_messages` table) or `amqp` |
+| `QUEUE_AMQP_DSN` | `amqp://guest:guest@localhost:5672/` | Broker connection string |
+| `QUEUE_AMQP_EXCHANGE` | `shopmon` | Exchange to publish jobs to (declared on startup) |
+| `QUEUE_AMQP_QUEUE` | `shopmon` | Queue workers consume from; also used as the routing key |
+| `QUEUE_AMQP_PREFETCH` | `10` | Unacknowledged deliveries per consumer. Keep it at or above the worker concurrency (10) |
+| `QUEUE_AMQP_DELAYED_EXCHANGE` | `true` | Declare the exchange as `x-delayed-message` so delayed jobs are held by the broker. Accepts `true`/`false`, `1`/`0`, `TRUE`/`FALSE`; an unparseable value keeps delayed delivery on |
+
+Set the same values on the `api` and `worker` services — the API publishes jobs and the worker consumes them.
+
+Shopmon delays some jobs (post-deployment scrapes, sitespeed reruns), which needs broker-side delayed delivery: **LavinMQ supports it natively**, RabbitMQ needs the [rabbitmq_delayed_message_exchange](https://github.com/rabbitmq/rabbitmq-delayed-message-exchange) plugin. Only set `QUEUE_AMQP_DELAYED_EXCHANGE=false` if your broker has neither — delayed jobs are then delivered immediately, so a post-deployment scrape runs before the shop has settled.
+
+Switching transports does not migrate jobs that are already queued. Drain the worker on the old transport before flipping the variable, or those jobs are left behind.
 
 ### S3 Storage (Deployments)
 

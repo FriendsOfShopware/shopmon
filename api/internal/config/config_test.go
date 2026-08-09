@@ -33,3 +33,95 @@ func TestDeploymentScrapeDelay(t *testing.T) {
 		})
 	}
 }
+
+func TestQueueTransportDefaultsToPostgres(t *testing.T) {
+	for _, key := range []string{
+		"QUEUE_TRANSPORT",
+		"QUEUE_AMQP_DSN",
+		"QUEUE_AMQP_EXCHANGE",
+		"QUEUE_AMQP_QUEUE",
+		"QUEUE_AMQP_PREFETCH",
+		"QUEUE_AMQP_DELAYED_EXCHANGE",
+	} {
+		t.Setenv(key, "")
+	}
+
+	cfg := Load()
+
+	assert.Equal(t, "postgres", cfg.QueueTransport)
+	assert.Equal(t, "amqp://guest:guest@localhost:5672/", cfg.QueueAMQP.DSN)
+	assert.Equal(t, "shopmon", cfg.QueueAMQP.Exchange)
+	assert.Equal(t, "shopmon", cfg.QueueAMQP.Queue)
+	assert.Equal(t, 10, cfg.QueueAMQP.PrefetchCount)
+	assert.True(t, cfg.QueueAMQP.DelayedExchange)
+}
+
+func TestQueueTransportIsNormalized(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		want string
+	}{
+		{name: "lowercased", env: "AMQP", want: "amqp"},
+		{name: "trimmed", env: "  amqp  ", want: "amqp"},
+		{name: "unknown value kept for the bus to reject", env: "kafka", want: "kafka"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("QUEUE_TRANSPORT", tt.env)
+
+			assert.Equal(t, tt.want, Load().QueueTransport)
+		})
+	}
+}
+
+func TestQueueAMQPPrefetch(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		want int
+	}{
+		{name: "default when unset", env: "", want: 10},
+		{name: "custom count", env: "50", want: 50},
+		{name: "invalid falls back to default", env: "many", want: 10},
+		{name: "zero falls back to default", env: "0", want: 10},
+		{name: "negative falls back to default", env: "-1", want: 10},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("QUEUE_AMQP_PREFETCH", tt.env)
+
+			assert.Equal(t, tt.want, Load().QueueAMQP.PrefetchCount)
+		})
+	}
+}
+
+func TestQueueAMQPDelayedExchange(t *testing.T) {
+	// Delayed delivery is load-bearing (post-deployment scrapes, sitespeed
+	// reruns), so only an explicit, parseable false may turn it off.
+	tests := []struct {
+		name string
+		env  string
+		want bool
+	}{
+		{name: "default when unset", env: "", want: true},
+		{name: "explicit false", env: "false", want: false},
+		{name: "uppercase FALSE", env: "FALSE", want: false},
+		{name: "zero", env: "0", want: false},
+		{name: "uppercase TRUE", env: "TRUE", want: true},
+		{name: "titlecase True", env: "True", want: true},
+		{name: "one", env: "1", want: true},
+		{name: "unparseable keeps delayed delivery on", env: "yes", want: true},
+		{name: "typo keeps delayed delivery on", env: "flase", want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("QUEUE_AMQP_DELAYED_EXCHANGE", tt.env)
+
+			assert.Equal(t, tt.want, Load().QueueAMQP.DelayedExchange)
+		})
+	}
+}

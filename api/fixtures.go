@@ -444,10 +444,11 @@ func (s *seeder) seedShopAndEnvironments(org orgFixture) (int32, []int32, error)
 // dispatchEnvironmentScrapes enqueues an initial scrape for each environment so
 // the worker populates them immediately.
 func (s *seeder) dispatchEnvironmentScrapes(environmentIDs []int32) error {
-	bus, err := jobs.NewBus(s.ctx, s.pool, jobs.BusConfig{OTelEnabled: s.cfg.OtelEnabled})
+	bus, closeBus, err := jobs.NewBus(s.ctx, s.pool, busConfig(s.cfg))
 	if err != nil {
 		return fmt.Errorf("create queue bus: %w", err)
 	}
+	defer func() { _ = closeBus() }()
 	for _, envID := range environmentIDs {
 		if err := jobs.Dispatch(s.ctx, bus, jobs.EnvironmentScrape{EnvironmentID: envID}); err != nil {
 			slog.Warn("failed to dispatch environment scrape", "environmentId", envID, "error", err)
