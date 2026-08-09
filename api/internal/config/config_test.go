@@ -98,8 +98,30 @@ func TestQueueAMQPPrefetch(t *testing.T) {
 	}
 }
 
-func TestQueueAMQPDelayedExchangeOptOut(t *testing.T) {
-	t.Setenv("QUEUE_AMQP_DELAYED_EXCHANGE", "false")
+func TestQueueAMQPDelayedExchange(t *testing.T) {
+	// Delayed delivery is load-bearing (post-deployment scrapes, sitespeed
+	// reruns), so only an explicit, parseable false may turn it off.
+	tests := []struct {
+		name string
+		env  string
+		want bool
+	}{
+		{name: "default when unset", env: "", want: true},
+		{name: "explicit false", env: "false", want: false},
+		{name: "uppercase FALSE", env: "FALSE", want: false},
+		{name: "zero", env: "0", want: false},
+		{name: "uppercase TRUE", env: "TRUE", want: true},
+		{name: "titlecase True", env: "True", want: true},
+		{name: "one", env: "1", want: true},
+		{name: "unparseable keeps delayed delivery on", env: "yes", want: true},
+		{name: "typo keeps delayed delivery on", env: "flase", want: true},
+	}
 
-	assert.False(t, Load().QueueAMQP.DelayedExchange)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("QUEUE_AMQP_DELAYED_EXCHANGE", tt.env)
+
+			assert.Equal(t, tt.want, Load().QueueAMQP.DelayedExchange)
+		})
+	}
 }

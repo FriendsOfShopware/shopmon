@@ -109,7 +109,7 @@ func Load() *Config {
 			DSN:             getEnv("QUEUE_AMQP_DSN", "amqp://guest:guest@localhost:5672/"),
 			Exchange:        getEnv("QUEUE_AMQP_EXCHANGE", "shopmon"),
 			Queue:           getEnv("QUEUE_AMQP_QUEUE", "shopmon"),
-			DelayedExchange: getEnv("QUEUE_AMQP_DELAYED_EXCHANGE", "true") == "true",
+			DelayedExchange: getEnvBool("QUEUE_AMQP_DELAYED_EXCHANGE", true),
 		},
 
 		MailDSN:     mailDSN(),
@@ -256,6 +256,24 @@ func mailDSN() string {
 		u.User = url.UserPassword(user, getEnv("SMTP_PASS", ""))
 	}
 	return u.String()
+}
+
+// getEnvBool parses a boolean env var, accepting every representation
+// strconv.ParseBool does (1, t, T, TRUE, true, True and their false
+// counterparts). An unset or unparseable value keeps the fallback and warns,
+// so a typo cannot silently flip a flag that defaults to on.
+func getEnvBool(key string, fallback bool) bool {
+	raw := getEnv(key, "")
+	if raw == "" {
+		return fallback
+	}
+
+	value, err := strconv.ParseBool(raw)
+	if err != nil {
+		slog.Warn("invalid boolean value, using default", "key", key, "value", raw, "default", fallback)
+		return fallback
+	}
+	return value
 }
 
 func getEnv(key, fallback string) string {
