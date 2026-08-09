@@ -76,13 +76,16 @@ func serverCmd() *cobra.Command {
 }
 
 func runServer(cmd *cobra.Command, args []string) error {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	// OpenTelemetry
-	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName, cfg.OtelServiceVersion, cfg.OtelDeploymentEnv, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	otelShutdown := telemetry.Setup(ctx, telemetryConfig(cfg, cfg.OtelServiceName))
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)
