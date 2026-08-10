@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
@@ -22,11 +21,25 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+// Config describes the exporters and the resource attributes they report.
+type Config struct {
+	ServiceName   string
+	Version       string
+	DeploymentEnv string
+	TraceEndpoint string
+	LogEndpoint   string
+	// SamplerRatio is the head sampling ratio in [0, 1]; 1 samples everything.
+	SamplerRatio float64
+}
+
 // Setup initializes OpenTelemetry tracing and logging with OTLP HTTP exporters.
 // It sets slog's default logger to a handler that sends logs via OTLP and also
 // writes to stderr. Returns a shutdown function that should be called on application exit.
-// If endpoint is empty, telemetry is disabled and a no-op shutdown is returned.
-func Setup(ctx context.Context, serviceName, version, deploymentEnv, traceEndpoint, logEndpoint string) (shutdown func(context.Context) error) {
+// If both endpoints are empty, telemetry is disabled and a no-op shutdown is returned.
+func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) error) {
+	serviceName, version, deploymentEnv := cfg.ServiceName, cfg.Version, cfg.DeploymentEnv
+	traceEndpoint, logEndpoint := cfg.TraceEndpoint, cfg.LogEndpoint
+
 	if traceEndpoint == "" && logEndpoint == "" {
 		return func(context.Context) error { return nil }
 	}
@@ -67,7 +80,7 @@ func Setup(ctx context.Context, serviceName, version, deploymentEnv, traceEndpoi
 			tp := sdktrace.NewTracerProvider(
 				sdktrace.WithBatcher(traceExporter),
 				sdktrace.WithResource(res),
-				sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(parseSamplerRatio()))),
+				sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(cfg.SamplerRatio))),
 			)
 			otel.SetTracerProvider(tp)
 			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
@@ -108,26 +121,6 @@ func Setup(ctx context.Context, serviceName, version, deploymentEnv, traceEndpoi
 		}
 		return firstErr
 	}
-}
-
-// parseSamplerRatio reads OTEL_TRACES_SAMPLER_RATIO and returns it clamped to
-// [0, 1]. It defaults to 1.0 (sample everything) when unset or unparseable.
-func parseSamplerRatio() float64 {
-	raw := os.Getenv("OTEL_TRACES_SAMPLER_RATIO")
-	if raw == "" {
-		return 1.0
-	}
-	ratio, err := strconv.ParseFloat(raw, 64)
-	if err != nil {
-		return 1.0
-	}
-	if ratio < 0 {
-		return 0
-	}
-	if ratio > 1 {
-		return 1
-	}
-	return ratio
 }
 
 // ensurePath appends defaultPath to the endpoint URL if it has no path set.

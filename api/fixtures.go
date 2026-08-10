@@ -58,7 +58,10 @@ type orgFixture struct {
 }
 
 func runFixtures(ctx context.Context, skipShop bool) error {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {

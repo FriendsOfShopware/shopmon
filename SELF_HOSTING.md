@@ -93,6 +93,12 @@ The Docker image runs three different commands:
 
 ## Environment Variables
 
+All variables are read once at startup. A value that cannot be parsed (a
+non-numeric count, an unparseable duration, a boolean that is not
+`true`/`false`) or that is out of range makes the process exit with an error
+instead of falling back to the default, so a typo cannot silently run the
+instance with settings you did not choose.
+
 ### Required
 
 | Variable | Description |
@@ -202,6 +208,9 @@ Required only if you use the deployment tracking feature.
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | | Override for trace-specific endpoint |
 | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | | Override for log-specific endpoint |
 | `OTEL_SERVICE_NAME` | `shopmon` | Service name in traces |
+| `OTEL_DEPLOYMENT_ENVIRONMENT` | `$DD_ENV` | Deployment environment reported as a resource attribute |
+| `OTEL_SERVICE_VERSION` | `$DD_VERSION`, else the build revision | Service version reported as a resource attribute |
+| `OTEL_TRACES_SAMPLER_RATIO` | `1` | Head sampling ratio, clamped to `[0, 1]` |
 
 
 ## Reverse Proxy Examples
