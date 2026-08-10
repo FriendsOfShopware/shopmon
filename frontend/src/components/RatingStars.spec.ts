@@ -28,7 +28,7 @@ describe("RatingStars", () => {
 
   it("renders 5 star elements", () => {
     const wrapper = mountRatingStars(8);
-    const stars = wrapper.findAll(".inline-flex > *");
+    const stars = wrapper.findAll("svg");
     expect(stars.length).toBe(5);
   });
 
