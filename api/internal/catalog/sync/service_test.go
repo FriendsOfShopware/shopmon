@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +38,19 @@ type mockStoreServer struct {
 	*httptest.Server
 	requests   atomic.Int64
 	extensions map[string]*mockExtension
+
+	mu sync.Mutex
+	// rateLimitedVersions, when set, causes pluginsByName for those Shopware
+	// versions to respond with HTTP 429.
+	rateLimitedVersions map[string]bool
+	// seen records locale@shopwareVersion hits in order.
+	seen []string
+	// inFlight tracks concurrent handlers; maxInFlight is the high-water mark.
+	inFlight    int
+	maxInFlight int
+	// handlerDelay, when > 0, holds each handler briefly so overlapping
+	// concurrent calls raise maxInFlight (used by the serialization test).
+	handlerDelay time.Duration
 }
 
 func newMockStoreServer(t *testing.T) *mockStoreServer {
@@ -46,6 +62,7 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 				changelogVersions:       []string{"1.2.0", "1.1.0", "1.0.0"},
 			},
 		},
+		rateLimitedVersions: map[string]bool{},
 	}
 
 	mux := http.NewServeMux()
@@ -53,6 +70,32 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 		m.requests.Add(1)
 		locale := r.URL.Query().Get("locale")
 		swv := r.URL.Query().Get("shopwareVersion")
+
+		m.mu.Lock()
+		m.seen = append(m.seen, locale+"@"+swv)
+		m.inFlight++
+		if m.inFlight > m.maxInFlight {
+			m.maxInFlight = m.inFlight
+		}
+		rateLimited := m.rateLimitedVersions[swv]
+		delay := m.handlerDelay
+		m.mu.Unlock()
+
+		defer func() {
+			m.mu.Lock()
+			m.inFlight--
+			m.mu.Unlock()
+		}()
+
+		if delay > 0 {
+			time.Sleep(delay)
+		}
+
+		if rateLimited {
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
 
 		var plugins []map[string]any
 		for _, name := range r.URL.Query()["technicalNames[]"] {
@@ -98,6 +141,28 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 	m.Server = httptest.NewServer(mux)
 	t.Cleanup(m.Close)
 	return m
+}
+
+func (m *mockStoreServer) seenLocales() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]string, len(m.seen))
+	copy(out, m.seen)
+	return out
+}
+
+func (m *mockStoreServer) maxConcurrent() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.maxInFlight
+}
+
+// fastStoreClient returns a client that fails 429s on the first attempt (no
+// real backoff sleep) so sync tests stay fast.
+func fastStoreClient(baseURL string) *shopwareaccount.Client {
+	client := shopwareaccount.NewClient(baseURL, nil)
+	client.ConfigureRetry(1, func(context.Context, time.Duration) error { return nil })
+	return client
 }
 
 // setupSyncTest returns a sync handler wired to a mock store server, with two
@@ -365,6 +430,76 @@ func TestNamesNeedingSyncCompatibilityGap(t *testing.T) {
 	needing, err = h.namesNeedingSync(ctx, []string{"FroshTools", "CustomPlugin"}, "6.7.0.0")
 	require.NoError(t, err, "namesNeedingSync")
 	assert.Equal(t, []string{"FroshTools"}, needing, "needing sync for new version")
+}
+
+// TestStoreExtensionSyncSerializesLocaleProbes: en and de for a version must
+// not run concurrently, otherwise catalog sync doubles store API pressure.
+func TestStoreExtensionSyncSerializesLocaleProbes(t *testing.T) {
+	h, _, store := setupSyncTest(t)
+	store.handlerDelay = 30 * time.Millisecond
+
+	require.NoError(t, h.SyncNames(context.Background(), []string{"FroshTools"}, "6.5.0.0", false))
+
+	assert.Equal(t, 1, store.maxConcurrent(), "locale/version probes must be serial")
+	assert.Equal(t, []string{
+		"en_GB@6.6.0.0", "de_DE@6.6.0.0",
+		"en_GB@6.5.0.0", "de_DE@6.5.0.0",
+	}, store.seenLocales(), "versions newest-first, locales en then de")
+}
+
+// TestStoreExtensionSyncAbortsRemainingVersionsOn429: once the store rate-limits
+// a version probe, SyncNames must stop probing further versions instead of
+// stomping through the rest of the list, leave sync bookkeeping untouched so a
+// retry can continue, and still persist any versions already probed.
+func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	// Newest version (6.6.0.0) succeeds; older 6.5.0.0 is rate-limited. Probes
+	// run newest-first, so we get partial progress then abort.
+	store.rateLimitedVersions["6.5.0.0"] = true
+	h.account = fastStoreClient(store.URL)
+
+	err := h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false)
+	require.Error(t, err)
+	assert.True(t, shopwareaccount.IsRateLimited(err), "expected rate-limit error, got %v", err)
+
+	// 6.6 en+de succeeded; 6.5 en hit 429 and aborted before de (and before any
+	// further versions, of which there are none).
+	assert.Equal(t, []string{
+		"en_GB@6.6.0.0", "de_DE@6.6.0.0",
+		"en_GB@6.5.0.0",
+	}, store.seenLocales())
+	assert.Equal(t, int64(3), store.requests.Load())
+
+	// Partial catalog for the successful version is kept.
+	assert.Equal(t, 1, countRows(t, pool, "store_extension"), "partial catalog persisted")
+	var latest66 *string
+	require.NoError(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = '6.6.0.0'`).Scan(&latest66))
+	require.NotNil(t, latest66)
+	assert.Equal(t, "1.2.0", *latest66)
+
+	// No compatibility row for the aborted version, and sync bookkeeping must
+	// not be advanced (otherwise the hourly freshness gate would starve retries).
+	assert.Equal(t, 1, countRows(t, pool, "store_extension_compatibility"))
+	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"), "bookkeeping not marked fresh after rate limit")
+}
+
+// TestStoreExtensionSyncAllProbesRateLimited: when the first version is already
+// rate-limited, nothing is persisted and the error surfaces for job retry.
+func TestStoreExtensionSyncAllProbesRateLimited(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	store.rateLimitedVersions["6.6.0.0"] = true
+	store.rateLimitedVersions["6.5.0.0"] = true
+	h.account = fastStoreClient(store.URL)
+
+	err := h.SyncNames(context.Background(), []string{"FroshTools"}, "6.6.0.0", false)
+	require.Error(t, err)
+	assert.True(t, shopwareaccount.IsRateLimited(err), "expected rate-limit error, got %v", err)
+
+	assert.Equal(t, []string{"en_GB@6.6.0.0"}, store.seenLocales(), "must not continue after first 429")
+	assert.Equal(t, 0, countRows(t, pool, "store_extension"))
+	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
 }
 
 // TestOldDataCleanupRetainsCatalog verifies the catalog itself — including its
