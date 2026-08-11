@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"math"
 	"sort"
-	"sync"
 
 	"github.com/friendsofshopware/shopmon/api/internal/catalog/storemodel"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
@@ -31,11 +30,21 @@ type Service struct {
 	pool    *pgxpool.Pool
 	queries *queries.Queries
 	cfg     *config.Config
+	// account is an optional store client override (tests). When nil, SyncNames
+	// constructs one from cfg.ShopwareAPIURL.
+	account *shopwareaccount.Client
 }
 
 // NewService creates a new Service.
 func NewService(pool *pgxpool.Pool, q *queries.Queries, cfg *config.Config) *Service {
 	return &Service{pool: pool, queries: q, cfg: cfg}
+}
+
+func (h *Service) accountClient() *shopwareaccount.Client {
+	if h.account != nil {
+		return h.account
+	}
+	return shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, nil)
 }
 
 // Sync refreshes the requested names using the normal freshness checks.
@@ -159,7 +168,7 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 		return nil
 	}
 
-	client := shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, nil)
+	client := h.accountClient()
 
 	// The store's pluginsByName endpoint is scoped to the requested Shopware
 	// version: it omits any plugin whose releases are all incompatible with that
@@ -171,6 +180,11 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	// (en + de), and each extension's catalog data is taken from the richest
 	// probe that returned it.
 	//
+	// Versions are probed sequentially (and locales within a version serially)
+	// so a rate-limit from the store is not amplified by fan-out. On 429 after
+	// client retries, remaining versions are aborted and the job returns an
+	// error for a later retry instead of burning through the rest of the list.
+	//
 	// compat[swv][name] is the compatible latest version the store reports for
 	// that Shopware version; best[name] is the plugin data used to build the
 	// shared catalog subtree, preferring the probe with the most changelog
@@ -178,10 +192,20 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	compat := make(map[string]map[string]string, len(swvs))
 	best := make(map[string]*storemodel.Data, len(needed))
 	anyProbeSucceeded := false
+	var rateLimitErr error
 
 	for _, swv := range swvs {
 		enPlugins, dePlugins, err := h.probeVersion(ctx, client, swv, needed)
 		if err != nil {
+			if shopwareaccount.IsRateLimited(err) {
+				// Stop probing further versions; continuing would only deepen the
+				// 429 burst. Partial progress (if any) is persisted below without
+				// advancing sync bookkeeping so the queue / next scrape retries.
+				slog.Warn("store rate limited, aborting remaining version probes",
+					"shopwareVersion", swv, "error", err)
+				rateLimitErr = err
+				break
+			}
 			// Skip this version; its missing compatibility rows re-trigger a sync
 			// from the next scrape of an environment running it.
 			slog.Warn("failed to probe store plugins", "shopwareVersion", swv, "error", err)
@@ -208,6 +232,9 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	if !anyProbeSucceeded {
 		// Bookkeeping is deliberately not updated so the queue retry (or the next
 		// scrape dispatch) tries again.
+		if rateLimitErr != nil {
+			return fmt.Errorf("store rate limited; all probes failed for %d version(s): %w", len(swvs), rateLimitErr)
+		}
 		return fmt.Errorf("all store probes failed for %d version(s)", len(swvs))
 	}
 
@@ -224,6 +251,15 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	}
 	span.SetAttributes(attribute.Int("extension.synced", synced))
 
+	if rateLimitErr != nil {
+		// Persist what we have but do not mark names fresh — missing compatibility
+		// rows and stale bookkeeping will re-dispatch, and the returned error lets
+		// the queue retry with its own backoff.
+		slog.Warn("synced store extensions partially before rate limit",
+			"requested", len(names), "fetched", len(needed), "found", synced)
+		return fmt.Errorf("store rate limited after probing %d/%d version(s): %w", len(compat), len(swvs), rateLimitErr)
+	}
+
 	if err := h.queries.UpsertStoreExtensionSyncStates(ctx, needed); err != nil {
 		return fmt.Errorf("upsert sync states: %w", err)
 	}
@@ -233,24 +269,20 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 }
 
 // probeVersion fetches the given names from the store in both locales scoped to
-// one Shopware version, concurrently. It returns an error only when both locale
-// calls fail; a single-locale failure is logged and its (nil) result is used.
+// one Shopware version, sequentially (en then de) to avoid doubling concurrent
+// pressure on the store API. It returns a rate-limit error immediately so the
+// caller can abort remaining versions. Otherwise it returns an error only when
+// both locale calls fail; a single-locale failure is logged and its (nil)
+// result is used.
 func (h *Service) probeVersion(ctx context.Context, client *shopwareaccount.Client, shopwareVersion string, names []string) ([]shopwareaccount.StorePlugin, []shopwareaccount.StorePlugin, error) {
-	var (
-		enPlugins, dePlugins []shopwareaccount.StorePlugin
-		enErr, deErr         error
-		wg                   sync.WaitGroup
-	)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		enPlugins, enErr = client.PluginsByName(ctx, "en_GB", shopwareVersion, names)
-	}()
-	go func() {
-		defer wg.Done()
-		dePlugins, deErr = client.PluginsByName(ctx, "de_DE", shopwareVersion, names)
-	}()
-	wg.Wait()
+	enPlugins, enErr := client.PluginsByName(ctx, "en_GB", shopwareVersion, names)
+	if shopwareaccount.IsRateLimited(enErr) {
+		return nil, nil, enErr
+	}
+	dePlugins, deErr := client.PluginsByName(ctx, "de_DE", shopwareVersion, names)
+	if shopwareaccount.IsRateLimited(deErr) {
+		return nil, nil, deErr
+	}
 
 	if enErr != nil && deErr != nil {
 		return nil, nil, fmt.Errorf("en: %w, de: %v", enErr, deErr)

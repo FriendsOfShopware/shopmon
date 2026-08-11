@@ -1,9 +1,7 @@
-// Package shopwareaccount provides a client for the Shopware account/store API
-// (api.shopware.com). This is distinct from internal/shopware, which talks to a
-// single shop's admin API.
 package shopwareaccount
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +16,14 @@ const DefaultBaseURL = "https://api.shopware.com"
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
+
+	// Optional retry tuning for 429 responses. Zero values use defaults; tests
+	// set these to keep backoff fast and deterministic.
+	maxAttempts   int
+	baseBackoff   time.Duration
+	maxBackoff    time.Duration
+	maxRetryAfter time.Duration
+	sleepFn       func(context.Context, time.Duration) error
 }
 
 // NewClient creates a Client for the given base URL. If httpClient is nil a
@@ -33,4 +39,11 @@ func NewClient(baseURL string, httpClient *http.Client) *Client {
 		baseURL:    strings.TrimRight(baseURL, "/"),
 		httpClient: httpClient,
 	}
+}
+
+// ConfigureRetry overrides 429 retry behaviour. Intended for tests that need
+// deterministic, fast backoff; production callers should use NewClient defaults.
+func (c *Client) ConfigureRetry(maxAttempts int, sleep func(context.Context, time.Duration) error) {
+	c.maxAttempts = maxAttempts
+	c.sleepFn = sleep
 }
