@@ -4,14 +4,28 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"unicode"
 )
+
+// sharedSpanHosts are outbound peers with stable, deployment-wide cardinality.
+// Tenant shop domains, SSO IdPs, and other per-customer hosts are collapsed to
+// "{host}" so Datadog resources stay bounded while shared APIs remain readable
+// (e.g. "GET api.shopware.com/pluginStore/pluginsByName").
+var sharedSpanHosts = map[string]struct{}{
+	"api.shopware.com":          {},
+	"releases.shopware.com":     {},
+	"store.shopware.com":        {},
+	"raw.githubusercontent.com": {},
+}
 
 // ClientSpanName formats an outbound HTTP client span as "METHOD host/path".
 //
 // otelhttp's default transport formatter uses only the method ("HTTP GET"),
-// which Datadog collapses to a bare GET/POST resource. Including host + path
-// (without query string) keeps cardinality low while making worker traces
-// actionable — e.g. "GET api.shopware.com/pluginStore/pluginsByName".
+// which Datadog collapses to a bare GET/POST resource. This formatter keeps
+// cardinality low by:
+//   - stripping query strings
+//   - keeping only known shared hosts literal; other hosts become "{host}"
+//   - replacing UUID / numeric / long-hex path segments with "{id}"
 //
 // The operation argument is ignored; otelhttp's client transport always passes "".
 func ClientSpanName(_ string, r *http.Request) string {
@@ -24,8 +38,8 @@ func ClientSpanName(_ string, r *http.Request) string {
 		method = http.MethodGet
 	}
 
-	host := requestHost(r)
-	path := requestPath(r)
+	host := spanHost(requestHost(r))
+	path := spanPath(requestPath(r))
 
 	if host == "" {
 		return method + " " + path
@@ -76,4 +90,101 @@ func hostnameOnly(hostport string) string {
 		return hostport
 	}
 	return host
+}
+
+func spanHost(host string) string {
+	if host == "" {
+		return ""
+	}
+	host = strings.ToLower(host)
+	if _, ok := sharedSpanHosts[host]; ok {
+		return host
+	}
+	return "{host}"
+}
+
+func spanPath(path string) string {
+	if path == "" || path == "/" {
+		return "/"
+	}
+
+	leading := strings.HasPrefix(path, "/")
+	parts := strings.Split(path, "/")
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+		if isHighCardinalityPathSegment(part) {
+			parts[i] = "{id}"
+		}
+	}
+	out := strings.Join(parts, "/")
+	if leading && !strings.HasPrefix(out, "/") {
+		return "/" + out
+	}
+	return out
+}
+
+func isHighCardinalityPathSegment(seg string) bool {
+	if isUUIDSegment(seg) {
+		return true
+	}
+	if isAllDigits(seg) {
+		return true
+	}
+	// Long hex tokens (OAuth-ish / opaque IDs), but not short version-like
+	// fragments such as "v1".
+	if len(seg) >= 16 && isAllHex(seg) {
+		return true
+	}
+	return false
+}
+
+func isUUIDSegment(seg string) bool {
+	// 8-4-4-4-12 dashed UUID.
+	if len(seg) == 36 {
+		for i, r := range seg {
+			switch i {
+			case 8, 13, 18, 23:
+				if r != '-' {
+					return false
+				}
+			default:
+				if !isHexRune(r) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	// 32-char hex UUID without dashes.
+	return len(seg) == 32 && isAllHex(seg)
+}
+
+func isAllDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func isAllHex(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if !isHexRune(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func isHexRune(r rune) bool {
+	return unicode.IsDigit(r) || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
 }
