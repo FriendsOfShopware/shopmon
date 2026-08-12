@@ -28,6 +28,9 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("store api returned status %d", e.StatusCode)
 }
 
+// HTTPStatusCode exposes the status for otelx expected-dependency classification.
+func (e *APIError) HTTPStatusCode() int { return e.StatusCode }
+
 // IsRateLimited reports whether err is (or wraps) a store API 429 response.
 func IsRateLimited(err error) bool {
 	var apiErr *APIError

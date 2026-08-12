@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -15,7 +16,13 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
+	"github.com/friendsofshopware/shopmon/api/internal/otelx"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
+
+var tracer = otel.Tracer("shopmon/monitoring/sitespeed")
 
 type Service struct {
 	queries *queries.Queries
@@ -44,6 +51,11 @@ func (s *Service) Scrape(ctx context.Context, environmentID int32) (err error) {
 }
 
 func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) (err error) {
+	ctx, span := tracer.Start(ctx, "sitespeed.scrape",
+		trace.WithAttributes(attribute.Int("environment.id", int(env.ID))),
+	)
+	defer span.End()
+
 	log := slog.With("environmentId", env.ID)
 
 	if s.cfg.SitespeedEndpoint == "" || s.cfg.SitespeedAPIKey == "" {
@@ -54,6 +66,10 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 
 	defer func() {
 		if err != nil {
+			// 503 / connection-refused are retryable (go-queue retries the job);
+			// mark expected so intermediate attempts do not dominate APM errors.
+			// shopmon.sitespeed.outcome still counts every failure.
+			recordSitespeedSpan(span, err)
 			metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeError)
 			return
 		}
@@ -99,7 +115,10 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 
 	resp, err := httputil.NewHTTPClient(httputil.WithTimeout(300 * time.Second)).Do(req)
 	if err != nil {
-		return fmt.Errorf("call sitespeed: %w", err)
+		return &sitespeedError{
+			err:       fmt.Errorf("call sitespeed: %w", err),
+			retryable: otelx.IsRetryableNetError(err),
+		}
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -108,7 +127,11 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 		return fmt.Errorf("read sitespeed response for environment %d: %w", env.ID, err)
 	}
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("sitespeed error (%d): %s", resp.StatusCode, string(body))
+		return &sitespeedError{
+			err:        fmt.Errorf("sitespeed error (%d): %s", resp.StatusCode, string(body)),
+			statusCode: resp.StatusCode,
+			retryable:  otelx.HTTPClientStatusExpected(resp.StatusCode),
+		}
 	}
 
 	// Parse response and save metrics
@@ -148,4 +171,27 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 
 	log.Info("sitespeed scrape completed")
 	return nil
+}
+
+// sitespeedError wraps an upstream Sitespeed failure and whether the job should
+// treat it as an expected/retryable dependency degradation for span status.
+type sitespeedError struct {
+	err        error
+	statusCode int
+	retryable  bool
+}
+
+func (e *sitespeedError) Error() string { return e.err.Error() }
+func (e *sitespeedError) Unwrap() error { return e.err }
+
+// HTTPStatusCode exposes a positive status for otelx classification when set.
+func (e *sitespeedError) HTTPStatusCode() int { return e.statusCode }
+
+func recordSitespeedSpan(span trace.Span, err error) {
+	var se *sitespeedError
+	if errors.As(err, &se) && se.retryable {
+		otelx.RecordExpected(span, err)
+		return
+	}
+	otelx.RecordDependency(span, err)
 }

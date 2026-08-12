@@ -54,6 +54,9 @@ func (e *ApiError) Error() string {
 	return fmt.Sprintf("shopware api error (status %d): %s", e.StatusCode, e.Body)
 }
 
+// HTTPStatusCode exposes the status for otelx expected-dependency classification.
+func (e *ApiError) HTTPStatusCode() int { return e.StatusCode }
+
 func NewClient(baseURL, clientID, clientSecret, shopToken string) *Client {
 	return &Client{
 		baseURL:      strings.TrimRight(baseURL, "/"),

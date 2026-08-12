@@ -15,6 +15,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
+	"github.com/friendsofshopware/shopmon/api/internal/otelx"
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -125,8 +126,10 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		authCtx, authSpan := tracer.Start(ctx, "environment.scrape.authenticate")
 		err := client.Authenticate(authCtx)
 		if err != nil {
-			authSpan.RecordError(err)
-			authSpan.SetStatus(codes.Error, err.Error())
+			// Tenant-side 401/403 (and other expected dependency statuses) must
+			// not inflate APM error rate; shopmon.scrape.outcome=auth_error
+			// remains the alert signal (#793).
+			otelx.RecordDependency(authSpan, err)
 		}
 		authSpan.End()
 

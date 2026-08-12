@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/otelx"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -92,16 +93,25 @@ func (t *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 // wrapTransport adds the Shopmon User-Agent and OpenTelemetry instrumentation.
-// Order: application -> userAgent -> otelhttp -> base, so the User-Agent is set
-// before tracing observes the request and still applies when a custom base is used.
+//
+// Order (outbound):
+//
+//	application → userAgent → expectedStatus → otelhttp → spanCapture → base
+//
+// User-Agent is set before tracing observes the request. expectedStatus sits
+// outside otelhttp so it can downgrade expected dependency statuses (429, 401,
+// 503, …) from span status Error to Ok after otelhttp applies semconv rules;
+// spanCapture (inside otelhttp) hands it the client span via context.
 func wrapTransport(base http.RoundTripper) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
 	}
 	return &userAgentTransport{
-		base: otelhttp.NewTransport(
-			base,
-			otelhttp.WithSpanNameFormatter(ClientSpanName),
+		base: otelx.WrapClientTransport(
+			otelhttp.NewTransport(
+				otelx.CaptureClientSpan(base),
+				otelhttp.WithSpanNameFormatter(ClientSpanName),
+			),
 		),
 		ua: UserAgentString(),
 	}

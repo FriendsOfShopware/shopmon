@@ -11,8 +11,6 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	gomailer "github.com/shyim/go-mailer"
-	"github.com/shyim/go-mailer/middleware"
-	"github.com/shyim/go-mailer/middleware/otelmw"
 	"github.com/shyim/go-mailer/transport"
 	smtptransport "github.com/shyim/go-mailer/transport/smtp"
 )
@@ -86,13 +84,10 @@ func NewService(cfg Config) (*Service, error) {
 		st.SetAllowPlaintextAuth(true)
 	}
 
-	// Instrument each delivery attempt with an OpenTelemetry span and metrics.
-	// Passing nil providers makes otelmw fall back to the globals configured by
-	// the telemetry package; when telemetry is disabled those are no-ops, so the
-	// middleware degrades to a cheap pass-through. We wrap the leaf transport so
-	// every delivery attempt (including retries) gets its own span, and keep the
-	// leaf's closer so shutdown still QUITs the pooled connection.
-	tr := middleware.Wrap(leaf, otelmw.New(nil, nil))
+	// Instrument each delivery attempt with a classifying OpenTelemetry span
+	// (see instrumentTransport). Keep the leaf's closer so shutdown still QUITs
+	// the pooled connection — observability wrappers do not forward Close.
+	tr := instrumentTransport(leaf)
 
 	return newService(tr, leaf, cfg.From, cfg.ReplyTo, cfg.FrontendURL)
 }

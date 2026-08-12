@@ -11,12 +11,12 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
+	"github.com/friendsofshopware/shopmon/api/internal/otelx"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -146,8 +146,9 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	recordOutcome := true
 	defer func() {
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
+			// 429 aborts are expected (job retries; shopmon.store_sync.outcome
+			// =rate_limited). Other failures remain hard span errors.
+			otelx.RecordDependency(span, err)
 		}
 		span.End()
 		if !recordOutcome {
