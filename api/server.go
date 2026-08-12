@@ -84,8 +84,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// OpenTelemetry
-	otelShutdown := telemetry.Setup(ctx, telemetryConfig(cfg, cfg.OtelServiceName))
+	// OpenTelemetry — API reports as ${OTEL_SERVICE_NAME}-api (worker appends -worker).
+	otelShutdown := telemetry.Setup(ctx, telemetryConfig(cfg, cfg.OtelServiceName+"-api"))
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)
