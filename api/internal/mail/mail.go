@@ -92,7 +92,11 @@ func NewService(cfg Config) (*Service, error) {
 	// middleware degrades to a cheap pass-through. We wrap the leaf transport so
 	// every delivery attempt (including retries) gets its own span, and keep the
 	// leaf's closer so shutdown still QUITs the pooled connection.
-	tr := middleware.Wrap(leaf, otelmw.New(nil, nil))
+	//
+	// smtpSpanAttrs sits inside otelmw so it can attach SMTP code / retryable
+	// attributes to the still-open gomailer.send span (otelmw already sets
+	// messaging.gomailer.outcome). Request flow: otelmw → smtp attrs → leaf.
+	tr := middleware.Wrap(leaf, otelmw.New(nil, nil), smtpSpanAttrs())
 
 	return newService(tr, leaf, cfg.From, cfg.ReplyTo, cfg.FrontendURL)
 }
