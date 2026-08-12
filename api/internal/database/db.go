@@ -21,9 +21,14 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	config.MaxConnIdleTime = 30 * time.Minute
 	config.ConnConfig.ConnectTimeout = 10 * time.Second
 	// WithTrimSQLInSpanName keeps the full statement in span attributes (for
-	// Datadog's SQL obfuscation) but trims it out of the span name, so the
-	// trace resource column shows the operation instead of the whole query.
-	config.ConnConfig.Tracer = otelpgx.NewTracer(otelpgx.WithTrimSQLInSpanName())
+	// Datadog's SQL obfuscation) but uses a short operation for the span name.
+	// sqlc prefixes generated SQL with `-- name: Foo ...`; otelpgx's default
+	// first-word trim treats `--` as the operation (Datadog: `query --`).
+	// SQLSpanName prefers the sqlc query name, else the first SQL keyword.
+	config.ConnConfig.Tracer = otelpgx.NewTracer(
+		otelpgx.WithTrimSQLInSpanName(),
+		otelpgx.WithSpanNameFunc(SQLSpanName),
+	)
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
