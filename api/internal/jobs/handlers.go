@@ -60,13 +60,20 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 	}
 
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message EnvironmentScrape) error {
-		return handlers.EnvironmentScraper.Scrape(ctx, message.EnvironmentID)
+		// Annotate the go-queue otel Consumer span before Scrape starts a child
+		// Internal span, so Datadog can facet EnvironmentScrape process by environment.id.
+		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
+			return handlers.EnvironmentScraper.Scrape(ctx, message.EnvironmentID)
+		})
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message StoreExtensionSync) error {
+		// Names are high-cardinality; keep them off the Consumer entry span.
 		return handlers.StoreExtensionSynchronizer.Sync(ctx, message.Names, message.ShopwareVersion)
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message SitespeedScrape) error {
-		return handlers.SitespeedScraper.Scrape(ctx, message.EnvironmentID)
+		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
+			return handlers.SitespeedScraper.Scrape(ctx, message.EnvironmentID)
+		})
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ LockCleanup) error {
 		return handlers.Cleanup.CleanupLocks(ctx)
