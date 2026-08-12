@@ -99,8 +99,11 @@ func wrapTransport(base http.RoundTripper) http.RoundTripper {
 		base = http.DefaultTransport
 	}
 	return &userAgentTransport{
-		base: otelhttp.NewTransport(base),
-		ua:   UserAgentString(),
+		base: otelhttp.NewTransport(
+			base,
+			otelhttp.WithSpanNameFormatter(ClientSpanName),
+		),
+		ua: UserAgentString(),
 	}
 }
 
