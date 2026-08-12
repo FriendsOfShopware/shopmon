@@ -25,9 +25,12 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	// sqlc prefixes generated SQL with `-- name: Foo ...`; otelpgx's default
 	// first-word trim treats `--` as the operation (Datadog: `query --`).
 	// SQLSpanName prefers the sqlc query name, else the first SQL keyword.
+	// WithDisableAcquireTracer drops pool.acquire / client.request spans: they
+	// are high-volume and low-signal in Datadog compared to query/exec/prepare.
 	config.ConnConfig.Tracer = otelpgx.NewTracer(
 		otelpgx.WithTrimSQLInSpanName(),
 		otelpgx.WithSpanNameFunc(SQLSpanName),
+		otelpgx.WithDisableAcquireTracer(),
 	)
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
