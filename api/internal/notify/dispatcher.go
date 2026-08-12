@@ -6,6 +6,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 )
 
 // Dispatcher resolves recipients' channel preferences, renders each event into
@@ -77,7 +78,10 @@ func (d *Dispatcher) Dispatch(ctx context.Context, ev Event, recipients []Recipi
 			if err := ch.Send(ctx, r, ev, msg); err != nil {
 				slog.Warn("notify: channel delivery failed",
 					"channel", name, "event", ev.Type, "userId", r.ID, "error", err)
+				metrics.RecordNotifyDelivery(ctx, metrics.OutcomeError, string(name))
+				continue
 			}
+			metrics.RecordNotifyDelivery(ctx, metrics.OutcomeOK, string(name))
 		}
 	}
 }

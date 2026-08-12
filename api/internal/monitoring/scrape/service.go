@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
@@ -77,6 +78,7 @@ func (h *Service) Scrape(ctx context.Context, environmentID int32) error {
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		metrics.RecordScrapeOutcome(ctx, metrics.OutcomeError)
 		return fmt.Errorf("environment %d not found: %w", environmentID, err)
 	}
 
@@ -92,7 +94,7 @@ func (h *Service) Scrape(ctx context.Context, environmentID int32) error {
 }
 
 // scrapeEnvironment performs the full scrape flow for a single environment.
-func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvironmentsRow) error {
+func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvironmentsRow) (err error) {
 	ctx, span := tracer.Start(ctx, "environment.scrape.environment",
 		trace.WithAttributes(
 			attribute.Int("environment.id", int(env.ID)),
@@ -101,6 +103,14 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		),
 	)
 	defer span.End()
+
+	outcome := metrics.OutcomeOK
+	defer func() {
+		if err != nil {
+			outcome = metrics.OutcomeError
+		}
+		metrics.RecordScrapeOutcome(ctx, outcome)
+	}()
 
 	log := slog.With("environmentId", env.ID, "name", env.Name)
 
@@ -129,6 +139,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			}); err != nil {
 				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 			}
+			outcome = metrics.OutcomeAuthError
 			return nil
 		}
 	}
@@ -191,6 +202,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}); err != nil {
 			slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 		}
+		outcome = metrics.OutcomeDataFetchError
 		return nil
 	}
 
