@@ -10,6 +10,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/catalog/storemodel"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -140,12 +141,27 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 			attribute.Bool("sync.force", force),
 		),
 	)
+	// recordOutcome stays false for the "nothing to sync" early return so
+	// no-op freshness checks do not inflate shopmon.store_sync.outcome ok.
+	recordOutcome := true
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
+		if !recordOutcome {
+			return
+		}
+		outcome := metrics.OutcomeOK
+		if err != nil {
+			if shopwareaccount.IsRateLimited(err) {
+				outcome = metrics.OutcomeRateLimited
+			} else {
+				outcome = metrics.OutcomeError
+			}
+		}
+		metrics.RecordStoreSyncOutcome(ctx, outcome)
 	}()
 
 	needed := names
@@ -156,6 +172,7 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 		}
 	}
 	if len(needed) == 0 {
+		recordOutcome = false
 		return nil
 	}
 	span.SetAttributes(attribute.Int("extension.needed", len(needed)))

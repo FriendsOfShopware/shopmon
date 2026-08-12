@@ -10,11 +10,12 @@ import (
 // reports under its own name.
 func telemetryConfig(cfg *config.Config, serviceName string) telemetry.Config {
 	return telemetry.Config{
-		ServiceName:   serviceName,
-		Version:       cfg.OtelServiceVersion,
-		DeploymentEnv: cfg.OtelDeploymentEnv,
-		TraceEndpoint: cfg.OtelTraceEndpoint,
-		LogEndpoint:   cfg.OtelLogEndpoint,
-		SamplerRatio:  cfg.OtelSamplerRatio,
+		ServiceName:    serviceName,
+		Version:        cfg.OtelServiceVersion,
+		DeploymentEnv:  cfg.OtelDeploymentEnv,
+		TraceEndpoint:  cfg.OtelTraceEndpoint,
+		LogEndpoint:    cfg.OtelLogEndpoint,
+		MetricEndpoint: cfg.OtelMetricEndpoint,
+		SamplerRatio:   cfg.OtelSamplerRatio,
 	}
 }

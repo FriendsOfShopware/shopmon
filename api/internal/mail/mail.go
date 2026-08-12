@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	gomailer "github.com/shyim/go-mailer"
 	"github.com/shyim/go-mailer/middleware"
 	"github.com/shyim/go-mailer/middleware/otelmw"
@@ -170,8 +171,11 @@ func (s *Service) Send(ctx context.Context, to string, email Email) error {
 	// A nil envelope derives the sender and recipients from the message
 	// headers set above.
 	if err := s.mailer.Send(ctx, msg, nil); err != nil {
+		// Outcome only — never label with recipient addresses (SES 451 etc.).
+		metrics.RecordMailSend(ctx, metrics.OutcomeError)
 		return fmt.Errorf("send mail: %w", err)
 	}
+	metrics.RecordMailSend(ctx, metrics.OutcomeOK)
 	return nil
 }
 

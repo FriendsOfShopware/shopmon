@@ -1,4 +1,4 @@
-// Package telemetry sets up OpenTelemetry tracing and logging.
+// Package telemetry sets up OpenTelemetry tracing, metrics, and logging.
 package telemetry
 
 import (
@@ -9,13 +9,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -28,19 +31,23 @@ type Config struct {
 	DeploymentEnv string
 	TraceEndpoint string
 	LogEndpoint   string
+	// MetricEndpoint is the OTLP HTTP metrics URL. Empty disables metrics
+	// (global MeterProvider stays a no-op).
+	MetricEndpoint string
 	// SamplerRatio is the head sampling ratio in [0, 1]; 1 samples everything.
 	SamplerRatio float64
 }
 
-// Setup initializes OpenTelemetry tracing and logging with OTLP HTTP exporters.
-// It sets slog's default logger to a handler that sends logs via OTLP and also
-// writes to stderr. Returns a shutdown function that should be called on application exit.
-// If both endpoints are empty, telemetry is disabled and a no-op shutdown is returned.
+// Setup initializes OpenTelemetry tracing, metrics, and logging with OTLP HTTP
+// exporters. It sets slog's default logger to a handler that sends logs via
+// OTLP and also writes to stderr. Returns a shutdown function that should be
+// called on application exit. If all endpoints are empty, telemetry is disabled
+// and a no-op shutdown is returned.
 func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) error) {
 	serviceName, version, deploymentEnv := cfg.ServiceName, cfg.Version, cfg.DeploymentEnv
-	traceEndpoint, logEndpoint := cfg.TraceEndpoint, cfg.LogEndpoint
+	traceEndpoint, logEndpoint, metricEndpoint := cfg.TraceEndpoint, cfg.LogEndpoint, cfg.MetricEndpoint
 
-	if traceEndpoint == "" && logEndpoint == "" {
+	if traceEndpoint == "" && logEndpoint == "" && metricEndpoint == "" {
 		return func(context.Context) error { return nil }
 	}
 
@@ -89,6 +96,27 @@ func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) erro
 			))
 			shutdownFuncs = append(shutdownFuncs, tp.Shutdown)
 			slog.Info("OpenTelemetry tracing enabled", "endpoint", traceEndpoint, "service", serviceName)
+		}
+	}
+
+	// Metrics
+	if metricEndpoint != "" {
+		metricExporter, err := otlpmetrichttp.New(setupCtx,
+			otlpmetrichttp.WithEndpointURL(ensurePath(metricEndpoint, "/v1/metrics")),
+		)
+		if err != nil {
+			slog.Error("failed to create OTLP metric exporter", "error", err)
+		} else {
+			mp := sdkmetric.NewMeterProvider(
+				sdkmetric.WithResource(res),
+				sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExporter)),
+			)
+			otel.SetMeterProvider(mp)
+			// Bind business-outcome instruments to this provider (not the
+			// default no-op that was active at package init).
+			metrics.Register()
+			shutdownFuncs = append(shutdownFuncs, mp.Shutdown)
+			slog.Info("OpenTelemetry metrics enabled", "endpoint", metricEndpoint, "service", serviceName)
 		}
 	}
 

@@ -77,6 +77,10 @@ type Config struct {
 	// unified service tagging variables.
 	OtelTraceEndpoint  string  `env:"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
 	OtelLogEndpoint    string  `env:"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
+	// OTEL_EXPORTER_OTLP_METRICS_ENDPOINT selects the OTLP HTTP metrics
+	// exporter. When empty (and the generic OTEL_EXPORTER_OTLP_ENDPOINT is
+	// also empty), metrics stay disabled and MeterProvider remains a no-op.
+	OtelMetricEndpoint string  `env:"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
 	OtelServiceName    string  `env:"OTEL_SERVICE_NAME" envDefault:"shopmon"`
 	OtelDeploymentEnv  string  `env:"OTEL_DEPLOYMENT_ENVIRONMENT,expand" envDefault:"${DD_ENV}"`
 	OtelServiceVersion string  `env:"OTEL_SERVICE_VERSION,expand" envDefault:"${DD_VERSION}"`

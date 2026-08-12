@@ -253,31 +253,37 @@ func TestOtelEndpointsFallBackToGenericEndpoint(t *testing.T) {
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
 	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "")
 	t.Setenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "")
+	t.Setenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "")
 
 	cfg, err := Load()
 	require.NoError(t, err)
 
 	assert.Equal(t, "http://collector:4318", cfg.OtelTraceEndpoint)
 	assert.Equal(t, "http://collector:4318", cfg.OtelLogEndpoint)
+	assert.Equal(t, "http://collector:4318", cfg.OtelMetricEndpoint)
 	assert.True(t, cfg.OtelEnabled)
 
 	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces:4318")
+	t.Setenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://metrics:4318")
 
 	cfg, err = Load()
 	require.NoError(t, err)
 
 	assert.Equal(t, "http://traces:4318", cfg.OtelTraceEndpoint)
 	assert.Equal(t, "http://collector:4318", cfg.OtelLogEndpoint)
+	assert.Equal(t, "http://metrics:4318", cfg.OtelMetricEndpoint)
 }
 
 func TestOtelDisabledWithoutEndpoint(t *testing.T) {
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
 	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "")
+	t.Setenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "")
 
 	cfg, err := Load()
 	require.NoError(t, err)
 
 	assert.Empty(t, cfg.OtelTraceEndpoint)
+	assert.Empty(t, cfg.OtelMetricEndpoint)
 	assert.False(t, cfg.OtelEnabled)
 }
 

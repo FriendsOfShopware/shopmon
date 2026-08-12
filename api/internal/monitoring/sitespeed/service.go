@@ -14,6 +14,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 )
 
 type Service struct {
@@ -25,9 +26,10 @@ func NewService(q *queries.Queries, cfg *config.Config) *Service {
 	return &Service{queries: q, cfg: cfg}
 }
 
-func (s *Service) Scrape(ctx context.Context, environmentID int32) error {
+func (s *Service) Scrape(ctx context.Context, environmentID int32) (err error) {
 	environments, err := s.queries.GetEnvironmentsWithSitespeedEnabled(ctx)
 	if err != nil {
+		metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeError)
 		return fmt.Errorf("list sitespeed-enabled environments: %w", err)
 	}
 
@@ -37,16 +39,26 @@ func (s *Service) Scrape(ctx context.Context, environmentID int32) error {
 		}
 	}
 
+	metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeError)
 	return fmt.Errorf("environment %d not found or sitespeed not enabled", environmentID)
 }
 
-func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) error {
+func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironmentsWithSitespeedEnabledRow) (err error) {
 	log := slog.With("environmentId", env.ID)
 
 	if s.cfg.SitespeedEndpoint == "" || s.cfg.SitespeedAPIKey == "" {
 		log.Info("sitespeed not configured, skipping")
+		metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeSkipped)
 		return nil
 	}
+
+	defer func() {
+		if err != nil {
+			metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeError)
+			return
+		}
+		metrics.RecordSitespeedOutcome(ctx, metrics.OutcomeOK)
+	}()
 
 	// Get URLs to test - default is the environment URL
 	var urls []string
