@@ -33,6 +33,9 @@ func annotateConsumerOutcome(ctx context.Context, err error) {
 
 // runEnvironmentJob annotates the Consumer span with environment.id up front
 // and outcome when the job finishes, then returns the job error unchanged.
+// Do not RecordError / SetStatus here: queueotel.Middleware already does that
+// on the Consumer span after the handler returns; duplicating it would emit
+// two exception events for the same failure.
 func runEnvironmentJob(ctx context.Context, environmentID int32, run func(context.Context) error) error {
 	annotateConsumerEnvironment(ctx, environmentID)
 	err := run(ctx)
