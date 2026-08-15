@@ -120,15 +120,20 @@ func DeriveFixes(entries []ChangelogEntry) ([]Fix, []Coverage) {
 			cov = &Coverage{Branch: branch}
 			coverage[branch] = cov
 		}
+		// Both bounds describe the releases that were parsed, not the ones that
+		// named an advisory: early plugin releases predate GHSA labelling, and
+		// they are still evidence that the branch was read. Tracking the
+		// minimum inside the GHSA loop below would leave it empty for a branch
+		// that parsed cleanly but backports nothing.
 		if cov.MaxParsedVersion == "" || version.Compare(entry.Version, cov.MaxParsedVersion) > 0 {
 			cov.MaxParsedVersion = entry.Version
+		}
+		if cov.MinParsedVersion == "" || version.Compare(entry.Version, cov.MinParsedVersion) < 0 {
+			cov.MinParsedVersion = entry.Version
 		}
 
 		for _, ghsa := range ExtractGHSAs(entry.Changelog) {
 			cov.GhsaCount++
-			if cov.MinParsedVersion == "" || version.Compare(entry.Version, cov.MinParsedVersion) < 0 {
-				cov.MinParsedVersion = entry.Version
-			}
 
 			k := key{ghsa: ghsa, branch: branch}
 			current, exists := best[k]

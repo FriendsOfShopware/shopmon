@@ -217,6 +217,38 @@ func TestDeriveFixesCoverageRecordsParsedBranchesWithoutGhsas(t *testing.T) {
 	if coverage[0].MaxParsedVersion != "1.0.9" {
 		t.Errorf("MaxParsedVersion = %q, want 1.0.9", coverage[0].MaxParsedVersion)
 	}
+	// The branch was parsed end to end even though no entry named a GHSA, so
+	// both bounds must be populated. Leaving the minimum empty would read as
+	// "never parsed" to anyone debugging why the branch resolves to unknown.
+	if coverage[0].MinParsedVersion != "1.0.5" {
+		t.Errorf("MinParsedVersion = %q, want 1.0.5", coverage[0].MinParsedVersion)
+	}
+}
+
+// Releases that predate GHSA labelling still count as parsed: the coverage
+// range must span them rather than starting at the first advisory.
+func TestDeriveFixesCoverageSpansEntriesWithoutGhsas(t *testing.T) {
+	t.Parallel()
+
+	entries := []ChangelogEntry{
+		{Version: "1.0.1", Changelog: "Initial release"},
+		{Version: "1.0.5", Changelog: "Fixes GHSA-xvhc-gm7j-mhmc"},
+		{Version: "1.0.9", Changelog: "Bug fixes"},
+	}
+
+	_, coverage := DeriveFixes(entries)
+	if len(coverage) != 1 {
+		t.Fatalf("got %d coverage rows, want 1", len(coverage))
+	}
+	if coverage[0].MinParsedVersion != "1.0.1" {
+		t.Errorf("MinParsedVersion = %q, want 1.0.1 (the earliest parsed release)", coverage[0].MinParsedVersion)
+	}
+	if coverage[0].MaxParsedVersion != "1.0.9" {
+		t.Errorf("MaxParsedVersion = %q, want 1.0.9", coverage[0].MaxParsedVersion)
+	}
+	if coverage[0].GhsaCount != 1 {
+		t.Errorf("GhsaCount = %d, want 1", coverage[0].GhsaCount)
+	}
 }
 
 func TestDeriveFixesSkipsUnparseableVersions(t *testing.T) {
