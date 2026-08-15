@@ -78,6 +78,7 @@ func TestRegisterHandlersRegistersEveryStableMessageType(t *testing.T) {
 		func() error { return Dispatch(context.Background(), bus, InvitationCleanup{}) },
 		func() error { return Dispatch(context.Background(), bus, OldDataCleanup{}) },
 		func() error { return Dispatch(context.Background(), bus, ShopwareChangelogSync{}) },
+		func() error { return Dispatch(context.Background(), bus, ComposerAdvisorySync{}) },
 		func() error { return Dispatch(context.Background(), bus, StoreExtensionSync{}) },
 	}
 
@@ -174,6 +175,10 @@ type changelogSynchronizerStub struct{}
 
 func (changelogSynchronizerStub) Sync(context.Context) error { return nil }
 
+type advisorySynchronizerStub struct{}
+
+func (advisorySynchronizerStub) Sync(context.Context) error { return nil }
+
 func completeHandlers() Handlers {
 	return Handlers{
 		EnvironmentScraper:         scraperStub{},
@@ -181,5 +186,7 @@ func completeHandlers() Handlers {
 		SitespeedScraper:           scraperStub{},
 		Cleanup:                    cleanupHandlerStub{},
 		ChangelogSynchronizer:      changelogSynchronizerStub{},
+		AdvisorySynchronizer:       advisorySynchronizerStub{},
+		SecurityPluginSynchronizer: advisorySynchronizerStub{},
 	}
 }

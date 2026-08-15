@@ -44,6 +44,11 @@ const (
 	EventStatusRecovered EventType = "status_recovered"
 	EventAuthError       EventType = "auth_error"
 	EventDataFetchError  EventType = "data_fetch_error"
+	// EventAdvisoryDetected fires when newly published advisories match an
+	// environment's Composer inventory. Batched per environment: matches arrive
+	// in bursts (Shopware publishes several advisories at once), and one email
+	// per advisory would mean a handful of messages in the same minute.
+	EventAdvisoryDetected EventType = "advisory_detected"
 )
 
 // Link is a frontend route reference attached to a notification.
