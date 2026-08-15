@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	goqueue "github.com/shyim/go-queue"
 	"github.com/shyim/go-queue/transport/memory"
 	"github.com/stretchr/testify/assert"
@@ -93,6 +94,60 @@ func TestRegisterHandlersRejectsIncompleteWorkerGraph(t *testing.T) {
 	bus, _ := newMemoryBus()
 	require.Error(t, RegisterHandlers(bus, Handlers{}))
 	require.Error(t, RegisterHandlers(nil, completeHandlers()))
+}
+
+func TestNewTransportSelectsDriver(t *testing.T) {
+	amqpConfig := AMQPConfig{DSN: "amqp://guest:guest@localhost:5672/", Exchange: "shopmon", Queue: "shopmon"}
+
+	tests := []struct {
+		name        string
+		config      BusConfig
+		expectedErr string
+	}{
+		{name: "amqp driver", config: BusConfig{Driver: DriverAMQP, AMQP: amqpConfig}},
+		{name: "amqp driver without dsn", config: BusConfig{Driver: DriverAMQP}, expectedErr: "requires a broker DSN"},
+		// The pool is nil in this test, so only the driver dispatch is asserted:
+		// the postgres transport is the one branch that needs it.
+		{name: "postgres driver without pool", config: BusConfig{Driver: DriverPostgres}, expectedErr: "requires a database pool"},
+		{name: "empty driver defaults to postgres", config: BusConfig{}, expectedErr: "requires a database pool"},
+		{name: "unknown driver", config: BusConfig{Driver: "kafka"}, expectedErr: `unknown queue driver "kafka"`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			transport, closeTransport, err := newTransport(nil, test.config)
+
+			if test.expectedErr != "" {
+				assert.ErrorContains(t, err, test.expectedErr)
+				assert.Nil(t, transport)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, transport)
+			// Constructing the AMQP transport must not dial the broker; only
+			// bus.Setup does, so dispatch-only processes fail fast with a clear error.
+			require.NoError(t, closeTransport())
+		})
+	}
+}
+
+func TestNewTransportKeepsPostgresPoolOpen(t *testing.T) {
+	// postgres.Transport.Close() closes the pool it was handed, which the rest of
+	// the process still uses — NewBus must therefore hand back a no-op closer.
+	pool, err := pgxpool.New(context.Background(), "postgres://user:pass@127.0.0.1:1/db")
+	require.NoError(t, err)
+	defer pool.Close()
+
+	_, closeTransport, err := newTransport(pool, BusConfig{Driver: DriverPostgres})
+	require.NoError(t, err)
+	require.NoError(t, closeTransport())
+
+	// A closed pool rejects acquisition with "closed pool"; a live one gets as far
+	// as dialing the (unreachable) address instead.
+	_, err = pool.Acquire(context.Background())
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "closed pool")
 }
 
 func newMemoryBus() (*goqueue.Bus, *memory.Transport) {

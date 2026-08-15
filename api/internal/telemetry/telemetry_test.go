@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEnsurePath(t *testing.T) {
@@ -47,35 +45,6 @@ func TestEnsurePath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, ensurePath(tt.endpoint, tt.defaultPath))
-		})
-	}
-}
-
-func TestParseSamplerRatio(t *testing.T) {
-	tests := []struct {
-		name string
-		set  bool
-		env  string
-		want float64
-	}{
-		{name: "unset defaults to 1.0", set: false, want: 1.0},
-		{name: "empty defaults to 1.0", set: true, env: "", want: 1.0},
-		{name: "half", set: true, env: "0.5", want: 0.5},
-		{name: "one", set: true, env: "1.0", want: 1.0},
-		{name: "zero", set: true, env: "0.0", want: 0.0},
-		{name: "above one clamps", set: true, env: "2.5", want: 1.0},
-		{name: "below zero clamps", set: true, env: "-1", want: 0.0},
-		{name: "invalid defaults to 1.0", set: true, env: "not-a-number", want: 1.0},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.set {
-				t.Setenv("OTEL_TRACES_SAMPLER_RATIO", tt.env)
-			} else {
-				require.NoError(t, os.Unsetenv("OTEL_TRACES_SAMPLER_RATIO"))
-			}
-			assert.Equal(t, tt.want, parseSamplerRatio())
 		})
 	}
 }

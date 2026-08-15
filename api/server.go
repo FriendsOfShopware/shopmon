@@ -79,13 +79,16 @@ func serverCmd() *cobra.Command {
 }
 
 func runServer(cmd *cobra.Command, args []string) error {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// OpenTelemetry
-	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName, cfg.OtelServiceVersion, cfg.OtelDeploymentEnv, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	// OpenTelemetry — API reports as ${OTEL_SERVICE_NAME}-api (worker appends -worker).
+	otelShutdown := telemetry.Setup(ctx, telemetryConfig(cfg, cfg.OtelServiceName+"-api"))
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)
@@ -124,10 +127,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	// Dispatch-only queue bus. Executable handlers are registered exclusively by
 	// the worker process.
-	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
+	bus, closeBus, err := jobs.NewBus(ctx, pool, busConfig(cfg))
 	if err != nil {
 		return err
 	}
+	defer func() { _ = closeBus() }()
 
 	organizationRepository := organizationpostgres.NewAuthorizationRepository(q)
 	organizationAuthorizer := organization.NewAuthorizer(organizationRepository)

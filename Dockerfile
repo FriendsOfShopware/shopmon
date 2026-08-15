@@ -1,11 +1,5 @@
 # syntax=docker/dockerfile:1.7
 
-ARG BUILDPLATFORM=linux/amd64
-ARG TARGETPLATFORM=linux/amd64
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
-ARG TARGETVARIANT
-
 FROM --platform=$BUILDPLATFORM node:26-alpine AS frontend-build
 
 WORKDIR /src/frontend

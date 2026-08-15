@@ -99,4 +99,38 @@ test.describe("environment detail tabs", () => {
         .toBeGreaterThan(20);
     }
   });
+
+  // The fixtures seed more changelog entries than fit on one page, so the tab
+  // must page through them rather than showing the whole history at once.
+  test("Changelog tab pages through the history", async ({ page }) => {
+    await tab(page, /^Changelog/).click();
+    await expect(page).toHaveURL(new RegExp(`${BASE}/changelog`));
+
+    const previous = page.getByRole("button", { name: "Previous" });
+    const next = page.getByRole("button", { name: "Next" });
+
+    await expect(page.getByText(/^Page 1 of \d+$/)).toBeVisible();
+    await expect(previous).toBeDisabled();
+    await expect(next).toBeEnabled();
+
+    // Each entry's header is an expand button labelled with the entry's date, so
+    // match on that prefix rather than any button on the page. Capturing the
+    // first row proves the list actually changes instead of re-rendering.
+    const entries = page.getByRole("button").filter({ hasText: /^\d{2}\.\d{2}\.\d{4}/ });
+    const firstPageText = await entries.first().innerText();
+    const firstPageCount = await entries.count();
+    expect(firstPageCount).toBe(10);
+
+    await next.click();
+    await expect(page.getByText("Page 2 of", { exact: false })).toBeVisible();
+    await expect(previous).toBeEnabled();
+    expect(await entries.first().innerText()).not.toBe(firstPageText);
+    // The last page holds the remainder, so it must not be larger than a full page.
+    expect(await entries.count()).toBeLessThanOrEqual(firstPageCount);
+
+    await previous.click();
+    await expect(page.getByText(/^Page 1 of \d+$/)).toBeVisible();
+    await expect(previous).toBeDisabled();
+    expect(await entries.first().innerText()).toBe(firstPageText);
+  });
 });

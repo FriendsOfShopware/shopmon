@@ -120,6 +120,61 @@ func (h *Service) handleStatusTransition(ctx context.Context, env queries.GetAll
 	return &statusTransition{oldStatus: oldStatus, newStatus: newStatus, reasons: reasons}
 }
 
+// carryOverChecks returns the previously persisted checks that belong to a
+// check group the current run could not evaluate and that the run did not
+// re-report.
+//
+// A source is only reported unavailable when its data was unreachable, so its
+// findings are unknown rather than resolved. Dropping them would flip the
+// environment to green and mail out a recovery, then flip it back on the next
+// successful scrape — one upstream hiccup, two misleading emails.
+func carryOverChecks(oldChecks []queries.EnvironmentCheck, newChecks []checker.Check, unavailable []checker.UnavailableSource) []checker.Check {
+	if len(oldChecks) == 0 || len(unavailable) == 0 {
+		return nil
+	}
+
+	reported := make(map[string]bool, len(newChecks))
+	for _, c := range newChecks {
+		reported[c.ID] = true
+	}
+
+	unevaluated := func(c queries.EnvironmentCheck) bool {
+		for _, u := range unavailable {
+			if u.Owns(c.Source, c.CheckID) {
+				return true
+			}
+		}
+		return false
+	}
+
+	carried := make([]checker.Check, 0, len(oldChecks))
+	for _, c := range oldChecks {
+		if !unevaluated(c) || reported[c.CheckID] {
+			continue
+		}
+		link := ""
+		if c.Link != nil {
+			link = *c.Link
+		}
+		// Rows written before checks moved to translation keys carry only the
+		// rendered English message; fall back to it the way computeStatusReasons
+		// does, so a carry-over never blanks a check's text.
+		messageKey := c.Message
+		if c.MessageKey != nil {
+			messageKey = *c.MessageKey
+		}
+		carried = append(carried, checker.Check{
+			ID:            c.CheckID,
+			Level:         checker.Status(c.Level),
+			MessageKey:    messageKey,
+			MessageParams: decodeParams(c.Params),
+			Source:        c.Source,
+			Link:          link,
+		})
+	}
+	return carried
+}
+
 // checkWeight orders check levels for comparison (higher is worse).
 func checkWeight(level string) int {
 	switch level {

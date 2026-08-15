@@ -45,7 +45,11 @@ func migrateCmd() *cobra.Command {
 		Use:   "up",
 		Short: "Run all pending migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := config.Load()
+			cfg, err := config.Load()
+			if err != nil {
+				return err
+			}
+
 			m, err := newMigrate(cfg.DatabaseURL)
 			if err != nil {
 				return err
@@ -65,7 +69,11 @@ func migrateCmd() *cobra.Command {
 		Use:   "down",
 		Short: "Rollback the last migration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := config.Load()
+			cfg, err := config.Load()
+			if err != nil {
+				return err
+			}
+
 			m, err := newMigrate(cfg.DatabaseURL)
 			if err != nil {
 				return err
@@ -85,7 +93,11 @@ func migrateCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Show current migration version",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := config.Load()
+			cfg, err := config.Load()
+			if err != nil {
+				return err
+			}
+
 			m, err := newMigrate(cfg.DatabaseURL)
 			if err != nil {
 				return err

@@ -37,12 +37,15 @@ func workerCmd() *cobra.Command {
 }
 
 func runWorker(cmd *cobra.Command, args []string) error {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	otelShutdown := telemetry.Setup(ctx, cfg.OtelServiceName+"-worker", cfg.OtelServiceVersion, cfg.OtelDeploymentEnv, cfg.OtelTraceEndpoint, cfg.OtelLogEndpoint)
+	otelShutdown := telemetry.Setup(ctx, telemetryConfig(cfg, cfg.OtelServiceName+"-worker"))
 	defer func() {
 		if err := otelShutdown(context.Background()); err != nil {
 			slog.Error("otel shutdown error", "error", err)
@@ -72,10 +75,13 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	// The worker owns executable handlers; API and fixture processes use the
 	// same bus strictly for dispatch.
-	bus, err := jobs.NewBus(ctx, pool, jobs.BusConfig{OTelEnabled: cfg.OtelEnabled})
+	bus, closeBus, err := jobs.NewBus(ctx, pool, busConfig(cfg))
 	if err != nil {
 		return err
 	}
+	// Deferred after the in-flight drain below, so no job loses its ack because
+	// the broker connection went away early.
+	defer func() { _ = closeBus() }()
 
 	storeSync := catalogsync.NewService(pool, q, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)

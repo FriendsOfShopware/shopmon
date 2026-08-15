@@ -849,6 +849,7 @@
     "noChecksMatch": "Keine Prüfungen entsprechen dem aktuellen Filter.",
     "noChangesRecorded": "Keine Änderungen aufgezeichnet",
     "changesWillAppear": "Änderungen an dieser Umgebung werden hier angezeigt.",
+    "failedLoadChangelogs": "Änderungen konnten nicht geladen werden",
     "performanceOverTime": "Performance über die Zeit",
     "history": "Verlauf",
     "lastDeploy": "Letztes Deployment",

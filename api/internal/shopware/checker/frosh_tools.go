@@ -28,6 +28,13 @@ var ignoredFroshChecks = map[string]bool{
 }
 
 func checkFroshTools(ctx context.Context, input Input, output *Output) {
+	// Without the extension list there is no way to tell whether FroshTools is
+	// gone or merely unlisted, so treat the source as unevaluated.
+	if input.Missing.Extensions {
+		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
+		return
+	}
+
 	var found bool
 	for _, ext := range input.Extensions {
 		if ext.Name == "FroshTools" && ext.Active && ext.Installed {
@@ -43,15 +50,20 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 		return
 	}
 
+	// Every failure below leaves the shop's real health unknown. Reporting no
+	// checks would read as "everything recovered", so the source is marked
+	// unavailable and the caller keeps the last known checks.
 	healthData, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools health status", "error", err)
+		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
 
 	var healthChecks []froshToolsCheck
 	if err := json.Unmarshal(healthData, &healthChecks); err != nil {
 		slog.Warn("failed to parse FroshTools health data", "error", err)
+		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
 
@@ -60,12 +72,14 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	perfData, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools performance status", "error", err)
+		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
 
 	var perfChecks []froshToolsCheck
 	if err := json.Unmarshal(perfData, &perfChecks); err != nil {
 		slog.Warn("failed to parse FroshTools performance data", "error", err)
+		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
 	}
 
@@ -83,7 +97,7 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 			key = c.ID
 		}
 
-		id := "frosh." + key
+		id := prefixFroshTools + key
 		// messageKey resolves to a catalog entry per snippet. The snippet is also
 		// passed as a param so an unknown snippet degrades to its raw name rather
 		// than a bare key. current/recommended (when present) drive the generic
@@ -98,17 +112,17 @@ func mapFroshChecks(checks []froshToolsCheck, output *Output) {
 		}
 
 		if ignoredFroshChecks[c.Snippet] {
-			output.Success(id, messageKey, params, "FroshTools", c.URL)
+			output.Success(id, messageKey, params, SourceFroshTools, c.URL)
 			continue
 		}
 
 		switch c.State {
 		case "STATE_OK":
-			output.Success(id, messageKey, params, "FroshTools", c.URL)
+			output.Success(id, messageKey, params, SourceFroshTools, c.URL)
 		case "STATE_WARNING":
-			output.Warning(id, messageKey, params, "FroshTools", c.URL)
+			output.Warning(id, messageKey, params, SourceFroshTools, c.URL)
 		case "STATE_ERROR":
-			output.Error(id, messageKey, params, "FroshTools", c.URL)
+			output.Error(id, messageKey, params, SourceFroshTools, c.URL)
 		}
 	}
 }

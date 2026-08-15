@@ -82,6 +82,18 @@ Environment variables for local development are pre-configured in [`.mise.toml`]
 
 For production/staging, see [`.env.production`](.env.production) and [`.env.staging`](.env.staging).
 
+### Background Job Queue
+
+Jobs run through PostgreSQL by default. To develop against the AMQP transport instead, point the API and worker at the LavinMQ container started by `mise run up`:
+
+```bash
+export QUEUE_TRANSPORT=amqp
+export QUEUE_AMQP_DSN=amqp://guest:guest@localhost:5672/
+mise run dev
+```
+
+The queue and exchange are declared on startup; inspect them in the LavinMQ UI at http://localhost:15672 (`guest` / `guest`). See [SELF_HOSTING.md](SELF_HOSTING.md#background-job-queue) for the full variable list.
+
 ## Making Changes
 
 ### Branch Naming

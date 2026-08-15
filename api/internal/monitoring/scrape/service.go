@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
@@ -77,6 +78,7 @@ func (h *Service) Scrape(ctx context.Context, environmentID int32) error {
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		metrics.RecordScrapeOutcome(ctx, metrics.OutcomeError)
 		return fmt.Errorf("environment %d not found: %w", environmentID, err)
 	}
 
@@ -92,7 +94,7 @@ func (h *Service) Scrape(ctx context.Context, environmentID int32) error {
 }
 
 // scrapeEnvironment performs the full scrape flow for a single environment.
-func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvironmentsRow) error {
+func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvironmentsRow) (err error) {
 	ctx, span := tracer.Start(ctx, "environment.scrape.environment",
 		trace.WithAttributes(
 			attribute.Int("environment.id", int(env.ID)),
@@ -101,6 +103,14 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		),
 	)
 	defer span.End()
+
+	outcome := metrics.OutcomeOK
+	defer func() {
+		if err != nil {
+			outcome = metrics.OutcomeError
+		}
+		metrics.RecordScrapeOutcome(ctx, outcome)
+	}()
 
 	log := slog.With("environmentId", env.ID, "name", env.Name)
 
@@ -129,6 +139,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			}); err != nil {
 				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 			}
+			outcome = metrics.OutcomeAuthError
 			return nil
 		}
 	}
@@ -191,6 +202,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}); err != nil {
 			slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
 		}
+		outcome = metrics.OutcomeDataFetchError
 		return nil
 	}
 
@@ -201,10 +213,17 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 	var extensions []extensionEntry
 
+	// Track which data sets never arrived. The checkers must not turn a failed
+	// fetch into a passing check, otherwise a transient upstream error (a 504
+	// from the shop, say) reads as "everything resolved" and the next successful
+	// scrape reads as "broken again".
+	var missing checker.MissingData
+
 	if fr.pluginErr == nil {
 		var pluginsResp shopwareSearchResponse[shopwarePlugin]
 		if err := json.Unmarshal(fr.pluginData, &pluginsResp); err != nil {
 			slog.Warn("failed to parse Shopware plugins", "environmentId", env.ID, "error", err)
+			missing.Extensions = true
 		} else {
 			for _, p := range pluginsResp.Data {
 				ext := extensionEntry{
@@ -223,12 +242,14 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}
 	} else {
 		slog.Warn("failed to fetch Shopware plugins", "environmentId", env.ID, "error", fr.pluginErr)
+		missing.Extensions = true
 	}
 
 	if fr.appErr == nil {
 		var appsResp shopwareSearchResponse[shopwareApp]
 		if err := json.Unmarshal(fr.appData, &appsResp); err != nil {
 			slog.Warn("failed to parse Shopware apps", "environmentId", env.ID, "error", err)
+			missing.Extensions = true
 		} else {
 			for _, a := range appsResp.Data {
 				extensions = append(extensions, extensionEntry{
@@ -243,6 +264,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		}
 	} else {
 		slog.Warn("failed to fetch Shopware apps", "environmentId", env.ID, "error", fr.appErr)
+		missing.Extensions = true
 	}
 
 	var scheduledTasks []shopwareScheduledTask
@@ -250,11 +272,13 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		var tasksResp shopwareSearchResponse[shopwareScheduledTask]
 		if err := json.Unmarshal(fr.taskData, &tasksResp); err != nil {
 			slog.Warn("failed to parse Shopware scheduled tasks", "environmentId", env.ID, "error", err)
+			missing.ScheduledTasks = true
 		} else {
 			scheduledTasks = tasksResp.Data
 		}
 	} else {
 		slog.Warn("failed to fetch Shopware scheduled tasks", "environmentId", env.ID, "error", fr.taskErr)
+		missing.ScheduledTasks = true
 	}
 
 	var queueEntries []shopwareQueueEntry
@@ -270,9 +294,11 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	if fr.cacheInfoErr == nil {
 		if err := json.Unmarshal(fr.cacheInfoData, &cacheInfo); err != nil {
 			slog.Warn("failed to parse cache info", "environmentId", env.ID, "error", err)
+			missing.CacheInfo = true
 		}
 	} else {
 		slog.Warn("failed to fetch Shopware cache info", "environmentId", env.ID, "error", fr.cacheInfoErr)
+		missing.CacheInfo = true
 	}
 
 	oldExtensions := h.loadExistingExtensions(ctx, env.ID)
@@ -379,6 +405,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		},
 		Client:             client,
 		Ignores:            ignores,
+		Missing:            missing,
 		SecurityAdvisories: securityAdvisories,
 		// Composer package inventory from the FroshTools SBOM. Empty when the
 		// shop cannot serve one, in which case checkSecurity falls back to
@@ -391,18 +418,45 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	_, checkSpan := tracer.Start(ctx, "environment.scrape.run_checks")
 	checkerResult := checker.RunAll(ctx, checkerInput)
 	checkSpan.SetAttributes(attribute.String("check.status", string(checkerResult.Status)))
+	unavailableNames := checkerResult.UnavailableNames()
+	if len(unavailableNames) > 0 {
+		checkSpan.SetAttributes(attribute.StringSlice("check.unavailable_sources", unavailableNames))
+	}
 	checkSpan.End()
-
-	newStatus := string(checkerResult.Status)
 
 	// Capture the previously persisted checks before they are replaced so the
 	// status transition can be explained by the specific checks that changed.
 	oldChecks, err := h.queries.GetEnvironmentChecks(ctx, env.ID)
 	if err != nil {
+		// With a check group unevaluated, the previous checks are the only
+		// record of its findings. Persisting without them would prune exactly
+		// those findings and mail out the false recovery this path exists to
+		// prevent, so fail the scrape and let it retry with the stored state
+		// intact. Without an unevaluated group the loss only costs the reasons
+		// attached to a transition, which is not worth failing over.
+		if len(checkerResult.Unavailable) > 0 {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			return fmt.Errorf("load previous checks while %v unavailable: %w", unavailableNames, err)
+		}
 		slog.Warn("failed to load previous checks for status diff", "environmentId", env.ID, "error", err)
 		oldChecks = nil
 	}
-	transition := h.handleStatusTransition(ctx, env, oldChecks, checkerResult.Checks, newStatus)
+
+	// Check groups that could not be evaluated keep their last known checks, so
+	// an unreachable source does not silently resolve every finding it reported.
+	finalChecks := checkerResult.Checks
+	if len(checkerResult.Unavailable) > 0 {
+		carried := carryOverChecks(oldChecks, checkerResult.Checks, checkerResult.Unavailable)
+		if len(carried) > 0 {
+			log.Warn("check sources unavailable, keeping last known checks",
+				"sources", unavailableNames, "checks", len(carried))
+			finalChecks = append(finalChecks, carried...)
+		}
+	}
+
+	newStatus := string(checker.AggregateStatus(finalChecks, ignores))
+	transition := h.handleStatusTransition(ctx, env, oldChecks, finalChecks, newStatus)
 
 	// Fetch the favicon before opening the persist transaction: it is an HTTP
 	// call with its own timeout and must not run while holding row locks.
@@ -415,7 +469,8 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		scheduledTasks:  scheduledTasks,
 		queueEntries:    queueEntries,
 		cacheInfo:       cacheInfo,
-		checks:          checkerResult.Checks,
+		missing:         missing,
+		checks:          finalChecks,
 		extensionsDiff:  extensionsDiff,
 		favicon:         favicon,
 		transition:      transition,
@@ -524,6 +579,7 @@ type scrapeResult struct {
 	scheduledTasks  []shopwareScheduledTask
 	queueEntries    []shopwareQueueEntry
 	cacheInfo       shopwareCacheInfo
+	missing         checker.MissingData
 	checks          []checker.Check
 	extensionsDiff  []extensionDiff
 	favicon         *string
@@ -663,17 +719,21 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 		}
 	}
 
-	cacheAdapter := res.cacheInfo.CacheAdapter
-	if cacheAdapter == "" {
-		cacheAdapter = "filesystem"
-	}
-	if err := txQueries.UpsertEnvironmentCache(ctx, queries.UpsertEnvironmentCacheParams{
-		EnvironmentID: env.ID,
-		Environment:   res.cacheInfo.Environment,
-		HttpCache:     res.cacheInfo.HttpCache,
-		CacheAdapter:  cacheAdapter,
-	}); err != nil {
-		return fmt.Errorf("upsert environment cache: %w", err)
+	// Skipped when the cache info could not be fetched, so a transient failure
+	// does not overwrite the stored values with an empty environment.
+	if !res.missing.CacheInfo {
+		cacheAdapter := res.cacheInfo.CacheAdapter
+		if cacheAdapter == "" {
+			cacheAdapter = "filesystem"
+		}
+		if err := txQueries.UpsertEnvironmentCache(ctx, queries.UpsertEnvironmentCacheParams{
+			EnvironmentID: env.ID,
+			Environment:   res.cacheInfo.Environment,
+			HttpCache:     res.cacheInfo.HttpCache,
+			CacheAdapter:  cacheAdapter,
+		}); err != nil {
+			return fmt.Errorf("upsert environment cache: %w", err)
+		}
 	}
 
 	if err := persistSbom(ctx, txQueries, env.ID, res.sbom); err != nil {

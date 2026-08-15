@@ -80,6 +80,7 @@ A ready-to-publish Coder workspace template is available in [`coder/`](coder/REA
 | Demo Shop Frontend | http://localhost:3889 | |
 | Demo Shop Admin | http://localhost:3889/admin | `admin` / `shopware` |
 | Jaeger (traces) | http://localhost:16686 | OpenTelemetry traces |
+| LavinMQ | http://localhost:15672 | `guest` / `guest`. Only used with `QUEUE_TRANSPORT=amqp` |
 
 ### Environment Variables
 

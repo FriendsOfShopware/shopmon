@@ -98,14 +98,14 @@ func (c *Client) PluginsByName(ctx context.Context, locale, shopwareVersion stri
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch store plugins: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("store api returned status %d", resp.StatusCode)
+		return nil, &APIError{StatusCode: resp.StatusCode}
 	}
 
 	body, err := io.ReadAll(resp.Body)

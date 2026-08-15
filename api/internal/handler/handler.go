@@ -13,11 +13,11 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
-	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
 	adminread "github.com/friendsofshopware/shopmon/api/internal/readmodel/admin"
 	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
+	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 )
 
 // AdvisorySyncDispatcher enqueues a Packagist advisory sync job.

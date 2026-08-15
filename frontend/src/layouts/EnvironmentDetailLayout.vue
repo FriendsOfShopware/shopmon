@@ -412,7 +412,7 @@ const tabs = computed(() => {
       route: "account.environments.detail.changelog",
       label: t("nav.changelog"),
       icon: FaFileWaveform,
-      count: environment.value?.changelogs?.length ?? 0,
+      count: environment.value?.changelogsCount ?? 0,
     },
     {
       route: "account.environments.detail.deployments",

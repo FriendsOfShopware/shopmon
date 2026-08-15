@@ -328,6 +328,8 @@
 <script setup lang="ts">
 import {
   checkExtensionCompatibility,
+  getEnvironmentChangelogs,
+  type AccountChangelog,
   type EnvironmentExtension as Extension,
 } from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
@@ -335,7 +337,7 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
 import EnvironmentChangelog from "@/components/modal/ShopChangelog.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useAlert } from "@/composables/useAlert";
 import { sumChanges } from "@/helpers/changelog";
@@ -488,10 +490,35 @@ const overdueTasks = computed(() => {
     .slice(0, 5);
 });
 
-const recentChangelogs = computed(() => {
-  if (!environment.value?.changelogs) return [];
-  return environment.value.changelogs.slice(0, 5);
-});
+// The changelog history is paginated on its own tab, so the overview fetches
+// just the handful of entries it previews. Only the newest request may write to
+// the preview, so a slow response cannot show a previous environment's history.
+const recentChangelogs = ref<AccountChangelog[]>([]);
+let changelogRequestId = 0;
+
+watch(
+  () => environment.value?.id,
+  async (id) => {
+    const request = ++changelogRequestId;
+    recentChangelogs.value = [];
+    if (!id) return;
+
+    const { data, error: responseError } = await getEnvironmentChangelogs({
+      path: { environmentId: id },
+      query: { limit: 5, offset: 0 },
+    });
+    if (request !== changelogRequestId) return;
+
+    // The client resolves with an error instead of throwing, so a failed
+    // request must not be rendered as an empty history.
+    if (responseError || !data) {
+      error(t("shopDetail.failedLoadChangelogs"));
+      return;
+    }
+    recentChangelogs.value = data.entries;
+  },
+  { immediate: true },
+);
 
 function getOverdueTime(nextExecutionTime: string): string {
   const diffMs = Date.now() - new Date(nextExecutionTime).getTime();

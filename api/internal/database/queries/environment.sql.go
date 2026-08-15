@@ -12,6 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countEnvironmentChangelogs = `-- name: CountEnvironmentChangelogs :one
+SELECT COUNT(*)::int FROM environment_changelog WHERE environment_id = $1
+`
+
+func (q *Queries) CountEnvironmentChangelogs(ctx context.Context, environmentID *int32) (int32, error) {
+	row := q.db.QueryRow(ctx, countEnvironmentChangelogs, environmentID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const countEnvironmentDeployments = `-- name: CountEnvironmentDeployments :one
 SELECT COUNT(*)::int FROM deployment WHERE environment_id = $1
 `
@@ -298,11 +309,20 @@ func (q *Queries) GetEnvironmentCache(ctx context.Context, environmentID int32) 
 
 const getEnvironmentChangelogs = `-- name: GetEnvironmentChangelogs :many
 SELECT id, environment_id, extensions, old_shopware_version, new_shopware_version, date
-FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC LIMIT 10
+FROM environment_changelog WHERE environment_id = $1 ORDER BY date DESC, id DESC LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, environmentID *int32) ([]EnvironmentChangelog, error) {
-	rows, err := q.db.Query(ctx, getEnvironmentChangelogs, environmentID)
+type GetEnvironmentChangelogsParams struct {
+	EnvironmentID *int32 `json:"environment_id"`
+	Limit         int32  `json:"limit"`
+	Offset        int32  `json:"offset"`
+}
+
+// id breaks ties on date: inserts use NOW() (the transaction timestamp), so
+// entries written in one transaction share a date and would otherwise order
+// non-deterministically, letting offset pages overlap or skip entries.
+func (q *Queries) GetEnvironmentChangelogs(ctx context.Context, arg GetEnvironmentChangelogsParams) ([]EnvironmentChangelog, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentChangelogs, arg.EnvironmentID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

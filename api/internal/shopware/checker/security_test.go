@@ -218,6 +218,30 @@ func TestResolveByPluginStates(t *testing.T) {
 	}
 }
 
+// Without the extension list the installed SwagPlatformSecurity version is
+// unknown, so no advisory can be judged. Emitting zero checks would read as
+// "all clear", so the source is marked unavailable and the caller keeps the
+// findings from the previous run.
+func TestCheckSecurityUnavailableWithoutExtensions(t *testing.T) {
+	t.Parallel()
+
+	input := Input{
+		Config:  ShopConfig{Version: "6.7.8.2"},
+		Missing: MissingData{Extensions: true},
+		SecurityAdvisories: []SecurityAdvisory{{
+			ID: "CVE-U", Title: "Unjudgeable", CVE: "CVE-U", Severity: "high",
+			Packages: []SecurityAdvisoryPackage{{PackageName: "shopware/core", AffectedVersions: "<6.7.10.1"}},
+		}},
+	}
+
+	output := NewOutput(nil)
+	checkSecurity(context.Background(), input, output)
+	result := output.Result()
+
+	assert.Empty(t, result.Checks)
+	assert.Contains(t, result.Unavailable, UnavailableSource{Source: SourceSecurity, IDPrefix: prefixSecurity})
+}
+
 // A covered advisory is reported as a green check naming the mitigation, not
 // dropped: the reasoning must stay visible and must not degrade shop status.
 func TestCheckSecurityReportsPluginMitigation(t *testing.T) {

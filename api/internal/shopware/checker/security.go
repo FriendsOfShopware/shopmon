@@ -37,6 +37,15 @@ const (
 
 func checkSecurity(ctx context.Context, input Input, output *Output) {
 	_ = ctx
+	// Plugin resolution below needs the installed SwagPlatformSecurity version,
+	// so without the extension list the advisories cannot be judged either way.
+	// Emitting no checks would look like they were resolved, so the source is
+	// marked unavailable and the caller keeps the previous findings.
+	if input.Missing.Extensions {
+		output.MarkUnavailable(SourceSecurity, prefixSecurity)
+		return
+	}
+
 	if len(input.SecurityAdvisories) == 0 {
 		return
 	}
@@ -84,13 +93,13 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 			// naming the plugin version is auditable, a missing row is not.
 			params["securityPluginVersion"] = resolution.InstalledVersion
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
-			output.Success(id, "check.security.advisoryMitigated", params, "Security", link)
+			output.Success(id, "check.security.advisoryMitigated", params, SourceSecurity, link)
 			continue
 		case CoverageOutdated:
 			// Exposed, but one plugin update away rather than a core upgrade.
 			params["securityPluginVersion"] = resolution.InstalledVersion
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
-			output.Warning(id, "check.security.advisoryPluginOutdated", params, "Security", link)
+			output.Warning(id, "check.security.advisoryPluginOutdated", params, SourceSecurity, link)
 			continue
 		case CoverageNotInstalled:
 			params["securityPluginFixVersion"] = resolution.RequiredVersion
@@ -101,9 +110,9 @@ func checkSecurity(ctx context.Context, input Input, output *Output) {
 
 		switch strings.ToLower(adv.Severity) {
 		case "low", "none":
-			output.Warning(id, messageKey, params, "Security", link)
+			output.Warning(id, messageKey, params, SourceSecurity, link)
 		default:
-			output.Error(id, messageKey, params, "Security", link)
+			output.Error(id, messageKey, params, SourceSecurity, link)
 		}
 	}
 }

@@ -12,10 +12,6 @@ import (
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -169,21 +165,12 @@ func (c *Client) Authenticate(ctx context.Context) error {
 	return err
 }
 
-var tracer = otel.Tracer("shopmon/shopware")
-
+// request performs an authenticated Admin API call. HTTP client tracing comes
+// from httputil's otelhttp transport (span name METHOD host/path); we do not
+// create a second Internal span that would duplicate that client span in Datadog.
 func (c *Client) request(ctx context.Context, method, path string, body interface{}, retry bool) ([]byte, error) {
-	ctx, span := tracer.Start(ctx, method+" "+path,
-		trace.WithAttributes(
-			attribute.String("http.method", method),
-			attribute.String("http.url", c.baseURL+"/api"+path),
-		),
-	)
-	defer span.End()
-
 	token, err := c.getToken(ctx)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 
@@ -211,13 +198,9 @@ func (c *Client) request(ctx context.Context, method, path string, body interfac
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, fmt.Errorf("request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
 	if resp.StatusCode == 301 || resp.StatusCode == 302 {
 		return nil, &ApiError{StatusCode: resp.StatusCode, Body: "redirect detected"}
@@ -234,10 +217,7 @@ func (c *Client) request(ctx context.Context, method, path string, body interfac
 	}
 
 	if resp.StatusCode >= 400 {
-		apiErr := &ApiError{StatusCode: resp.StatusCode, Body: string(respBody)}
-		span.RecordError(apiErr)
-		span.SetStatus(codes.Error, apiErr.Error())
-		return nil, apiErr
+		return nil, &ApiError{StatusCode: resp.StatusCode, Body: string(respBody)}
 	}
 
 	return respBody, nil

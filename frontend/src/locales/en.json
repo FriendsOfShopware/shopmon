@@ -849,6 +849,7 @@
     "noChecksMatch": "No checks match the current filter.",
     "noChangesRecorded": "No changes recorded",
     "changesWillAppear": "Changes to this environment will appear here.",
+    "failedLoadChangelogs": "Failed to load changes",
     "performanceOverTime": "Performance over time",
     "history": "History",
     "lastDeploy": "Last deploy",
