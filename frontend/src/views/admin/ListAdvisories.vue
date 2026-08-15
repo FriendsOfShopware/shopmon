@@ -257,7 +257,16 @@ function debouncedSearch() {
   }, 300);
 }
 
+// Filter changes, pagination, debounced search, and browser history can each
+// start a reload while an earlier one is still in flight. Responses are not
+// guaranteed to arrive in request order, so every result is checked against the
+// latest request id and a superseded one is discarded — otherwise a slow older
+// response would overwrite newer results, leaving the table disagreeing with
+// the URL and the controls.
+let requestId = 0;
+
 async function reload() {
+  const currentRequest = ++requestId;
   loading.value = true;
   error.value = "";
   try {
@@ -275,6 +284,7 @@ async function reload() {
     if (filters.value.visible === "hidden") query.visible = false;
 
     const { data, error: apiError } = await adminListAdvisories({ query });
+    if (currentRequest !== requestId) return;
     if (apiError || !data) {
       error.value = t("advisories.loadFailed");
       return;
@@ -282,7 +292,11 @@ async function reload() {
     advisories.value = data.advisories;
     total.value = data.total;
   } finally {
-    loading.value = false;
+    // Only the newest request owns the spinner: an older one clearing it would
+    // signal "done" while the current request is still running.
+    if (currentRequest === requestId) {
+      loading.value = false;
+    }
   }
 }
 
