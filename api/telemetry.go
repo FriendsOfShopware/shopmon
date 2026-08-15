@@ -6,8 +6,9 @@ import (
 )
 
 // telemetryConfig translates the OTel environment configuration into the
-// telemetry setup config. The service name is passed in because the worker
-// reports under its own name.
+// telemetry setup config. serviceName is the process-specific APM name:
+// the HTTP server uses ${OTEL_SERVICE_NAME}-api and the worker uses
+// ${OTEL_SERVICE_NAME}-worker so both can share one base env value.
 func telemetryConfig(cfg *config.Config, serviceName string) telemetry.Config {
 	return telemetry.Config{
 		ServiceName:    serviceName,

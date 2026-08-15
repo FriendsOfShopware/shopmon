@@ -207,7 +207,7 @@ Required only if you use the deployment tracking feature.
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | | OTLP endpoint for traces and logs |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | | Override for trace-specific endpoint |
 | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | | Override for log-specific endpoint |
-| `OTEL_SERVICE_NAME` | `shopmon` | Service name in traces |
+| `OTEL_SERVICE_NAME` | `shopmon` | Base APM service name. The API reports as `${OTEL_SERVICE_NAME}-api` and the worker as `${OTEL_SERVICE_NAME}-worker` (defaults: `shopmon-api` / `shopmon-worker`) |
 | `OTEL_DEPLOYMENT_ENVIRONMENT` | `$DD_ENV` | Deployment environment reported as a resource attribute |
 | `OTEL_SERVICE_VERSION` | `$DD_VERSION`, else the build revision | Service version reported as a resource attribute |
 | `OTEL_TRACES_SAMPLER_RATIO` | `1` | Head sampling ratio, clamped to `[0, 1]` |

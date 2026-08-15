@@ -249,6 +249,16 @@ func TestMailDSN(t *testing.T) {
 	}
 }
 
+func TestOtelServiceNameDefaultsToShopmon(t *testing.T) {
+	t.Setenv("OTEL_SERVICE_NAME", "")
+
+	cfg, err := Load()
+	require.NoError(t, err)
+
+	// Base name only — server/worker append -api / -worker at process start.
+	assert.Equal(t, "shopmon", cfg.OtelServiceName)
+}
+
 func TestOtelEndpointsFallBackToGenericEndpoint(t *testing.T) {
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
 	t.Setenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "")

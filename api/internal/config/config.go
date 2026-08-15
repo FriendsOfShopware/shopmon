@@ -75,12 +75,15 @@ type Config struct {
 	// The OTLP signal endpoints fall back to the generic
 	// OTEL_EXPORTER_OTLP_ENDPOINT, and service env/version to the Datadog
 	// unified service tagging variables.
-	OtelTraceEndpoint  string  `env:"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
-	OtelLogEndpoint    string  `env:"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
+	OtelTraceEndpoint string `env:"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
+	OtelLogEndpoint   string `env:"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
 	// OTEL_EXPORTER_OTLP_METRICS_ENDPOINT selects the OTLP HTTP metrics
 	// exporter. When empty (and the generic OTEL_EXPORTER_OTLP_ENDPOINT is
 	// also empty), metrics stay disabled and MeterProvider remains a no-op.
-	OtelMetricEndpoint string  `env:"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
+	OtelMetricEndpoint string `env:"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,expand" envDefault:"${OTEL_EXPORTER_OTLP_ENDPOINT}"`
+	// OtelServiceName is the shared base APM service name. The HTTP server
+	// reports as ${OTEL_SERVICE_NAME}-api and the worker as
+	// ${OTEL_SERVICE_NAME}-worker (see api/server.go and api/worker.go).
 	OtelServiceName    string  `env:"OTEL_SERVICE_NAME" envDefault:"shopmon"`
 	OtelDeploymentEnv  string  `env:"OTEL_DEPLOYMENT_ENVIRONMENT,expand" envDefault:"${DD_ENV}"`
 	OtelServiceVersion string  `env:"OTEL_SERVICE_VERSION,expand" envDefault:"${DD_VERSION}"`
