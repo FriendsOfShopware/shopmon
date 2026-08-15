@@ -121,6 +121,7 @@
                   {{ $t("advisories.disclosure") }}
                 </div>
                 <a
+                  v-if="isSafeHttpUrl(advisory.link)"
                   :href="advisory.link"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -129,6 +130,9 @@
                   <icon-fa6-solid:arrow-up-right-from-square class="mt-0.5 size-3 shrink-0" />
                   {{ advisory.link }}
                 </a>
+                <span v-else class="mt-0.5 block break-all text-xs text-muted-foreground">{{
+                  advisory.link
+                }}</span>
               </div>
             </CardContent>
           </Card>
@@ -234,6 +238,7 @@ import {
   adminGetAdvisory,
   adminUpdateAdvisory,
 } from "@/api/generated";
+import { isSafeHttpUrl } from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
 import { sanitizeHtml } from "@/helpers/sanitize";
 import { computed, reactive, ref, watch } from "vue";
