@@ -29,6 +29,8 @@ tags:
     description: CLI integration endpoints
   - name: SSO
     description: Single Sign-On provider management
+  - name: Advisories
+    description: Composer security advisories for Shopware packages
   - name: Admin
     description: Admin-only endpoints
   - name: Info
@@ -1389,6 +1391,265 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /admin/advisories:
+    get:
+      operationId: adminListAdvisories
+      tags: [Admin]
+      summary: List all Composer advisories including hidden ones (admin only)
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryLimit"
+        - $ref: "#/components/parameters/AdvisoryOffset"
+        - $ref: "#/components/parameters/AdvisoryPackage"
+        - $ref: "#/components/parameters/AdvisorySeverity"
+        - $ref: "#/components/parameters/AdvisoryTag"
+        - $ref: "#/components/parameters/AdvisorySearch"
+        - name: visible
+          in: query
+          schema:
+            type: boolean
+          description: When set, filter by visibility
+      responses:
+        "200":
+          description: Paginated advisories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAdvisoryListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/advisories/sync:
+    post:
+      operationId: adminSyncAdvisories
+      tags: [Admin]
+      summary: Enqueue a Packagist advisory sync job
+      responses:
+        "202":
+          description: Sync job enqueued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAdvisorySyncResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/advisories/{advisoryId}:
+    get:
+      operationId: adminGetAdvisory
+      tags: [Admin]
+      summary: Get a single advisory with internal notes (admin only)
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      responses:
+        "200":
+          description: Advisory detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAdvisory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: adminUpdateAdvisory
+      tags: [Admin]
+      summary: Update Shopmon enrichment fields for an advisory
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAdvisoryEnrichmentRequest"
+      responses:
+        "200":
+          description: Updated advisory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAdvisory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ──────────────────────────────────────────────
+  # Advisories (user-facing)
+  # ──────────────────────────────────────────────
+  /advisories:
+    get:
+      operationId: listAdvisories
+      tags: [Advisories]
+      summary: List visible Composer security advisories for Shopware packages
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryLimit"
+        - $ref: "#/components/parameters/AdvisoryOffset"
+        - $ref: "#/components/parameters/AdvisoryPackage"
+        - $ref: "#/components/parameters/AdvisorySeverity"
+        - $ref: "#/components/parameters/AdvisoryTag"
+        - $ref: "#/components/parameters/AdvisorySearch"
+        - $ref: "#/components/parameters/AdvisoryScope"
+        - $ref: "#/components/parameters/AdvisorySort"
+      responses:
+        "200":
+          description: Paginated visible advisories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvisoryListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /advisories/packages:
+    get:
+      operationId: listAdvisoryPackages
+      tags: [Advisories]
+      summary: List package names that have visible advisories
+      responses:
+        "200":
+          description: Package names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /advisories/{advisoryId}:
+    get:
+      operationId: getAdvisory
+      tags: [Advisories]
+      summary: Get a visible advisory by Packagist advisory ID
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      responses:
+        "200":
+          description: Advisory detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Advisory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /advisories/{advisoryId}/suppressions:
+    post:
+      operationId: createAdvisorySuppression
+      tags: [Advisories]
+      summary: Record that an advisory is accepted or mitigated for a shop
+      description: >
+        Suppressing an advisory removes it from the "affecting my shops" list
+        and silences its alerts. Shop-wide suppression requires the owner or
+        admin role; narrowing to a single environment is open to any member.
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdvisorySuppressionRequest"
+      responses:
+        "201":
+          description: Suppression recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvisorySuppression"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: An active suppression already covers this scope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /suppressions:
+    get:
+      operationId: listSuppressions
+      tags: [Advisories]
+      summary: List advisory suppressions for the caller's organizations
+      parameters:
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include revoked and expired suppressions
+      responses:
+        "200":
+          description: Suppressions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvisorySuppressionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /suppressions/{suppressionId}:
+    delete:
+      operationId: revokeAdvisorySuppression
+      tags: [Advisories]
+      summary: Revoke a suppression so the advisory resurfaces
+      parameters:
+        - name: suppressionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Suppression revoked
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /advisories/{advisoryId}/affected:
+    get:
+      operationId: listAdvisoryAffectedEnvironments
+      tags: [Advisories]
+      summary: List the caller's environments affected by an advisory
+      description: >
+        Environments whose Composer package inventory (from the FroshTools SBOM)
+        matches this advisory. Restricted to organizations the caller belongs to;
+        admins additionally receive a fleet-wide affected count.
+      parameters:
+        - $ref: "#/components/parameters/AdvisoryId"
+      responses:
+        "200":
+          description: Affected environments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdvisoryAffectedResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ──────────────────────────────────────────────
   # Info
@@ -2830,6 +3091,88 @@ components:
       schema:
         type: integer
       description: Notification ID
+
+    AdvisoryId:
+      name: advisoryId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: >
+        Canonical advisory ID as returned in Advisory.advisoryId: the CVE when
+        known, else the GHSA, else the Packagist PKSA ID. Detail and suppression
+        endpoints also accept a package row's PKSA ID as a legacy alias, but
+        affected-environment lookups resolve the canonical ID only.
+
+    AdvisoryLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+
+    AdvisoryOffset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    AdvisoryPackage:
+      name: package
+      in: query
+      schema:
+        type: string
+      description: Filter by Composer package name (e.g. shopware/core)
+
+    AdvisorySeverity:
+      name: severity
+      in: query
+      schema:
+        type: string
+        enum: [none, low, medium, high, critical]
+      description: Filter by effective severity
+
+    AdvisoryTag:
+      name: tag
+      in: query
+      schema:
+        type: string
+      description: Filter by admin tag
+
+    AdvisorySearch:
+      name: q
+      in: query
+      schema:
+        type: string
+      description: Search title, CVE, GHSA, package, or advisory ID
+
+    AdvisoryScope:
+      name: scope
+      in: query
+      schema:
+        type: string
+        enum: [all, affected, suppressed]
+        default: affected
+      description: >
+        "affected" limits results to advisories matching the Composer inventory
+        of the caller's own environments, excluding suppressed ones;
+        "suppressed" returns only those the caller has acknowledged;
+        "all" returns the full catalog.
+
+    AdvisorySort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [reported, severity, affected, cvss]
+        default: reported
+      description: >
+        Sort order: "reported" newest first, "severity" most severe first,
+        "affected" most affected environments first, "cvss" highest score first.
 
   # ──────────────────────────────────────────────
   # Responses
@@ -4914,3 +5257,474 @@ components:
           type: boolean
         packageMirrorEnabled:
           type: boolean
+
+    # ── Advisories ──────────────────────────────
+    SeverityLevel:
+      type: string
+      enum: [none, low, medium, high, critical]
+
+    AdvisorySource:
+      type: object
+      required:
+        - name
+        - remoteId
+      properties:
+        name:
+          type: string
+        remoteId:
+          type: string
+
+    AdvisoryAffectedPackage:
+      type: object
+      required:
+        - packageName
+        - affectedVersions
+        - packagistAdvisoryId
+      properties:
+        packageName:
+          type: string
+          description: Composer package name (e.g. shopware/core)
+        affectedVersions:
+          type: string
+          description: Composer constraint for this package
+        packagistAdvisoryId:
+          type: string
+          description: Original Packagist PKSA id for this package row
+
+    Advisory:
+      type: object
+      required:
+        - advisoryId
+        - packages
+        - title
+        - effectiveSeverity
+        - isVisible
+        - sources
+        - tags
+        - affectedComponents
+        - syncedAt
+        - createdAt
+        - updatedAt
+      properties:
+        advisoryId:
+          type: string
+          description: Canonical id (CVE, else GHSA, else Packagist PKSA)
+        packages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisoryAffectedPackage"
+          description: Affected Composer packages (one CVE may span multiple packages)
+        title:
+          type: string
+        link:
+          type: string
+          nullable: true
+        cve:
+          type: string
+          nullable: true
+        ghsaId:
+          type: string
+          nullable: true
+        severity:
+          allOf:
+            - $ref: "#/components/schemas/SeverityLevel"
+          nullable: true
+        severityOverride:
+          allOf:
+            - $ref: "#/components/schemas/SeverityLevel"
+          nullable: true
+        effectiveSeverity:
+          allOf:
+            - $ref: "#/components/schemas/SeverityLevel"
+          nullable: true
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisorySource"
+        reportedAt:
+          type: string
+          format: date-time
+          nullable: true
+        composerRepository:
+          type: string
+          nullable: true
+        summary:
+          type: string
+          nullable: true
+          description: Short summary from the disclosure source (e.g. GitHub Advisory)
+        description:
+          type: string
+          nullable: true
+          description: Full advisory write-up in Markdown (source form)
+        descriptionHtml:
+          type: string
+          nullable: true
+          description: description rendered as HTML for safe display after client sanitization
+        cvssScore:
+          type: number
+          format: double
+          nullable: true
+        cvssVector:
+          type: string
+          nullable: true
+        cwes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisoryCWE"
+        externalReferences:
+          type: array
+          items:
+            type: string
+          description: External reference URLs (GHSA page, commits, etc.)
+        detailsSource:
+          type: string
+          nullable: true
+          description: Where disclosure details were loaded from (e.g. github)
+        isVisible:
+          type: boolean
+        notesPublic:
+          type: string
+          nullable: true
+        remediationSummary:
+          type: string
+          nullable: true
+        remediationUrl:
+          type: string
+          nullable: true
+        recommendedUpgrade:
+          type: string
+          nullable: true
+        shopwareImpactSummary:
+          type: string
+          nullable: true
+        affectedComponents:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        affectedEnvironmentCount:
+          type: integer
+          nullable: true
+          description: >
+            Number of the caller's environments whose Composer package inventory
+            matches this advisory and that are not suppressed. Null when no SBOM
+            data has been collected.
+        securityPluginFixes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisorySecurityPluginFix"
+          description: >
+            Which SwagPlatformSecurity releases backport this advisory, per
+            branch. Empty when it is not backportable or not yet derived.
+        firstPatchedVersions:
+          type: object
+          additionalProperties:
+            type: string
+          description: >
+            First Shopware release per line that closes this advisory, e.g.
+            {"6.7": "6.7.10.1"}. Machine-derived from the GitHub advisory.
+        suppressedEnvironmentCount:
+          type: integer
+          nullable: true
+          description: >
+            Number of the caller's environments where this advisory has been
+            acknowledged via an active suppression.
+        syncedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdvisorySecurityPluginFix:
+      type: object
+      required: [pluginBranch, pluginVersion, shopwareBranch]
+      properties:
+        pluginBranch:
+          type: string
+          description: SwagPlatformSecurity major version, e.g. "4"
+        pluginVersion:
+          type: string
+          description: Lowest plugin version on this branch that backports the fix
+        shopwareBranch:
+          type: string
+          description: Shopware line this branch serves, e.g. "6.7"
+
+    AdvisorySuppression:
+      type: object
+      required:
+        - id
+        - advisoryId
+        - organizationId
+        - shopId
+        - shopName
+        - reason
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        advisoryId:
+          type: string
+        organizationId:
+          type: string
+        shopId:
+          type: integer
+        shopName:
+          type: string
+        environmentId:
+          type: integer
+          nullable: true
+          description: Null means every environment of the shop
+        environmentName:
+          type: string
+          nullable: true
+        reason:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null means the suppression does not expire
+        createdBy:
+          type: string
+          nullable: true
+        createdByName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateAdvisorySuppressionRequest:
+      type: object
+      required:
+        - shopId
+        - reason
+      properties:
+        shopId:
+          type: integer
+        environmentId:
+          type: integer
+          nullable: true
+          description: Omit to suppress across every environment of the shop
+        reason:
+          type: string
+          minLength: 1
+          description: Why the advisory is accepted or how it is mitigated
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Omit for a suppression that does not expire
+
+    AdvisorySuppressionListResponse:
+      type: object
+      required:
+        - suppressions
+      properties:
+        suppressions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisorySuppression"
+
+    AdvisoryAffectedEnvironment:
+      type: object
+      required:
+        - environmentId
+        - environmentName
+        - environmentStatus
+        - shopId
+        - shopName
+        - organizationId
+        - organizationName
+        - packageName
+        - installedVersion
+        - affectedVersions
+        - suppressed
+        - matchedAt
+      properties:
+        environmentId:
+          type: integer
+        environmentName:
+          type: string
+        environmentStatus:
+          type: string
+        shopId:
+          type: integer
+        shopName:
+          type: string
+        organizationId:
+          type: string
+        organizationName:
+          type: string
+        shopwareVersion:
+          type: string
+          nullable: true
+        packageName:
+          type: string
+          description: Installed Composer package that matched the advisory
+        installedVersion:
+          type: string
+        affectedVersions:
+          type: string
+          description: The advisory constraint the installed version falls into
+        suppressed:
+          type: boolean
+          description: Whether an active suppression covers this environment
+        matchedAt:
+          type: string
+          format: date-time
+
+    AdvisoryAffectedResponse:
+      type: object
+      required:
+        - environments
+        - total
+      properties:
+        environments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvisoryAffectedEnvironment"
+          description: Affected environments within the caller's organizations
+        total:
+          type: integer
+          description: Number of affected environments visible to the caller
+        globalTotal:
+          type: integer
+          nullable: true
+          description: Fleet-wide affected environment count; admins only
+
+    AdvisoryCWE:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: CWE identifier, e.g. CWE-918
+        name:
+          type: string
+
+    AdvisoryListResponse:
+      type: object
+      required:
+        - advisories
+        - total
+      properties:
+        advisories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Advisory"
+        total:
+          type: integer
+          description: Advisories matching the current scope and filters
+        scopeCounts:
+          allOf:
+            - $ref: "#/components/schemas/AdvisoryScopeCounts"
+          nullable: true
+          description: Totals per scope, ignoring the scope filter, for tab badges
+
+    AdvisoryScopeCounts:
+      type: object
+      required:
+        - all
+        - affected
+        - suppressed
+      properties:
+        all:
+          type: integer
+          description: All visible advisories matching the non-scope filters
+        affected:
+          type: integer
+          description: >
+            Of those, how many affect the caller's environments and are not
+            suppressed
+        suppressed:
+          type: integer
+          description: Of those, how many the caller has acknowledged
+
+    AdminAdvisory:
+      allOf:
+        - $ref: "#/components/schemas/Advisory"
+        - type: object
+          properties:
+            notesInternal:
+              type: string
+              nullable: true
+            enrichedAt:
+              type: string
+              format: date-time
+              nullable: true
+            enrichedBy:
+              type: string
+              nullable: true
+
+    AdminAdvisoryListResponse:
+      type: object
+      required:
+        - advisories
+        - total
+      properties:
+        advisories:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAdvisory"
+        total:
+          type: integer
+
+    UpdateAdvisoryEnrichmentRequest:
+      type: object
+      properties:
+        severityOverride:
+          allOf:
+            - $ref: "#/components/schemas/SeverityLevel"
+          nullable: true
+        isVisible:
+          type: boolean
+        notesPublic:
+          type: string
+          nullable: true
+        notesInternal:
+          type: string
+          nullable: true
+        remediationSummary:
+          type: string
+          nullable: true
+        remediationUrl:
+          type: string
+          nullable: true
+        recommendedUpgrade:
+          type: string
+          nullable: true
+        shopwareImpactSummary:
+          type: string
+          nullable: true
+        affectedComponents:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    AdminAdvisorySyncResponse:
+      type: object
+      required:
+        - enqueued
+      properties:
+        enqueued:
+          type: boolean
+

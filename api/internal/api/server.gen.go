@@ -19,6 +19,105 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for SeverityLevel.
+const (
+	SeverityLevelCritical SeverityLevel = "critical"
+	SeverityLevelHigh     SeverityLevel = "high"
+	SeverityLevelLow      SeverityLevel = "low"
+	SeverityLevelMedium   SeverityLevel = "medium"
+	SeverityLevelNone     SeverityLevel = "none"
+)
+
+// Valid indicates whether the value is a known member of the SeverityLevel enum.
+func (e SeverityLevel) Valid() bool {
+	switch e {
+	case SeverityLevelCritical:
+		return true
+	case SeverityLevelHigh:
+		return true
+	case SeverityLevelLow:
+		return true
+	case SeverityLevelMedium:
+		return true
+	case SeverityLevelNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdvisoryScope.
+const (
+	AdvisoryScopeAffected   AdvisoryScope = "affected"
+	AdvisoryScopeAll        AdvisoryScope = "all"
+	AdvisoryScopeSuppressed AdvisoryScope = "suppressed"
+)
+
+// Valid indicates whether the value is a known member of the AdvisoryScope enum.
+func (e AdvisoryScope) Valid() bool {
+	switch e {
+	case AdvisoryScopeAffected:
+		return true
+	case AdvisoryScopeAll:
+		return true
+	case AdvisoryScopeSuppressed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdvisorySeverity.
+const (
+	AdvisorySeverityCritical AdvisorySeverity = "critical"
+	AdvisorySeverityHigh     AdvisorySeverity = "high"
+	AdvisorySeverityLow      AdvisorySeverity = "low"
+	AdvisorySeverityMedium   AdvisorySeverity = "medium"
+	AdvisorySeverityNone     AdvisorySeverity = "none"
+)
+
+// Valid indicates whether the value is a known member of the AdvisorySeverity enum.
+func (e AdvisorySeverity) Valid() bool {
+	switch e {
+	case AdvisorySeverityCritical:
+		return true
+	case AdvisorySeverityHigh:
+		return true
+	case AdvisorySeverityLow:
+		return true
+	case AdvisorySeverityMedium:
+		return true
+	case AdvisorySeverityNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdvisorySort.
+const (
+	AdvisorySortAffected AdvisorySort = "affected"
+	AdvisorySortCvss     AdvisorySort = "cvss"
+	AdvisorySortReported AdvisorySort = "reported"
+	AdvisorySortSeverity AdvisorySort = "severity"
+)
+
+// Valid indicates whether the value is a known member of the AdvisorySort enum.
+func (e AdvisorySort) Valid() bool {
+	switch e {
+	case AdvisorySortAffected:
+		return true
+	case AdvisorySortCvss:
+		return true
+	case AdvisorySortReported:
+		return true
+	case AdvisorySortSeverity:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LanguageParam.
 const (
 	LanguageParamDe LanguageParam = "de"
@@ -67,6 +166,33 @@ func (e GetAccountExtensionParamsLanguage) Valid() bool {
 	case GetAccountExtensionParamsLanguageDe:
 		return true
 	case GetAccountExtensionParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminListAdvisoriesParamsSeverity.
+const (
+	AdminListAdvisoriesParamsSeverityCritical AdminListAdvisoriesParamsSeverity = "critical"
+	AdminListAdvisoriesParamsSeverityHigh     AdminListAdvisoriesParamsSeverity = "high"
+	AdminListAdvisoriesParamsSeverityLow      AdminListAdvisoriesParamsSeverity = "low"
+	AdminListAdvisoriesParamsSeverityMedium   AdminListAdvisoriesParamsSeverity = "medium"
+	AdminListAdvisoriesParamsSeverityNone     AdminListAdvisoriesParamsSeverity = "none"
+)
+
+// Valid indicates whether the value is a known member of the AdminListAdvisoriesParamsSeverity enum.
+func (e AdminListAdvisoriesParamsSeverity) Valid() bool {
+	switch e {
+	case AdminListAdvisoriesParamsSeverityCritical:
+		return true
+	case AdminListAdvisoriesParamsSeverityHigh:
+		return true
+	case AdminListAdvisoriesParamsSeverityLow:
+		return true
+	case AdminListAdvisoriesParamsSeverityMedium:
+		return true
+	case AdminListAdvisoriesParamsSeverityNone:
 		return true
 	default:
 		return false
@@ -127,6 +253,78 @@ func (e AdminGetOrganizationsParamsSortDirection) Valid() bool {
 	case AdminGetOrganizationsParamsSortDirectionAsc:
 		return true
 	case AdminGetOrganizationsParamsSortDirectionDesc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListAdvisoriesParamsSeverity.
+const (
+	ListAdvisoriesParamsSeverityCritical ListAdvisoriesParamsSeverity = "critical"
+	ListAdvisoriesParamsSeverityHigh     ListAdvisoriesParamsSeverity = "high"
+	ListAdvisoriesParamsSeverityLow      ListAdvisoriesParamsSeverity = "low"
+	ListAdvisoriesParamsSeverityMedium   ListAdvisoriesParamsSeverity = "medium"
+	ListAdvisoriesParamsSeverityNone     ListAdvisoriesParamsSeverity = "none"
+)
+
+// Valid indicates whether the value is a known member of the ListAdvisoriesParamsSeverity enum.
+func (e ListAdvisoriesParamsSeverity) Valid() bool {
+	switch e {
+	case ListAdvisoriesParamsSeverityCritical:
+		return true
+	case ListAdvisoriesParamsSeverityHigh:
+		return true
+	case ListAdvisoriesParamsSeverityLow:
+		return true
+	case ListAdvisoriesParamsSeverityMedium:
+		return true
+	case ListAdvisoriesParamsSeverityNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListAdvisoriesParamsScope.
+const (
+	ListAdvisoriesParamsScopeAffected   ListAdvisoriesParamsScope = "affected"
+	ListAdvisoriesParamsScopeAll        ListAdvisoriesParamsScope = "all"
+	ListAdvisoriesParamsScopeSuppressed ListAdvisoriesParamsScope = "suppressed"
+)
+
+// Valid indicates whether the value is a known member of the ListAdvisoriesParamsScope enum.
+func (e ListAdvisoriesParamsScope) Valid() bool {
+	switch e {
+	case ListAdvisoriesParamsScopeAffected:
+		return true
+	case ListAdvisoriesParamsScopeAll:
+		return true
+	case ListAdvisoriesParamsScopeSuppressed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListAdvisoriesParamsSort.
+const (
+	ListAdvisoriesParamsSortAffected ListAdvisoriesParamsSort = "affected"
+	ListAdvisoriesParamsSortCvss     ListAdvisoriesParamsSort = "cvss"
+	ListAdvisoriesParamsSortReported ListAdvisoriesParamsSort = "reported"
+	ListAdvisoriesParamsSortSeverity ListAdvisoriesParamsSort = "severity"
+)
+
+// Valid indicates whether the value is a known member of the ListAdvisoriesParamsSort enum.
+func (e ListAdvisoriesParamsSort) Valid() bool {
+	switch e {
+	case ListAdvisoriesParamsSortAffected:
+		return true
+	case ListAdvisoriesParamsSortCvss:
+		return true
+	case ListAdvisoriesParamsSortReported:
+		return true
+	case ListAdvisoriesParamsSortSeverity:
 		return true
 	default:
 		return false
@@ -255,6 +453,80 @@ type AccountShop struct {
 	Name                 string  `json:"name"`
 	OrganizationId       string  `json:"organizationId"`
 	OrganizationName     string  `json:"organizationName"`
+}
+
+// AdminAdvisory defines model for AdminAdvisory.
+type AdminAdvisory struct {
+	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA)
+	AdvisoryId         string   `json:"advisoryId"`
+	AffectedComponents []string `json:"affectedComponents"`
+
+	// AffectedEnvironmentCount Number of the caller's environments whose Composer package inventory matches this advisory and that are not suppressed. Null when no SBOM data has been collected.
+	AffectedEnvironmentCount *int           `json:"affectedEnvironmentCount,omitempty"`
+	ComposerRepository       *string        `json:"composerRepository,omitempty"`
+	CreatedAt                time.Time      `json:"createdAt"`
+	Cve                      *string        `json:"cve,omitempty"`
+	CvssScore                *float64       `json:"cvssScore,omitempty"`
+	CvssVector               *string        `json:"cvssVector,omitempty"`
+	Cwes                     *[]AdvisoryCWE `json:"cwes,omitempty"`
+
+	// Description Full advisory write-up in Markdown (source form)
+	Description *string `json:"description,omitempty"`
+
+	// DescriptionHtml description rendered as HTML for safe display after client sanitization
+	DescriptionHtml *string `json:"descriptionHtml,omitempty"`
+
+	// DetailsSource Where disclosure details were loaded from (e.g. github)
+	DetailsSource     *string        `json:"detailsSource,omitempty"`
+	EffectiveSeverity *SeverityLevel `json:"effectiveSeverity"`
+	EnrichedAt        *time.Time     `json:"enrichedAt,omitempty"`
+	EnrichedBy        *string        `json:"enrichedBy,omitempty"`
+
+	// ExternalReferences External reference URLs (GHSA page, commits, etc.)
+	ExternalReferences *[]string `json:"externalReferences,omitempty"`
+
+	// FirstPatchedVersions First Shopware release per line that closes this advisory, e.g. {"6.7": "6.7.10.1"}. Machine-derived from the GitHub advisory.
+	FirstPatchedVersions *map[string]string `json:"firstPatchedVersions,omitempty"`
+	GhsaId               *string            `json:"ghsaId,omitempty"`
+	IsVisible            bool               `json:"isVisible"`
+	Link                 *string            `json:"link,omitempty"`
+	NotesInternal        *string            `json:"notesInternal,omitempty"`
+	NotesPublic          *string            `json:"notesPublic,omitempty"`
+
+	// Packages Affected Composer packages (one CVE may span multiple packages)
+	Packages           []AdvisoryAffectedPackage `json:"packages"`
+	RecommendedUpgrade *string                   `json:"recommendedUpgrade,omitempty"`
+	RemediationSummary *string                   `json:"remediationSummary,omitempty"`
+	RemediationUrl     *string                   `json:"remediationUrl,omitempty"`
+	ReportedAt         *time.Time                `json:"reportedAt,omitempty"`
+
+	// SecurityPluginFixes Which SwagPlatformSecurity releases backport this advisory, per branch. Empty when it is not backportable or not yet derived.
+	SecurityPluginFixes   *[]AdvisorySecurityPluginFix `json:"securityPluginFixes,omitempty"`
+	Severity              *SeverityLevel               `json:"severity,omitempty"`
+	SeverityOverride      *SeverityLevel               `json:"severityOverride,omitempty"`
+	ShopwareImpactSummary *string                      `json:"shopwareImpactSummary,omitempty"`
+	Sources               []AdvisorySource             `json:"sources"`
+
+	// Summary Short summary from the disclosure source (e.g. GitHub Advisory)
+	Summary *string `json:"summary,omitempty"`
+
+	// SuppressedEnvironmentCount Number of the caller's environments where this advisory has been acknowledged via an active suppression.
+	SuppressedEnvironmentCount *int      `json:"suppressedEnvironmentCount,omitempty"`
+	SyncedAt                   time.Time `json:"syncedAt"`
+	Tags                       []string  `json:"tags"`
+	Title                      string    `json:"title"`
+	UpdatedAt                  time.Time `json:"updatedAt"`
+}
+
+// AdminAdvisoryListResponse defines model for AdminAdvisoryListResponse.
+type AdminAdvisoryListResponse struct {
+	Advisories []AdminAdvisory `json:"advisories"`
+	Total      int             `json:"total"`
+}
+
+// AdminAdvisorySyncResponse defines model for AdminAdvisorySyncResponse.
+type AdminAdvisorySyncResponse struct {
+	Enqueued bool `json:"enqueued"`
 }
 
 // AdminAuditLogEntry defines model for AdminAuditLogEntry.
@@ -447,6 +719,186 @@ type AdminStats struct {
 	TotalUsers         int `json:"totalUsers"`
 }
 
+// Advisory defines model for Advisory.
+type Advisory struct {
+	// AdvisoryId Canonical id (CVE, else GHSA, else Packagist PKSA)
+	AdvisoryId         string   `json:"advisoryId"`
+	AffectedComponents []string `json:"affectedComponents"`
+
+	// AffectedEnvironmentCount Number of the caller's environments whose Composer package inventory matches this advisory and that are not suppressed. Null when no SBOM data has been collected.
+	AffectedEnvironmentCount *int           `json:"affectedEnvironmentCount,omitempty"`
+	ComposerRepository       *string        `json:"composerRepository,omitempty"`
+	CreatedAt                time.Time      `json:"createdAt"`
+	Cve                      *string        `json:"cve,omitempty"`
+	CvssScore                *float64       `json:"cvssScore,omitempty"`
+	CvssVector               *string        `json:"cvssVector,omitempty"`
+	Cwes                     *[]AdvisoryCWE `json:"cwes,omitempty"`
+
+	// Description Full advisory write-up in Markdown (source form)
+	Description *string `json:"description,omitempty"`
+
+	// DescriptionHtml description rendered as HTML for safe display after client sanitization
+	DescriptionHtml *string `json:"descriptionHtml,omitempty"`
+
+	// DetailsSource Where disclosure details were loaded from (e.g. github)
+	DetailsSource     *string        `json:"detailsSource,omitempty"`
+	EffectiveSeverity *SeverityLevel `json:"effectiveSeverity"`
+
+	// ExternalReferences External reference URLs (GHSA page, commits, etc.)
+	ExternalReferences *[]string `json:"externalReferences,omitempty"`
+
+	// FirstPatchedVersions First Shopware release per line that closes this advisory, e.g. {"6.7": "6.7.10.1"}. Machine-derived from the GitHub advisory.
+	FirstPatchedVersions *map[string]string `json:"firstPatchedVersions,omitempty"`
+	GhsaId               *string            `json:"ghsaId,omitempty"`
+	IsVisible            bool               `json:"isVisible"`
+	Link                 *string            `json:"link,omitempty"`
+	NotesPublic          *string            `json:"notesPublic,omitempty"`
+
+	// Packages Affected Composer packages (one CVE may span multiple packages)
+	Packages           []AdvisoryAffectedPackage `json:"packages"`
+	RecommendedUpgrade *string                   `json:"recommendedUpgrade,omitempty"`
+	RemediationSummary *string                   `json:"remediationSummary,omitempty"`
+	RemediationUrl     *string                   `json:"remediationUrl,omitempty"`
+	ReportedAt         *time.Time                `json:"reportedAt,omitempty"`
+
+	// SecurityPluginFixes Which SwagPlatformSecurity releases backport this advisory, per branch. Empty when it is not backportable or not yet derived.
+	SecurityPluginFixes   *[]AdvisorySecurityPluginFix `json:"securityPluginFixes,omitempty"`
+	Severity              *SeverityLevel               `json:"severity,omitempty"`
+	SeverityOverride      *SeverityLevel               `json:"severityOverride,omitempty"`
+	ShopwareImpactSummary *string                      `json:"shopwareImpactSummary,omitempty"`
+	Sources               []AdvisorySource             `json:"sources"`
+
+	// Summary Short summary from the disclosure source (e.g. GitHub Advisory)
+	Summary *string `json:"summary,omitempty"`
+
+	// SuppressedEnvironmentCount Number of the caller's environments where this advisory has been acknowledged via an active suppression.
+	SuppressedEnvironmentCount *int      `json:"suppressedEnvironmentCount,omitempty"`
+	SyncedAt                   time.Time `json:"syncedAt"`
+	Tags                       []string  `json:"tags"`
+	Title                      string    `json:"title"`
+	UpdatedAt                  time.Time `json:"updatedAt"`
+}
+
+// AdvisoryAffectedEnvironment defines model for AdvisoryAffectedEnvironment.
+type AdvisoryAffectedEnvironment struct {
+	// AffectedVersions The advisory constraint the installed version falls into
+	AffectedVersions  string    `json:"affectedVersions"`
+	EnvironmentId     int       `json:"environmentId"`
+	EnvironmentName   string    `json:"environmentName"`
+	EnvironmentStatus string    `json:"environmentStatus"`
+	InstalledVersion  string    `json:"installedVersion"`
+	MatchedAt         time.Time `json:"matchedAt"`
+	OrganizationId    string    `json:"organizationId"`
+	OrganizationName  string    `json:"organizationName"`
+
+	// PackageName Installed Composer package that matched the advisory
+	PackageName     string  `json:"packageName"`
+	ShopId          int     `json:"shopId"`
+	ShopName        string  `json:"shopName"`
+	ShopwareVersion *string `json:"shopwareVersion,omitempty"`
+
+	// Suppressed Whether an active suppression covers this environment
+	Suppressed bool `json:"suppressed"`
+}
+
+// AdvisoryAffectedPackage defines model for AdvisoryAffectedPackage.
+type AdvisoryAffectedPackage struct {
+	// AffectedVersions Composer constraint for this package
+	AffectedVersions string `json:"affectedVersions"`
+
+	// PackageName Composer package name (e.g. shopware/core)
+	PackageName string `json:"packageName"`
+
+	// PackagistAdvisoryId Original Packagist PKSA id for this package row
+	PackagistAdvisoryId string `json:"packagistAdvisoryId"`
+}
+
+// AdvisoryAffectedResponse defines model for AdvisoryAffectedResponse.
+type AdvisoryAffectedResponse struct {
+	// Environments Affected environments within the caller's organizations
+	Environments []AdvisoryAffectedEnvironment `json:"environments"`
+
+	// GlobalTotal Fleet-wide affected environment count; admins only
+	GlobalTotal *int `json:"globalTotal,omitempty"`
+
+	// Total Number of affected environments visible to the caller
+	Total int `json:"total"`
+}
+
+// AdvisoryCWE defines model for AdvisoryCWE.
+type AdvisoryCWE struct {
+	// Id CWE identifier, e.g. CWE-918
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// AdvisoryListResponse defines model for AdvisoryListResponse.
+type AdvisoryListResponse struct {
+	Advisories []Advisory `json:"advisories"`
+
+	// ScopeCounts Totals per scope, ignoring the scope filter, for tab badges
+	ScopeCounts *AdvisoryScopeCounts `json:"scopeCounts,omitempty"`
+
+	// Total Advisories matching the current scope and filters
+	Total int `json:"total"`
+}
+
+// AdvisoryScopeCounts defines model for AdvisoryScopeCounts.
+type AdvisoryScopeCounts struct {
+	// Affected Of those, how many affect the caller's environments and are not suppressed
+	Affected int `json:"affected"`
+
+	// All All visible advisories matching the non-scope filters
+	All int `json:"all"`
+
+	// Suppressed Of those, how many the caller has acknowledged
+	Suppressed int `json:"suppressed"`
+}
+
+// AdvisorySecurityPluginFix defines model for AdvisorySecurityPluginFix.
+type AdvisorySecurityPluginFix struct {
+	// PluginBranch SwagPlatformSecurity major version, e.g. "4"
+	PluginBranch string `json:"pluginBranch"`
+
+	// PluginVersion Lowest plugin version on this branch that backports the fix
+	PluginVersion string `json:"pluginVersion"`
+
+	// ShopwareBranch Shopware line this branch serves, e.g. "6.7"
+	ShopwareBranch string `json:"shopwareBranch"`
+}
+
+// AdvisorySource defines model for AdvisorySource.
+type AdvisorySource struct {
+	Name     string `json:"name"`
+	RemoteId string `json:"remoteId"`
+}
+
+// AdvisorySuppression defines model for AdvisorySuppression.
+type AdvisorySuppression struct {
+	AdvisoryId    string    `json:"advisoryId"`
+	CreatedAt     time.Time `json:"createdAt"`
+	CreatedBy     *string   `json:"createdBy,omitempty"`
+	CreatedByName *string   `json:"createdByName,omitempty"`
+
+	// EnvironmentId Null means every environment of the shop
+	EnvironmentId   *int    `json:"environmentId,omitempty"`
+	EnvironmentName *string `json:"environmentName,omitempty"`
+
+	// ExpiresAt Null means the suppression does not expire
+	ExpiresAt      *time.Time `json:"expiresAt,omitempty"`
+	Id             int64      `json:"id"`
+	OrganizationId string     `json:"organizationId"`
+	Reason         string     `json:"reason"`
+	RevokedAt      *time.Time `json:"revokedAt,omitempty"`
+	ShopId         int        `json:"shopId"`
+	ShopName       string     `json:"shopName"`
+}
+
+// AdvisorySuppressionListResponse defines model for AdvisorySuppressionListResponse.
+type AdvisorySuppressionListResponse struct {
+	Suppressions []AdvisorySuppression `json:"suppressions"`
+}
+
 // ApiKey defines model for ApiKey.
 type ApiKey struct {
 	CreatedAt  time.Time  `json:"createdAt"`
@@ -469,6 +921,19 @@ type CacheInfo struct {
 	Environment  *string `json:"environment,omitempty"`
 	HttpCache    *bool   `json:"httpCache,omitempty"`
 	Id           *int    `json:"id,omitempty"`
+}
+
+// CreateAdvisorySuppressionRequest defines model for CreateAdvisorySuppressionRequest.
+type CreateAdvisorySuppressionRequest struct {
+	// EnvironmentId Omit to suppress across every environment of the shop
+	EnvironmentId *int `json:"environmentId,omitempty"`
+
+	// ExpiresAt Omit for a suppression that does not expire
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
+
+	// Reason Why the advisory is accepted or how it is mitigated
+	Reason string `json:"reason"`
+	ShopId int    `json:"shopId"`
 }
 
 // CreateApiKeyRequest defines model for CreateApiKeyRequest.
@@ -805,6 +1270,9 @@ type ScheduledTask struct {
 	Status            string     `json:"status"`
 }
 
+// SeverityLevel defines model for SeverityLevel.
+type SeverityLevel string
+
 // Shop defines model for Shop.
 type Shop struct {
 	DefaultEnvironmentId *int    `json:"defaultEnvironmentId"`
@@ -898,6 +1366,20 @@ type SubscribedEnvironment struct {
 	ShopName *string `json:"shopName,omitempty"`
 }
 
+// UpdateAdvisoryEnrichmentRequest defines model for UpdateAdvisoryEnrichmentRequest.
+type UpdateAdvisoryEnrichmentRequest struct {
+	AffectedComponents    *[]string      `json:"affectedComponents,omitempty"`
+	IsVisible             *bool          `json:"isVisible,omitempty"`
+	NotesInternal         *string        `json:"notesInternal,omitempty"`
+	NotesPublic           *string        `json:"notesPublic,omitempty"`
+	RecommendedUpgrade    *string        `json:"recommendedUpgrade,omitempty"`
+	RemediationSummary    *string        `json:"remediationSummary,omitempty"`
+	RemediationUrl        *string        `json:"remediationUrl,omitempty"`
+	SeverityOverride      *SeverityLevel `json:"severityOverride,omitempty"`
+	ShopwareImpactSummary *string        `json:"shopwareImpactSummary,omitempty"`
+	Tags                  *[]string      `json:"tags,omitempty"`
+}
+
 // UpdateEnvironmentRequest defines model for UpdateEnvironmentRequest.
 type UpdateEnvironmentRequest struct {
 	ClientId     *string   `json:"clientId,omitempty"`
@@ -937,6 +1419,33 @@ type UserProfile struct {
 	// Locale The user's preferred language, used to localize notification emails.
 	Locale string `json:"locale"`
 }
+
+// AdvisoryId defines model for AdvisoryId.
+type AdvisoryId = string
+
+// AdvisoryLimit defines model for AdvisoryLimit.
+type AdvisoryLimit = int
+
+// AdvisoryOffset defines model for AdvisoryOffset.
+type AdvisoryOffset = int
+
+// AdvisoryPackage defines model for AdvisoryPackage.
+type AdvisoryPackage = string
+
+// AdvisoryScope defines model for AdvisoryScope.
+type AdvisoryScope string
+
+// AdvisorySearch defines model for AdvisorySearch.
+type AdvisorySearch = string
+
+// AdvisorySeverity defines model for AdvisorySeverity.
+type AdvisorySeverity string
+
+// AdvisorySort defines model for AdvisorySort.
+type AdvisorySort string
+
+// AdvisoryTag defines model for AdvisoryTag.
+type AdvisoryTag = string
 
 // DeploymentId defines model for DeploymentId.
 type DeploymentId = int
@@ -1015,6 +1524,30 @@ type DeleteNotificationPreferenceParams struct {
 	Channel   string  `form:"channel" json:"channel"`
 }
 
+// AdminListAdvisoriesParams defines parameters for AdminListAdvisories.
+type AdminListAdvisoriesParams struct {
+	Limit  *AdvisoryLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *AdvisoryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Package Filter by Composer package name (e.g. shopware/core)
+	Package *AdvisoryPackage `form:"package,omitempty" json:"package,omitempty"`
+
+	// Severity Filter by effective severity
+	Severity *AdminListAdvisoriesParamsSeverity `form:"severity,omitempty" json:"severity,omitempty"`
+
+	// Tag Filter by admin tag
+	Tag *AdvisoryTag `form:"tag,omitempty" json:"tag,omitempty"`
+
+	// Q Search title, CVE, GHSA, package, or advisory ID
+	Q *AdvisorySearch `form:"q,omitempty" json:"q,omitempty"`
+
+	// Visible When set, filter by visibility
+	Visible *bool `form:"visible,omitempty" json:"visible,omitempty"`
+}
+
+// AdminListAdvisoriesParamsSeverity defines parameters for AdminListAdvisories.
+type AdminListAdvisoriesParamsSeverity string
+
 // AdminGetAuditLogParams defines parameters for AdminGetAuditLog.
 type AdminGetAuditLogParams struct {
 	Limit        *int    `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1061,6 +1594,39 @@ type AdminGetOrganizationsParamsSortBy string
 // AdminGetOrganizationsParamsSortDirection defines parameters for AdminGetOrganizations.
 type AdminGetOrganizationsParamsSortDirection string
 
+// ListAdvisoriesParams defines parameters for ListAdvisories.
+type ListAdvisoriesParams struct {
+	Limit  *AdvisoryLimit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *AdvisoryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Package Filter by Composer package name (e.g. shopware/core)
+	Package *AdvisoryPackage `form:"package,omitempty" json:"package,omitempty"`
+
+	// Severity Filter by effective severity
+	Severity *ListAdvisoriesParamsSeverity `form:"severity,omitempty" json:"severity,omitempty"`
+
+	// Tag Filter by admin tag
+	Tag *AdvisoryTag `form:"tag,omitempty" json:"tag,omitempty"`
+
+	// Q Search title, CVE, GHSA, package, or advisory ID
+	Q *AdvisorySearch `form:"q,omitempty" json:"q,omitempty"`
+
+	// Scope "affected" limits results to advisories matching the Composer inventory of the caller's own environments, excluding suppressed ones; "suppressed" returns only those the caller has acknowledged; "all" returns the full catalog.
+	Scope *ListAdvisoriesParamsScope `form:"scope,omitempty" json:"scope,omitempty"`
+
+	// Sort Sort order: "reported" newest first, "severity" most severe first, "affected" most affected environments first, "cvss" highest score first.
+	Sort *ListAdvisoriesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+}
+
+// ListAdvisoriesParamsSeverity defines parameters for ListAdvisories.
+type ListAdvisoriesParamsSeverity string
+
+// ListAdvisoriesParamsScope defines parameters for ListAdvisories.
+type ListAdvisoriesParamsScope string
+
+// ListAdvisoriesParamsSort defines parameters for ListAdvisories.
+type ListAdvisoriesParamsSort string
+
 // GetEnvironmentParams defines parameters for GetEnvironment.
 type GetEnvironmentParams struct {
 	// Language Language for localized store text (label, description, manual, changelog). Falls back to English.
@@ -1093,11 +1659,23 @@ type DiscoverSsoParams struct {
 	Issuer string `form:"issuer" json:"issuer"`
 }
 
+// ListSuppressionsParams defines parameters for ListSuppressions.
+type ListSuppressionsParams struct {
+	// IncludeInactive Include revoked and expired suppressions
+	IncludeInactive *bool `form:"includeInactive,omitempty" json:"includeInactive,omitempty"`
+}
+
 // UpdateAccountMeJSONRequestBody defines body for UpdateAccountMe for application/json ContentType.
 type UpdateAccountMeJSONRequestBody UpdateAccountMeJSONBody
 
 // SetNotificationPreferenceJSONRequestBody defines body for SetNotificationPreference for application/json ContentType.
 type SetNotificationPreferenceJSONRequestBody = NotificationPreferenceInput
+
+// AdminUpdateAdvisoryJSONRequestBody defines body for AdminUpdateAdvisory for application/json ContentType.
+type AdminUpdateAdvisoryJSONRequestBody = UpdateAdvisoryEnrichmentRequest
+
+// CreateAdvisorySuppressionJSONRequestBody defines body for CreateAdvisorySuppression for application/json ContentType.
+type CreateAdvisorySuppressionJSONRequestBody = CreateAdvisorySuppressionRequest
 
 // CreateCliDeploymentJSONRequestBody defines body for CreateCliDeployment for application/json ContentType.
 type CreateCliDeploymentJSONRequestBody = CreateCliDeploymentRequest
@@ -1170,6 +1748,18 @@ type ServerInterface interface {
 	// Get environments the user is subscribed to for notifications
 	// (GET /account/subscribed-environments)
 	GetAccountSubscribedEnvironments(w http.ResponseWriter, r *http.Request)
+	// List all Composer advisories including hidden ones (admin only)
+	// (GET /admin/advisories)
+	AdminListAdvisories(w http.ResponseWriter, r *http.Request, params AdminListAdvisoriesParams)
+	// Enqueue a Packagist advisory sync job
+	// (POST /admin/advisories/sync)
+	AdminSyncAdvisories(w http.ResponseWriter, r *http.Request)
+	// Get a single advisory with internal notes (admin only)
+	// (GET /admin/advisories/{advisoryId})
+	AdminGetAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId)
+	// Update Shopmon enrichment fields for an advisory
+	// (PATCH /admin/advisories/{advisoryId})
+	AdminUpdateAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId)
 	// List audit log entries (admin only)
 	// (GET /admin/audit-log)
 	AdminGetAuditLog(w http.ResponseWriter, r *http.Request, params AdminGetAuditLogParams)
@@ -1197,6 +1787,21 @@ type ServerInterface interface {
 	// Get admin dashboard statistics
 	// (GET /admin/stats)
 	AdminGetStats(w http.ResponseWriter, r *http.Request)
+	// List visible Composer security advisories for Shopware packages
+	// (GET /advisories)
+	ListAdvisories(w http.ResponseWriter, r *http.Request, params ListAdvisoriesParams)
+	// List package names that have visible advisories
+	// (GET /advisories/packages)
+	ListAdvisoryPackages(w http.ResponseWriter, r *http.Request)
+	// Get a visible advisory by Packagist advisory ID
+	// (GET /advisories/{advisoryId})
+	GetAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId)
+	// List the caller's environments affected by an advisory
+	// (GET /advisories/{advisoryId}/affected)
+	ListAdvisoryAffectedEnvironments(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId)
+	// Record that an advisory is accepted or mitigated for a shop
+	// (POST /advisories/{advisoryId}/suppressions)
+	CreateAdvisorySuppression(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId)
 	// Get available API key scopes
 	// (GET /api-key-scopes)
 	GetApiKeyScopes(w http.ResponseWriter, r *http.Request)
@@ -1329,6 +1934,12 @@ type ServerInterface interface {
 	// Discover OIDC configuration from an issuer URL
 	// (GET /sso/discover)
 	DiscoverSso(w http.ResponseWriter, r *http.Request, params DiscoverSsoParams)
+	// List advisory suppressions for the caller's organizations
+	// (GET /suppressions)
+	ListSuppressions(w http.ResponseWriter, r *http.Request, params ListSuppressionsParams)
+	// Revoke a suppression so the advisory resurfaces
+	// (DELETE /suppressions/{suppressionId})
+	RevokeAdvisorySuppression(w http.ResponseWriter, r *http.Request, suppressionId int64)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1407,6 +2018,30 @@ func (_ Unimplemented) GetAccountSubscribedEnvironments(w http.ResponseWriter, r
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List all Composer advisories including hidden ones (admin only)
+// (GET /admin/advisories)
+func (_ Unimplemented) AdminListAdvisories(w http.ResponseWriter, r *http.Request, params AdminListAdvisoriesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Enqueue a Packagist advisory sync job
+// (POST /admin/advisories/sync)
+func (_ Unimplemented) AdminSyncAdvisories(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a single advisory with internal notes (admin only)
+// (GET /admin/advisories/{advisoryId})
+func (_ Unimplemented) AdminGetAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update Shopmon enrichment fields for an advisory
+// (PATCH /admin/advisories/{advisoryId})
+func (_ Unimplemented) AdminUpdateAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List audit log entries (admin only)
 // (GET /admin/audit-log)
 func (_ Unimplemented) AdminGetAuditLog(w http.ResponseWriter, r *http.Request, params AdminGetAuditLogParams) {
@@ -1458,6 +2093,36 @@ func (_ Unimplemented) AdminGetShopwareVersions(w http.ResponseWriter, r *http.R
 // Get admin dashboard statistics
 // (GET /admin/stats)
 func (_ Unimplemented) AdminGetStats(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List visible Composer security advisories for Shopware packages
+// (GET /advisories)
+func (_ Unimplemented) ListAdvisories(w http.ResponseWriter, r *http.Request, params ListAdvisoriesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List package names that have visible advisories
+// (GET /advisories/packages)
+func (_ Unimplemented) ListAdvisoryPackages(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get a visible advisory by Packagist advisory ID
+// (GET /advisories/{advisoryId})
+func (_ Unimplemented) GetAdvisory(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List the caller's environments affected by an advisory
+// (GET /advisories/{advisoryId}/affected)
+func (_ Unimplemented) ListAdvisoryAffectedEnvironments(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Record that an advisory is accepted or mitigated for a shop
+// (POST /advisories/{advisoryId}/suppressions)
+func (_ Unimplemented) CreateAdvisorySuppression(w http.ResponseWriter, r *http.Request, advisoryId AdvisoryId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1722,6 +2387,18 @@ func (_ Unimplemented) GetPackagesTokenConfiguration(w http.ResponseWriter, r *h
 // Discover OIDC configuration from an issuer URL
 // (GET /sso/discover)
 func (_ Unimplemented) DiscoverSso(w http.ResponseWriter, r *http.Request, params DiscoverSsoParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List advisory suppressions for the caller's organizations
+// (GET /suppressions)
+func (_ Unimplemented) ListSuppressions(w http.ResponseWriter, r *http.Request, params ListSuppressionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Revoke a suppression so the advisory resurfaces
+// (DELETE /suppressions/{suppressionId})
+func (_ Unimplemented) RevokeAdvisorySuppression(w http.ResponseWriter, r *http.Request, suppressionId int64) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2070,6 +2747,207 @@ func (siw *ServerInterfaceWrapper) GetAccountSubscribedEnvironments(w http.Respo
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountSubscribedEnvironments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListAdvisories operation middleware
+func (siw *ServerInterfaceWrapper) AdminListAdvisories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListAdvisoriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "package" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "package", r.URL.Query(), &params.Package, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "package"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "package", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "severity" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "severity", r.URL.Query(), &params.Severity, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "severity"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "severity", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tag" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag", r.URL.Query(), &params.Tag, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tag"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "visible" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "visible", r.URL.Query(), &params.Visible, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "visible"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "visible", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListAdvisories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminSyncAdvisories operation middleware
+func (siw *ServerInterfaceWrapper) AdminSyncAdvisories(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminSyncAdvisories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetAdvisory operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetAdvisory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "advisoryId" -------------
+	var advisoryId AdvisoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "advisoryId", chi.URLParam(r, "advisoryId"), &advisoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "advisoryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetAdvisory(w, r, advisoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminUpdateAdvisory operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateAdvisory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "advisoryId" -------------
+	var advisoryId AdvisoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "advisoryId", chi.URLParam(r, "advisoryId"), &advisoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "advisoryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminUpdateAdvisory(w, r, advisoryId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2617,6 +3495,252 @@ func (siw *ServerInterfaceWrapper) AdminGetStats(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminGetStats(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdvisories operation middleware
+func (siw *ServerInterfaceWrapper) ListAdvisories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAdvisoriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "package" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "package", r.URL.Query(), &params.Package, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "package"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "package", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "severity" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "severity", r.URL.Query(), &params.Severity, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "severity"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "severity", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tag" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag", r.URL.Query(), &params.Tag, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tag"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "scope" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "scope", r.URL.Query(), &params.Scope, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "scope"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "scope", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdvisories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdvisoryPackages operation middleware
+func (siw *ServerInterfaceWrapper) ListAdvisoryPackages(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdvisoryPackages(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdvisory operation middleware
+func (siw *ServerInterfaceWrapper) GetAdvisory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "advisoryId" -------------
+	var advisoryId AdvisoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "advisoryId", chi.URLParam(r, "advisoryId"), &advisoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "advisoryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdvisory(w, r, advisoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAdvisoryAffectedEnvironments operation middleware
+func (siw *ServerInterfaceWrapper) ListAdvisoryAffectedEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "advisoryId" -------------
+	var advisoryId AdvisoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "advisoryId", chi.URLParam(r, "advisoryId"), &advisoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "advisoryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAdvisoryAffectedEnvironments(w, r, advisoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateAdvisorySuppression operation middleware
+func (siw *ServerInterfaceWrapper) CreateAdvisorySuppression(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "advisoryId" -------------
+	var advisoryId AdvisoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "advisoryId", chi.URLParam(r, "advisoryId"), &advisoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "advisoryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAdvisorySuppression(w, r, advisoryId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4082,6 +5206,77 @@ func (siw *ServerInterfaceWrapper) DiscoverSso(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ListSuppressions operation middleware
+func (siw *ServerInterfaceWrapper) ListSuppressions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSuppressionsParams
+
+	// ------------- Optional query parameter "includeInactive" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "includeInactive", r.URL.Query(), &params.IncludeInactive, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "includeInactive"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "includeInactive", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSuppressions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeAdvisorySuppression operation middleware
+func (siw *ServerInterfaceWrapper) RevokeAdvisorySuppression(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "suppressionId" -------------
+	var suppressionId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "suppressionId", chi.URLParam(r, "suppressionId"), &suppressionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "int64"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "suppressionId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeAdvisorySuppression(w, r, suppressionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -4232,6 +5427,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/account/subscribed-environments", wrapper.GetAccountSubscribedEnvironments)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/advisories", wrapper.AdminListAdvisories)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/admin/advisories/sync", wrapper.AdminSyncAdvisories)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/admin/advisories/{advisoryId}", wrapper.AdminGetAdvisory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/admin/advisories/{advisoryId}", wrapper.AdminUpdateAdvisory)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/audit-log", wrapper.AdminGetAuditLog)
 	})
 	r.Group(func(r chi.Router) {
@@ -4257,6 +5464,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/admin/stats", wrapper.AdminGetStats)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/advisories", wrapper.ListAdvisories)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/advisories/packages", wrapper.ListAdvisoryPackages)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/advisories/{advisoryId}", wrapper.GetAdvisory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/advisories/{advisoryId}/affected", wrapper.ListAdvisoryAffectedEnvironments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/advisories/{advisoryId}/suppressions", wrapper.CreateAdvisorySuppression)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api-key-scopes", wrapper.GetApiKeyScopes)
@@ -4389,6 +5611,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sso/discover", wrapper.DiscoverSso)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/suppressions", wrapper.ListSuppressions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/suppressions/{suppressionId}", wrapper.RevokeAdvisorySuppression)
 	})
 
 	return r
