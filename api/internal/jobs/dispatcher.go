@@ -74,3 +74,17 @@ func (d *Dispatcher) EnqueueShopwareChangelogSync(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (d *Dispatcher) EnqueueComposerAdvisorySync(ctx context.Context) error {
+	if err := Dispatch(ctx, d.bus, ComposerAdvisorySync{}); err != nil {
+		return fmt.Errorf("dispatch composer advisory sync: %w", err)
+	}
+	return nil
+}
+
+func (d *Dispatcher) EnqueueSecurityPluginSync(ctx context.Context) error {
+	if err := Dispatch(ctx, d.bus, SecurityPluginSync{}); err != nil {
+		return fmt.Errorf("dispatch security plugin sync: %w", err)
+	}
+	return nil
+}

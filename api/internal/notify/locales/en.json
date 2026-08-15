@@ -11,6 +11,9 @@
   "email.statusRecovered.subject": "Environment {name} recovered",
   "email.authError.subject": "Environment {name} connection failed",
   "email.dataFetchError.subject": "Environment {name} could not be updated",
+  "notification.advisoryDetected.title": "Environment: {name} has new security advisories",
+  "notification.advisoryDetected.message": "{count} new advisories affect this environment: {first}",
+  "email.advisoryDetected.subject": "{count} new security advisories affect {name}",
   "email.alertIntro": "There is an alert for environment **{name}**:",
 
   "check.recommendationSuffix": " (current: {current}, recommended: {recommended})",
@@ -22,6 +25,11 @@
   "check.task.allRunning": "All scheduled tasks are running correctly.",
   "check.security.advisory": "{title}",
   "check.security.advisoryCve": "{title} ({cve})",
+  "check.security.advisoryPackage": "{title} — {package} {installedVersion}",
+  "check.security.advisoryMitigated": "{title} ({cve}) — backported by SwagPlatformSecurity {securityPluginFixVersion}",
+  "check.security.advisoryPluginOutdated": "{title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} backports the fix, you have {securityPluginVersion}",
+  "check.security.advisoryInstallPlugin": "{title} ({cve}) — installable fix: SwagPlatformSecurity {securityPluginFixVersion}",
+  "check.security.advisoryNotBackported": "{title} ({cve}) — not backported by SwagPlatformSecurity; a Shopware upgrade is required",
 
   "check.frosh.phpGood": "PHP version is up to date",
   "check.frosh.phpOutdated": "PHP version is outdated",

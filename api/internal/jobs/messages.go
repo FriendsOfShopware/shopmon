@@ -22,6 +22,14 @@ type OldDataCleanup struct{}
 
 type ShopwareChangelogSync struct{}
 
+// ComposerAdvisorySync refreshes Packagist security advisories for official
+// shopware/* Composer packages into the local composer_advisory catalog.
+type ComposerAdvisorySync struct{}
+
+// SecurityPluginSync refreshes the map of which SwagPlatformSecurity release
+// backports which advisory, derived from the plugin's store changelog.
+type SecurityPluginSync struct{}
+
 // StoreExtensionSync refreshes the shared store extension catalog for a set of
 // extension names. ShopwareVersion is the version of the environment that
 // requested the sync; it is included in the compatibility probing.

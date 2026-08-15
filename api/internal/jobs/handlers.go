@@ -29,6 +29,14 @@ type ChangelogSynchronizer interface {
 	Sync(ctx context.Context) error
 }
 
+type SecurityPluginSynchronizer interface {
+	Sync(ctx context.Context) error
+}
+
+type AdvisorySynchronizer interface {
+	Sync(ctx context.Context) error
+}
+
 // Handlers is the worker-side composition boundary. Construct these services
 // in the worker root; dispatch-only processes do not need them.
 type Handlers struct {
@@ -37,6 +45,8 @@ type Handlers struct {
 	SitespeedScraper           SitespeedScraper
 	Cleanup                    CleanupHandler
 	ChangelogSynchronizer      ChangelogSynchronizer
+	AdvisorySynchronizer       AdvisorySynchronizer
+	SecurityPluginSynchronizer SecurityPluginSynchronizer
 }
 
 func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
@@ -57,6 +67,12 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 	}
 	if handlers.ChangelogSynchronizer == nil {
 		return errors.New("register job handlers: changelog synchronizer is required")
+	}
+	if handlers.AdvisorySynchronizer == nil {
+		return errors.New("register job handlers: advisory synchronizer is required")
+	}
+	if handlers.SecurityPluginSynchronizer == nil {
+		return errors.New("register job handlers: security plugin synchronizer is required")
 	}
 
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message EnvironmentScrape) error {
@@ -86,6 +102,13 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ ShopwareChangelogSync) error {
 		return handlers.ChangelogSynchronizer.Sync(ctx)
+	})
+	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ ComposerAdvisorySync) error {
+		return handlers.AdvisorySynchronizer.Sync(ctx)
+	})
+
+	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ SecurityPluginSync) error {
+		return handlers.SecurityPluginSynchronizer.Sync(ctx)
 	})
 	return nil
 }
