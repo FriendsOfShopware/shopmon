@@ -50,8 +50,11 @@ import (
 	packagespostgres "github.com/friendsofshopware/shopmon/api/internal/packagesmirror/postgres"
 	accountread "github.com/friendsofshopware/shopmon/api/internal/readmodel/account"
 	adminread "github.com/friendsofshopware/shopmon/api/internal/readmodel/admin"
+	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/suppression"
+	suppressionpostgres "github.com/friendsofshopware/shopmon/api/internal/suppression/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -169,7 +172,10 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	catalogService := catalog.NewService(catalogRepository, catalogGateway)
 	accountReadModel := accountread.NewService(q)
 	adminReadModel := adminread.NewService(q)
+	advisoryReadModel := advisoryread.NewService(q)
+	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
+	jobDispatcher := jobs.NewDispatcher(bus)
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)
 	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
@@ -217,6 +223,9 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Account:       accountReadModel,
 		Admin:         adminReadModel,
 		Environments:  environmentReadModel,
+		Advisories:    advisoryReadModel,
+		Suppressions:  suppressionService,
+		AdvisorySync:  jobDispatcher,
 	})
 
 	// Build chi router matching production setup
@@ -330,6 +339,29 @@ func (e *TestEnv) SeedOrganization(t *testing.T, orgID, name, slug, userID strin
 	}
 
 	// Set as active organization on the user's session
+	_, err = e.Pool.Exec(ctx, `
+		UPDATE session SET active_organization_id = $1 WHERE user_id = $2 AND active_organization_id IS NULL
+	`, orgID, userID)
+	if err != nil {
+		t.Fatalf("failed to set active organization: %v", err)
+	}
+}
+
+// SeedMember adds a user to an existing organization with an explicit role.
+// SeedOrganization always creates an owner, so this is what makes role-gated
+// behaviour (member vs owner/admin) testable.
+func (e *TestEnv) SeedMember(t *testing.T, orgID, userID, role string) {
+	t.Helper()
+	ctx := context.Background()
+
+	_, err := e.Pool.Exec(ctx, `
+		INSERT INTO member (id, organization_id, user_id, role, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`, fmt.Sprintf("member-%s-%s", orgID, userID), orgID, userID, role, time.Now())
+	if err != nil {
+		t.Fatalf("failed to seed member: %v", err)
+	}
+
 	_, err = e.Pool.Exec(ctx, `
 		UPDATE session SET active_organization_id = $1 WHERE user_id = $2 AND active_organization_id IS NULL
 	`, orgID, userID)

@@ -62,6 +62,7 @@ func TestCapabilityCoreDoesNotImportTransportOrPersistence(t *testing.T) {
 		"internal/notification",
 		"internal/organization",
 		"internal/packagesmirror",
+		"internal/suppression",
 	} {
 		// Only inspect files in the capability root. Infrastructure adapters and
 		// specialized worker implementations intentionally live below it.
@@ -88,6 +89,7 @@ func TestCapabilitiesDoNotImportHTTPTransport(t *testing.T) {
 		"internal/organization",
 		"internal/packagesmirror",
 		"internal/readmodel",
+		"internal/suppression",
 	} {
 		assertNoForbiddenImports(t, root, directory, true, forbidden)
 	}
