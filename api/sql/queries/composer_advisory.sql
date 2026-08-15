@@ -73,8 +73,12 @@ LIMIT $1;
 -- The GitHub pass serves two needs: details for rows nothing else enriched,
 -- and first_patched_versions for every GHSA-bearing row — including those NVD
 -- already enriched, hence the separate github_synced_at marker.
+-- link is carried along so a GHSA missing from the global advisory database can
+-- still be fetched from the repository that published it.
 -- name: ListComposerAdvisoryGhsaPendingDetails :many
-SELECT ghsa_id, BOOL_OR(details_synced_at IS NULL) AS needs_details
+SELECT ghsa_id,
+       BOOL_OR(details_synced_at IS NULL) AS needs_details,
+       COALESCE(MIN(link) FILTER (WHERE link IS NOT NULL AND link <> ''), '')::text AS link
 FROM composer_advisory
 WHERE ghsa_id IS NOT NULL AND ghsa_id <> ''
   AND (details_synced_at IS NULL OR github_synced_at IS NULL)

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -180,8 +181,49 @@ func extractGHSAID(adv repository.SecurityAdvisory) string {
 	if id := normalizeGHSA(adv.RemoteID); id != "" {
 		return id
 	}
-	return ""
+	// Advisories sourced from FriendsOfPHP carry a remoteId like
+	// "mcp/sdk/CVE-2026-53965.yaml" and no GHSA anywhere in Sources, but their
+	// link still points at the GitHub advisory page. Without this the row never
+	// enters the GHSA enrichment queue and stays permanently bare when NVD has
+	// not published the CVE either.
+	return ghsaFromLink(adv.Link)
 }
+
+// ghsaLinkPattern matches the GHSA id in a GitHub advisory URL, covering both
+// the global (/advisories/GHSA-...) and repository-scoped
+// (/owner/repo/security/advisories/GHSA-...) forms.
+var ghsaLinkPattern = regexp.MustCompile(`(?i)/advisories/(GHSA(?:-[A-Za-z0-9]{4,})+)`)
+
+// ghsaFromLink recovers a GHSA id from an advisory link. The result is matched
+// against the same shape rule fetchAdvisory enforces, so a crafted link cannot
+// smuggle path segments into a token-bearing request.
+func ghsaFromLink(link string) string {
+	m := ghsaLinkPattern.FindStringSubmatch(strings.TrimSpace(link))
+	if m == nil {
+		return ""
+	}
+	id := m[1]
+	if !ghsaIDPattern.MatchString(strings.ToUpper(id)) {
+		return ""
+	}
+	return id
+}
+
+// repoFromAdvisoryLink extracts owner/repo from a repository-scoped GitHub
+// advisory URL. Global advisory links (github.com/advisories/GHSA-...) have no
+// repository and yield empty strings.
+func repoFromAdvisoryLink(link string) (owner, repo string) {
+	m := repoAdvisoryLinkPattern.FindStringSubmatch(strings.TrimSpace(link))
+	if m == nil {
+		return "", ""
+	}
+	return m[1], m[2]
+}
+
+// Owner and repo are constrained to GitHub's own naming rules so neither can
+// introduce a path segment when interpolated into the API URL.
+var repoAdvisoryLinkPattern = regexp.MustCompile(
+	`(?i)^https://github\.com/([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)/security/advisories/GHSA(?:-[A-Za-z0-9]{4,})+/?$`)
 
 func normalizeGHSA(id string) string {
 	id = strings.TrimSpace(id)

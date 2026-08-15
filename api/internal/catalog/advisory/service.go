@@ -412,7 +412,7 @@ func (s *Service) enrichFromGitHub(ctx context.Context) (int, error) {
 			slog.WarnContext(ctx, "failed to mark ghsa details attempt", "ghsa", ghsaID, "error", err)
 		}
 
-		details, err := s.github.fetchAdvisory(ctx, ghsaID)
+		details, err := s.github.fetchAdvisoryWithLink(ctx, ghsaID, row.Link)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to fetch github advisory details", "ghsa", ghsaID, "error", err)
 			if firstErr == nil {
