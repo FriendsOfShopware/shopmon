@@ -15,6 +15,12 @@
     "dataFetchError": {
       "title": "Environment: {name} could not be updated",
       "message": "Could not connect to environment. Please check your credentials and try again."
+    },
+    "advisoryDetected": {
+      "title": "Environment: {name} has new security advisories",
+      "titleOne": "Environment: {name} has a new security advisory",
+      "message": "{count} new advisories affect this environment",
+      "messageOne": "1 new advisory affects this environment"
     }
   },
   "statusHistory": {
@@ -39,6 +45,7 @@
       "advisory": "{title}",
       "advisoryCve": "{title} ({cve})",
       "advisoryPackage": "{title} — {package} {installedVersion}",
+      "advisoryAlert": "{severity}: {title} ({id}) — {package} {installedVersion}",
       "advisoryMitigated": "{title} ({cve}) — backported by SwagPlatformSecurity {securityPluginFixVersion}",
       "advisoryPluginOutdated": "{title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} backports the fix, you have {securityPluginVersion}",
       "advisoryInstallPlugin": "{title} ({cve}) — installable fix: SwagPlatformSecurity {securityPluginFixVersion}",

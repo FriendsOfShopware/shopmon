@@ -130,4 +130,35 @@ describe("translateNotification", () => {
   it("returns no reasons when absent", () => {
     expect(notificationReasons(notification({}))).toEqual([]);
   });
+
+  it("renders a singular advisory alert", () => {
+    const n = notification({
+      titleKey: "notification.advisoryDetected.titleOne",
+      messageKey: "notification.advisoryDetected.messageOne",
+      params: { name: "Demo · Production", count: 1 },
+    });
+    expect(translateNotificationTitle(n)).toBe(
+      "Environment: Demo · Production has a new security advisory",
+    );
+    expect(translateNotificationMessage(n)).toBe("1 new advisory affects this environment");
+  });
+
+  it("renders an advisory reason with severity, id, package, and fix", () => {
+    const reason = {
+      level: "red",
+      messageKey: "check.security.advisoryAlert",
+      params: {
+        severity: "High",
+        title: "SSE buffer grows unbounded",
+        id: "CVE-2026-1234",
+        package: "mcp/sdk",
+        installedVersion: "1.2.3",
+        current: "1.2.3",
+        recommended: "1.2.4",
+      },
+    };
+    expect(translateReason(reason)).toBe(
+      "High: SSE buffer grows unbounded (CVE-2026-1234) — mcp/sdk 1.2.3 (current: 1.2.3, recommended: 1.2.4)",
+    );
+  });
 });

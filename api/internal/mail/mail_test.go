@@ -122,7 +122,7 @@ func TestBuildAlertEmailHTML(t *testing.T) {
 	intro := "There is an alert for environment **Production**:"
 	message := "Status improved from yellow to green\n\n- PHP value opcache.enable_file_override (current: 0, recommended: 1)\n- The queue storage in database does not scale well with multiple workers (current: doctrine, recommended: redis or rabbitmq)"
 
-	email := svc.BuildAlertEmail("Shyim", "Environment Production recovered", intro, message)
+	email := svc.BuildAlertEmail("Shyim", "Environment Production recovered", intro, message, nil)
 
 	// Verify HTML output contains rendered markdown tags and branded layout elements
 	assert.Contains(t, email.HTML, "<strong style=\"color:#0f172a;font-weight:600\">Production</strong>")
@@ -140,13 +140,29 @@ func TestBuildAlertEmailHTML(t *testing.T) {
 	assert.Contains(t, email.Text, "Status improved from yellow to green")
 }
 
+func TestBuildAlertEmailAction(t *testing.T) {
+	rec := mailertest.NewRecordingTransport("")
+	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "https://app.example.com")
+	require.NoError(t, err)
+
+	email := svc.BuildAlertEmail("Shyim", "1 new security advisory affects Demo",
+		"There is an alert for environment **Demo**:",
+		"1 new advisory affects this environment",
+		&AlertAction{Text: "View advisory", URL: "https://app.example.com/app/advisories/CVE-2026-1234"})
+
+	assert.Contains(t, email.HTML, "View advisory")
+	assert.Contains(t, email.HTML, "https://app.example.com/app/advisories/CVE-2026-1234")
+	assert.Contains(t, email.Text, "View advisory")
+	assert.Contains(t, email.Text, "https://app.example.com/app/advisories/CVE-2026-1234")
+}
+
 func TestEmailHTMLInjectionPrevention(t *testing.T) {
 	rec := mailertest.NewRecordingTransport("")
 	svc, err := NewServiceWithTransport(rec, "sender@example.com", "", "https://app.example.com")
 	require.NoError(t, err)
 
 	maliciousShop := "<script>alert('xss')</script>"
-	email := svc.BuildAlertEmail("Attacker", "Alert", "Alert for **"+maliciousShop+"**", "message")
+	email := svc.BuildAlertEmail("Attacker", "Alert", "Alert for **"+maliciousShop+"**", "message", nil)
 
 	// Verify raw HTML tags are escaped and cannot inject script/HTML elements
 	assert.NotContains(t, email.HTML, "<script>")

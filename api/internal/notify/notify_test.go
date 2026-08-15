@@ -30,6 +30,48 @@ func TestTranslatorInterpolatesAndFallsBack(t *testing.T) {
 	assert.Equal(t, "does.not.exist", tr.T("en", "does.not.exist", nil))
 }
 
+func TestTranslatorAdvisoryDetectedSingularAndPlural(t *testing.T) {
+	tr := NewTranslator()
+
+	assert.Equal(t, "1 new advisory affects this environment",
+		tr.T("en", "notification.advisoryDetected.messageOne", map[string]any{"count": 1}))
+	assert.Equal(t, "3 new advisories affect this environment",
+		tr.T("en", "notification.advisoryDetected.message", map[string]any{"count": 3}))
+	assert.Equal(t, "1 new security advisory affects Demo · Production",
+		tr.T("en", "email.advisoryDetected.subjectOne", map[string]any{"name": "Demo · Production"}))
+	assert.Equal(t, "2 new security advisories affect Demo · Production",
+		tr.T("en", "email.advisoryDetected.subject", map[string]any{"count": 2, "name": "Demo · Production"}))
+
+	assert.Equal(t, "1 neue Meldung betrifft diese Umgebung",
+		tr.T("de", "notification.advisoryDetected.messageOne", nil))
+	assert.Equal(t, "High: SSE buffer (CVE-2026-1) — mcp/sdk 1.2.3",
+		tr.T("en", "check.security.advisoryAlert", map[string]any{
+			"severity": "High", "title": "SSE buffer", "id": "CVE-2026-1",
+			"package": "mcp/sdk", "installedVersion": "1.2.3",
+		}))
+}
+
+func TestFrontendURLResolvesKnownRoutes(t *testing.T) {
+	assert.Equal(t, "https://app.example.test/app/environments/42",
+		frontendURL("https://app.example.test/", Link{
+			Name:   "account.environments.detail",
+			Params: map[string]string{"environmentId": "42"},
+		}))
+	assert.Equal(t, "https://app.example.test/app/advisories/CVE-2026-1",
+		frontendURL("https://app.example.test", Link{
+			Name:   "account.advisories.detail",
+			Params: map[string]string{"id": "CVE-2026-1"},
+		}))
+	assert.Empty(t, frontendURL("https://app.example.test", Link{Name: "account.dashboard"}))
+	assert.Empty(t, frontendURL("", Link{Name: "account.advisories.detail", Params: map[string]string{"id": "x"}}))
+}
+
+func TestActionTextKey(t *testing.T) {
+	assert.Equal(t, "email.viewEnvironment", actionTextKey("account.environments.detail"))
+	assert.Equal(t, "email.viewAdvisory", actionTextKey("account.advisories.detail"))
+	assert.Equal(t, "email.viewDetails", actionTextKey("account.dashboard"))
+}
+
 // recordingChannel captures every Send for assertions.
 type recordingChannel struct {
 	name ChannelName

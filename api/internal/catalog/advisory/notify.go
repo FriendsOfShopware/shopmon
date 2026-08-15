@@ -2,17 +2,19 @@ package advisory
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
 )
 
-// maxNotifiedTitles caps how many advisory titles are named in one alert. The
+// maxNotifiedReasons caps how many advisory rows are named in one alert. The
 // rest are covered by the count, so a large burst stays readable.
-const maxNotifiedTitles = 3
+const maxNotifiedReasons = 8
 
 // notifyNewAdvisories alerts an environment's subscribers about advisories that
 // have just started matching it.
@@ -88,14 +90,20 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		})
 	}
 
-	titles, err := s.advisoryTitles(ctx, fresh)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to load advisory titles for alert", "error", err)
-	}
+	reasons := s.advisoryReasons(ctx, matches, fresh)
 
 	name := env.Name
 	if env.ShopName != nil && *env.ShopName != "" {
 		name = *env.ShopName + " · " + env.Name
+	}
+
+	titleKey := "notification.advisoryDetected.title"
+	messageKey := "notification.advisoryDetected.message"
+	subjectKey := "email.advisoryDetected.subject"
+	if len(fresh) == 1 {
+		titleKey = "notification.advisoryDetected.titleOne"
+		messageKey = "notification.advisoryDetected.messageOne"
+		subjectKey = "email.advisoryDetected.subjectOne"
 	}
 
 	res := s.notifier.Dispatch(ctx, notify.Event{
@@ -106,18 +114,16 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		OrgID:     env.OrganizationID,
 		// Keyed per environment rather than per advisory, so the in-app upsert
 		// collapses a burst of new advisories into one entry.
-		DedupKey:   "advisory_detected:" + strconv.Itoa(int(environmentID)),
-		TitleKey:   "notification.advisoryDetected.title",
-		MessageKey: "notification.advisoryDetected.message",
+		DedupKey:        "advisory_detected:" + strconv.Itoa(int(environmentID)),
+		TitleKey:        titleKey,
+		MessageKey:      messageKey,
+		EmailSubjectKey: subjectKey,
 		Params: map[string]any{
 			"name":  name,
 			"count": len(fresh),
-			"first": titles,
 		},
-		Link: notify.Link{
-			Name:   "account.environments.detail",
-			Params: map[string]string{"environmentId": strconv.Itoa(int(environmentID))},
-		},
+		Reasons: reasons,
+		Link:    advisoryAlertLink(environmentID, fresh),
 	}, recipients)
 
 	// Only record the advisories as notified when nothing failed. A channel
@@ -134,6 +140,21 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 	}
 
 	s.markNotified(ctx, environmentID, fresh)
+}
+
+// advisoryAlertLink sends a single-advisory alert to that advisory's page, and
+// a burst to the environment so the owner can see every hit in one place.
+func advisoryAlertLink(environmentID int32, fresh []string) notify.Link {
+	if len(fresh) == 1 {
+		return notify.Link{
+			Name:   "account.advisories.detail",
+			Params: map[string]string{"id": fresh[0]},
+		}
+	}
+	return notify.Link{
+		Name:   "account.environments.detail",
+		Params: map[string]string{"environmentId": strconv.Itoa(int(environmentID))},
+	}
 }
 
 // markNotified records that subscribers have been told about these advisories.
@@ -167,29 +188,134 @@ func (s *Service) suppressedAdvisoryIDs(ctx context.Context, environmentID int32
 	return out, nil
 }
 
-// advisoryTitles returns a short, human-readable summary of the first few new
-// advisories so the alert says what was found rather than only how many.
-func (s *Service) advisoryTitles(ctx context.Context, advisoryIDs []string) (string, error) {
-	limit := min(len(advisoryIDs), maxNotifiedTitles)
+// advisoryReasons builds the per-advisory lines that the email and in-app
+// notification list under the summary. Each line names the identifier,
+// severity, affected package, installed version, and a fix when we know one.
+func (s *Service) advisoryReasons(ctx context.Context, matches []sbom.Match, freshIDs []string) []notify.StatusReason {
+	byAdvisory := make(map[string][]sbom.Match, len(freshIDs))
+	for _, match := range matches {
+		byAdvisory[match.AdvisoryID] = append(byAdvisory[match.AdvisoryID], match)
+	}
 
-	titles := make([]string, 0, limit)
-	for _, id := range advisoryIDs[:limit] {
+	reasons := make([]notify.StatusReason, 0, min(len(freshIDs), maxNotifiedReasons))
+	for _, id := range freshIDs {
+		if len(reasons) >= maxNotifiedReasons {
+			break
+		}
 		row, err := s.queries.GetComposerAdvisory(ctx, id)
 		if err != nil {
-			return "", err
+			slog.WarnContext(ctx, "failed to load advisory for alert", "advisoryId", id, "error", err)
+			continue
 		}
-		titles = append(titles, row.Title)
+		hits := byAdvisory[id]
+		if len(hits) == 0 {
+			hits = []sbom.Match{{AdvisoryID: id}}
+		}
+		for _, hit := range hits {
+			if len(reasons) >= maxNotifiedReasons {
+				break
+			}
+			reasons = append(reasons, advisoryReason(row, hit))
+		}
+	}
+	return reasons
+}
+
+func advisoryReason(row queries.ComposerAdvisory, hit sbom.Match) notify.StatusReason {
+	severity := displaySeverity(row)
+	params := map[string]any{
+		"title":    row.Title,
+		"id":       advisoryPublicID(row),
+		"severity": severity,
+	}
+	if hit.PackageName != "" {
+		params["package"] = hit.PackageName
+		params["installedVersion"] = hit.InstalledVersion
+		params["current"] = hit.InstalledVersion
+	}
+	if fix := recommendedFix(row, hit.InstalledVersion); fix != "" {
+		params["recommended"] = fix
 	}
 
-	out := ""
-	for i, title := range titles {
-		if i > 0 {
-			out += ", "
+	return notify.StatusReason{
+		Level:  severityLevel(severity),
+		Key:    "check.security.advisoryAlert",
+		Params: params,
+		Source: "security",
+	}
+}
+
+// advisoryPublicID prefers the identifier an operator can look up: CVE, then
+// GHSA, then the catalog's own id.
+func advisoryPublicID(row queries.ComposerAdvisory) string {
+	if row.Cve != nil && strings.TrimSpace(*row.Cve) != "" {
+		return strings.TrimSpace(*row.Cve)
+	}
+	if row.GhsaID != nil && strings.TrimSpace(*row.GhsaID) != "" {
+		return strings.TrimSpace(*row.GhsaID)
+	}
+	return row.AdvisoryID
+}
+
+func displaySeverity(row queries.ComposerAdvisory) string {
+	raw := ""
+	if row.SeverityOverride != nil && strings.TrimSpace(*row.SeverityOverride) != "" {
+		raw = *row.SeverityOverride
+	} else if row.Severity != nil {
+		raw = *row.Severity
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "Unknown"
+	}
+	return titleCaseWord(raw)
+}
+
+func titleCaseWord(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func severityLevel(severity string) string {
+	switch strings.ToLower(severity) {
+	case "critical", "high":
+		return "red"
+	default:
+		return "yellow"
+	}
+}
+
+// recommendedFix is the least-disruptive upgrade we can name: an admin-set
+// recommendation first, then the GitHub first-patched version for the
+// installed Shopware line.
+func recommendedFix(row queries.ComposerAdvisory, installedVersion string) string {
+	if row.RecommendedUpgrade != nil && strings.TrimSpace(*row.RecommendedUpgrade) != "" {
+		return strings.TrimSpace(*row.RecommendedUpgrade)
+	}
+	if len(row.FirstPatchedVersions) == 0 {
+		return ""
+	}
+	var byLine map[string]string
+	if err := json.Unmarshal(row.FirstPatchedVersions, &byLine); err != nil || len(byLine) == 0 {
+		return ""
+	}
+	if line := shopwareLine(installedVersion); line != "" {
+		if v := strings.TrimSpace(byLine[line]); v != "" {
+			return v
 		}
-		out += title
 	}
-	if len(advisoryIDs) > limit {
-		out += ", …"
+	best := ""
+	for _, v := range byLine {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			continue
+		}
+		if best == "" || v < best {
+			best = v
+		}
 	}
-	return out, nil
+	return best
 }
