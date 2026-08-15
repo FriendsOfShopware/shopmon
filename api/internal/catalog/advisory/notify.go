@@ -98,7 +98,7 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		name = *env.ShopName + " · " + env.Name
 	}
 
-	s.notifier.Dispatch(ctx, notify.Event{
+	res := s.notifier.Dispatch(ctx, notify.Event{
 		Type:      notify.EventAdvisoryDetected,
 		Level:     notify.LevelWarning,
 		ScopeType: notify.ScopeEnvironment,
@@ -120,12 +120,26 @@ func (s *Service) notifyNewAdvisories(ctx context.Context, environmentID int32, 
 		},
 	}, recipients)
 
+	// Only record the advisories as notified when nothing failed. A channel
+	// error here means these subscribers were not told, and marking anyway
+	// would drop them from every future rematch — the alert would never be
+	// retried. A dispatch that delivered nothing but failed nothing (every
+	// channel skipped by the email dedup lock or by recipient preference) has
+	// nothing to retry, so it counts as handled.
+	if res.Failed > 0 {
+		slog.WarnContext(ctx, "advisory alert partially failed; leaving advisories unnotified for retry",
+			"environmentId", environmentID, "delivered", res.Delivered,
+			"failed", res.Failed, "advisories", len(fresh))
+		return
+	}
+
 	s.markNotified(ctx, environmentID, fresh)
 }
 
 // markNotified records that subscribers have been told about these advisories.
-// Written only after dispatch, so an alert lost to a transient failure is
-// retried on the next pass rather than being silently swallowed.
+// Written only after a dispatch that reported no channel failures, so an alert
+// lost to a transient failure is retried on the next pass rather than being
+// silently swallowed.
 func (s *Service) markNotified(ctx context.Context, environmentID int32, advisoryIDs []string) {
 	if len(advisoryIDs) == 0 {
 		return

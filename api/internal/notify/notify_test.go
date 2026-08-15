@@ -35,6 +35,9 @@ type recordingChannel struct {
 	name ChannelName
 	mu   sync.Mutex
 	sent []RenderedMessage
+	// err, when set, makes every send fail, standing in for an unreachable
+	// SMTP server or a failing in-app insert.
+	err error
 }
 
 func (c *recordingChannel) Name() ChannelName { return c.name }
@@ -42,6 +45,9 @@ func (c *recordingChannel) Name() ChannelName { return c.name }
 func (c *recordingChannel) Send(_ context.Context, _ Recipient, _ Event, msg RenderedMessage) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.err != nil {
+		return c.err
+	}
 	c.sent = append(c.sent, msg)
 	return nil
 }
@@ -141,4 +147,58 @@ func TestDispatchDataFetchErrorEmails(t *testing.T) {
 
 	assert.Len(t, inApp.sent, 2, "in-app re-records idempotently")
 	assert.Len(t, email.sent, 1, "email fires once then is deduped")
+}
+
+// DispatchResult is what lets a caller tell a delivered alert from a lost one.
+// Callers that persist an "already told them" marker consult it before writing,
+// so a channel failure is retried instead of being recorded as sent.
+func TestDispatchResultReportsDeliveryOutcome(t *testing.T) {
+	recipients := []Recipient{{ID: "u1", Locale: "en"}}
+
+	t.Run("all channels deliver", func(t *testing.T) {
+		inApp := &recordingChannel{name: ChannelInApp}
+		email := &recordingChannel{name: ChannelEmail}
+		d := newTestDispatcher(inApp, email, &fakeLocker{})
+
+		res := d.Dispatch(context.Background(), degradeEvent(), recipients)
+
+		assert.Zero(t, res.Failed)
+		assert.Positive(t, res.Delivered)
+		assert.True(t, res.Delivery(), "a clean dispatch is safe to record as sent")
+	})
+
+	t.Run("a failing channel is reported", func(t *testing.T) {
+		inApp := &recordingChannel{name: ChannelInApp, err: assert.AnError}
+		email := &recordingChannel{name: ChannelEmail}
+		d := newTestDispatcher(inApp, email, &fakeLocker{})
+
+		res := d.Dispatch(context.Background(), degradeEvent(), recipients)
+
+		assert.Equal(t, 1, res.Failed)
+		assert.False(t, res.Delivery(), "a partial failure must not be recorded as sent")
+	})
+
+	t.Run("every channel failing is reported", func(t *testing.T) {
+		inApp := &recordingChannel{name: ChannelInApp, err: assert.AnError}
+		email := &recordingChannel{name: ChannelEmail, err: assert.AnError}
+		d := newTestDispatcher(inApp, email, &fakeLocker{})
+
+		res := d.Dispatch(context.Background(), degradeEvent(), recipients)
+
+		assert.Zero(t, res.Delivered)
+		assert.Positive(t, res.Failed)
+		assert.False(t, res.Delivery())
+	})
+
+	t.Run("no recipients is not a failure", func(t *testing.T) {
+		inApp := &recordingChannel{name: ChannelInApp}
+		email := &recordingChannel{name: ChannelEmail}
+		d := newTestDispatcher(inApp, email, &fakeLocker{})
+
+		res := d.Dispatch(context.Background(), degradeEvent(), nil)
+
+		assert.Zero(t, res.Failed)
+		assert.Zero(t, res.Delivered)
+		assert.False(t, res.Delivery(), "nothing was delivered, but nothing needs retrying either")
+	})
 }
