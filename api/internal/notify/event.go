@@ -89,7 +89,11 @@ type Event struct {
 	// TitleKey and MessageKey are catalog keys rendered with Params.
 	TitleKey   string
 	MessageKey string
-	Params     map[string]any
+	// EmailSubjectKey overrides the registry subject when the wording depends
+	// on the event (e.g. singular vs plural advisory counts). Empty means the
+	// registry key is used.
+	EmailSubjectKey string
+	Params          map[string]any
 
 	// Reasons are the checks that caused this event (status transitions). They
 	// are surfaced in the UI and email body, and stored on the timeline.

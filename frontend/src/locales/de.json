@@ -15,6 +15,12 @@
     "dataFetchError": {
       "title": "Umgebung: {name} konnte nicht aktualisiert werden",
       "message": "Verbindung zur Umgebung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten und versuche es erneut."
+    },
+    "advisoryDetected": {
+      "title": "Umgebung: {name} hat neue Sicherheitsmeldungen",
+      "titleOne": "Umgebung: {name} hat eine neue Sicherheitsmeldung",
+      "message": "{count} neue Meldungen betreffen diese Umgebung",
+      "messageOne": "1 neue Meldung betrifft diese Umgebung"
     }
   },
   "statusHistory": {
@@ -39,6 +45,7 @@
       "advisory": "{title}",
       "advisoryCve": "{title} ({cve})",
       "advisoryPackage": "{title} — {package} {installedVersion}",
+      "advisoryAlert": "{severity}: {title} ({id}) — {package} {installedVersion}",
       "advisoryMitigated": "{title} ({cve}) — durch SwagPlatformSecurity {securityPluginFixVersion} zurückportiert",
       "advisoryPluginOutdated": "{title} ({cve}) — SwagPlatformSecurity {securityPluginFixVersion} enthält den Fix, installiert ist {securityPluginVersion}",
       "advisoryInstallPlugin": "{title} ({cve}) — installierbarer Fix: SwagPlatformSecurity {securityPluginFixVersion}",

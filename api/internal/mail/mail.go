@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	gomailer "github.com/shyim/go-mailer"
@@ -37,7 +38,10 @@ type Sender interface {
 	BuildOrgInviteEmail(inviterName, orgName, acceptURL, rejectURL string) Email
 	BuildStatusChangeEmail(userName, envName, newStatus, alertMessage string) Email
 	BuildConnectionFailedEmail(userName, envName, alertMessage string) Email
-	BuildAlertEmail(userName, subject, intro, alertMessage string) Email
+	BuildAlertEmail(userName, subject, intro, alertMessage string, action *AlertAction) Email
+	// ProductURL is the web app base used to turn notification routes into
+	// clickable email links.
+	ProductURL() string
 }
 
 // Config holds the settings for the SMTP mailer.
@@ -132,6 +136,15 @@ func newService(tr, closeTarget gomailer.Transport, from, replyTo, frontendURL s
 	}
 
 	return svc, nil
+}
+
+// ProductURL is the configured frontend base, falling back to the same default
+// the branded template uses for the logo link.
+func (s *Service) ProductURL() string {
+	if s.frontendURL == "" {
+		return defaultProductLink
+	}
+	return strings.TrimRight(s.frontendURL, "/")
 }
 
 // Close releases the underlying SMTP transport, sending QUIT and closing any

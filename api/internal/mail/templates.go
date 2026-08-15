@@ -138,20 +138,34 @@ func shopAlertBody(userName, shopName, alertMessage string) hermes.Email {
 	}
 }
 
+// AlertAction is an optional call-to-action button on an alert email.
+type AlertAction struct {
+	Text string
+	URL  string
+}
+
 // BuildAlertEmail renders a notification alert email. The subject, intro and
 // message are already localized by the caller; this only wraps them in the
-// branded template.
-func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string) Email {
-	return s.generate(subject, hermes.Email{
-		Body: hermes.Body{
-			Name:      userName,
-			Signature: "Best regards,",
-			Intros: []string{
-				intro,
-				alertMessage,
-			},
+// branded template. action may be nil.
+func (s *Service) BuildAlertEmail(userName, subject, intro, alertMessage string, action *AlertAction) Email {
+	body := hermes.Body{
+		Name:      userName,
+		Signature: "Best regards,",
+		Intros: []string{
+			intro,
+			alertMessage,
 		},
-	})
+	}
+	if action != nil && action.URL != "" && action.Text != "" {
+		body.Actions = []hermes.Action{{
+			Button: hermes.Button{
+				Color: "#2563eb",
+				Text:  action.Text,
+				Link:  action.URL,
+			},
+		}}
+	}
+	return s.generate(subject, hermes.Email{Body: body})
 }
 
 // generate renders an email with the given subject into its plain-text and HTML
