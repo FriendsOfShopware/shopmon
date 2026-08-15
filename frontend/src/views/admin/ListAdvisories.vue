@@ -112,15 +112,7 @@
     />
 
     <div v-if="totalPages > 1" class="mt-4 flex items-center justify-center gap-4">
-      <Button
-        size="sm"
-        variant="outline"
-        :disabled="page <= 1"
-        @click="
-          page--;
-          reload();
-        "
-      >
+      <Button size="sm" variant="outline" :disabled="page <= 1" @click="changePage(page - 1)">
         {{ $t("common.previous") }}
       </Button>
       <span class="text-sm tabular-nums text-muted-foreground">{{
@@ -130,10 +122,7 @@
         size="sm"
         variant="outline"
         :disabled="page >= totalPages"
-        @click="
-          page++;
-          reload();
-        "
+        @click="changePage(page + 1)"
       >
         {{ $t("common.next") }}
       </Button>
@@ -166,9 +155,10 @@ import {
   adminSyncAdvisories,
   listAdvisoryPackages,
 } from "@/api/generated";
+import { useAdminListQuery } from "@/composables/useAdminListQuery";
 import { severityTileClass } from "@/helpers/advisory";
 import { formatDate } from "@/helpers/formatter";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import IconShield from "~icons/fa6-solid/shield-halved";
 
@@ -178,18 +168,37 @@ const packages = ref<string[]>([]);
 const total = ref(0);
 const loading = ref(true);
 const error = ref("");
-const searchQuery = ref("");
-const packageFilter = ref("all");
-const page = ref(1);
 const perPage = 25;
 const syncing = ref(false);
 const syncMessage = ref("");
 
 const severities = ["critical", "high", "medium", "low", "none"] as const;
 
-const filters = ref<Record<string, string>>({
-  severity: "",
-  visible: "",
+// Shared with the other admin lists so search, filters, and pagination survive
+// a reload and can be reproduced from a shared URL. revision fires when the
+// route query changes from outside (browser back/forward), which local refs
+// would miss.
+const {
+  search: searchQuery,
+  page,
+  filters,
+  revision,
+  syncToUrl,
+} = useAdminListQuery({
+  search: "",
+  page: 1,
+  filters: {
+    severity: "",
+    visible: "",
+    package: "all",
+  },
+});
+
+const packageFilter = computed({
+  get: () => filters.value.package ?? "all",
+  set: (value: string) => {
+    filters.value = { ...filters.value, package: value };
+  },
 });
 
 const filterGroups = computed<FilterGroup[]>(() => [
@@ -226,15 +235,24 @@ const activeFilterCount = computed(
 );
 
 function onFilterChange() {
+  clearTimeout(searchTimeout);
   page.value = 1;
+  syncToUrl();
   reload();
 }
 
-let searchTimeout: ReturnType<typeof setTimeout>;
+function changePage(next: number) {
+  page.value = next;
+  syncToUrl();
+  reload();
+}
+
+let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 function debouncedSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     page.value = 1;
+    syncToUrl();
     reload();
   }, 300);
 }
@@ -282,6 +300,12 @@ async function syncNow() {
     syncing.value = false;
   }
 }
+
+// Browser back/forward changes the query without remounting, so the list must
+// follow the URL rather than keep whatever it last rendered.
+watch(revision, () => {
+  reload();
+});
 
 onMounted(async () => {
   const { data } = await listAdvisoryPackages();
