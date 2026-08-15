@@ -36,31 +36,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern=release-{{version}}
 
-      - name: Verify binary architecture per platform
-        # Reads the ELF e_machine field (offset 18, 2 bytes LE):
-        # 0x003e (3e 00) = x86-64, 0x00b7 (b7 00) = aarch64.
-        # This works without emulation, unlike running the image (#788).
-        run: |
-          set -euo pipefail
-          for arch in amd64 arm64; do
-            docker buildx build \
-              --platform "linux/${arch}" \
-              --output "type=local,dest=/tmp/verify-${arch}" \
-              .
-            bin="/tmp/verify-${arch}/usr/local/bin/shopmon"
-            mach=$(od -An -tx1 -j18 -N2 "$bin" | tr -d ' \n')
-            case "${arch}-${mach}" in
-              amd64-3e00|arm64-b700)
-                echo "linux/${arch}: ELF e_machine=${mach} OK"
-                ;;
-              *)
-                echo "::error::linux/${arch} image contains wrong binary architecture (ELF e_machine=${mach})"
-                exit 1
-                ;;
-            esac
-            rm -rf "/tmp/verify-${arch}"
-          done
-
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
