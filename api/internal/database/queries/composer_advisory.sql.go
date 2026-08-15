@@ -332,7 +332,11 @@ func (q *Queries) ListComposerAdvisoryCvePendingDetails(ctx context.Context, lim
 }
 
 const listComposerAdvisoryGhsaPendingDetails = `-- name: ListComposerAdvisoryGhsaPendingDetails :many
-SELECT ghsa_id, BOOL_OR(details_synced_at IS NULL) AS needs_details
+SELECT ghsa_id,
+       BOOL_OR(details_synced_at IS NULL) AS needs_details,
+       COALESCE(MIN(link) FILTER (
+         WHERE link ~ '^https://github\.com/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+/security/advisories/GHSA-'
+       ), '')::text AS link
 FROM composer_advisory
 WHERE ghsa_id IS NOT NULL AND ghsa_id <> ''
   AND (details_synced_at IS NULL OR github_synced_at IS NULL)
@@ -344,11 +348,18 @@ LIMIT $1
 type ListComposerAdvisoryGhsaPendingDetailsRow struct {
 	GhsaID       *string `json:"ghsa_id"`
 	NeedsDetails bool    `json:"needs_details"`
+	Link         string  `json:"link"`
 }
 
 // The GitHub pass serves two needs: details for rows nothing else enriched,
 // and first_patched_versions for every GHSA-bearing row — including those NVD
 // already enriched, hence the separate github_synced_at marker.
+// link is carried along so a GHSA missing from the global advisory database can
+// still be fetched from the repository that published it. Only a
+// repository-scoped link serves that purpose, so siblings sharing the GHSA are
+// filtered to that shape rather than picked by sort order: a global
+// github.com/advisories link sorts first but names no repository, and would
+// leave the advisory unenriched forever.
 func (q *Queries) ListComposerAdvisoryGhsaPendingDetails(ctx context.Context, limit int32) ([]ListComposerAdvisoryGhsaPendingDetailsRow, error) {
 	rows, err := q.db.Query(ctx, listComposerAdvisoryGhsaPendingDetails, limit)
 	if err != nil {
@@ -358,7 +369,7 @@ func (q *Queries) ListComposerAdvisoryGhsaPendingDetails(ctx context.Context, li
 	items := []ListComposerAdvisoryGhsaPendingDetailsRow{}
 	for rows.Next() {
 		var i ListComposerAdvisoryGhsaPendingDetailsRow
-		if err := rows.Scan(&i.GhsaID, &i.NeedsDetails); err != nil {
+		if err := rows.Scan(&i.GhsaID, &i.NeedsDetails, &i.Link); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

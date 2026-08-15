@@ -3,6 +3,7 @@ package advisory
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -70,6 +71,8 @@ type githubAdvisoryResponse struct {
 		} `json:"package"`
 		VulnerableVersionRange string  `json:"vulnerable_version_range"`
 		FirstPatchedVersion    *string `json:"first_patched_version"`
+		// The repository-scoped endpoint names the same value differently.
+		PatchedVersions string `json:"patched_versions"`
 	} `json:"vulnerabilities"`
 }
 
@@ -143,7 +146,18 @@ func newGitHubClient(token, userAgent string, httpClient *http.Client) *githubCl
 // encoding ever widens.
 var ghsaIDPattern = regexp.MustCompile(`^GHSA(-[A-Za-z0-9]{4,})+$`)
 
+// fetchAdvisory loads a global GitHub advisory. Advisories that were published
+// on a repository but never promoted to the global database 404 here; use
+// fetchAdvisoryWithLink to fall back to the repository-scoped endpoint.
 func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githubAdvisoryDetails, error) {
+	return c.fetchAdvisoryWithLink(ctx, ghsaID, "")
+}
+
+// fetchAdvisoryWithLink tries the global advisories endpoint first and, when
+// that reports the advisory unknown, retries against the repository named in
+// link. Repository advisories are not mirrored globally and are not indexed by
+// cve_id or affects, so the link is the only route to them.
+func (c *githubClient) fetchAdvisoryWithLink(ctx context.Context, ghsaID, link string) (*githubAdvisoryDetails, error) {
 	ghsaID = strings.TrimSpace(ghsaID)
 	if ghsaID == "" {
 		return nil, fmt.Errorf("empty ghsa id")
@@ -155,6 +169,29 @@ func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githu
 	// Escaped as well as validated: defence in depth if the pattern is ever
 	// loosened.
 	endpoint := fmt.Sprintf("%s/advisories/%s", c.baseURL, url.PathEscape(ghsaID))
+	details, err := c.fetchAdvisoryURL(ctx, ghsaID, endpoint)
+	if err == nil || !errors.Is(err, errGitHubAdvisoryNotFound) {
+		return details, err
+	}
+
+	owner, repo := repoFromAdvisoryLink(link)
+	if owner == "" || repo == "" {
+		return nil, err
+	}
+	repoEndpoint := fmt.Sprintf("%s/repos/%s/%s/security-advisories/%s",
+		c.baseURL, url.PathEscape(owner), url.PathEscape(repo), url.PathEscape(ghsaID))
+	repoDetails, repoErr := c.fetchAdvisoryURL(ctx, ghsaID, repoEndpoint)
+	if repoErr != nil {
+		return nil, repoErr
+	}
+	return repoDetails, nil
+}
+
+// errGitHubAdvisoryNotFound signals a 404 so callers can decide whether another
+// endpoint is worth trying.
+var errGitHubAdvisoryNotFound = errors.New("github advisory not found")
+
+func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint string) (*githubAdvisoryDetails, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create github advisory request: %w", err)
@@ -177,7 +214,7 @@ func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githu
 		return nil, fmt.Errorf("read github advisory %s: %w", ghsaID, err)
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("github advisory %s not found", ghsaID)
+		return nil, fmt.Errorf("github advisory %s: %w", ghsaID, errGitHubAdvisoryNotFound)
 	}
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
 		return nil, fmt.Errorf("github rate limited or forbidden (%d) for %s", resp.StatusCode, ghsaID)
@@ -246,14 +283,17 @@ func (c *githubClient) fetchAdvisory(ctx context.Context, ghsaID string) (*githu
 func firstPatchedByLine(raw githubAdvisoryResponse) map[string]string {
 	out := map[string]string{}
 	for _, vuln := range raw.Vulnerabilities {
-		if vuln.FirstPatchedVersion == nil {
+		patched := strings.TrimSpace(vuln.PatchedVersions)
+		if vuln.FirstPatchedVersion != nil {
+			patched = strings.TrimSpace(*vuln.FirstPatchedVersion)
+		}
+		if patched == "" {
 			continue
 		}
 		name := strings.ToLower(strings.TrimSpace(vuln.Package.Name))
 		if !strings.HasPrefix(name, packagePrefix) {
 			continue
 		}
-		patched := strings.TrimSpace(*vuln.FirstPatchedVersion)
 		line := shopwareLine(patched)
 		if line == "" {
 			continue
