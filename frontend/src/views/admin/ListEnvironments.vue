@@ -21,9 +21,15 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-      <icon-line-md:loading-twotone-loop class="size-5" />
-      {{ $t("admin.loadingEnvironments") }}
+    <div v-if="loading" class="space-y-2" aria-hidden="true">
+      <div v-for="i in 8" :key="i" class="flex items-center gap-4 rounded-xl border bg-card p-4">
+        <Skeleton class="size-9 shrink-0 rounded-lg" />
+        <div class="flex-1 space-y-2">
+          <Skeleton class="h-4 w-1/3" />
+          <Skeleton class="h-3 w-1/5" />
+        </div>
+        <Skeleton class="hidden h-5 w-14 rounded-full sm:block" />
+      </div>
     </div>
 
     <!-- Environment list -->
@@ -79,16 +85,14 @@
     </div>
 
     <!-- Empty -->
-    <div
+    <EmptyState
       v-else
-      class="flex flex-col items-center gap-2 rounded-xl border border-dashed py-16 text-center"
-    >
-      <icon-fa6-solid:earth-americas class="size-10 text-muted-foreground" />
-      <h3 class="text-lg font-semibold">{{ $t("admin.noEnvironmentsFound") }}</h3>
-      <p v-if="searchQuery" class="text-sm text-muted-foreground">
-        {{ $t("admin.noEnvironmentsMatch", { query: searchQuery }) }}
-      </p>
-    </div>
+      :icon="IconEarth"
+      :title="$t('admin.noEnvironmentsFound')"
+      :description="
+        searchQuery ? $t('admin.noEnvironmentsMatch', { query: searchQuery }) : undefined
+      "
+    />
 
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-4">
@@ -118,9 +122,11 @@
 <script setup lang="ts">
 import AdminFilterSidebar, { type FilterGroup } from "@/components/admin/AdminFilterSidebar.vue";
 import AdminListLayout from "@/components/admin/AdminListLayout.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import StatusIcon from "@/components/StatusIcon.vue";
 import {
   adminGetEnvironments,
@@ -128,6 +134,7 @@ import {
   type AccountEnvironment as Environment,
 } from "@/api/generated";
 import { formatDate } from "@/helpers/formatter";
+import IconEarth from "~icons/fa6-solid/earth-americas";
 import { useI18n } from "vue-i18n";
 import { computed, onMounted, ref, watch } from "vue";
 import { useAdminListQuery } from "@/composables/useAdminListQuery";
