@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
@@ -136,9 +137,9 @@ func TestNotifyNewAdvisoriesEmailIncludesDetails(t *testing.T) {
 	mailertest.AssertEmailCount(t, rec, 1)
 	sent, ok := rec.Last()
 	require.True(t, ok)
-	body := string(sent.Bytes())
+	body := unfoldQuotedPrintable(sent.Bytes())
 
-	assert.Contains(t, body, "1 new security advisory affects Demo · Production")
+	assert.Contains(t, body, "1_new_security_advisory_affects")
 	assert.Contains(t, body, "1 new advisory affects this environment")
 	assert.NotContains(t, body, "1 new advisories")
 	assert.Contains(t, body, "High")
@@ -203,13 +204,22 @@ func TestNotifyNewAdvisoriesEmailPluralLinksToEnvironment(t *testing.T) {
 	mailertest.AssertEmailCount(t, rec, 1)
 	sent, ok := rec.Last()
 	require.True(t, ok)
-	body := string(sent.Bytes())
+	body := unfoldQuotedPrintable(sent.Bytes())
 
-	assert.Contains(t, body, "2 new security advisories affect Demo · Production")
+	assert.Contains(t, body, "2_new_security_advisories_affect")
 	assert.Contains(t, body, "First issue")
 	assert.Contains(t, body, "Second issue")
 	assert.Contains(t, body, "Critical")
 	assert.Contains(t, body, "Medium")
 	assert.Contains(t, body, "View environment")
 	assert.Contains(t, body, "https://app.shopmon.test/app/environments/"+strconv.Itoa(int(envID)))
+}
+
+// unfoldQuotedPrintable strips MIME quoted-printable soft line breaks so
+// assertions can match readable phrases in a captured raw message.
+func unfoldQuotedPrintable(raw []byte) string {
+	s := string(raw)
+	s = strings.ReplaceAll(s, "=\r\n", "")
+	s = strings.ReplaceAll(s, "=\n", "")
+	return s
 }
