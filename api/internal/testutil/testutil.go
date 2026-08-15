@@ -56,6 +56,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 	suppressionpostgres "github.com/friendsofshopware/shopmon/api/internal/suppression/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
+	"github.com/friendsofshopware/shopmon/api/internal/uptime"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
@@ -176,6 +177,8 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)
+	uptimeService := uptime.NewService(q)
+	deploymentService.WithUptimePauser(uptimeService)
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)
 	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
@@ -226,6 +229,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		Advisories:    advisoryReadModel,
 		Suppressions:  suppressionService,
 		AdvisorySync:  jobDispatcher,
+		Uptime:        uptimeService,
 	})
 
 	// Build chi router matching production setup

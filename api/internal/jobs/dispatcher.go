@@ -88,3 +88,17 @@ func (d *Dispatcher) EnqueueSecurityPluginSync(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (d *Dispatcher) EnqueueUptimeDailyRollup(ctx context.Context) error {
+	if err := Dispatch(ctx, d.bus, UptimeDailyRollup{}); err != nil {
+		return fmt.Errorf("dispatch uptime daily rollup: %w", err)
+	}
+	return nil
+}
+
+func (d *Dispatcher) DispatchUptimeResume(ctx context.Context, environmentID int32, delay time.Duration) error {
+	if err := Dispatch(ctx, d.bus, UptimeResume{EnvironmentID: environmentID}, goqueue.WithDelay(delay)); err != nil {
+		return fmt.Errorf("dispatch delayed uptime resume: %w", err)
+	}
+	return nil
+}

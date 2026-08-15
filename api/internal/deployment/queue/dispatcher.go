@@ -26,3 +26,10 @@ func (d *Dispatcher) DispatchPostDeploymentScrape(ctx context.Context, environme
 	}
 	return nil
 }
+
+func (d *Dispatcher) DispatchUptimeResume(ctx context.Context, environmentID int32, delay time.Duration) error {
+	if err := jobs.Dispatch(ctx, d.bus, jobs.UptimeResume{EnvironmentID: environmentID}, goqueue.WithDelay(delay)); err != nil {
+		return fmt.Errorf("dispatch delayed uptime resume: %w", err)
+	}
+	return nil
+}

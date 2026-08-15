@@ -80,6 +80,9 @@ func TestRegisterHandlersRegistersEveryStableMessageType(t *testing.T) {
 		func() error { return Dispatch(context.Background(), bus, ShopwareChangelogSync{}) },
 		func() error { return Dispatch(context.Background(), bus, ComposerAdvisorySync{}) },
 		func() error { return Dispatch(context.Background(), bus, StoreExtensionSync{}) },
+		func() error { return Dispatch(context.Background(), bus, SecurityPluginSync{}) },
+		func() error { return Dispatch(context.Background(), bus, UptimeDailyRollup{}) },
+		func() error { return Dispatch(context.Background(), bus, UptimeResume{}) },
 	}
 
 	for _, dispatch := range dispatches {
@@ -179,6 +182,11 @@ type advisorySynchronizerStub struct{}
 
 func (advisorySynchronizerStub) Sync(context.Context) error { return nil }
 
+type uptimeMaintainerStub struct{}
+
+func (uptimeMaintainerStub) RunDailyMaintenance(context.Context) error  { return nil }
+func (uptimeMaintainerStub) ResumeMonitor(context.Context, int32) error { return nil }
+
 func completeHandlers() Handlers {
 	return Handlers{
 		EnvironmentScraper:         scraperStub{},
@@ -188,5 +196,6 @@ func completeHandlers() Handlers {
 		ChangelogSynchronizer:      changelogSynchronizerStub{},
 		AdvisorySynchronizer:       advisorySynchronizerStub{},
 		SecurityPluginSynchronizer: advisorySynchronizerStub{},
+		UptimeMaintainer:           uptimeMaintainerStub{},
 	}
 }

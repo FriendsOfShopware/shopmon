@@ -646,6 +646,62 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationError"
 
+  /environments/{environmentId}/uptime-settings:
+    put:
+      operationId: updateUptimeSettings
+      tags: [Environments]
+      summary: Update uptime monitoring settings for an environment
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UptimeSettingsRequest"
+      responses:
+        "204":
+          description: Uptime settings updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /environments/{environmentId}/uptime:
+    get:
+      operationId: getEnvironmentUptime
+      tags: [Environments]
+      summary: Get uptime status, availability and incident history
+      parameters:
+        - $ref: "#/components/parameters/EnvironmentId"
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [24h, 7d, 30d, 90d]
+            default: 24h
+          description: Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+      responses:
+        "200":
+          description: Uptime status and history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UptimeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
   # ──────────────────────────────────────────────
   # Shops
   # ──────────────────────────────────────────────
@@ -4095,6 +4151,186 @@ components:
           items:
             type: string
           maxItems: 5
+
+    # ── Uptime ─────────────────────────────────
+    UptimeSettingsRequest:
+      type: object
+      required:
+        - enabled
+        - intervalSeconds
+        - expectedStatus
+        - failureThreshold
+        - recoveryThreshold
+      properties:
+        enabled:
+          type: boolean
+        url:
+          type: string
+          nullable: true
+          description: Override URL to probe. Null probes the environment URL.
+        intervalSeconds:
+          type: integer
+          minimum: 30
+          maximum: 3600
+        expectedStatus:
+          type: integer
+          description: Expected HTTP status code. 0 accepts any 2xx/3xx.
+        contentMatch:
+          type: string
+          nullable: true
+          description: Optional substring that must appear in the response body.
+        failureThreshold:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Consecutive failing probes before an incident opens.
+        recoveryThreshold:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Consecutive successful probes before recovery.
+
+    UptimeSettings:
+      type: object
+      required:
+        - enabled
+        - intervalSeconds
+        - expectedStatus
+        - failureThreshold
+        - recoveryThreshold
+        - status
+      properties:
+        enabled:
+          type: boolean
+        url:
+          type: string
+          nullable: true
+        intervalSeconds:
+          type: integer
+        expectedStatus:
+          type: integer
+        contentMatch:
+          type: string
+          nullable: true
+        failureThreshold:
+          type: integer
+        recoveryThreshold:
+          type: integer
+        status:
+          type: string
+          enum: [unknown, up, down, paused]
+        lastCheckedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastStatusCode:
+          type: integer
+          nullable: true
+        lastLatencyMs:
+          type: integer
+          nullable: true
+        lastError:
+          type: string
+          nullable: true
+
+    UptimeIncident:
+      type: object
+      required:
+        - id
+        - startedAt
+        - durationSeconds
+      properties:
+        id:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationSeconds:
+          type: integer
+          format: int64
+        statusCode:
+          type: integer
+          nullable: true
+        latencyMs:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    UptimeDay:
+      type: object
+      required:
+        - day
+        - downSeconds
+      properties:
+        day:
+          type: string
+          description: UTC calendar day (YYYY-MM-DD).
+        availability:
+          type: number
+          format: double
+          nullable: true
+          description: Fraction of measured time the shop was up. Null when no data.
+        downSeconds:
+          type: integer
+          format: int64
+
+    UptimeLatencyPoint:
+      type: object
+      required:
+        - timestamp
+        - probesRun
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        avgMs:
+          type: integer
+          nullable: true
+        p95Ms:
+          type: integer
+          nullable: true
+        probesRun:
+          type: integer
+
+    UptimeResponse:
+      type: object
+      required:
+        - settings
+        - days
+        - incidents
+        - latency
+      properties:
+        settings:
+          $ref: "#/components/schemas/UptimeSettings"
+        openIncident:
+          allOf:
+            - $ref: "#/components/schemas/UptimeIncident"
+          nullable: true
+        availability:
+          type: number
+          format: double
+          nullable: true
+          description: Availability over the requested range. Null when no data.
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/UptimeDay"
+          description: Day-by-day history. Empty for the 24h range.
+        incidents:
+          type: array
+          items:
+            $ref: "#/components/schemas/UptimeIncident"
+        latency:
+          type: array
+          items:
+            $ref: "#/components/schemas/UptimeLatencyPoint"
+          description: Hourly latency samples. Only populated for the 24h range.
 
     # ── Shops ────────────────────────────────────
     Shop:

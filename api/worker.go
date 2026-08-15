@@ -21,8 +21,10 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
+	"github.com/friendsofshopware/shopmon/api/internal/notify"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
+	"github.com/friendsofshopware/shopmon/api/internal/uptime"
 	goqueue "github.com/shyim/go-queue"
 	queueotel "github.com/shyim/go-queue/middleware/otel"
 	"github.com/spf13/cobra"
@@ -96,6 +98,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	})
 	securityPluginSync := securityplugin.NewService(pool, q, shopwareaccount.NewClient(
 		cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
+	uptimeService := uptime.NewService(q)
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
 		EnvironmentScraper:         environmentScrape,
 		StoreExtensionSynchronizer: storeSync,
@@ -104,6 +107,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		ChangelogSynchronizer:      changelog,
 		AdvisorySynchronizer:       advisorySync,
 		SecurityPluginSynchronizer: securityPluginSync,
+		UptimeMaintainer:           uptimeService,
 	}); err != nil {
 		return err
 	}
@@ -116,6 +120,20 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	scheduler.Start()
+
+	// The uptime probe loop runs outside the queue: probes are timing-critical
+	// and discardable, so a ticker with bounded concurrency drives them while
+	// only the durable side effects (notifications, daily rollups) take the
+	// queue.
+	var uptimeLoop *uptime.MonitorLoop
+	if cfg.UptimeEnabled {
+		uptimeLoop = uptime.NewMonitorLoop(uptime.MonitorConfig{
+			MaxConcurrent: cfg.UptimeMaxConcurrent,
+			ShardTotal:    cfg.UptimeShardTotal,
+			ShardIndex:    cfg.UptimeShardIndex,
+		}, q, q, uptime.NewHTTPProber(), uptime.NewRecorder(q), uptime.NewNotifier(q, notify.NewDispatcher(q, mailSvc)))
+		uptimeLoop.Start(ctx)
+	}
 
 	// Populate the Shopware version cache immediately on startup so the data is
 	// available without waiting for the first hourly tick. Only versions not yet
@@ -170,6 +188,12 @@ func runWorker(cmd *cobra.Command, args []string) error {
 
 	// Stop scheduling new tasks and wait for any active schedule to finish.
 	schedulerCtx := scheduler.Stop()
+
+	// Stop probing and flush the in-flight hourly rollup before draining the
+	// queue, so shutdown cannot lose already-counted probe data.
+	if uptimeLoop != nil {
+		uptimeLoop.Stop()
+	}
 
 	// worker.Run drains in-flight jobs (bounded by ShutdownTimeout) once ctx is
 	// cancelled. Wait for it to finish before deferred resources (pool, otel) are

@@ -30,6 +30,16 @@ type ComposerAdvisorySync struct{}
 // backports which advisory, derived from the plugin's store changelog.
 type SecurityPluginSync struct{}
 
+// UptimeDailyRollup aggregates the previous day's uptime probes into daily
+// availability rollups and enforces uptime data retention.
+type UptimeDailyRollup struct{}
+
+// UptimeResume re-arms a paused uptime monitor after a deployment's settle
+// window, so probes do not fire while post-deploy tasks are still running.
+type UptimeResume struct {
+	EnvironmentID int32 `json:"environment_id"`
+}
+
 // StoreExtensionSync refreshes the shared store extension catalog for a set of
 // extension names. ShopwareVersion is the version of the environment that
 // requested the sync; it is included in the compatibility probing.

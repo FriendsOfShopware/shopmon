@@ -51,6 +51,16 @@ var registry = map[EventType]eventMeta{
 		emailSubjectKey: "email.dataFetchError.subject",
 		emailDedupTTL:   time.Hour,
 	},
+	EventUptimeDown: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.uptimeDown.subject",
+		emailDedupTTL:   time.Hour,
+	},
+	EventUptimeRecovered: {
+		defaultChannels: []ChannelName{ChannelInApp, ChannelEmail},
+		emailSubjectKey: "email.uptimeRecovered.subject",
+		emailDedupTTL:   time.Hour,
+	},
 }
 
 // metaFor returns the registry entry for an event type, falling back to a safe
@@ -70,6 +80,8 @@ var orderedEventTypes = []EventType{
 	EventAuthError,
 	EventDataFetchError,
 	EventAdvisoryDetected,
+	EventUptimeDown,
+	EventUptimeRecovered,
 }
 
 // EventTypeInfo describes a notifiable event type for the preferences UI.

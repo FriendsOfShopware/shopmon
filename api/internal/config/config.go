@@ -48,6 +48,17 @@ type Config struct {
 	SitespeedPrefix   string `env:"APP_SITESPEED_PREFIX" envDefault:"local-"`
 	SitespeedAPIKey   string `env:"APP_SITESPEED_API_KEY"`
 
+	// UptimeEnabled toggles the external storefront uptime probe loop in the
+	// worker. The API endpoints stay available either way.
+	UptimeEnabled bool `env:"UPTIME_ENABLED" envDefault:"true"`
+	// UptimeShardTotal/UptimeShardIndex split monitors across worker replicas
+	// (environment_id % total == index owns a monitor). Defaults run everything
+	// in one worker.
+	UptimeShardTotal int32 `env:"UPTIME_SHARD_TOTAL" envDefault:"1"`
+	UptimeShardIndex int32 `env:"UPTIME_SHARD_INDEX" envDefault:"0"`
+	// UptimeMaxConcurrent bounds in-flight probes per worker.
+	UptimeMaxConcurrent int `env:"UPTIME_MAX_CONCURRENT" envDefault:"40"`
+
 	S3Endpoint  string `env:"APP_S3_ENDPOINT"`
 	S3AccessKey string `env:"APP_S3_ACCESS_KEY_ID"`
 	S3SecretKey string `env:"APP_S3_SECRET_ACCESS_KEY"`

@@ -387,6 +387,93 @@ export type SitespeedSettingsRequest = {
     urls?: Array<string>;
 };
 
+export type UptimeSettingsRequest = {
+    enabled: boolean;
+    /**
+     * Override URL to probe. Null probes the environment URL.
+     */
+    url?: string | null;
+    intervalSeconds: number;
+    /**
+     * Expected HTTP status code. 0 accepts any 2xx/3xx.
+     */
+    expectedStatus: number;
+    /**
+     * Optional substring that must appear in the response body.
+     */
+    contentMatch?: string | null;
+    /**
+     * Consecutive failing probes before an incident opens.
+     */
+    failureThreshold: number;
+    /**
+     * Consecutive successful probes before recovery.
+     */
+    recoveryThreshold: number;
+};
+
+export type UptimeSettings = {
+    enabled: boolean;
+    url?: string | null;
+    intervalSeconds: number;
+    expectedStatus: number;
+    contentMatch?: string | null;
+    failureThreshold: number;
+    recoveryThreshold: number;
+    status: 'unknown' | 'up' | 'down' | 'paused';
+    lastCheckedAt?: string | null;
+    lastStatusCode?: number | null;
+    lastLatencyMs?: number | null;
+    lastError?: string | null;
+};
+
+export type UptimeIncident = {
+    id: number;
+    startedAt: string;
+    resolvedAt?: string | null;
+    durationSeconds: number;
+    statusCode?: number | null;
+    latencyMs?: number | null;
+    error?: string | null;
+};
+
+export type UptimeDay = {
+    /**
+     * UTC calendar day (YYYY-MM-DD).
+     */
+    day: string;
+    /**
+     * Fraction of measured time the shop was up. Null when no data.
+     */
+    availability?: number | null;
+    downSeconds: number;
+};
+
+export type UptimeLatencyPoint = {
+    timestamp: string;
+    avgMs?: number | null;
+    p95Ms?: number | null;
+    probesRun: number;
+};
+
+export type UptimeResponse = {
+    settings: UptimeSettings;
+    openIncident?: UptimeIncident | null;
+    /**
+     * Availability over the requested range. Null when no data.
+     */
+    availability?: number | null;
+    /**
+     * Day-by-day history. Empty for the 24h range.
+     */
+    days: Array<UptimeDay>;
+    incidents: Array<UptimeIncident>;
+    /**
+     * Hourly latency samples. Only populated for the 24h range.
+     */
+    latency: Array<UptimeLatencyPoint>;
+};
+
 export type Shop = {
     id: number;
     name: string;
@@ -2153,6 +2240,95 @@ export type UpdateSitespeedSettingsResponses = {
      */
     200: unknown;
 };
+
+export type UpdateUptimeSettingsData = {
+    body: UptimeSettingsRequest;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/uptime-settings';
+};
+
+export type UpdateUptimeSettingsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation error
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateUptimeSettingsError = UpdateUptimeSettingsErrors[keyof UpdateUptimeSettingsErrors];
+
+export type UpdateUptimeSettingsResponses = {
+    /**
+     * Uptime settings updated
+     */
+    204: void;
+};
+
+export type UpdateUptimeSettingsResponse = UpdateUptimeSettingsResponses[keyof UpdateUptimeSettingsResponses];
+
+export type GetEnvironmentUptimeData = {
+    body?: never;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: {
+        /**
+         * Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+         */
+        range?: '24h' | '7d' | '30d' | '90d';
+    };
+    url: '/environments/{environmentId}/uptime';
+};
+
+export type GetEnvironmentUptimeErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Insufficient permissions
+     */
+    403: ErrorResponse;
+    /**
+     * Resource not found
+     */
+    404: ErrorResponse;
+    /**
+     * Validation error
+     */
+    422: ErrorResponse;
+};
+
+export type GetEnvironmentUptimeError = GetEnvironmentUptimeErrors[keyof GetEnvironmentUptimeErrors];
+
+export type GetEnvironmentUptimeResponses = {
+    /**
+     * Uptime status and history
+     */
+    200: UptimeResponse;
+};
+
+export type GetEnvironmentUptimeResponse = GetEnvironmentUptimeResponses[keyof GetEnvironmentUptimeResponses];
 
 export type GetOrganizationShopsData = {
     body?: never;

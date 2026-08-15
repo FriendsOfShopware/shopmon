@@ -49,6 +49,11 @@ const (
 	// in bursts (Shopware publishes several advisories at once), and one email
 	// per advisory would mean a handful of messages in the same minute.
 	EventAdvisoryDetected EventType = "advisory_detected"
+	// EventUptimeDown fires when the external storefront uptime probe crosses
+	// its failure threshold and an incident is opened.
+	EventUptimeDown EventType = "uptime_down"
+	// EventUptimeRecovered fires when a downtime incident is resolved.
+	EventUptimeRecovered EventType = "uptime_recovered"
 )
 
 // Link is a frontend route reference attached to a notification.

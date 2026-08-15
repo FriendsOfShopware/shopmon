@@ -14,6 +14,12 @@
   "notification.advisoryDetected.title": "Umgebung: {name} hat neue Sicherheitsmeldungen",
   "notification.advisoryDetected.message": "{count} neue Meldungen betreffen diese Umgebung: {first}",
   "email.advisoryDetected.subject": "{count} neue Sicherheitsmeldungen betreffen {name}",
+  "notification.uptimeDown.title": "Umgebung: {name} ist nicht erreichbar",
+  "notification.uptimeDown.message": "Der Storefront unter {url} ist nicht erreichbar: {reason}",
+  "notification.uptimeRecovered.title": "Umgebung: {name} ist wieder online",
+  "notification.uptimeRecovered.message": "Der Storefront unter {url} ist nach {duration} wieder erreichbar",
+  "email.uptimeDown.subject": "Umgebung {name} ist nicht erreichbar",
+  "email.uptimeRecovered.subject": "Umgebung {name} ist wieder online",
   "email.alertIntro": "Es gibt eine Warnung für die Umgebung **{name}**:",
 
   "check.recommendationSuffix": " (aktuell: {current}, empfohlen: {recommended})",

@@ -273,6 +273,57 @@ type EnvironmentStoreExtension struct {
 	InstalledAt   *string `json:"installed_at"`
 }
 
+type EnvironmentUptime struct {
+	EnvironmentID        int32            `json:"environment_id"`
+	Enabled              bool             `json:"enabled"`
+	Url                  *string          `json:"url"`
+	IntervalSeconds      int32            `json:"interval_seconds"`
+	ExpectedStatus       int32            `json:"expected_status"`
+	ContentMatch         *string          `json:"content_match"`
+	FailureThreshold     int32            `json:"failure_threshold"`
+	RecoveryThreshold    int32            `json:"recovery_threshold"`
+	Status               string           `json:"status"`
+	ConsecutiveFailures  int32            `json:"consecutive_failures"`
+	ConsecutiveSuccesses int32            `json:"consecutive_successes"`
+	NextCheckAt          pgtype.Timestamp `json:"next_check_at"`
+	LastCheckedAt        pgtype.Timestamp `json:"last_checked_at"`
+	LastStatusCode       *int32           `json:"last_status_code"`
+	LastLatencyMs        *int32           `json:"last_latency_ms"`
+	LastError            *string          `json:"last_error"`
+}
+
+type EnvironmentUptimeEvent struct {
+	ID            int32            `json:"id"`
+	EnvironmentID int32            `json:"environment_id"`
+	StartedAt     pgtype.Timestamp `json:"started_at"`
+	ResolvedAt    pgtype.Timestamp `json:"resolved_at"`
+	StatusCode    *int32           `json:"status_code"`
+	LatencyMs     *int32           `json:"latency_ms"`
+	Error         *string          `json:"error"`
+}
+
+type EnvironmentUptimeRollupDaily struct {
+	EnvironmentID int32       `json:"environment_id"`
+	Day           pgtype.Date `json:"day"`
+	UpSeconds     int32       `json:"up_seconds"`
+	DownSeconds   int32       `json:"down_seconds"`
+	PausedSeconds int32       `json:"paused_seconds"`
+	NodataSeconds int32       `json:"nodata_seconds"`
+	LatencyAvgMs  *int32      `json:"latency_avg_ms"`
+	LatencyP95Ms  *int32      `json:"latency_p95_ms"`
+}
+
+type EnvironmentUptimeRollupHourly struct {
+	EnvironmentID  int32            `json:"environment_id"`
+	Hour           pgtype.Timestamp `json:"hour"`
+	ProbesExpected int32            `json:"probes_expected"`
+	ProbesRun      int32            `json:"probes_run"`
+	ProbesOk       int32            `json:"probes_ok"`
+	PausedSeconds  int32            `json:"paused_seconds"`
+	LatencyAvgMs   *int32           `json:"latency_avg_ms"`
+	LatencyP95Ms   *int32           `json:"latency_p95_ms"`
+}
+
 type Invitation struct {
 	ID             string           `json:"id"`
 	OrganizationID string           `json:"organization_id"`

@@ -60,6 +60,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 	suppressionpostgres "github.com/friendsofshopware/shopmon/api/internal/suppression/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
+	"github.com/friendsofshopware/shopmon/api/internal/uptime"
 	"github.com/friendsofshopware/shopmon/api/internal/webui"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -170,6 +171,10 @@ func runServer(cmd *cobra.Command, args []string) error {
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)
+	uptimeService := uptime.NewService(q)
+	// Deployments suspend uptime probes for the settle window; the delayed resume
+	// job re-arms them alongside the post-deployment scrape.
+	deploymentService.WithUptimePauser(uptimeService)
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)
 	ssoService := organizationsso.NewService(ssoRepository, organizationAuthorizer, ssoGateway)
@@ -226,6 +231,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		Advisories:    advisoryReadModel,
 		Suppressions:  suppressionService,
 		AdvisorySync:  jobDispatcher,
+		Uptime:        uptimeService,
 	})
 
 	// Router

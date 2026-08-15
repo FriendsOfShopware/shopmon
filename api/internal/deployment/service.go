@@ -119,6 +119,13 @@ type OutputStore interface {
 
 type PostDeploymentDispatcher interface {
 	DispatchPostDeploymentScrape(ctx context.Context, environmentID int32, delay time.Duration) error
+	DispatchUptimeResume(ctx context.Context, environmentID int32, delay time.Duration) error
+}
+
+// UptimePauser suspends the environment's uptime monitor while a deployment
+// settles. Optional: nil disables deploy-aware pausing.
+type UptimePauser interface {
+	PauseMonitor(ctx context.Context, environmentID int32) error
 }
 
 type Service struct {
@@ -126,6 +133,7 @@ type Service struct {
 	authorizer  MembershipAuthorizer
 	outputs     OutputStore
 	dispatcher  PostDeploymentDispatcher
+	uptime      UptimePauser
 	frontendURL string
 	scrapeDelay time.Duration
 }
@@ -139,6 +147,13 @@ func NewService(repository Repository, authorizer MembershipAuthorizer, outputs 
 		frontendURL: strings.TrimRight(frontendURL, "/"),
 		scrapeDelay: scrapeDelay,
 	}
+}
+
+// WithUptimePauser attaches the uptime monitor pauser used to suspend probes
+// during a deployment's settle window.
+func (s *Service) WithUptimePauser(pauser UptimePauser) *Service {
+	s.uptime = pauser
+	return s
 }
 
 func (s *Service) List(ctx context.Context, userID string, environmentID, limit, offset int32) ([]Deployment, error) {
@@ -327,6 +342,18 @@ func (s *Service) CreateCLI(ctx context.Context, cmd CreateCLICommand) (CreateCL
 	if s.dispatcher != nil {
 		if err := s.dispatcher.DispatchPostDeploymentScrape(ctx, cmd.EnvironmentID, s.scrapeDelay); err != nil {
 			slog.ErrorContext(ctx, "failed to enqueue post-deployment scrape", "environmentId", cmd.EnvironmentID, "error", err)
+		}
+		// Suspend uptime probes for the settle window so post-deploy churn
+		// (theme compile, indexing, cache warming) does not page customers.
+		// The delayed resume job re-arms the monitor at the same horizon as
+		// the post-deployment scrape.
+		if s.uptime != nil {
+			if err := s.uptime.PauseMonitor(ctx, cmd.EnvironmentID); err != nil {
+				slog.ErrorContext(ctx, "failed to pause uptime monitor for deployment", "environmentId", cmd.EnvironmentID, "error", err)
+			}
+			if err := s.dispatcher.DispatchUptimeResume(ctx, cmd.EnvironmentID, s.scrapeDelay); err != nil {
+				slog.ErrorContext(ctx, "failed to enqueue uptime resume", "environmentId", cmd.EnvironmentID, "error", err)
+			}
 		}
 	}
 

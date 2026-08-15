@@ -13,6 +13,7 @@ import FaFileWaveform from "~icons/fa6-solid/file-waveform";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaPlug from "~icons/fa6-solid/plug";
 import FaRocket from "~icons/fa6-solid/rocket";
+import FaHeartPulse from "~icons/fa6-solid/heart-pulse";
 import FaCodeBranch from "~icons/fa6-solid/code-branch";
 import Dashboard from "~icons/ri/dashboard-fill";
 import FaFolder from "~icons/fa6-solid/folder";
@@ -208,6 +209,15 @@ export const routes: RouteRecordRaw[] = [
             meta: {
               titleKey: "nav.sitespeed",
               icon: FaRocket,
+            },
+          },
+          {
+            name: "account.environments.detail.uptime",
+            path: "uptime",
+            component: () => import("@/views/environment/detail/DetailUptime.vue"),
+            meta: {
+              titleKey: "nav.uptime",
+              icon: FaHeartPulse,
             },
           },
           {

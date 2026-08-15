@@ -46,6 +46,30 @@ func (e SeverityLevel) Valid() bool {
 	}
 }
 
+// Defines values for UptimeSettingsStatus.
+const (
+	Down    UptimeSettingsStatus = "down"
+	Paused  UptimeSettingsStatus = "paused"
+	Unknown UptimeSettingsStatus = "unknown"
+	Up      UptimeSettingsStatus = "up"
+)
+
+// Valid indicates whether the value is a known member of the UptimeSettingsStatus enum.
+func (e UptimeSettingsStatus) Valid() bool {
+	switch e {
+	case Down:
+		return true
+	case Paused:
+		return true
+	case Unknown:
+		return true
+	case Up:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AdvisoryScope.
 const (
 	AdvisoryScopeAffected   AdvisoryScope = "affected"
@@ -343,6 +367,30 @@ func (e GetEnvironmentParamsLanguage) Valid() bool {
 	case GetEnvironmentParamsLanguageDe:
 		return true
 	case GetEnvironmentParamsLanguageEn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetEnvironmentUptimeParamsRange.
+const (
+	N24h GetEnvironmentUptimeParamsRange = "24h"
+	N30d GetEnvironmentUptimeParamsRange = "30d"
+	N7d  GetEnvironmentUptimeParamsRange = "7d"
+	N90d GetEnvironmentUptimeParamsRange = "90d"
+)
+
+// Valid indicates whether the value is a known member of the GetEnvironmentUptimeParamsRange enum.
+func (e GetEnvironmentUptimeParamsRange) Valid() bool {
+	switch e {
+	case N24h:
+		return true
+	case N30d:
+		return true
+	case N7d:
+		return true
+	case N90d:
 		return true
 	default:
 		return false
@@ -1409,6 +1457,89 @@ type UpdateSsoProviderRequest struct {
 	TokenEndpoint         string  `json:"tokenEndpoint"`
 }
 
+// UptimeDay defines model for UptimeDay.
+type UptimeDay struct {
+	// Availability Fraction of measured time the shop was up. Null when no data.
+	Availability *float64 `json:"availability,omitempty"`
+
+	// Day UTC calendar day (YYYY-MM-DD).
+	Day         string `json:"day"`
+	DownSeconds int64  `json:"downSeconds"`
+}
+
+// UptimeIncident defines model for UptimeIncident.
+type UptimeIncident struct {
+	DurationSeconds int64      `json:"durationSeconds"`
+	Error           *string    `json:"error,omitempty"`
+	Id              int        `json:"id"`
+	LatencyMs       *int       `json:"latencyMs,omitempty"`
+	ResolvedAt      *time.Time `json:"resolvedAt,omitempty"`
+	StartedAt       time.Time  `json:"startedAt"`
+	StatusCode      *int       `json:"statusCode,omitempty"`
+}
+
+// UptimeLatencyPoint defines model for UptimeLatencyPoint.
+type UptimeLatencyPoint struct {
+	AvgMs     *int      `json:"avgMs,omitempty"`
+	P95Ms     *int      `json:"p95Ms,omitempty"`
+	ProbesRun int       `json:"probesRun"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// UptimeResponse defines model for UptimeResponse.
+type UptimeResponse struct {
+	// Availability Availability over the requested range. Null when no data.
+	Availability *float64 `json:"availability,omitempty"`
+
+	// Days Day-by-day history. Empty for the 24h range.
+	Days      []UptimeDay      `json:"days"`
+	Incidents []UptimeIncident `json:"incidents"`
+
+	// Latency Hourly latency samples. Only populated for the 24h range.
+	Latency      []UptimeLatencyPoint `json:"latency"`
+	OpenIncident *UptimeIncident      `json:"openIncident,omitempty"`
+	Settings     UptimeSettings       `json:"settings"`
+}
+
+// UptimeSettings defines model for UptimeSettings.
+type UptimeSettings struct {
+	ContentMatch      *string              `json:"contentMatch,omitempty"`
+	Enabled           bool                 `json:"enabled"`
+	ExpectedStatus    int                  `json:"expectedStatus"`
+	FailureThreshold  int                  `json:"failureThreshold"`
+	IntervalSeconds   int                  `json:"intervalSeconds"`
+	LastCheckedAt     *time.Time           `json:"lastCheckedAt,omitempty"`
+	LastError         *string              `json:"lastError,omitempty"`
+	LastLatencyMs     *int                 `json:"lastLatencyMs,omitempty"`
+	LastStatusCode    *int                 `json:"lastStatusCode,omitempty"`
+	RecoveryThreshold int                  `json:"recoveryThreshold"`
+	Status            UptimeSettingsStatus `json:"status"`
+	Url               *string              `json:"url,omitempty"`
+}
+
+// UptimeSettingsStatus defines model for UptimeSettings.Status.
+type UptimeSettingsStatus string
+
+// UptimeSettingsRequest defines model for UptimeSettingsRequest.
+type UptimeSettingsRequest struct {
+	// ContentMatch Optional substring that must appear in the response body.
+	ContentMatch *string `json:"contentMatch,omitempty"`
+	Enabled      bool    `json:"enabled"`
+
+	// ExpectedStatus Expected HTTP status code. 0 accepts any 2xx/3xx.
+	ExpectedStatus int `json:"expectedStatus"`
+
+	// FailureThreshold Consecutive failing probes before an incident opens.
+	FailureThreshold int `json:"failureThreshold"`
+	IntervalSeconds  int `json:"intervalSeconds"`
+
+	// RecoveryThreshold Consecutive successful probes before recovery.
+	RecoveryThreshold int `json:"recoveryThreshold"`
+
+	// Url Override URL to probe. Null probes the environment URL.
+	Url *string `json:"url,omitempty"`
+}
+
 // UserProfile defines model for UserProfile.
 type UserProfile struct {
 	CreatedAt   time.Time           `json:"createdAt"`
@@ -1654,6 +1785,15 @@ type RefreshEnvironmentJSONBody struct {
 	Sitespeed *bool `json:"sitespeed,omitempty"`
 }
 
+// GetEnvironmentUptimeParams defines parameters for GetEnvironmentUptime.
+type GetEnvironmentUptimeParams struct {
+	// Range Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+	Range *GetEnvironmentUptimeParamsRange `form:"range,omitempty" json:"range,omitempty"`
+}
+
+// GetEnvironmentUptimeParamsRange defines parameters for GetEnvironmentUptime.
+type GetEnvironmentUptimeParamsRange string
+
 // DiscoverSsoParams defines parameters for DiscoverSso.
 type DiscoverSsoParams struct {
 	Issuer string `form:"issuer" json:"issuer"`
@@ -1691,6 +1831,9 @@ type RefreshEnvironmentJSONRequestBody RefreshEnvironmentJSONBody
 
 // UpdateSitespeedSettingsJSONRequestBody defines body for UpdateSitespeedSettings for application/json ContentType.
 type UpdateSitespeedSettingsJSONRequestBody = SitespeedSettingsRequest
+
+// UpdateUptimeSettingsJSONRequestBody defines body for UpdateUptimeSettings for application/json ContentType.
+type UpdateUptimeSettingsJSONRequestBody = UptimeSettingsRequest
 
 // CheckExtensionCompatibilityJSONRequestBody defines body for CheckExtensionCompatibility for application/json ContentType.
 type CheckExtensionCompatibilityJSONRequestBody = ExtensionCompatibilityRequest
@@ -1853,6 +1996,12 @@ type ServerInterface interface {
 	// Reschedule a scheduled task
 	// (POST /environments/{environmentId}/tasks/{taskId}/reschedule)
 	RescheduleTask(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, taskId TaskId)
+	// Get uptime status, availability and incident history
+	// (GET /environments/{environmentId}/uptime)
+	GetEnvironmentUptime(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentUptimeParams)
+	// Update uptime monitoring settings for an environment
+	// (PUT /environments/{environmentId}/uptime-settings)
+	UpdateUptimeSettings(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId)
 	// Health check
 	// (GET /health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -2225,6 +2374,18 @@ func (_ Unimplemented) SubscribeToEnvironment(w http.ResponseWriter, r *http.Req
 // Reschedule a scheduled task
 // (POST /environments/{environmentId}/tasks/{taskId}/reschedule)
 func (_ Unimplemented) RescheduleTask(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, taskId TaskId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get uptime status, availability and incident history
+// (GET /environments/{environmentId}/uptime)
+func (_ Unimplemented) GetEnvironmentUptime(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId, params GetEnvironmentUptimeParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update uptime monitoring settings for an environment
+// (PUT /environments/{environmentId}/uptime-settings)
+func (_ Unimplemented) UpdateUptimeSettings(w http.ResponseWriter, r *http.Request, environmentId EnvironmentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4353,6 +4514,86 @@ func (siw *ServerInterfaceWrapper) RescheduleTask(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// GetEnvironmentUptime operation middleware
+func (siw *ServerInterfaceWrapper) GetEnvironmentUptime(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEnvironmentUptimeParams
+
+	// ------------- Optional query parameter "range" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "range", r.URL.Query(), &params.Range, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "range"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "range", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEnvironmentUptime(w, r, environmentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateUptimeSettings operation middleware
+func (siw *ServerInterfaceWrapper) UpdateUptimeSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "environmentId" -------------
+	var environmentId EnvironmentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "environmentId", chi.URLParam(r, "environmentId"), &environmentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "environmentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateUptimeSettings(w, r, environmentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -5530,6 +5771,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/environments/{environmentId}/tasks/{taskId}/reschedule", wrapper.RescheduleTask)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/environments/{environmentId}/uptime", wrapper.GetEnvironmentUptime)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/environments/{environmentId}/uptime-settings", wrapper.UpdateUptimeSettings)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/health", wrapper.GetHealth)

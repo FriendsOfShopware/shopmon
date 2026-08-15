@@ -311,6 +311,7 @@ import FaClockRotateLeft from "~icons/fa6-solid/clock-rotate-left";
 import FaPlug from "~icons/fa6-solid/plug";
 import FaListCheck from "~icons/fa6-solid/list-check";
 import FaRocket from "~icons/fa6-solid/rocket";
+import FaHeartPulse from "~icons/fa6-solid/heart-pulse";
 import FaFileWaveform from "~icons/fa6-solid/file-waveform";
 import FaCodeBranch from "~icons/fa6-solid/code-branch";
 
@@ -408,6 +409,12 @@ const tabs = computed(() => {
           },
         ]
       : []),
+    {
+      route: "account.environments.detail.uptime",
+      label: t("nav.uptime"),
+      icon: FaHeartPulse,
+      count: 0,
+    },
     {
       route: "account.environments.detail.changelog",
       label: t("nav.changelog"),

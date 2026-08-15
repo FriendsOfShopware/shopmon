@@ -21,6 +21,9 @@ const (
 	// Offset from the advisory sync so the backport map is refreshed before the
 	// next advisory pass rather than racing it.
 	securityPluginSyncSchedule = "37 * * * *"
+	// Aggregate the previous UTC day's uptime probes into daily availability
+	// rollups and enforce retention. Runs shortly after midnight UTC.
+	uptimeDailyRollupSchedule = "10 0 * * *"
 )
 
 type ScheduledEnvironment struct {
@@ -42,6 +45,7 @@ type ScheduleDispatcher interface {
 	EnqueueShopwareChangelogSync(ctx context.Context) error
 	EnqueueComposerAdvisorySync(ctx context.Context) error
 	EnqueueSecurityPluginSync(ctx context.Context) error
+	EnqueueUptimeDailyRollup(ctx context.Context) error
 }
 
 type SchedulerConfig struct {
@@ -141,6 +145,14 @@ func (s *Scheduler) register() error {
 			run: func() {
 				ctx := context.Background()
 				s.logDispatchError(ctx, "composer advisory sync", s.dispatcher.EnqueueComposerAdvisorySync(ctx))
+			},
+		},
+		{
+			name:     "uptime daily rollup",
+			schedule: uptimeDailyRollupSchedule,
+			run: func() {
+				ctx := context.Background()
+				s.logDispatchError(ctx, "uptime daily rollup", s.dispatcher.EnqueueUptimeDailyRollup(ctx))
 			},
 		},
 	}

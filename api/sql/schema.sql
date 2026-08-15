@@ -389,6 +389,61 @@ CREATE TABLE "environment_status_event" (
 
 CREATE INDEX "idx_environment_status_event_env" ON "environment_status_event" ("environment_id", "created_at" DESC);
 
+CREATE TABLE "environment_uptime" (
+  "environment_id" integer PRIMARY KEY REFERENCES "environment"("id") ON DELETE cascade,
+  "enabled" boolean NOT NULL DEFAULT false,
+  "url" text,
+  "interval_seconds" integer NOT NULL DEFAULT 60,
+  "expected_status" integer NOT NULL DEFAULT 0,
+  "content_match" text,
+  "failure_threshold" integer NOT NULL DEFAULT 3,
+  "recovery_threshold" integer NOT NULL DEFAULT 2,
+  "status" text NOT NULL DEFAULT 'unknown',
+  "consecutive_failures" integer NOT NULL DEFAULT 0,
+  "consecutive_successes" integer NOT NULL DEFAULT 0,
+  "next_check_at" timestamp,
+  "last_checked_at" timestamp,
+  "last_status_code" integer,
+  "last_latency_ms" integer,
+  "last_error" text
+);
+
+CREATE TABLE "environment_uptime_event" (
+  "id" serial PRIMARY KEY NOT NULL,
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "started_at" timestamp NOT NULL,
+  "resolved_at" timestamp,
+  "status_code" integer,
+  "latency_ms" integer,
+  "error" text
+);
+
+CREATE INDEX "idx_environment_uptime_event_env" ON "environment_uptime_event" ("environment_id", "started_at" DESC);
+
+CREATE TABLE "environment_uptime_rollup_hourly" (
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "hour" timestamp NOT NULL,
+  "probes_expected" integer NOT NULL DEFAULT 0,
+  "probes_run" integer NOT NULL DEFAULT 0,
+  "probes_ok" integer NOT NULL DEFAULT 0,
+  "paused_seconds" integer NOT NULL DEFAULT 0,
+  "latency_avg_ms" integer,
+  "latency_p95_ms" integer,
+  PRIMARY KEY ("environment_id", "hour")
+);
+
+CREATE TABLE "environment_uptime_rollup_daily" (
+  "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,
+  "day" date NOT NULL,
+  "up_seconds" integer NOT NULL DEFAULT 0,
+  "down_seconds" integer NOT NULL DEFAULT 0,
+  "paused_seconds" integer NOT NULL DEFAULT 0,
+  "nodata_seconds" integer NOT NULL DEFAULT 0,
+  "latency_avg_ms" integer,
+  "latency_p95_ms" integer,
+  PRIMARY KEY ("environment_id", "day")
+);
+
 CREATE TABLE "notification_preference" (
   "id" serial PRIMARY KEY NOT NULL,
   "user_id" text NOT NULL REFERENCES "user"("id") ON DELETE cascade,

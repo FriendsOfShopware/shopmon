@@ -53,6 +53,10 @@ func TestRecordHelpersEmitLowCardinalityAttributes(t *testing.T) {
 	RecordSitespeedOutcome(ctx, OutcomeError)
 	RecordMailSend(ctx, OutcomeOK)
 	RecordNotifyDelivery(ctx, OutcomeError, ChannelEmail)
+	RecordUptimeProbe(ctx, OutcomeOK)
+	RecordUptimeProbe(ctx, "connection reset") // coerced to unknown
+	RecordUptimeTransition(ctx, TransitionDown)
+	RecordUptimeTransition(ctx, "flap") // coerced to unknown
 
 	var rm metricdata.ResourceMetrics
 	require.NoError(t, reader.Collect(ctx, &rm))
@@ -65,6 +69,10 @@ func TestRecordHelpersEmitLowCardinalityAttributes(t *testing.T) {
 	assert.Equal(t, int64(1), counts["shopmon.mail.send|outcome=ok"])
 	// Attribute iteration is sorted by key, so channel precedes outcome.
 	assert.Equal(t, int64(1), counts["shopmon.notify.delivery|channel=email|outcome=error"])
+	assert.Equal(t, int64(1), counts["shopmon.uptime.probe|outcome=ok"])
+	assert.Equal(t, int64(1), counts["shopmon.uptime.probe|outcome=unknown"])
+	assert.Equal(t, int64(1), counts["shopmon.uptime.transition|transition=down"])
+	assert.Equal(t, int64(1), counts["shopmon.uptime.transition|transition=unknown"])
 }
 
 func TestRecordWithoutRegisterIsNoop(t *testing.T) {
@@ -75,6 +83,8 @@ func TestRecordWithoutRegisterIsNoop(t *testing.T) {
 	sitespeedOutcome = nil
 	mailSend = nil
 	notifyDelivery = nil
+	uptimeProbe = nil
+	uptimeTransition = nil
 	mu.Unlock()
 
 	assert.NotPanics(t, func() {

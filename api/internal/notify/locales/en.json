@@ -13,7 +13,13 @@
   "email.dataFetchError.subject": "Environment {name} could not be updated",
   "notification.advisoryDetected.title": "Environment: {name} has new security advisories",
   "notification.advisoryDetected.message": "{count} new advisories affect this environment: {first}",
+  "notification.uptimeDown.title": "Environment: {name} is down",
+  "notification.uptimeDown.message": "The storefront at {url} is not reachable: {reason}",
+  "notification.uptimeRecovered.title": "Environment: {name} is back online",
+  "notification.uptimeRecovered.message": "The storefront at {url} is reachable again after {duration}",
   "email.advisoryDetected.subject": "{count} new security advisories affect {name}",
+  "email.uptimeDown.subject": "Environment {name} is down",
+  "email.uptimeRecovered.subject": "Environment {name} is back online",
   "email.alertIntro": "There is an alert for environment **{name}**:",
 
   "check.recommendationSuffix": " (current: {current}, recommended: {recommended})",

@@ -42,6 +42,8 @@ var (
 	sitespeedOutcome metric.Int64Counter
 	mailSend         metric.Int64Counter
 	notifyDelivery   metric.Int64Counter
+	uptimeProbe      metric.Int64Counter
+	uptimeTransition metric.Int64Counter
 )
 
 // Register creates the shopmon outcome instruments on the global MeterProvider.
@@ -70,6 +72,14 @@ func Register() {
 		metric.WithDescription("Notification channel delivery attempts"),
 		metric.WithUnit("{delivery}"),
 	)
+	uptime, _ := m.Int64Counter("shopmon.uptime.probe",
+		metric.WithDescription("External uptime probe outcomes"),
+		metric.WithUnit("{probe}"),
+	)
+	uptimeTransitions, _ := m.Int64Counter("shopmon.uptime.transition",
+		metric.WithDescription("Uptime state transitions; a burst of downs indicates probe-infrastructure trouble"),
+		metric.WithUnit("{transition}"),
+	)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -78,6 +88,8 @@ func Register() {
 	sitespeedOutcome = sitespeed
 	mailSend = mail
 	notifyDelivery = notify
+	uptimeProbe = uptime
+	uptimeTransition = uptimeTransitions
 }
 
 // RecordScrapeOutcome increments shopmon.scrape.outcome.
@@ -115,6 +127,34 @@ func RecordNotifyDelivery(ctx context.Context, outcome, channel string) {
 		attribute.String("outcome", NormalizeMailOutcome(outcome)),
 		attribute.String("channel", NormalizeNotifyChannel(channel)),
 	))
+}
+
+// Transition values for uptime state changes.
+const (
+	TransitionDown = "down"
+	TransitionUp   = "up"
+)
+
+// RecordUptimeProbe increments shopmon.uptime.probe.
+// Allowed outcomes: ok, error.
+func RecordUptimeProbe(ctx context.Context, outcome string) {
+	add(ctx, uptimeProbeCounter(), "outcome", NormalizeMailOutcome(outcome))
+}
+
+// RecordUptimeTransition increments shopmon.uptime.transition.
+// Allowed transitions: down, up.
+func RecordUptimeTransition(ctx context.Context, transition string) {
+	add(ctx, uptimeTransitionCounter(), "transition", NormalizeUptimeTransition(transition))
+}
+
+// NormalizeUptimeTransition maps arbitrary strings onto down|up|unknown.
+func NormalizeUptimeTransition(transition string) string {
+	switch transition {
+	case TransitionDown, TransitionUp:
+		return transition
+	default:
+		return OutcomeUnknown
+	}
 }
 
 // NormalizeScrapeOutcome maps arbitrary strings onto the scrape outcome enum.
@@ -202,4 +242,16 @@ func notifyCounter() metric.Int64Counter {
 	mu.RLock()
 	defer mu.RUnlock()
 	return notifyDelivery
+}
+
+func uptimeProbeCounter() metric.Int64Counter {
+	mu.RLock()
+	defer mu.RUnlock()
+	return uptimeProbe
+}
+
+func uptimeTransitionCounter() metric.Int64Counter {
+	mu.RLock()
+	defer mu.RUnlock()
+	return uptimeTransition
 }

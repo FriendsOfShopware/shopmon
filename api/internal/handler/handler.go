@@ -18,6 +18,7 @@ import (
 	advisoryread "github.com/friendsofshopware/shopmon/api/internal/readmodel/advisory"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 	"github.com/friendsofshopware/shopmon/api/internal/suppression"
+	"github.com/friendsofshopware/shopmon/api/internal/uptime"
 )
 
 // AdvisorySyncDispatcher enqueues a Packagist advisory sync job.
@@ -60,6 +61,7 @@ type Dependencies struct {
 	Advisories    *advisoryread.Service
 	AdvisorySync  AdvisorySyncDispatcher
 	Suppressions  *suppression.Service
+	Uptime        *uptime.Service
 }
 
 type Handler struct {
@@ -77,6 +79,7 @@ type Handler struct {
 	advisories    *advisoryread.Service
 	advisorySync  AdvisorySyncDispatcher
 	suppressions  *suppression.Service
+	uptime        *uptime.Service
 }
 
 func New(dependencies Dependencies) *Handler {
@@ -95,6 +98,7 @@ func New(dependencies Dependencies) *Handler {
 		advisories:    dependencies.Advisories,
 		advisorySync:  dependencies.AdvisorySync,
 		suppressions:  dependencies.Suppressions,
+		uptime:        dependencies.Uptime,
 	}
 }
 

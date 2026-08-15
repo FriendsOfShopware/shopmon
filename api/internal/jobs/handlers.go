@@ -37,6 +37,12 @@ type AdvisorySynchronizer interface {
 	Sync(ctx context.Context) error
 }
 
+// UptimeMaintainer aggregates daily uptime rollups and applies retention.
+type UptimeMaintainer interface {
+	RunDailyMaintenance(ctx context.Context) error
+	ResumeMonitor(ctx context.Context, environmentID int32) error
+}
+
 // Handlers is the worker-side composition boundary. Construct these services
 // in the worker root; dispatch-only processes do not need them.
 type Handlers struct {
@@ -47,6 +53,7 @@ type Handlers struct {
 	ChangelogSynchronizer      ChangelogSynchronizer
 	AdvisorySynchronizer       AdvisorySynchronizer
 	SecurityPluginSynchronizer SecurityPluginSynchronizer
+	UptimeMaintainer           UptimeMaintainer
 }
 
 func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
@@ -73,6 +80,9 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 	}
 	if handlers.SecurityPluginSynchronizer == nil {
 		return errors.New("register job handlers: security plugin synchronizer is required")
+	}
+	if handlers.UptimeMaintainer == nil {
+		return errors.New("register job handlers: uptime maintainer is required")
 	}
 
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message EnvironmentScrape) error {
@@ -109,6 +119,14 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ SecurityPluginSync) error {
 		return handlers.SecurityPluginSynchronizer.Sync(ctx)
+	})
+	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ UptimeDailyRollup) error {
+		return handlers.UptimeMaintainer.RunDailyMaintenance(ctx)
+	})
+	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message UptimeResume) error {
+		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
+			return handlers.UptimeMaintainer.ResumeMonitor(ctx, message.EnvironmentID)
+		})
 	})
 	return nil
 }
