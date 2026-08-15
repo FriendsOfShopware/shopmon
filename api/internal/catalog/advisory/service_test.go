@@ -150,3 +150,54 @@ func TestSyncCollapsesPackagesUnderCVE(t *testing.T) {
 }
 
 func ptr(s string) *string { return &s }
+
+// A Packagist outage must not hold back alerts for matches that scrapes have
+// already stored. The scrape path records match rows but never notifies —
+// notification is the rematch's job — so returning early on a sync failure
+// would keep those advisories silent for the whole outage rather than the
+// usual hour.
+func TestSyncRematchesEvenWhenPackagistFails(t *testing.T) {
+	env := testutil.Setup(t)
+	ctx := context.Background()
+
+	env.SeedUser(t, "user-1", "Owner", "owner@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Org One", "org-one", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Shop One")
+	envID := int32(env.SeedEnvironment(t, "org-1", shopID, "prod", "https://example.com"))
+
+	// A catalog entry and an inventory that already match: exactly the state a
+	// scrape leaves behind between syncs.
+	_, err := env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory (advisory_id, title, severity, is_visible)
+		VALUES ('CVE-OUTAGE-1', 'Stored advisory', 'high', true)
+	`)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO composer_advisory_package (advisory_id, package_name, packagist_advisory_id, affected_versions)
+		VALUES ('CVE-OUTAGE-1', 'symfony/http-kernel', 'PKSA-outage-1', '>=6.4.0,<6.4.3')
+	`)
+	require.NoError(t, err)
+	_, err = env.Pool.Exec(ctx, `
+		INSERT INTO environment_sbom_component (environment_id, package_name, version)
+		VALUES ($1, 'symfony/http-kernel', '6.4.2')
+	`, envID)
+	require.NoError(t, err)
+
+	// Every Packagist request fails, so syncFromPackagist returns an error.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "upstream unavailable", http.StatusServiceUnavailable)
+	}))
+	t.Cleanup(server.Close)
+
+	svc := catalogadvisory.NewServiceWithClient(env.Pool, env.Queries, server.URL, server.Client())
+
+	// Sync still reports the failure: the outage must stay visible.
+	require.Error(t, svc.Sync(ctx))
+
+	// ...but the stored catalog was rematched, so the advisory is on record for
+	// this environment and can be alerted on.
+	matches, err := env.Queries.GetEnvironmentAdvisoryMatches(ctx, envID)
+	require.NoError(t, err)
+	require.Len(t, matches, 1, "a Packagist outage must not skip the rematch")
+	assert.Equal(t, "CVE-OUTAGE-1", matches[0].AdvisoryID)
+}

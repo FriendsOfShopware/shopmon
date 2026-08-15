@@ -117,6 +117,14 @@ func (s *Service) Sync(ctx context.Context) error {
 		})
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		// The stored catalog is still valid, and scrapes keep recording matches
+		// against it without alerting anyone — the notification is the rematch's
+		// job. Returning here would hold those alerts back for the whole outage,
+		// so rematch the existing catalog before reporting the failure.
+		if _, rematchErr := s.rematchEnvironments(ctx); rematchErr != nil {
+			slog.WarnContext(ctx, "advisory rematch after packagist failure incomplete", "error", rematchErr)
+			span.RecordError(rematchErr)
+		}
 		return err
 	}
 
