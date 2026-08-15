@@ -25,6 +25,7 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
+	github.com/shyim/go-composer v0.1.3
 	github.com/shyim/go-mailer v0.1.0
 	github.com/shyim/go-mailer/middleware/otelmw v0.1.0
 	github.com/shyim/go-mailer/transport/smtp v0.1.0

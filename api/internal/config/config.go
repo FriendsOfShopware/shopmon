@@ -56,6 +56,12 @@ type Config struct {
 
 	GithubClientID     string `env:"APP_OAUTH_GITHUB_CLIENT_ID"`
 	GithubClientSecret string `env:"APP_OAUTH_GITHUB_CLIENT_SECRET"`
+	// GithubToken is an optional personal access token used for GitHub API
+	// calls that enrich security advisories without a CVE (higher rate limits).
+	GithubToken string `env:"GITHUB_TOKEN,expand" envDefault:"${APP_GITHUB_TOKEN}"`
+	// NVDAPIKey is an optional NIST NVD API key for higher rate limits when
+	// enriching CVE descriptions from services.nvd.nist.gov.
+	NVDAPIKey string `env:"NVD_API_KEY,expand" envDefault:"${APP_NVD_API_KEY}"`
 
 	PackagesAPIURL   string `env:"PACKAGES_API_URL"`
 	PackagesAPIToken string `env:"PACKAGES_API_TOKEN"`

@@ -22,3 +22,10 @@ func Compare(a, b string) int {
 	}
 	return va.Compare(vb)
 }
+
+// Satisfies reports whether version matches a Composer constraint string
+// (e.g. ">=6.7.0.0,<6.7.10.1" or "<6.6.10.18|>=6.7.0.0,<6.7.10.1").
+// Invalid version or constraint strings return false with a non-nil error.
+func Satisfies(version, constraint string) (bool, error) {
+	return goversion.Satisfies(version, constraint)
+}

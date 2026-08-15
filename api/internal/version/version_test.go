@@ -21,3 +21,26 @@ func TestCompare(t *testing.T) {
 		}
 	}
 }
+
+func TestSatisfies(t *testing.T) {
+	cases := []struct {
+		version, constraint string
+		want                bool
+	}{
+		{"6.7.5.0", ">=6.7.0.0,<6.7.10.1", true},
+		{"6.7.10.1", ">=6.7.0.0,<6.7.10.1", false},
+		{"6.6.10.0", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", true},
+		{"6.6.10.18", "<6.6.10.18|>=6.7.0.0,<6.7.10.1", false},
+		{"6.5.0.0", ">=6.7.0.0,<6.7.10.1", false},
+	}
+	for _, c := range cases {
+		got, err := Satisfies(c.version, c.constraint)
+		if err != nil {
+			t.Errorf("Satisfies(%q, %q) unexpected error: %v", c.version, c.constraint, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("Satisfies(%q, %q) = %v, want %v", c.version, c.constraint, got, c.want)
+		}
+	}
+}
