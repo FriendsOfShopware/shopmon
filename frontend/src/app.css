@@ -206,6 +206,36 @@
     @apply font-semibold text-foreground;
   }
   .richtext code {
-    @apply rounded bg-muted px-1.5 py-0.5 text-sm;
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[13px];
+  }
+  /* Fenced code blocks from advisory write-ups (PoC, vulnerable code) must
+     scroll instead of stretching the card, and must not double up on the
+     inline-code background. */
+  .richtext pre {
+    @apply mb-3 overflow-x-auto rounded-lg bg-muted p-3;
+  }
+  .richtext pre code {
+    @apply bg-transparent p-0 font-mono text-[13px] leading-relaxed;
+  }
+  .richtext blockquote {
+    @apply mb-3 border-l-2 border-border pl-3 text-muted-foreground;
+  }
+  .richtext table {
+    @apply mb-3 w-full text-left text-[13px];
+  }
+  .richtext th,
+  .richtext td {
+    @apply border-b border-border px-2 py-1.5;
+  }
+  .richtext th {
+    @apply font-semibold;
+  }
+  .richtext hr {
+    @apply my-4 border-border;
+  }
+  /* Long autolinks and unbroken tokens inside prose must wrap, not overflow
+     the card. */
+  .richtext a {
+    @apply break-all;
   }
 }
