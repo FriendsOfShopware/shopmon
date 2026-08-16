@@ -25,6 +25,10 @@ var ignoredFroshChecks = map[string]bool{
 	"not-prod":             true,
 	"adminWorkerGood":      true,
 	"adminWorkerWarning":   true,
+	// Duplicated by the Security source, which matches the SBOM against the
+	// composer_advisory catalog with per-package detail and suppressions —
+	// the FroshTools counter adds a second red status without any of that.
+	"Composer security advisories": true,
 }
 
 func checkFroshTools(ctx context.Context, input Input, output *Output) {

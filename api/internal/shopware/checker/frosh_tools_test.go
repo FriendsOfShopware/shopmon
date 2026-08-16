@@ -79,6 +79,14 @@ func TestMapFroshChecks(t *testing.T) {
 			wantKey:     "check.frosh.scheduledTaskWarning",
 		},
 		{
+			name:        "composer security advisories stays green despite duplicating the Security source",
+			check:       froshToolsCheck{Snippet: "Composer security advisories", State: "STATE_ERROR"},
+			wantEmitted: true,
+			wantID:      "frosh.Composer security advisories",
+			wantLevel:   StatusGreen,
+			wantKey:     "check.frosh.Composer security advisories",
+		},
+		{
 			name:        "unknown snippet still keyed, snippet param carries fallback",
 			check:       froshToolsCheck{Snippet: "somethingCustom", State: "STATE_OK"},
 			wantEmitted: true,
