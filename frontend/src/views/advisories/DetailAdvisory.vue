@@ -477,15 +477,22 @@
                 <div class="text-xs font-medium text-muted-foreground">
                   {{ $t("advisories.sources") }}
                 </div>
-                <div class="mt-1 flex flex-wrap gap-1">
-                  <Badge
+                <!-- The remote id is the useful identifier (CVE/GHSA); the
+                     source name only says where it was synced from, so it is
+                     the secondary label rather than cramming both into one
+                     overflowing badge. -->
+                <ul class="mt-1.5 space-y-1.5">
+                  <li
                     v-for="(src, i) in advisory.sources"
                     :key="i"
-                    variant="outline"
-                    class="font-mono text-[10px]"
-                    >{{ src.name }}: {{ src.remoteId }}</Badge
+                    class="flex items-center justify-between gap-2"
                   >
-                </div>
+                    <span class="truncate text-xs text-muted-foreground">{{ src.name }}</span>
+                    <Badge variant="outline" class="shrink-0 font-mono text-[10px]">
+                      {{ src.remoteId }}
+                    </Badge>
+                  </li>
+                </ul>
               </div>
             </CardContent>
           </Card>
