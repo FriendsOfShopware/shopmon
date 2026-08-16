@@ -177,7 +177,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)
-	uptimeService := uptime.NewService(q)
+	uptimeService := uptime.NewService(pool, q)
 	deploymentService.WithUptimePauser(uptimeService)
 	ssoRepository := ssopostgres.NewRepository(q)
 	ssoGateway := ssooidc.NewGateway(15 * time.Second)

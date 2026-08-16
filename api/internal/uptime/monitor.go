@@ -16,6 +16,10 @@ import (
 // state transition and incident resolution happen regardless.
 const minRecoveryNotifyDuration = 2 * time.Minute
 
+// stopGraceMargin is added to ProbeTimeout to bound how long Stop waits for
+// in-flight probes before cancelling them.
+const stopGraceMargin = 5 * time.Second
+
 // MonitorConfig tunes the probe loop.
 type MonitorConfig struct {
 	// TickInterval is how often the loop looks for due monitors. Keep this
@@ -30,12 +34,12 @@ type MonitorConfig struct {
 	ShardTotal int32
 	ShardIndex int32
 	// BreakerWindow/BreakerThreshold implement the mass-down circuit breaker:
-	// if at least BreakerThreshold monitors go down within BreakerWindow, the
-	// cause is almost certainly the probe infrastructure, not the shops, and
-	// customer notifications are suppressed.
+	// if at least BreakerThreshold distinct monitors go down within
+	// BreakerWindow, the cause is almost certainly the probe infrastructure,
+	// not the shops, and customer notifications are suppressed.
 	BreakerWindow    time.Duration
 	BreakerThreshold int
-	// ListTimeout bounds the due-monitors query.
+	// ListTimeout bounds the due-monitors claim query.
 	ListTimeout time.Duration
 }
 
@@ -68,9 +72,11 @@ func (c *MonitorConfig) withDefaults() MonitorConfig {
 	return out
 }
 
-// DueRepository lists monitors that are due for a probe.
+// DueRepository claims monitors that are due for a probe. The claim must be
+// atomic (advance next_check_at in the same statement) so two overlapping
+// ticks can never probe the same monitor twice.
 type DueRepository interface {
-	ListDueUptimeMonitors(ctx context.Context, arg queries.ListDueUptimeMonitorsParams) ([]queries.ListDueUptimeMonitorsRow, error)
+	ClaimDueUptimeMonitors(ctx context.Context, arg queries.ClaimDueUptimeMonitorsParams) ([]queries.ClaimDueUptimeMonitorsRow, error)
 }
 
 // RollupRepository receives flushed hourly aggregates.
@@ -87,6 +93,7 @@ type Alerter interface {
 
 // hourAcc accumulates one hour of probes for one monitor.
 type hourAcc struct {
+	hour       time.Time
 	probesRun  int32
 	probesOK   int32
 	latencySum int64 // milliseconds
@@ -94,8 +101,22 @@ type hourAcc struct {
 	interval   int32 // last-seen probe interval, for probes_expected
 }
 
-// MonitorLoop drives probes: list due monitors, probe them concurrently with a
-// bounded pool, record state, accumulate hourly rollups and alert on
+func (a *hourAcc) fold(mon Monitor, res ProbeResult) {
+	a.probesRun++
+	if res.OK {
+		a.probesOK++
+	}
+	ms := int32(res.Latency.Milliseconds())
+	a.latencySum += int64(ms)
+	// Bound memory for pathological intervals; p95 degrades gracefully.
+	if len(a.latencies) < 1000 {
+		a.latencies = append(a.latencies, ms)
+	}
+	a.interval = mon.IntervalSeconds
+}
+
+// MonitorLoop drives probes: claim due monitors, probe them concurrently with
+// a bounded pool, record state, accumulate hourly rollups and alert on
 // transitions.
 type MonitorLoop struct {
 	cfg      MonitorConfig
@@ -109,15 +130,23 @@ type MonitorLoop struct {
 	sem chan struct{}
 
 	mu           sync.Mutex
-	currentHour  time.Time
 	accumulators map[int32]*hourAcc
-	recentDowns  []time.Time
+	// recentDowns tracks the last down transition per monitor inside the
+	// breaker window; recoveries remove their entry so a set of flapping
+	// shops cannot keep the breaker tripped forever.
+	recentDowns map[int32]time.Time
 	// suppressed tracks monitors whose down-alert was swallowed by the
 	// circuit breaker, so the matching recovery notification is skipped too.
 	suppressed map[int32]struct{}
 
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
+	wg sync.WaitGroup
+	// cancel stops the ticker; probeCtx/probeCancel bound the probes
+	// themselves. Probes run on their own context so a shutdown signal does
+	// not destroy their results before they are recorded.
+	stopMu      sync.Mutex
+	cancel      context.CancelFunc
+	probeCtx    context.Context
+	probeCancel context.CancelFunc
 }
 
 func NewMonitorLoop(cfg MonitorConfig, dueRepo DueRepository, rollRepo RollupRepository, prober Prober, recorder *Recorder, alerter Alerter) *MonitorLoop {
@@ -130,16 +159,26 @@ func NewMonitorLoop(cfg MonitorConfig, dueRepo DueRepository, rollRepo RollupRep
 		alerter:      alerter,
 		now:          time.Now,
 		sem:          make(chan struct{}, cfg.withDefaults().MaxConcurrent),
-		currentHour:  time.Now().UTC().Truncate(time.Hour),
 		accumulators: make(map[int32]*hourAcc),
+		recentDowns:  make(map[int32]time.Time),
 		suppressed:   make(map[int32]struct{}),
 	}
 }
 
 // Start launches the probe loop; Stop terminates it and flushes pending data.
 func (m *MonitorLoop) Start(parent context.Context) {
-	ctx, cancel := context.WithCancel(parent)
+	// The ticker follows the parent so external cancellation halts scheduling
+	// immediately; probes get an independent context and rely on Stop's grace
+	// period, otherwise a down-transition discovered right at shutdown would
+	// lose both its state write and its incident row.
+	tickCtx, cancel := context.WithCancel(parent)
+	probeCtx, probeCancel := context.WithCancel(context.Background())
+
+	m.stopMu.Lock()
 	m.cancel = cancel
+	m.probeCtx = probeCtx
+	m.probeCancel = probeCancel
+	m.stopMu.Unlock()
 
 	m.wg.Add(1)
 	go func() {
@@ -148,10 +187,10 @@ func (m *MonitorLoop) Start(parent context.Context) {
 		defer ticker.Stop()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-tickCtx.Done():
 				return
 			case <-ticker.C:
-				m.tick(ctx)
+				m.tick(probeCtx)
 			}
 		}
 	}()
@@ -160,40 +199,64 @@ func (m *MonitorLoop) Start(parent context.Context) {
 		"maxConcurrent", m.cfg.MaxConcurrent, "tickInterval", m.cfg.TickInterval)
 }
 
-// Stop halts the loop and flushes the in-flight hourly accumulator.
+// Stop halts the loop, waits for in-flight probes to finish recording (bounded
+// by the probe timeout plus a margin), and flushes pending hourly data.
 func (m *MonitorLoop) Stop() {
-	if m.cancel != nil {
-		m.cancel()
+	m.stopMu.Lock()
+	cancel := m.cancel
+	probeCancel := m.probeCancel
+	m.stopMu.Unlock()
+	if cancel != nil {
+		cancel()
 	}
-	m.wg.Wait()
+
+	done := make(chan struct{})
+	go func() {
+		m.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(m.cfg.ProbeTimeout + stopGraceMargin):
+		// Probes still running are stuck; abandon them so shutdown proceeds.
+		if probeCancel != nil {
+			probeCancel()
+		}
+		<-done
+	}
+
 	// Flush the partial hour so probes already counted are not lost.
+	ctx, cancelFlush := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancelFlush()
+	accs := m.takeAccumulators()
+	m.flushAccumulators(ctx, accs)
+}
+
+// takeAccumulators detaches all pending accumulators under the lock.
+func (m *MonitorLoop) takeAccumulators() map[int32]*hourAcc {
 	m.mu.Lock()
-	hour := m.currentHour
+	defer m.mu.Unlock()
 	accs := m.accumulators
 	m.accumulators = make(map[int32]*hourAcc)
-	m.mu.Unlock()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	m.flushAccumulators(ctx, hour, accs)
+	return accs
 }
 
 func (m *MonitorLoop) tick(ctx context.Context) {
 	m.rollHourIfNeeded(ctx)
 
 	listCtx, cancel := context.WithTimeout(ctx, m.cfg.ListTimeout)
-	due, err := m.dueRepo.ListDueUptimeMonitors(listCtx, queries.ListDueUptimeMonitorsParams{
+	claimed, err := m.dueRepo.ClaimDueUptimeMonitors(listCtx, queries.ClaimDueUptimeMonitorsParams{
 		Now:        pgTimestamp(m.now().UTC()),
 		ShardTotal: m.cfg.ShardTotal,
 		ShardIndex: m.cfg.ShardIndex,
 	})
 	cancel()
 	if err != nil {
-		slog.Error("uptime: failed to list due monitors", "error", err)
+		slog.Error("uptime: failed to claim due monitors", "error", err)
 		return
 	}
 
-	for _, row := range due {
+	for _, row := range claimed {
 		mon := monitorFromRow(row)
 		select {
 		case m.sem <- struct{}{}:
@@ -210,6 +273,8 @@ func (m *MonitorLoop) tick(ctx context.Context) {
 }
 
 func (m *MonitorLoop) probeAndRecord(ctx context.Context, mon Monitor) {
+	startedAt := m.now()
+
 	res := m.prober.Probe(ctx, ProbeConfig{
 		URL:            mon.URL,
 		ExpectedStatus: int(mon.ExpectedStatus),
@@ -229,7 +294,7 @@ func (m *MonitorLoop) probeAndRecord(ctx context.Context, mon Monitor) {
 		return
 	}
 
-	m.accumulate(mon, res)
+	m.accumulate(mon, res, startedAt)
 	m.handleTransition(ctx, mon, outcome, res)
 }
 
@@ -237,7 +302,7 @@ func (m *MonitorLoop) handleTransition(ctx context.Context, mon Monitor, outcome
 	switch outcome.Transition {
 	case TransitionDown:
 		metrics.RecordUptimeTransition(ctx, metrics.TransitionDown)
-		if m.trackMassDown(m.now()) {
+		if m.trackMassDown(mon.EnvironmentID, m.now()) {
 			m.mu.Lock()
 			m.suppressed[mon.EnvironmentID] = struct{}{}
 			m.mu.Unlock()
@@ -252,6 +317,9 @@ func (m *MonitorLoop) handleTransition(ctx context.Context, mon Monitor, outcome
 
 	case TransitionUp:
 		metrics.RecordUptimeTransition(ctx, metrics.TransitionUp)
+		// A recovery ends the incident: it must also leave the mass-down
+		// window so recovered shops stop counting towards the breaker.
+		m.clearMassDown(mon.EnvironmentID)
 		m.mu.Lock()
 		_, wasSuppressed := m.suppressed[mon.EnvironmentID]
 		delete(m.suppressed, mon.EnvironmentID)
@@ -271,65 +339,94 @@ func (m *MonitorLoop) handleTransition(ctx context.Context, mon Monitor, outcome
 }
 
 // trackMassDown records a down transition and reports whether the mass-down
-// circuit breaker tripped.
-func (m *MonitorLoop) trackMassDown(now time.Time) bool {
+// circuit breaker tripped (distinct monitors down within the window).
+func (m *MonitorLoop) trackMassDown(envID int32, now time.Time) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	cutoff := now.Add(-m.cfg.BreakerWindow)
-	kept := m.recentDowns[:0]
-	for _, t := range m.recentDowns {
-		if t.After(cutoff) {
-			kept = append(kept, t)
+	for id, t := range m.recentDowns {
+		if t.Before(cutoff) {
+			delete(m.recentDowns, id)
 		}
 	}
-	kept = append(kept, now)
-	m.recentDowns = kept
+	m.recentDowns[envID] = now
 	return len(m.recentDowns) >= m.cfg.BreakerThreshold
 }
 
-// accumulate folds one probe into the current hour's rollup data.
-func (m *MonitorLoop) accumulate(mon Monitor, res ProbeResult) {
+// clearMassDown removes a recovered monitor from the mass-down window.
+func (m *MonitorLoop) clearMassDown(envID int32) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-
-	acc, ok := m.accumulators[mon.EnvironmentID]
-	if !ok {
-		acc = &hourAcc{}
-		m.accumulators[mon.EnvironmentID] = acc
-	}
-	acc.probesRun++
-	if res.OK {
-		acc.probesOK++
-	}
-	ms := int32(res.Latency.Milliseconds())
-	acc.latencySum += int64(ms)
-	// Bound memory for pathological intervals; p95 degrades gracefully.
-	if len(acc.latencies) < 1000 {
-		acc.latencies = append(acc.latencies, ms)
-	}
-	acc.interval = mon.IntervalSeconds
+	delete(m.recentDowns, envID)
 }
 
-// rollHourIfNeeded flushes the accumulator whenever the UTC hour changes.
+// accumulate folds one probe into the rollup bucket of the hour the probe
+// started in, so slow probes completing after an hour rollover are not
+// attributed to the wrong bucket.
+func (m *MonitorLoop) accumulate(mon Monitor, res ProbeResult, startedAt time.Time) {
+	hour := startedAt.UTC().Truncate(time.Hour)
+
+	m.mu.Lock()
+	acc, ok := m.accumulators[mon.EnvironmentID]
+	if ok && acc.hour.Equal(hour) {
+		acc.fold(mon, res)
+		m.mu.Unlock()
+		return
+	}
+	if ok {
+		// Hour boundary crossed between probes: detach the buffered hour
+		// and start a new one. The additive upsert makes flushing the old
+		// bucket separately safe.
+		delete(m.accumulators, mon.EnvironmentID)
+	}
+	fresh := &hourAcc{hour: hour}
+	fresh.fold(mon, res)
+	m.accumulators[mon.EnvironmentID] = fresh
+	m.mu.Unlock()
+
+	if ok {
+		m.flushAccumulators(m.probeFlushCtx(), map[int32]*hourAcc{mon.EnvironmentID: acc})
+	}
+}
+
+// probeFlushCtx returns the probe context for incidental flushes outside the
+// hour roll; it is cancelled by Stop to avoid writes after shutdown.
+func (m *MonitorLoop) probeFlushCtx() context.Context {
+	m.stopMu.Lock()
+	defer m.stopMu.Unlock()
+	if m.probeCtx != nil {
+		return m.probeCtx
+	}
+	return context.Background()
+}
+
+// rollHourIfNeeded flushes accumulators whenever the UTC hour changes.
 func (m *MonitorLoop) rollHourIfNeeded(ctx context.Context) {
 	hour := m.now().UTC().Truncate(time.Hour)
 
 	m.mu.Lock()
-	if hour.Equal(m.currentHour) {
+	var stale []int32
+	for id, acc := range m.accumulators {
+		if acc.hour.Before(hour) {
+			stale = append(stale, id)
+		}
+	}
+	if len(stale) == 0 {
 		m.mu.Unlock()
 		return
 	}
-	prevHour := m.currentHour
-	accs := m.accumulators
-	m.currentHour = hour
-	m.accumulators = make(map[int32]*hourAcc)
+	detached := make(map[int32]*hourAcc, len(stale))
+	for _, id := range stale {
+		detached[id] = m.accumulators[id]
+		delete(m.accumulators, id)
+	}
 	m.mu.Unlock()
 
-	m.flushAccumulators(ctx, prevHour, accs)
+	m.flushAccumulators(ctx, detached)
 }
 
-func (m *MonitorLoop) flushAccumulators(ctx context.Context, hour time.Time, accs map[int32]*hourAcc) {
+func (m *MonitorLoop) flushAccumulators(ctx context.Context, accs map[int32]*hourAcc) {
 	for envID, acc := range accs {
 		if acc.probesRun == 0 {
 			continue
@@ -346,7 +443,7 @@ func (m *MonitorLoop) flushAccumulators(ctx context.Context, hour time.Time, acc
 		}
 		err := m.rollRepo.UpsertUptimeHourlyRollup(ctx, queries.UpsertUptimeHourlyRollupParams{
 			EnvironmentID:  envID,
-			Hour:           pgTimestamp(hour),
+			Hour:           pgTimestamp(acc.hour),
 			ProbesExpected: expected,
 			ProbesRun:      acc.probesRun,
 			ProbesOk:       acc.probesOK,
@@ -355,7 +452,7 @@ func (m *MonitorLoop) flushAccumulators(ctx context.Context, hour time.Time, acc
 			LatencyP95Ms:   p95,
 		})
 		if err != nil {
-			slog.Error("uptime: failed to flush hourly rollup", "environmentId", envID, "hour", hour, "error", err)
+			slog.Error("uptime: failed to flush hourly rollup", "environmentId", envID, "hour", acc.hour, "error", err)
 		}
 	}
 }
@@ -376,7 +473,7 @@ func percentile(values []int32, pct int) int32 {
 	return sorted[idx]
 }
 
-func monitorFromRow(row queries.ListDueUptimeMonitorsRow) Monitor {
+func monitorFromRow(row queries.ClaimDueUptimeMonitorsRow) Monitor {
 	url := row.EnvironmentUrl
 	if row.Url != nil && *row.Url != "" {
 		url = *row.Url

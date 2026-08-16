@@ -662,6 +662,8 @@ paths:
       responses:
         "204":
           description: Uptime settings updated
+        "400":
+          $ref: "#/components/responses/ValidationError"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -685,7 +687,7 @@ paths:
             type: string
             enum: [24h, 7d, 30d, 90d]
             default: 24h
-          description: Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+          description: Time range for availability, incidents and history. 24h is a rolling last-24-hours window and returns an hourly latency series; longer ranges are UTC-day aligned and return a day-by-day history strip.
       responses:
         "200":
           description: Uptime status and history
@@ -4174,6 +4176,8 @@ components:
           maximum: 3600
         expectedStatus:
           type: integer
+          minimum: 0
+          maximum: 599
           description: Expected HTTP status code. 0 accepts any 2xx/3xx.
         contentMatch:
           type: string

@@ -1,5 +1,12 @@
 <template>
-  <div v-if="!view" class="space-y-6">
+  <Card v-if="loadFailed">
+    <CardContent class="flex flex-col items-center gap-3 py-10 text-center">
+      <p class="text-sm text-muted-foreground">{{ $t("uptime.loadFailed") }}</p>
+      <Button variant="outline" @click="load">{{ $t("uptime.retry") }}</Button>
+    </CardContent>
+  </Card>
+
+  <div v-else-if="!view" class="space-y-6">
     <Skeleton class="h-32 w-full" />
     <Skeleton class="h-64 w-full" />
   </div>
@@ -99,7 +106,7 @@
       <!-- Day strip (multi-day ranges) -->
       <Card v-if="view.days.length">
         <CardHeader class="pb-2">
-          <CardTitle class="text-base">{{ $t("uptime.dayAvailability") }}</CardTitle>
+          <CardTitle class="text-base">{{ $t("uptime.dayAvailability") }} (UTC)</CardTitle>
         </CardHeader>
         <CardContent>
           <div class="flex gap-0.5">
@@ -298,8 +305,12 @@ const environmentId = computed(() => environment.value?.id ?? 0);
 const view = ref<UptimeResponse | null>(null);
 const range = ref<Range>("24h");
 const isSaving = ref(false);
+const loadFailed = ref(false);
 const latencyCanvas = ref<HTMLCanvasElement | null>(null);
 let chart: Chart | null = null;
+// Guards against stale responses: when the range or environment changes while
+// a request is in flight, only the newest request may update the view.
+let loadToken = 0;
 
 const settings = reactive({
   enabled: false,
@@ -323,13 +334,49 @@ function applySettingsToForm() {
   settings.recoveryThreshold = s.recoveryThreshold;
 }
 
+const numericFieldBounds = [
+  { key: "intervalSeconds", min: 30, max: 3600, labelKey: "uptime.interval" },
+  { key: "expectedStatus", min: 0, max: 599, labelKey: "uptime.expectedStatus" },
+  { key: "failureThreshold", min: 1, max: 10, labelKey: "uptime.failureThreshold" },
+  { key: "recoveryThreshold", min: 1, max: 10, labelKey: "uptime.recoveryThreshold" },
+] as const;
+
+// Number inputs yield "" when cleared and v-model.number cannot revive them;
+// validate before sending so the API never receives junk.
+function validateSettingsForm(): string | null {
+  for (const field of numericFieldBounds) {
+    const value = settings[field.key];
+    if (
+      typeof value !== "number" ||
+      Number.isNaN(value) ||
+      value < field.min ||
+      value > field.max
+    ) {
+      return t("uptime.invalidNumber", {
+        field: t(field.labelKey),
+        min: field.min,
+        max: field.max,
+      });
+    }
+  }
+  return null;
+}
+
 async function load() {
   if (!environmentId.value) return;
+  const token = ++loadToken;
+  loadFailed.value = false;
   try {
-    const { data } = await getEnvironmentUptime({
+    const { data, error: fetchError } = await getEnvironmentUptime({
       path: { environmentId: environmentId.value },
       query: { range: range.value },
     });
+    if (token !== loadToken) return;
+    if (fetchError) {
+      loadFailed.value = !view.value;
+      error(fetchError instanceof Error ? fetchError.message : String(fetchError));
+      return;
+    }
     if (data) {
       view.value = data;
       applySettingsToForm();
@@ -337,12 +384,19 @@ async function load() {
       renderLatencyChart();
     }
   } catch (e) {
+    if (token !== loadToken) return;
+    loadFailed.value = !view.value;
     error(e instanceof Error ? e.message : String(e));
   }
 }
 
 async function save() {
   if (!environmentId.value) return;
+  const invalid = validateSettingsForm();
+  if (invalid) {
+    error(invalid);
+    return;
+  }
   try {
     isSaving.value = true;
     await updateUptimeSettings({
@@ -421,7 +475,7 @@ function dayColor(day: UptimeDay): string {
 
 function dayTooltip(day: UptimeDay): string {
   const availability =
-    day.availability == null ? "no data" : `${(day.availability * 100).toFixed(2)}%`;
+    day.availability == null ? t("uptime.dayNoData") : `${(day.availability * 100).toFixed(2)}%`;
   return `${day.day}: ${availability}`;
 }
 
@@ -465,7 +519,7 @@ function renderLatencyChart() {
             label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}ms`,
             title: (items) =>
               items.length && items[0].parsed.x != null
-                ? new Date(items[0].parsed.x).toLocaleString()
+                ? (formatDateTime(new Date(items[0].parsed.x)) ?? "")
                 : "",
           },
         },

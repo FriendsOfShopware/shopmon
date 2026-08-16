@@ -3,10 +3,18 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import DetailUptime from "./DetailUptime.vue";
 
+const { chartConfigs, defaultEnvironment } = vi.hoisted(() => ({
+  chartConfigs: [] as unknown[],
+  defaultEnvironment: { id: 1, name: "Production", url: "https://shop.example.com" },
+}));
+
 vi.mock("chart.js", () => {
   class Chart {
     static register = vi.fn();
     destroy = vi.fn();
+    constructor(_canvas: unknown, config: unknown) {
+      chartConfigs.push(config);
+    }
   }
   return {
     Chart,
@@ -17,21 +25,18 @@ vi.mock("chart.js", () => {
 vi.mock("chartjs-adapter-date-fns", () => ({}));
 
 vi.mock("@/composables/useEnvironmentDetail", () => ({
-  useEnvironmentDetail: () => ({
-    environment: ref({
-      id: 1,
-      name: "Production",
-      url: "https://shop.example.com",
-    }),
-  }),
+  useEnvironmentDetail: vi.fn(() => ({
+    environment: ref(defaultEnvironment),
+  })),
 }));
 
-vi.mock("@/composables/useAlert", () => ({
-  useAlert: () => ({
-    error: vi.fn(),
-    success: vi.fn(),
-  }),
-}));
+vi.mock("@/composables/useAlert", () => {
+  const error = vi.fn();
+  const success = vi.fn();
+  return {
+    useAlert: () => ({ error, success }),
+  };
+});
 
 vi.mock("@/api/generated", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/generated")>()),
@@ -40,6 +45,8 @@ vi.mock("@/api/generated", async (importOriginal) => ({
 }));
 
 import { getEnvironmentUptime, updateUptimeSettings } from "@/api/generated";
+import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
+import { useAlert } from "@/composables/useAlert";
 
 function uptimeResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -86,6 +93,7 @@ function mountComponent() {
 describe("DetailUptime", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    chartConfigs.length = 0;
     vi.mocked(getEnvironmentUptime).mockResolvedValue({
       data: uptimeResponse(),
       error: undefined,
@@ -188,7 +196,9 @@ describe("DetailUptime", () => {
     const urlInput = wrapper.find("#uptime-url");
     await urlInput.setValue("https://status.example.com/health");
 
-    await wrapper.find("button").trigger("click");
+    const saveButton = wrapper.findAll("button").find((b) => b.text().includes("Save settings"));
+    expect(saveButton).toBeDefined();
+    await saveButton!.trigger("click");
     await flushPromises();
 
     expect(updateUptimeSettings).toHaveBeenCalledWith(
@@ -249,5 +259,121 @@ describe("DetailUptime", () => {
         body: expect.objectContaining({ enabled: true }),
       }),
     );
+  });
+
+  it("shows an error state with retry when loading fails", async () => {
+    vi.mocked(getEnvironmentUptime).mockResolvedValue({
+      data: undefined,
+      error: { message: "boom" } as never,
+      response: new Response(),
+    } as never);
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Failed to load uptime data");
+    const retryButton = wrapper.findAll("button").find((b) => b.text().includes("Retry"));
+    expect(retryButton).toBeDefined();
+
+    // Retry recovers when the request succeeds again.
+    vi.mocked(getEnvironmentUptime).mockResolvedValue({
+      data: uptimeResponse(),
+      error: undefined,
+      response: new Response(),
+    } as never);
+    await retryButton!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Uptime monitoring");
+  });
+
+  it("rejects cleared numeric fields instead of sending junk", async () => {
+    const { error } = useAlert();
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const intervalInput = wrapper.find("#uptime-interval");
+    await intervalInput.setValue("");
+
+    const saveButton = wrapper.findAll("button").find((b) => b.text().includes("Save settings"));
+    await saveButton!.trigger("click");
+    await flushPromises();
+
+    expect(updateUptimeSettings).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("must be a number between 30 and 3600"),
+    );
+  });
+
+  it("renders the latency chart with mapped datasets", async () => {
+    vi.mocked(getEnvironmentUptime).mockResolvedValue({
+      data: uptimeResponse({
+        latency: [
+          { timestamp: "2026-08-15T10:00:00Z", avgMs: 120, p95Ms: 300, probesRun: 60 },
+          { timestamp: "2026-08-15T11:00:00Z", avgMs: null, p95Ms: 250, probesRun: 60 },
+        ],
+      }),
+      error: undefined,
+      response: new Response(),
+    } as never);
+
+    mountComponent();
+    await flushPromises();
+
+    expect(chartConfigs).toHaveLength(1);
+    const config = chartConfigs[0] as {
+      data: { datasets: { label: string; data: { x: number; y: number | null }[] }[] };
+    };
+    expect(config.data.datasets).toHaveLength(2);
+    expect(config.data.datasets[0].label).toBe("Average");
+    expect(config.data.datasets[1].label).toBe("p95");
+    expect(config.data.datasets[0].data).toEqual([
+      { x: new Date("2026-08-15T10:00:00Z").getTime(), y: 120 },
+      { x: new Date("2026-08-15T11:00:00Z").getTime(), y: null },
+    ]);
+  });
+
+  it("ignores stale responses when the environment changes mid-flight", async () => {
+    let resolveSlow!: (value: unknown) => void;
+    const slow = new Promise((resolve) => {
+      resolveSlow = resolve;
+    });
+    let call = 0;
+    vi.mocked(getEnvironmentUptime).mockImplementation((() => {
+      call++;
+      if (call === 1) {
+        return slow;
+      }
+      return Promise.resolve({
+        data: uptimeResponse({ availability: 1 }),
+        error: undefined,
+        response: new Response(),
+      });
+    }) as never);
+
+    const env = ref({ ...defaultEnvironment });
+    vi.mocked(useEnvironmentDetail).mockReturnValue({ environment: env } as never);
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    // Switch environments while the first load is still pending: the second
+    // (fast) load lands first and must win.
+    env.value = { ...defaultEnvironment, id: 2 };
+    await flushPromises();
+    expect(wrapper.text()).toContain("100.000%");
+
+    // The slow response for the previous environment arrives late and must
+    // not overwrite the newer view.
+    resolveSlow({
+      data: uptimeResponse({ availability: 0.5 }),
+      error: undefined,
+      response: new Response(),
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("100.000%");
+    expect(wrapper.text()).not.toContain("50.000%");
   });
 });

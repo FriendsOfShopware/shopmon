@@ -109,7 +109,7 @@ func (r *Recorder) Record(ctx context.Context, m Monitor, res ProbeResult) (Reco
 				EnvironmentID: m.EnvironmentID,
 				StartedAt:     pgtype.Timestamp{Time: now.UTC(), Valid: true},
 				StatusCode:    nullInt32(int32(res.StatusCode)),
-				LatencyMs:     nullInt32(int32(res.Latency.Milliseconds())),
+				LatencyMs:     int32Ptr(int32(res.Latency.Milliseconds())),
 				Error:         nullString(res.Err),
 			})
 			if err != nil {
@@ -148,15 +148,16 @@ func (r *Recorder) Record(ctx context.Context, m Monitor, res ProbeResult) (Reco
 		}
 	}
 
+	// next_check_at is not touched here: the claim that scheduled this probe
+	// already pushed it forward, which is what prevents double probes.
 	err := r.repo.UpdateUptimeProbeState(ctx, queries.UpdateUptimeProbeStateParams{
 		EnvironmentID:        m.EnvironmentID,
 		Status:               status,
 		ConsecutiveFailures:  failures,
 		ConsecutiveSuccesses: successes,
 		LastStatusCode:       nullInt32(int32(res.StatusCode)),
-		LastLatencyMs:        nullInt32(int32(res.Latency.Milliseconds())),
+		LastLatencyMs:        int32Ptr(int32(res.Latency.Milliseconds())),
 		LastError:            nullString(res.Err),
-		IntervalSeconds:      m.IntervalSeconds,
 	})
 	if err != nil {
 		return outcome, fmt.Errorf("update uptime probe state: %w", err)
@@ -165,10 +166,18 @@ func (r *Recorder) Record(ctx context.Context, m Monitor, res ProbeResult) (Reco
 	return outcome, nil
 }
 
+// nullInt32 maps 0 to nil. Only meaningful for status codes, where 0 means
+// "no HTTP response was received".
 func nullInt32(v int32) *int32 {
 	if v == 0 {
 		return nil
 	}
+	return &v
+}
+
+// int32Ptr always stores the value: a latency of 0 ms is a real measurement,
+// not a missing one.
+func int32Ptr(v int32) *int32 {
 	return &v
 }
 

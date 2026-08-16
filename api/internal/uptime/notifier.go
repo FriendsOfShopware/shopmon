@@ -49,10 +49,7 @@ func (n *Notifier) AlertDown(ctx context.Context, m Monitor, eventID int32, res 
 		},
 		Link: environmentLink(m.EnvironmentID),
 	}
-	dr := n.dispatcher.Dispatch(ctx, ev, n.recipients(ctx, m))
-	slog.Info("uptime: down alert dispatched",
-		"environmentId", m.EnvironmentID, "delivered", dr.Delivered,
-		"failed", dr.Failed, "skipped", dr.Skipped)
+	n.dispatch(ctx, ev, m)
 }
 
 func (n *Notifier) AlertRecovered(ctx context.Context, m Monitor, eventID int32, downFor time.Duration) {
@@ -72,22 +69,19 @@ func (n *Notifier) AlertRecovered(ctx context.Context, m Monitor, eventID int32,
 		},
 		Link: environmentLink(m.EnvironmentID),
 	}
-	dr := n.dispatcher.Dispatch(ctx, ev, n.recipients(ctx, m))
-	slog.Info("uptime: recovery alert dispatched",
-		"environmentId", m.EnvironmentID, "delivered", dr.Delivered,
-		"failed", dr.Failed, "skipped", dr.Skipped)
+	n.dispatch(ctx, ev, m)
 }
 
 // recipients resolves the environment's subscribers into notify recipients.
-// It returns nil (and logs) on error so alerting degrades gracefully.
-func (n *Notifier) recipients(ctx context.Context, m Monitor) []notify.Recipient {
+// A failed lookup returns the error: dispatching to nobody would silently
+// drop the alert, so the caller skips dispatch and logs loudly instead.
+func (n *Notifier) recipients(ctx context.Context, m Monitor) ([]notify.Recipient, error) {
 	subscribers, err := n.queries.GetEnvironmentNotificationSubscribers(ctx, queries.GetEnvironmentNotificationSubscribersParams{
 		OrganizationID: m.OrganizationID,
 		EnvironmentID:  strconv.Itoa(int(m.EnvironmentID)),
 	})
 	if err != nil {
-		slog.Warn("uptime: failed to get notification subscribers", "environmentId", m.EnvironmentID, "error", err)
-		return nil
+		return nil, fmt.Errorf("get notification subscribers: %w", err)
 	}
 
 	recipients := make([]notify.Recipient, 0, len(subscribers))
@@ -99,7 +93,22 @@ func (n *Notifier) recipients(ctx context.Context, m Monitor) []notify.Recipient
 			Locale: u.Locale,
 		})
 	}
-	return recipients
+	return recipients, nil
+}
+
+// dispatch sends the event when recipients resolve; a recipient lookup failure
+// is logged as an error rather than dispatching to nobody.
+func (n *Notifier) dispatch(ctx context.Context, ev notify.Event, m Monitor) {
+	recipients, err := n.recipients(ctx, m)
+	if err != nil {
+		slog.Error("uptime: failed to resolve notification recipients, alert dropped",
+			"environmentId", m.EnvironmentID, "dedupKey", ev.DedupKey, "error", err)
+		return
+	}
+	dr := n.dispatcher.Dispatch(ctx, ev, recipients)
+	slog.Info("uptime: alert dispatched",
+		"environmentId", m.EnvironmentID, "delivered", dr.Delivered,
+		"failed", dr.Failed, "skipped", dr.Skipped)
 }
 
 // environmentLink builds the frontend route reference for the environment

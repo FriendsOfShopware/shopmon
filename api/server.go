@@ -171,7 +171,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	suppressionService := suppression.NewService(suppressionpostgres.NewRepository(pool, q), organizationAuthorizer)
 	environmentReadModel := environmentread.NewService(q, organizationAuthorizer, cfg)
 	jobDispatcher := jobs.NewDispatcher(bus)
-	uptimeService := uptime.NewService(q)
+	uptimeService := uptime.NewService(pool, q)
 	// Deployments suspend uptime probes for the settle window; the delayed resume
 	// job re-arms them alongside the post-deployment scrape.
 	deploymentService.WithUptimePauser(uptimeService)

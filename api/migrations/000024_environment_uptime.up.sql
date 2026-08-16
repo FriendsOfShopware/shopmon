@@ -28,6 +28,10 @@ CREATE TABLE "environment_uptime" (
   "last_error" text
 );
 
+-- Supports the due-monitor claim scan.
+CREATE INDEX "idx_environment_uptime_next_check" ON "environment_uptime" ("next_check_at")
+  WHERE "enabled" AND "next_check_at" IS NOT NULL;
+
 -- Downtime incidents: one row per up->down transition, resolved_at set on
 -- recovery. An open incident has resolved_at IS NULL.
 CREATE TABLE "environment_uptime_event" (

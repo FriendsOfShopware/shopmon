@@ -2255,6 +2255,10 @@ export type UpdateUptimeSettingsData = {
 
 export type UpdateUptimeSettingsErrors = {
     /**
+     * Validation error
+     */
+    400: ErrorResponse;
+    /**
      * Authentication required
      */
     401: ErrorResponse;
@@ -2293,7 +2297,7 @@ export type GetEnvironmentUptimeData = {
     };
     query?: {
         /**
-         * Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+         * Time range for availability, incidents and history. 24h is a rolling last-24-hours window and returns an hourly latency series; longer ranges are UTC-day aligned and return a day-by-day history strip.
          */
         range?: '24h' | '7d' | '30d' | '90d';
     };

@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -21,6 +22,9 @@ const maxErrorLength = 200
 // probeUserAgent identifies probes so shop operators can tell Shopmon traffic
 // from real customers in their logs.
 const probeUserAgent = "Shopmon-Uptime/1.0"
+
+// errAddressBlocked marks dials to non-public targets refused by the prober.
+var errAddressBlocked = errors.New("target address is not allowed")
 
 // ProbeConfig describes a single probe target.
 type ProbeConfig struct {
@@ -51,15 +55,31 @@ type httpProber struct {
 	client *http.Client
 }
 
-// NewHTTPProber returns the default storefront prober. The client is shared
-// across probes; per-probe deadlines come from the request context.
+// NewHTTPProber returns the default storefront prober with the private-address
+// guard enabled. The client is shared across probes; per-probe deadlines come
+// from the request context.
 func NewHTTPProber() Prober {
+	return newHTTPProber(false)
+}
+
+// newHTTPProber builds the prober; tests may allow private targets so they can
+// probe loopback httptest servers.
+func newHTTPProber(allowPrivateTargets bool) Prober {
+	dialer := &net.Dialer{
+		Timeout:   10 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	if !allowPrivateTargets {
+		dialer.Control = blockPrivateAddresses
+	}
 	return &httpProber{
 		client: &http.Client{
 			// Redirects are followed (Go default: up to 10 hops) since
 			// storefronts frequently redirect (www, locale, trailing slash).
+			// The dial-time address check also guards redirect targets.
 			Transport: &http.Transport{
 				Proxy:                 nil, // probes must be direct, never via a proxy
+				DialContext:           dialer.DialContext,
 				MaxIdleConns:          100,
 				IdleConnTimeout:       90 * time.Second,
 				TLSHandshakeTimeout:   10 * time.Second,
@@ -67,6 +87,27 @@ func NewHTTPProber() Prober {
 			},
 		},
 	}
+}
+
+// blockPrivateAddresses is a net.Dialer Control hook that refuses connections
+// to anything but public addresses. Uptime targets are public storefronts, so
+// loopback, private, link-local (including the cloud metadata service at
+// 169.254.169.254), multicast and unspecified targets are blocked. Checking at
+// dial time rather than at settings-validation time means redirects and DNS
+// answers that resolve differently than the URL looked like are covered too.
+func blockPrivateAddresses(network, address string, _ syscall.RawConn) error {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return fmt.Errorf("uptime probe: invalid dial address %q: %w", address, err)
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return fmt.Errorf("uptime probe: non-IP dial address %q: %w", host, errAddressBlocked)
+	}
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return fmt.Errorf("uptime probe: dial to %s %s: %w", network, host, errAddressBlocked)
+	}
+	return nil
 }
 
 func (p *httpProber) Probe(ctx context.Context, cfg ProbeConfig) ProbeResult {
@@ -109,10 +150,9 @@ func (p *httpProber) Probe(ctx context.Context, cfg ProbeConfig) ProbeResult {
 		}
 	}
 
-	// Drain a small body so the connection can be reused; skip large ones.
-	if ok && cfg.ContentMatch == "" {
-		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
-	}
+	// Drain a small body remainder so the connection can be reused for the
+	// next probe of this host; skip large ones.
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
 
 	return ProbeResult{
 		OK:         ok,
@@ -136,6 +176,8 @@ func classifyError(err error) string {
 		return "timeout"
 	case errors.Is(err, context.Canceled):
 		return "canceled"
+	case errors.Is(err, errAddressBlocked):
+		return "target address is not allowed"
 	}
 
 	var dnsErr *net.DNSError
@@ -144,10 +186,11 @@ func classifyError(err error) string {
 	}
 
 	var opErr *net.OpError
-	if errors.As(err, &opErr) {
-		if opErr.Op == "dial" {
-			return "connection refused"
+	if errors.As(err, &opErr) && opErr.Op == "dial" {
+		if opErr.Timeout() {
+			return "connect timeout"
 		}
+		return "connection failed"
 	}
 
 	msg := err.Error()

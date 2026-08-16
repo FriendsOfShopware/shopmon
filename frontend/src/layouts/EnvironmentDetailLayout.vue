@@ -413,7 +413,6 @@ const tabs = computed(() => {
       route: "account.environments.detail.uptime",
       label: t("nav.uptime"),
       icon: FaHeartPulse,
-      count: 0,
     },
     {
       route: "account.environments.detail.changelog",

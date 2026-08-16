@@ -98,7 +98,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 	})
 	securityPluginSync := securityplugin.NewService(pool, q, shopwareaccount.NewClient(
 		cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
-	uptimeService := uptime.NewService(q)
+	uptimeService := uptime.NewService(pool, q)
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
 		EnvironmentScraper:         environmentScrape,
 		StoreExtensionSynchronizer: storeSync,

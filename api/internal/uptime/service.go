@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -93,12 +96,13 @@ type View struct {
 // loop lives in MonitorLoop; this service handles user reads/writes and the
 // scheduled rollup/retention work.
 type Service struct {
-	q   *queries.Queries
-	now func() time.Time
+	pool *pgxpool.Pool
+	q    *queries.Queries
+	now  func() time.Time
 }
 
-func NewService(q *queries.Queries) *Service {
-	return &Service{q: q, now: time.Now}
+func NewService(pool *pgxpool.Pool, q *queries.Queries) *Service {
+	return &Service{pool: pool, q: q, now: time.Now}
 }
 
 // authorize resolves the environment's organization and checks membership.
@@ -141,13 +145,36 @@ func validateSettings(st Settings) error {
 		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
 			return fmt.Errorf("%w: url must be a valid http(s) URL", ErrInvalidSettings)
 		}
+		if err := validatePublicHost(parsed.Host); err != nil {
+			return fmt.Errorf("%w: url %v", ErrInvalidSettings, err)
+		}
+	}
+	return nil
+}
+
+// validatePublicHost rejects obviously internal targets at settings time so
+// users get immediate feedback. The authoritative guard is the dial-time
+// address check in the prober, which also covers redirects and DNS drift.
+func validatePublicHost(host string) error {
+	hostname := host
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		hostname = h
+	}
+	if strings.EqualFold(hostname, "localhost") || strings.HasSuffix(strings.ToLower(hostname), ".localhost") {
+		return errors.New("host must be a public address")
+	}
+	if ip := net.ParseIP(strings.Trim(hostname, "[]")); ip != nil {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast() {
+			return errors.New("host must be a public address")
+		}
 	}
 	return nil
 }
 
 // UpdateSettings creates or updates the monitor for an environment. Disabling
 // resolves any open incident, since the system stops making claims about the
-// shop's availability.
+// shop's availability; the upsert and the resolve run in one transaction so a
+// monitor can never end up disabled with an incident that nothing will close.
 func (s *Service) UpdateSettings(ctx context.Context, userID string, environmentID int32, st Settings) error {
 	if err := s.authorize(ctx, userID, environmentID); err != nil {
 		return err
@@ -156,7 +183,14 @@ func (s *Service) UpdateSettings(ctx context.Context, userID string, environment
 		return err
 	}
 
-	err := s.q.UpsertUptimeSettings(ctx, queries.UpsertUptimeSettingsParams{
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin uptime settings transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	qtx := s.q.WithTx(tx)
+
+	err = qtx.UpsertUptimeSettings(ctx, queries.UpsertUptimeSettingsParams{
 		EnvironmentID:     environmentID,
 		Enabled:           st.Enabled,
 		Url:               nilIfEmpty(st.URL),
@@ -171,12 +205,15 @@ func (s *Service) UpdateSettings(ctx context.Context, userID string, environment
 	}
 
 	if !st.Enabled {
-		if err := s.q.ResolveUptimeEvents(ctx, queries.ResolveUptimeEventsParams{
+		if err := qtx.ResolveUptimeEvents(ctx, queries.ResolveUptimeEventsParams{
 			EnvironmentID: environmentID,
 			ResolvedAt:    pgTimestamp(s.now()),
 		}); err != nil {
 			return fmt.Errorf("resolve open uptime events: %w", err)
 		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit uptime settings: %w", err)
 	}
 	return nil
 }
@@ -218,50 +255,74 @@ func (s *Service) GetView(ctx context.Context, userID string, environmentID int3
 		}
 	}
 
+	// The open incident is range-independent so an outage that started before
+	// the window is still visible.
+	open, err := s.q.GetOpenUptimeEvent(ctx, environmentID)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return view, fmt.Errorf("get open uptime event: %w", err)
+	default:
+		incident := incidentFromRow(open, now)
+		view.OpenIncident = &incident
+	}
+
+	// The 24h range is a rolling now-24h window so availability, incidents
+	// and the latency series all cover the same period; multi-day ranges are
+	// UTC-day aligned to match the day strip.
 	rangeStart := startOfDay(now).AddDate(0, 0, -(days - 1))
+	if days == 1 {
+		rangeStart = now.Add(-24 * time.Hour)
+	}
+
+	if days == 1 {
+		if err := s.getViewRolling24h(ctx, environmentID, now, rangeStart, &view); err != nil {
+			return view, err
+		}
+		return view, nil
+	}
 
 	// Availability: downtime always comes from incidents (the source of
 	// truth); daily rollups refine the denominator by excluding recorded
 	// no-data time. A day with incidents but no rollup yet (the nightly
 	// aggregation has not run) counts fully, so incidents are never lost.
-	var upSeconds, downSeconds int64
 	todayStart := startOfDay(now)
-	if days > 1 {
-		rollups, err := s.q.ListUptimeDailyRollups(ctx, queries.ListUptimeDailyRollupsParams{
-			EnvironmentID: environmentID,
-			Day:           pgDate(rangeStart),
-			Day_2:         pgDate(todayStart.AddDate(0, 0, -1)),
-		})
-		if err != nil {
-			return view, fmt.Errorf("list daily rollups: %w", err)
-		}
-		rollupByDay := make(map[string]queries.EnvironmentUptimeRollupDaily, len(rollups))
-		for _, r := range rollups {
-			rollupByDay[r.Day.Time.Format("2006-01-02")] = r
-		}
 
-		fullDayEvents, err := s.q.ListUptimeEventsOverlapping(ctx, queries.ListUptimeEventsOverlappingParams{
-			EnvironmentID: environmentID,
-			RangeFrom:     pgTimestamp(rangeStart),
-			RangeTo:       pgTimestamp(todayStart),
-		})
-		if err != nil {
-			return view, fmt.Errorf("list uptime events: %w", err)
-		}
+	rollups, err := s.q.ListUptimeDailyRollups(ctx, queries.ListUptimeDailyRollupsParams{
+		EnvironmentID: environmentID,
+		Day:           pgDate(rangeStart),
+		Day_2:         pgDate(todayStart.AddDate(0, 0, -1)),
+	})
+	if err != nil {
+		return view, fmt.Errorf("list daily rollups: %w", err)
+	}
+	rollupByDay := make(map[string]queries.EnvironmentUptimeRollupDaily, len(rollups))
+	for _, r := range rollups {
+		rollupByDay[r.Day.Time.Format("2006-01-02")] = r
+	}
 
-		for day := rangeStart; day.Before(todayStart); day = day.AddDate(0, 0, 1) {
-			if r, ok := rollupByDay[day.Format("2006-01-02")]; ok {
-				upSeconds += int64(r.UpSeconds)
-				downSeconds += int64(r.DownSeconds)
-				continue
-			}
-			// No rollup row: count the day only when an incident proves the
-			// monitor was running.
-			dayDown := overlapSeconds(fullDayEvents, day, day.AddDate(0, 0, 1))
-			if dayDown > 0 {
-				upSeconds += 24*3600 - dayDown
-				downSeconds += dayDown
-			}
+	var upSeconds, downSeconds int64
+	fullDayEvents, err := s.q.ListUptimeEventsOverlapping(ctx, queries.ListUptimeEventsOverlappingParams{
+		EnvironmentID: environmentID,
+		RangeFrom:     pgTimestamp(rangeStart),
+		RangeTo:       pgTimestamp(todayStart),
+	})
+	if err != nil {
+		return view, fmt.Errorf("list uptime events: %w", err)
+	}
+
+	for day := rangeStart; day.Before(todayStart); day = day.AddDate(0, 0, 1) {
+		if r, ok := rollupByDay[day.Format("2006-01-02")]; ok {
+			upSeconds += int64(r.UpSeconds)
+			downSeconds += int64(r.DownSeconds)
+			continue
+		}
+		// No rollup row: count the day only when an incident proves the
+		// monitor was running.
+		dayDown := overlapSeconds(fullDayEvents, day, day.AddDate(0, 0, 1))
+		if dayDown > 0 {
+			upSeconds += 24*3600 - dayDown
+			downSeconds += dayDown
 		}
 	}
 	todayDown, err := s.downSecondsInRange(ctx, environmentID, todayStart, now)
@@ -287,47 +348,9 @@ func (s *Service) GetView(ctx context.Context, userID string, environmentID int3
 	view.Incidents = make([]Incident, 0, len(events))
 	for _, e := range events {
 		view.Incidents = append(view.Incidents, incidentFromRow(e, now))
-		if !e.ResolvedAt.Valid {
-			incident := incidentFromRow(e, now)
-			view.OpenIncident = &incident
-		}
 	}
 
-	if days == 1 {
-		// 24h view: hourly latency series instead of the day strip.
-		hourlies, err := s.q.ListUptimeHourlyRollups(ctx, queries.ListUptimeHourlyRollupsParams{
-			EnvironmentID: environmentID,
-			Hour:          pgTimestamp(now.Add(-24 * time.Hour)),
-			Hour_2:        pgTimestamp(now),
-		})
-		if err != nil {
-			return view, fmt.Errorf("list hourly rollups: %w", err)
-		}
-		view.Latency = make([]LatencyPoint, 0, len(hourlies))
-		for _, h := range hourlies {
-			view.Latency = append(view.Latency, LatencyPoint{
-				Timestamp: h.Hour.Time,
-				AvgMs:     h.LatencyAvgMs,
-				P95Ms:     h.LatencyP95Ms,
-				ProbesRun: h.ProbesRun,
-			})
-		}
-		return view, nil
-	}
-
-	// Day strip for multi-day ranges.
-	rollups, err := s.q.ListUptimeDailyRollups(ctx, queries.ListUptimeDailyRollupsParams{
-		EnvironmentID: environmentID,
-		Day:           pgDate(rangeStart),
-		Day_2:         pgDate(startOfDay(now).AddDate(0, 0, -1)),
-	})
-	if err != nil {
-		return view, fmt.Errorf("list daily rollups: %w", err)
-	}
-	byDay := make(map[string]queries.EnvironmentUptimeRollupDaily, len(rollups))
-	for _, r := range rollups {
-		byDay[r.Day.Time.Format("2006-01-02")] = r
-	}
+	// Day strip, reusing the rollups fetched for availability.
 	view.Days = make([]DayPoint, 0, days)
 	for i := 0; i < days; i++ {
 		day := rangeStart.AddDate(0, 0, i)
@@ -344,7 +367,7 @@ func (s *Service) GetView(ctx context.Context, userID string, environmentID int3
 			view.Days = append(view.Days, DayPoint{Day: key, Availability: &availability, DownSeconds: todayDown})
 			continue
 		}
-		r, ok := byDay[key]
+		r, ok := rollupByDay[key]
 		if !ok {
 			view.Days = append(view.Days, DayPoint{Day: key})
 			continue
@@ -358,6 +381,82 @@ func (s *Service) GetView(ctx context.Context, userID string, environmentID int3
 	}
 
 	return view, nil
+}
+
+// getViewRolling24h fills availability, incidents and the latency series for
+// the rolling 24h view. The availability denominator starts at the earliest
+// evidence of monitoring inside the window (rollups or incidents), so time
+// before the monitor existed is not silently counted as up.
+func (s *Service) getViewRolling24h(ctx context.Context, environmentID int32, now, rangeStart time.Time, view *View) error {
+	hourlies, err := s.q.ListUptimeHourlyRollups(ctx, queries.ListUptimeHourlyRollupsParams{
+		EnvironmentID: environmentID,
+		Hour:          pgTimestamp(rangeStart),
+		Hour_2:        pgTimestamp(now),
+	})
+	if err != nil {
+		return fmt.Errorf("list hourly rollups: %w", err)
+	}
+	view.Latency = make([]LatencyPoint, 0, len(hourlies))
+	for _, h := range hourlies {
+		view.Latency = append(view.Latency, LatencyPoint{
+			Timestamp: h.Hour.Time,
+			AvgMs:     h.LatencyAvgMs,
+			P95Ms:     h.LatencyP95Ms,
+			ProbesRun: h.ProbesRun,
+		})
+	}
+
+	events, err := s.q.ListUptimeEvents(ctx, queries.ListUptimeEventsParams{
+		EnvironmentID: environmentID,
+		StartedAt:     pgTimestamp(rangeStart),
+	})
+	if err != nil {
+		return fmt.Errorf("list uptime events: %w", err)
+	}
+	view.Incidents = make([]Incident, 0, len(events))
+	for _, e := range events {
+		view.Incidents = append(view.Incidents, incidentFromRow(e, now))
+	}
+
+	// Downtime must include incidents that started before the window and are
+	// still open (or resolved inside it).
+	overlapping, err := s.q.ListUptimeEventsOverlapping(ctx, queries.ListUptimeEventsOverlappingParams{
+		EnvironmentID: environmentID,
+		RangeFrom:     pgTimestamp(rangeStart),
+		RangeTo:       pgTimestamp(now),
+	})
+	if err != nil {
+		return fmt.Errorf("list overlapping uptime events: %w", err)
+	}
+
+	// Bound the denominator by the earliest evidence of monitoring inside
+	// the window (rollups or incidents); with no evidence at all there is no
+	// availability to report and pre-monitor time is never counted as up.
+	dataStart := rangeStart
+	evidence := false
+	for _, e := range overlapping {
+		evidence = true
+		if e.StartedAt.Time.After(rangeStart) && e.StartedAt.Time.Before(dataStart) {
+			dataStart = e.StartedAt.Time
+		}
+	}
+	for _, h := range hourlies {
+		evidence = true
+		if h.Hour.Time.After(rangeStart) && h.Hour.Time.Before(dataStart) {
+			dataStart = h.Hour.Time
+		}
+	}
+
+	if !evidence {
+		return nil
+	}
+	elapsed := int64(now.Sub(dataStart).Seconds())
+	if elapsed > 0 {
+		downSeconds := overlapSeconds(overlapping, dataStart, now)
+		availability := float64(elapsed-downSeconds) / float64(elapsed)
+		view.Availability = &availability
+	}
+	return nil
 }
 
 // downSecondsInRange sums incident time clipped to [from, to).

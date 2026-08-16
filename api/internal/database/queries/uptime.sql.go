@@ -11,6 +11,82 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const claimDueUptimeMonitors = `-- name: ClaimDueUptimeMonitors :many
+UPDATE environment_uptime u SET
+  next_check_at = NOW() + make_interval(secs => u.interval_seconds::int)
+FROM environment e
+WHERE e.id = u.environment_id
+  AND u.enabled = true
+  AND u.status <> 'paused'
+  AND u.next_check_at IS NOT NULL
+  AND u.next_check_at <= $1
+  AND (u.environment_id % $2) = $3
+RETURNING
+  u.environment_id, u.url, u.interval_seconds, u.expected_status, u.content_match,
+  u.failure_threshold, u.recovery_threshold, u.status,
+  u.consecutive_failures, u.consecutive_successes,
+  e.url AS environment_url, e.name AS environment_name, e.organization_id
+`
+
+type ClaimDueUptimeMonitorsParams struct {
+	Now        pgtype.Timestamp `json:"now"`
+	ShardTotal int32            `json:"shard_total"`
+	ShardIndex int32            `json:"shard_index"`
+}
+
+type ClaimDueUptimeMonitorsRow struct {
+	EnvironmentID        int32   `json:"environment_id"`
+	Url                  *string `json:"url"`
+	IntervalSeconds      int32   `json:"interval_seconds"`
+	ExpectedStatus       int32   `json:"expected_status"`
+	ContentMatch         *string `json:"content_match"`
+	FailureThreshold     int32   `json:"failure_threshold"`
+	RecoveryThreshold    int32   `json:"recovery_threshold"`
+	Status               string  `json:"status"`
+	ConsecutiveFailures  int32   `json:"consecutive_failures"`
+	ConsecutiveSuccesses int32   `json:"consecutive_successes"`
+	EnvironmentUrl       string  `json:"environment_url"`
+	EnvironmentName      string  `json:"environment_name"`
+	OrganizationID       string  `json:"organization_id"`
+}
+
+// Atomically claims due monitors by pushing next_check_at forward before they
+// are probed, so concurrent ticks (or a slow probe overlapping the next tick)
+// can never probe the same monitor twice.
+func (q *Queries) ClaimDueUptimeMonitors(ctx context.Context, arg ClaimDueUptimeMonitorsParams) ([]ClaimDueUptimeMonitorsRow, error) {
+	rows, err := q.db.Query(ctx, claimDueUptimeMonitors, arg.Now, arg.ShardTotal, arg.ShardIndex)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClaimDueUptimeMonitorsRow{}
+	for rows.Next() {
+		var i ClaimDueUptimeMonitorsRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Url,
+			&i.IntervalSeconds,
+			&i.ExpectedStatus,
+			&i.ContentMatch,
+			&i.FailureThreshold,
+			&i.RecoveryThreshold,
+			&i.Status,
+			&i.ConsecutiveFailures,
+			&i.ConsecutiveSuccesses,
+			&i.EnvironmentUrl,
+			&i.EnvironmentName,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteUptimeEventsOlderThan = `-- name: DeleteUptimeEventsOlderThan :exec
 DELETE FROM environment_uptime_event WHERE started_at < $1 AND resolved_at IS NOT NULL
 `
@@ -104,34 +180,6 @@ func (q *Queries) GetUptimeSettings(ctx context.Context, environmentID int32) (G
 	return i, err
 }
 
-const getUptimeState = `-- name: GetUptimeState :one
-SELECT environment_id, enabled, url, interval_seconds, expected_status, content_match, failure_threshold, recovery_threshold, status, consecutive_failures, consecutive_successes, next_check_at, last_checked_at, last_status_code, last_latency_ms, last_error FROM environment_uptime WHERE environment_id = $1
-`
-
-func (q *Queries) GetUptimeState(ctx context.Context, environmentID int32) (EnvironmentUptime, error) {
-	row := q.db.QueryRow(ctx, getUptimeState, environmentID)
-	var i EnvironmentUptime
-	err := row.Scan(
-		&i.EnvironmentID,
-		&i.Enabled,
-		&i.Url,
-		&i.IntervalSeconds,
-		&i.ExpectedStatus,
-		&i.ContentMatch,
-		&i.FailureThreshold,
-		&i.RecoveryThreshold,
-		&i.Status,
-		&i.ConsecutiveFailures,
-		&i.ConsecutiveSuccesses,
-		&i.NextCheckAt,
-		&i.LastCheckedAt,
-		&i.LastStatusCode,
-		&i.LastLatencyMs,
-		&i.LastError,
-	)
-	return i, err
-}
-
 const insertUptimeEvent = `-- name: InsertUptimeEvent :one
 INSERT INTO environment_uptime_event (environment_id, started_at, status_code, latency_ms, error)
 VALUES ($1, $2, $3, $4, $5)
@@ -157,77 +205,6 @@ func (q *Queries) InsertUptimeEvent(ctx context.Context, arg InsertUptimeEventPa
 	var id int32
 	err := row.Scan(&id)
 	return id, err
-}
-
-const listDueUptimeMonitors = `-- name: ListDueUptimeMonitors :many
-SELECT
-  u.environment_id, u.url, u.interval_seconds, u.expected_status, u.content_match,
-  u.failure_threshold, u.recovery_threshold, u.status,
-  u.consecutive_failures, u.consecutive_successes,
-  e.url AS environment_url, e.name AS environment_name, e.organization_id
-FROM environment_uptime u
-JOIN environment e ON e.id = u.environment_id
-WHERE u.enabled = true
-  AND u.status <> 'paused'
-  AND u.next_check_at IS NOT NULL
-  AND u.next_check_at <= $1
-  AND (u.environment_id % $2) = $3
-`
-
-type ListDueUptimeMonitorsParams struct {
-	Now        pgtype.Timestamp `json:"now"`
-	ShardTotal int32            `json:"shard_total"`
-	ShardIndex int32            `json:"shard_index"`
-}
-
-type ListDueUptimeMonitorsRow struct {
-	EnvironmentID        int32   `json:"environment_id"`
-	Url                  *string `json:"url"`
-	IntervalSeconds      int32   `json:"interval_seconds"`
-	ExpectedStatus       int32   `json:"expected_status"`
-	ContentMatch         *string `json:"content_match"`
-	FailureThreshold     int32   `json:"failure_threshold"`
-	RecoveryThreshold    int32   `json:"recovery_threshold"`
-	Status               string  `json:"status"`
-	ConsecutiveFailures  int32   `json:"consecutive_failures"`
-	ConsecutiveSuccesses int32   `json:"consecutive_successes"`
-	EnvironmentUrl       string  `json:"environment_url"`
-	EnvironmentName      string  `json:"environment_name"`
-	OrganizationID       string  `json:"organization_id"`
-}
-
-func (q *Queries) ListDueUptimeMonitors(ctx context.Context, arg ListDueUptimeMonitorsParams) ([]ListDueUptimeMonitorsRow, error) {
-	rows, err := q.db.Query(ctx, listDueUptimeMonitors, arg.Now, arg.ShardTotal, arg.ShardIndex)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListDueUptimeMonitorsRow{}
-	for rows.Next() {
-		var i ListDueUptimeMonitorsRow
-		if err := rows.Scan(
-			&i.EnvironmentID,
-			&i.Url,
-			&i.IntervalSeconds,
-			&i.ExpectedStatus,
-			&i.ContentMatch,
-			&i.FailureThreshold,
-			&i.RecoveryThreshold,
-			&i.Status,
-			&i.ConsecutiveFailures,
-			&i.ConsecutiveSuccesses,
-			&i.EnvironmentUrl,
-			&i.EnvironmentName,
-			&i.OrganizationID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listUptimeDailyAggregateTargets = `-- name: ListUptimeDailyAggregateTargets :many
@@ -476,8 +453,7 @@ UPDATE environment_uptime SET
   last_checked_at = NOW(),
   last_status_code = $5,
   last_latency_ms = $6,
-  last_error = $7,
-  next_check_at = NOW() + make_interval(secs => $8::int)
+  last_error = $7
 WHERE environment_id = $1
 `
 
@@ -489,7 +465,6 @@ type UpdateUptimeProbeStateParams struct {
 	LastStatusCode       *int32  `json:"last_status_code"`
 	LastLatencyMs        *int32  `json:"last_latency_ms"`
 	LastError            *string `json:"last_error"`
-	IntervalSeconds      int32   `json:"interval_seconds"`
 }
 
 func (q *Queries) UpdateUptimeProbeState(ctx context.Context, arg UpdateUptimeProbeStateParams) error {
@@ -501,7 +476,6 @@ func (q *Queries) UpdateUptimeProbeState(ctx context.Context, arg UpdateUptimePr
 		arg.LastStatusCode,
 		arg.LastLatencyMs,
 		arg.LastError,
-		arg.IntervalSeconds,
 	)
 	return err
 }
@@ -553,12 +527,18 @@ INSERT INTO environment_uptime_rollup_hourly (
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (environment_id, hour) DO UPDATE SET
-  probes_expected = EXCLUDED.probes_expected,
-  probes_run = EXCLUDED.probes_run,
-  probes_ok = EXCLUDED.probes_ok,
-  paused_seconds = EXCLUDED.paused_seconds,
-  latency_avg_ms = EXCLUDED.latency_avg_ms,
-  latency_p95_ms = EXCLUDED.latency_p95_ms
+  probes_expected = GREATEST(environment_uptime_rollup_hourly.probes_expected, EXCLUDED.probes_expected),
+  probes_run = environment_uptime_rollup_hourly.probes_run + EXCLUDED.probes_run,
+  probes_ok = environment_uptime_rollup_hourly.probes_ok + EXCLUDED.probes_ok,
+  paused_seconds = environment_uptime_rollup_hourly.paused_seconds + EXCLUDED.paused_seconds,
+  latency_avg_ms = CASE
+    WHEN environment_uptime_rollup_hourly.latency_avg_ms IS NULL THEN EXCLUDED.latency_avg_ms
+    WHEN EXCLUDED.latency_avg_ms IS NULL THEN environment_uptime_rollup_hourly.latency_avg_ms
+    ELSE (environment_uptime_rollup_hourly.latency_avg_ms * environment_uptime_rollup_hourly.probes_run
+        + EXCLUDED.latency_avg_ms * EXCLUDED.probes_run)
+        / (environment_uptime_rollup_hourly.probes_run + EXCLUDED.probes_run)
+  END,
+  latency_p95_ms = GREATEST(environment_uptime_rollup_hourly.latency_p95_ms, EXCLUDED.latency_p95_ms)
 `
 
 type UpsertUptimeHourlyRollupParams struct {
@@ -572,6 +552,9 @@ type UpsertUptimeHourlyRollupParams struct {
 	LatencyP95Ms   *int32           `json:"latency_p95_ms"`
 }
 
+// Additive on conflict: the same hour can be flushed more than once when a
+// probe started in hour H completes after H was already flushed; late samples
+// must merge into the existing row, not replace it.
 func (q *Queries) UpsertUptimeHourlyRollup(ctx context.Context, arg UpsertUptimeHourlyRollupParams) error {
 	_, err := q.db.Exec(ctx, upsertUptimeHourlyRollup,
 		arg.EnvironmentID,

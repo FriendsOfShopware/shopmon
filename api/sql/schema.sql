@@ -408,6 +408,9 @@ CREATE TABLE "environment_uptime" (
   "last_error" text
 );
 
+CREATE INDEX "idx_environment_uptime_next_check" ON "environment_uptime" ("next_check_at")
+  WHERE "enabled" AND "next_check_at" IS NOT NULL;
+
 CREATE TABLE "environment_uptime_event" (
   "id" serial PRIMARY KEY NOT NULL,
   "environment_id" integer NOT NULL REFERENCES "environment"("id") ON DELETE cascade,

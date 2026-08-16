@@ -1787,7 +1787,7 @@ type RefreshEnvironmentJSONBody struct {
 
 // GetEnvironmentUptimeParams defines parameters for GetEnvironmentUptime.
 type GetEnvironmentUptimeParams struct {
-	// Range Time range for availability, incidents and history. 24h returns an hourly latency series; longer ranges return a day-by-day history strip.
+	// Range Time range for availability, incidents and history. 24h is a rolling last-24-hours window and returns an hourly latency series; longer ranges are UTC-day aligned and return a day-by-day history strip.
 	Range *GetEnvironmentUptimeParamsRange `form:"range,omitempty" json:"range,omitempty"`
 }
 

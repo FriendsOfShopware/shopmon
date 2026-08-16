@@ -40,7 +40,7 @@ func seedUptimeFixture(t *testing.T, pool *pgxpool.Pool) (string, int32) {
 func TestUpdateSettingsValidation(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	valid := Settings{Enabled: true, IntervalSeconds: 60, ExpectedStatus: 0, FailureThreshold: 3, RecoveryThreshold: 2}
@@ -58,6 +58,11 @@ func TestUpdateSettingsValidation(t *testing.T) {
 		{name: "threshold too high", mutate: func(s *Settings) { s.RecoveryThreshold = 11 }, wantErr: true},
 		{name: "invalid url", mutate: func(s *Settings) { s.URL = "not a url" }, wantErr: true},
 		{name: "valid override url", mutate: func(s *Settings) { s.URL = "https://status.example.com/health" }},
+		{name: "localhost url", mutate: func(s *Settings) { s.URL = "http://localhost:8080/health" }, wantErr: true},
+		{name: "private ipv4 url", mutate: func(s *Settings) { s.URL = "http://10.0.0.5/health" }, wantErr: true},
+		{name: "loopback ipv4 url", mutate: func(s *Settings) { s.URL = "http://127.0.0.1/" }, wantErr: true},
+		{name: "metadata service url", mutate: func(s *Settings) { s.URL = "http://169.254.169.254/latest/meta-data" }, wantErr: true},
+		{name: "loopback ipv6 url", mutate: func(s *Settings) { s.URL = "http://[::1]/" }, wantErr: true},
 	}
 
 	for _, test := range tests {
@@ -77,7 +82,7 @@ func TestUpdateSettingsValidation(t *testing.T) {
 func TestUpdateSettingsAuthorization(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	_, envID := seedUptimeFixture(t, pool)
 
 	settings := Settings{Enabled: true, IntervalSeconds: 60, FailureThreshold: 3, RecoveryThreshold: 2}
@@ -94,7 +99,7 @@ func TestUpdateSettingsAuthorization(t *testing.T) {
 func TestUpdateSettingsDisableResolvesOpenIncident(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	enable := Settings{Enabled: true, IntervalSeconds: 60, FailureThreshold: 3, RecoveryThreshold: 2}
@@ -119,7 +124,7 @@ func TestUpdateSettingsDisableResolvesOpenIncident(t *testing.T) {
 func TestAggregateDayComputesAvailability(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	_, envID := seedUptimeFixture(t, pool)
 
 	day := startOfDay(time.Now().UTC()).AddDate(0, 0, -1)
@@ -173,7 +178,7 @@ func TestAggregateDayComputesAvailability(t *testing.T) {
 func TestAggregateDayCountsMissingHoursAsNoData(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	_, envID := seedUptimeFixture(t, pool)
 
 	day := startOfDay(time.Now().UTC()).AddDate(0, 0, -1)
@@ -206,7 +211,7 @@ func TestAggregateDayCountsMissingHoursAsNoData(t *testing.T) {
 func TestGetViewAvailability(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
@@ -244,7 +249,7 @@ func TestGetViewAvailability(t *testing.T) {
 func TestGetViewReportsOpenIncident(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
@@ -268,7 +273,7 @@ func TestGetViewReportsOpenIncident(t *testing.T) {
 func TestGetViewRejectsUnknownRange(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	_, err := service.GetView(t.Context(), userID, envID, "100y")
@@ -278,7 +283,7 @@ func TestGetViewRejectsUnknownRange(t *testing.T) {
 func TestPauseAndResumeMonitor(t *testing.T) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
-	service := NewService(q)
+	service := NewService(pool, q)
 	userID, envID := seedUptimeFixture(t, pool)
 
 	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
@@ -286,12 +291,99 @@ func TestPauseAndResumeMonitor(t *testing.T) {
 	}))
 
 	require.NoError(t, service.PauseMonitor(t.Context(), envID))
-	state, err := q.GetUptimeState(t.Context(), envID)
+	state, err := q.GetUptimeSettings(t.Context(), envID)
 	require.NoError(t, err)
 	assert.Equal(t, StatusPaused, state.Status)
 
 	require.NoError(t, service.ResumeMonitor(t.Context(), envID))
-	state, err = q.GetUptimeState(t.Context(), envID)
+	state, err = q.GetUptimeSettings(t.Context(), envID)
 	require.NoError(t, err)
 	assert.Equal(t, StatusUnknown, state.Status)
+}
+
+func TestGetViewRolling24hCountsIncidentSpanningWindowStart(t *testing.T) {
+	pool := testdb.Setup(t)
+	q := queries.New(pool)
+	service := NewService(pool, q)
+	userID, envID := seedUptimeFixture(t, pool)
+
+	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
+		Enabled: true, IntervalSeconds: 60, FailureThreshold: 3, RecoveryThreshold: 2,
+	}))
+
+	// An outage that started 30h ago and is still open: it must surface as
+	// the open incident and reduce availability over the rolling 24h window.
+	_, err := q.InsertUptimeEvent(t.Context(), queries.InsertUptimeEventParams{
+		EnvironmentID: envID,
+		StartedAt:     pgTimestamp(time.Now().UTC().Add(-30 * time.Hour)),
+	})
+	require.NoError(t, err)
+
+	view, err := service.GetView(t.Context(), userID, envID, "24h")
+	require.NoError(t, err)
+
+	require.NotNil(t, view.OpenIncident, "an outage started before the window must still be reported")
+	assert.Nil(t, view.OpenIncident.ResolvedAt)
+	require.NotNil(t, view.Availability)
+	assert.LessOrEqual(t, *view.Availability, 0.01, "an outage covering the whole window must yield ~0% availability")
+	assert.Empty(t, view.Incidents, "the incident list only holds incidents started inside the window")
+}
+
+func TestGetViewRolling24hExcludesOlderIncidents(t *testing.T) {
+	pool := testdb.Setup(t)
+	q := queries.New(pool)
+	service := NewService(pool, q)
+	userID, envID := seedUptimeFixture(t, pool)
+
+	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
+		Enabled: true, IntervalSeconds: 60, FailureThreshold: 3, RecoveryThreshold: 2,
+	}))
+
+	// Resolved 25h ago: fully outside the rolling 24h window.
+	started := time.Now().UTC().Add(-26 * time.Hour)
+	_, err := q.InsertUptimeEvent(t.Context(), queries.InsertUptimeEventParams{
+		EnvironmentID: envID,
+		StartedAt:     pgTimestamp(started),
+	})
+	require.NoError(t, err)
+	require.NoError(t, q.ResolveUptimeEvents(t.Context(), queries.ResolveUptimeEventsParams{
+		EnvironmentID: envID,
+		ResolvedAt:    pgTimestamp(started.Add(time.Hour)),
+	}))
+
+	// A rollup inside the window proves the monitor was live recently.
+	require.NoError(t, q.UpsertUptimeHourlyRollup(t.Context(), queries.UpsertUptimeHourlyRollupParams{
+		EnvironmentID:  envID,
+		Hour:           pgTimestamp(time.Now().UTC().Add(-2 * time.Hour).Truncate(time.Hour)),
+		ProbesExpected: 60,
+		ProbesRun:      60,
+		ProbesOk:       60,
+	}))
+
+	view, err := service.GetView(t.Context(), userID, envID, "24h")
+	require.NoError(t, err)
+
+	assert.Empty(t, view.Incidents, "incidents older than the rolling window must be excluded")
+	assert.Nil(t, view.OpenIncident)
+	require.NotNil(t, view.Availability)
+	assert.InDelta(t, 1.0, *view.Availability, 0.001, "the excluded outage must not reduce availability")
+}
+
+func TestGetViewRolling24hWithoutDataHasNoAvailability(t *testing.T) {
+	pool := testdb.Setup(t)
+	q := queries.New(pool)
+	service := NewService(pool, q)
+	userID, envID := seedUptimeFixture(t, pool)
+
+	// A freshly enabled monitor: no rollups, no incidents. Availability must
+	// be absent rather than a misleading 100%.
+	require.NoError(t, service.UpdateSettings(t.Context(), userID, envID, Settings{
+		Enabled: true, IntervalSeconds: 60, FailureThreshold: 3, RecoveryThreshold: 2,
+	}))
+
+	view, err := service.GetView(t.Context(), userID, envID, "24h")
+	require.NoError(t, err)
+
+	assert.Nil(t, view.Availability, "no monitoring data in the window means no availability claim")
+	assert.Empty(t, view.Incidents)
 }
