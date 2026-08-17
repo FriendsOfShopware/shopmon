@@ -175,10 +175,16 @@ describe("Dashboard", () => {
     expect(wrapper.exists()).toBe(true);
   });
 
-  it("displays shops heading", async () => {
+  it("displays dashboard title", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Shops");
+    expect(wrapper.find("h1").text()).toBe("Dashboard");
+  });
+
+  it("displays My Environments section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("My Environments");
   });
 
   it("displays environments data", async () => {
@@ -193,7 +199,13 @@ describe("Dashboard", () => {
     const wrapper = mountComponent();
     await flushPromises();
     const statusIcons = wrapper.findAllComponents(StatusIconStub);
-    expect(statusIcons.length).toBeGreaterThan(0);
+    expect(statusIcons.length).toBe(2);
+  });
+
+  it("displays Shopware Versions section", async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Shopware Versions");
   });
 
   it("displays version distribution data", async () => {
@@ -206,7 +218,7 @@ describe("Dashboard", () => {
   it("displays Last Changes section when changelogs exist", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Recent Changes");
+    expect(wrapper.text()).toContain("Last Changes");
   });
 
   it("does not display Last Changes section when no changelogs", async () => {
@@ -223,32 +235,37 @@ describe("Dashboard", () => {
   it("displays changelog data", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Environment 1");
+    expect(wrapper.text()).toContain("Test Shop 1 · Test Environment 1");
   });
 
   it("displays correct environment links", async () => {
     const wrapper = mountComponent();
     await flushPromises();
-    expect(wrapper.text()).toContain("Test Shop 1");
+    const links = wrapper.findAll("a");
+    const shopLink = links.find((l) => l.text().includes("Test Shop 1"));
+    expect(shopLink).toBeTruthy();
   });
 
   it("clears the status filter when the active organization changes", async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    const criticalButton = wrapper.findAll("button").find((b) => b.text().includes("Critical"));
-    expect(criticalButton).toBeTruthy();
-    await criticalButton!.trigger("click");
+    const errorFilter = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("Errors") && b.attributes("aria-pressed") !== undefined);
+    expect(errorFilter).toBeTruthy();
+    await errorFilter!.trigger("click");
     await flushPromises();
-
-    expect(wrapper.text()).not.toContain("Test Shop 1");
-    expect(wrapper.text()).toContain("Test Shop 2");
+    expect(errorFilter!.attributes("aria-pressed")).toBe("true");
+    const shopGrid = wrapper.find("section");
+    expect(shopGrid.text()).not.toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
 
     mockActiveOrganizationId.value = "org-2";
     await flushPromises();
-
-    expect(wrapper.text()).toContain("Test Shop 1");
-    expect(wrapper.text()).toContain("Test Shop 2");
+    expect(errorFilter!.attributes("aria-pressed")).toBe("false");
+    expect(shopGrid.text()).toContain("Test Shop 1");
+    expect(shopGrid.text()).toContain("Test Shop 2");
   });
 
   it("ignores stale dashboard responses after an organization switch", async () => {
