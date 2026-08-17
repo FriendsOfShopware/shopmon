@@ -8,13 +8,13 @@ test.describe("dashboard", () => {
 
   test("renders the summary stat cards", async ({ page }) => {
     await expect(page.getByRole("button", { name: /Healthy/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Warning/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Critical/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Warnings/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Errors/ })).toBeVisible();
   });
 
   test("shows the seeded shop and its environment widgets", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Extension Updates/ })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Recent Changes/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Shopware Versions/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Last Changes/ })).toBeVisible();
     // The shop appears in the grid as a link to its environment.
     await expect(page.getByRole("link", { name: new RegExp(SHOP.name) }).first()).toBeVisible();
   });
