@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/identity"
 )
@@ -26,105 +27,92 @@ var (
 	githubAPIBaseURL   = "https://api.github.com"
 )
 
-func (h *AuthHandler) SignInSocial(w http.ResponseWriter, r *http.Request) {
-	var req socialSignInRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
+func (h *AuthHandler) SignInSocial(ctx context.Context, input *socialSignInInput) (*urlOutput, error) {
+	req := input.Body
 
 	if req.Provider != "github" {
-		httputil.WriteError(w, http.StatusBadRequest, "unsupported provider")
-		return
+		return nil, huma.Error400BadRequest("unsupported provider")
 	}
 
 	if h.config.GitHubClientID == "" {
-		httputil.WriteError(w, http.StatusNotFound, "GitHub OAuth not configured")
-		return
+		return nil, huma.Error404NotFound("GitHub OAuth not configured")
 	}
 
 	if !h.validateCallbackURL(req.CallbackURL) {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid callback URL")
-		return
+		return nil, huma.Error400BadRequest("invalid callback URL")
 	}
 
 	state, err := generateToken()
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to generate OAuth state", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to generate OAuth state")
-		return
+		slog.ErrorContext(ctx, "failed to generate OAuth state", "error", err)
+		return nil, huma.Error500InternalServerError("failed to generate OAuth state")
 	}
-	if err := h.challenges.Set(r.Context(), "oauth:"+state, oauthState{
+	if err := h.challenges.Set(ctx, "oauth:"+state, oauthState{
 		CallbackURL: req.CallbackURL,
 	}, 10*time.Minute); err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to store OAuth state")
-		return
+		return nil, huma.Error500InternalServerError("failed to store OAuth state")
 	}
 
 	authURL := fmt.Sprintf("%s/login/oauth/authorize?client_id=%s&state=%s&scope=user:email",
 		githubOAuthBaseURL, url.QueryEscape(h.config.GitHubClientID), url.QueryEscape(state))
 
-	httputil.WriteJSON(w, http.StatusOK, urlResponse{URL: authURL})
+	return &urlOutput{Body: urlResponse{URL: authURL}}, nil
 }
 
-func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, params authapi.GithubCallbackParams) {
+func (h *AuthHandler) GithubCallback(ctx context.Context, input *githubCallbackInput) (*authCodeOutput, error) {
+	if input.Code == "" || input.State == "" {
+		return nil, huma.Error400BadRequest("missing or invalid parameters")
+	}
+
 	// Validate state (Get consumes the key)
 	var stateData oauthState
-	if err := h.challenges.Get(r.Context(), "oauth:"+params.State, &stateData); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired state")
-		return
+	if err := h.challenges.Get(ctx, "oauth:"+input.State, &stateData); err != nil {
+		return nil, huma.Error400BadRequest("invalid or expired state")
 	}
 
 	// Exchange code for access token
 	tokenForm := url.Values{
 		"client_id":     {h.config.GitHubClientID},
 		"client_secret": {h.config.GitHubClientSecret},
-		"code":          {params.Code},
+		"code":          {input.Code},
 	}
-	tokenReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
+	tokenReq, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		githubOAuthBaseURL+"/login/oauth/access_token", strings.NewReader(tokenForm.Encode()))
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to build token request")
-		return
+		return nil, huma.Error500InternalServerError("failed to build token request")
 	}
 	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	tokenResp, err := httputil.NewHTTPClient().Do(tokenReq)
 	if err != nil {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to exchange code")
-		return
+		return nil, huma.Error502BadGateway("failed to exchange code")
 	}
 	defer func() { _ = tokenResp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(tokenResp.Body, 1<<20))
 	if err != nil {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to read token response")
-		return
+		return nil, huma.Error502BadGateway("failed to read token response")
 	}
 	tokenParams, err := url.ParseQuery(string(body))
 	if err != nil {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to parse token response")
-		return
+		return nil, huma.Error502BadGateway("failed to parse token response")
 	}
 	accessToken := tokenParams.Get("access_token")
 	if accessToken == "" {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to get access token")
-		return
+		return nil, huma.Error502BadGateway("failed to get access token")
 	}
 
 	// Fetch GitHub user info
-	ghReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user", nil)
+	ghReq, err := http.NewRequestWithContext(ctx, http.MethodGet, githubAPIBaseURL+"/user", nil)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to build GitHub user request")
-		return
+		return nil, huma.Error500InternalServerError("failed to build GitHub user request")
 	}
 	ghReq.Header.Set("Authorization", "Bearer "+accessToken)
 	ghReq.Header.Set("Accept", "application/json")
 
 	ghResp, err := httputil.NewHTTPClient().Do(ghReq)
 	if err != nil {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to fetch GitHub user")
-		return
+		return nil, huma.Error502BadGateway("failed to fetch GitHub user")
 	}
 	defer func() { _ = ghResp.Body.Close() }()
 
@@ -136,16 +124,14 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 		AvatarURL string `json:"avatar_url"`
 	}
 	if err := json.NewDecoder(ghResp.Body).Decode(&ghUser); err != nil {
-		httputil.WriteError(w, http.StatusBadGateway, "failed to decode GitHub user response")
-		return
+		return nil, huma.Error502BadGateway("failed to decode GitHub user response")
 	}
 
 	// If no public email, fetch from emails API
 	if ghUser.Email == "" {
-		emailReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, githubAPIBaseURL+"/user/emails", nil)
+		emailReq, err := http.NewRequestWithContext(ctx, http.MethodGet, githubAPIBaseURL+"/user/emails", nil)
 		if err != nil {
-			httputil.WriteError(w, http.StatusInternalServerError, "failed to build GitHub email request")
-			return
+			return nil, huma.Error500InternalServerError("failed to build GitHub email request")
 		}
 		emailReq.Header.Set("Authorization", "Bearer "+accessToken)
 		emailReq.Header.Set("Accept", "application/json")
@@ -168,35 +154,32 @@ func (h *AuthHandler) GithubCallback(w http.ResponseWriter, r *http.Request, par
 				}
 			}
 		} else {
-			slog.ErrorContext(r.Context(), "failed to fetch GitHub emails", "error", err)
+			slog.ErrorContext(ctx, "failed to fetch GitHub emails", "error", err)
 		}
 	}
 
 	if ghUser.Email == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "could not get email from GitHub")
-		return
+		return nil, huma.Error400BadRequest("could not get email from GitHub")
 	}
 
 	if ghUser.Name == "" {
 		ghUser.Name = ghUser.Login
 	}
 
-	userID, err := h.federated.Provision(r.Context(), identity.FederatedProfile{
+	userID, err := h.federated.Provision(ctx, identity.FederatedProfile{
 		Provider: "github", AccountID: fmt.Sprintf("%d", ghUser.ID),
 		Email: ghUser.Email, EmailVerified: true, Name: ghUser.Name, ImageURL: ghUser.AvatarURL,
 	})
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to provision GitHub identity", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create user")
-		return
+		slog.ErrorContext(ctx, "failed to provision GitHub identity", "error", err)
+		return nil, huma.Error500InternalServerError("failed to create user")
 	}
 
 	// Create a one-time code (not the token itself, for security)
-	authCode, err := h.createOneTimeCode(r, userID)
+	authCode, err := h.createOneTimeCode(requestFromContext(ctx), userID)
 	if err != nil {
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create session")
-		return
+		return nil, huma.Error500InternalServerError("failed to create session")
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"code": authCode})
+	return &authCodeOutput{Body: authCodeResponse{Code: authCode}}, nil
 }

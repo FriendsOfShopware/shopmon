@@ -1,195 +1,262 @@
 package auth
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"log/slog"
-	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/organization"
 )
 
-func (h *AuthHandler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+type statusOutput struct {
+	Body statusResponse
+}
+
+type urlOutput struct {
+	Body urlResponse
+}
+
+func statusOK() *statusOutput {
+	return &statusOutput{Body: newStatusResponse()}
+}
+
+type createOrganizationInput struct {
+	Body createOrganizationRequest
+}
+
+type createOrganizationOutput struct {
+	Body createOrganizationResponse
+}
+
+func (h *AuthHandler) CreateOrganization(ctx context.Context, input *createOrganizationInput) (*createOrganizationOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var request createOrganizationRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if request.Name == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "name is required")
-		return
+	if input.Body.Name == "" {
+		return nil, huma.Error400BadRequest("name is required")
 	}
 
-	result, err := h.organizations.Create(r.Context(), organization.CreateCommand{
+	result, err := h.organizations.Create(ctx, organization.CreateCommand{
 		UserID:       principal.User.ID,
-		SessionToken: httputil.ExtractToken(r),
-		Name:         request.Name,
+		SessionToken: httputil.ExtractToken(requestFromContext(ctx)),
+		Name:         input.Body.Name,
 	})
 	if err != nil {
-		h.writeOrganizationError(w, r, "create organization", err)
-		return
+		return nil, h.organizationError(ctx, "create organization", err)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, createOrganizationResponse{ID: result.ID, Name: result.Name})
+	return &createOrganizationOutput{Body: createOrganizationResponse{ID: result.ID, Name: result.Name}}, nil
 }
 
-func (h *AuthHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+type organizationIDInput struct {
+	OrganizationID string `path:"organizationId"`
+}
+
+type updateOrganizationInput struct {
+	OrganizationID string `path:"organizationId"`
+	Body           updateOrganizationRequest
+}
+
+func (h *AuthHandler) UpdateOrganization(ctx context.Context, input *updateOrganizationInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var request updateOrganizationRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	if err := h.organizations.Update(r.Context(), organization.UpdateCommand{
+	if err := h.organizations.Update(ctx, organization.UpdateCommand{
 		UserID:         principal.User.ID,
-		OrganizationID: organizationID,
-		Name:           request.Name,
-		Logo:           request.Logo,
+		OrganizationID: input.OrganizationID,
+		Name:           input.Body.Name,
+		Logo:           input.Body.Logo,
 	}); err != nil {
-		h.writeOrganizationError(w, r, "update organization", err)
-		return
+		return nil, h.organizationError(ctx, "update organization", err)
 	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+	return statusOK(), nil
 }
 
-func (h *AuthHandler) DeleteOrganization(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+func (h *AuthHandler) DeleteOrganization(ctx context.Context, input *organizationIDInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.organizations.Delete(r.Context(), principal.User.ID, organizationID); err != nil {
-		h.writeOrganizationError(w, r, "delete organization", err)
-		return
+	if err := h.organizations.Delete(ctx, principal.User.ID, input.OrganizationID); err != nil {
+		return nil, h.organizationError(ctx, "delete organization", err)
 	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+	return statusOK(), nil
 }
 
-func (h *AuthHandler) InviteMember(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+type inviteMemberInput struct {
+	OrganizationID string `path:"organizationId"`
+	Body           inviteMemberRequest
+}
+
+type idOutput struct {
+	Body idResponse
+}
+
+func (h *AuthHandler) InviteMember(ctx context.Context, input *inviteMemberInput) (*idOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var request inviteMemberRequest
-	if err := httputil.DecodeBody(r, &request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
+	if input.Body.Email == "" {
+		return nil, huma.Error400BadRequest("email is required")
 	}
-	if request.Email == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "email is required")
-		return
-	}
-	if request.Role == "" {
-		request.Role = string(organization.RoleMember)
+	role := input.Body.Role
+	if role == "" {
+		role = string(organization.RoleMember)
 	}
 
-	invitationID, err := h.organizations.Invite(r.Context(), organization.InviteCommand{
-		OrganizationID: organizationID,
+	invitationID, err := h.organizations.Invite(ctx, organization.InviteCommand{
+		OrganizationID: input.OrganizationID,
 		InviterID:      principal.User.ID,
 		InviterName:    principal.User.Name,
-		Email:          request.Email,
-		Role:           request.Role,
+		Email:          input.Body.Email,
+		Role:           role,
 	})
 	if err != nil {
-		h.writeOrganizationError(w, r, "invite organization member", err)
-		return
+		return nil, h.organizationError(ctx, "invite organization member", err)
 	}
-	httputil.WriteJSON(w, http.StatusOK, idResponse{ID: invitationID})
+	return &idOutput{Body: idResponse{ID: invitationID}}, nil
 }
 
-func (h *AuthHandler) AcceptInvitation(w http.ResponseWriter, r *http.Request, invitationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	if err := h.organizations.AcceptInvitation(r.Context(), invitationID, principal.User.ID, principal.User.Email); err != nil {
-		h.writeOrganizationError(w, r, "accept organization invitation", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
+type invitationIDInput struct {
+	InvitationID string `path:"invitationId"`
 }
 
-func (h *AuthHandler) RejectInvitation(w http.ResponseWriter, r *http.Request, invitationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	if err := h.organizations.RejectInvitation(r.Context(), invitationID, principal.User.Email); err != nil {
-		h.writeOrganizationError(w, r, "reject organization invitation", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
-}
-
-func (h *AuthHandler) RemoveMember(w http.ResponseWriter, r *http.Request, organizationID, userID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	if err := h.organizations.RemoveMember(r.Context(), principal.User.ID, organizationID, userID); err != nil {
-		h.writeOrganizationError(w, r, "remove organization member", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
-}
-
-func (h *AuthHandler) LeaveOrganization(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	if err := h.organizations.Leave(r.Context(), principal.User.ID, organizationID); err != nil {
-		h.writeOrganizationError(w, r, "leave organization", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
-}
-
-func (h *AuthHandler) SetMemberRole(w http.ResponseWriter, r *http.Request, organizationID, userID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	var request setMemberRoleRequest
-	if err := httputil.DecodeBody(r, &request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if err := h.organizations.SetMemberRole(r.Context(), principal.User.ID, organizationID, userID, request.Role); err != nil {
-		h.writeOrganizationError(w, r, "set organization member role", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
-}
-
-func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	members, err := h.organizations.ListMembers(r.Context(), principal.User.ID, organizationID)
+func (h *AuthHandler) AcceptInvitation(ctx context.Context, input *invitationIDInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
 	if err != nil {
-		h.writeOrganizationError(w, r, "list organization members", err)
-		return
+		return nil, err
 	}
+
+	if err := h.organizations.AcceptInvitation(ctx, input.InvitationID, principal.User.ID, principal.User.Email); err != nil {
+		return nil, h.organizationError(ctx, "accept organization invitation", err)
+	}
+	return statusOK(), nil
+}
+
+func (h *AuthHandler) RejectInvitation(ctx context.Context, input *invitationIDInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.organizations.RejectInvitation(ctx, input.InvitationID, principal.User.Email); err != nil {
+		return nil, h.organizationError(ctx, "reject organization invitation", err)
+	}
+	return statusOK(), nil
+}
+
+type organizationMemberInput struct {
+	OrganizationID string `path:"organizationId"`
+	UserID         string `path:"userId"`
+}
+
+func (h *AuthHandler) RemoveMember(ctx context.Context, input *organizationMemberInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.organizations.RemoveMember(ctx, principal.User.ID, input.OrganizationID, input.UserID); err != nil {
+		return nil, h.organizationError(ctx, "remove organization member", err)
+	}
+	return statusOK(), nil
+}
+
+func (h *AuthHandler) LeaveOrganization(ctx context.Context, input *organizationIDInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.organizations.Leave(ctx, principal.User.ID, input.OrganizationID); err != nil {
+		return nil, h.organizationError(ctx, "leave organization", err)
+	}
+	return statusOK(), nil
+}
+
+type setMemberRoleInput struct {
+	OrganizationID string `path:"organizationId"`
+	UserID         string `path:"userId"`
+	Body           setMemberRoleRequest
+}
+
+func (h *AuthHandler) SetMemberRole(ctx context.Context, input *setMemberRoleInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.organizations.SetMemberRole(ctx, principal.User.ID, input.OrganizationID, input.UserID, input.Body.Role); err != nil {
+		return nil, h.organizationError(ctx, "set organization member role", err)
+	}
+	return statusOK(), nil
+}
+
+type listOrganizationMembersOutput struct {
+	Body []organizationMemberResponse
+}
+
+func (h *AuthHandler) ListOrganizationMembers(ctx context.Context, input *organizationIDInput) (*listOrganizationMembersOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	members, err := h.organizations.ListMembers(ctx, principal.User.ID, input.OrganizationID)
+	if err != nil {
+		return nil, h.organizationError(ctx, "list organization members", err)
+	}
+	return &listOrganizationMembersOutput{Body: mapOrganizationMembers(members)}, nil
+}
+
+type listOrganizationInvitationsOutput struct {
+	Body []organizationInvitationResponse
+}
+
+func (h *AuthHandler) ListOrganizationInvitations(ctx context.Context, input *organizationIDInput) (*listOrganizationInvitationsOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	invitations, err := h.organizations.ListInvitations(ctx, principal.User.ID, input.OrganizationID)
+	if err != nil {
+		return nil, h.organizationError(ctx, "list organization invitations", err)
+	}
+	return &listOrganizationInvitationsOutput{Body: mapOrganizationInvitations(invitations)}, nil
+}
+
+type setActiveOrganizationInput struct {
+	Body struct {
+		OrganizationID string `json:"organizationId"`
+	}
+}
+
+func (h *AuthHandler) SetActiveOrganization(ctx context.Context, input *setActiveOrganizationInput) (*statusOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.Body.OrganizationID == "" {
+		return nil, huma.Error400BadRequest("organizationId is required")
+	}
+	if err := h.organizations.SetActive(ctx, principal.User.ID, httputil.ExtractToken(requestFromContext(ctx)), input.Body.OrganizationID); err != nil {
+		return nil, h.organizationError(ctx, "set active organization", err)
+	}
+	return statusOK(), nil
+}
+
+func mapOrganizationMembers(members []organization.Member) []organizationMemberResponse {
 	response := make([]organizationMemberResponse, 0, len(members))
 	for _, member := range members {
 		response = append(response, organizationMemberResponse{
@@ -197,20 +264,10 @@ func (h *AuthHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Req
 			Name: member.Name, Email: member.Email, Image: member.Image,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, response)
+	return response
 }
 
-func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organizationID string) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	invitations, err := h.organizations.ListInvitations(r.Context(), principal.User.ID, organizationID)
-	if err != nil {
-		h.writeOrganizationError(w, r, "list organization invitations", err)
-		return
-	}
+func mapOrganizationInvitations(invitations []organization.Invitation) []organizationInvitationResponse {
 	response := make([]organizationInvitationResponse, 0, len(invitations))
 	for _, invitation := range invitations {
 		var role *string
@@ -223,51 +280,31 @@ func (h *AuthHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http
 			ExpiresAt: invitation.ExpiresAt, InviterName: invitation.InviterName,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, response)
+	return response
 }
 
-func (h *AuthHandler) SetActiveOrganization(w http.ResponseWriter, r *http.Request) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
-	}
-
-	var request struct {
-		OrganizationID string `json:"organizationId"`
-	}
-	if err := httputil.DecodeBody(r, &request); err != nil || request.OrganizationID == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "organizationId is required")
-		return
-	}
-	if err := h.organizations.SetActive(r.Context(), principal.User.ID, httputil.ExtractToken(r), request.OrganizationID); err != nil {
-		h.writeOrganizationError(w, r, "set active organization", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, newStatusResponse())
-}
-
-func (h *AuthHandler) writeOrganizationError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+func (h *AuthHandler) organizationError(ctx context.Context, operation string, err error) error {
 	switch {
 	case errors.Is(err, organization.ErrOrganizationNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "organization not found")
+		return huma.Error404NotFound("organization not found")
 	case errors.Is(err, organization.ErrInvitationNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "invitation not found or expired")
+		return huma.Error404NotFound("invitation not found or expired")
 	case errors.Is(err, organization.ErrInvitationEmailMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "this invitation is not for your email address")
+		return huma.Error403Forbidden("this invitation is not for your email address")
 	case errors.Is(err, organization.ErrInvalidRole):
-		httputil.WriteError(w, http.StatusBadRequest, "role must be 'owner', 'admin', or 'member'")
+		return huma.Error400BadRequest("role must be 'owner', 'admin', or 'member'")
 	case errors.Is(err, organization.ErrCannotGrantRole):
-		httputil.WriteError(w, http.StatusForbidden, "cannot invite a member with equal or higher role")
+		return huma.Error403Forbidden("cannot invite a member with equal or higher role")
 	case errors.Is(err, organization.ErrCannotRemoveRole):
-		httputil.WriteError(w, http.StatusForbidden, "cannot remove a member with equal or higher role")
+		return huma.Error403Forbidden("cannot remove a member with equal or higher role")
 	case errors.Is(err, organization.ErrOwnerRequired):
-		httputil.WriteError(w, http.StatusForbidden, "organization owner role required")
+		return huma.Error403Forbidden("organization owner role required")
 	case errors.Is(err, organization.ErrLastOwner):
-		httputil.WriteError(w, http.StatusBadRequest, "cannot leave as the only owner. Transfer ownership first.")
+		return huma.Error400BadRequest("cannot leave as the only owner. Transfer ownership first.")
 	case errors.Is(err, organization.ErrMembershipNotFound), errors.Is(err, organization.ErrRoleNotAllowed):
-		httputil.WriteForbidden(w)
+		return huma.Error403Forbidden(httputil.MsgForbidden)
 	default:
-		slog.ErrorContext(r.Context(), "organization operation failed", "operation", operation, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "organization operation failed")
+		slog.ErrorContext(ctx, "organization operation failed", "operation", operation, "error", err)
+		return huma.Error500InternalServerError("organization operation failed")
 	}
 }

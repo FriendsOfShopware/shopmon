@@ -2,13 +2,14 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
 	"net/http"
 
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/danielgtaylor/huma/v2"
 	identitypasskey "github.com/friendsofshopware/shopmon/api/internal/identity/passkey"
 )
 
@@ -21,93 +22,87 @@ type passkeyLoginMetadata struct {
 	ChallengeKey string `json:"challengeKey"`
 }
 
-func (h *AuthHandler) PasskeyRegisterOptions(w http.ResponseWriter, r *http.Request) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+func (h *AuthHandler) PasskeyRegisterOptions(ctx context.Context, _ *struct{}) (*passkeyOptionsOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
-	options, err := h.passkeys.BeginRegistration(r.Context(), identitypasskey.User{
+	options, err := h.passkeys.BeginRegistration(ctx, identitypasskey.User{
 		ID: principal.User.ID, Name: principal.User.Name, Email: principal.User.Email,
 	})
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to begin passkey registration", "userID", principal.User.ID, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin registration")
-		return
+		slog.ErrorContext(ctx, "failed to begin passkey registration", "userID", principal.User.ID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to begin registration")
 	}
-	httputil.WriteJSON(w, http.StatusOK, passkeyOptionsResponse{Options: options.Options, ChallengeKey: options.ChallengeKey})
+	return &passkeyOptionsOutput{Body: passkeyOptionsResponse{Options: options.Options, ChallengeKey: options.ChallengeKey}}, nil
 }
 
-func (h *AuthHandler) PasskeyRegister(w http.ResponseWriter, r *http.Request) {
-	principal := h.requireAuth(w, r)
-	if principal == nil {
-		return
+func (h *AuthHandler) PasskeyRegister(ctx context.Context, input *passkeyRegisterInput) (*passkeyRegisterOutput, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
 	}
 	var metadata passkeyRegisterMetadata
-	if _, err := readJSONBody(r, &metadata); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
+	if err := json.Unmarshal(input.RawBody, &metadata); err != nil {
+		return nil, huma.Error400BadRequest("invalid request body")
 	}
 	if metadata.ChallengeKey == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "challengeKey is required")
-		return
+		return nil, huma.Error400BadRequest("challengeKey is required")
 	}
-	registered, err := h.passkeys.FinishRegistration(r.Context(), r, identitypasskey.User{
+	registered, err := h.passkeys.FinishRegistration(ctx, requestWithRawBody(ctx, input.RawBody), identitypasskey.User{
 		ID: principal.User.ID, Name: principal.User.Name, Email: principal.User.Email,
 	}, metadata.ChallengeKey, metadata.Name)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "passkey registration failed", "userID", principal.User.ID, "error", err)
-		httputil.WriteError(w, http.StatusBadRequest, "registration failed: "+err.Error())
-		return
+		slog.ErrorContext(ctx, "passkey registration failed", "userID", principal.User.ID, "error", err)
+		return nil, huma.Error400BadRequest("registration failed: " + err.Error())
 	}
-	httputil.WriteJSON(w, http.StatusOK, passkeyRegisterResponse{ID: registered.ID, Name: registered.Name})
+	return &passkeyRegisterOutput{Body: passkeyRegisterResponse{ID: registered.ID, Name: registered.Name}}, nil
 }
 
-func (h *AuthHandler) PasskeyLoginOptions(w http.ResponseWriter, r *http.Request) {
-	options, err := h.passkeys.BeginLogin(r.Context())
+func (h *AuthHandler) PasskeyLoginOptions(ctx context.Context, _ *struct{}) (*passkeyOptionsOutput, error) {
+	options, err := h.passkeys.BeginLogin(ctx)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to begin passkey login", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to begin login")
-		return
+		slog.ErrorContext(ctx, "failed to begin passkey login", "error", err)
+		return nil, huma.Error500InternalServerError("failed to begin login")
 	}
-	httputil.WriteJSON(w, http.StatusOK, passkeyOptionsResponse{Options: options.Options, ChallengeKey: options.ChallengeKey})
+	return &passkeyOptionsOutput{Body: passkeyOptionsResponse{Options: options.Options, ChallengeKey: options.ChallengeKey}}, nil
 }
 
-func (h *AuthHandler) PasskeyLogin(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) PasskeyLogin(ctx context.Context, input *passkeyLoginInput) (*tokenUserOutput, error) {
 	var metadata passkeyLoginMetadata
-	if _, err := readJSONBody(r, &metadata); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
+	if err := json.Unmarshal(input.RawBody, &metadata); err != nil {
+		return nil, huma.Error400BadRequest("invalid request body")
 	}
 	if metadata.ChallengeKey == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "challengeKey is required")
-		return
+		return nil, huma.Error400BadRequest("challengeKey is required")
 	}
+	r := requestWithRawBody(ctx, input.RawBody)
 	authentication, err := h.passkeys.FinishLogin(r, metadata.ChallengeKey, sessionMetadata(r))
 	if err != nil {
 		if errors.Is(err, identitypasskey.ErrChallenge) {
-			httputil.WriteError(w, http.StatusBadRequest, identitypasskey.ErrChallenge.Error())
-			return
+			return nil, huma.Error400BadRequest(identitypasskey.ErrChallenge.Error())
 		}
-		slog.ErrorContext(r.Context(), "passkey authentication failed", "error", err)
-		httputil.WriteError(w, http.StatusUnauthorized, "authentication failed")
-		return
+		slog.ErrorContext(ctx, "passkey authentication failed", "error", err)
+		return nil, huma.Error401Unauthorized("authentication failed")
 	}
-	httputil.WriteJSON(w, http.StatusOK, tokenUserResponse{
+	return &tokenUserOutput{Body: tokenUserResponse{
 		Token: authentication.Token,
 		User: authenticatedUserResponse{
 			ID: authentication.User.ID, Name: authentication.User.Name, Email: authentication.User.Email,
 		},
-	})
+	}}, nil
 }
 
-func readJSONBody[T any](r *http.Request, destination *T) ([]byte, error) {
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	if err != nil {
-		return nil, err
+func requestWithRawBody(ctx context.Context, raw []byte) *http.Request {
+	r := requestFromContext(ctx)
+	clone := r.Clone(ctx)
+	if clone.Header == nil {
+		clone.Header = make(http.Header)
 	}
-	if err := json.Unmarshal(body, destination); err != nil {
-		return nil, err
+	clone.Body = io.NopCloser(bytes.NewReader(raw))
+	clone.ContentLength = int64(len(raw))
+	if clone.Header.Get("Content-Type") == "" {
+		clone.Header.Set("Content-Type", "application/json")
 	}
-	r.Body = io.NopCloser(bytes.NewReader(body))
-	return body, nil
+	return clone
 }

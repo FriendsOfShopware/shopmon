@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInvitationData, AcceptInvitationResponses, AdminBanUserData, AdminBanUserResponses, AdminGetAdvisoryData, AdminGetAdvisoryErrors, AdminGetAdvisoryResponses, AdminGetAuditLogData, AdminGetAuditLogErrors, AdminGetAuditLogResponses, AdminGetEnvironmentDetailData, AdminGetEnvironmentDetailErrors, AdminGetEnvironmentDetailResponses, AdminGetEnvironmentsData, AdminGetEnvironmentsErrors, AdminGetEnvironmentsResponses, AdminGetGrowthData, AdminGetGrowthErrors, AdminGetGrowthResponses, AdminGetOrganizationDetailData, AdminGetOrganizationDetailErrors, AdminGetOrganizationDetailResponses, AdminGetOrganizationsData, AdminGetOrganizationsErrors, AdminGetOrganizationsResponses, AdminGetRecentActivityData, AdminGetRecentActivityErrors, AdminGetRecentActivityResponses, AdminGetShopwareVersionsData, AdminGetShopwareVersionsErrors, AdminGetShopwareVersionsResponses, AdminGetStatsData, AdminGetStatsErrors, AdminGetStatsResponses, AdminGetUserDetailData, AdminGetUserDetailErrors, AdminGetUserDetailResponses, AdminImpersonateData, AdminImpersonateResponses, AdminListAdvisoriesData, AdminListAdvisoriesErrors, AdminListAdvisoriesResponses, AdminListUsersData, AdminListUsersResponses, AdminSetUserRoleData, AdminSetUserRoleResponses, AdminStopImpersonatingData, AdminStopImpersonatingResponses, AdminSyncAdvisoriesData, AdminSyncAdvisoriesErrors, AdminSyncAdvisoriesResponses, AdminUnbanUserData, AdminUnbanUserResponses, AdminUpdateAdvisoryData, AdminUpdateAdvisoryErrors, AdminUpdateAdvisoryResponses, CancelInvitationData, CancelInvitationResponses, ChangeEmailData, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckExtensionCompatibilityData, CheckExtensionCompatibilityErrors, CheckExtensionCompatibilityResponses, ClearEnvironmentCacheData, ClearEnvironmentCacheErrors, ClearEnvironmentCacheResponses, CreateAdvisorySuppressionData, CreateAdvisorySuppressionErrors, CreateAdvisorySuppressionResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateCliDeploymentData, CreateCliDeploymentErrors, CreateCliDeploymentResponses, CreateEnvironmentData, CreateEnvironmentErrors, CreateEnvironmentResponses, CreateOrganizationData, CreateOrganizationResponses, CreatePackagesTokenData, CreatePackagesTokenErrors, CreatePackagesTokenResponses, CreateShopData, CreateShopErrors, CreateShopResponses, DeleteAllNotificationsData, DeleteAllNotificationsErrors, DeleteAllNotificationsResponses, DeleteApiKeyData, DeleteApiKeyErrors, DeleteApiKeyResponses, DeleteDeploymentData, DeleteDeploymentErrors, DeleteDeploymentResponses, DeleteEnvironmentData, DeleteEnvironmentErrors, DeleteEnvironmentResponses, DeleteNotificationData, DeleteNotificationErrors, DeleteNotificationPreferenceData, DeleteNotificationPreferenceErrors, DeleteNotificationPreferenceResponses, DeleteNotificationResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeletePackagesTokenData, DeletePackagesTokenErrors, DeletePackagesTokenResponses, DeletePasskeyData, DeletePasskeyResponses, DeleteShopData, DeleteShopErrors, DeleteShopResponses, DeleteSsoProviderData, DeleteSsoProviderErrors, DeleteSsoProviderResponses, DeleteUserData, DeleteUserResponses, DiscoverSsoData, DiscoverSsoErrors, DiscoverSsoResponses, ExchangeCodeData, ExchangeCodeErrors, ExchangeCodeResponses, ForgetPasswordData, ForgetPasswordResponses, GetAccountChangelogsData, GetAccountChangelogsErrors, GetAccountChangelogsResponses, GetAccountEnvironmentsData, GetAccountEnvironmentsErrors, GetAccountEnvironmentsResponses, GetAccountExtensionData, GetAccountExtensionErrors, GetAccountExtensionResponses, GetAccountExtensionsData, GetAccountExtensionsErrors, GetAccountExtensionsResponses, GetAccountMeData, GetAccountMeErrors, GetAccountMeResponses, GetAccountOrganizationsData, GetAccountOrganizationsErrors, GetAccountOrganizationsResponses, GetAccountShopsData, GetAccountShopsErrors, GetAccountShopsResponses, GetAccountSubscribedEnvironmentsData, GetAccountSubscribedEnvironmentsErrors, GetAccountSubscribedEnvironmentsResponses, GetAdvisoryData, GetAdvisoryErrors, GetAdvisoryResponses, GetApiKeyScopesData, GetApiKeyScopesResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetDeploymentData, GetDeploymentErrors, GetDeploymentResponses, GetDeploymentsData, GetDeploymentsErrors, GetDeploymentsResponses, GetEcosystemStatsData, GetEcosystemStatsErrors, GetEcosystemStatsResponses, GetEnvironmentChangelogsData, GetEnvironmentChangelogsErrors, GetEnvironmentChangelogsResponses, GetEnvironmentData, GetEnvironmentErrors, GetEnvironmentResponses, GetEnvironmentStatusEventsData, GetEnvironmentStatusEventsErrors, GetEnvironmentStatusEventsResponses, GetFullOrganizationData, GetFullOrganizationResponses, GetHealthData, GetHealthResponses, GetInstanceConfigData, GetInstanceConfigResponses, GetNotificationEventTypesData, GetNotificationEventTypesErrors, GetNotificationEventTypesResponses, GetNotificationPreferencesData, GetNotificationPreferencesErrors, GetNotificationPreferencesResponses, GetNotificationsData, GetNotificationsErrors, GetNotificationsResponses, GetOrganizationEnvironmentsData, GetOrganizationEnvironmentsErrors, GetOrganizationEnvironmentsResponses, GetOrganizationShopsData, GetOrganizationShopsErrors, GetOrganizationShopsResponses, GetPackagesTokenConfigurationData, GetPackagesTokenConfigurationErrors, GetPackagesTokenConfigurationResponses, GetPackagesTokensData, GetPackagesTokensErrors, GetPackagesTokensResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetShopwareVersionsData, GetShopwareVersionsResponses, GetSsoProvidersData, GetSsoProvidersErrors, GetSsoProvidersResponses, GithubCallbackData, GithubCallbackErrors, GithubCallbackResponses, HasPermissionData, HasPermissionResponses, InviteMemberData, InviteMemberResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkSocialData, LinkSocialResponses, ListAccountsData, ListAccountsResponses, ListAdvisoriesData, ListAdvisoriesErrors, ListAdvisoriesResponses, ListAdvisoryAffectedEnvironmentsData, ListAdvisoryAffectedEnvironmentsErrors, ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryPackagesData, ListAdvisoryPackagesErrors, ListAdvisoryPackagesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersResponses, ListSessionsData, ListSessionsResponses, ListSuppressionsData, ListSuppressionsErrors, ListSuppressionsResponses, ListUserOrganizationsData, ListUserOrganizationsResponses, ListUserPasskeysData, ListUserPasskeysResponses, MarkNotificationsReadData, MarkNotificationsReadErrors, MarkNotificationsReadResponses, PasskeyLoginData, PasskeyLoginErrors, PasskeyLoginOptionsData, PasskeyLoginOptionsResponses, PasskeyLoginResponses, PasskeyRegisterData, PasskeyRegisterErrors, PasskeyRegisterOptionsData, PasskeyRegisterOptionsResponses, PasskeyRegisterResponses, RefreshEnvironmentData, RefreshEnvironmentErrors, RefreshEnvironmentResponses, RegisterSsoProviderData, RegisterSsoProviderResponses, RejectInvitationData, RejectInvitationResponses, RemoveMemberData, RemoveMemberResponses, RescheduleTaskData, RescheduleTaskErrors, RescheduleTaskResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RevokeAdvisorySuppressionData, RevokeAdvisorySuppressionErrors, RevokeAdvisorySuppressionResponses, RevokeSessionData, RevokeSessionResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetMemberRoleData, SetMemberRoleResponses, SetNotificationPreferenceData, SetNotificationPreferenceErrors, SetNotificationPreferenceResponses, SignInEmailData, SignInEmailErrors, SignInEmailResponses, SignInSocialData, SignInSocialResponses, SignInSsoData, SignInSsoErrors, SignInSsoResponses, SignOutData, SignOutResponses, SignUpEmailData, SignUpEmailErrors, SignUpEmailResponses, SsoCallbackData, SsoCallbackErrors, SsoCallbackResponses, SubscribeToEnvironmentData, SubscribeToEnvironmentErrors, SubscribeToEnvironmentResponses, SyncPackagesTokenData, SyncPackagesTokenErrors, SyncPackagesTokenResponses, UnlinkAccountData, UnlinkAccountResponses, UnsubscribeFromEnvironmentData, UnsubscribeFromEnvironmentErrors, UnsubscribeFromEnvironmentResponses, UpdateAccountMeData, UpdateAccountMeErrors, UpdateAccountMeResponses, UpdateEnvironmentData, UpdateEnvironmentErrors, UpdateEnvironmentResponses, UpdateOrganizationData, UpdateOrganizationResponses, UpdateShopData, UpdateShopErrors, UpdateShopResponses, UpdateSitespeedSettingsData, UpdateSitespeedSettingsErrors, UpdateSitespeedSettingsResponses, UpdateSsoProviderData, UpdateSsoProviderErrors, UpdateSsoProviderResponses, UpdateUserData, UpdateUserResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
+import type { AcceptInvitationData, AcceptInvitationErrors, AcceptInvitationResponses, AdminBanUserData, AdminBanUserErrors, AdminBanUserResponses, AdminGetAdvisoryData, AdminGetAdvisoryErrors, AdminGetAdvisoryResponses, AdminGetAuditLogData, AdminGetAuditLogErrors, AdminGetAuditLogResponses, AdminGetEnvironmentDetailData, AdminGetEnvironmentDetailErrors, AdminGetEnvironmentDetailResponses, AdminGetEnvironmentsData, AdminGetEnvironmentsErrors, AdminGetEnvironmentsResponses, AdminGetGrowthData, AdminGetGrowthErrors, AdminGetGrowthResponses, AdminGetOrganizationDetailData, AdminGetOrganizationDetailErrors, AdminGetOrganizationDetailResponses, AdminGetOrganizationsData, AdminGetOrganizationsErrors, AdminGetOrganizationsResponses, AdminGetRecentActivityData, AdminGetRecentActivityErrors, AdminGetRecentActivityResponses, AdminGetShopwareVersionsData, AdminGetShopwareVersionsErrors, AdminGetShopwareVersionsResponses, AdminGetStatsData, AdminGetStatsErrors, AdminGetStatsResponses, AdminGetUserDetailData, AdminGetUserDetailErrors, AdminGetUserDetailResponses, AdminImpersonateData, AdminImpersonateErrors, AdminImpersonateResponses, AdminListAdvisoriesData, AdminListAdvisoriesErrors, AdminListAdvisoriesResponses, AdminListUsersData, AdminListUsersErrors, AdminListUsersResponses, AdminSetUserRoleData, AdminSetUserRoleErrors, AdminSetUserRoleResponses, AdminStopImpersonatingData, AdminStopImpersonatingErrors, AdminStopImpersonatingResponses, AdminSyncAdvisoriesData, AdminSyncAdvisoriesErrors, AdminSyncAdvisoriesResponses, AdminUnbanUserData, AdminUnbanUserErrors, AdminUnbanUserResponses, AdminUpdateAdvisoryData, AdminUpdateAdvisoryErrors, AdminUpdateAdvisoryResponses, CancelInvitationData, CancelInvitationErrors, CancelInvitationResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckExtensionCompatibilityData, CheckExtensionCompatibilityErrors, CheckExtensionCompatibilityResponses, ClearEnvironmentCacheData, ClearEnvironmentCacheErrors, ClearEnvironmentCacheResponses, CreateAdvisorySuppressionData, CreateAdvisorySuppressionErrors, CreateAdvisorySuppressionResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateCliDeploymentData, CreateCliDeploymentErrors, CreateCliDeploymentResponses, CreateEnvironmentData, CreateEnvironmentErrors, CreateEnvironmentResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreatePackagesTokenData, CreatePackagesTokenErrors, CreatePackagesTokenResponses, CreateShopData, CreateShopErrors, CreateShopResponses, DeleteAllNotificationsData, DeleteAllNotificationsErrors, DeleteAllNotificationsResponses, DeleteApiKeyData, DeleteApiKeyErrors, DeleteApiKeyResponses, DeleteDeploymentData, DeleteDeploymentErrors, DeleteDeploymentResponses, DeleteEnvironmentData, DeleteEnvironmentErrors, DeleteEnvironmentResponses, DeleteNotificationData, DeleteNotificationErrors, DeleteNotificationPreferenceData, DeleteNotificationPreferenceErrors, DeleteNotificationPreferenceResponses, DeleteNotificationResponses, DeleteOrganizationData, DeleteOrganizationErrors, DeleteOrganizationResponses, DeletePackagesTokenData, DeletePackagesTokenErrors, DeletePackagesTokenResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteShopData, DeleteShopErrors, DeleteShopResponses, DeleteSsoProviderData, DeleteSsoProviderErrors, DeleteSsoProviderResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DiscoverSsoData, DiscoverSsoErrors, DiscoverSsoResponses, ExchangeCodeData, ExchangeCodeErrors, ExchangeCodeResponses, ForgetPasswordData, ForgetPasswordErrors, ForgetPasswordResponses, GetAccountChangelogsData, GetAccountChangelogsErrors, GetAccountChangelogsResponses, GetAccountEnvironmentsData, GetAccountEnvironmentsErrors, GetAccountEnvironmentsResponses, GetAccountExtensionData, GetAccountExtensionErrors, GetAccountExtensionResponses, GetAccountExtensionsData, GetAccountExtensionsErrors, GetAccountExtensionsResponses, GetAccountMeData, GetAccountMeErrors, GetAccountMeResponses, GetAccountOrganizationsData, GetAccountOrganizationsErrors, GetAccountOrganizationsResponses, GetAccountShopsData, GetAccountShopsErrors, GetAccountShopsResponses, GetAccountSubscribedEnvironmentsData, GetAccountSubscribedEnvironmentsErrors, GetAccountSubscribedEnvironmentsResponses, GetAdvisoryData, GetAdvisoryErrors, GetAdvisoryResponses, GetApiKeyScopesData, GetApiKeyScopesErrors, GetApiKeyScopesResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetDeploymentData, GetDeploymentErrors, GetDeploymentResponses, GetDeploymentsData, GetDeploymentsErrors, GetDeploymentsResponses, GetEcosystemStatsData, GetEcosystemStatsErrors, GetEcosystemStatsResponses, GetEnvironmentChangelogsData, GetEnvironmentChangelogsErrors, GetEnvironmentChangelogsResponses, GetEnvironmentData, GetEnvironmentErrors, GetEnvironmentResponses, GetEnvironmentStatusEventsData, GetEnvironmentStatusEventsErrors, GetEnvironmentStatusEventsResponses, GetFullOrganizationData, GetFullOrganizationErrors, GetFullOrganizationResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetInstanceConfigData, GetInstanceConfigErrors, GetInstanceConfigResponses, GetNotificationEventTypesData, GetNotificationEventTypesErrors, GetNotificationEventTypesResponses, GetNotificationPreferencesData, GetNotificationPreferencesErrors, GetNotificationPreferencesResponses, GetNotificationsData, GetNotificationsErrors, GetNotificationsResponses, GetOrganizationEnvironmentsData, GetOrganizationEnvironmentsErrors, GetOrganizationEnvironmentsResponses, GetOrganizationShopsData, GetOrganizationShopsErrors, GetOrganizationShopsResponses, GetPackagesTokenConfigurationData, GetPackagesTokenConfigurationErrors, GetPackagesTokenConfigurationResponses, GetPackagesTokensData, GetPackagesTokensErrors, GetPackagesTokensResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetShopwareVersionsData, GetShopwareVersionsErrors, GetShopwareVersionsResponses, GetSsoProvidersData, GetSsoProvidersErrors, GetSsoProvidersResponses, GithubCallbackData, GithubCallbackErrors, GithubCallbackResponses, HasPermissionData, HasPermissionErrors, HasPermissionResponses, InviteMemberData, InviteMemberErrors, InviteMemberResponses, LeaveOrganizationData, LeaveOrganizationErrors, LeaveOrganizationResponses, LinkSocialData, LinkSocialErrors, LinkSocialResponses, ListAccountsData, ListAccountsErrors, ListAccountsResponses, ListAdvisoriesData, ListAdvisoriesErrors, ListAdvisoriesResponses, ListAdvisoryAffectedEnvironmentsData, ListAdvisoryAffectedEnvironmentsErrors, ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryPackagesData, ListAdvisoryPackagesErrors, ListAdvisoryPackagesResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListSuppressionsData, ListSuppressionsErrors, ListSuppressionsResponses, ListUserOrganizationsData, ListUserOrganizationsErrors, ListUserOrganizationsResponses, ListUserPasskeysData, ListUserPasskeysErrors, ListUserPasskeysResponses, MarkNotificationsReadData, MarkNotificationsReadErrors, MarkNotificationsReadResponses, PasskeyLoginData, PasskeyLoginErrors, PasskeyLoginOptionsData, PasskeyLoginOptionsErrors, PasskeyLoginOptionsResponses, PasskeyLoginResponses, PasskeyRegisterData, PasskeyRegisterErrors, PasskeyRegisterOptionsData, PasskeyRegisterOptionsErrors, PasskeyRegisterOptionsResponses, PasskeyRegisterResponses, RefreshEnvironmentData, RefreshEnvironmentErrors, RefreshEnvironmentResponses, RegisterSsoProviderData, RegisterSsoProviderErrors, RegisterSsoProviderResponses, RejectInvitationData, RejectInvitationErrors, RejectInvitationResponses, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RescheduleTaskData, RescheduleTaskErrors, RescheduleTaskResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RevokeAdvisorySuppressionData, RevokeAdvisorySuppressionErrors, RevokeAdvisorySuppressionResponses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, SetActiveOrganizationData, SetActiveOrganizationErrors, SetActiveOrganizationResponses, SetMemberRoleData, SetMemberRoleErrors, SetMemberRoleResponses, SetNotificationPreferenceData, SetNotificationPreferenceErrors, SetNotificationPreferenceResponses, SignInEmailData, SignInEmailErrors, SignInEmailResponses, SignInSocialData, SignInSocialErrors, SignInSocialResponses, SignInSsoData, SignInSsoErrors, SignInSsoResponses, SignOutData, SignOutErrors, SignOutResponses, SignUpEmailData, SignUpEmailErrors, SignUpEmailResponses, SsoCallbackData, SsoCallbackErrors, SsoCallbackResponses, SubscribeToEnvironmentData, SubscribeToEnvironmentErrors, SubscribeToEnvironmentResponses, SyncPackagesTokenData, SyncPackagesTokenErrors, SyncPackagesTokenResponses, UnlinkAccountData, UnlinkAccountErrors, UnlinkAccountResponses, UnsubscribeFromEnvironmentData, UnsubscribeFromEnvironmentErrors, UnsubscribeFromEnvironmentResponses, UpdateAccountMeData, UpdateAccountMeErrors, UpdateAccountMeResponses, UpdateEnvironmentData, UpdateEnvironmentErrors, UpdateEnvironmentResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationResponses, UpdateShopData, UpdateShopErrors, UpdateShopResponses, UpdateSitespeedSettingsData, UpdateSitespeedSettingsErrors, UpdateSitespeedSettingsResponses, UpdateSsoProviderData, UpdateSsoProviderErrors, UpdateSsoProviderResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,9 +19,40 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Health check
+ * Get changelogs across all environments
  */
-export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/health', ...options });
+export const getAccountChangelogs = <ThrowOnError extends boolean = false>(options?: Options<GetAccountChangelogsData, ThrowOnError>): RequestResult<GetAccountChangelogsResponses, GetAccountChangelogsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountChangelogsResponses, GetAccountChangelogsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/account/changelogs',
+    ...options
+});
+
+/**
+ * Get all environments accessible to the user
+ */
+export const getAccountEnvironments = <ThrowOnError extends boolean = false>(options?: Options<GetAccountEnvironmentsData, ThrowOnError>): RequestResult<GetAccountEnvironmentsResponses, GetAccountEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountEnvironmentsResponses, GetAccountEnvironmentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/account/environments',
+    ...options
+});
+
+/**
+ * Get aggregated extensions across all environments
+ */
+export const getAccountExtensions = <ThrowOnError extends boolean = false>(options?: Options<GetAccountExtensionsData, ThrowOnError>): RequestResult<GetAccountExtensionsResponses, GetAccountExtensionsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountExtensionsResponses, GetAccountExtensionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/account/extensions',
+    ...options
+});
+
+/**
+ * Get a single aggregated extension by technical name
+ */
+export const getAccountExtension = <ThrowOnError extends boolean = false>(options: Options<GetAccountExtensionData, ThrowOnError>): RequestResult<GetAccountExtensionResponses, GetAccountExtensionErrors, ThrowOnError> => (options.client ?? client).get<GetAccountExtensionResponses, GetAccountExtensionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/account/extensions/{name}',
+    ...options
+});
 
 /**
  * Get current user profile
@@ -46,72 +77,9 @@ export const updateAccountMe = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
- * Get aggregated extensions across all environments
- */
-export const getAccountExtensions = <ThrowOnError extends boolean = false>(options?: Options<GetAccountExtensionsData, ThrowOnError>): RequestResult<GetAccountExtensionsResponses, GetAccountExtensionsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountExtensionsResponses, GetAccountExtensionsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/extensions',
-    ...options
-});
-
-/**
- * Get a single aggregated extension by technical name
- */
-export const getAccountExtension = <ThrowOnError extends boolean = false>(options: Options<GetAccountExtensionData, ThrowOnError>): RequestResult<GetAccountExtensionResponses, GetAccountExtensionErrors, ThrowOnError> => (options.client ?? client).get<GetAccountExtensionResponses, GetAccountExtensionErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/extensions/{name}',
-    ...options
-});
-
-/**
- * Get organizations the user belongs to
- */
-export const getAccountOrganizations = <ThrowOnError extends boolean = false>(options?: Options<GetAccountOrganizationsData, ThrowOnError>): RequestResult<GetAccountOrganizationsResponses, GetAccountOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountOrganizationsResponses, GetAccountOrganizationsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/organizations',
-    ...options
-});
-
-/**
- * Get all environments accessible to the user
- */
-export const getAccountEnvironments = <ThrowOnError extends boolean = false>(options?: Options<GetAccountEnvironmentsData, ThrowOnError>): RequestResult<GetAccountEnvironmentsResponses, GetAccountEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountEnvironmentsResponses, GetAccountEnvironmentsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/environments',
-    ...options
-});
-
-/**
- * Get all shops accessible to the user
- */
-export const getAccountShops = <ThrowOnError extends boolean = false>(options?: Options<GetAccountShopsData, ThrowOnError>): RequestResult<GetAccountShopsResponses, GetAccountShopsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountShopsResponses, GetAccountShopsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/shops',
-    ...options
-});
-
-/**
- * Get changelogs across all environments
- */
-export const getAccountChangelogs = <ThrowOnError extends boolean = false>(options?: Options<GetAccountChangelogsData, ThrowOnError>): RequestResult<GetAccountChangelogsResponses, GetAccountChangelogsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountChangelogsResponses, GetAccountChangelogsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/changelogs',
-    ...options
-});
-
-/**
- * Get environments the user is subscribed to for notifications
- */
-export const getAccountSubscribedEnvironments = <ThrowOnError extends boolean = false>(options?: Options<GetAccountSubscribedEnvironmentsData, ThrowOnError>): RequestResult<GetAccountSubscribedEnvironmentsResponses, GetAccountSubscribedEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountSubscribedEnvironmentsResponses, GetAccountSubscribedEnvironmentsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/account/subscribed-environments',
-    ...options
-});
-
-/**
  * Delete a single notification preference (revert to inherited/default)
  */
-export const deleteNotificationPreference = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationPreferenceData, ThrowOnError>): RequestResult<DeleteNotificationPreferenceResponses, DeleteNotificationPreferenceErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationPreferenceResponses, DeleteNotificationPreferenceErrors, ThrowOnError>({
+export const deleteNotificationPreference = <ThrowOnError extends boolean = false>(options?: Options<DeleteNotificationPreferenceData, ThrowOnError>): RequestResult<DeleteNotificationPreferenceResponses, DeleteNotificationPreferenceErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteNotificationPreferenceResponses, DeleteNotificationPreferenceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/account/notification-preferences',
     ...options
@@ -140,57 +108,763 @@ export const setNotificationPreference = <ThrowOnError extends boolean = false>(
 });
 
 /**
- * Delete all notifications
+ * Get organizations the user belongs to
  */
-export const deleteAllNotifications = <ThrowOnError extends boolean = false>(options?: Options<DeleteAllNotificationsData, ThrowOnError>): RequestResult<DeleteAllNotificationsResponses, DeleteAllNotificationsErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteAllNotificationsResponses, DeleteAllNotificationsErrors, ThrowOnError>({
+export const getAccountOrganizations = <ThrowOnError extends boolean = false>(options?: Options<GetAccountOrganizationsData, ThrowOnError>): RequestResult<GetAccountOrganizationsResponses, GetAccountOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountOrganizationsResponses, GetAccountOrganizationsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/notifications',
+    url: '/account/organizations',
     ...options
 });
 
 /**
- * Get all notifications for the current user
+ * Get all shops accessible to the user
  */
-export const getNotifications = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationsData, ThrowOnError>): RequestResult<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError> => (options?.client ?? client).get<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError>({
+export const getAccountShops = <ThrowOnError extends boolean = false>(options?: Options<GetAccountShopsData, ThrowOnError>): RequestResult<GetAccountShopsResponses, GetAccountShopsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountShopsResponses, GetAccountShopsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/notifications',
+    url: '/account/shops',
     ...options
 });
 
 /**
- * List the notifiable event types and their default channels
+ * Get environments the user is subscribed to for notifications
  */
-export const getNotificationEventTypes = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationEventTypesData, ThrowOnError>): RequestResult<GetNotificationEventTypesResponses, GetNotificationEventTypesErrors, ThrowOnError> => (options?.client ?? client).get<GetNotificationEventTypesResponses, GetNotificationEventTypesErrors, ThrowOnError>({
+export const getAccountSubscribedEnvironments = <ThrowOnError extends boolean = false>(options?: Options<GetAccountSubscribedEnvironmentsData, ThrowOnError>): RequestResult<GetAccountSubscribedEnvironmentsResponses, GetAccountSubscribedEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<GetAccountSubscribedEnvironmentsResponses, GetAccountSubscribedEnvironmentsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/notifications/event-types',
+    url: '/account/subscribed-environments',
     ...options
 });
 
 /**
- * Delete a single notification
+ * List all Composer advisories including hidden ones (admin only)
  */
-export const deleteNotification = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationData, ThrowOnError>): RequestResult<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError>({
+export const adminListAdvisories = <ThrowOnError extends boolean = false>(options?: Options<AdminListAdvisoriesData, ThrowOnError>): RequestResult<AdminListAdvisoriesResponses, AdminListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<AdminListAdvisoriesResponses, AdminListAdvisoriesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/notifications/{id}',
+    url: '/admin/advisories',
     ...options
 });
 
 /**
- * Mark all notifications as read
+ * Enqueue a Packagist advisory sync job
  */
-export const markNotificationsRead = <ThrowOnError extends boolean = false>(options?: Options<MarkNotificationsReadData, ThrowOnError>): RequestResult<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError> => (options?.client ?? client).post<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError>({
+export const adminSyncAdvisories = <ThrowOnError extends boolean = false>(options?: Options<AdminSyncAdvisoriesData, ThrowOnError>): RequestResult<AdminSyncAdvisoriesResponses, AdminSyncAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).post<AdminSyncAdvisoriesResponses, AdminSyncAdvisoriesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/notifications/mark-read',
+    url: '/admin/advisories/sync',
     ...options
 });
 
 /**
- * Get all environments in an organization
+ * Get a single advisory with internal notes (admin only)
  */
-export const getOrganizationEnvironments = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationEnvironmentsData, ThrowOnError>): RequestResult<GetOrganizationEnvironmentsResponses, GetOrganizationEnvironmentsErrors, ThrowOnError> => (options.client ?? client).get<GetOrganizationEnvironmentsResponses, GetOrganizationEnvironmentsErrors, ThrowOnError>({
+export const adminGetAdvisory = <ThrowOnError extends boolean = false>(options: Options<AdminGetAdvisoryData, ThrowOnError>): RequestResult<AdminGetAdvisoryResponses, AdminGetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<AdminGetAdvisoryResponses, AdminGetAdvisoryErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/organizations/{orgId}/environments',
+    url: '/admin/advisories/{advisoryId}',
     ...options
+});
+
+/**
+ * Update Shopmon enrichment fields for an advisory
+ */
+export const adminUpdateAdvisory = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateAdvisoryData, ThrowOnError>): RequestResult<AdminUpdateAdvisoryResponses, AdminUpdateAdvisoryErrors, ThrowOnError> => (options.client ?? client).patch<AdminUpdateAdvisoryResponses, AdminUpdateAdvisoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/advisories/{advisoryId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List audit log entries (admin only)
+ */
+export const adminGetAuditLog = <ThrowOnError extends boolean = false>(options?: Options<AdminGetAuditLogData, ThrowOnError>): RequestResult<AdminGetAuditLogResponses, AdminGetAuditLogErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetAuditLogResponses, AdminGetAuditLogErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/audit-log',
+    ...options
+});
+
+/**
+ * List all environments (admin only)
+ */
+export const adminGetEnvironments = <ThrowOnError extends boolean = false>(options?: Options<AdminGetEnvironmentsData, ThrowOnError>): RequestResult<AdminGetEnvironmentsResponses, AdminGetEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetEnvironmentsResponses, AdminGetEnvironmentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/environments',
+    ...options
+});
+
+/**
+ * Get an environment with detail (admin only)
+ */
+export const adminGetEnvironmentDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetEnvironmentDetailData, ThrowOnError>): RequestResult<AdminGetEnvironmentDetailResponses, AdminGetEnvironmentDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetEnvironmentDetailResponses, AdminGetEnvironmentDetailErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/environments/{envId}',
+    ...options
+});
+
+/**
+ * Get growth data over time
+ */
+export const adminGetGrowth = <ThrowOnError extends boolean = false>(options?: Options<AdminGetGrowthData, ThrowOnError>): RequestResult<AdminGetGrowthResponses, AdminGetGrowthErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetGrowthResponses, AdminGetGrowthErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/growth',
+    ...options
+});
+
+/**
+ * List all organizations (admin only)
+ */
+export const adminGetOrganizations = <ThrowOnError extends boolean = false>(options?: Options<AdminGetOrganizationsData, ThrowOnError>): RequestResult<AdminGetOrganizationsResponses, AdminGetOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetOrganizationsResponses, AdminGetOrganizationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/organizations',
+    ...options
+});
+
+/**
+ * Get an organization with detail (admin only)
+ */
+export const adminGetOrganizationDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetOrganizationDetailData, ThrowOnError>): RequestResult<AdminGetOrganizationDetailResponses, AdminGetOrganizationDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetOrganizationDetailResponses, AdminGetOrganizationDetailErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/organizations/{orgId}',
+    ...options
+});
+
+/**
+ * Get recent user and environment activity
+ */
+export const adminGetRecentActivity = <ThrowOnError extends boolean = false>(options?: Options<AdminGetRecentActivityData, ThrowOnError>): RequestResult<AdminGetRecentActivityResponses, AdminGetRecentActivityErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetRecentActivityResponses, AdminGetRecentActivityErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/recent-activity',
+    ...options
+});
+
+/**
+ * Get Shopware version distribution across environments
+ */
+export const adminGetShopwareVersions = <ThrowOnError extends boolean = false>(options?: Options<AdminGetShopwareVersionsData, ThrowOnError>): RequestResult<AdminGetShopwareVersionsResponses, AdminGetShopwareVersionsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetShopwareVersionsResponses, AdminGetShopwareVersionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/shopware-versions',
+    ...options
+});
+
+/**
+ * Get admin dashboard statistics
+ */
+export const adminGetStats = <ThrowOnError extends boolean = false>(options?: Options<AdminGetStatsData, ThrowOnError>): RequestResult<AdminGetStatsResponses, AdminGetStatsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetStatsResponses, AdminGetStatsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/admin/stats',
+    ...options
+});
+
+/**
+ * List visible Composer security advisories for Shopware packages
+ */
+export const listAdvisories = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoriesData, ThrowOnError>): RequestResult<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisories',
+    ...options
+});
+
+/**
+ * List package names that have visible advisories
+ */
+export const listAdvisoryPackages = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoryPackagesData, ThrowOnError>): RequestResult<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisories/packages',
+    ...options
+});
+
+/**
+ * Get a visible advisory by Packagist advisory ID
+ */
+export const getAdvisory = <ThrowOnError extends boolean = false>(options: Options<GetAdvisoryData, ThrowOnError>): RequestResult<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisories/{advisoryId}',
+    ...options
+});
+
+/**
+ * List the caller's environments affected by an advisory
+ *
+ * Environments whose Composer package inventory (from the FroshTools SBOM) matches this advisory. Restricted to organizations the caller belongs to; admins additionally receive a fleet-wide affected count.
+ */
+export const listAdvisoryAffectedEnvironments = <ThrowOnError extends boolean = false>(options: Options<ListAdvisoryAffectedEnvironmentsData, ThrowOnError>): RequestResult<ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryAffectedEnvironmentsErrors, ThrowOnError> => (options.client ?? client).get<ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryAffectedEnvironmentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisories/{advisoryId}/affected',
+    ...options
+});
+
+/**
+ * Record that an advisory is accepted or mitigated for a shop
+ *
+ * Suppressing an advisory removes it from the "affecting my shops" list and silences its alerts. Shop-wide suppression requires the owner or admin role; narrowing to a single environment is open to any member.
+ */
+export const createAdvisorySuppression = <ThrowOnError extends boolean = false>(options: Options<CreateAdvisorySuppressionData, ThrowOnError>): RequestResult<CreateAdvisorySuppressionResponses, CreateAdvisorySuppressionErrors, ThrowOnError> => (options.client ?? client).post<CreateAdvisorySuppressionResponses, CreateAdvisorySuppressionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/advisories/{advisoryId}/suppressions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get available API key scopes
+ */
+export const getApiKeyScopes = <ThrowOnError extends boolean = false>(options?: Options<GetApiKeyScopesData, ThrowOnError>): RequestResult<GetApiKeyScopesResponses, GetApiKeyScopesErrors, ThrowOnError> => (options?.client ?? client).get<GetApiKeyScopesResponses, GetApiKeyScopesErrors, ThrowOnError>({ url: '/api-key-scopes', ...options });
+
+/**
+ * Stop impersonating a user
+ */
+export const adminStopImpersonating = <ThrowOnError extends boolean = false>(options?: Options<AdminStopImpersonatingData, ThrowOnError>): RequestResult<AdminStopImpersonatingResponses, AdminStopImpersonatingErrors, ThrowOnError> => (options?.client ?? client).post<AdminStopImpersonatingResponses, AdminStopImpersonatingErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/stop-impersonating',
+    ...options
+});
+
+/**
+ * List all users (admin only)
+ */
+export const adminListUsers = <ThrowOnError extends boolean = false>(options?: Options<AdminListUsersData, ThrowOnError>): RequestResult<AdminListUsersResponses, AdminListUsersErrors, ThrowOnError> => (options?.client ?? client).get<AdminListUsersResponses, AdminListUsersErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users',
+    ...options
+});
+
+/**
+ * Get a single user with detail (admin only)
+ */
+export const adminGetUserDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetUserDetailData, ThrowOnError>): RequestResult<AdminGetUserDetailResponses, AdminGetUserDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetUserDetailResponses, AdminGetUserDetailErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users/{userId}',
+    ...options
+});
+
+/**
+ * Ban a user
+ */
+export const adminBanUser = <ThrowOnError extends boolean = false>(options: Options<AdminBanUserData, ThrowOnError>): RequestResult<AdminBanUserResponses, AdminBanUserErrors, ThrowOnError> => (options.client ?? client).post<AdminBanUserResponses, AdminBanUserErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users/{userId}/ban',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Impersonate a user
+ */
+export const adminImpersonate = <ThrowOnError extends boolean = false>(options: Options<AdminImpersonateData, ThrowOnError>): RequestResult<AdminImpersonateResponses, AdminImpersonateErrors, ThrowOnError> => (options.client ?? client).post<AdminImpersonateResponses, AdminImpersonateErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users/{userId}/impersonate',
+    ...options
+});
+
+/**
+ * Set a user's role
+ */
+export const adminSetUserRole = <ThrowOnError extends boolean = false>(options: Options<AdminSetUserRoleData, ThrowOnError>): RequestResult<AdminSetUserRoleResponses, AdminSetUserRoleErrors, ThrowOnError> => (options.client ?? client).patch<AdminSetUserRoleResponses, AdminSetUserRoleErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users/{userId}/role',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unban a user
+ */
+export const adminUnbanUser = <ThrowOnError extends boolean = false>(options: Options<AdminUnbanUserData, ThrowOnError>): RequestResult<AdminUnbanUserResponses, AdminUnbanUserErrors, ThrowOnError> => (options.client ?? client).post<AdminUnbanUserResponses, AdminUnbanUserErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/admin/users/{userId}/unban',
+    ...options
+});
+
+/**
+ * Handle GitHub OAuth callback
+ */
+export const githubCallback = <ThrowOnError extends boolean = false>(options?: Options<GithubCallbackData, ThrowOnError>): RequestResult<GithubCallbackResponses, GithubCallbackErrors, ThrowOnError> => (options?.client ?? client).get<GithubCallbackResponses, GithubCallbackErrors, ThrowOnError>({ url: '/auth/callback/github', ...options });
+
+/**
+ * Cancel a pending invitation
+ */
+export const cancelInvitation = <ThrowOnError extends boolean = false>(options: Options<CancelInvitationData, ThrowOnError>): RequestResult<CancelInvitationResponses, CancelInvitationErrors, ThrowOnError> => (options.client ?? client).post<CancelInvitationResponses, CancelInvitationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/cancel-invitation',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change email address
+ */
+export const changeEmail = <ThrowOnError extends boolean = false>(options: Options<ChangeEmailData, ThrowOnError>): RequestResult<ChangeEmailResponses, ChangeEmailErrors, ThrowOnError> => (options.client ?? client).post<ChangeEmailResponses, ChangeEmailErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/change-email',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change password
+ */
+export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).post<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/change-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete user account
+ */
+export const deleteUser = <ThrowOnError extends boolean = false>(options?: Options<DeleteUserData, ThrowOnError>): RequestResult<DeleteUserResponses, DeleteUserErrors, ThrowOnError> => (options?.client ?? client).post<DeleteUserResponses, DeleteUserErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/delete-user',
+    ...options
+});
+
+/**
+ * Exchange one-time authorization code for session token
+ */
+export const exchangeCode = <ThrowOnError extends boolean = false>(options: Options<ExchangeCodeData, ThrowOnError>): RequestResult<ExchangeCodeResponses, ExchangeCodeErrors, ThrowOnError> => (options.client ?? client).post<ExchangeCodeResponses, ExchangeCodeErrors, ThrowOnError>({
+    url: '/auth/exchange-code',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Request password reset email
+ */
+export const forgetPassword = <ThrowOnError extends boolean = false>(options: Options<ForgetPasswordData, ThrowOnError>): RequestResult<ForgetPasswordResponses, ForgetPasswordErrors, ThrowOnError> => (options.client ?? client).post<ForgetPasswordResponses, ForgetPasswordErrors, ThrowOnError>({
+    url: '/auth/forget-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get full organization details by ID
+ */
+export const getFullOrganization = <ThrowOnError extends boolean = false>(options?: Options<GetFullOrganizationData, ThrowOnError>): RequestResult<GetFullOrganizationResponses, GetFullOrganizationErrors, ThrowOnError> => (options?.client ?? client).get<GetFullOrganizationResponses, GetFullOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/get-full-organization',
+    ...options
+});
+
+/**
+ * Check organization permission
+ */
+export const hasPermission = <ThrowOnError extends boolean = false>(options: Options<HasPermissionData, ThrowOnError>): RequestResult<HasPermissionResponses, HasPermissionErrors, ThrowOnError> => (options.client ?? client).post<HasPermissionResponses, HasPermissionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/has-permission',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Accept an invitation
+ */
+export const acceptInvitation = <ThrowOnError extends boolean = false>(options: Options<AcceptInvitationData, ThrowOnError>): RequestResult<AcceptInvitationResponses, AcceptInvitationErrors, ThrowOnError> => (options.client ?? client).post<AcceptInvitationResponses, AcceptInvitationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/invitations/{invitationId}/accept',
+    ...options
+});
+
+/**
+ * Reject an invitation
+ */
+export const rejectInvitation = <ThrowOnError extends boolean = false>(options: Options<RejectInvitationData, ThrowOnError>): RequestResult<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError> => (options.client ?? client).post<RejectInvitationResponses, RejectInvitationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/invitations/{invitationId}/reject',
+    ...options
+});
+
+/**
+ * Link a social provider
+ */
+export const linkSocial = <ThrowOnError extends boolean = false>(options: Options<LinkSocialData, ThrowOnError>): RequestResult<LinkSocialResponses, LinkSocialErrors, ThrowOnError> => (options.client ?? client).post<LinkSocialResponses, LinkSocialErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/link-social',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List linked auth providers
+ */
+export const listAccounts = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsData, ThrowOnError>): RequestResult<ListAccountsResponses, ListAccountsErrors, ThrowOnError> => (options?.client ?? client).get<ListAccountsResponses, ListAccountsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/list-accounts',
+    ...options
+});
+
+/**
+ * List user's organizations
+ */
+export const listUserOrganizations = <ThrowOnError extends boolean = false>(options?: Options<ListUserOrganizationsData, ThrowOnError>): RequestResult<ListUserOrganizationsResponses, ListUserOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<ListUserOrganizationsResponses, ListUserOrganizationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/list-organizations',
+    ...options
+});
+
+/**
+ * List active sessions
+ */
+export const listSessions = <ThrowOnError extends boolean = false>(options?: Options<ListSessionsData, ThrowOnError>): RequestResult<ListSessionsResponses, ListSessionsErrors, ThrowOnError> => (options?.client ?? client).get<ListSessionsResponses, ListSessionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/list-sessions',
+    ...options
+});
+
+/**
+ * Create an organization
+ */
+export const createOrganization = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationData, ThrowOnError>): RequestResult<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError> => (options.client ?? client).post<CreateOrganizationResponses, CreateOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete an organization
+ */
+export const deleteOrganization = <ThrowOnError extends boolean = false>(options: Options<DeleteOrganizationData, ThrowOnError>): RequestResult<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}',
+    ...options
+});
+
+/**
+ * Update an organization
+ */
+export const updateOrganization = <ThrowOnError extends boolean = false>(options: Options<UpdateOrganizationData, ThrowOnError>): RequestResult<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateOrganizationResponses, UpdateOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List pending invitations
+ */
+export const listOrganizationInvitations = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationInvitationsData, ThrowOnError>): RequestResult<ListOrganizationInvitationsResponses, ListOrganizationInvitationsErrors, ThrowOnError> => (options.client ?? client).get<ListOrganizationInvitationsResponses, ListOrganizationInvitationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/invitations',
+    ...options
+});
+
+/**
+ * Invite a user to the organization
+ */
+export const inviteMember = <ThrowOnError extends boolean = false>(options: Options<InviteMemberData, ThrowOnError>): RequestResult<InviteMemberResponses, InviteMemberErrors, ThrowOnError> => (options.client ?? client).post<InviteMemberResponses, InviteMemberErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Leave an organization
+ */
+export const leaveOrganization = <ThrowOnError extends boolean = false>(options: Options<LeaveOrganizationData, ThrowOnError>): RequestResult<LeaveOrganizationResponses, LeaveOrganizationErrors, ThrowOnError> => (options.client ?? client).post<LeaveOrganizationResponses, LeaveOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/leave',
+    ...options
+});
+
+/**
+ * List organization members
+ */
+export const listOrganizationMembers = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationMembersData, ThrowOnError>): RequestResult<ListOrganizationMembersResponses, ListOrganizationMembersErrors, ThrowOnError> => (options.client ?? client).get<ListOrganizationMembersResponses, ListOrganizationMembersErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/members',
+    ...options
+});
+
+/**
+ * Remove a member from the organization
+ */
+export const removeMember = <ThrowOnError extends boolean = false>(options: Options<RemoveMemberData, ThrowOnError>): RequestResult<RemoveMemberResponses, RemoveMemberErrors, ThrowOnError> => (options.client ?? client).delete<RemoveMemberResponses, RemoveMemberErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/members/{userId}',
+    ...options
+});
+
+/**
+ * Change a member's role
+ */
+export const setMemberRole = <ThrowOnError extends boolean = false>(options: Options<SetMemberRoleData, ThrowOnError>): RequestResult<SetMemberRoleResponses, SetMemberRoleErrors, ThrowOnError> => (options.client ?? client).patch<SetMemberRoleResponses, SetMemberRoleErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/organizations/{organizationId}/members/{userId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a passkey
+ */
+export const deletePasskey = <ThrowOnError extends boolean = false>(options: Options<DeletePasskeyData, ThrowOnError>): RequestResult<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError> => (options.client ?? client).post<DeletePasskeyResponses, DeletePasskeyErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/passkey/delete-passkey',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List user's passkeys
+ */
+export const listUserPasskeys = <ThrowOnError extends boolean = false>(options?: Options<ListUserPasskeysData, ThrowOnError>): RequestResult<ListUserPasskeysResponses, ListUserPasskeysErrors, ThrowOnError> => (options?.client ?? client).get<ListUserPasskeysResponses, ListUserPasskeysErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/passkey/list-user-passkeys',
+    ...options
+});
+
+/**
+ * Complete passkey login
+ */
+export const passkeyLogin = <ThrowOnError extends boolean = false>(options: Options<PasskeyLoginData, ThrowOnError>): RequestResult<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError> => (options.client ?? client).post<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/auth/passkey/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Begin passkey login
+ */
+export const passkeyLoginOptions = <ThrowOnError extends boolean = false>(options?: Options<PasskeyLoginOptionsData, ThrowOnError>): RequestResult<PasskeyLoginOptionsResponses, PasskeyLoginOptionsErrors, ThrowOnError> => (options?.client ?? client).post<PasskeyLoginOptionsResponses, PasskeyLoginOptionsErrors, ThrowOnError>({ url: '/auth/passkey/login-options', ...options });
+
+/**
+ * Complete passkey registration
+ */
+export const passkeyRegister = <ThrowOnError extends boolean = false>(options: Options<PasskeyRegisterData, ThrowOnError>): RequestResult<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError> => (options.client ?? client).post<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError>({
+    bodySerializer: null,
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/passkey/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Begin passkey registration
+ */
+export const passkeyRegisterOptions = <ThrowOnError extends boolean = false>(options?: Options<PasskeyRegisterOptionsData, ThrowOnError>): RequestResult<PasskeyRegisterOptionsResponses, PasskeyRegisterOptionsErrors, ThrowOnError> => (options?.client ?? client).post<PasskeyRegisterOptionsResponses, PasskeyRegisterOptionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/passkey/register-options',
+    ...options
+});
+
+/**
+ * Reset password with token
+ */
+export const resetPassword = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordData, ThrowOnError>): RequestResult<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError> => (options.client ?? client).post<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError>({
+    url: '/auth/reset-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a session
+ */
+export const revokeSession = <ThrowOnError extends boolean = false>(options: Options<RevokeSessionData, ThrowOnError>): RequestResult<RevokeSessionResponses, RevokeSessionErrors, ThrowOnError> => (options.client ?? client).post<RevokeSessionResponses, RevokeSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/revoke-session',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get current session
+ */
+export const getSession = <ThrowOnError extends boolean = false>(options?: Options<GetSessionData, ThrowOnError>): RequestResult<GetSessionResponses, GetSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetSessionResponses, GetSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/session',
+    ...options
+});
+
+/**
+ * Set the active organization for the current session
+ */
+export const setActiveOrganization = <ThrowOnError extends boolean = false>(options: Options<SetActiveOrganizationData, ThrowOnError>): RequestResult<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError> => (options.client ?? client).post<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/set-active-organization',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sign in with email and password
+ */
+export const signInEmail = <ThrowOnError extends boolean = false>(options: Options<SignInEmailData, ThrowOnError>): RequestResult<SignInEmailResponses, SignInEmailErrors, ThrowOnError> => (options.client ?? client).post<SignInEmailResponses, SignInEmailErrors, ThrowOnError>({
+    url: '/auth/sign-in/email',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Initiate OAuth sign-in (GitHub)
+ */
+export const signInSocial = <ThrowOnError extends boolean = false>(options: Options<SignInSocialData, ThrowOnError>): RequestResult<SignInSocialResponses, SignInSocialErrors, ThrowOnError> => (options.client ?? client).post<SignInSocialResponses, SignInSocialErrors, ThrowOnError>({
+    url: '/auth/sign-in/social',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Initiate SSO sign-in
+ */
+export const signInSso = <ThrowOnError extends boolean = false>(options: Options<SignInSsoData, ThrowOnError>): RequestResult<SignInSsoResponses, SignInSsoErrors, ThrowOnError> => (options.client ?? client).post<SignInSsoResponses, SignInSsoErrors, ThrowOnError>({
+    url: '/auth/sign-in/sso',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sign out
+ */
+export const signOut = <ThrowOnError extends boolean = false>(options?: Options<SignOutData, ThrowOnError>): RequestResult<SignOutResponses, SignOutErrors, ThrowOnError> => (options?.client ?? client).post<SignOutResponses, SignOutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/sign-out',
+    ...options
+});
+
+/**
+ * Register with email and password
+ */
+export const signUpEmail = <ThrowOnError extends boolean = false>(options: Options<SignUpEmailData, ThrowOnError>): RequestResult<SignUpEmailResponses, SignUpEmailErrors, ThrowOnError> => (options.client ?? client).post<SignUpEmailResponses, SignUpEmailErrors, ThrowOnError>({
+    url: '/auth/sign-up/email',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Handle SSO OIDC callback
+ */
+export const ssoCallback = <ThrowOnError extends boolean = false>(options: Options<SsoCallbackData, ThrowOnError>): RequestResult<SsoCallbackResponses, SsoCallbackErrors, ThrowOnError> => (options.client ?? client).get<SsoCallbackResponses, SsoCallbackErrors, ThrowOnError>({ url: '/auth/sso/callback/{providerId}', ...options });
+
+/**
+ * Register an SSO provider
+ */
+export const registerSsoProvider = <ThrowOnError extends boolean = false>(options: Options<RegisterSsoProviderData, ThrowOnError>): RequestResult<RegisterSsoProviderResponses, RegisterSsoProviderErrors, ThrowOnError> => (options.client ?? client).post<RegisterSsoProviderResponses, RegisterSsoProviderErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/sso/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unlink an auth provider
+ */
+export const unlinkAccount = <ThrowOnError extends boolean = false>(options: Options<UnlinkAccountData, ThrowOnError>): RequestResult<UnlinkAccountResponses, UnlinkAccountErrors, ThrowOnError> => (options.client ?? client).post<UnlinkAccountResponses, UnlinkAccountErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/unlink-account',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Update user profile
+ */
+export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError> => (options.client ?? client).post<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/update-user',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Verify email address
+ */
+export const verifyEmail = <ThrowOnError extends boolean = false>(options?: Options<VerifyEmailData, ThrowOnError>): RequestResult<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError> => (options?.client ?? client).get<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError>({ url: '/auth/verify-email', ...options });
+
+/**
+ * Create a deployment via CLI
+ */
+export const createCliDeployment = <ThrowOnError extends boolean = false>(options: Options<CreateCliDeploymentData, ThrowOnError>): RequestResult<CreateCliDeploymentResponses, CreateCliDeploymentErrors, ThrowOnError> => (options.client ?? client).post<CreateCliDeploymentResponses, CreateCliDeploymentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/cli/deployments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -238,6 +912,51 @@ export const updateEnvironment = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
+ * List recorded changelog entries for an environment
+ */
+export const getEnvironmentChangelogs = <ThrowOnError extends boolean = false>(options: Options<GetEnvironmentChangelogsData, ThrowOnError>): RequestResult<GetEnvironmentChangelogsResponses, GetEnvironmentChangelogsErrors, ThrowOnError> => (options.client ?? client).get<GetEnvironmentChangelogsResponses, GetEnvironmentChangelogsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/environments/{environmentId}/changelogs',
+    ...options
+});
+
+/**
+ * Clear Shopware cache for the environment
+ */
+export const clearEnvironmentCache = <ThrowOnError extends boolean = false>(options: Options<ClearEnvironmentCacheData, ThrowOnError>): RequestResult<ClearEnvironmentCacheResponses, ClearEnvironmentCacheErrors, ThrowOnError> => (options.client ?? client).post<ClearEnvironmentCacheResponses, ClearEnvironmentCacheErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/environments/{environmentId}/clear-cache',
+    ...options
+});
+
+/**
+ * List deployments for an environment
+ */
+export const getDeployments = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentsData, ThrowOnError>): RequestResult<GetDeploymentsResponses, GetDeploymentsErrors, ThrowOnError> => (options.client ?? client).get<GetDeploymentsResponses, GetDeploymentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/environments/{environmentId}/deployments',
+    ...options
+});
+
+/**
+ * Delete a deployment
+ */
+export const deleteDeployment = <ThrowOnError extends boolean = false>(options: Options<DeleteDeploymentData, ThrowOnError>): RequestResult<DeleteDeploymentResponses, DeleteDeploymentErrors, ThrowOnError> => (options.client ?? client).delete<DeleteDeploymentResponses, DeleteDeploymentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/environments/{environmentId}/deployments/{deploymentId}',
+    ...options
+});
+
+/**
+ * Get deployment details with output
+ */
+export const getDeployment = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentData, ThrowOnError>): RequestResult<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError> => (options.client ?? client).get<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/environments/{environmentId}/deployments/{deploymentId}',
+    ...options
+});
+
+/**
  * Refresh environment data from Shopware API
  */
 export const refreshEnvironment = <ThrowOnError extends boolean = false>(options: Options<RefreshEnvironmentData, ThrowOnError>): RequestResult<RefreshEnvironmentResponses, RefreshEnvironmentErrors, ThrowOnError> => (options.client ?? client).post<RefreshEnvironmentResponses, RefreshEnvironmentErrors, ThrowOnError>({
@@ -251,20 +970,24 @@ export const refreshEnvironment = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Clear Shopware cache for the environment
+ * Update sitespeed settings for an environment
  */
-export const clearEnvironmentCache = <ThrowOnError extends boolean = false>(options: Options<ClearEnvironmentCacheData, ThrowOnError>): RequestResult<ClearEnvironmentCacheResponses, ClearEnvironmentCacheErrors, ThrowOnError> => (options.client ?? client).post<ClearEnvironmentCacheResponses, ClearEnvironmentCacheErrors, ThrowOnError>({
+export const updateSitespeedSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateSitespeedSettingsData, ThrowOnError>): RequestResult<UpdateSitespeedSettingsResponses, UpdateSitespeedSettingsErrors, ThrowOnError> => (options.client ?? client).put<UpdateSitespeedSettingsResponses, UpdateSitespeedSettingsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/clear-cache',
-    ...options
+    url: '/environments/{environmentId}/sitespeed-settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
- * Reschedule a scheduled task
+ * Get the status change history for an environment
  */
-export const rescheduleTask = <ThrowOnError extends boolean = false>(options: Options<RescheduleTaskData, ThrowOnError>): RequestResult<RescheduleTaskResponses, RescheduleTaskErrors, ThrowOnError> => (options.client ?? client).post<RescheduleTaskResponses, RescheduleTaskErrors, ThrowOnError>({
+export const getEnvironmentStatusEvents = <ThrowOnError extends boolean = false>(options: Options<GetEnvironmentStatusEventsData, ThrowOnError>): RequestResult<GetEnvironmentStatusEventsResponses, GetEnvironmentStatusEventsErrors, ThrowOnError> => (options.client ?? client).get<GetEnvironmentStatusEventsResponses, GetEnvironmentStatusEventsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/tasks/{taskId}/reschedule',
+    url: '/environments/{environmentId}/status-events',
     ...options
 });
 
@@ -287,34 +1010,108 @@ export const subscribeToEnvironment = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Get the status change history for an environment
+ * Reschedule a scheduled task
  */
-export const getEnvironmentStatusEvents = <ThrowOnError extends boolean = false>(options: Options<GetEnvironmentStatusEventsData, ThrowOnError>): RequestResult<GetEnvironmentStatusEventsResponses, GetEnvironmentStatusEventsErrors, ThrowOnError> => (options.client ?? client).get<GetEnvironmentStatusEventsResponses, GetEnvironmentStatusEventsErrors, ThrowOnError>({
+export const rescheduleTask = <ThrowOnError extends boolean = false>(options: Options<RescheduleTaskData, ThrowOnError>): RequestResult<RescheduleTaskResponses, RescheduleTaskErrors, ThrowOnError> => (options.client ?? client).post<RescheduleTaskResponses, RescheduleTaskErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/status-events',
+    url: '/environments/{environmentId}/tasks/{taskId}/reschedule',
     ...options
 });
 
 /**
- * List recorded changelog entries for an environment
+ * Health check
  */
-export const getEnvironmentChangelogs = <ThrowOnError extends boolean = false>(options: Options<GetEnvironmentChangelogsData, ThrowOnError>): RequestResult<GetEnvironmentChangelogsResponses, GetEnvironmentChangelogsErrors, ThrowOnError> => (options.client ?? client).get<GetEnvironmentChangelogsResponses, GetEnvironmentChangelogsErrors, ThrowOnError>({
+export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, GetHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({ url: '/health', ...options });
+
+/**
+ * Get instance feature configuration
+ *
+ * Returns which features are enabled on this instance, based on server configuration.
+ */
+export const getInstanceConfig = <ThrowOnError extends boolean = false>(options?: Options<GetInstanceConfigData, ThrowOnError>): RequestResult<GetInstanceConfigResponses, GetInstanceConfigErrors, ThrowOnError> => (options?.client ?? client).get<GetInstanceConfigResponses, GetInstanceConfigErrors, ThrowOnError>({ url: '/info/config', ...options });
+
+/**
+ * Get public ecosystem statistics
+ *
+ * Aggregate, non-identifying ecosystem statistics (user growth, environment growth and Shopware version distribution) visible to any authenticated user.
+ */
+export const getEcosystemStats = <ThrowOnError extends boolean = false>(options?: Options<GetEcosystemStatsData, ThrowOnError>): RequestResult<GetEcosystemStatsResponses, GetEcosystemStatsErrors, ThrowOnError> => (options?.client ?? client).get<GetEcosystemStatsResponses, GetEcosystemStatsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/changelogs',
+    url: '/info/ecosystem',
     ...options
 });
 
 /**
- * Update sitespeed settings for an environment
+ * Check extension compatibility between Shopware versions
  */
-export const updateSitespeedSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateSitespeedSettingsData, ThrowOnError>): RequestResult<UpdateSitespeedSettingsResponses, UpdateSitespeedSettingsErrors, ThrowOnError> => (options.client ?? client).put<UpdateSitespeedSettingsResponses, UpdateSitespeedSettingsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/sitespeed-settings',
+export const checkExtensionCompatibility = <ThrowOnError extends boolean = false>(options: Options<CheckExtensionCompatibilityData, ThrowOnError>): RequestResult<CheckExtensionCompatibilityResponses, CheckExtensionCompatibilityErrors, ThrowOnError> => (options.client ?? client).post<CheckExtensionCompatibilityResponses, CheckExtensionCompatibilityErrors, ThrowOnError>({
+    url: '/info/extension-compatibility',
     ...options,
     headers: {
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get known Shopware versions
+ *
+ * Returns all known Shopware versions, newest first. Served from a local cache that the worker refreshes hourly from the Shopware release changelog.
+ */
+export const getShopwareVersions = <ThrowOnError extends boolean = false>(options?: Options<GetShopwareVersionsData, ThrowOnError>): RequestResult<GetShopwareVersionsResponses, GetShopwareVersionsErrors, ThrowOnError> => (options?.client ?? client).get<GetShopwareVersionsResponses, GetShopwareVersionsErrors, ThrowOnError>({ url: '/info/shopware-versions', ...options });
+
+/**
+ * Delete all notifications
+ */
+export const deleteAllNotifications = <ThrowOnError extends boolean = false>(options?: Options<DeleteAllNotificationsData, ThrowOnError>): RequestResult<DeleteAllNotificationsResponses, DeleteAllNotificationsErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteAllNotificationsResponses, DeleteAllNotificationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications',
+    ...options
+});
+
+/**
+ * Get all notifications for the current user
+ */
+export const getNotifications = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationsData, ThrowOnError>): RequestResult<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError> => (options?.client ?? client).get<GetNotificationsResponses, GetNotificationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications',
+    ...options
+});
+
+/**
+ * List the notifiable event types and their default channels
+ */
+export const getNotificationEventTypes = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationEventTypesData, ThrowOnError>): RequestResult<GetNotificationEventTypesResponses, GetNotificationEventTypesErrors, ThrowOnError> => (options?.client ?? client).get<GetNotificationEventTypesResponses, GetNotificationEventTypesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications/event-types',
+    ...options
+});
+
+/**
+ * Mark all notifications as read
+ */
+export const markNotificationsRead = <ThrowOnError extends boolean = false>(options?: Options<MarkNotificationsReadData, ThrowOnError>): RequestResult<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError> => (options?.client ?? client).post<MarkNotificationsReadResponses, MarkNotificationsReadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications/mark-read',
+    ...options
+});
+
+/**
+ * Delete a single notification
+ */
+export const deleteNotification = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationData, ThrowOnError>): RequestResult<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/notifications/{id}',
+    ...options
+});
+
+/**
+ * Get all environments in an organization
+ */
+export const getOrganizationEnvironments = <ThrowOnError extends boolean = false>(options: Options<GetOrganizationEnvironmentsData, ThrowOnError>): RequestResult<GetOrganizationEnvironmentsResponses, GetOrganizationEnvironmentsErrors, ThrowOnError> => (options.client ?? client).get<GetOrganizationEnvironmentsResponses, GetOrganizationEnvironmentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/organizations/{orgId}/environments',
+    ...options
 });
 
 /**
@@ -362,11 +1159,6 @@ export const updateShop = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Get available API key scopes
- */
-export const getApiKeyScopes = <ThrowOnError extends boolean = false>(options?: Options<GetApiKeyScopesData, ThrowOnError>): RequestResult<GetApiKeyScopesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetApiKeyScopesResponses, unknown, ThrowOnError>({ url: '/api-key-scopes', ...options });
-
-/**
  * List API keys for a shop
  */
 export const getApiKeys = <ThrowOnError extends boolean = false>(options: Options<GetApiKeysData, ThrowOnError>): RequestResult<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError> => (options.client ?? client).get<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError>({
@@ -394,15 +1186,6 @@ export const createApiKey = <ThrowOnError extends boolean = false>(options: Opti
 export const deleteApiKey = <ThrowOnError extends boolean = false>(options: Options<DeleteApiKeyData, ThrowOnError>): RequestResult<DeleteApiKeyResponses, DeleteApiKeyErrors, ThrowOnError> => (options.client ?? client).delete<DeleteApiKeyResponses, DeleteApiKeyErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/organizations/{orgId}/shops/{shopId}/api-keys/{keyId}',
-    ...options
-});
-
-/**
- * Get packages token configuration
- */
-export const getPackagesTokenConfiguration = <ThrowOnError extends boolean = false>(options?: Options<GetPackagesTokenConfigurationData, ThrowOnError>): RequestResult<GetPackagesTokenConfigurationResponses, GetPackagesTokenConfigurationErrors, ThrowOnError> => (options?.client ?? client).get<GetPackagesTokenConfigurationResponses, GetPackagesTokenConfigurationErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/packages-token/configuration',
     ...options
 });
 
@@ -447,60 +1230,11 @@ export const syncPackagesToken = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * List deployments for an environment
- */
-export const getDeployments = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentsData, ThrowOnError>): RequestResult<GetDeploymentsResponses, GetDeploymentsErrors, ThrowOnError> => (options.client ?? client).get<GetDeploymentsResponses, GetDeploymentsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/deployments',
-    ...options
-});
-
-/**
- * Delete a deployment
- */
-export const deleteDeployment = <ThrowOnError extends boolean = false>(options: Options<DeleteDeploymentData, ThrowOnError>): RequestResult<DeleteDeploymentResponses, DeleteDeploymentErrors, ThrowOnError> => (options.client ?? client).delete<DeleteDeploymentResponses, DeleteDeploymentErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/deployments/{deploymentId}',
-    ...options
-});
-
-/**
- * Get deployment details with output
- */
-export const getDeployment = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentData, ThrowOnError>): RequestResult<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError> => (options.client ?? client).get<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/environments/{environmentId}/deployments/{deploymentId}',
-    ...options
-});
-
-/**
- * Create a deployment via CLI
- */
-export const createCliDeployment = <ThrowOnError extends boolean = false>(options: Options<CreateCliDeploymentData, ThrowOnError>): RequestResult<CreateCliDeploymentResponses, CreateCliDeploymentErrors, ThrowOnError> => (options.client ?? client).post<CreateCliDeploymentResponses, CreateCliDeploymentErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/cli/deployments',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
  * List SSO providers for an organization
  */
 export const getSsoProviders = <ThrowOnError extends boolean = false>(options: Options<GetSsoProvidersData, ThrowOnError>): RequestResult<GetSsoProvidersResponses, GetSsoProvidersErrors, ThrowOnError> => (options.client ?? client).get<GetSsoProvidersResponses, GetSsoProvidersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/organizations/{orgId}/sso-providers',
-    ...options
-});
-
-/**
- * Discover OIDC configuration from an issuer URL
- */
-export const discoverSso = <ThrowOnError extends boolean = false>(options: Options<DiscoverSsoData, ThrowOnError>): RequestResult<DiscoverSsoResponses, DiscoverSsoErrors, ThrowOnError> => (options.client ?? client).get<DiscoverSsoResponses, DiscoverSsoErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/sso/discover',
     ...options
 });
 
@@ -527,167 +1261,21 @@ export const updateSsoProvider = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * List all organizations (admin only)
+ * Get packages token configuration
  */
-export const adminGetOrganizations = <ThrowOnError extends boolean = false>(options?: Options<AdminGetOrganizationsData, ThrowOnError>): RequestResult<AdminGetOrganizationsResponses, AdminGetOrganizationsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetOrganizationsResponses, AdminGetOrganizationsErrors, ThrowOnError>({
+export const getPackagesTokenConfiguration = <ThrowOnError extends boolean = false>(options?: Options<GetPackagesTokenConfigurationData, ThrowOnError>): RequestResult<GetPackagesTokenConfigurationResponses, GetPackagesTokenConfigurationErrors, ThrowOnError> => (options?.client ?? client).get<GetPackagesTokenConfigurationResponses, GetPackagesTokenConfigurationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/organizations',
+    url: '/packages-token/configuration',
     ...options
 });
 
 /**
- * List all environments (admin only)
+ * Discover OIDC configuration from an issuer URL
  */
-export const adminGetEnvironments = <ThrowOnError extends boolean = false>(options?: Options<AdminGetEnvironmentsData, ThrowOnError>): RequestResult<AdminGetEnvironmentsResponses, AdminGetEnvironmentsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetEnvironmentsResponses, AdminGetEnvironmentsErrors, ThrowOnError>({
+export const discoverSso = <ThrowOnError extends boolean = false>(options?: Options<DiscoverSsoData, ThrowOnError>): RequestResult<DiscoverSsoResponses, DiscoverSsoErrors, ThrowOnError> => (options?.client ?? client).get<DiscoverSsoResponses, DiscoverSsoErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/environments',
+    url: '/sso/discover',
     ...options
-});
-
-/**
- * Get admin dashboard statistics
- */
-export const adminGetStats = <ThrowOnError extends boolean = false>(options?: Options<AdminGetStatsData, ThrowOnError>): RequestResult<AdminGetStatsResponses, AdminGetStatsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetStatsResponses, AdminGetStatsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/stats',
-    ...options
-});
-
-/**
- * Get growth data over time
- */
-export const adminGetGrowth = <ThrowOnError extends boolean = false>(options?: Options<AdminGetGrowthData, ThrowOnError>): RequestResult<AdminGetGrowthResponses, AdminGetGrowthErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetGrowthResponses, AdminGetGrowthErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/growth',
-    ...options
-});
-
-/**
- * Get an organization with detail (admin only)
- */
-export const adminGetOrganizationDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetOrganizationDetailData, ThrowOnError>): RequestResult<AdminGetOrganizationDetailResponses, AdminGetOrganizationDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetOrganizationDetailResponses, AdminGetOrganizationDetailErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/organizations/{orgId}',
-    ...options
-});
-
-/**
- * Get an environment with detail (admin only)
- */
-export const adminGetEnvironmentDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetEnvironmentDetailData, ThrowOnError>): RequestResult<AdminGetEnvironmentDetailResponses, AdminGetEnvironmentDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetEnvironmentDetailResponses, AdminGetEnvironmentDetailErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/environments/{envId}',
-    ...options
-});
-
-/**
- * List audit log entries (admin only)
- */
-export const adminGetAuditLog = <ThrowOnError extends boolean = false>(options?: Options<AdminGetAuditLogData, ThrowOnError>): RequestResult<AdminGetAuditLogResponses, AdminGetAuditLogErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetAuditLogResponses, AdminGetAuditLogErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/audit-log',
-    ...options
-});
-
-/**
- * Get recent user and environment activity
- */
-export const adminGetRecentActivity = <ThrowOnError extends boolean = false>(options?: Options<AdminGetRecentActivityData, ThrowOnError>): RequestResult<AdminGetRecentActivityResponses, AdminGetRecentActivityErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetRecentActivityResponses, AdminGetRecentActivityErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/recent-activity',
-    ...options
-});
-
-/**
- * Get Shopware version distribution across environments
- */
-export const adminGetShopwareVersions = <ThrowOnError extends boolean = false>(options?: Options<AdminGetShopwareVersionsData, ThrowOnError>): RequestResult<AdminGetShopwareVersionsResponses, AdminGetShopwareVersionsErrors, ThrowOnError> => (options?.client ?? client).get<AdminGetShopwareVersionsResponses, AdminGetShopwareVersionsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/shopware-versions',
-    ...options
-});
-
-/**
- * List all Composer advisories including hidden ones (admin only)
- */
-export const adminListAdvisories = <ThrowOnError extends boolean = false>(options?: Options<AdminListAdvisoriesData, ThrowOnError>): RequestResult<AdminListAdvisoriesResponses, AdminListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<AdminListAdvisoriesResponses, AdminListAdvisoriesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/advisories',
-    ...options
-});
-
-/**
- * Enqueue a Packagist advisory sync job
- */
-export const adminSyncAdvisories = <ThrowOnError extends boolean = false>(options?: Options<AdminSyncAdvisoriesData, ThrowOnError>): RequestResult<AdminSyncAdvisoriesResponses, AdminSyncAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).post<AdminSyncAdvisoriesResponses, AdminSyncAdvisoriesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/advisories/sync',
-    ...options
-});
-
-/**
- * Get a single advisory with internal notes (admin only)
- */
-export const adminGetAdvisory = <ThrowOnError extends boolean = false>(options: Options<AdminGetAdvisoryData, ThrowOnError>): RequestResult<AdminGetAdvisoryResponses, AdminGetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<AdminGetAdvisoryResponses, AdminGetAdvisoryErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/advisories/{advisoryId}',
-    ...options
-});
-
-/**
- * Update Shopmon enrichment fields for an advisory
- */
-export const adminUpdateAdvisory = <ThrowOnError extends boolean = false>(options: Options<AdminUpdateAdvisoryData, ThrowOnError>): RequestResult<AdminUpdateAdvisoryResponses, AdminUpdateAdvisoryErrors, ThrowOnError> => (options.client ?? client).patch<AdminUpdateAdvisoryResponses, AdminUpdateAdvisoryErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/admin/advisories/{advisoryId}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List visible Composer security advisories for Shopware packages
- */
-export const listAdvisories = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoriesData, ThrowOnError>): RequestResult<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoriesResponses, ListAdvisoriesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories',
-    ...options
-});
-
-/**
- * List package names that have visible advisories
- */
-export const listAdvisoryPackages = <ThrowOnError extends boolean = false>(options?: Options<ListAdvisoryPackagesData, ThrowOnError>): RequestResult<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError> => (options?.client ?? client).get<ListAdvisoryPackagesResponses, ListAdvisoryPackagesErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/packages',
-    ...options
-});
-
-/**
- * Get a visible advisory by Packagist advisory ID
- */
-export const getAdvisory = <ThrowOnError extends boolean = false>(options: Options<GetAdvisoryData, ThrowOnError>): RequestResult<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError> => (options.client ?? client).get<GetAdvisoryResponses, GetAdvisoryErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/{advisoryId}',
-    ...options
-});
-
-/**
- * Record that an advisory is accepted or mitigated for a shop
- *
- * Suppressing an advisory removes it from the "affecting my shops" list and silences its alerts. Shop-wide suppression requires the owner or admin role; narrowing to a single environment is open to any member.
- *
- */
-export const createAdvisorySuppression = <ThrowOnError extends boolean = false>(options: Options<CreateAdvisorySuppressionData, ThrowOnError>): RequestResult<CreateAdvisorySuppressionResponses, CreateAdvisorySuppressionErrors, ThrowOnError> => (options.client ?? client).post<CreateAdvisorySuppressionResponses, CreateAdvisorySuppressionErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/{advisoryId}/suppressions',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });
 
 /**
@@ -706,592 +1294,4 @@ export const revokeAdvisorySuppression = <ThrowOnError extends boolean = false>(
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/suppressions/{suppressionId}',
     ...options
-});
-
-/**
- * List the caller's environments affected by an advisory
- *
- * Environments whose Composer package inventory (from the FroshTools SBOM) matches this advisory. Restricted to organizations the caller belongs to; admins additionally receive a fleet-wide affected count.
- *
- */
-export const listAdvisoryAffectedEnvironments = <ThrowOnError extends boolean = false>(options: Options<ListAdvisoryAffectedEnvironmentsData, ThrowOnError>): RequestResult<ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryAffectedEnvironmentsErrors, ThrowOnError> => (options.client ?? client).get<ListAdvisoryAffectedEnvironmentsResponses, ListAdvisoryAffectedEnvironmentsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/advisories/{advisoryId}/affected',
-    ...options
-});
-
-/**
- * Check extension compatibility between Shopware versions
- */
-export const checkExtensionCompatibility = <ThrowOnError extends boolean = false>(options: Options<CheckExtensionCompatibilityData, ThrowOnError>): RequestResult<CheckExtensionCompatibilityResponses, CheckExtensionCompatibilityErrors, ThrowOnError> => (options.client ?? client).post<CheckExtensionCompatibilityResponses, CheckExtensionCompatibilityErrors, ThrowOnError>({
-    url: '/info/extension-compatibility',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Get known Shopware versions
- *
- * Returns all known Shopware versions, newest first. Served from a local cache that the worker refreshes hourly from the Shopware release changelog.
- */
-export const getShopwareVersions = <ThrowOnError extends boolean = false>(options?: Options<GetShopwareVersionsData, ThrowOnError>): RequestResult<GetShopwareVersionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetShopwareVersionsResponses, unknown, ThrowOnError>({ url: '/info/shopware-versions', ...options });
-
-/**
- * Get instance feature configuration
- *
- * Returns which features are enabled on this instance, based on server configuration.
- */
-export const getInstanceConfig = <ThrowOnError extends boolean = false>(options?: Options<GetInstanceConfigData, ThrowOnError>): RequestResult<GetInstanceConfigResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetInstanceConfigResponses, unknown, ThrowOnError>({ url: '/info/config', ...options });
-
-/**
- * Get public ecosystem statistics
- *
- * Aggregate, non-identifying ecosystem statistics (user growth, environment growth and Shopware version distribution) visible to any authenticated user.
- */
-export const getEcosystemStats = <ThrowOnError extends boolean = false>(options?: Options<GetEcosystemStatsData, ThrowOnError>): RequestResult<GetEcosystemStatsResponses, GetEcosystemStatsErrors, ThrowOnError> => (options?.client ?? client).get<GetEcosystemStatsResponses, GetEcosystemStatsErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/info/ecosystem',
-    ...options
-});
-
-/**
- * Register with email and password
- */
-export const signUpEmail = <ThrowOnError extends boolean = false>(options: Options<SignUpEmailData, ThrowOnError>): RequestResult<SignUpEmailResponses, SignUpEmailErrors, ThrowOnError> => (options.client ?? client).post<SignUpEmailResponses, SignUpEmailErrors, ThrowOnError>({
-    url: '/auth/sign-up/email',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Sign in with email and password
- */
-export const signInEmail = <ThrowOnError extends boolean = false>(options: Options<SignInEmailData, ThrowOnError>): RequestResult<SignInEmailResponses, SignInEmailErrors, ThrowOnError> => (options.client ?? client).post<SignInEmailResponses, SignInEmailErrors, ThrowOnError>({
-    url: '/auth/sign-in/email',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Sign out
- */
-export const signOut = <ThrowOnError extends boolean = false>(options?: Options<SignOutData, ThrowOnError>): RequestResult<SignOutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<SignOutResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/sign-out',
-    ...options
-});
-
-/**
- * Get current session
- */
-export const getSession = <ThrowOnError extends boolean = false>(options?: Options<GetSessionData, ThrowOnError>): RequestResult<GetSessionResponses, GetSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetSessionResponses, GetSessionErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/session',
-    ...options
-});
-
-/**
- * Set the active organization for the current session
- */
-export const setActiveOrganization = <ThrowOnError extends boolean = false>(options: Options<SetActiveOrganizationData, ThrowOnError>): RequestResult<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError> => (options.client ?? client).post<SetActiveOrganizationResponses, SetActiveOrganizationErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/set-active-organization',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Verify email address
- */
-export const verifyEmail = <ThrowOnError extends boolean = false>(options: Options<VerifyEmailData, ThrowOnError>): RequestResult<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError> => (options.client ?? client).get<VerifyEmailResponses, VerifyEmailErrors, ThrowOnError>({ url: '/auth/verify-email', ...options });
-
-/**
- * Request password reset email
- */
-export const forgetPassword = <ThrowOnError extends boolean = false>(options: Options<ForgetPasswordData, ThrowOnError>): RequestResult<ForgetPasswordResponses, unknown, ThrowOnError> => (options.client ?? client).post<ForgetPasswordResponses, unknown, ThrowOnError>({
-    url: '/auth/forget-password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Reset password with token
- */
-export const resetPassword = <ThrowOnError extends boolean = false>(options: Options<ResetPasswordData, ThrowOnError>): RequestResult<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError> => (options.client ?? client).post<ResetPasswordResponses, ResetPasswordErrors, ThrowOnError>({
-    url: '/auth/reset-password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Initiate OAuth sign-in (GitHub)
- */
-export const signInSocial = <ThrowOnError extends boolean = false>(options: Options<SignInSocialData, ThrowOnError>): RequestResult<SignInSocialResponses, unknown, ThrowOnError> => (options.client ?? client).post<SignInSocialResponses, unknown, ThrowOnError>({
-    url: '/auth/sign-in/social',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Initiate SSO sign-in
- */
-export const signInSso = <ThrowOnError extends boolean = false>(options: Options<SignInSsoData, ThrowOnError>): RequestResult<SignInSsoResponses, SignInSsoErrors, ThrowOnError> => (options.client ?? client).post<SignInSsoResponses, SignInSsoErrors, ThrowOnError>({
-    url: '/auth/sign-in/sso',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Handle SSO OIDC callback
- */
-export const ssoCallback = <ThrowOnError extends boolean = false>(options: Options<SsoCallbackData, ThrowOnError>): RequestResult<SsoCallbackResponses, SsoCallbackErrors, ThrowOnError> => (options.client ?? client).get<SsoCallbackResponses, SsoCallbackErrors, ThrowOnError>({ url: '/auth/sso/callback/{providerId}', ...options });
-
-/**
- * Begin passkey registration
- */
-export const passkeyRegisterOptions = <ThrowOnError extends boolean = false>(options?: Options<PasskeyRegisterOptionsData, ThrowOnError>): RequestResult<PasskeyRegisterOptionsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PasskeyRegisterOptionsResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/passkey/register-options',
-    ...options
-});
-
-/**
- * Complete passkey registration
- */
-export const passkeyRegister = <ThrowOnError extends boolean = false>(options: Options<PasskeyRegisterData, ThrowOnError>): RequestResult<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError> => (options.client ?? client).post<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/passkey/register',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Begin passkey login
- */
-export const passkeyLoginOptions = <ThrowOnError extends boolean = false>(options?: Options<PasskeyLoginOptionsData, ThrowOnError>): RequestResult<PasskeyLoginOptionsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PasskeyLoginOptionsResponses, unknown, ThrowOnError>({ url: '/auth/passkey/login-options', ...options });
-
-/**
- * Complete passkey login
- */
-export const passkeyLogin = <ThrowOnError extends boolean = false>(options: Options<PasskeyLoginData, ThrowOnError>): RequestResult<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError> => (options.client ?? client).post<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError>({
-    url: '/auth/passkey/login',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Create an organization
- */
-export const createOrganization = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationData, ThrowOnError>): RequestResult<CreateOrganizationResponses, unknown, ThrowOnError> => (options.client ?? client).post<CreateOrganizationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete an organization
- */
-export const deleteOrganization = <ThrowOnError extends boolean = false>(options: Options<DeleteOrganizationData, ThrowOnError>): RequestResult<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteOrganizationResponses, DeleteOrganizationErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}',
-    ...options
-});
-
-/**
- * Update an organization
- */
-export const updateOrganization = <ThrowOnError extends boolean = false>(options: Options<UpdateOrganizationData, ThrowOnError>): RequestResult<UpdateOrganizationResponses, unknown, ThrowOnError> => (options.client ?? client).patch<UpdateOrganizationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List organization members
- */
-export const listOrganizationMembers = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationMembersData, ThrowOnError>): RequestResult<ListOrganizationMembersResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListOrganizationMembersResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/members',
-    ...options
-});
-
-/**
- * Remove a member from the organization
- */
-export const removeMember = <ThrowOnError extends boolean = false>(options: Options<RemoveMemberData, ThrowOnError>): RequestResult<RemoveMemberResponses, unknown, ThrowOnError> => (options.client ?? client).delete<RemoveMemberResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/members/{userId}',
-    ...options
-});
-
-/**
- * Change a member's role
- */
-export const setMemberRole = <ThrowOnError extends boolean = false>(options: Options<SetMemberRoleData, ThrowOnError>): RequestResult<SetMemberRoleResponses, unknown, ThrowOnError> => (options.client ?? client).patch<SetMemberRoleResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/members/{userId}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Leave an organization
- */
-export const leaveOrganization = <ThrowOnError extends boolean = false>(options: Options<LeaveOrganizationData, ThrowOnError>): RequestResult<LeaveOrganizationResponses, LeaveOrganizationErrors, ThrowOnError> => (options.client ?? client).post<LeaveOrganizationResponses, LeaveOrganizationErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/leave',
-    ...options
-});
-
-/**
- * List pending invitations
- */
-export const listOrganizationInvitations = <ThrowOnError extends boolean = false>(options: Options<ListOrganizationInvitationsData, ThrowOnError>): RequestResult<ListOrganizationInvitationsResponses, unknown, ThrowOnError> => (options.client ?? client).get<ListOrganizationInvitationsResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/invitations',
-    ...options
-});
-
-/**
- * Invite a user to the organization
- */
-export const inviteMember = <ThrowOnError extends boolean = false>(options: Options<InviteMemberData, ThrowOnError>): RequestResult<InviteMemberResponses, unknown, ThrowOnError> => (options.client ?? client).post<InviteMemberResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/organizations/{organizationId}/invitations',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Accept an invitation
- */
-export const acceptInvitation = <ThrowOnError extends boolean = false>(options: Options<AcceptInvitationData, ThrowOnError>): RequestResult<AcceptInvitationResponses, unknown, ThrowOnError> => (options.client ?? client).post<AcceptInvitationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/invitations/{invitationId}/accept',
-    ...options
-});
-
-/**
- * Reject an invitation
- */
-export const rejectInvitation = <ThrowOnError extends boolean = false>(options: Options<RejectInvitationData, ThrowOnError>): RequestResult<RejectInvitationResponses, unknown, ThrowOnError> => (options.client ?? client).post<RejectInvitationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/invitations/{invitationId}/reject',
-    ...options
-});
-
-/**
- * List all users (admin only)
- */
-export const adminListUsers = <ThrowOnError extends boolean = false>(options?: Options<AdminListUsersData, ThrowOnError>): RequestResult<AdminListUsersResponses, unknown, ThrowOnError> => (options?.client ?? client).get<AdminListUsersResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users',
-    ...options
-});
-
-/**
- * Get a single user with detail (admin only)
- */
-export const adminGetUserDetail = <ThrowOnError extends boolean = false>(options: Options<AdminGetUserDetailData, ThrowOnError>): RequestResult<AdminGetUserDetailResponses, AdminGetUserDetailErrors, ThrowOnError> => (options.client ?? client).get<AdminGetUserDetailResponses, AdminGetUserDetailErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users/{userId}',
-    ...options
-});
-
-/**
- * Set a user's role
- */
-export const adminSetUserRole = <ThrowOnError extends boolean = false>(options: Options<AdminSetUserRoleData, ThrowOnError>): RequestResult<AdminSetUserRoleResponses, unknown, ThrowOnError> => (options.client ?? client).patch<AdminSetUserRoleResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users/{userId}/role',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Ban a user
- */
-export const adminBanUser = <ThrowOnError extends boolean = false>(options: Options<AdminBanUserData, ThrowOnError>): RequestResult<AdminBanUserResponses, unknown, ThrowOnError> => (options.client ?? client).post<AdminBanUserResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users/{userId}/ban',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Unban a user
- */
-export const adminUnbanUser = <ThrowOnError extends boolean = false>(options: Options<AdminUnbanUserData, ThrowOnError>): RequestResult<AdminUnbanUserResponses, unknown, ThrowOnError> => (options.client ?? client).post<AdminUnbanUserResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users/{userId}/unban',
-    ...options
-});
-
-/**
- * Impersonate a user
- */
-export const adminImpersonate = <ThrowOnError extends boolean = false>(options: Options<AdminImpersonateData, ThrowOnError>): RequestResult<AdminImpersonateResponses, unknown, ThrowOnError> => (options.client ?? client).post<AdminImpersonateResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/users/{userId}/impersonate',
-    ...options
-});
-
-/**
- * Get full organization details by ID
- */
-export const getFullOrganization = <ThrowOnError extends boolean = false>(options: Options<GetFullOrganizationData, ThrowOnError>): RequestResult<GetFullOrganizationResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetFullOrganizationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/get-full-organization',
-    ...options
-});
-
-/**
- * List active sessions
- */
-export const listSessions = <ThrowOnError extends boolean = false>(options?: Options<ListSessionsData, ThrowOnError>): RequestResult<ListSessionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListSessionsResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/list-sessions',
-    ...options
-});
-
-/**
- * Revoke a session
- */
-export const revokeSession = <ThrowOnError extends boolean = false>(options: Options<RevokeSessionData, ThrowOnError>): RequestResult<RevokeSessionResponses, unknown, ThrowOnError> => (options.client ?? client).post<RevokeSessionResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/revoke-session',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List linked auth providers
- */
-export const listAccounts = <ThrowOnError extends boolean = false>(options?: Options<ListAccountsData, ThrowOnError>): RequestResult<ListAccountsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListAccountsResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/list-accounts',
-    ...options
-});
-
-/**
- * Unlink an auth provider
- */
-export const unlinkAccount = <ThrowOnError extends boolean = false>(options: Options<UnlinkAccountData, ThrowOnError>): RequestResult<UnlinkAccountResponses, unknown, ThrowOnError> => (options.client ?? client).post<UnlinkAccountResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/unlink-account',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Change email address
- */
-export const changeEmail = <ThrowOnError extends boolean = false>(options: Options<ChangeEmailData, ThrowOnError>): RequestResult<ChangeEmailResponses, unknown, ThrowOnError> => (options.client ?? client).post<ChangeEmailResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/change-email',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Update user profile
- */
-export const updateUser = <ThrowOnError extends boolean = false>(options?: Options<UpdateUserData, ThrowOnError>): RequestResult<UpdateUserResponses, unknown, ThrowOnError> => (options?.client ?? client).post<UpdateUserResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/update-user',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-/**
- * Change password
- */
-export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).post<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/change-password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete user account
- */
-export const deleteUser = <ThrowOnError extends boolean = false>(options?: Options<DeleteUserData, ThrowOnError>): RequestResult<DeleteUserResponses, unknown, ThrowOnError> => (options?.client ?? client).post<DeleteUserResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/delete-user',
-    ...options
-});
-
-/**
- * Link a social provider
- */
-export const linkSocial = <ThrowOnError extends boolean = false>(options: Options<LinkSocialData, ThrowOnError>): RequestResult<LinkSocialResponses, unknown, ThrowOnError> => (options.client ?? client).post<LinkSocialResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/link-social',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List user's organizations
- */
-export const listUserOrganizations = <ThrowOnError extends boolean = false>(options?: Options<ListUserOrganizationsData, ThrowOnError>): RequestResult<ListUserOrganizationsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListUserOrganizationsResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/list-organizations',
-    ...options
-});
-
-/**
- * Check organization permission
- */
-export const hasPermission = <ThrowOnError extends boolean = false>(options: Options<HasPermissionData, ThrowOnError>): RequestResult<HasPermissionResponses, unknown, ThrowOnError> => (options.client ?? client).post<HasPermissionResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/has-permission',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Cancel a pending invitation
- */
-export const cancelInvitation = <ThrowOnError extends boolean = false>(options: Options<CancelInvitationData, ThrowOnError>): RequestResult<CancelInvitationResponses, unknown, ThrowOnError> => (options.client ?? client).post<CancelInvitationResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/cancel-invitation',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List user's passkeys
- */
-export const listUserPasskeys = <ThrowOnError extends boolean = false>(options?: Options<ListUserPasskeysData, ThrowOnError>): RequestResult<ListUserPasskeysResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListUserPasskeysResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/passkey/list-user-passkeys',
-    ...options
-});
-
-/**
- * Delete a passkey
- */
-export const deletePasskey = <ThrowOnError extends boolean = false>(options: Options<DeletePasskeyData, ThrowOnError>): RequestResult<DeletePasskeyResponses, unknown, ThrowOnError> => (options.client ?? client).post<DeletePasskeyResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/passkey/delete-passkey',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Register an SSO provider
- */
-export const registerSsoProvider = <ThrowOnError extends boolean = false>(options: Options<RegisterSsoProviderData, ThrowOnError>): RequestResult<RegisterSsoProviderResponses, unknown, ThrowOnError> => (options.client ?? client).post<RegisterSsoProviderResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/sso/register',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stop impersonating a user
- */
-export const adminStopImpersonating = <ThrowOnError extends boolean = false>(options?: Options<AdminStopImpersonatingData, ThrowOnError>): RequestResult<AdminStopImpersonatingResponses, unknown, ThrowOnError> => (options?.client ?? client).post<AdminStopImpersonatingResponses, unknown, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/auth/admin/stop-impersonating',
-    ...options
-});
-
-/**
- * Handle GitHub OAuth callback
- */
-export const githubCallback = <ThrowOnError extends boolean = false>(options: Options<GithubCallbackData, ThrowOnError>): RequestResult<GithubCallbackResponses, GithubCallbackErrors, ThrowOnError> => (options.client ?? client).get<GithubCallbackResponses, GithubCallbackErrors, ThrowOnError>({ url: '/auth/callback/github', ...options });
-
-/**
- * Exchange one-time authorization code for session token
- */
-export const exchangeCode = <ThrowOnError extends boolean = false>(options: Options<ExchangeCodeData, ThrowOnError>): RequestResult<ExchangeCodeResponses, ExchangeCodeErrors, ThrowOnError> => (options.client ?? client).post<ExchangeCodeResponses, ExchangeCodeErrors, ThrowOnError>({
-    url: '/auth/exchange-code',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });

@@ -4,7 +4,7 @@ Shopmon is an application from FriendsOfShopware to manage multiple Shopware ins
 
 ## Tech Stack
 
-- **API**: Go (chi router, sqlc, oapi-codegen)
+- **API**: Go (chi router, Huma v2, sqlc)
 - **Frontend**: Vue 3 + TypeScript + Tailwind CSS
 - **Database**: PostgreSQL
 - **Queue**: PostgreSQL (go-queue)
@@ -31,7 +31,7 @@ https://shopmon.fos.gg
 - [mise](https://mise.jdx.dev) — manages Go, Node.js, and tool versions
 - [Docker](https://www.docker.com/) — for PostgreSQL, Redis, Mailpit, and demo shop
 
-All other tools (Go 1.26, Node 26, sqlc, golangci-lint, air, oapi-codegen) are installed automatically by mise.
+All other tools (Go 1.26, Node 26, sqlc, golangci-lint, air) are installed automatically by mise.
 
 ### Quick Start
 
@@ -60,7 +60,7 @@ mise run load-fixtures   # Drop DB → migrate → seed (full reset)
 mise run test            # Run Go integration tests
 mise run lint            # Run all linters + type checks + tests
 mise run lint-fix        # Auto-fix lint and formatting issues
-mise run generate        # Regenerate sqlc + oapi-codegen + frontend API types
+mise run generate        # Regenerate sqlc + dump OpenAPI (gitignored) + frontend API types
 mise run build           # Build the API binary
 ```
 

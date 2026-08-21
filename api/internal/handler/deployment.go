@@ -1,35 +1,70 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/deployment"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
+type getDeploymentsInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId"`
+	Limit         int               `query:"limit"`
+	Offset        int               `query:"offset"`
+}
+
+type getDeploymentsOutput struct {
+	Body []api.Deployment
+}
+
+type getDeploymentInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId"`
+	DeploymentID  api.DeploymentId  `path:"deploymentId"`
+}
+
+type getDeploymentOutput struct {
+	Body api.DeploymentDetail
+}
+
+type deleteDeploymentInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId"`
+	DeploymentID  api.DeploymentId  `path:"deploymentId"`
+}
+
+type deleteDeploymentOutput struct {
+	Status int
+}
+
+type createCliDeploymentInput struct {
+	Authorization string `header:"Authorization"`
+	Body          api.CreateCliDeploymentRequest
+}
+
+type createCliDeploymentOutput struct {
+	Status int
+	Body   api.CreateCliDeploymentResponse
+}
+
 // GetDeployments lists deployments for an environment.
-func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, environmentID api.EnvironmentId, params api.GetDeploymentsParams) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) GetDeployments(ctx context.Context, input *getDeploymentsInput) (*getDeploymentsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	limit := int32(25)
-	offset := int32(0)
-	if params.Limit != nil {
-		limit = int32(*params.Limit)
+	offset := int32(input.Offset)
+	if input.Limit != 0 {
+		limit = int32(input.Limit)
 	}
-	if params.Offset != nil {
-		offset = int32(*params.Offset)
-	}
-	rows, err := h.deployments.List(r.Context(), user.ID, int32(environmentID), limit, offset)
+	rows, err := h.deployments.List(ctx, user.ID, int32(input.EnvironmentID), limit, offset)
 	if err != nil {
-		h.writeDeploymentError(w, r, "list deployments", err)
-		return
+		return nil, h.writeDeploymentError(ctx, "list deployments", err)
 	}
 
 	result := make([]api.Deployment, 0, len(rows))
@@ -47,23 +82,22 @@ func (h *Handler) GetDeployments(w http.ResponseWriter, r *http.Request, environ
 			CreatedAt:     row.CreatedAt,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getDeploymentsOutput{Body: result}, nil
 }
 
 // GetDeployment returns deployment details with output.
-func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, environmentID api.EnvironmentId, deploymentID api.DeploymentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) GetDeployment(ctx context.Context, input *getDeploymentInput) (*getDeploymentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	row, err := h.deployments.Get(r.Context(), user.ID, int32(environmentID), int32(deploymentID))
+	row, err := h.deployments.Get(ctx, user.ID, int32(input.EnvironmentID), int32(input.DeploymentID))
 	if err != nil {
-		h.writeDeploymentError(w, r, "get deployment", err)
-		return
+		return nil, h.writeDeploymentError(ctx, "get deployment", err)
 	}
 	name := row.Name
-	httputil.WriteJSON(w, http.StatusOK, api.DeploymentDetail{
+	return &getDeploymentOutput{Body: api.DeploymentDetail{
 		Id:            int(row.ID),
 		Command:       row.Command,
 		ReturnCode:    int(row.ReturnCode),
@@ -74,91 +108,85 @@ func (h *Handler) GetDeployment(w http.ResponseWriter, r *http.Request, environm
 		Reference:     row.Reference,
 		CreatedAt:     row.CreatedAt,
 		Output:        row.Output,
-	})
+	}}, nil
 }
 
 // DeleteDeployment deletes a deployment.
-func (h *Handler) DeleteDeployment(w http.ResponseWriter, r *http.Request, environmentID api.EnvironmentId, deploymentID api.DeploymentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteDeployment(ctx context.Context, input *deleteDeploymentInput) (*deleteDeploymentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.deployments.Delete(r.Context(), user.ID, int32(environmentID), int32(deploymentID)); err != nil {
-		h.writeDeploymentError(w, r, "delete deployment", err)
-		return
+	if err := h.deployments.Delete(ctx, user.ID, int32(input.EnvironmentID), int32(input.DeploymentID)); err != nil {
+		return nil, h.writeDeploymentError(ctx, "delete deployment", err)
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return &deleteDeploymentOutput{Status: http.StatusNoContent}, nil
 }
 
 // CreateCliDeployment creates a deployment via CLI using API key auth.
-func (h *Handler) CreateCliDeployment(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		httputil.WriteError(w, http.StatusUnauthorized, "missing or invalid authorization header")
-		return
+func (h *Handler) CreateCliDeployment(ctx context.Context, input *createCliDeploymentInput) (*createCliDeploymentOutput, error) {
+	if !strings.HasPrefix(input.Authorization, "Bearer ") {
+		return nil, huma.Error401Unauthorized("missing or invalid authorization header")
 	}
 
-	var request api.CreateCliDeploymentRequest
-	if err := httputil.DecodeBody(r, &request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	result, err := h.deployments.CreateCLI(r.Context(), deployment.CreateCLICommand{
-		Token:         strings.TrimPrefix(authHeader, "Bearer "),
-		EnvironmentID: int32(request.EnvironmentId),
-		Name:          request.Name,
-		Command:       request.Command,
-		ReturnCode:    int32(request.ReturnCode),
-		StartDate:     request.StartDate,
-		EndDate:       request.EndDate,
-		ExecutionTime: request.ExecutionTime,
-		Composer:      request.Composer,
-		Reference:     request.Reference,
+	result, err := h.deployments.CreateCLI(ctx, deployment.CreateCLICommand{
+		Token:         strings.TrimPrefix(input.Authorization, "Bearer "),
+		EnvironmentID: int32(input.Body.EnvironmentId),
+		Name:          input.Body.Name,
+		Command:       input.Body.Command,
+		ReturnCode:    int32(input.Body.ReturnCode),
+		StartDate:     input.Body.StartDate,
+		EndDate:       input.Body.EndDate,
+		ExecutionTime: input.Body.ExecutionTime,
+		Composer:      input.Body.Composer,
+		Reference:     input.Body.Reference,
 	})
 	if err != nil {
-		h.writeDeploymentError(w, r, "create CLI deployment", err)
-		return
+		return nil, h.writeDeploymentError(ctx, "create CLI deployment", err)
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, api.CreateCliDeploymentResponse{
-		DeploymentId: int(result.DeploymentID),
-		Name:         result.Name,
-		Success:      true,
-		UploadUrl:    result.UploadURL,
-		Url:          result.URL,
-	})
+	return &createCliDeploymentOutput{
+		Status: http.StatusCreated,
+		Body: api.CreateCliDeploymentResponse{
+			DeploymentId: int(result.DeploymentID),
+			Name:         result.Name,
+			Success:      true,
+			UploadUrl:    result.UploadURL,
+			Url:          result.URL,
+		},
+	}, nil
 }
 
-func (h *Handler) writeDeploymentError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+func (h *Handler) writeDeploymentError(ctx context.Context, operation string, err error) error {
 	switch {
 	case errors.Is(err, deployment.ErrAPIKeyInvalid):
-		httputil.WriteError(w, http.StatusUnauthorized, "invalid api key")
+		return huma.Error401Unauthorized("invalid api key")
 	case errors.Is(err, deployment.ErrDeploymentScopeRequired):
-		httputil.WriteError(w, http.StatusForbidden, "api key does not have deployments scope")
+		return huma.Error403Forbidden("api key does not have deployments scope")
 	case errors.Is(err, deployment.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, deployment.ErrShopOrganizationMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
+		return huma.Error403Forbidden("shop does not belong to this organization")
 	case errors.Is(err, deployment.ErrEnvironmentShopMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "environment does not belong to this shop")
+		return huma.Error403Forbidden("environment does not belong to this shop")
 	case errors.Is(err, deployment.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return huma.Error404NotFound("shop not found")
 	case errors.Is(err, deployment.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
+		return huma.Error404NotFound("environment not found")
 	case errors.Is(err, deployment.ErrDeploymentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "deployment not found")
+		return huma.Error404NotFound("deployment not found")
 	case errors.Is(err, deployment.ErrAPIKeyNameRequired):
-		httputil.WriteError(w, http.StatusBadRequest, "name is required")
+		return huma.Error400BadRequest("name is required")
 	case errors.Is(err, deployment.ErrEnvironmentIDRequired):
-		httputil.WriteError(w, http.StatusBadRequest, "environmentId is required")
+		return huma.Error400BadRequest("environmentId is required")
 	case errors.Is(err, deployment.ErrCommandRequired):
-		httputil.WriteError(w, http.StatusBadRequest, "command is required")
+		return huma.Error400BadRequest("command is required")
 	case errors.Is(err, deployment.ErrOutputUnavailable):
-		slog.ErrorContext(r.Context(), "deployment output operation failed", "operation", operation, "error", err)
-		httputil.WriteError(w, http.StatusBadGateway, "deployment output unavailable")
+		slog.ErrorContext(ctx, "deployment output operation failed", "operation", operation, "error", err)
+		return huma.Error502BadGateway("deployment output unavailable")
 	default:
-		slog.ErrorContext(r.Context(), "deployment operation failed", "operation", operation, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "deployment operation failed")
+		slog.ErrorContext(ctx, "deployment operation failed", "operation", operation, "error", err)
+		return huma.Error500InternalServerError("deployment operation failed")
 	}
 }

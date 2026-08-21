@@ -131,6 +131,9 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 		WebAuthnRPID:      "localhost",
 		WebAuthnRPName:    "Shopmon",
 		WebAuthnRPOrigins: []string{"http://localhost:3000"},
+		// Production always mounts the auth rate limiter. Use a high cap so
+		// ordinary tests are not 429'd; tight-cap tests override this.
+		AuthRateLimitMax: 10_000,
 	}
 
 	for _, fn := range cfgFn {
@@ -253,7 +256,11 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	r.Route("/api", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.OptionalAuthMiddleware(sessionAuthenticator))
 
-		apirouter.Mount(apiRouter, h, authHandler, apirouter.Options{})
+		opts := apirouter.Options{}
+		if cfg.AuthRateLimitMax > 0 {
+			opts.AuthRateLimit = auth.RateLimitMiddleware(auth.NewRateLimiter(t.Context(), time.Minute, cfg.AuthRateLimitMax))
+		}
+		apirouter.Mount(apiRouter, h, authHandler, opts)
 	})
 
 	srv := httptest.NewServer(r)

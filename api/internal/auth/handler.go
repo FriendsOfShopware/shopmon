@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/access"
 	"github.com/friendsofshopware/shopmon/api/internal/audit"
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	identitypasskey "github.com/friendsofshopware/shopmon/api/internal/identity/passkey"
@@ -19,9 +19,6 @@ import (
 	organizationsso "github.com/friendsofshopware/shopmon/api/internal/organization/sso"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
-
-// Compile-time check that AuthHandler implements the generated ServerInterface.
-var _ authapi.ServerInterface = (*AuthHandler)(nil)
 
 type AuthHandler struct {
 	config        HandlerConfig
@@ -78,29 +75,33 @@ func NewAuthHandler(dependencies Dependencies) *AuthHandler {
 	}
 }
 
-// requireAuth returns the principal validated by the request middleware.
-// Returns nil and writes an error response if authentication fails.
-func (h *AuthHandler) requireAuth(w http.ResponseWriter, r *http.Request) *access.Principal {
-	principal := access.PrincipalFromContext(r.Context())
+func (h *AuthHandler) requireAuth(ctx context.Context) (*access.Principal, error) {
+	principal := access.PrincipalFromContext(ctx)
 	if principal == nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	return principal, nil
+}
+
+func (h *AuthHandler) requireAdmin(ctx context.Context) (*access.Principal, error) {
+	principal, err := h.requireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if principal.User.Role != "admin" {
+		return nil, huma.Error403Forbidden(httputil.MsgAdminRequired)
+	}
+	return principal, nil
+}
+
+// requireAuthHTTP is used by unconverted http.Handler methods.
+func (h *AuthHandler) requireAuthHTTP(w http.ResponseWriter, r *http.Request) *access.Principal {
+	principal, err := h.requireAuth(r.Context())
+	if err != nil {
+		httputil.WriteStatusError(w, err)
 		return nil
 	}
 	return principal
-}
-
-// requireAdmin extracts and validates the session token, then checks for admin role.
-// Returns nil and writes an error response if authentication or authorization fails.
-func (h *AuthHandler) requireAdmin(w http.ResponseWriter, r *http.Request) *access.Principal {
-	su := h.requireAuth(w, r)
-	if su == nil {
-		return nil
-	}
-	if su.User.Role != "admin" {
-		httputil.WriteError(w, http.StatusForbidden, httputil.MsgAdminRequired)
-		return nil
-	}
-	return su
 }
 
 // validateCallbackURL checks that the callback URL is either empty (will default
@@ -152,20 +153,17 @@ func (h *AuthHandler) createOneTimeCode(r *http.Request, userID string) (string,
 }
 
 // ExchangeCode exchanges a one-time authorization code for a session token.
-func (h *AuthHandler) ExchangeCode(w http.ResponseWriter, r *http.Request) {
-	var req exchangeCodeRequest
-	if err := httputil.DecodeBody(r, &req); err != nil || req.Code == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "code is required")
-		return
+func (h *AuthHandler) ExchangeCode(ctx context.Context, input *exchangeCodeInput) (*exchangeCodeOutput, error) {
+	if input.Body.Code == "" {
+		return nil, huma.Error400BadRequest("code is required")
 	}
 
 	var sessionToken string
-	if err := h.challenges.Get(r.Context(), "auth-code:"+req.Code, &sessionToken); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid or expired code")
-		return
+	if err := h.challenges.Get(ctx, "auth-code:"+input.Body.Code, &sessionToken); err != nil {
+		return nil, huma.Error400BadRequest("invalid or expired code")
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, exchangeCodeResponse{Token: sessionToken})
+	return &exchangeCodeOutput{Body: exchangeCodeResponse{Token: sessionToken}}, nil
 }
 
 // createSession captures transport metadata and delegates session issuance to

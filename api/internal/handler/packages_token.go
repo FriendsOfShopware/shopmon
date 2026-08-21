@@ -1,40 +1,111 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
 )
 
+type getPackagesTokenConfigurationOutput struct {
+	Body api.PackagesTokenConfiguration
+}
+
+type getPackagesTokensInput struct {
+	OrgID  api.OrgId  `path:"orgId"`
+	ShopID api.ShopId `path:"shopId"`
+}
+
+type getPackagesTokensOutput struct {
+	Body []api.PackagesToken
+}
+
+type createPackagesTokenInput struct {
+	OrgID  api.OrgId  `path:"orgId"`
+	ShopID api.ShopId `path:"shopId"`
+	Body   api.CreatePackagesTokenRequest
+}
+
+type createPackagesTokenOutput struct {
+	Status int
+}
+
+type deletePackagesTokenInput struct {
+	OrgID   api.OrgId   `path:"orgId"`
+	ShopID  api.ShopId  `path:"shopId"`
+	TokenID api.TokenId `path:"tokenId"`
+}
+
+type deletePackagesTokenOutput struct {
+	Status int
+}
+
+type syncPackagesTokenInput struct {
+	OrgID   api.OrgId   `path:"orgId"`
+	ShopID  api.ShopId  `path:"shopId"`
+	TokenID api.TokenId `path:"tokenId"`
+}
+
+type syncPackagesTokenOutput struct {
+	Status int
+}
+
+type packagesRemoteError struct {
+	status int
+	body   json.RawMessage
+}
+
+func (e *packagesRemoteError) Error() string {
+	return string(e.body)
+}
+
+func (e *packagesRemoteError) GetStatus() int {
+	return e.status
+}
+
+func (e *packagesRemoteError) ContentType(string) string {
+	return "application/json"
+}
+
+func (e *packagesRemoteError) MarshalJSON() ([]byte, error) {
+	return e.body, nil
+}
+
+func newPackagesRemoteError(err *packagesmirror.RemoteError) error {
+	if len(err.Body) == 0 || !json.Valid(err.Body) {
+		return huma.NewError(err.StatusCode, "packages API request failed")
+	}
+	return &packagesRemoteError{status: err.StatusCode, body: json.RawMessage(err.Body)}
+}
+
 // GetPackagesTokenConfiguration returns the packages token configuration.
-func (h *Handler) GetPackagesTokenConfiguration(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) GetPackagesTokenConfiguration(_ context.Context, _ *struct{}) (*getPackagesTokenConfigurationOutput, error) {
 	configuration := h.packages.Configuration()
-	httputil.WriteJSON(w, http.StatusOK, api.PackagesTokenConfiguration{
+	return &getPackagesTokenConfigurationOutput{Body: api.PackagesTokenConfiguration{
 		Configured:  configuration.Configured,
 		ComposerUrl: configuration.ComposerURL,
-	})
+	}}, nil
 }
 
 // GetPackagesTokens lists packages tokens for a shop.
-func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) GetPackagesTokens(ctx context.Context, input *getPackagesTokensInput) (*getPackagesTokensOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	tokens, err := h.packages.List(r.Context(), packagesmirror.ShopCommand{
+	tokens, err := h.packages.List(ctx, packagesmirror.ShopCommand{
 		UserID:         user.ID,
-		OrganizationID: orgID,
-		ShopID:         int32(shopID),
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
 	})
 	if err != nil {
-		h.writePackagesError(w, r, "list packages tokens", err)
-		return
+		return nil, h.writePackagesError(ctx, "list packages tokens", err)
 	}
 
 	response := make([]api.PackagesToken, 0, len(tokens))
@@ -45,107 +116,95 @@ func (h *Handler) GetPackagesTokens(w http.ResponseWriter, r *http.Request, orgI
 			LastSyncedAt: token.LastSyncedAt,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, response)
+	return &getPackagesTokensOutput{Body: response}, nil
 }
 
 // CreatePackagesToken creates a new packages token.
-func (h *Handler) CreatePackagesToken(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) CreatePackagesToken(ctx context.Context, input *createPackagesTokenInput) (*createPackagesTokenOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var request api.CreatePackagesTokenRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "token is required")
-		return
-	}
-	if err := h.packages.Create(r.Context(), packagesmirror.CreateCommand{
+	if err := h.packages.Create(ctx, packagesmirror.CreateCommand{
 		ShopCommand: packagesmirror.ShopCommand{
 			UserID:         user.ID,
-			OrganizationID: orgID,
-			ShopID:         int32(shopID),
+			OrganizationID: input.OrgID,
+			ShopID:         int32(input.ShopID),
 		},
-		Token: request.Token,
+		Token: input.Body.Token,
 	}); err != nil {
-		h.writePackagesError(w, r, "create packages token", err)
-		return
+		return nil, h.writePackagesError(ctx, "create packages token", err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	return &createPackagesTokenOutput{Status: http.StatusCreated}, nil
 }
 
 // DeletePackagesToken deletes a packages token.
-func (h *Handler) DeletePackagesToken(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId, tokenID api.TokenId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeletePackagesToken(ctx context.Context, input *deletePackagesTokenInput) (*deletePackagesTokenOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.packages.Delete(r.Context(), packagesmirror.TokenCommand{
+	if err := h.packages.Delete(ctx, packagesmirror.TokenCommand{
 		ShopCommand: packagesmirror.ShopCommand{
 			UserID:         user.ID,
-			OrganizationID: orgID,
-			ShopID:         int32(shopID),
+			OrganizationID: input.OrgID,
+			ShopID:         int32(input.ShopID),
 		},
-		TokenID: int(tokenID),
+		TokenID: int(input.TokenID),
 	}); err != nil {
-		h.writePackagesError(w, r, "delete packages token", err)
-		return
+		return nil, h.writePackagesError(ctx, "delete packages token", err)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &deletePackagesTokenOutput{Status: http.StatusNoContent}, nil
 }
 
 // SyncPackagesToken syncs a packages token.
-func (h *Handler) SyncPackagesToken(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId, tokenID api.TokenId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) SyncPackagesToken(ctx context.Context, input *syncPackagesTokenInput) (*syncPackagesTokenOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.packages.Sync(r.Context(), packagesmirror.TokenCommand{
+	if err := h.packages.Sync(ctx, packagesmirror.TokenCommand{
 		ShopCommand: packagesmirror.ShopCommand{
 			UserID:         user.ID,
-			OrganizationID: orgID,
-			ShopID:         int32(shopID),
+			OrganizationID: input.OrgID,
+			ShopID:         int32(input.ShopID),
 		},
-		TokenID: int(tokenID),
+		TokenID: int(input.TokenID),
 	}); err != nil {
-		h.writePackagesError(w, r, "sync packages token", err)
-		return
+		return nil, h.writePackagesError(ctx, "sync packages token", err)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &syncPackagesTokenOutput{Status: http.StatusNoContent}, nil
 }
 
-func (h *Handler) writePackagesError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+func (h *Handler) writePackagesError(ctx context.Context, operation string, err error) error {
 	switch {
 	case errors.Is(err, packagesmirror.ErrNotConfigured):
-		httputil.WriteError(w, http.StatusNotFound, "packages API not configured")
+		return huma.Error404NotFound("packages API not configured")
 	case errors.Is(err, packagesmirror.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, packagesmirror.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return huma.Error404NotFound("shop not found")
 	case errors.Is(err, packagesmirror.ErrShopOrganizationMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
+		return huma.Error403Forbidden("shop does not belong to this organization")
 	case errors.Is(err, packagesmirror.ErrTokenNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "token not found")
+		return huma.Error404NotFound("token not found")
 	case errors.Is(err, packagesmirror.ErrTokenRequired):
-		httputil.WriteError(w, http.StatusBadRequest, "token is required")
+		return huma.Error400BadRequest("token is required")
 	default:
 		var remoteError *packagesmirror.RemoteError
 		if errors.As(err, &remoteError) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(remoteError.StatusCode)
-			_, _ = w.Write(remoteError.Body)
-			return
+			return newPackagesRemoteError(remoteError)
 		}
-		slog.ErrorContext(r.Context(), "packages operation failed", "operation", operation, "error", err)
+		slog.ErrorContext(ctx, "packages operation failed", "operation", operation, "error", err)
 		if errors.Is(err, packagesmirror.ErrRemote) {
-			httputil.WriteError(w, http.StatusBadGateway, "packages API request failed")
-			return
+			return huma.Error502BadGateway("packages API request failed")
 		}
-		httputil.WriteError(w, http.StatusInternalServerError, "packages operation failed")
+		return huma.Error500InternalServerError("packages operation failed")
 	}
 }

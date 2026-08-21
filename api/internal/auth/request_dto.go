@@ -1,5 +1,84 @@
 package auth
 
+type signUpEmailInput struct {
+	Body signUpEmailRequest
+}
+
+type signInEmailInput struct {
+	Body signInEmailRequest
+}
+
+type forgetPasswordInput struct {
+	Body forgetPasswordRequest
+}
+
+type resetPasswordInput struct {
+	Body resetPasswordRequest
+}
+
+type verifyEmailInput struct {
+	Token string `query:"token"`
+}
+
+type socialSignInInput struct {
+	Body socialSignInRequest
+}
+
+type ssoSignInInput struct {
+	Body ssoSignInRequest
+}
+
+type githubCallbackInput struct {
+	Code  string `query:"code"`
+	State string `query:"state"`
+}
+
+type ssoCallbackInput struct {
+	ProviderID string `path:"providerId"`
+	Code       string `query:"code"`
+	State      string `query:"state"`
+}
+
+type exchangeCodeInput struct {
+	Body exchangeCodeRequest
+}
+
+type passkeyRegisterInput struct {
+	RawBody []byte
+}
+
+type passkeyLoginInput struct {
+	RawBody []byte
+}
+
+type tokenUserOutput struct {
+	Body tokenUserResponse
+}
+
+type sessionOutput struct {
+	Body currentSessionEnvelope
+}
+
+type authCodeOutput struct {
+	Body authCodeResponse
+}
+
+type exchangeCodeOutput struct {
+	Body exchangeCodeResponse
+}
+
+type passkeyOptionsOutput struct {
+	Body passkeyOptionsResponse
+}
+
+type passkeyRegisterOutput struct {
+	Body passkeyRegisterResponse
+}
+
+type authCodeResponse struct {
+	Code string `json:"code"`
+}
+
 type exchangeCodeRequest struct {
 	Code string `json:"code"`
 }
@@ -84,8 +163,8 @@ type createOrganizationRequest struct {
 }
 
 type updateOrganizationRequest struct {
-	Name *string `json:"name"`
-	Logo *string `json:"logo"`
+	Name *string `json:"name,omitempty"`
+	Logo *string `json:"logo,omitempty"`
 }
 
 type inviteMemberRequest struct {

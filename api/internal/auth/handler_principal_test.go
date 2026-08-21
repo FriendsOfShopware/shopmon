@@ -19,7 +19,7 @@ func TestRequireAuthUsesValidatedRequestPrincipal(t *testing.T) {
 	req = req.WithContext(access.WithPrincipal(req.Context(), principal))
 	rec := httptest.NewRecorder()
 
-	got := (&AuthHandler{}).requireAuth(rec, req)
+	got := (&AuthHandler{}).requireAuthHTTP(rec, req)
 
 	require.NotNil(t, got)
 	assert.Same(t, principal, got)

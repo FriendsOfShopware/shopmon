@@ -1,102 +1,111 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
-	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/suppression"
 )
+
+type createAdvisorySuppressionInput struct {
+	AdvisoryID string `path:"advisoryId"`
+	Body       api.CreateAdvisorySuppressionRequest
+}
+
+type createAdvisorySuppressionOutput struct {
+	Body api.AdvisorySuppression
+}
 
 // CreateAdvisorySuppression records that an advisory is accepted or mitigated
 // for a shop, removing it from the "affecting my shops" list and silencing its
 // alerts.
-func (h *Handler) CreateAdvisorySuppression(w http.ResponseWriter, r *http.Request, advisoryID api.AdvisoryId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	var req api.CreateAdvisorySuppressionRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
+func (h *Handler) CreateAdvisorySuppression(ctx context.Context, input *createAdvisorySuppressionInput) (*createAdvisorySuppressionOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	var environmentID *int32
-	if req.EnvironmentId != nil {
-		id := int32(*req.EnvironmentId)
+	if input.Body.EnvironmentId != nil {
+		id := int32(*input.Body.EnvironmentId)
 		environmentID = &id
 	}
 
-	created, err := h.suppressions.Create(r.Context(), suppression.CreateCommand{
+	created, err := h.suppressions.Create(ctx, suppression.CreateCommand{
 		UserID:        user.ID,
-		ShopID:        int32(req.ShopId),
+		ShopID:        int32(input.Body.ShopId),
 		EnvironmentID: environmentID,
-		AdvisoryID:    advisoryID,
-		Reason:        req.Reason,
-		ExpiresAt:     req.ExpiresAt,
+		AdvisoryID:    input.AdvisoryID,
+		Reason:        input.Body.Reason,
+		ExpiresAt:     input.Body.ExpiresAt,
 	})
 	if err != nil {
-		writeSuppressionError(w, r, err)
-		return
+		return nil, writeSuppressionError(ctx, err)
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, toAPISuppression(created))
+	return &createAdvisorySuppressionOutput{Body: toAPISuppression(created)}, nil
+}
+
+type revokeAdvisorySuppressionInput struct {
+	SuppressionID int64 `path:"suppressionId"`
 }
 
 // RevokeAdvisorySuppression lifts a suppression so the advisory resurfaces. The
 // row is soft-deleted, preserving who accepted the risk and why.
-func (h *Handler) RevokeAdvisorySuppression(w http.ResponseWriter, r *http.Request, suppressionID int64) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	orgIDs, err := h.advisories.OrganizationIDsForUser(r.Context(), user.ID)
+func (h *Handler) RevokeAdvisorySuppression(ctx context.Context, input *revokeAdvisorySuppressionInput) (*struct{}, error) {
+	user, err := h.requireUser(ctx)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to load user organizations", "userId", user.ID, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to revoke suppression")
-		return
+		return nil, err
 	}
 
-	if _, err := h.suppressions.Revoke(r.Context(), suppressionID, user.ID, orgIDs); err != nil {
-		writeSuppressionError(w, r, err)
-		return
+	orgIDs, err := h.advisories.OrganizationIDsForUser(ctx, user.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to load user organizations", "userId", user.ID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to revoke suppression")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if _, err := h.suppressions.Revoke(ctx, input.SuppressionID, user.ID, orgIDs); err != nil {
+		return nil, writeSuppressionError(ctx, err)
+	}
+
+	return nil, nil
+}
+
+type listSuppressionsInput struct {
+	IncludeInactive bool `query:"includeInactive"`
+}
+
+type listSuppressionsOutput struct {
+	Body api.AdvisorySuppressionListResponse
 }
 
 // ListSuppressions returns the suppressions across the caller's organizations.
-func (h *Handler) ListSuppressions(w http.ResponseWriter, r *http.Request, params api.ListSuppressionsParams) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) ListSuppressions(ctx context.Context, input *listSuppressionsInput) (*listSuppressionsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	orgIDs, err := h.advisories.OrganizationIDsForUser(r.Context(), user.ID)
+	orgIDs, err := h.advisories.OrganizationIDsForUser(ctx, user.ID)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to load user organizations", "userId", user.ID, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list suppressions")
-		return
+		slog.ErrorContext(ctx, "failed to load user organizations", "userId", user.ID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to list suppressions")
 	}
 
-	includeInactive := params.IncludeInactive != nil && *params.IncludeInactive
-	records, err := h.suppressions.List(r.Context(), orgIDs, includeInactive)
+	records, err := h.suppressions.List(ctx, orgIDs, input.IncludeInactive)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to list suppressions", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to list suppressions")
-		return
+		slog.ErrorContext(ctx, "failed to list suppressions", "error", err)
+		return nil, huma.Error500InternalServerError("failed to list suppressions")
 	}
 
 	items := make([]api.AdvisorySuppression, 0, len(records))
 	for _, record := range records {
 		items = append(items, toAPISuppression(record))
 	}
-	httputil.WriteJSON(w, http.StatusOK, api.AdvisorySuppressionListResponse{Suppressions: items})
+	return &listSuppressionsOutput{Body: api.AdvisorySuppressionListResponse{Suppressions: items}}, nil
 }
 
 func toAPISuppression(record suppression.Suppression) api.AdvisorySuppression {
@@ -128,26 +137,26 @@ func toAPISuppression(record suppression.Suppression) api.AdvisorySuppression {
 // writeSuppressionError maps capability errors onto transport status codes.
 // A duplicate is a 409 rather than a silent overwrite, which is the behaviour
 // the legacy whole-array ignores PATCH could not offer.
-func writeSuppressionError(w http.ResponseWriter, r *http.Request, err error) {
+func writeSuppressionError(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, suppression.ErrReasonRequired):
-		httputil.WriteError(w, http.StatusBadRequest, "a reason is required")
+		return huma.Error400BadRequest("a reason is required")
 	case errors.Is(err, suppression.ErrExpiryInPast):
-		httputil.WriteError(w, http.StatusBadRequest, "expiry must be in the future")
+		return huma.Error400BadRequest("expiry must be in the future")
 	case errors.Is(err, suppression.ErrEnvironmentScope):
-		httputil.WriteError(w, http.StatusBadRequest, "environment does not belong to shop")
+		return huma.Error400BadRequest("environment does not belong to shop")
 	case errors.Is(err, suppression.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not authorized to suppress for this shop")
+		return huma.Error403Forbidden("not authorized to suppress for this shop")
 	case errors.Is(err, suppression.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
+		return huma.Error404NotFound("shop not found")
 	case errors.Is(err, suppression.ErrAdvisoryNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "advisory not found")
+		return huma.Error404NotFound("advisory not found")
 	case errors.Is(err, suppression.ErrNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "suppression not found")
+		return huma.Error404NotFound("suppression not found")
 	case errors.Is(err, suppression.ErrAlreadySuppressed):
-		httputil.WriteError(w, http.StatusConflict, "an active suppression already covers this scope")
+		return huma.Error409Conflict("an active suppression already covers this scope")
 	default:
-		slog.ErrorContext(r.Context(), "suppression request failed", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to process suppression")
+		slog.ErrorContext(ctx, "suppression request failed", "error", err)
+		return huma.Error500InternalServerError("failed to process suppression")
 	}
 }

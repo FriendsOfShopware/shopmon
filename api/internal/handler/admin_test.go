@@ -1,13 +1,13 @@
 package handler_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
+	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -295,14 +295,13 @@ func TestAdminGetAuditLog(t *testing.T) {
 	token := env.SeedUser(t, "admin-1", "Admin User", "admin@example.com", "admin")
 	env.SeedUser(t, "user-1", "Target User", "target@example.com", "user")
 
-	// Trigger an audited admin action: set a role.
-	roleReq := testutil.NewRequest(t, "PATCH", env.Server.URL+"/api/auth/admin/users/user-1/role", bytes.NewReader([]byte(`{"role":"admin"}`)))
-	roleReq.Header.Set("Authorization", "Bearer "+token)
-	roleReq.Header.Set("Content-Type", "application/json")
-	roleResp, err := http.DefaultClient.Do(roleReq)
-	require.NoError(t, err)
-	_ = roleResp.Body.Close()
-	require.Equal(t, http.StatusOK, roleResp.StatusCode)
+	actorID := "admin-1"
+	targetID := "user-1"
+	require.NoError(t, env.Queries.CreateAuditLog(t.Context(), queries.CreateAuditLogParams{
+		ActorUserID:  &actorID,
+		Action:       "admin.set_role",
+		TargetUserID: &targetID,
+	}))
 
 	req := testutil.NewRequest(t, "GET", env.Server.URL+"/api/admin/audit-log", nil)
 	req.Header.Set("Authorization", "Bearer "+token)

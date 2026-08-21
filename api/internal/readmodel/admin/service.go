@@ -10,7 +10,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/jackc/pgx/v5"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 var (
@@ -246,7 +245,7 @@ func (s *Service) RecentActivity(ctx context.Context) (api.AdminRecentActivity, 
 		recentUsers = append(recentUsers, api.UserProfile{
 			Id:          row.ID,
 			DisplayName: row.Name,
-			Email:       openapi_types.Email(row.Email),
+			Email:       row.Email,
 			CreatedAt:   database.Time(row.CreatedAt),
 		})
 	}

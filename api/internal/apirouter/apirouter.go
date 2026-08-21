@@ -1,59 +1,126 @@
-// Package apirouter wires the generated API and auth handlers onto an /api
-// sub-router with consistent JSON error handling. It is the single source of
-// truth shared by the production server (server.go) and the test harness
-// (internal/testutil) so the two cannot drift apart.
+// Package apirouter wires the Huma API onto an /api sub-router with consistent
+// JSON error handling. It is the single source of truth shared by the
+// production server (server.go) and the test harness (internal/testutil) so the
+// two cannot drift apart.
 package apirouter
 
 import (
-	"log/slog"
 	"net/http"
+	"reflect"
+	"strings"
 
-	apiserver "github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
+	"github.com/friendsofshopware/shopmon/api/internal/auth"
+	"github.com/friendsofshopware/shopmon/api/internal/handler"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/go-chi/chi/v5"
 )
 
-// Options configures Mount.
-type Options struct {
-	// AuthMiddlewares are applied to the generated auth routes (e.g. rate
-	// limiting). May be empty.
-	AuthMiddlewares []authapi.MiddlewareFunc
+func init() {
+	// oapi-codegen treated Go slices as required non-null arrays. Huma's
+	// default marks every slice nullable, which makes generated frontend
+	// types `T[] | null` and breaks existing callers.
+	huma.DefaultArrayNullable = false
 }
 
-// Mount registers the auth and API handlers on apiRouter (which must already be
-// scoped to /api) and installs the shared JSON error responders: a JSON 400 for
-// request-parameter binding failures, and JSON 404 / 405 for unmatched routes
-// and methods. Every error leaving the /api surface therefore uses the standard
-// {"message": "..."} shape.
-func Mount(apiRouter chi.Router, api apiserver.ServerInterface, authHandler authapi.ServerInterface, opts Options) {
-	// paramErrorHandler converts oapi-codegen's request-binding failures
-	// (missing/invalid path or query params) into the standard JSON error shape.
-	// The default generated handler writes plain text via http.Error and echoes
-	// the raw error; we keep the 400 status but return JSON and a generic message
-	// so the contract stays consistent and details aren't leaked.
-	paramErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		slog.DebugContext(r.Context(), "request parameter binding failed", "error", err)
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request parameters")
+// schemaNameAliases map Huma's Go-type-derived names onto the historical
+// OpenAPI schema names so generated frontend types stay stable.
+var schemaNameAliases = map[string]string{
+	"AdminUserResponse":         "AdminUser",
+	"AdminListUsersOutputBody":  "AdminUsersResponse",
+	"AuthAdminUserDetail":       "AdminUserDetail",
+	"AuthAdminUserAuthProvider": "AdminUserAuthProvider",
+	"AuthAdminUserMembership":   "AdminUserMembership",
+	"AuthAdminUserSession":      "AdminUserSession",
+	"JSONStatusError":           "ErrorResponse",
+}
+
+func schemaNamer(t reflect.Type, hint string) string {
+	name := huma.DefaultSchemaNamer(t, hint)
+	if alias, ok := schemaNameAliases[name]; ok {
+		return alias
+	}
+	return name
+}
+
+// Options configures Mount.
+type Options struct {
+	// AuthRateLimit is applied to paths under /auth (e.g. /api/auth/...).
+	// May be nil.
+	AuthRateLimit func(http.Handler) http.Handler
+}
+
+// NewAPI constructs the Huma API on apiRouter (already scoped to /api) with
+// Shopmon OpenAPI metadata. Operations are not registered.
+func NewAPI(apiRouter chi.Router) huma.API {
+	config := huma.DefaultConfig("Shopmon API", "1.0.0")
+	config.CreateHooks = nil
+	config.Transformers = nil
+	config.SchemasPath = ""
+	config.OpenAPIPath = "/openapi"
+	config.DocsPath = "/docs"
+	config.DocsRenderer = huma.DocsRendererStoplightElements
+	if config.Info != nil {
+		config.Info.Description = "Shopware monitoring application API"
+	}
+	config.Servers = []*huma.Server{{
+		URL:         "/api",
+		Description: "API base path",
+	}}
+	if config.Components == nil {
+		config.Components = &huma.Components{}
+	}
+	config.Components.Schemas = huma.NewMapRegistry("#/components/schemas/", schemaNamer)
+	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		"bearerAuth": {
+			Type:        "http",
+			Scheme:      "bearer",
+			Description: "Bearer token authentication",
+		},
+	}
+	config.Security = []map[string][]string{
+		{"bearerAuth": {}},
 	}
 
-	authapi.HandlerWithOptions(authHandler, authapi.ChiServerOptions{
-		BaseRouter:       apiRouter,
-		Middlewares:      opts.AuthMiddlewares,
-		ErrorHandlerFunc: paramErrorHandler,
-	})
+	return humachi.New(apiRouter, config)
+}
 
-	apiserver.HandlerWithOptions(api, apiserver.ChiServerOptions{
-		BaseRouter:       apiRouter,
-		ErrorHandlerFunc: paramErrorHandler,
-	})
+// Mount registers auth and API operations on apiRouter (already scoped to /api)
+// and installs JSON 404 / 405 responders so every error leaving the /api
+// surface uses the standard {"message": "..."} shape.
+func Mount(apiRouter chi.Router, apiHandler *handler.Handler, authHandler *auth.AuthHandler, opts Options) huma.API {
+	if opts.AuthRateLimit != nil {
+		apiRouter.Use(authPathMiddleware(opts.AuthRateLimit))
+	}
 
-	// Unmatched /api/* routes return a JSON 404 instead of falling through to
-	// the SPA fallback (which would serve HTML for a missing endpoint).
+	api := NewAPI(apiRouter)
+	handler.Register(api, apiHandler)
+	auth.Register(api, authHandler)
+
 	apiRouter.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusNotFound, "not found")
 	})
 	apiRouter.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	})
+	return api
+}
+
+func authPathMiddleware(limit func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		limited := limit(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if isAuthPath(r.URL.Path) {
+				limited.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isAuthPath(path string) bool {
+	return path == "/auth" || strings.HasPrefix(path, "/auth/") ||
+		path == "/api/auth" || strings.HasPrefix(path, "/api/auth/")
 }

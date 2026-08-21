@@ -113,7 +113,7 @@ git checkout -b fix/your-bug-fix
    - Frontend code: `frontend/`
    - Database queries: `api/sql/queries/`
    - Database migrations: `api/migrations/`
-   - API specification: `api/openapi/spec.yaml`
+   - HTTP operations: `api/internal/handler/` and `api/internal/auth/` (Huma)
 
 2. Run code quality checks:
    ```bash
@@ -129,10 +129,13 @@ git checkout -b fix/your-bug-fix
 
 When adding or modifying API endpoints:
 
-1. Edit `api/openapi/spec.yaml` (add paths, schemas, parameters)
-2. Run `mise run generate` (regenerates sqlc queries + oapi-codegen server interface)
-3. Implement the new method on the Handler in `api/internal/handler/`
-4. Add sqlc queries if needed (`api/sql/queries/`, then `mise run generate`)
+1. Register a Huma operation (`huma.Register`) with the `operationId`, path, method, and input/output structs in `api/internal/handler/` or `api/internal/auth/`
+2. Implement the handler (return a Huma output or `huma.Error*`)
+3. Add or extend DTO types in `api/internal/api/` or `api/internal/authapi/` if needed
+4. Add sqlc queries if needed (`api/sql/queries/`)
+5. Run `mise run generate` (dumps OpenAPI from registered routes and regenerates frontend types)
+
+Do not commit or hand-edit `api/openapi/spec.yaml` — it is a gitignored dump used only to generate frontend types.
 
 ### Database Changes
 
@@ -151,9 +154,9 @@ If your changes require database modifications:
 - Use `log/slog` for all logging — never `log` or `fmt.Println`
 - Always include structured context: `slog.Error("msg", "key", value, "error", err)`
 - Wrap errors with context: `fmt.Errorf("create shop: %w", err)`
-- Handlers implement the generated `openapi.ServerInterface`
-- Use `httputil.WriteJSON()` and `httputil.WriteError()` for all HTTP responses
-- Use `r.Context()` for all database calls (propagates OpenTelemetry traces)
+- HTTP is Huma v2 on chi (`huma.Register`); handlers return Huma outputs or `huma.Error*`
+- Error bodies stay `{"message":"..."}` with `application/json`
+- Use `ctx` from the Huma handler for all database calls (propagates OpenTelemetry traces)
 - See [AGENTS.md](AGENTS.md) for detailed Go conventions
 
 ### Frontend (Vue 3 + TypeScript)
@@ -165,15 +168,15 @@ If your changes require database modifications:
 
 ### Code Generation
 
-After changing SQL queries or the OpenAPI spec, regenerate code:
+After changing SQL queries or HTTP operations, regenerate code:
 
 ```bash
 mise run generate
 ```
 
-This runs `sqlc generate`, `oapi-codegen`, and regenerates frontend API types.
+This runs `sqlc generate`, dumps OpenAPI YAML from registered Huma routes into gitignored `api/openapi/spec.yaml`, and regenerates frontend API types.
 
-**Never edit files in `api/internal/database/queries/` or `api/openapi/generated/`** — they are auto-generated.
+**Never edit files in `api/internal/database/queries/` or `frontend/src/api/generated/`** — they are auto-generated. `api/openapi/spec.yaml` is gitignored generate output, not a source file.
 
 ## Testing
 

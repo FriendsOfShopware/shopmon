@@ -1,18 +1,32 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
+	"github.com/danielgtaylor/huma/v2"
 )
 
-// GetHealth handles the health check endpoint.
-func (h *Handler) GetHealth(w http.ResponseWriter, r *http.Request) {
-	// Check database connection
-	if err := h.database.Ping(r.Context()); err != nil {
-		httputil.WriteError(w, http.StatusServiceUnavailable, "database connection failed")
-		return
-	}
+type healthStatus struct {
+	Status string `json:"status"`
+}
 
-	httputil.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+type getHealthOutput struct {
+	Body healthStatus
+}
+
+func registerHealth(api huma.API, h *Handler) {
+	huma.Register(api, huma.Operation{
+		OperationID: "getHealth",
+		Method:      http.MethodGet,
+		Path:        "/health",
+		Summary:     "Health check",
+		Tags:        []string{"Health"},
+		Security:    []map[string][]string{},
+	}, func(ctx context.Context, _ *struct{}) (*getHealthOutput, error) {
+		if err := h.database.Ping(ctx); err != nil {
+			return nil, huma.Error503ServiceUnavailable("database connection failed")
+		}
+		return &getHealthOutput{Body: healthStatus{Status: "ok"}}, nil
+	})
 }
