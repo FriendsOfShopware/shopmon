@@ -4,309 +4,682 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}/api` | (string & {});
 };
 
-export type ErrorResponse = {
-    message: string;
-};
-
-export type UserProfile = {
-    id: string;
-    displayName: string;
-    email: string;
-    createdAt: string;
-    /**
-     * The user's preferred language, used to localize notification emails.
-     */
-    locale: string;
-};
-
-export type AccountExtension = {
-    name: string;
-    label: string;
-    version: string;
-    latestVersion: string;
-    active: boolean;
-    installed: boolean;
-    storeLink: string | null;
-    ratingAverage: number | null;
-    installedAt: string | null;
-    changelog: Array<ExtensionChangelogEntry> | null;
-    /**
-     * URL of the extension's store icon, when known.
-     */
-    iconUrl?: string | null;
-    producerName?: string | null;
-    producerWebsite?: string | null;
-    /**
-     * Release date of the latest store version (raw store value).
-     */
-    releaseDate?: string | null;
-    /**
-     * Short store description in the requested language (falls back to English).
-     */
-    shortDescription?: string | null;
-    /**
-     * Full store description (HTML) in the requested language (falls back to English).
-     */
-    description?: string | null;
-    /**
-     * Installation manual (HTML) in the requested language (falls back to English).
-     */
-    installationManual?: string | null;
-    screenshots?: Array<ExtensionScreenshot> | null;
-    environments: Array<AccountExtensionEnvironment>;
-};
-
-export type ExtensionScreenshot = {
-    url: string;
-    /**
-     * Whether this image is the store's primary preview image.
-     */
-    preview: boolean;
-};
-
-export type AccountExtensionEnvironment = {
+export type AccountChangelog = {
+    date: string;
     environmentId: number;
     environmentName: string;
-    environmentShopName: string;
-    environmentOrganizationName: string;
     environmentOrganizationId: string;
-    environmentUrl: string;
-    /**
-     * ID of the shop this environment belongs to.
-     */
-    shopId: number;
-    /**
-     * Name of the shop this environment belongs to (environments may share a name across shops).
-     */
-    shopName: string;
-    active: boolean;
-    version: string;
-    latestVersion: string;
-    installed: boolean;
-};
-
-export type AccountOrganization = {
-    id: string;
-    name: string;
-    logo: string | null;
-    createdAt: string;
-    environmentCount: number;
-    memberCount: number;
+    environmentOrganizationName: string;
+    environmentShopName: string;
+    extensions: Array<ExtensionDiff>;
+    id: number;
+    newShopwareVersion: string | null;
+    oldShopwareVersion: string | null;
 };
 
 export type AccountEnvironment = {
-    id: number;
-    name: string;
-    url: string;
     favicon: string | null;
-    status: string;
-    shopwareVersion: string;
+    id: number;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
+    name: string;
     organizationId: string;
     organizationName: string;
     shopId: number | null;
     shopName: string | null;
+    shopwareVersion: string;
+    status: string;
+    url: string;
+};
+
+export type AccountExtension = {
+    active: boolean;
+    changelog: Array<ExtensionChangelogEntry>;
+    description?: string;
+    environments: Array<AccountExtensionEnvironment>;
+    iconUrl?: string;
+    installationManual?: string;
+    installed: boolean;
+    installedAt: string | null;
+    label: string;
+    latestVersion: string;
+    name: string;
+    producerName?: string;
+    producerWebsite?: string;
+    ratingAverage: number | null;
+    releaseDate?: string;
+    screenshots?: Array<ExtensionScreenshot>;
+    shortDescription?: string;
+    storeLink: string | null;
+    version: string;
+};
+
+export type AccountExtensionEnvironment = {
+    active: boolean;
+    environmentId: number;
+    environmentName: string;
+    environmentOrganizationId: string;
+    environmentOrganizationName: string;
+    environmentShopName: string;
+    environmentUrl: string;
+    installed: boolean;
+    latestVersion: string;
+    shopId: number;
+    shopName: string;
+    version: string;
+};
+
+export type AccountOrganization = {
+    createdAt: string;
+    environmentCount: number;
+    id: string;
+    logo: string | null;
+    memberCount: number;
+    name: string;
 };
 
 export type AccountShop = {
-    id: number;
-    name: string;
+    defaultEnvironmentId: number | null;
     description: string | null;
     gitUrl: string | null;
+    id: number;
+    name: string;
     organizationId: string;
     organizationName: string;
-    defaultEnvironmentId: number | null;
 };
 
-export type AccountChangelog = {
-    id: number;
-    environmentId: number;
-    /**
-     * JSON data describing extension changes
-     */
-    extensions: Array<ExtensionDiff>;
-    oldShopwareVersion: string | null;
-    newShopwareVersion: string | null;
-    date: string;
-    environmentName: string;
-    environmentShopName: string;
-    environmentOrganizationName: string;
-    environmentOrganizationId: string;
-};
-
-export type ExtensionDiff = {
-    name: string;
-    label: string;
-    state: string;
-    oldVersion?: string | null;
-    newVersion?: string | null;
-    changelog?: Array<ExtensionChangelogEntry> | null;
-    active: boolean;
-};
-
-export type ExtensionChangelogEntry = {
-    version: string;
-    /**
-     * Changelog text. For store catalog endpoints this is already resolved to the requested language (English fallback). For stored environment-changelog history it holds the English (en_GB) text, with textDe carrying the German variant when available.
-     */
-    text: string;
-    /**
-     * German (de_DE) changelog text for stored history entries, when available.
-     */
-    textDe?: string | null;
-    creationDate: string;
-};
-
-export type SubscribedEnvironment = {
-    id: number;
-    name: string;
-    /**
-     * The shop this environment belongs to, if any.
-     */
-    shopId?: number | null;
-    shopName?: string | null;
-};
-
-export type StatusReason = {
-    level: string;
-    messageKey: string;
-    params?: {
-        [key: string]: unknown;
-    };
-    source?: string;
-};
-
-export type StatusEvent = {
-    id: number;
-    oldStatus: string;
-    newStatus: string;
-    reasons: Array<StatusReason>;
+export type AdminAdvisory = {
+    advisoryId: string;
+    affectedComponents: Array<string>;
+    affectedEnvironmentCount?: number;
+    composerRepository?: string;
     createdAt: string;
-};
-
-export type NotificationEventType = {
-    /**
-     * Stable event type identifier (e.g. status_degraded).
-     */
-    type: string;
-    /**
-     * Channels this event is delivered on by default.
-     */
-    defaultChannels: Array<string>;
-};
-
-export type NotificationPreference = {
-    /**
-     * Scope of the preference: global, organization, or environment.
-     */
-    scopeType: string;
-    /**
-     * Empty for global; organization or environment id otherwise.
-     */
-    scopeId: string;
-    /**
-     * Empty matches all event types; otherwise a specific event type.
-     */
-    eventType: string;
-    /**
-     * Empty is a subscription marker; otherwise in_app or email.
-     */
-    channel: string;
-    enabled: boolean;
-};
-
-export type NotificationPreferenceInput = {
-    scopeType: string;
-    scopeId?: string;
-    eventType?: string;
-    channel: string;
-    enabled: boolean;
-};
-
-export type Notification = {
-    id: number;
-    userId: string;
-    key: string;
-    level: string;
+    cve?: string;
+    cvssScore?: number;
+    cvssVector?: string;
+    cwes?: Array<AdvisoryCwe>;
+    description?: string;
+    descriptionHtml?: string;
+    detailsSource?: string;
+    effectiveSeverity: SeverityLevel;
+    enrichedAt?: string;
+    enrichedBy?: string;
+    externalReferences?: Array<string>;
+    firstPatchedVersions?: {
+        [key: string]: string;
+    };
+    ghsaId?: string;
+    isVisible: boolean;
+    link?: string;
+    notesInternal?: string;
+    notesPublic?: string;
+    packages: Array<AdvisoryAffectedPackage>;
+    recommendedUpgrade?: string;
+    remediationSummary?: string;
+    remediationUrl?: string;
+    reportedAt?: string;
+    securityPluginFixes?: Array<AdvisorySecurityPluginFix>;
+    severity?: SeverityLevel;
+    severityOverride?: SeverityLevel;
+    shopwareImpactSummary?: string;
+    sources: Array<AdvisorySource>;
+    summary?: string;
+    suppressedEnvironmentCount?: number;
+    syncedAt: string;
+    tags: Array<string>;
     title: string;
-    message: string;
-    /**
-     * Translation key for the title; render with params client-side. Falls back to title.
-     */
-    titleKey?: string | null;
-    /**
-     * Translation key for the message; render with params client-side. Falls back to message.
-     */
-    messageKey?: string | null;
-    /**
-     * Structured params for interpolating titleKey/messageKey.
-     */
-    params?: {
-        [key: string]: unknown;
-    };
-    link: NotificationLink | null;
-    read: boolean;
-    createdAt: string;
+    updatedAt: string;
 };
 
-export type NotificationLink = {
+export type AdminAdvisoryListResponse = {
+    advisories: Array<AdminAdvisory>;
+    total: number;
+};
+
+export type AdminAdvisorySyncResponse = {
+    enqueued: boolean;
+};
+
+export type AdminAuditLogEntry = {
+    action: string;
+    actorEmail?: string;
+    actorName?: string;
+    actorUserId?: string;
+    createdAt: string;
+    detail?: string;
+    id: number;
+    ipAddress?: string;
+    targetEmail?: string;
+    targetName?: string;
+    targetUserId?: string;
+};
+
+export type AdminAuditLogResponse = {
+    entries: Array<AdminAuditLogEntry>;
+    total: number;
+};
+
+export type AdminBanUserRequest = {
+    banReason: string | null;
+};
+
+export type AdminEnvironmentCheck = {
+    checkId: string;
+    id: number;
+    level: string;
+    link?: string;
+    message: string;
+    source: string;
+};
+
+export type AdminEnvironmentDeployment = {
+    command: string;
+    createdAt: string;
+    executionTime: number;
+    id: number;
+    name: string;
+    reference?: string;
+    returnCode: number;
+};
+
+export type AdminEnvironmentDetail = {
+    checks: Array<AdminEnvironmentCheck>;
+    connectionIssueCount: number;
+    createdAt: string;
+    extensions: Array<AdminEnvironmentExtension>;
+    id: number;
+    lastDeployment?: AdminEnvironmentDeployment;
+    lastScrapedAt?: string;
+    lastScrapedError?: string;
+    name: string;
+    organizationId: string;
+    organizationName: string;
+    scheduledTasks: Array<AdminEnvironmentTask>;
+    shopId: number;
+    shopName: string;
+    shopwareVersion: string;
+    status: string;
     url: string;
+};
+
+export type AdminEnvironmentExtension = {
+    active: boolean;
+    id: number;
+    installed: boolean;
     label: string;
+    latestVersion?: string;
+    name: string;
+    storeLink?: string;
+    version: string;
+};
+
+export type AdminEnvironmentTask = {
+    id: number;
+    interval: number;
+    lastExecutionTime?: string;
+    name: string;
+    nextExecutionTime?: string;
+    overdue: boolean;
+    status: string;
+    taskId: string;
+};
+
+export type AdminEnvironmentsResponse = {
+    environments: Array<AccountEnvironment>;
+    total: number;
+};
+
+export type AdminGrowth = {
+    environments: Array<GrowthDataPoint>;
+    users: Array<GrowthDataPoint>;
+};
+
+export type AdminOrganizationDetail = {
+    createdAt: string;
+    environmentCount: number;
+    environments: Array<AdminOrganizationEnvironment>;
+    id: string;
+    invitations: Array<AdminOrganizationInvitation>;
+    logo?: string;
+    memberCount: number;
+    members: Array<AdminOrganizationMember>;
+    name: string;
+    shops: Array<AdminOrganizationShop>;
+    slug: string;
+    ssoProviders: Array<AdminOrganizationSso>;
+};
+
+export type AdminOrganizationEnvironment = {
+    id: number;
+    lastScrapedAt?: string;
+    name: string;
+    shopId: number;
+    shopName: string;
+    shopwareVersion: string;
+    status: string;
+    url: string;
+};
+
+export type AdminOrganizationInvitation = {
+    createdAt: string;
+    email: string;
+    expiresAt: string;
+    id: string;
+    inviterEmail: string;
+    inviterName: string;
+    role?: string;
+    status: string;
+};
+
+export type AdminOrganizationMember = {
+    createdAt: string;
+    email: string;
+    image?: string;
+    name: string;
+    role: string;
+    userId: string;
+};
+
+export type AdminOrganizationSso = {
+    domain: string;
+    id: string;
+    issuer: string;
+    providerId: string;
+};
+
+export type AdminOrganizationShop = {
+    createdAt: string;
+    defaultEnvironmentId?: number;
+    description?: string;
+    id: number;
+    name: string;
+};
+
+export type AdminOrganizationsResponse = {
+    organizations: Array<AccountOrganization>;
+    total: number;
+};
+
+export type AdminRecentActivity = {
+    recentEnvironments: Array<AccountEnvironment>;
+    recentUsers: Array<UserProfile>;
+};
+
+export type AdminSetUserRoleRequest = {
+    role: string;
+};
+
+export type AdminStats = {
+    environmentsByStatus: AdminStatsEnvironmentsByStatusStruct;
+    totalEnvironments: number;
+    totalOrganizations: number;
+    totalUsers: number;
+};
+
+export type AdminStatsEnvironmentsByStatusStruct = {
+    green: number;
+    red: number;
+    yellow: number;
+};
+
+export type AdminUser = {
+    banReason: string | null;
+    banned: boolean | null;
+    createdAt: string;
+    email: string;
+    emailVerified: boolean;
+    id: string;
+    image: string | null;
+    name: string;
+    role: string;
+};
+
+export type AdminUserAuthProvider = {
+    accountId?: string;
+    createdAt: string;
+    id: string;
+    providerId: string;
+};
+
+export type AdminUserDetail = {
+    auditLog: Array<AuthAdminAuditLogEntry>;
+    authProviders: Array<AdminUserAuthProvider>;
+    banExpires?: string;
+    banReason?: string;
+    banned: boolean;
+    createdAt: string;
+    email: string;
+    emailVerified: boolean;
+    id: string;
+    image?: string;
+    memberships: Array<AdminUserMembership>;
+    name: string;
+    role: string;
+    sessions: Array<AdminUserSession>;
+    updatedAt: string;
+};
+
+export type AdminUserMembership = {
+    createdAt: string;
+    organizationId: string;
+    organizationName: string;
+    organizationSlug: string;
+    role: string;
+};
+
+export type AdminUserSession = {
+    createdAt: string;
+    expiresAt: string;
+    id: string;
+    impersonated: boolean;
+    ipAddress?: string;
+    userAgent?: string;
+};
+
+export type AdminUsersResponse = {
+    total: number;
+    users: Array<AdminUser>;
+};
+
+export type Advisory = {
+    advisoryId: string;
+    affectedComponents: Array<string>;
+    affectedEnvironmentCount?: number;
+    composerRepository?: string;
+    createdAt: string;
+    cve?: string;
+    cvssScore?: number;
+    cvssVector?: string;
+    cwes?: Array<AdvisoryCwe>;
+    description?: string;
+    descriptionHtml?: string;
+    detailsSource?: string;
+    effectiveSeverity: SeverityLevel;
+    externalReferences?: Array<string>;
+    firstPatchedVersions?: {
+        [key: string]: string;
+    };
+    ghsaId?: string;
+    isVisible: boolean;
+    link?: string;
+    notesPublic?: string;
+    packages: Array<AdvisoryAffectedPackage>;
+    recommendedUpgrade?: string;
+    remediationSummary?: string;
+    remediationUrl?: string;
+    reportedAt?: string;
+    securityPluginFixes?: Array<AdvisorySecurityPluginFix>;
+    severity?: SeverityLevel;
+    severityOverride?: SeverityLevel;
+    shopwareImpactSummary?: string;
+    sources: Array<AdvisorySource>;
+    summary?: string;
+    suppressedEnvironmentCount?: number;
+    syncedAt: string;
+    tags: Array<string>;
+    title: string;
+    updatedAt: string;
+};
+
+export type AdvisoryAffectedEnvironment = {
+    affectedVersions: string;
+    environmentId: number;
+    environmentName: string;
+    environmentStatus: string;
+    installedVersion: string;
+    matchedAt: string;
+    organizationId: string;
+    organizationName: string;
+    packageName: string;
+    shopId: number;
+    shopName: string;
+    shopwareVersion?: string;
+    suppressed: boolean;
+};
+
+export type AdvisoryAffectedPackage = {
+    affectedVersions: string;
+    packageName: string;
+    packagistAdvisoryId: string;
+};
+
+export type AdvisoryAffectedResponse = {
+    environments: Array<AdvisoryAffectedEnvironment>;
+    globalTotal?: number;
+    total: number;
+};
+
+export type AdvisoryCwe = {
+    id: string;
+    name: string;
+};
+
+export type AdvisoryListResponse = {
+    advisories: Array<Advisory>;
+    scopeCounts?: AdvisoryScopeCounts;
+    total: number;
+};
+
+export type AdvisoryScopeCounts = {
+    affected: number;
+    all: number;
+    suppressed: number;
+};
+
+export type AdvisorySecurityPluginFix = {
+    pluginBranch: string;
+    pluginVersion: string;
+    shopwareBranch: string;
+};
+
+export type AdvisorySource = {
+    name: string;
+    remoteId: string;
+};
+
+export type AdvisorySuppression = {
+    advisoryId: string;
+    createdAt: string;
+    createdBy?: string;
+    createdByName?: string;
+    environmentId?: number;
+    environmentName?: string;
+    expiresAt?: string;
+    id: number;
+    organizationId: string;
+    reason: string;
+    revokedAt?: string;
+    shopId: number;
+    shopName: string;
+};
+
+export type AdvisorySuppressionListResponse = {
+    suppressions: Array<AdvisorySuppression>;
+};
+
+export type ApiKey = {
+    createdAt: string;
+    id: string;
+    lastUsedAt: string | null;
+    name: string;
+    scopes: Array<string>;
+};
+
+export type ApiKeyScope = {
+    description: string;
+    label: string;
+    value: string;
+};
+
+export type AuthAdminAuditLogEntry = {
+    action: string;
+    actorEmail?: string;
+    actorName?: string;
+    actorUserId?: string;
+    createdAt: string;
+    detail?: string;
+    id: number;
+    ipAddress?: string;
+    targetEmail?: string;
+    targetName?: string;
+    targetUserId?: string;
+};
+
+export type AuthCodeResponse = {
+    code: string;
+};
+
+export type AuthenticatedUserResponse = {
+    email: string;
+    emailVerified?: boolean;
+    id: string;
+    image?: string;
+    name: string;
+    notifications?: Array<string>;
+    role?: string;
+};
+
+export type CacheInfo = {
+    cacheAdapter?: string;
+    environment?: string;
+    httpCache?: boolean;
+    id?: number;
+};
+
+export type CancelInvitationRequest = {
+    invitationId: string;
+};
+
+export type ChangeEmailRequest = {
+    currentPassword: string;
+    newEmail: string;
+};
+
+export type ChangePasswordRequest = {
+    currentPassword: string;
+    newPassword: string;
+};
+
+export type CreateAdvisorySuppressionRequest = {
+    environmentId?: number;
+    expiresAt?: string;
+    reason: string;
+    shopId: number;
+};
+
+export type CreateApiKeyRequest = {
+    name: string;
+    scopes: Array<string>;
+};
+
+export type CreateApiKeyResponse = {
+    id: string;
+    name: string;
+    scopes: Array<string>;
+    token: string;
+};
+
+export type CreateCliDeploymentRequest = {
+    command: string;
+    composer?: string;
+    end_date: string;
+    environment_id: number;
+    execution_time: number;
+    name?: string;
+    reference?: string;
+    return_code: number;
+    start_date: string;
+};
+
+export type CreateCliDeploymentResponse = {
+    deployment_id: number;
+    name: string;
+    success: boolean;
+    upload_url: string;
+    url: string;
+};
+
+export type CreateEnvironmentOutputBody = {
+    id: number;
 };
 
 export type CreateEnvironmentRequest = {
-    name: string;
-    shopUrl: string;
     clientId: string;
     clientSecret: string;
-    shopId: number;
-    environmentToken?: string | null;
-};
-
-export type UpdateEnvironmentRequest = {
-    name?: string;
-    shopUrl?: string;
-    clientId?: string;
-    clientSecret?: string;
-    ignores?: Array<string>;
-    shopId: number;
-};
-
-export type EnvironmentDetail = {
-    id: number;
-    organizationId: string;
-    organizationName: string;
-    shopId: number | null;
-    shopName: string | null;
-    shopDescription: string | null;
+    environmentToken?: string;
     name: string;
-    status: string;
-    url: string;
-    favicon: string | null;
-    shopwareVersion: string;
-    lastScrapedAt: string | null;
-    lastScrapedError: string | null;
-    ignores: Array<string> | null;
-    environmentImage: string | null;
-    environmentToken: string;
-    lastChangelog: AccountChangelog | null;
-    sitespeedEnabled: boolean;
-    sitespeedUrls: Array<string> | null;
-    sitespeedDetailUrl: string | null;
+    shopId: number;
+    shopUrl: string;
+};
+
+export type CreateOrganizationRequest = {
+    name: string;
+};
+
+export type CreateOrganizationResponse = {
+    id: string;
+    name: string;
+};
+
+export type CreatePackagesTokenRequest = {
+    token: string;
+};
+
+export type CreateShopRequest = {
+    clientId: string;
+    clientSecret: string;
+    description?: string;
+    environmentName: string;
+    environmentUrl: string;
+    gitUrl?: string;
+    name: string;
+};
+
+export type CurrentSessionEnvelope = {
+    session: CurrentSessionResponse;
+    user: AuthenticatedUserResponse;
+};
+
+export type CurrentSessionResponse = {
+    activeOrganizationId: string | null;
+    expiresAt: string;
+    id: string;
+    impersonatedBy?: string;
+    userId: string;
+};
+
+export type DeletePasskeyRequest = {
+    id: string;
+};
+
+export type Deployment = {
+    command: string;
     createdAt: string;
-    extensions: Array<EnvironmentExtension>;
-    scheduledTasks: Array<ScheduledTask>;
-    queues: Array<Queue>;
-    cache: CacheInfo | null;
-    checks: Array<EnvironmentCheck>;
-    sitespeeds: Array<Sitespeed>;
-    /**
-     * Total number of recorded changelog entries. The entries themselves are paginated via GET /environments/{environmentId}/changelogs.
-     */
-    changelogsCount: number;
-    deploymentsCount: number;
-    subscribed: boolean;
+    endDate: string;
+    executionTime: number;
+    id: number;
+    name: string | null;
+    reference: string | null;
+    returnCode: number;
+    startDate: string;
+};
+
+export type DeploymentDetail = {
+    command: string;
+    createdAt: string;
+    endDate: string;
+    executionTime: number;
+    id: number;
+    name: string | null;
+    output?: string;
+    reference: string | null;
+    returnCode: number;
+    startDate: string;
+};
+
+export type EcosystemStats = {
+    growth: AdminGrowth;
+    shopwareVersions: Array<ShopwareVersionCount>;
 };
 
 export type EnvironmentChangelogsResponse = {
@@ -314,27 +687,271 @@ export type EnvironmentChangelogsResponse = {
     total: number;
 };
 
-export type EnvironmentExtension = {
-    name: string;
-    label: string;
-    version: string;
-    latestVersion: string;
-    active: boolean;
-    installed: boolean;
-    storeLink?: string | null;
-    ratingAverage?: number | null;
-    installedAt?: string | null;
-    changelog?: Array<ExtensionChangelogEntry> | null;
+export type EnvironmentCheck = {
+    id: string;
+    level: string;
+    link?: string;
+    message: string;
+    messageKey?: string;
+    params?: {
+        [key: string]: unknown;
+    };
 };
 
-export type ScheduledTask = {
+export type EnvironmentDetail = {
+    cache: CacheInfo;
+    changelogsCount: number;
+    checks: Array<EnvironmentCheck>;
+    createdAt: string;
+    deploymentsCount: number;
+    environmentImage: string | null;
+    environmentToken: string;
+    extensions: Array<EnvironmentExtension>;
+    favicon: string | null;
+    id: number;
+    ignores: Array<string>;
+    lastChangelog: AccountChangelog;
+    lastScrapedAt: string | null;
+    lastScrapedError: string | null;
+    name: string;
+    organizationId: string;
+    organizationName: string;
+    queues: Array<Queue>;
+    scheduledTasks: Array<ScheduledTask>;
+    shopDescription: string | null;
+    shopId: number | null;
+    shopName: string | null;
+    shopwareVersion: string;
+    sitespeedDetailUrl: string | null;
+    sitespeedEnabled: boolean;
+    sitespeedUrls: Array<string>;
+    sitespeeds: Array<Sitespeed>;
+    status: string;
+    subscribed: boolean;
+    url: string;
+};
+
+export type EnvironmentExtension = {
+    active: boolean;
+    changelog?: Array<ExtensionChangelogEntry>;
+    installed: boolean;
+    installedAt?: string;
+    label: string;
+    latestVersion: string;
+    name: string;
+    ratingAverage?: number;
+    storeLink?: string;
+    version: string;
+};
+
+export type ErrorResponse = {
+    message: string;
+};
+
+export type ExchangeCodeRequest = {
+    code: string;
+};
+
+export type ExchangeCodeResponse = {
+    token: string;
+};
+
+export type ExtensionChangelogEntry = {
+    creationDate: string;
+    text: string;
+    textDe?: string;
+    version: string;
+};
+
+export type ExtensionCompatibilityRequest = {
+    currentVersion: string;
+    extensions: Array<Item>;
+    futureVersion: string;
+};
+
+export type ExtensionCompatibilityResult = {
+    iconPath: string | null;
+    label: string;
+    name: string;
+    status: ExtensionCompatibilityResultStatusStruct;
+};
+
+export type ExtensionCompatibilityResultStatusStruct = {
+    label: string;
+    name: string;
+    type: string;
+};
+
+export type ExtensionDiff = {
+    active: boolean;
+    changelog?: Array<ExtensionChangelogEntry>;
+    label: string;
+    name: string;
+    newVersion?: string;
+    oldVersion?: string;
+    state: string;
+};
+
+export type ExtensionScreenshot = {
+    preview: boolean;
+    url: string;
+};
+
+export type ForgetPasswordRequest = {
+    email: string;
+};
+
+export type FullOrganizationResponse = {
+    id: string;
+    invitations: Array<OrganizationInvitationResponse>;
+    logo: string | null;
+    members: Array<OrganizationMemberResponse>;
+    name: string;
+};
+
+export type GrowthDataPoint = {
+    count: number;
+    month: string;
+};
+
+export type HasPermissionRequest = {
+    organizationId: string;
+};
+
+export type HealthStatus = {
+    status: string;
+};
+
+export type IdResponse = {
+    id: string;
+};
+
+export type ImpersonationResponse = {
+    session: ImpersonationSessionResponse;
+    token: string;
+};
+
+export type ImpersonationSessionResponse = {
+    impersonatedBy: string;
+    token: string;
+};
+
+export type InstanceConfig = {
+    githubAuthEnabled: boolean;
+    packageMirrorEnabled: boolean;
+    registrationEnabled: boolean;
+    sitespeedEnabled: boolean;
+};
+
+export type InviteMemberRequest = {
+    email: string;
+    role: string;
+};
+
+export type Item = {
+    name: string;
+    version: string;
+};
+
+export type LinkedAccountResponse = {
+    accountId: string;
+    createdAt: string;
+    id: string;
+    provider: string;
+};
+
+export type Notification = {
+    createdAt: string;
+    id: number;
+    key: string;
+    level: string;
+    link: NotificationLink;
+    message: string;
+    messageKey?: string;
+    params?: {
+        [key: string]: unknown;
+    };
+    read: boolean;
+    title: string;
+    titleKey?: string;
+    userId: string;
+};
+
+export type NotificationEventType = {
+    defaultChannels: Array<string>;
+    type: string;
+};
+
+export type NotificationLink = {
+    label: string;
+    url: string;
+};
+
+export type NotificationPreference = {
+    channel: string;
+    enabled: boolean;
+    eventType: string;
+    scopeId: string;
+    scopeType: string;
+};
+
+export type NotificationPreferenceInput = {
+    channel: string;
+    enabled: boolean;
+    eventType?: string;
+    scopeId?: string;
+    scopeType: string;
+};
+
+export type OrganizationInvitationResponse = {
+    email: string;
+    expiresAt: string;
+    id: string;
+    inviterName: string;
+    role: string | null;
+    status: string;
+};
+
+export type OrganizationMemberResponse = {
+    email: string;
+    id: string;
+    image: string | null;
+    name: string;
+    role: string;
+    userId: string;
+};
+
+export type PackagesToken = {
+    id: number;
+    lastSyncedAt: number | null;
+    source: string;
+};
+
+export type PackagesTokenConfiguration = {
+    composerUrl: string | null;
+    configured: boolean;
+};
+
+export type PasskeyOptionsResponse = {
+    challengeKey: string;
+    options: unknown;
+};
+
+export type PasskeyRegisterResponse = {
     id: string;
     name: string;
-    runInterval: number;
-    status: string;
-    lastExecutionTime?: string | null;
-    nextExecutionTime?: string | null;
-    overdue: boolean;
+};
+
+export type PasskeyResponse = {
+    backedUp: boolean;
+    createdAt: string;
+    deviceType: string;
+    id: string;
+    name: string | null;
+};
+
+export type PermissionResponse = {
+    success: boolean;
 };
 
 export type Queue = {
@@ -342,39 +959,97 @@ export type Queue = {
     size: number;
 };
 
-export type CacheInfo = {
-    id?: number;
-    environment?: string;
-    httpCache?: boolean;
-    cacheAdapter?: string;
+export type RefreshEnvironmentJsonBody = {
+    sitespeed?: boolean;
 };
 
-export type EnvironmentCheck = {
+export type RegisterSsoProviderRequest = {
+    authorizationEndpoint: string;
+    clientId: string;
+    clientSecret: string;
+    domain: string;
+    issuer: string;
+    jwksEndpoint: string;
+    organizationId: string;
+    tokenEndpoint: string;
+};
+
+export type ResetPasswordRequest = {
+    newPassword: string;
+    token: string;
+};
+
+export type RevokeSessionRequest = {
+    sessionId: string;
+};
+
+export type ScheduledTask = {
     id: string;
-    level: string;
-    message: string;
-    /**
-     * Translation key for the message; render with params client-side. Falls back to message.
-     */
-    messageKey?: string | null;
-    /**
-     * Structured params for interpolating messageKey.
-     */
-    params?: {
-        [key: string]: unknown;
-    };
-    link?: string | null;
+    lastExecutionTime?: string;
+    name: string;
+    nextExecutionTime?: string;
+    overdue: boolean;
+    runInterval: number;
+    status: string;
+};
+
+export type SessionResponse = {
+    createdAt: string;
+    expiresAt: string;
+    id: string;
+    impersonatedBy: string | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+};
+
+export type SetActiveOrganizationInputBody = {
+    organizationId: string;
+};
+
+export type SetMemberRoleRequest = {
+    role: string;
+};
+
+export type SeverityLevel = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+export type Shop = {
+    defaultEnvironmentId: number | null;
+    description: string | null;
+    gitUrl: string | null;
+    id: number;
+    name: string;
+    organizationId: string;
+};
+
+export type ShopwareVersion = {
+    name: string;
+};
+
+export type ShopwareVersionCount = {
+    count: number;
+    version: string;
+};
+
+export type SignInEmailRequest = {
+    email: string;
+    password: string;
+};
+
+export type SignUpEmailRequest = {
+    email: string;
+    name: string;
+    password: string;
 };
 
 export type Sitespeed = {
-    ttfb?: number | null;
-    fullyLoaded?: number | null;
-    largestContentfulPaint?: number | null;
-    firstContentfulPaint?: number | null;
-    cumulativeLayoutShift?: number | null;
-    transferSize?: number | null;
     createdAt: string;
-    deployment?: SitespeedDeployment | null;
+    cumulativeLayoutShift?: number;
+    deployment?: SitespeedDeployment;
+    firstContentfulPaint?: number;
+    fullyLoaded?: number;
+    largestContentfulPaint?: number;
+    transferSize?: number;
+    ttfb?: number;
 };
 
 export type SitespeedDeployment = {
@@ -387,1012 +1062,143 @@ export type SitespeedSettingsRequest = {
     urls?: Array<string>;
 };
 
-export type Shop = {
-    id: number;
-    name: string;
-    description: string | null;
-    gitUrl: string | null;
-    organizationId: string;
-    defaultEnvironmentId: number | null;
-};
-
-export type CreateShopRequest = {
-    name: string;
-    description?: string;
-    gitUrl?: string;
-    environmentName: string;
-    environmentUrl: string;
-    clientId: string;
-    clientSecret: string;
-};
-
-export type UpdateShopRequest = {
-    name?: string;
-    description?: string;
-    gitUrl?: string;
-    defaultEnvironmentId?: number;
-};
-
-export type ApiKeyScope = {
-    value: string;
-    label: string;
-    description: string;
-};
-
-export type ApiKey = {
-    id: string;
-    name: string;
-    scopes: Array<string>;
-    createdAt: string;
-    lastUsedAt: string | null;
-};
-
-export type CreateApiKeyRequest = {
-    name: string;
-    scopes: Array<string>;
-};
-
-export type CreateApiKeyResponse = {
-    id: string;
-    token: string;
-    name: string;
-    scopes: Array<string>;
-};
-
-export type PackagesTokenConfiguration = {
-    configured: boolean;
-    composerUrl: string | null;
-};
-
-export type PackagesToken = {
-    id: number;
-    source: string;
-    /**
-     * Unix timestamp in seconds of the last successful sync, or null if never synced.
-     */
-    lastSyncedAt: number | null;
-};
-
-export type CreatePackagesTokenRequest = {
-    token: string;
-};
-
-export type Deployment = {
-    id: number;
-    name: string | null;
-    command: string;
-    returnCode: number;
-    startDate: string;
-    endDate: string;
-    /**
-     * Execution time in seconds
-     */
-    executionTime: number;
-    reference: string | null;
-    createdAt: string;
-};
-
-export type DeploymentDetail = Deployment & {
-    output?: string | null;
-};
-
-export type CreateCliDeploymentRequest = {
-    environment_id: number;
-    command: string;
-    return_code: number;
-    start_date: string;
-    end_date: string;
-    execution_time: number;
-    composer?: string | null;
-    reference?: string | null;
-    name?: string | null;
-};
-
-export type CreateCliDeploymentResponse = {
-    success: boolean;
-    name: string;
-    deployment_id: number;
-    url: string;
-    upload_url: string;
-};
-
-export type SsoProvider = {
-    id: string;
-    domain: string;
-    issuer: string;
-    clientId: string;
-    authorizationEndpoint: string;
-    tokenEndpoint: string;
-    jwksEndpoint: string;
+export type SocialSignInRequest = {
+    callbackURL: string;
+    provider: string;
 };
 
 export type SsoDiscovery = {
-    issuer: string;
     authorizationEndpoint: string;
-    tokenEndpoint: string;
+    issuer: string;
     jwksEndpoint: string;
-    userInfoEndpoint: string;
     scopes: Array<string>;
-};
-
-export type UpdateSsoProviderRequest = {
-    domain: string;
-    issuer: string;
-    clientId: string;
-    clientSecret?: string;
-    authorizationEndpoint: string;
     tokenEndpoint: string;
-    jwksEndpoint: string;
+    userInfoEndpoint: string;
 };
 
-export type AdminOrganizationsResponse = {
-    organizations: Array<AccountOrganization>;
-    total: number;
-};
-
-export type AdminEnvironmentsResponse = {
-    environments: Array<AccountEnvironment>;
-    total: number;
-};
-
-export type AdminUser = {
-    id: string;
-    name: string;
-    email: string;
-    emailVerified: boolean;
-    image?: string | null;
-    role: string;
-    banned?: boolean | null;
-    banReason?: string | null;
-    createdAt: string;
-};
-
-export type AdminUsersResponse = {
-    users: Array<AdminUser>;
-    total: number;
-};
-
-export type AdminUserDetail = {
-    id: string;
-    name: string;
-    email: string;
-    emailVerified: boolean;
-    image?: string | null;
-    role: string;
-    banned: boolean;
-    banReason?: string | null;
-    banExpires?: string | null;
-    createdAt: string;
-    updatedAt: string;
-    authProviders: Array<AdminUserAuthProvider>;
-    sessions: Array<AdminUserSession>;
-    memberships: Array<AdminUserMembership>;
-    auditLog: Array<AdminAuditLogEntry>;
-};
-
-export type AdminUserAuthProvider = {
-    id: string;
-    providerId: string;
-    accountId?: string;
-    createdAt: string;
-};
-
-export type AdminUserSession = {
-    id: string;
-    ipAddress?: string | null;
-    userAgent?: string | null;
-    impersonated: boolean;
-    createdAt: string;
-    expiresAt: string;
-};
-
-export type AdminUserMembership = {
-    organizationId: string;
-    organizationName: string;
-    organizationSlug: string;
-    role: string;
-    createdAt: string;
-};
-
-export type AdminOrganizationDetail = {
-    id: string;
-    name: string;
-    slug: string;
-    logo?: string | null;
-    createdAt: string;
-    memberCount: number;
-    environmentCount: number;
-    members: Array<AdminOrganizationMember>;
-    environments: Array<AdminOrganizationEnvironment>;
-    invitations: Array<AdminOrganizationInvitation>;
-    ssoProviders: Array<AdminOrganizationSso>;
-    shops: Array<AdminOrganizationShop>;
-};
-
-export type AdminOrganizationMember = {
-    userId: string;
-    name: string;
-    email: string;
-    image?: string | null;
-    role: string;
-    createdAt: string;
-};
-
-export type AdminOrganizationEnvironment = {
-    id: number;
-    name: string;
-    url: string;
-    status: string;
-    shopwareVersion: string;
-    shopId: number;
-    shopName: string;
-    lastScrapedAt?: string | null;
-};
-
-export type AdminOrganizationInvitation = {
-    id: string;
-    email: string;
-    role?: string | null;
-    status: string;
-    expiresAt: string;
-    createdAt: string;
-    inviterName: string;
-    inviterEmail: string;
-};
-
-export type AdminOrganizationSso = {
+export type SsoProvider = {
+    authorizationEndpoint: string;
+    clientId: string;
+    domain: string;
     id: string;
     issuer: string;
-    providerId: string;
-    domain: string;
+    jwksEndpoint: string;
+    tokenEndpoint: string;
 };
 
-export type AdminOrganizationShop = {
-    id: number;
-    name: string;
-    description?: string | null;
-    defaultEnvironmentId?: number | null;
+export type SsoSignInRequest = {
+    callbackURL: string;
+    email: string;
+};
+
+export type StatusEvent = {
     createdAt: string;
+    id: number;
+    newStatus: string;
+    oldStatus: string;
+    reasons: Array<StatusReason>;
 };
 
-export type AdminEnvironmentDetail = {
-    id: number;
-    name: string;
-    url: string;
-    status: string;
-    shopwareVersion: string;
-    createdAt: string;
-    lastScrapedAt?: string | null;
-    lastScrapedError?: string | null;
-    connectionIssueCount: number;
-    organizationId: string;
-    organizationName: string;
-    shopId: number;
-    shopName: string;
-    checks: Array<AdminEnvironmentCheck>;
-    extensions: Array<AdminEnvironmentExtension>;
-    scheduledTasks: Array<AdminEnvironmentTask>;
-    lastDeployment?: AdminEnvironmentDeployment;
-};
-
-export type AdminEnvironmentCheck = {
-    id: number;
-    checkId: string;
+export type StatusReason = {
     level: string;
-    message: string;
-    source: string;
-    link?: string | null;
+    messageKey: string;
+    params?: {
+        [key: string]: unknown;
+    };
+    source?: string;
 };
 
-export type AdminEnvironmentExtension = {
-    id: number;
-    name: string;
-    label: string;
-    active: boolean;
-    version: string;
-    latestVersion?: string | null;
-    installed: boolean;
-    storeLink?: string | null;
-};
-
-export type AdminEnvironmentTask = {
-    id: number;
-    taskId: string;
-    name: string;
+export type StatusResponse = {
     status: string;
-    interval: number;
-    overdue: boolean;
-    lastExecutionTime?: string | null;
-    nextExecutionTime?: string | null;
 };
 
-export type AdminEnvironmentDeployment = {
+export type SubscribedEnvironment = {
     id: number;
     name: string;
-    command: string;
-    returnCode: number;
-    executionTime: number;
-    reference?: string | null;
-    createdAt: string;
+    shopId?: number;
+    shopName?: string;
 };
 
-export type AdminAuditLogEntry = {
-    id: number;
-    actorUserId?: string | null;
-    actorName?: string | null;
-    actorEmail?: string | null;
-    action: string;
-    targetUserId?: string | null;
-    targetName?: string | null;
-    targetEmail?: string | null;
-    detail?: string | null;
-    ipAddress?: string | null;
-    createdAt: string;
+export type TokenUserResponse = {
+    token: string;
+    user: AuthenticatedUserResponse;
 };
 
-export type AdminAuditLogResponse = {
-    entries: Array<AdminAuditLogEntry>;
-    total: number;
+export type UnlinkAccountRequest = {
+    providerId: string;
 };
 
-export type AdminStats = {
-    totalUsers: number;
-    totalOrganizations: number;
-    totalEnvironments: number;
-    environmentsByStatus: {
-        green: number;
-        yellow: number;
-        red: number;
-    };
-};
-
-export type AdminGrowth = {
-    users: Array<GrowthDataPoint>;
-    environments: Array<GrowthDataPoint>;
-};
-
-export type GrowthDataPoint = {
-    month: string;
-    count: number;
-};
-
-export type AdminRecentActivity = {
-    recentUsers: Array<UserProfile>;
-    recentEnvironments: Array<AccountEnvironment>;
-};
-
-export type ShopwareVersionCount = {
-    version: string;
-    count: number;
-};
-
-export type ShopwareVersion = {
-    name: string;
-};
-
-export type EcosystemStats = {
-    growth: AdminGrowth;
-    shopwareVersions: Array<ShopwareVersionCount>;
-};
-
-export type ExtensionCompatibilityRequest = {
-    currentVersion: string;
-    futureVersion: string;
-    extensions: Array<{
-        name: string;
-        version: string;
-    }>;
-};
-
-export type ExtensionCompatibilityResult = {
-    name: string;
-    label: string;
-    iconPath: string | null;
-    status: {
-        name: string;
-        label: string;
-        type: string;
-    };
-};
-
-export type AuthUser = {
-    id?: string;
-    name?: string;
-    email?: string;
-    emailVerified?: boolean;
-    image?: string | null;
-    role?: string;
-    notifications?: Array<string>;
-};
-
-export type SessionInfo = {
-    id?: string;
-    userId?: string;
-    expiresAt?: string;
-    activeOrganizationId?: string | null;
-    /**
-     * Admin user ID when this session is an impersonation
-     */
-    impersonatedBy?: string | null;
-};
-
-export type InstanceConfig = {
-    registrationEnabled: boolean;
-    githubAuthEnabled: boolean;
-    sitespeedEnabled: boolean;
-    packageMirrorEnabled: boolean;
-};
-
-export type SeverityLevel = 'none' | 'low' | 'medium' | 'high' | 'critical';
-
-export type AdvisorySource = {
-    name: string;
-    remoteId: string;
-};
-
-export type AdvisoryAffectedPackage = {
-    /**
-     * Composer package name (e.g. shopware/core)
-     */
-    packageName: string;
-    /**
-     * Composer constraint for this package
-     */
-    affectedVersions: string;
-    /**
-     * Original Packagist PKSA id for this package row
-     */
-    packagistAdvisoryId: string;
-};
-
-export type Advisory = {
-    /**
-     * Canonical id (CVE, else GHSA, else Packagist PKSA)
-     */
-    advisoryId: string;
-    /**
-     * Affected Composer packages (one CVE may span multiple packages)
-     */
-    packages: Array<AdvisoryAffectedPackage>;
-    title: string;
-    link?: string | null;
-    cve?: string | null;
-    ghsaId?: string | null;
-    severity?: SeverityLevel | null;
-    severityOverride?: SeverityLevel | null;
-    effectiveSeverity: SeverityLevel | null;
-    sources: Array<AdvisorySource>;
-    reportedAt?: string | null;
-    composerRepository?: string | null;
-    /**
-     * Short summary from the disclosure source (e.g. GitHub Advisory)
-     */
-    summary?: string | null;
-    /**
-     * Full advisory write-up in Markdown (source form)
-     */
-    description?: string | null;
-    /**
-     * description rendered as HTML for safe display after client sanitization
-     */
-    descriptionHtml?: string | null;
-    cvssScore?: number | null;
-    cvssVector?: string | null;
-    cwes?: Array<AdvisoryCwe>;
-    /**
-     * External reference URLs (GHSA page, commits, etc.)
-     */
-    externalReferences?: Array<string>;
-    /**
-     * Where disclosure details were loaded from (e.g. github)
-     */
-    detailsSource?: string | null;
-    isVisible: boolean;
-    notesPublic?: string | null;
-    remediationSummary?: string | null;
-    remediationUrl?: string | null;
-    recommendedUpgrade?: string | null;
-    shopwareImpactSummary?: string | null;
-    affectedComponents: Array<string>;
-    tags: Array<string>;
-    /**
-     * Number of the caller's environments whose Composer package inventory matches this advisory and that are not suppressed. Null when no SBOM data has been collected.
-     *
-     */
-    affectedEnvironmentCount?: number | null;
-    /**
-     * Which SwagPlatformSecurity releases backport this advisory, per branch. Empty when it is not backportable or not yet derived.
-     *
-     */
-    securityPluginFixes?: Array<AdvisorySecurityPluginFix>;
-    /**
-     * First Shopware release per line that closes this advisory, e.g. {"6.7": "6.7.10.1"}. Machine-derived from the GitHub advisory.
-     *
-     */
-    firstPatchedVersions?: {
-        [key: string]: string;
-    };
-    /**
-     * Number of the caller's environments where this advisory has been acknowledged via an active suppression.
-     *
-     */
-    suppressedEnvironmentCount?: number | null;
-    syncedAt: string;
-    createdAt: string;
-    updatedAt: string;
-};
-
-export type AdvisorySecurityPluginFix = {
-    /**
-     * SwagPlatformSecurity major version, e.g. "4"
-     */
-    pluginBranch: string;
-    /**
-     * Lowest plugin version on this branch that backports the fix
-     */
-    pluginVersion: string;
-    /**
-     * Shopware line this branch serves, e.g. "6.7"
-     */
-    shopwareBranch: string;
-};
-
-export type AdvisorySuppression = {
-    id: number;
-    advisoryId: string;
-    organizationId: string;
-    shopId: number;
-    shopName: string;
-    /**
-     * Null means every environment of the shop
-     */
-    environmentId?: number | null;
-    environmentName?: string | null;
-    reason: string;
-    /**
-     * Null means the suppression does not expire
-     */
-    expiresAt?: string | null;
-    createdBy?: string | null;
-    createdByName?: string | null;
-    createdAt: string;
-    revokedAt?: string | null;
-};
-
-export type CreateAdvisorySuppressionRequest = {
-    shopId: number;
-    /**
-     * Omit to suppress across every environment of the shop
-     */
-    environmentId?: number | null;
-    /**
-     * Why the advisory is accepted or how it is mitigated
-     */
-    reason: string;
-    /**
-     * Omit for a suppression that does not expire
-     */
-    expiresAt?: string | null;
-};
-
-export type AdvisorySuppressionListResponse = {
-    suppressions: Array<AdvisorySuppression>;
-};
-
-export type AdvisoryAffectedEnvironment = {
-    environmentId: number;
-    environmentName: string;
-    environmentStatus: string;
-    shopId: number;
-    shopName: string;
-    organizationId: string;
-    organizationName: string;
-    shopwareVersion?: string | null;
-    /**
-     * Installed Composer package that matched the advisory
-     */
-    packageName: string;
-    installedVersion: string;
-    /**
-     * The advisory constraint the installed version falls into
-     */
-    affectedVersions: string;
-    /**
-     * Whether an active suppression covers this environment
-     */
-    suppressed: boolean;
-    matchedAt: string;
-};
-
-export type AdvisoryAffectedResponse = {
-    /**
-     * Affected environments within the caller's organizations
-     */
-    environments: Array<AdvisoryAffectedEnvironment>;
-    /**
-     * Number of affected environments visible to the caller
-     */
-    total: number;
-    /**
-     * Fleet-wide affected environment count; admins only
-     */
-    globalTotal?: number | null;
-};
-
-export type AdvisoryCwe = {
-    /**
-     * CWE identifier, e.g. CWE-918
-     */
-    id: string;
-    name: string;
-};
-
-export type AdvisoryListResponse = {
-    advisories: Array<Advisory>;
-    /**
-     * Advisories matching the current scope and filters
-     */
-    total: number;
-    /**
-     * Totals per scope, ignoring the scope filter, for tab badges
-     */
-    scopeCounts?: AdvisoryScopeCounts | null;
-};
-
-export type AdvisoryScopeCounts = {
-    /**
-     * All visible advisories matching the non-scope filters
-     */
-    all: number;
-    /**
-     * Of those, how many affect the caller's environments and are not suppressed
-     *
-     */
-    affected: number;
-    /**
-     * Of those, how many the caller has acknowledged
-     */
-    suppressed: number;
-};
-
-export type AdminAdvisory = Advisory & {
-    notesInternal?: string | null;
-    enrichedAt?: string | null;
-    enrichedBy?: string | null;
-};
-
-export type AdminAdvisoryListResponse = {
-    advisories: Array<AdminAdvisory>;
-    total: number;
+export type UpdateAccountMeJsonBody = {
+    locale?: string;
 };
 
 export type UpdateAdvisoryEnrichmentRequest = {
-    severityOverride?: SeverityLevel | null;
-    isVisible?: boolean;
-    notesPublic?: string | null;
-    notesInternal?: string | null;
-    remediationSummary?: string | null;
-    remediationUrl?: string | null;
-    recommendedUpgrade?: string | null;
-    shopwareImpactSummary?: string | null;
     affectedComponents?: Array<string>;
+    isVisible?: boolean;
+    notesInternal?: string;
+    notesPublic?: string;
+    recommendedUpgrade?: string;
+    remediationSummary?: string;
+    remediationUrl?: string;
+    severityOverride?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+    shopwareImpactSummary?: string;
     tags?: Array<string>;
 };
 
-export type AdminAdvisorySyncResponse = {
-    enqueued: boolean;
+export type UpdateEnvironmentRequest = {
+    clientId?: string;
+    clientSecret?: string;
+    ignores?: Array<string>;
+    name?: string;
+    shopId: number;
+    shopUrl?: string;
 };
 
-/**
- * Organization ID
- */
-export type OrgId = string;
-
-/**
- * Language for localized store text (label, description, manual, changelog). Falls back to English.
- */
-export type LanguageParam = 'en' | 'de';
-
-/**
- * Environment ID
- */
-export type EnvironmentId = number;
-
-/**
- * Shop ID
- */
-export type ShopId = number;
-
-/**
- * Deployment ID
- */
-export type DeploymentId = number;
-
-/**
- * API key ID
- */
-export type KeyId = string;
-
-/**
- * Packages token ID
- */
-export type TokenId = number;
-
-/**
- * Scheduled task ID
- */
-export type TaskId = string;
-
-/**
- * SSO provider ID
- */
-export type ProviderId = string;
-
-/**
- * Notification ID
- */
-export type NotificationId = number;
-
-/**
- * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
- *
- */
-export type AdvisoryId = string;
-
-export type AdvisoryLimit = number;
-
-export type AdvisoryOffset = number;
-
-/**
- * Filter by Composer package name (e.g. shopware/core)
- */
-export type AdvisoryPackage = string;
-
-/**
- * Filter by effective severity
- */
-export type AdvisorySeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
-
-/**
- * Filter by admin tag
- */
-export type AdvisoryTag = string;
-
-/**
- * Search title, CVE, GHSA, package, or advisory ID
- */
-export type AdvisorySearch = string;
-
-/**
- * "affected" limits results to advisories matching the Composer inventory of the caller's own environments, excluding suppressed ones; "suppressed" returns only those the caller has acknowledged; "all" returns the full catalog.
- *
- */
-export type AdvisoryScope = 'all' | 'affected' | 'suppressed';
-
-/**
- * Sort order: "reported" newest first, "severity" most severe first, "affected" most affected environments first, "cvss" highest score first.
- *
- */
-export type AdvisorySort = 'reported' | 'severity' | 'affected' | 'cvss';
-
-export type GetHealthData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/health';
+export type UpdateOrganizationRequest = {
+    logo?: string;
+    name?: string;
 };
 
-export type GetHealthResponses = {
-    /**
-     * Service is healthy
-     */
-    200: 'ok';
+export type UpdateShopRequest = {
+    defaultEnvironmentId?: number;
+    description?: string;
+    gitUrl?: string;
+    name?: string;
 };
 
-export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
-
-export type GetAccountMeData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/account/me';
+export type UpdateSsoProviderRequest = {
+    authorizationEndpoint: string;
+    clientId: string;
+    clientSecret?: string;
+    domain: string;
+    issuer: string;
+    jwksEndpoint: string;
+    tokenEndpoint: string;
 };
 
-export type GetAccountMeErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
+export type UpdateUserRequest = {
+    name: string;
 };
 
-export type GetAccountMeError = GetAccountMeErrors[keyof GetAccountMeErrors];
-
-export type GetAccountMeResponses = {
-    /**
-     * Current user profile
-     */
-    200: UserProfile;
+export type UrlResponse = {
+    url: string;
 };
 
-export type GetAccountMeResponse = GetAccountMeResponses[keyof GetAccountMeResponses];
-
-export type UpdateAccountMeData = {
-    body: {
-        /**
-         * Preferred language (e.g. "en", "de").
-         */
-        locale?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/account/me';
+export type UserOrganizationResponse = {
+    createdAt: string;
+    id: string;
+    logo: string | null;
+    name: string;
+    role: string;
 };
 
-export type UpdateAccountMeErrors = {
-    /**
-     * Validation error
-     */
-    400: ErrorResponse;
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
+export type UserProfile = {
+    createdAt: string;
+    displayName: string;
+    email: string;
+    id: string;
+    locale: string;
 };
-
-export type UpdateAccountMeError = UpdateAccountMeErrors[keyof UpdateAccountMeErrors];
-
-export type UpdateAccountMeResponses = {
-    /**
-     * Updated user profile
-     */
-    200: UserProfile;
-};
-
-export type UpdateAccountMeResponse = UpdateAccountMeResponses[keyof UpdateAccountMeResponses];
-
-export type GetAccountExtensionsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Language for localized store text (label, description, manual, changelog). Falls back to English.
-         */
-        language?: 'en' | 'de';
-    };
-    url: '/account/extensions';
-};
-
-export type GetAccountExtensionsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetAccountExtensionsError = GetAccountExtensionsErrors[keyof GetAccountExtensionsErrors];
-
-export type GetAccountExtensionsResponses = {
-    /**
-     * List of extensions
-     */
-    200: Array<AccountExtension>;
-};
-
-export type GetAccountExtensionsResponse = GetAccountExtensionsResponses[keyof GetAccountExtensionsResponses];
-
-export type GetAccountExtensionData = {
-    body?: never;
-    path: {
-        /**
-         * Technical name of the extension
-         */
-        name: string;
-    };
-    query?: {
-        /**
-         * Language for localized store text (label, description, manual, changelog). Falls back to English.
-         */
-        language?: 'en' | 'de';
-    };
-    url: '/account/extensions/{name}';
-};
-
-export type GetAccountExtensionErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type GetAccountExtensionError = GetAccountExtensionErrors[keyof GetAccountExtensionErrors];
-
-export type GetAccountExtensionResponses = {
-    /**
-     * The extension
-     */
-    200: AccountExtension;
-};
-
-export type GetAccountExtensionResponse = GetAccountExtensionResponses[keyof GetAccountExtensionResponses];
-
-export type GetAccountOrganizationsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/account/organizations';
-};
-
-export type GetAccountOrganizationsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetAccountOrganizationsError = GetAccountOrganizationsErrors[keyof GetAccountOrganizationsErrors];
-
-export type GetAccountOrganizationsResponses = {
-    /**
-     * List of organizations
-     */
-    200: Array<AccountOrganization>;
-};
-
-export type GetAccountOrganizationsResponse = GetAccountOrganizationsResponses[keyof GetAccountOrganizationsResponses];
-
-export type GetAccountEnvironmentsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/account/environments';
-};
-
-export type GetAccountEnvironmentsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetAccountEnvironmentsError = GetAccountEnvironmentsErrors[keyof GetAccountEnvironmentsErrors];
-
-export type GetAccountEnvironmentsResponses = {
-    /**
-     * List of environments
-     */
-    200: Array<AccountEnvironment>;
-};
-
-export type GetAccountEnvironmentsResponse = GetAccountEnvironmentsResponses[keyof GetAccountEnvironmentsResponses];
-
-export type GetAccountShopsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/account/shops';
-};
-
-export type GetAccountShopsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetAccountShopsError = GetAccountShopsErrors[keyof GetAccountShopsErrors];
-
-export type GetAccountShopsResponses = {
-    /**
-     * List of shops
-     */
-    200: Array<AccountShop>;
-};
-
-export type GetAccountShopsResponse = GetAccountShopsResponses[keyof GetAccountShopsResponses];
 
 export type GetAccountChangelogsData = {
     body?: never;
@@ -1403,75 +1209,233 @@ export type GetAccountChangelogsData = {
 
 export type GetAccountChangelogsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetAccountChangelogsError = GetAccountChangelogsErrors[keyof GetAccountChangelogsErrors];
 
 export type GetAccountChangelogsResponses = {
     /**
-     * List of changelogs
+     * OK
      */
     200: Array<AccountChangelog>;
 };
 
 export type GetAccountChangelogsResponse = GetAccountChangelogsResponses[keyof GetAccountChangelogsResponses];
 
-export type GetAccountSubscribedEnvironmentsData = {
+export type GetAccountEnvironmentsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/account/subscribed-environments';
+    url: '/account/environments';
 };
 
-export type GetAccountSubscribedEnvironmentsErrors = {
+export type GetAccountEnvironmentsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
-};
-
-export type GetAccountSubscribedEnvironmentsError = GetAccountSubscribedEnvironmentsErrors[keyof GetAccountSubscribedEnvironmentsErrors];
-
-export type GetAccountSubscribedEnvironmentsResponses = {
     /**
-     * List of subscribed environments
+     * Internal Server Error
      */
-    200: Array<SubscribedEnvironment>;
+    500: ErrorResponse;
 };
 
-export type GetAccountSubscribedEnvironmentsResponse = GetAccountSubscribedEnvironmentsResponses[keyof GetAccountSubscribedEnvironmentsResponses];
+export type GetAccountEnvironmentsError = GetAccountEnvironmentsErrors[keyof GetAccountEnvironmentsErrors];
+
+export type GetAccountEnvironmentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AccountEnvironment>;
+};
+
+export type GetAccountEnvironmentsResponse = GetAccountEnvironmentsResponses[keyof GetAccountEnvironmentsResponses];
+
+export type GetAccountExtensionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        language?: string;
+    };
+    url: '/account/extensions';
+};
+
+export type GetAccountExtensionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetAccountExtensionsError = GetAccountExtensionsErrors[keyof GetAccountExtensionsErrors];
+
+export type GetAccountExtensionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AccountExtension>;
+};
+
+export type GetAccountExtensionsResponse = GetAccountExtensionsResponses[keyof GetAccountExtensionsResponses];
+
+export type GetAccountExtensionData = {
+    body?: never;
+    path: {
+        name: string;
+    };
+    query?: {
+        language?: string;
+    };
+    url: '/account/extensions/{name}';
+};
+
+export type GetAccountExtensionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetAccountExtensionError = GetAccountExtensionErrors[keyof GetAccountExtensionErrors];
+
+export type GetAccountExtensionResponses = {
+    /**
+     * OK
+     */
+    200: AccountExtension;
+};
+
+export type GetAccountExtensionResponse = GetAccountExtensionResponses[keyof GetAccountExtensionResponses];
+
+export type GetAccountMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/account/me';
+};
+
+export type GetAccountMeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetAccountMeError = GetAccountMeErrors[keyof GetAccountMeErrors];
+
+export type GetAccountMeResponses = {
+    /**
+     * OK
+     */
+    200: UserProfile;
+};
+
+export type GetAccountMeResponse = GetAccountMeResponses[keyof GetAccountMeResponses];
+
+export type UpdateAccountMeData = {
+    body: UpdateAccountMeJsonBody;
+    path?: never;
+    query?: never;
+    url: '/account/me';
+};
+
+export type UpdateAccountMeErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateAccountMeError = UpdateAccountMeErrors[keyof UpdateAccountMeErrors];
+
+export type UpdateAccountMeResponses = {
+    /**
+     * OK
+     */
+    200: UserProfile;
+};
+
+export type UpdateAccountMeResponse = UpdateAccountMeResponses[keyof UpdateAccountMeResponses];
 
 export type DeleteNotificationPreferenceData = {
     body?: never;
     path?: never;
-    query: {
-        scopeType: string;
+    query?: {
+        scopeType?: string;
         scopeId?: string;
         eventType?: string;
-        channel: string;
+        channel?: string;
     };
     url: '/account/notification-preferences';
 };
 
 export type DeleteNotificationPreferenceErrors = {
     /**
-     * Validation error
+     * Bad Request
      */
     400: ErrorResponse;
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type DeleteNotificationPreferenceError = DeleteNotificationPreferenceErrors[keyof DeleteNotificationPreferenceErrors];
 
 export type DeleteNotificationPreferenceResponses = {
     /**
-     * Preference deleted
+     * No Content
      */
     204: void;
 };
@@ -1487,16 +1451,20 @@ export type GetNotificationPreferencesData = {
 
 export type GetNotificationPreferencesErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetNotificationPreferencesError = GetNotificationPreferencesErrors[keyof GetNotificationPreferencesErrors];
 
 export type GetNotificationPreferencesResponses = {
     /**
-     * List of notification preferences
+     * OK
      */
     200: Array<NotificationPreference>;
 };
@@ -1512,193 +1480,2276 @@ export type SetNotificationPreferenceData = {
 
 export type SetNotificationPreferenceErrors = {
     /**
-     * Validation error
+     * Bad Request
      */
     400: ErrorResponse;
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type SetNotificationPreferenceError = SetNotificationPreferenceErrors[keyof SetNotificationPreferenceErrors];
 
 export type SetNotificationPreferenceResponses = {
     /**
-     * Preference saved
+     * No Content
      */
     204: void;
 };
 
 export type SetNotificationPreferenceResponse = SetNotificationPreferenceResponses[keyof SetNotificationPreferenceResponses];
 
-export type DeleteAllNotificationsData = {
+export type GetAccountOrganizationsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/notifications';
+    url: '/account/organizations';
 };
 
-export type DeleteAllNotificationsErrors = {
+export type GetAccountOrganizationsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
-};
-
-export type DeleteAllNotificationsError = DeleteAllNotificationsErrors[keyof DeleteAllNotificationsErrors];
-
-export type DeleteAllNotificationsResponses = {
     /**
-     * All notifications deleted
+     * Internal Server Error
      */
-    204: void;
+    500: ErrorResponse;
 };
 
-export type DeleteAllNotificationsResponse = DeleteAllNotificationsResponses[keyof DeleteAllNotificationsResponses];
+export type GetAccountOrganizationsError = GetAccountOrganizationsErrors[keyof GetAccountOrganizationsErrors];
 
-export type GetNotificationsData = {
+export type GetAccountOrganizationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AccountOrganization>;
+};
+
+export type GetAccountOrganizationsResponse = GetAccountOrganizationsResponses[keyof GetAccountOrganizationsResponses];
+
+export type GetAccountShopsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/notifications';
+    url: '/account/shops';
 };
 
-export type GetNotificationsErrors = {
+export type GetAccountShopsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
-};
-
-export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
-
-export type GetNotificationsResponses = {
     /**
-     * List of notifications
+     * Internal Server Error
      */
-    200: Array<Notification>;
+    500: ErrorResponse;
 };
 
-export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+export type GetAccountShopsError = GetAccountShopsErrors[keyof GetAccountShopsErrors];
 
-export type GetNotificationEventTypesData = {
+export type GetAccountShopsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AccountShop>;
+};
+
+export type GetAccountShopsResponse = GetAccountShopsResponses[keyof GetAccountShopsResponses];
+
+export type GetAccountSubscribedEnvironmentsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/notifications/event-types';
+    url: '/account/subscribed-environments';
 };
 
-export type GetNotificationEventTypesErrors = {
+export type GetAccountSubscribedEnvironmentsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
-};
-
-export type GetNotificationEventTypesError = GetNotificationEventTypesErrors[keyof GetNotificationEventTypesErrors];
-
-export type GetNotificationEventTypesResponses = {
     /**
-     * List of event types
+     * Internal Server Error
      */
-    200: Array<NotificationEventType>;
+    500: ErrorResponse;
 };
 
-export type GetNotificationEventTypesResponse = GetNotificationEventTypesResponses[keyof GetNotificationEventTypesResponses];
+export type GetAccountSubscribedEnvironmentsError = GetAccountSubscribedEnvironmentsErrors[keyof GetAccountSubscribedEnvironmentsErrors];
 
-export type DeleteNotificationData = {
+export type GetAccountSubscribedEnvironmentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<SubscribedEnvironment>;
+};
+
+export type GetAccountSubscribedEnvironmentsResponse = GetAccountSubscribedEnvironmentsResponses[keyof GetAccountSubscribedEnvironmentsResponses];
+
+export type AdminListAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        package?: string;
+        severity?: string;
+        tag?: string;
+        q?: string;
+        /**
+         * When set, filter by visibility
+         */
+        visible?: boolean;
+    };
+    url: '/admin/advisories';
+};
+
+export type AdminListAdvisoriesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminListAdvisoriesError = AdminListAdvisoriesErrors[keyof AdminListAdvisoriesErrors];
+
+export type AdminListAdvisoriesResponses = {
+    /**
+     * OK
+     */
+    200: AdminAdvisoryListResponse;
+};
+
+export type AdminListAdvisoriesResponse = AdminListAdvisoriesResponses[keyof AdminListAdvisoriesResponses];
+
+export type AdminSyncAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/advisories/sync';
+};
+
+export type AdminSyncAdvisoriesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminSyncAdvisoriesError = AdminSyncAdvisoriesErrors[keyof AdminSyncAdvisoriesErrors];
+
+export type AdminSyncAdvisoriesResponses = {
+    /**
+     * Accepted
+     */
+    202: AdminAdvisorySyncResponse;
+};
+
+export type AdminSyncAdvisoriesResponse = AdminSyncAdvisoriesResponses[keyof AdminSyncAdvisoriesResponses];
+
+export type AdminGetAdvisoryData = {
     body?: never;
     path: {
-        /**
-         * Notification ID
-         */
-        id: number;
+        advisoryId: string;
     };
     query?: never;
-    url: '/notifications/{id}';
+    url: '/admin/advisories/{advisoryId}';
 };
 
-export type DeleteNotificationErrors = {
+export type AdminGetAdvisoryErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Resource not found
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
      */
     404: ErrorResponse;
-};
-
-export type DeleteNotificationError = DeleteNotificationErrors[keyof DeleteNotificationErrors];
-
-export type DeleteNotificationResponses = {
     /**
-     * Notification deleted
+     * Unprocessable Entity
      */
-    204: void;
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
-export type DeleteNotificationResponse = DeleteNotificationResponses[keyof DeleteNotificationResponses];
+export type AdminGetAdvisoryError = AdminGetAdvisoryErrors[keyof AdminGetAdvisoryErrors];
 
-export type MarkNotificationsReadData = {
+export type AdminGetAdvisoryResponses = {
+    /**
+     * OK
+     */
+    200: AdminAdvisory;
+};
+
+export type AdminGetAdvisoryResponse = AdminGetAdvisoryResponses[keyof AdminGetAdvisoryResponses];
+
+export type AdminUpdateAdvisoryData = {
+    body: UpdateAdvisoryEnrichmentRequest;
+    path: {
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/admin/advisories/{advisoryId}';
+};
+
+export type AdminUpdateAdvisoryErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminUpdateAdvisoryError = AdminUpdateAdvisoryErrors[keyof AdminUpdateAdvisoryErrors];
+
+export type AdminUpdateAdvisoryResponses = {
+    /**
+     * OK
+     */
+    200: AdminAdvisory;
+};
+
+export type AdminUpdateAdvisoryResponse = AdminUpdateAdvisoryResponses[keyof AdminUpdateAdvisoryResponses];
+
+export type AdminGetAuditLogData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        action?: string;
+        actorUserId?: string;
+        targetUserId?: string;
+    };
+    url: '/admin/audit-log';
+};
+
+export type AdminGetAuditLogErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetAuditLogError = AdminGetAuditLogErrors[keyof AdminGetAuditLogErrors];
+
+export type AdminGetAuditLogResponses = {
+    /**
+     * OK
+     */
+    200: AdminAuditLogResponse;
+};
+
+export type AdminGetAuditLogResponse = AdminGetAuditLogResponses[keyof AdminGetAuditLogResponses];
+
+export type AdminGetEnvironmentsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        sortBy?: string;
+        sortDirection?: 'asc' | 'desc';
+        searchField?: string;
+        searchOperator?: string;
+        searchValue?: string;
+        filterField?: string;
+        filterOperator?: string;
+        filterValue?: string;
+    };
+    url: '/admin/environments';
+};
+
+export type AdminGetEnvironmentsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetEnvironmentsError = AdminGetEnvironmentsErrors[keyof AdminGetEnvironmentsErrors];
+
+export type AdminGetEnvironmentsResponses = {
+    /**
+     * OK
+     */
+    200: AdminEnvironmentsResponse;
+};
+
+export type AdminGetEnvironmentsResponse = AdminGetEnvironmentsResponses[keyof AdminGetEnvironmentsResponses];
+
+export type AdminGetEnvironmentDetailData = {
+    body?: never;
+    path: {
+        envId: number;
+    };
+    query?: never;
+    url: '/admin/environments/{envId}';
+};
+
+export type AdminGetEnvironmentDetailErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetEnvironmentDetailError = AdminGetEnvironmentDetailErrors[keyof AdminGetEnvironmentDetailErrors];
+
+export type AdminGetEnvironmentDetailResponses = {
+    /**
+     * OK
+     */
+    200: AdminEnvironmentDetail;
+};
+
+export type AdminGetEnvironmentDetailResponse = AdminGetEnvironmentDetailResponses[keyof AdminGetEnvironmentDetailResponses];
+
+export type AdminGetGrowthData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/notifications/mark-read';
+    url: '/admin/growth';
 };
 
-export type MarkNotificationsReadErrors = {
+export type AdminGetGrowthErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
-};
-
-export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkNotificationsReadErrors];
-
-export type MarkNotificationsReadResponses = {
     /**
-     * All notifications marked as read
+     * Forbidden
      */
-    204: void;
+    403: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
-export type MarkNotificationsReadResponse = MarkNotificationsReadResponses[keyof MarkNotificationsReadResponses];
+export type AdminGetGrowthError = AdminGetGrowthErrors[keyof AdminGetGrowthErrors];
 
-export type GetOrganizationEnvironmentsData = {
+export type AdminGetGrowthResponses = {
+    /**
+     * OK
+     */
+    200: AdminGrowth;
+};
+
+export type AdminGetGrowthResponse = AdminGetGrowthResponses[keyof AdminGetGrowthResponses];
+
+export type AdminGetOrganizationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        sortBy?: 'name' | 'createdAt' | 'shopCount' | 'memberCount';
+        sortDirection?: 'asc' | 'desc';
+        searchField?: string;
+        searchOperator?: string;
+        searchValue?: string;
+        filterField?: string;
+        filterOperator?: string;
+        filterValue?: string;
+    };
+    url: '/admin/organizations';
+};
+
+export type AdminGetOrganizationsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetOrganizationsError = AdminGetOrganizationsErrors[keyof AdminGetOrganizationsErrors];
+
+export type AdminGetOrganizationsResponses = {
+    /**
+     * OK
+     */
+    200: AdminOrganizationsResponse;
+};
+
+export type AdminGetOrganizationsResponse = AdminGetOrganizationsResponses[keyof AdminGetOrganizationsResponses];
+
+export type AdminGetOrganizationDetailData = {
     body?: never;
     path: {
-        /**
-         * Organization ID
-         */
         orgId: string;
     };
     query?: never;
-    url: '/organizations/{orgId}/environments';
+    url: '/admin/organizations/{orgId}';
 };
 
-export type GetOrganizationEnvironmentsErrors = {
+export type AdminGetOrganizationDetailErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
-};
-
-export type GetOrganizationEnvironmentsError = GetOrganizationEnvironmentsErrors[keyof GetOrganizationEnvironmentsErrors];
-
-export type GetOrganizationEnvironmentsResponses = {
     /**
-     * List of environments
+     * Not Found
      */
-    200: Array<AccountEnvironment>;
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
-export type GetOrganizationEnvironmentsResponse = GetOrganizationEnvironmentsResponses[keyof GetOrganizationEnvironmentsResponses];
+export type AdminGetOrganizationDetailError = AdminGetOrganizationDetailErrors[keyof AdminGetOrganizationDetailErrors];
+
+export type AdminGetOrganizationDetailResponses = {
+    /**
+     * OK
+     */
+    200: AdminOrganizationDetail;
+};
+
+export type AdminGetOrganizationDetailResponse = AdminGetOrganizationDetailResponses[keyof AdminGetOrganizationDetailResponses];
+
+export type AdminGetRecentActivityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/recent-activity';
+};
+
+export type AdminGetRecentActivityErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetRecentActivityError = AdminGetRecentActivityErrors[keyof AdminGetRecentActivityErrors];
+
+export type AdminGetRecentActivityResponses = {
+    /**
+     * OK
+     */
+    200: AdminRecentActivity;
+};
+
+export type AdminGetRecentActivityResponse = AdminGetRecentActivityResponses[keyof AdminGetRecentActivityResponses];
+
+export type AdminGetShopwareVersionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/shopware-versions';
+};
+
+export type AdminGetShopwareVersionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetShopwareVersionsError = AdminGetShopwareVersionsErrors[keyof AdminGetShopwareVersionsErrors];
+
+export type AdminGetShopwareVersionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ShopwareVersionCount>;
+};
+
+export type AdminGetShopwareVersionsResponse = AdminGetShopwareVersionsResponses[keyof AdminGetShopwareVersionsResponses];
+
+export type AdminGetStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/stats';
+};
+
+export type AdminGetStatsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetStatsError = AdminGetStatsErrors[keyof AdminGetStatsErrors];
+
+export type AdminGetStatsResponses = {
+    /**
+     * OK
+     */
+    200: AdminStats;
+};
+
+export type AdminGetStatsResponse = AdminGetStatsResponses[keyof AdminGetStatsResponses];
+
+export type ListAdvisoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        package?: string;
+        severity?: string;
+        tag?: string;
+        q?: string;
+        scope?: string;
+        sort?: string;
+    };
+    url: '/advisories';
+};
+
+export type ListAdvisoriesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type ListAdvisoriesError = ListAdvisoriesErrors[keyof ListAdvisoriesErrors];
+
+export type ListAdvisoriesResponses = {
+    /**
+     * OK
+     */
+    200: AdvisoryListResponse;
+};
+
+export type ListAdvisoriesResponse = ListAdvisoriesResponses[keyof ListAdvisoriesResponses];
+
+export type ListAdvisoryPackagesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/advisories/packages';
+};
+
+export type ListAdvisoryPackagesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type ListAdvisoryPackagesError = ListAdvisoryPackagesErrors[keyof ListAdvisoryPackagesErrors];
+
+export type ListAdvisoryPackagesResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type ListAdvisoryPackagesResponse = ListAdvisoryPackagesResponses[keyof ListAdvisoryPackagesResponses];
+
+export type GetAdvisoryData = {
+    body?: never;
+    path: {
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}';
+};
+
+export type GetAdvisoryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetAdvisoryError = GetAdvisoryErrors[keyof GetAdvisoryErrors];
+
+export type GetAdvisoryResponses = {
+    /**
+     * OK
+     */
+    200: Advisory;
+};
+
+export type GetAdvisoryResponse = GetAdvisoryResponses[keyof GetAdvisoryResponses];
+
+export type ListAdvisoryAffectedEnvironmentsData = {
+    body?: never;
+    path: {
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}/affected';
+};
+
+export type ListAdvisoryAffectedEnvironmentsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type ListAdvisoryAffectedEnvironmentsError = ListAdvisoryAffectedEnvironmentsErrors[keyof ListAdvisoryAffectedEnvironmentsErrors];
+
+export type ListAdvisoryAffectedEnvironmentsResponses = {
+    /**
+     * OK
+     */
+    200: AdvisoryAffectedResponse;
+};
+
+export type ListAdvisoryAffectedEnvironmentsResponse = ListAdvisoryAffectedEnvironmentsResponses[keyof ListAdvisoryAffectedEnvironmentsResponses];
+
+export type CreateAdvisorySuppressionData = {
+    body: CreateAdvisorySuppressionRequest;
+    path: {
+        advisoryId: string;
+    };
+    query?: never;
+    url: '/advisories/{advisoryId}/suppressions';
+};
+
+export type CreateAdvisorySuppressionErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type CreateAdvisorySuppressionError = CreateAdvisorySuppressionErrors[keyof CreateAdvisorySuppressionErrors];
+
+export type CreateAdvisorySuppressionResponses = {
+    /**
+     * Created
+     */
+    201: AdvisorySuppression;
+};
+
+export type CreateAdvisorySuppressionResponse = CreateAdvisorySuppressionResponses[keyof CreateAdvisorySuppressionResponses];
+
+export type GetApiKeyScopesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api-key-scopes';
+};
+
+export type GetApiKeyScopesErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetApiKeyScopesError = GetApiKeyScopesErrors[keyof GetApiKeyScopesErrors];
+
+export type GetApiKeyScopesResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiKeyScope>;
+};
+
+export type GetApiKeyScopesResponse = GetApiKeyScopesResponses[keyof GetApiKeyScopesResponses];
+
+export type AdminStopImpersonatingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/admin/stop-impersonating';
+};
+
+export type AdminStopImpersonatingErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminStopImpersonatingError = AdminStopImpersonatingErrors[keyof AdminStopImpersonatingErrors];
+
+export type AdminStopImpersonatingResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type AdminStopImpersonatingResponse = AdminStopImpersonatingResponses[keyof AdminStopImpersonatingResponses];
+
+export type AdminListUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+        search?: string;
+        role?: string;
+        status?: string;
+        sortBy?: string;
+        sortDirection?: string;
+    };
+    url: '/auth/admin/users';
+};
+
+export type AdminListUsersErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminListUsersError = AdminListUsersErrors[keyof AdminListUsersErrors];
+
+export type AdminListUsersResponses = {
+    /**
+     * OK
+     */
+    200: AdminUsersResponse;
+};
+
+export type AdminListUsersResponse = AdminListUsersResponses[keyof AdminListUsersResponses];
+
+export type AdminGetUserDetailData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/admin/users/{userId}';
+};
+
+export type AdminGetUserDetailErrors = {
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type AdminGetUserDetailError = AdminGetUserDetailErrors[keyof AdminGetUserDetailErrors];
+
+export type AdminGetUserDetailResponses = {
+    /**
+     * OK
+     */
+    200: AdminUserDetail;
+};
+
+export type AdminGetUserDetailResponse = AdminGetUserDetailResponses[keyof AdminGetUserDetailResponses];
+
+export type AdminBanUserData = {
+    body: AdminBanUserRequest;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/admin/users/{userId}/ban';
+};
+
+export type AdminBanUserErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminBanUserError = AdminBanUserErrors[keyof AdminBanUserErrors];
+
+export type AdminBanUserResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type AdminBanUserResponse = AdminBanUserResponses[keyof AdminBanUserResponses];
+
+export type AdminImpersonateData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/admin/users/{userId}/impersonate';
+};
+
+export type AdminImpersonateErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminImpersonateError = AdminImpersonateErrors[keyof AdminImpersonateErrors];
+
+export type AdminImpersonateResponses = {
+    /**
+     * OK
+     */
+    200: ImpersonationResponse;
+};
+
+export type AdminImpersonateResponse = AdminImpersonateResponses[keyof AdminImpersonateResponses];
+
+export type AdminSetUserRoleData = {
+    body: AdminSetUserRoleRequest;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/admin/users/{userId}/role';
+};
+
+export type AdminSetUserRoleErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminSetUserRoleError = AdminSetUserRoleErrors[keyof AdminSetUserRoleErrors];
+
+export type AdminSetUserRoleResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type AdminSetUserRoleResponse = AdminSetUserRoleResponses[keyof AdminSetUserRoleResponses];
+
+export type AdminUnbanUserData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/admin/users/{userId}/unban';
+};
+
+export type AdminUnbanUserErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AdminUnbanUserError = AdminUnbanUserErrors[keyof AdminUnbanUserErrors];
+
+export type AdminUnbanUserResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type AdminUnbanUserResponse = AdminUnbanUserResponses[keyof AdminUnbanUserResponses];
+
+export type GithubCallbackData = {
+    body?: never;
+    path?: never;
+    query?: {
+        code?: string;
+        state?: string;
+    };
+    url: '/auth/callback/github';
+};
+
+export type GithubCallbackErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GithubCallbackError = GithubCallbackErrors[keyof GithubCallbackErrors];
+
+export type GithubCallbackResponses = {
+    /**
+     * OK
+     */
+    200: AuthCodeResponse;
+};
+
+export type GithubCallbackResponse = GithubCallbackResponses[keyof GithubCallbackResponses];
+
+export type CancelInvitationData = {
+    body: CancelInvitationRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/cancel-invitation';
+};
+
+export type CancelInvitationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type CancelInvitationError = CancelInvitationErrors[keyof CancelInvitationErrors];
+
+export type CancelInvitationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type CancelInvitationResponse = CancelInvitationResponses[keyof CancelInvitationResponses];
+
+export type ChangeEmailData = {
+    body: ChangeEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/change-email';
+};
+
+export type ChangeEmailErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ChangeEmailError = ChangeEmailErrors[keyof ChangeEmailErrors];
+
+export type ChangeEmailResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type ChangeEmailResponse = ChangeEmailResponses[keyof ChangeEmailResponses];
+
+export type ChangePasswordData = {
+    body: ChangePasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/change-password';
+};
+
+export type ChangePasswordErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
+
+export type ChangePasswordResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type DeleteUserData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/delete-user';
+};
+
+export type DeleteUserErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type DeleteUserError = DeleteUserErrors[keyof DeleteUserErrors];
+
+export type DeleteUserResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type DeleteUserResponse = DeleteUserResponses[keyof DeleteUserResponses];
+
+export type ExchangeCodeData = {
+    body: ExchangeCodeRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/exchange-code';
+};
+
+export type ExchangeCodeErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ExchangeCodeError = ExchangeCodeErrors[keyof ExchangeCodeErrors];
+
+export type ExchangeCodeResponses = {
+    /**
+     * OK
+     */
+    200: ExchangeCodeResponse;
+};
+
+export type ExchangeCodeResponse2 = ExchangeCodeResponses[keyof ExchangeCodeResponses];
+
+export type ForgetPasswordData = {
+    body: ForgetPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/forget-password';
+};
+
+export type ForgetPasswordErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ForgetPasswordError = ForgetPasswordErrors[keyof ForgetPasswordErrors];
+
+export type ForgetPasswordResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type ForgetPasswordResponse = ForgetPasswordResponses[keyof ForgetPasswordResponses];
+
+export type GetFullOrganizationData = {
+    body?: never;
+    path?: never;
+    query?: {
+        organizationId?: string;
+    };
+    url: '/auth/get-full-organization';
+};
+
+export type GetFullOrganizationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetFullOrganizationError = GetFullOrganizationErrors[keyof GetFullOrganizationErrors];
+
+export type GetFullOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: FullOrganizationResponse;
+};
+
+export type GetFullOrganizationResponse = GetFullOrganizationResponses[keyof GetFullOrganizationResponses];
+
+export type HasPermissionData = {
+    body: HasPermissionRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/has-permission';
+};
+
+export type HasPermissionErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type HasPermissionError = HasPermissionErrors[keyof HasPermissionErrors];
+
+export type HasPermissionResponses = {
+    /**
+     * OK
+     */
+    200: PermissionResponse;
+};
+
+export type HasPermissionResponse = HasPermissionResponses[keyof HasPermissionResponses];
+
+export type AcceptInvitationData = {
+    body?: never;
+    path: {
+        invitationId: string;
+    };
+    query?: never;
+    url: '/auth/invitations/{invitationId}/accept';
+};
+
+export type AcceptInvitationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type AcceptInvitationError = AcceptInvitationErrors[keyof AcceptInvitationErrors];
+
+export type AcceptInvitationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type AcceptInvitationResponse = AcceptInvitationResponses[keyof AcceptInvitationResponses];
+
+export type RejectInvitationData = {
+    body?: never;
+    path: {
+        invitationId: string;
+    };
+    query?: never;
+    url: '/auth/invitations/{invitationId}/reject';
+};
+
+export type RejectInvitationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type RejectInvitationError = RejectInvitationErrors[keyof RejectInvitationErrors];
+
+export type RejectInvitationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type RejectInvitationResponse = RejectInvitationResponses[keyof RejectInvitationResponses];
+
+export type LinkSocialData = {
+    body: SocialSignInRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/link-social';
+};
+
+export type LinkSocialErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type LinkSocialError = LinkSocialErrors[keyof LinkSocialErrors];
+
+export type LinkSocialResponses = {
+    /**
+     * OK
+     */
+    200: UrlResponse;
+};
+
+export type LinkSocialResponse = LinkSocialResponses[keyof LinkSocialResponses];
+
+export type ListAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/list-accounts';
+};
+
+export type ListAccountsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListAccountsError = ListAccountsErrors[keyof ListAccountsErrors];
+
+export type ListAccountsResponses = {
+    /**
+     * OK
+     */
+    200: Array<LinkedAccountResponse>;
+};
+
+export type ListAccountsResponse = ListAccountsResponses[keyof ListAccountsResponses];
+
+export type ListUserOrganizationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/list-organizations';
+};
+
+export type ListUserOrganizationsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListUserOrganizationsError = ListUserOrganizationsErrors[keyof ListUserOrganizationsErrors];
+
+export type ListUserOrganizationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<UserOrganizationResponse>;
+};
+
+export type ListUserOrganizationsResponse = ListUserOrganizationsResponses[keyof ListUserOrganizationsResponses];
+
+export type ListSessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/list-sessions';
+};
+
+export type ListSessionsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
+
+export type ListSessionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<SessionResponse>;
+};
+
+export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
+
+export type CreateOrganizationData = {
+    body: CreateOrganizationRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/organizations';
+};
+
+export type CreateOrganizationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
+
+export type CreateOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: CreateOrganizationResponse;
+};
+
+export type CreateOrganizationResponse2 = CreateOrganizationResponses[keyof CreateOrganizationResponses];
+
+export type DeleteOrganizationData = {
+    body?: never;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}';
+};
+
+export type DeleteOrganizationErrors = {
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteOrganizationError = DeleteOrganizationErrors[keyof DeleteOrganizationErrors];
+
+export type DeleteOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type DeleteOrganizationResponse = DeleteOrganizationResponses[keyof DeleteOrganizationResponses];
+
+export type UpdateOrganizationData = {
+    body: UpdateOrganizationRequest;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}';
+};
+
+export type UpdateOrganizationErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
+
+export type UpdateOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type ListOrganizationInvitationsData = {
+    body?: never;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/invitations';
+};
+
+export type ListOrganizationInvitationsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListOrganizationInvitationsError = ListOrganizationInvitationsErrors[keyof ListOrganizationInvitationsErrors];
+
+export type ListOrganizationInvitationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<OrganizationInvitationResponse>;
+};
+
+export type ListOrganizationInvitationsResponse = ListOrganizationInvitationsResponses[keyof ListOrganizationInvitationsResponses];
+
+export type InviteMemberData = {
+    body: InviteMemberRequest;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/invitations';
+};
+
+export type InviteMemberErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type InviteMemberError = InviteMemberErrors[keyof InviteMemberErrors];
+
+export type InviteMemberResponses = {
+    /**
+     * OK
+     */
+    200: IdResponse;
+};
+
+export type InviteMemberResponse = InviteMemberResponses[keyof InviteMemberResponses];
+
+export type LeaveOrganizationData = {
+    body?: never;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/leave';
+};
+
+export type LeaveOrganizationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type LeaveOrganizationError = LeaveOrganizationErrors[keyof LeaveOrganizationErrors];
+
+export type LeaveOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type LeaveOrganizationResponse = LeaveOrganizationResponses[keyof LeaveOrganizationResponses];
+
+export type ListOrganizationMembersData = {
+    body?: never;
+    path: {
+        organizationId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/members';
+};
+
+export type ListOrganizationMembersErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListOrganizationMembersError = ListOrganizationMembersErrors[keyof ListOrganizationMembersErrors];
+
+export type ListOrganizationMembersResponses = {
+    /**
+     * OK
+     */
+    200: Array<OrganizationMemberResponse>;
+};
+
+export type ListOrganizationMembersResponse = ListOrganizationMembersResponses[keyof ListOrganizationMembersResponses];
+
+export type RemoveMemberData = {
+    body?: never;
+    path: {
+        organizationId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/members/{userId}';
+};
+
+export type RemoveMemberErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type RemoveMemberError = RemoveMemberErrors[keyof RemoveMemberErrors];
+
+export type RemoveMemberResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+
+export type SetMemberRoleData = {
+    body: SetMemberRoleRequest;
+    path: {
+        organizationId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/auth/organizations/{organizationId}/members/{userId}';
+};
+
+export type SetMemberRoleErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SetMemberRoleError = SetMemberRoleErrors[keyof SetMemberRoleErrors];
+
+export type SetMemberRoleResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type SetMemberRoleResponse = SetMemberRoleResponses[keyof SetMemberRoleResponses];
+
+export type DeletePasskeyData = {
+    body: DeletePasskeyRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/delete-passkey';
+};
+
+export type DeletePasskeyErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type DeletePasskeyError = DeletePasskeyErrors[keyof DeletePasskeyErrors];
+
+export type DeletePasskeyResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
+
+export type ListUserPasskeysData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/list-user-passkeys';
+};
+
+export type ListUserPasskeysErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ListUserPasskeysError = ListUserPasskeysErrors[keyof ListUserPasskeysErrors];
+
+export type ListUserPasskeysResponses = {
+    /**
+     * OK
+     */
+    200: Array<PasskeyResponse>;
+};
+
+export type ListUserPasskeysResponse = ListUserPasskeysResponses[keyof ListUserPasskeysResponses];
+
+export type PasskeyLoginData = {
+    body: Blob | File;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/login';
+};
+
+export type PasskeyLoginErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type PasskeyLoginError = PasskeyLoginErrors[keyof PasskeyLoginErrors];
+
+export type PasskeyLoginResponses = {
+    /**
+     * OK
+     */
+    200: TokenUserResponse;
+};
+
+export type PasskeyLoginResponse = PasskeyLoginResponses[keyof PasskeyLoginResponses];
+
+export type PasskeyLoginOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/login-options';
+};
+
+export type PasskeyLoginOptionsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type PasskeyLoginOptionsError = PasskeyLoginOptionsErrors[keyof PasskeyLoginOptionsErrors];
+
+export type PasskeyLoginOptionsResponses = {
+    /**
+     * OK
+     */
+    200: PasskeyOptionsResponse;
+};
+
+export type PasskeyLoginOptionsResponse = PasskeyLoginOptionsResponses[keyof PasskeyLoginOptionsResponses];
+
+export type PasskeyRegisterData = {
+    body: Blob | File;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/register';
+};
+
+export type PasskeyRegisterErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type PasskeyRegisterError = PasskeyRegisterErrors[keyof PasskeyRegisterErrors];
+
+export type PasskeyRegisterResponses = {
+    /**
+     * OK
+     */
+    200: PasskeyRegisterResponse;
+};
+
+export type PasskeyRegisterResponse2 = PasskeyRegisterResponses[keyof PasskeyRegisterResponses];
+
+export type PasskeyRegisterOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/passkey/register-options';
+};
+
+export type PasskeyRegisterOptionsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type PasskeyRegisterOptionsError = PasskeyRegisterOptionsErrors[keyof PasskeyRegisterOptionsErrors];
+
+export type PasskeyRegisterOptionsResponses = {
+    /**
+     * OK
+     */
+    200: PasskeyOptionsResponse;
+};
+
+export type PasskeyRegisterOptionsResponse = PasskeyRegisterOptionsResponses[keyof PasskeyRegisterOptionsResponses];
+
+export type ResetPasswordData = {
+    body: ResetPasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/reset-password';
+};
+
+export type ResetPasswordErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type ResetPasswordError = ResetPasswordErrors[keyof ResetPasswordErrors];
+
+export type ResetPasswordResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type ResetPasswordResponse = ResetPasswordResponses[keyof ResetPasswordResponses];
+
+export type RevokeSessionData = {
+    body: RevokeSessionRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/revoke-session';
+};
+
+export type RevokeSessionErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type RevokeSessionError = RevokeSessionErrors[keyof RevokeSessionErrors];
+
+export type RevokeSessionResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type RevokeSessionResponse = RevokeSessionResponses[keyof RevokeSessionResponses];
+
+export type GetSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/session';
+};
+
+export type GetSessionErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
+
+export type GetSessionResponses = {
+    /**
+     * OK
+     */
+    200: CurrentSessionEnvelope;
+};
+
+export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+
+export type SetActiveOrganizationData = {
+    body: SetActiveOrganizationInputBody;
+    path?: never;
+    query?: never;
+    url: '/auth/set-active-organization';
+};
+
+export type SetActiveOrganizationErrors = {
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type SetActiveOrganizationError = SetActiveOrganizationErrors[keyof SetActiveOrganizationErrors];
+
+export type SetActiveOrganizationResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type SetActiveOrganizationResponse = SetActiveOrganizationResponses[keyof SetActiveOrganizationResponses];
+
+export type SignInEmailData = {
+    body: SignInEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-in/email';
+};
+
+export type SignInEmailErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SignInEmailError = SignInEmailErrors[keyof SignInEmailErrors];
+
+export type SignInEmailResponses = {
+    /**
+     * OK
+     */
+    200: TokenUserResponse;
+};
+
+export type SignInEmailResponse = SignInEmailResponses[keyof SignInEmailResponses];
+
+export type SignInSocialData = {
+    body: SocialSignInRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-in/social';
+};
+
+export type SignInSocialErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SignInSocialError = SignInSocialErrors[keyof SignInSocialErrors];
+
+export type SignInSocialResponses = {
+    /**
+     * OK
+     */
+    200: UrlResponse;
+};
+
+export type SignInSocialResponse = SignInSocialResponses[keyof SignInSocialResponses];
+
+export type SignInSsoData = {
+    body: SsoSignInRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-in/sso';
+};
+
+export type SignInSsoErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SignInSsoError = SignInSsoErrors[keyof SignInSsoErrors];
+
+export type SignInSsoResponses = {
+    /**
+     * OK
+     */
+    200: UrlResponse;
+};
+
+export type SignInSsoResponse = SignInSsoResponses[keyof SignInSsoResponses];
+
+export type SignOutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-out';
+};
+
+export type SignOutErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SignOutError = SignOutErrors[keyof SignOutErrors];
+
+export type SignOutResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type SignOutResponse = SignOutResponses[keyof SignOutResponses];
+
+export type SignUpEmailData = {
+    body: SignUpEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/sign-up/email';
+};
+
+export type SignUpEmailErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SignUpEmailError = SignUpEmailErrors[keyof SignUpEmailErrors];
+
+export type SignUpEmailResponses = {
+    /**
+     * OK
+     */
+    200: TokenUserResponse;
+};
+
+export type SignUpEmailResponse = SignUpEmailResponses[keyof SignUpEmailResponses];
+
+export type SsoCallbackData = {
+    body?: never;
+    path: {
+        providerId: string;
+    };
+    query?: {
+        code?: string;
+        state?: string;
+    };
+    url: '/auth/sso/callback/{providerId}';
+};
+
+export type SsoCallbackErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type SsoCallbackError = SsoCallbackErrors[keyof SsoCallbackErrors];
+
+export type SsoCallbackResponses = {
+    /**
+     * OK
+     */
+    200: AuthCodeResponse;
+};
+
+export type SsoCallbackResponse = SsoCallbackResponses[keyof SsoCallbackResponses];
+
+export type RegisterSsoProviderData = {
+    body: RegisterSsoProviderRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/sso/register';
+};
+
+export type RegisterSsoProviderErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type RegisterSsoProviderError = RegisterSsoProviderErrors[keyof RegisterSsoProviderErrors];
+
+export type RegisterSsoProviderResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type RegisterSsoProviderResponse = RegisterSsoProviderResponses[keyof RegisterSsoProviderResponses];
+
+export type UnlinkAccountData = {
+    body: UnlinkAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/unlink-account';
+};
+
+export type UnlinkAccountErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type UnlinkAccountError = UnlinkAccountErrors[keyof UnlinkAccountErrors];
+
+export type UnlinkAccountResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type UnlinkAccountResponse = UnlinkAccountResponses[keyof UnlinkAccountResponses];
+
+export type UpdateUserData = {
+    body: UpdateUserRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/update-user';
+};
+
+export type UpdateUserErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+
+export type UpdateUserResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
+
+export type VerifyEmailData = {
+    body?: never;
+    path?: never;
+    query?: {
+        token?: string;
+    };
+    url: '/auth/verify-email';
+};
+
+export type VerifyEmailErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type VerifyEmailError = VerifyEmailErrors[keyof VerifyEmailErrors];
+
+export type VerifyEmailResponses = {
+    /**
+     * OK
+     */
+    200: StatusResponse;
+};
+
+export type VerifyEmailResponse = VerifyEmailResponses[keyof VerifyEmailResponses];
+
+export type CreateCliDeploymentData = {
+    body: CreateCliDeploymentRequest;
+    headers?: {
+        Authorization?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/cli/deployments';
+};
+
+export type CreateCliDeploymentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type CreateCliDeploymentError = CreateCliDeploymentErrors[keyof CreateCliDeploymentErrors];
+
+export type CreateCliDeploymentResponses = {
+    /**
+     * Created
+     */
+    201: CreateCliDeploymentResponse;
+};
+
+export type CreateCliDeploymentResponse2 = CreateCliDeploymentResponses[keyof CreateCliDeploymentResponses];
 
 export type CreateEnvironmentData = {
     body: CreateEnvironmentRequest;
@@ -1709,23 +3760,37 @@ export type CreateEnvironmentData = {
 
 export type CreateEnvironmentErrors = {
     /**
-     * Authentication required
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Validation error
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type CreateEnvironmentError = CreateEnvironmentErrors[keyof CreateEnvironmentErrors];
 
 export type CreateEnvironmentResponses = {
     /**
-     * Environment created
+     * Created
      */
-    201: unknown;
+    201: CreateEnvironmentOutputBody;
 };
+
+export type CreateEnvironmentResponse = CreateEnvironmentResponses[keyof CreateEnvironmentResponses];
 
 export type DeleteEnvironmentData = {
     body?: never;
@@ -1741,24 +3806,32 @@ export type DeleteEnvironmentData = {
 
 export type DeleteEnvironmentErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type DeleteEnvironmentError = DeleteEnvironmentErrors[keyof DeleteEnvironmentErrors];
 
 export type DeleteEnvironmentResponses = {
     /**
-     * Environment deleted
+     * No Content
      */
     204: void;
 };
@@ -1784,24 +3857,32 @@ export type GetEnvironmentData = {
 
 export type GetEnvironmentErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetEnvironmentError = GetEnvironmentErrors[keyof GetEnvironmentErrors];
 
 export type GetEnvironmentResponses = {
     /**
-     * Environment details
+     * OK
      */
     200: EnvironmentDetail;
 };
@@ -1822,74 +3903,94 @@ export type UpdateEnvironmentData = {
 
 export type UpdateEnvironmentErrors = {
     /**
-     * Authentication required
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type UpdateEnvironmentError = UpdateEnvironmentErrors[keyof UpdateEnvironmentErrors];
 
 export type UpdateEnvironmentResponses = {
     /**
-     * Environment updated
+     * No Content
      */
-    200: unknown;
+    204: void;
 };
 
-export type RefreshEnvironmentData = {
-    body?: {
-        /**
-         * Also run sitespeed check
-         */
-        sitespeed?: boolean;
-    };
+export type UpdateEnvironmentResponse = UpdateEnvironmentResponses[keyof UpdateEnvironmentResponses];
+
+export type GetEnvironmentChangelogsData = {
+    body?: never;
     path: {
         /**
          * Environment ID
          */
         environmentId: number;
     };
-    query?: never;
-    url: '/environments/{environmentId}/refresh';
+    query?: {
+        limit?: number;
+        offset?: number;
+    };
+    url: '/environments/{environmentId}/changelogs';
 };
 
-export type RefreshEnvironmentErrors = {
+export type GetEnvironmentChangelogsErrors = {
     /**
-     * Authentication required
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
-};
-
-export type RefreshEnvironmentError = RefreshEnvironmentErrors[keyof RefreshEnvironmentErrors];
-
-export type RefreshEnvironmentResponses = {
     /**
-     * Environment refresh triggered
+     * Unprocessable Entity
      */
-    204: void;
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
-export type RefreshEnvironmentResponse = RefreshEnvironmentResponses[keyof RefreshEnvironmentResponses];
+export type GetEnvironmentChangelogsError = GetEnvironmentChangelogsErrors[keyof GetEnvironmentChangelogsErrors];
+
+export type GetEnvironmentChangelogsResponses = {
+    /**
+     * OK
+     */
+    200: EnvironmentChangelogsResponse;
+};
+
+export type GetEnvironmentChangelogsResponse = GetEnvironmentChangelogsResponses[keyof GetEnvironmentChangelogsResponses];
 
 export type ClearEnvironmentCacheData = {
     body?: never;
@@ -1905,71 +4006,307 @@ export type ClearEnvironmentCacheData = {
 
 export type ClearEnvironmentCacheErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
 };
 
 export type ClearEnvironmentCacheError = ClearEnvironmentCacheErrors[keyof ClearEnvironmentCacheErrors];
 
 export type ClearEnvironmentCacheResponses = {
     /**
-     * Cache cleared
+     * No Content
      */
     204: void;
 };
 
 export type ClearEnvironmentCacheResponse = ClearEnvironmentCacheResponses[keyof ClearEnvironmentCacheResponses];
 
-export type RescheduleTaskData = {
+export type GetDeploymentsData = {
+    body?: never;
+    path: {
+        environmentId: number;
+    };
+    query?: {
+        limit?: number;
+        offset?: number;
+    };
+    url: '/environments/{environmentId}/deployments';
+};
+
+export type GetDeploymentsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetDeploymentsError = GetDeploymentsErrors[keyof GetDeploymentsErrors];
+
+export type GetDeploymentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Deployment>;
+};
+
+export type GetDeploymentsResponse = GetDeploymentsResponses[keyof GetDeploymentsResponses];
+
+export type DeleteDeploymentData = {
+    body?: never;
+    path: {
+        environmentId: number;
+        deploymentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/deployments/{deploymentId}';
+};
+
+export type DeleteDeploymentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteDeploymentError = DeleteDeploymentErrors[keyof DeleteDeploymentErrors];
+
+export type DeleteDeploymentResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteDeploymentResponse = DeleteDeploymentResponses[keyof DeleteDeploymentResponses];
+
+export type GetDeploymentData = {
+    body?: never;
+    path: {
+        environmentId: number;
+        deploymentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/deployments/{deploymentId}';
+};
+
+export type GetDeploymentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetDeploymentError = GetDeploymentErrors[keyof GetDeploymentErrors];
+
+export type GetDeploymentResponses = {
+    /**
+     * OK
+     */
+    200: DeploymentDetail;
+};
+
+export type GetDeploymentResponse = GetDeploymentResponses[keyof GetDeploymentResponses];
+
+export type RefreshEnvironmentData = {
+    body?: RefreshEnvironmentJsonBody;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/refresh';
+};
+
+export type RefreshEnvironmentErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type RefreshEnvironmentError = RefreshEnvironmentErrors[keyof RefreshEnvironmentErrors];
+
+export type RefreshEnvironmentResponses = {
+    /**
+     * Accepted
+     */
+    202: unknown;
+};
+
+export type UpdateSitespeedSettingsData = {
+    body: SitespeedSettingsRequest;
+    path: {
+        /**
+         * Environment ID
+         */
+        environmentId: number;
+    };
+    query?: never;
+    url: '/environments/{environmentId}/sitespeed-settings';
+};
+
+export type UpdateSitespeedSettingsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateSitespeedSettingsError = UpdateSitespeedSettingsErrors[keyof UpdateSitespeedSettingsErrors];
+
+export type UpdateSitespeedSettingsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateSitespeedSettingsResponse = UpdateSitespeedSettingsResponses[keyof UpdateSitespeedSettingsResponses];
+
+export type GetEnvironmentStatusEventsData = {
     body?: never;
     path: {
         /**
          * Environment ID
          */
         environmentId: number;
-        /**
-         * Scheduled task ID
-         */
-        taskId: string;
     };
     query?: never;
-    url: '/environments/{environmentId}/tasks/{taskId}/reschedule';
+    url: '/environments/{environmentId}/status-events';
 };
 
-export type RescheduleTaskErrors = {
+export type GetEnvironmentStatusEventsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
-};
-
-export type RescheduleTaskError = RescheduleTaskErrors[keyof RescheduleTaskErrors];
-
-export type RescheduleTaskResponses = {
     /**
-     * Task rescheduled
+     * Unprocessable Entity
      */
-    204: void;
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
-export type RescheduleTaskResponse = RescheduleTaskResponses[keyof RescheduleTaskResponses];
+export type GetEnvironmentStatusEventsError = GetEnvironmentStatusEventsErrors[keyof GetEnvironmentStatusEventsErrors];
+
+export type GetEnvironmentStatusEventsResponses = {
+    /**
+     * OK
+     */
+    200: Array<StatusEvent>;
+};
+
+export type GetEnvironmentStatusEventsResponse = GetEnvironmentStatusEventsResponses[keyof GetEnvironmentStatusEventsResponses];
 
 export type UnsubscribeFromEnvironmentData = {
     body?: never;
@@ -1985,20 +4322,32 @@ export type UnsubscribeFromEnvironmentData = {
 
 export type UnsubscribeFromEnvironmentErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type UnsubscribeFromEnvironmentError = UnsubscribeFromEnvironmentErrors[keyof UnsubscribeFromEnvironmentErrors];
 
 export type UnsubscribeFromEnvironmentResponses = {
     /**
-     * Unsubscribed
+     * No Content
      */
     204: void;
 };
@@ -2019,140 +4368,425 @@ export type SubscribeToEnvironmentData = {
 
 export type SubscribeToEnvironmentErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type SubscribeToEnvironmentError = SubscribeToEnvironmentErrors[keyof SubscribeToEnvironmentErrors];
 
 export type SubscribeToEnvironmentResponses = {
     /**
-     * Subscribed
+     * No Content
      */
     204: void;
 };
 
 export type SubscribeToEnvironmentResponse = SubscribeToEnvironmentResponses[keyof SubscribeToEnvironmentResponses];
 
-export type GetEnvironmentStatusEventsData = {
+export type RescheduleTaskData = {
     body?: never;
     path: {
         /**
          * Environment ID
          */
         environmentId: number;
+        /**
+         * Scheduled task ID
+         */
+        taskId: string;
     };
     query?: never;
-    url: '/environments/{environmentId}/status-events';
+    url: '/environments/{environmentId}/tasks/{taskId}/reschedule';
 };
 
-export type GetEnvironmentStatusEventsErrors = {
+export type RescheduleTaskErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type GetEnvironmentStatusEventsError = GetEnvironmentStatusEventsErrors[keyof GetEnvironmentStatusEventsErrors];
-
-export type GetEnvironmentStatusEventsResponses = {
-    /**
-     * List of status events (most recent first)
-     */
-    200: Array<StatusEvent>;
-};
-
-export type GetEnvironmentStatusEventsResponse = GetEnvironmentStatusEventsResponses[keyof GetEnvironmentStatusEventsResponses];
-
-export type GetEnvironmentChangelogsData = {
-    body?: never;
-    path: {
-        /**
-         * Environment ID
-         */
-        environmentId: number;
-    };
-    query?: {
-        limit?: number;
-        offset?: number;
-    };
-    url: '/environments/{environmentId}/changelogs';
-};
-
-export type GetEnvironmentChangelogsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type GetEnvironmentChangelogsError = GetEnvironmentChangelogsErrors[keyof GetEnvironmentChangelogsErrors];
-
-export type GetEnvironmentChangelogsResponses = {
-    /**
-     * Paginated changelog entries (most recent first)
-     */
-    200: EnvironmentChangelogsResponse;
-};
-
-export type GetEnvironmentChangelogsResponse = GetEnvironmentChangelogsResponses[keyof GetEnvironmentChangelogsResponses];
-
-export type UpdateSitespeedSettingsData = {
-    body: SitespeedSettingsRequest;
-    path: {
-        /**
-         * Environment ID
-         */
-        environmentId: number;
-    };
-    query?: never;
-    url: '/environments/{environmentId}/sitespeed-settings';
-};
-
-export type UpdateSitespeedSettingsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
-};
-
-export type UpdateSitespeedSettingsError = UpdateSitespeedSettingsErrors[keyof UpdateSitespeedSettingsErrors];
-
-export type UpdateSitespeedSettingsResponses = {
     /**
-     * Sitespeed settings updated
+     * Internal Server Error
      */
-    200: unknown;
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
 };
+
+export type RescheduleTaskError = RescheduleTaskErrors[keyof RescheduleTaskErrors];
+
+export type RescheduleTaskResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RescheduleTaskResponse = RescheduleTaskResponses[keyof RescheduleTaskResponses];
+
+export type GetHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/health';
+};
+
+export type GetHealthErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetHealthError = GetHealthErrors[keyof GetHealthErrors];
+
+export type GetHealthResponses = {
+    /**
+     * OK
+     */
+    200: HealthStatus;
+};
+
+export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type GetInstanceConfigData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/info/config';
+};
+
+export type GetInstanceConfigErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetInstanceConfigError = GetInstanceConfigErrors[keyof GetInstanceConfigErrors];
+
+export type GetInstanceConfigResponses = {
+    /**
+     * OK
+     */
+    200: InstanceConfig;
+};
+
+export type GetInstanceConfigResponse = GetInstanceConfigResponses[keyof GetInstanceConfigResponses];
+
+export type GetEcosystemStatsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/info/ecosystem';
+};
+
+export type GetEcosystemStatsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetEcosystemStatsError = GetEcosystemStatsErrors[keyof GetEcosystemStatsErrors];
+
+export type GetEcosystemStatsResponses = {
+    /**
+     * OK
+     */
+    200: EcosystemStats;
+};
+
+export type GetEcosystemStatsResponse = GetEcosystemStatsResponses[keyof GetEcosystemStatsResponses];
+
+export type CheckExtensionCompatibilityData = {
+    body: ExtensionCompatibilityRequest;
+    path?: never;
+    query?: never;
+    url: '/info/extension-compatibility';
+};
+
+export type CheckExtensionCompatibilityErrors = {
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: ErrorResponse;
+};
+
+export type CheckExtensionCompatibilityError = CheckExtensionCompatibilityErrors[keyof CheckExtensionCompatibilityErrors];
+
+export type CheckExtensionCompatibilityResponses = {
+    /**
+     * OK
+     */
+    200: Array<ExtensionCompatibilityResult>;
+};
+
+export type CheckExtensionCompatibilityResponse = CheckExtensionCompatibilityResponses[keyof CheckExtensionCompatibilityResponses];
+
+export type GetShopwareVersionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/info/shopware-versions';
+};
+
+export type GetShopwareVersionsErrors = {
+    /**
+     * Error
+     */
+    default: ErrorResponse;
+};
+
+export type GetShopwareVersionsError = GetShopwareVersionsErrors[keyof GetShopwareVersionsErrors];
+
+export type GetShopwareVersionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ShopwareVersion>;
+};
+
+export type GetShopwareVersionsResponse = GetShopwareVersionsResponses[keyof GetShopwareVersionsResponses];
+
+export type DeleteAllNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications';
+};
+
+export type DeleteAllNotificationsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteAllNotificationsError = DeleteAllNotificationsErrors[keyof DeleteAllNotificationsErrors];
+
+export type DeleteAllNotificationsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteAllNotificationsResponse = DeleteAllNotificationsResponses[keyof DeleteAllNotificationsResponses];
+
+export type GetNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications';
+};
+
+export type GetNotificationsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
+
+export type GetNotificationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<Notification>;
+};
+
+export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
+
+export type GetNotificationEventTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications/event-types';
+};
+
+export type GetNotificationEventTypesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetNotificationEventTypesError = GetNotificationEventTypesErrors[keyof GetNotificationEventTypesErrors];
+
+export type GetNotificationEventTypesResponses = {
+    /**
+     * OK
+     */
+    200: Array<NotificationEventType>;
+};
+
+export type GetNotificationEventTypesResponse = GetNotificationEventTypesResponses[keyof GetNotificationEventTypesResponses];
+
+export type MarkNotificationsReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications/mark-read';
+};
+
+export type MarkNotificationsReadErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type MarkNotificationsReadError = MarkNotificationsReadErrors[keyof MarkNotificationsReadErrors];
+
+export type MarkNotificationsReadResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type MarkNotificationsReadResponse = MarkNotificationsReadResponses[keyof MarkNotificationsReadResponses];
+
+export type DeleteNotificationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/notifications/{id}';
+};
+
+export type DeleteNotificationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteNotificationError = DeleteNotificationErrors[keyof DeleteNotificationErrors];
+
+export type DeleteNotificationResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteNotificationResponse = DeleteNotificationResponses[keyof DeleteNotificationResponses];
+
+export type GetOrganizationEnvironmentsData = {
+    body?: never;
+    path: {
+        /**
+         * Organization ID
+         */
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/environments';
+};
+
+export type GetOrganizationEnvironmentsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetOrganizationEnvironmentsError = GetOrganizationEnvironmentsErrors[keyof GetOrganizationEnvironmentsErrors];
+
+export type GetOrganizationEnvironmentsResponses = {
+    /**
+     * OK
+     */
+    200: Array<AccountEnvironment>;
+};
+
+export type GetOrganizationEnvironmentsResponse = GetOrganizationEnvironmentsResponses[keyof GetOrganizationEnvironmentsResponses];
 
 export type GetOrganizationShopsData = {
     body?: never;
@@ -2168,20 +4802,28 @@ export type GetOrganizationShopsData = {
 
 export type GetOrganizationShopsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetOrganizationShopsError = GetOrganizationShopsErrors[keyof GetOrganizationShopsErrors];
 
 export type GetOrganizationShopsResponses = {
     /**
-     * List of shops
+     * OK
      */
     200: Array<Shop>;
 };
@@ -2202,27 +4844,37 @@ export type CreateShopData = {
 
 export type CreateShopErrors = {
     /**
-     * Authentication required
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type CreateShopError = CreateShopErrors[keyof CreateShopErrors];
 
 export type CreateShopResponses = {
     /**
-     * Shop created
+     * Created
      */
-    201: unknown;
+    201: Shop;
 };
+
+export type CreateShopResponse = CreateShopResponses[keyof CreateShopResponses];
 
 export type DeleteShopData = {
     body?: never;
@@ -2242,24 +4894,36 @@ export type DeleteShopData = {
 
 export type DeleteShopErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type DeleteShopError = DeleteShopErrors[keyof DeleteShopErrors];
 
 export type DeleteShopResponses = {
     /**
-     * Shop deleted
+     * No Content
      */
     204: void;
 };
@@ -2284,58 +4948,46 @@ export type UpdateShopData = {
 
 export type UpdateShopErrors = {
     /**
-     * Authentication required
+     * Bad Request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type UpdateShopError = UpdateShopErrors[keyof UpdateShopErrors];
 
 export type UpdateShopResponses = {
     /**
-     * Shop updated
+     * No Content
      */
-    200: unknown;
+    204: void;
 };
 
-export type GetApiKeyScopesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api-key-scopes';
-};
-
-export type GetApiKeyScopesResponses = {
-    /**
-     * List of available scopes
-     */
-    200: Array<ApiKeyScope>;
-};
-
-export type GetApiKeyScopesResponse = GetApiKeyScopesResponses[keyof GetApiKeyScopesResponses];
+export type UpdateShopResponse = UpdateShopResponses[keyof UpdateShopResponses];
 
 export type GetApiKeysData = {
     body?: never;
     path: {
-        /**
-         * Organization ID
-         */
         orgId: string;
-        /**
-         * Shop ID
-         */
         shopId: number;
     };
     query?: never;
@@ -2344,20 +4996,28 @@ export type GetApiKeysData = {
 
 export type GetApiKeysErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetApiKeysError = GetApiKeysErrors[keyof GetApiKeysErrors];
 
 export type GetApiKeysResponses = {
     /**
-     * List of API keys
+     * OK
      */
     200: Array<ApiKey>;
 };
@@ -2367,13 +5027,7 @@ export type GetApiKeysResponse = GetApiKeysResponses[keyof GetApiKeysResponses];
 export type CreateApiKeyData = {
     body: CreateApiKeyRequest;
     path: {
-        /**
-         * Organization ID
-         */
         orgId: string;
-        /**
-         * Shop ID
-         */
         shopId: number;
     };
     query?: never;
@@ -2382,24 +5036,28 @@ export type CreateApiKeyData = {
 
 export type CreateApiKeyErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
 
 export type CreateApiKeyResponses = {
     /**
-     * API key created
+     * Created
      */
     201: CreateApiKeyResponse;
 };
@@ -2409,17 +5067,8 @@ export type CreateApiKeyResponse2 = CreateApiKeyResponses[keyof CreateApiKeyResp
 export type DeleteApiKeyData = {
     body?: never;
     path: {
-        /**
-         * Organization ID
-         */
         orgId: string;
-        /**
-         * Shop ID
-         */
         shopId: number;
-        /**
-         * API key ID
-         */
         keyId: string;
     };
     query?: never;
@@ -2428,29 +5077,332 @@ export type DeleteApiKeyData = {
 
 export type DeleteApiKeyErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Insufficient permissions
+     * Forbidden
      */
     403: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type DeleteApiKeyError = DeleteApiKeyErrors[keyof DeleteApiKeyErrors];
 
 export type DeleteApiKeyResponses = {
     /**
-     * API key deleted
+     * No Content
      */
     204: void;
 };
 
 export type DeleteApiKeyResponse = DeleteApiKeyResponses[keyof DeleteApiKeyResponses];
+
+export type GetPackagesTokensData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens';
+};
+
+export type GetPackagesTokensErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetPackagesTokensError = GetPackagesTokensErrors[keyof GetPackagesTokensErrors];
+
+export type GetPackagesTokensResponses = {
+    /**
+     * OK
+     */
+    200: Array<PackagesToken>;
+};
+
+export type GetPackagesTokensResponse = GetPackagesTokensResponses[keyof GetPackagesTokensResponses];
+
+export type CreatePackagesTokenData = {
+    body: CreatePackagesTokenRequest;
+    path: {
+        orgId: string;
+        shopId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens';
+};
+
+export type CreatePackagesTokenErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type CreatePackagesTokenError = CreatePackagesTokenErrors[keyof CreatePackagesTokenErrors];
+
+export type CreatePackagesTokenResponses = {
+    /**
+     * Created
+     */
+    201: unknown;
+};
+
+export type DeletePackagesTokenData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        tokenId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}';
+};
+
+export type DeletePackagesTokenErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeletePackagesTokenError = DeletePackagesTokenErrors[keyof DeletePackagesTokenErrors];
+
+export type DeletePackagesTokenResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeletePackagesTokenResponse = DeletePackagesTokenResponses[keyof DeletePackagesTokenResponses];
+
+export type SyncPackagesTokenData = {
+    body?: never;
+    path: {
+        orgId: string;
+        shopId: number;
+        tokenId: number;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync';
+};
+
+export type SyncPackagesTokenErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type SyncPackagesTokenError = SyncPackagesTokenErrors[keyof SyncPackagesTokenErrors];
+
+export type SyncPackagesTokenResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SyncPackagesTokenResponse = SyncPackagesTokenResponses[keyof SyncPackagesTokenResponses];
+
+export type GetSsoProvidersData = {
+    body?: never;
+    path: {
+        orgId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/sso-providers';
+};
+
+export type GetSsoProvidersErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetSsoProvidersError = GetSsoProvidersErrors[keyof GetSsoProvidersErrors];
+
+export type GetSsoProvidersResponses = {
+    /**
+     * OK
+     */
+    200: Array<SsoProvider>;
+};
+
+export type GetSsoProvidersResponse = GetSsoProvidersResponses[keyof GetSsoProvidersResponses];
+
+export type DeleteSsoProviderData = {
+    body?: never;
+    path: {
+        orgId: string;
+        providerId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/sso-providers/{providerId}';
+};
+
+export type DeleteSsoProviderErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteSsoProviderError = DeleteSsoProviderErrors[keyof DeleteSsoProviderErrors];
+
+export type DeleteSsoProviderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteSsoProviderResponse = DeleteSsoProviderResponses[keyof DeleteSsoProviderResponses];
+
+export type UpdateSsoProviderData = {
+    body: UpdateSsoProviderRequest;
+    path: {
+        orgId: string;
+        providerId: string;
+    };
+    query?: never;
+    url: '/organizations/{orgId}/sso-providers/{providerId}';
+};
+
+export type UpdateSsoProviderErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not Found
+     */
+    404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type UpdateSsoProviderError = UpdateSsoProviderErrors[keyof UpdateSsoProviderErrors];
+
+export type UpdateSsoProviderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateSsoProviderResponse = UpdateSsoProviderResponses[keyof UpdateSsoProviderResponses];
 
 export type GetPackagesTokenConfigurationData = {
     body?: never;
@@ -2461,1121 +5413,65 @@ export type GetPackagesTokenConfigurationData = {
 
 export type GetPackagesTokenConfigurationErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type GetPackagesTokenConfigurationError = GetPackagesTokenConfigurationErrors[keyof GetPackagesTokenConfigurationErrors];
 
 export type GetPackagesTokenConfigurationResponses = {
     /**
-     * Packages token configuration
+     * OK
      */
     200: PackagesTokenConfiguration;
 };
 
 export type GetPackagesTokenConfigurationResponse = GetPackagesTokenConfigurationResponses[keyof GetPackagesTokenConfigurationResponses];
 
-export type GetPackagesTokensData = {
-    body?: never;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * Shop ID
-         */
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens';
-};
-
-export type GetPackagesTokensErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type GetPackagesTokensError = GetPackagesTokensErrors[keyof GetPackagesTokensErrors];
-
-export type GetPackagesTokensResponses = {
-    /**
-     * List of packages tokens
-     */
-    200: Array<PackagesToken>;
-};
-
-export type GetPackagesTokensResponse = GetPackagesTokensResponses[keyof GetPackagesTokensResponses];
-
-export type CreatePackagesTokenData = {
-    body: CreatePackagesTokenRequest;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * Shop ID
-         */
-        shopId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens';
-};
-
-export type CreatePackagesTokenErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Validation error
-     */
-    422: ErrorResponse;
-};
-
-export type CreatePackagesTokenError = CreatePackagesTokenErrors[keyof CreatePackagesTokenErrors];
-
-export type CreatePackagesTokenResponses = {
-    /**
-     * Packages token created
-     */
-    201: unknown;
-};
-
-export type DeletePackagesTokenData = {
-    body?: never;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * Shop ID
-         */
-        shopId: number;
-        /**
-         * Packages token ID
-         */
-        tokenId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}';
-};
-
-export type DeletePackagesTokenErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type DeletePackagesTokenError = DeletePackagesTokenErrors[keyof DeletePackagesTokenErrors];
-
-export type DeletePackagesTokenResponses = {
-    /**
-     * Packages token deleted
-     */
-    204: void;
-};
-
-export type DeletePackagesTokenResponse = DeletePackagesTokenResponses[keyof DeletePackagesTokenResponses];
-
-export type SyncPackagesTokenData = {
-    body?: never;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * Shop ID
-         */
-        shopId: number;
-        /**
-         * Packages token ID
-         */
-        tokenId: number;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/shops/{shopId}/packages-tokens/{tokenId}/sync';
-};
-
-export type SyncPackagesTokenErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type SyncPackagesTokenError = SyncPackagesTokenErrors[keyof SyncPackagesTokenErrors];
-
-export type SyncPackagesTokenResponses = {
-    /**
-     * Sync triggered
-     */
-    204: void;
-};
-
-export type SyncPackagesTokenResponse = SyncPackagesTokenResponses[keyof SyncPackagesTokenResponses];
-
-export type GetDeploymentsData = {
-    body?: never;
-    path: {
-        /**
-         * Environment ID
-         */
-        environmentId: number;
-    };
-    query?: {
-        limit?: number;
-        offset?: number;
-    };
-    url: '/environments/{environmentId}/deployments';
-};
-
-export type GetDeploymentsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type GetDeploymentsError = GetDeploymentsErrors[keyof GetDeploymentsErrors];
-
-export type GetDeploymentsResponses = {
-    /**
-     * List of deployments
-     */
-    200: Array<Deployment>;
-};
-
-export type GetDeploymentsResponse = GetDeploymentsResponses[keyof GetDeploymentsResponses];
-
-export type DeleteDeploymentData = {
-    body?: never;
-    path: {
-        /**
-         * Environment ID
-         */
-        environmentId: number;
-        /**
-         * Deployment ID
-         */
-        deploymentId: number;
-    };
-    query?: never;
-    url: '/environments/{environmentId}/deployments/{deploymentId}';
-};
-
-export type DeleteDeploymentErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type DeleteDeploymentError = DeleteDeploymentErrors[keyof DeleteDeploymentErrors];
-
-export type DeleteDeploymentResponses = {
-    /**
-     * Deployment deleted
-     */
-    204: void;
-};
-
-export type DeleteDeploymentResponse = DeleteDeploymentResponses[keyof DeleteDeploymentResponses];
-
-export type GetDeploymentData = {
-    body?: never;
-    path: {
-        /**
-         * Environment ID
-         */
-        environmentId: number;
-        /**
-         * Deployment ID
-         */
-        deploymentId: number;
-    };
-    query?: never;
-    url: '/environments/{environmentId}/deployments/{deploymentId}';
-};
-
-export type GetDeploymentErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type GetDeploymentError = GetDeploymentErrors[keyof GetDeploymentErrors];
-
-export type GetDeploymentResponses = {
-    /**
-     * Deployment details with output
-     */
-    200: DeploymentDetail;
-};
-
-export type GetDeploymentResponse = GetDeploymentResponses[keyof GetDeploymentResponses];
-
-export type CreateCliDeploymentData = {
-    body: CreateCliDeploymentRequest;
-    path?: never;
-    query?: never;
-    url: '/cli/deployments';
-};
-
-export type CreateCliDeploymentErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Validation error
-     */
-    422: ErrorResponse;
-};
-
-export type CreateCliDeploymentError = CreateCliDeploymentErrors[keyof CreateCliDeploymentErrors];
-
-export type CreateCliDeploymentResponses = {
-    /**
-     * Deployment created
-     */
-    201: CreateCliDeploymentResponse;
-};
-
-export type CreateCliDeploymentResponse2 = CreateCliDeploymentResponses[keyof CreateCliDeploymentResponses];
-
-export type GetSsoProvidersData = {
-    body?: never;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/sso-providers';
-};
-
-export type GetSsoProvidersErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type GetSsoProvidersError = GetSsoProvidersErrors[keyof GetSsoProvidersErrors];
-
-export type GetSsoProvidersResponses = {
-    /**
-     * List of SSO providers
-     */
-    200: Array<SsoProvider>;
-};
-
-export type GetSsoProvidersResponse = GetSsoProvidersResponses[keyof GetSsoProvidersResponses];
-
 export type DiscoverSsoData = {
     body?: never;
     path?: never;
-    query: {
-        issuer: string;
+    query?: {
+        issuer?: string;
     };
     url: '/sso/discover';
 };
 
 export type DiscoverSsoErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Validation error
+     * Unprocessable Entity
      */
     422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type DiscoverSsoError = DiscoverSsoErrors[keyof DiscoverSsoErrors];
 
 export type DiscoverSsoResponses = {
     /**
-     * Discovered OIDC configuration
+     * OK
      */
     200: SsoDiscovery;
 };
 
 export type DiscoverSsoResponse = DiscoverSsoResponses[keyof DiscoverSsoResponses];
 
-export type DeleteSsoProviderData = {
-    body?: never;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * SSO provider ID
-         */
-        providerId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/sso-providers/{providerId}';
-};
-
-export type DeleteSsoProviderErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type DeleteSsoProviderError = DeleteSsoProviderErrors[keyof DeleteSsoProviderErrors];
-
-export type DeleteSsoProviderResponses = {
-    /**
-     * SSO provider deleted
-     */
-    204: void;
-};
-
-export type DeleteSsoProviderResponse = DeleteSsoProviderResponses[keyof DeleteSsoProviderResponses];
-
-export type UpdateSsoProviderData = {
-    body: UpdateSsoProviderRequest;
-    path: {
-        /**
-         * Organization ID
-         */
-        orgId: string;
-        /**
-         * SSO provider ID
-         */
-        providerId: string;
-    };
-    query?: never;
-    url: '/organizations/{orgId}/sso-providers/{providerId}';
-};
-
-export type UpdateSsoProviderErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-    /**
-     * Validation error
-     */
-    422: ErrorResponse;
-};
-
-export type UpdateSsoProviderError = UpdateSsoProviderErrors[keyof UpdateSsoProviderErrors];
-
-export type UpdateSsoProviderResponses = {
-    /**
-     * SSO provider updated
-     */
-    200: unknown;
-};
-
-export type AdminGetOrganizationsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        sortBy?: 'name' | 'createdAt' | 'shopCount' | 'memberCount';
-        sortDirection?: 'asc' | 'desc';
-        searchField?: string;
-        searchOperator?: string;
-        searchValue?: string;
-        filterField?: string;
-        filterOperator?: string;
-        filterValue?: string;
-    };
-    url: '/admin/organizations';
-};
-
-export type AdminGetOrganizationsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetOrganizationsError = AdminGetOrganizationsErrors[keyof AdminGetOrganizationsErrors];
-
-export type AdminGetOrganizationsResponses = {
-    /**
-     * Paginated list of organizations
-     */
-    200: AdminOrganizationsResponse;
-};
-
-export type AdminGetOrganizationsResponse = AdminGetOrganizationsResponses[keyof AdminGetOrganizationsResponses];
-
-export type AdminGetEnvironmentsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        sortBy?: string;
-        sortDirection?: 'asc' | 'desc';
-        searchField?: string;
-        searchOperator?: string;
-        searchValue?: string;
-        filterField?: string;
-        filterOperator?: string;
-        filterValue?: string;
-    };
-    url: '/admin/environments';
-};
-
-export type AdminGetEnvironmentsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetEnvironmentsError = AdminGetEnvironmentsErrors[keyof AdminGetEnvironmentsErrors];
-
-export type AdminGetEnvironmentsResponses = {
-    /**
-     * Paginated list of environments
-     */
-    200: AdminEnvironmentsResponse;
-};
-
-export type AdminGetEnvironmentsResponse = AdminGetEnvironmentsResponses[keyof AdminGetEnvironmentsResponses];
-
-export type AdminGetStatsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/admin/stats';
-};
-
-export type AdminGetStatsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetStatsError = AdminGetStatsErrors[keyof AdminGetStatsErrors];
-
-export type AdminGetStatsResponses = {
-    /**
-     * Admin statistics
-     */
-    200: AdminStats;
-};
-
-export type AdminGetStatsResponse = AdminGetStatsResponses[keyof AdminGetStatsResponses];
-
-export type AdminGetGrowthData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/admin/growth';
-};
-
-export type AdminGetGrowthErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetGrowthError = AdminGetGrowthErrors[keyof AdminGetGrowthErrors];
-
-export type AdminGetGrowthResponses = {
-    /**
-     * Growth data
-     */
-    200: AdminGrowth;
-};
-
-export type AdminGetGrowthResponse = AdminGetGrowthResponses[keyof AdminGetGrowthResponses];
-
-export type AdminGetOrganizationDetailData = {
-    body?: never;
-    path: {
-        orgId: string;
-    };
-    query?: never;
-    url: '/admin/organizations/{orgId}';
-};
-
-export type AdminGetOrganizationDetailErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type AdminGetOrganizationDetailError = AdminGetOrganizationDetailErrors[keyof AdminGetOrganizationDetailErrors];
-
-export type AdminGetOrganizationDetailResponses = {
-    /**
-     * Organization detail
-     */
-    200: AdminOrganizationDetail;
-};
-
-export type AdminGetOrganizationDetailResponse = AdminGetOrganizationDetailResponses[keyof AdminGetOrganizationDetailResponses];
-
-export type AdminGetEnvironmentDetailData = {
-    body?: never;
-    path: {
-        envId: number;
-    };
-    query?: never;
-    url: '/admin/environments/{envId}';
-};
-
-export type AdminGetEnvironmentDetailErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type AdminGetEnvironmentDetailError = AdminGetEnvironmentDetailErrors[keyof AdminGetEnvironmentDetailErrors];
-
-export type AdminGetEnvironmentDetailResponses = {
-    /**
-     * Environment detail
-     */
-    200: AdminEnvironmentDetail;
-};
-
-export type AdminGetEnvironmentDetailResponse = AdminGetEnvironmentDetailResponses[keyof AdminGetEnvironmentDetailResponses];
-
-export type AdminGetAuditLogData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        action?: string;
-        actorUserId?: string;
-        targetUserId?: string;
-    };
-    url: '/admin/audit-log';
-};
-
-export type AdminGetAuditLogErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetAuditLogError = AdminGetAuditLogErrors[keyof AdminGetAuditLogErrors];
-
-export type AdminGetAuditLogResponses = {
-    /**
-     * Paginated audit log
-     */
-    200: AdminAuditLogResponse;
-};
-
-export type AdminGetAuditLogResponse = AdminGetAuditLogResponses[keyof AdminGetAuditLogResponses];
-
-export type AdminGetRecentActivityData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/admin/recent-activity';
-};
-
-export type AdminGetRecentActivityErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetRecentActivityError = AdminGetRecentActivityErrors[keyof AdminGetRecentActivityErrors];
-
-export type AdminGetRecentActivityResponses = {
-    /**
-     * Recent activity
-     */
-    200: AdminRecentActivity;
-};
-
-export type AdminGetRecentActivityResponse = AdminGetRecentActivityResponses[keyof AdminGetRecentActivityResponses];
-
-export type AdminGetShopwareVersionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/admin/shopware-versions';
-};
-
-export type AdminGetShopwareVersionsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminGetShopwareVersionsError = AdminGetShopwareVersionsErrors[keyof AdminGetShopwareVersionsErrors];
-
-export type AdminGetShopwareVersionsResponses = {
-    /**
-     * Version distribution
-     */
-    200: Array<ShopwareVersionCount>;
-};
-
-export type AdminGetShopwareVersionsResponse = AdminGetShopwareVersionsResponses[keyof AdminGetShopwareVersionsResponses];
-
-export type AdminListAdvisoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        /**
-         * Filter by Composer package name (e.g. shopware/core)
-         */
-        package?: string;
-        /**
-         * Filter by effective severity
-         */
-        severity?: 'none' | 'low' | 'medium' | 'high' | 'critical';
-        /**
-         * Filter by admin tag
-         */
-        tag?: string;
-        /**
-         * Search title, CVE, GHSA, package, or advisory ID
-         */
-        q?: string;
-        /**
-         * When set, filter by visibility
-         */
-        visible?: boolean;
-    };
-    url: '/admin/advisories';
-};
-
-export type AdminListAdvisoriesErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminListAdvisoriesError = AdminListAdvisoriesErrors[keyof AdminListAdvisoriesErrors];
-
-export type AdminListAdvisoriesResponses = {
-    /**
-     * Paginated advisories
-     */
-    200: AdminAdvisoryListResponse;
-};
-
-export type AdminListAdvisoriesResponse = AdminListAdvisoriesResponses[keyof AdminListAdvisoriesResponses];
-
-export type AdminSyncAdvisoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/admin/advisories/sync';
-};
-
-export type AdminSyncAdvisoriesErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-};
-
-export type AdminSyncAdvisoriesError = AdminSyncAdvisoriesErrors[keyof AdminSyncAdvisoriesErrors];
-
-export type AdminSyncAdvisoriesResponses = {
-    /**
-     * Sync job enqueued
-     */
-    202: AdminAdvisorySyncResponse;
-};
-
-export type AdminSyncAdvisoriesResponse = AdminSyncAdvisoriesResponses[keyof AdminSyncAdvisoriesResponses];
-
-export type AdminGetAdvisoryData = {
-    body?: never;
-    path: {
-        /**
-         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
-         *
-         */
-        advisoryId: string;
-    };
-    query?: never;
-    url: '/admin/advisories/{advisoryId}';
-};
-
-export type AdminGetAdvisoryErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type AdminGetAdvisoryError = AdminGetAdvisoryErrors[keyof AdminGetAdvisoryErrors];
-
-export type AdminGetAdvisoryResponses = {
-    /**
-     * Advisory detail
-     */
-    200: AdminAdvisory;
-};
-
-export type AdminGetAdvisoryResponse = AdminGetAdvisoryResponses[keyof AdminGetAdvisoryResponses];
-
-export type AdminUpdateAdvisoryData = {
-    body: UpdateAdvisoryEnrichmentRequest;
-    path: {
-        /**
-         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
-         *
-         */
-        advisoryId: string;
-    };
-    query?: never;
-    url: '/admin/advisories/{advisoryId}';
-};
-
-export type AdminUpdateAdvisoryErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type AdminUpdateAdvisoryError = AdminUpdateAdvisoryErrors[keyof AdminUpdateAdvisoryErrors];
-
-export type AdminUpdateAdvisoryResponses = {
-    /**
-     * Updated advisory
-     */
-    200: AdminAdvisory;
-};
-
-export type AdminUpdateAdvisoryResponse = AdminUpdateAdvisoryResponses[keyof AdminUpdateAdvisoryResponses];
-
-export type ListAdvisoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        /**
-         * Filter by Composer package name (e.g. shopware/core)
-         */
-        package?: string;
-        /**
-         * Filter by effective severity
-         */
-        severity?: 'none' | 'low' | 'medium' | 'high' | 'critical';
-        /**
-         * Filter by admin tag
-         */
-        tag?: string;
-        /**
-         * Search title, CVE, GHSA, package, or advisory ID
-         */
-        q?: string;
-        /**
-         * "affected" limits results to advisories matching the Composer inventory of the caller's own environments, excluding suppressed ones; "suppressed" returns only those the caller has acknowledged; "all" returns the full catalog.
-         *
-         */
-        scope?: 'all' | 'affected' | 'suppressed';
-        /**
-         * Sort order: "reported" newest first, "severity" most severe first, "affected" most affected environments first, "cvss" highest score first.
-         *
-         */
-        sort?: 'reported' | 'severity' | 'affected' | 'cvss';
-    };
-    url: '/advisories';
-};
-
-export type ListAdvisoriesErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type ListAdvisoriesError = ListAdvisoriesErrors[keyof ListAdvisoriesErrors];
-
-export type ListAdvisoriesResponses = {
-    /**
-     * Paginated visible advisories
-     */
-    200: AdvisoryListResponse;
-};
-
-export type ListAdvisoriesResponse = ListAdvisoriesResponses[keyof ListAdvisoriesResponses];
-
-export type ListAdvisoryPackagesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/advisories/packages';
-};
-
-export type ListAdvisoryPackagesErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type ListAdvisoryPackagesError = ListAdvisoryPackagesErrors[keyof ListAdvisoryPackagesErrors];
-
-export type ListAdvisoryPackagesResponses = {
-    /**
-     * Package names
-     */
-    200: Array<string>;
-};
-
-export type ListAdvisoryPackagesResponse = ListAdvisoryPackagesResponses[keyof ListAdvisoryPackagesResponses];
-
-export type GetAdvisoryData = {
-    body?: never;
-    path: {
-        /**
-         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
-         *
-         */
-        advisoryId: string;
-    };
-    query?: never;
-    url: '/advisories/{advisoryId}';
-};
-
-export type GetAdvisoryErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type GetAdvisoryError = GetAdvisoryErrors[keyof GetAdvisoryErrors];
-
-export type GetAdvisoryResponses = {
-    /**
-     * Advisory detail
-     */
-    200: Advisory;
-};
-
-export type GetAdvisoryResponse = GetAdvisoryResponses[keyof GetAdvisoryResponses];
-
-export type CreateAdvisorySuppressionData = {
-    body: CreateAdvisorySuppressionRequest;
-    path: {
-        /**
-         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
-         *
-         */
-        advisoryId: string;
-    };
-    query?: never;
-    url: '/advisories/{advisoryId}/suppressions';
-};
-
-export type CreateAdvisorySuppressionErrors = {
-    /**
-     * Validation error
-     */
-    400: ErrorResponse;
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Insufficient permissions
-     */
-    403: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-    /**
-     * An active suppression already covers this scope
-     */
-    409: ErrorResponse;
-};
-
-export type CreateAdvisorySuppressionError = CreateAdvisorySuppressionErrors[keyof CreateAdvisorySuppressionErrors];
-
-export type CreateAdvisorySuppressionResponses = {
-    /**
-     * Suppression recorded
-     */
-    201: AdvisorySuppression;
-};
-
-export type CreateAdvisorySuppressionResponse = CreateAdvisorySuppressionResponses[keyof CreateAdvisorySuppressionResponses];
-
 export type ListSuppressionsData = {
     body?: never;
     path?: never;
     query?: {
-        /**
-         * Include revoked and expired suppressions
-         */
         includeInactive?: boolean;
     };
     url: '/suppressions';
@@ -3583,16 +5479,24 @@ export type ListSuppressionsData = {
 
 export type ListSuppressionsErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type ListSuppressionsError = ListSuppressionsErrors[keyof ListSuppressionsErrors];
 
 export type ListSuppressionsResponses = {
     /**
-     * Suppressions
+     * OK
      */
     200: AdvisorySuppressionListResponse;
 };
@@ -3610,1239 +5514,30 @@ export type RevokeAdvisorySuppressionData = {
 
 export type RevokeAdvisorySuppressionErrors = {
     /**
-     * Authentication required
+     * Unauthorized
      */
     401: ErrorResponse;
     /**
-     * Resource not found
+     * Not Found
      */
     404: ErrorResponse;
+    /**
+     * Unprocessable Entity
+     */
+    422: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
 };
 
 export type RevokeAdvisorySuppressionError = RevokeAdvisorySuppressionErrors[keyof RevokeAdvisorySuppressionErrors];
 
 export type RevokeAdvisorySuppressionResponses = {
     /**
-     * Suppression revoked
+     * No Content
      */
     204: void;
 };
 
 export type RevokeAdvisorySuppressionResponse = RevokeAdvisorySuppressionResponses[keyof RevokeAdvisorySuppressionResponses];
-
-export type ListAdvisoryAffectedEnvironmentsData = {
-    body?: never;
-    path: {
-        /**
-         * Canonical advisory ID as returned in Advisory.advisoryId: the CVE when known, else the GHSA, else the Packagist PKSA ID. Detail and suppression endpoints also accept a package row's PKSA ID as a legacy alias, but affected-environment lookups resolve the canonical ID only.
-         *
-         */
-        advisoryId: string;
-    };
-    query?: never;
-    url: '/advisories/{advisoryId}/affected';
-};
-
-export type ListAdvisoryAffectedEnvironmentsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type ListAdvisoryAffectedEnvironmentsError = ListAdvisoryAffectedEnvironmentsErrors[keyof ListAdvisoryAffectedEnvironmentsErrors];
-
-export type ListAdvisoryAffectedEnvironmentsResponses = {
-    /**
-     * Affected environments
-     */
-    200: AdvisoryAffectedResponse;
-};
-
-export type ListAdvisoryAffectedEnvironmentsResponse = ListAdvisoryAffectedEnvironmentsResponses[keyof ListAdvisoryAffectedEnvironmentsResponses];
-
-export type CheckExtensionCompatibilityData = {
-    body: ExtensionCompatibilityRequest;
-    path?: never;
-    query?: never;
-    url: '/info/extension-compatibility';
-};
-
-export type CheckExtensionCompatibilityErrors = {
-    /**
-     * Validation error
-     */
-    422: ErrorResponse;
-};
-
-export type CheckExtensionCompatibilityError = CheckExtensionCompatibilityErrors[keyof CheckExtensionCompatibilityErrors];
-
-export type CheckExtensionCompatibilityResponses = {
-    /**
-     * Compatibility results
-     */
-    200: Array<ExtensionCompatibilityResult>;
-};
-
-export type CheckExtensionCompatibilityResponse = CheckExtensionCompatibilityResponses[keyof CheckExtensionCompatibilityResponses];
-
-export type GetShopwareVersionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/info/shopware-versions';
-};
-
-export type GetShopwareVersionsResponses = {
-    /**
-     * Known Shopware versions, newest first
-     */
-    200: Array<ShopwareVersion>;
-};
-
-export type GetShopwareVersionsResponse = GetShopwareVersionsResponses[keyof GetShopwareVersionsResponses];
-
-export type GetInstanceConfigData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/info/config';
-};
-
-export type GetInstanceConfigResponses = {
-    /**
-     * Instance configuration
-     */
-    200: InstanceConfig;
-};
-
-export type GetInstanceConfigResponse = GetInstanceConfigResponses[keyof GetInstanceConfigResponses];
-
-export type GetEcosystemStatsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/info/ecosystem';
-};
-
-export type GetEcosystemStatsErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetEcosystemStatsError = GetEcosystemStatsErrors[keyof GetEcosystemStatsErrors];
-
-export type GetEcosystemStatsResponses = {
-    /**
-     * Ecosystem statistics
-     */
-    200: EcosystemStats;
-};
-
-export type GetEcosystemStatsResponse = GetEcosystemStatsResponses[keyof GetEcosystemStatsResponses];
-
-export type SignUpEmailData = {
-    body: {
-        email: string;
-        password: string;
-        name: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/sign-up/email';
-};
-
-export type SignUpEmailErrors = {
-    /**
-     * Validation error
-     */
-    400: ErrorResponse;
-    /**
-     * Email already exists
-     */
-    409: ErrorResponse;
-};
-
-export type SignUpEmailError = SignUpEmailErrors[keyof SignUpEmailErrors];
-
-export type SignUpEmailResponses = {
-    /**
-     * User created successfully
-     */
-    200: {
-        token?: string;
-        user?: AuthUser;
-    };
-};
-
-export type SignUpEmailResponse = SignUpEmailResponses[keyof SignUpEmailResponses];
-
-export type SignInEmailData = {
-    body: {
-        email: string;
-        password: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/sign-in/email';
-};
-
-export type SignInEmailErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-    /**
-     * Account is banned
-     */
-    403: unknown;
-};
-
-export type SignInEmailError = SignInEmailErrors[keyof SignInEmailErrors];
-
-export type SignInEmailResponses = {
-    /**
-     * Signed in successfully
-     */
-    200: {
-        token?: string;
-        user?: AuthUser;
-    };
-};
-
-export type SignInEmailResponse = SignInEmailResponses[keyof SignInEmailResponses];
-
-export type SignOutData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/sign-out';
-};
-
-export type SignOutResponses = {
-    /**
-     * Signed out
-     */
-    200: unknown;
-};
-
-export type GetSessionData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/session';
-};
-
-export type GetSessionErrors = {
-    /**
-     * Authentication required
-     */
-    401: ErrorResponse;
-};
-
-export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
-
-export type GetSessionResponses = {
-    /**
-     * Current session
-     */
-    200: {
-        user?: AuthUser;
-        session?: SessionInfo;
-    };
-};
-
-export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
-
-export type SetActiveOrganizationData = {
-    body: {
-        organizationId: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/set-active-organization';
-};
-
-export type SetActiveOrganizationErrors = {
-    /**
-     * Not a member of the specified organization
-     */
-    403: unknown;
-};
-
-export type SetActiveOrganizationResponses = {
-    /**
-     * Active organization updated
-     */
-    200: unknown;
-};
-
-export type VerifyEmailData = {
-    body?: never;
-    path?: never;
-    query: {
-        token: string;
-    };
-    url: '/auth/verify-email';
-};
-
-export type VerifyEmailErrors = {
-    /**
-     * Invalid or expired token
-     */
-    400: unknown;
-};
-
-export type VerifyEmailResponses = {
-    /**
-     * Email verified
-     */
-    200: unknown;
-};
-
-export type ForgetPasswordData = {
-    body: {
-        email: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/forget-password';
-};
-
-export type ForgetPasswordResponses = {
-    /**
-     * Reset email sent (always returns success)
-     */
-    200: unknown;
-};
-
-export type ResetPasswordData = {
-    body: {
-        token: string;
-        newPassword: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/reset-password';
-};
-
-export type ResetPasswordErrors = {
-    /**
-     * Invalid token or weak password
-     */
-    400: unknown;
-};
-
-export type ResetPasswordResponses = {
-    /**
-     * Password reset
-     */
-    200: unknown;
-};
-
-export type SignInSocialData = {
-    body: {
-        provider: 'github';
-        callbackURL?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/sign-in/social';
-};
-
-export type SignInSocialResponses = {
-    /**
-     * Authorization URL
-     */
-    200: {
-        url?: string;
-    };
-};
-
-export type SignInSocialResponse = SignInSocialResponses[keyof SignInSocialResponses];
-
-export type SignInSsoData = {
-    body: {
-        email: string;
-        callbackURL?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/sign-in/sso';
-};
-
-export type SignInSsoErrors = {
-    /**
-     * No SSO provider for this domain
-     */
-    404: unknown;
-};
-
-export type SignInSsoResponses = {
-    /**
-     * Authorization URL
-     */
-    200: {
-        url?: string;
-    };
-};
-
-export type SignInSsoResponse = SignInSsoResponses[keyof SignInSsoResponses];
-
-export type SsoCallbackData = {
-    body?: never;
-    path: {
-        providerId: string;
-    };
-    query: {
-        code: string;
-        state: string;
-    };
-    url: '/auth/sso/callback/{providerId}';
-};
-
-export type SsoCallbackErrors = {
-    /**
-     * Missing or invalid parameters
-     */
-    400: unknown;
-};
-
-export type SsoCallbackResponses = {
-    /**
-     * One-time authorization code
-     */
-    200: {
-        code?: string;
-    };
-};
-
-export type SsoCallbackResponse = SsoCallbackResponses[keyof SsoCallbackResponses];
-
-export type PasskeyRegisterOptionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/register-options';
-};
-
-export type PasskeyRegisterOptionsResponses = {
-    /**
-     * Registration options and challenge key
-     */
-    200: {
-        options?: {
-            [key: string]: unknown;
-        };
-        challengeKey?: string;
-    };
-};
-
-export type PasskeyRegisterOptionsResponse = PasskeyRegisterOptionsResponses[keyof PasskeyRegisterOptionsResponses];
-
-export type PasskeyRegisterData = {
-    body: {
-        challengeKey: string;
-        name?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/register';
-};
-
-export type PasskeyRegisterErrors = {
-    /**
-     * Invalid or expired challenge
-     */
-    400: unknown;
-};
-
-export type PasskeyRegisterResponses = {
-    /**
-     * Passkey registered
-     */
-    200: unknown;
-};
-
-export type PasskeyLoginOptionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/login-options';
-};
-
-export type PasskeyLoginOptionsResponses = {
-    /**
-     * Login options and challenge key
-     */
-    200: unknown;
-};
-
-export type PasskeyLoginData = {
-    body: {
-        challengeKey: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/login';
-};
-
-export type PasskeyLoginErrors = {
-    /**
-     * Authentication failed
-     */
-    401: unknown;
-};
-
-export type PasskeyLoginResponses = {
-    /**
-     * Logged in
-     */
-    200: unknown;
-};
-
-export type CreateOrganizationData = {
-    body: {
-        name: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/organizations';
-};
-
-export type CreateOrganizationResponses = {
-    /**
-     * Organization created
-     */
-    200: {
-        id?: string;
-        name?: string;
-    };
-};
-
-export type CreateOrganizationResponse = CreateOrganizationResponses[keyof CreateOrganizationResponses];
-
-export type DeleteOrganizationData = {
-    body?: never;
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}';
-};
-
-export type DeleteOrganizationErrors = {
-    /**
-     * Only owners can delete
-     */
-    403: unknown;
-};
-
-export type DeleteOrganizationResponses = {
-    /**
-     * Deleted
-     */
-    200: unknown;
-};
-
-export type UpdateOrganizationData = {
-    body?: {
-        name?: string;
-        logo?: string;
-    };
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}';
-};
-
-export type UpdateOrganizationResponses = {
-    /**
-     * Updated
-     */
-    200: unknown;
-};
-
-export type ListOrganizationMembersData = {
-    body?: never;
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/members';
-};
-
-export type ListOrganizationMembersResponses = {
-    /**
-     * List of members
-     */
-    200: Array<{
-        id?: string;
-        userId?: string;
-        role?: string;
-        name?: string;
-        email?: string;
-        image?: string | null;
-    }>;
-};
-
-export type ListOrganizationMembersResponse = ListOrganizationMembersResponses[keyof ListOrganizationMembersResponses];
-
-export type RemoveMemberData = {
-    body?: never;
-    path: {
-        organizationId: string;
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/members/{userId}';
-};
-
-export type RemoveMemberResponses = {
-    /**
-     * Member removed
-     */
-    200: unknown;
-};
-
-export type SetMemberRoleData = {
-    body?: {
-        role: string;
-    };
-    path: {
-        organizationId: string;
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/members/{userId}';
-};
-
-export type SetMemberRoleResponses = {
-    /**
-     * Role updated
-     */
-    200: unknown;
-};
-
-export type LeaveOrganizationData = {
-    body?: never;
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/leave';
-};
-
-export type LeaveOrganizationErrors = {
-    /**
-     * Cannot leave as only owner
-     */
-    400: unknown;
-};
-
-export type LeaveOrganizationResponses = {
-    /**
-     * Left organization
-     */
-    200: unknown;
-};
-
-export type ListOrganizationInvitationsData = {
-    body?: never;
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/invitations';
-};
-
-export type ListOrganizationInvitationsResponses = {
-    /**
-     * List of pending invitations
-     */
-    200: unknown;
-};
-
-export type InviteMemberData = {
-    body: {
-        email: string;
-        role?: string;
-    };
-    path: {
-        organizationId: string;
-    };
-    query?: never;
-    url: '/auth/organizations/{organizationId}/invitations';
-};
-
-export type InviteMemberResponses = {
-    /**
-     * Invitation sent
-     */
-    200: unknown;
-};
-
-export type AcceptInvitationData = {
-    body?: never;
-    path: {
-        invitationId: string;
-    };
-    query?: never;
-    url: '/auth/invitations/{invitationId}/accept';
-};
-
-export type AcceptInvitationResponses = {
-    /**
-     * Invitation accepted
-     */
-    200: unknown;
-};
-
-export type RejectInvitationData = {
-    body?: never;
-    path: {
-        invitationId: string;
-    };
-    query?: never;
-    url: '/auth/invitations/{invitationId}/reject';
-};
-
-export type RejectInvitationResponses = {
-    /**
-     * Invitation rejected
-     */
-    200: unknown;
-};
-
-export type AdminListUsersData = {
-    body?: never;
-    path?: never;
-    query?: {
-        limit?: number;
-        offset?: number;
-        /**
-         * Filter users by email or name (case-insensitive substring)
-         */
-        search?: string;
-        /**
-         * Filter users by role
-         */
-        role?: 'user' | 'admin';
-        /**
-         * Filter users by account status
-         */
-        status?: 'active' | 'banned' | 'unverified';
-        sortBy?: 'createdAt' | 'name' | 'email';
-        sortDirection?: 'asc' | 'desc';
-    };
-    url: '/auth/admin/users';
-};
-
-export type AdminListUsersResponses = {
-    /**
-     * Paginated list of users
-     */
-    200: AdminUsersResponse;
-};
-
-export type AdminListUsersResponse = AdminListUsersResponses[keyof AdminListUsersResponses];
-
-export type AdminGetUserDetailData = {
-    body?: never;
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/admin/users/{userId}';
-};
-
-export type AdminGetUserDetailErrors = {
-    /**
-     * Resource not found
-     */
-    404: ErrorResponse;
-};
-
-export type AdminGetUserDetailError = AdminGetUserDetailErrors[keyof AdminGetUserDetailErrors];
-
-export type AdminGetUserDetailResponses = {
-    /**
-     * User detail
-     */
-    200: AdminUserDetail;
-};
-
-export type AdminGetUserDetailResponse = AdminGetUserDetailResponses[keyof AdminGetUserDetailResponses];
-
-export type AdminSetUserRoleData = {
-    body: {
-        role: 'user' | 'admin';
-    };
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/admin/users/{userId}/role';
-};
-
-export type AdminSetUserRoleResponses = {
-    /**
-     * Role updated
-     */
-    200: unknown;
-};
-
-export type AdminBanUserData = {
-    body?: {
-        banReason?: string;
-    };
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/admin/users/{userId}/ban';
-};
-
-export type AdminBanUserResponses = {
-    /**
-     * User banned
-     */
-    200: unknown;
-};
-
-export type AdminUnbanUserData = {
-    body?: never;
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/admin/users/{userId}/unban';
-};
-
-export type AdminUnbanUserResponses = {
-    /**
-     * User unbanned
-     */
-    200: unknown;
-};
-
-export type AdminImpersonateData = {
-    body?: never;
-    path: {
-        userId: string;
-    };
-    query?: never;
-    url: '/auth/admin/users/{userId}/impersonate';
-};
-
-export type AdminImpersonateResponses = {
-    /**
-     * Impersonation session created
-     */
-    200: {
-        token: string;
-        session: {
-            token: string;
-            impersonatedBy: string;
-        };
-    };
-};
-
-export type AdminImpersonateResponse = AdminImpersonateResponses[keyof AdminImpersonateResponses];
-
-export type GetFullOrganizationData = {
-    body?: never;
-    path?: never;
-    query: {
-        organizationId: string;
-    };
-    url: '/auth/get-full-organization';
-};
-
-export type GetFullOrganizationResponses = {
-    /**
-     * Full organization details
-     */
-    200: {
-        id?: string;
-        name?: string;
-        members?: Array<{
-            id?: string;
-            userId?: string;
-            role?: string;
-            name?: string;
-            email?: string;
-        }>;
-        invitations?: Array<{
-            id?: string;
-            email?: string;
-            role?: string;
-            status?: string;
-        }>;
-    };
-};
-
-export type GetFullOrganizationResponse = GetFullOrganizationResponses[keyof GetFullOrganizationResponses];
-
-export type ListSessionsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/list-sessions';
-};
-
-export type ListSessionsResponses = {
-    /**
-     * List of sessions
-     */
-    200: Array<{
-        id: string;
-        expiresAt: string;
-        createdAt: string;
-        ipAddress?: string | null;
-        userAgent?: string | null;
-        impersonatedBy?: string | null;
-    }>;
-};
-
-export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
-
-export type RevokeSessionData = {
-    body: {
-        sessionId: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/revoke-session';
-};
-
-export type RevokeSessionResponses = {
-    /**
-     * Session revoked
-     */
-    200: unknown;
-};
-
-export type ListAccountsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/list-accounts';
-};
-
-export type ListAccountsResponses = {
-    /**
-     * List of linked accounts
-     */
-    200: Array<{
-        id: string;
-        provider: string;
-        accountId: string;
-        createdAt: string;
-    }>;
-};
-
-export type ListAccountsResponse = ListAccountsResponses[keyof ListAccountsResponses];
-
-export type UnlinkAccountData = {
-    body: {
-        providerId: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/unlink-account';
-};
-
-export type UnlinkAccountResponses = {
-    /**
-     * Account unlinked
-     */
-    200: unknown;
-};
-
-export type ChangeEmailData = {
-    body: {
-        newEmail: string;
-        currentPassword: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/change-email';
-};
-
-export type ChangeEmailResponses = {
-    /**
-     * Email changed
-     */
-    200: unknown;
-};
-
-export type UpdateUserData = {
-    body?: {
-        name?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/update-user';
-};
-
-export type UpdateUserResponses = {
-    /**
-     * User updated
-     */
-    200: unknown;
-};
-
-export type ChangePasswordData = {
-    body: {
-        currentPassword: string;
-        newPassword: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/change-password';
-};
-
-export type ChangePasswordErrors = {
-    /**
-     * Current password incorrect
-     */
-    401: unknown;
-};
-
-export type ChangePasswordResponses = {
-    /**
-     * Password changed
-     */
-    200: unknown;
-};
-
-export type DeleteUserData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/delete-user';
-};
-
-export type DeleteUserResponses = {
-    /**
-     * User deleted
-     */
-    200: unknown;
-};
-
-export type LinkSocialData = {
-    body: {
-        provider: string;
-        callbackURL?: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/link-social';
-};
-
-export type LinkSocialResponses = {
-    /**
-     * Authorization URL
-     */
-    200: {
-        url?: string;
-    };
-};
-
-export type LinkSocialResponse = LinkSocialResponses[keyof LinkSocialResponses];
-
-export type ListUserOrganizationsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/list-organizations';
-};
-
-export type ListUserOrganizationsResponses = {
-    /**
-     * List of organizations
-     */
-    200: Array<{
-        id: string;
-        name: string;
-        logo?: string | null;
-        createdAt?: string;
-        role?: string;
-    }>;
-};
-
-export type ListUserOrganizationsResponse = ListUserOrganizationsResponses[keyof ListUserOrganizationsResponses];
-
-export type HasPermissionData = {
-    body: {
-        organizationId: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/has-permission';
-};
-
-export type HasPermissionResponses = {
-    /**
-     * Permission check result
-     */
-    200: {
-        success?: boolean;
-    };
-};
-
-export type HasPermissionResponse = HasPermissionResponses[keyof HasPermissionResponses];
-
-export type CancelInvitationData = {
-    body: {
-        invitationId: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/cancel-invitation';
-};
-
-export type CancelInvitationResponses = {
-    /**
-     * Invitation cancelled
-     */
-    200: unknown;
-};
-
-export type ListUserPasskeysData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/list-user-passkeys';
-};
-
-export type ListUserPasskeysResponses = {
-    /**
-     * List of passkeys
-     */
-    200: Array<{
-        id: string;
-        name: string | null;
-        deviceType?: string;
-        backedUp?: boolean;
-        createdAt: string;
-    }>;
-};
-
-export type ListUserPasskeysResponse = ListUserPasskeysResponses[keyof ListUserPasskeysResponses];
-
-export type DeletePasskeyData = {
-    body: {
-        id: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/passkey/delete-passkey';
-};
-
-export type DeletePasskeyResponses = {
-    /**
-     * Passkey deleted
-     */
-    200: unknown;
-};
-
-export type RegisterSsoProviderData = {
-    body: {
-        organizationId: string;
-        domain: string;
-        issuer: string;
-        clientId: string;
-        clientSecret: string;
-        authorizationEndpoint: string;
-        tokenEndpoint: string;
-        jwksEndpoint: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/sso/register';
-};
-
-export type RegisterSsoProviderResponses = {
-    /**
-     * SSO provider registered
-     */
-    200: unknown;
-};
-
-export type AdminStopImpersonatingData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/auth/admin/stop-impersonating';
-};
-
-export type AdminStopImpersonatingResponses = {
-    /**
-     * Impersonation ended
-     */
-    200: unknown;
-};
-
-export type GithubCallbackData = {
-    body?: never;
-    path?: never;
-    query: {
-        code: string;
-        state: string;
-    };
-    url: '/auth/callback/github';
-};
-
-export type GithubCallbackErrors = {
-    /**
-     * Missing or invalid parameters
-     */
-    400: unknown;
-};
-
-export type GithubCallbackResponses = {
-    /**
-     * One-time authorization code
-     */
-    200: {
-        code?: string;
-    };
-};
-
-export type GithubCallbackResponse = GithubCallbackResponses[keyof GithubCallbackResponses];
-
-export type ExchangeCodeData = {
-    body: {
-        code: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/auth/exchange-code';
-};
-
-export type ExchangeCodeErrors = {
-    /**
-     * Invalid or expired code
-     */
-    400: unknown;
-};
-
-export type ExchangeCodeResponses = {
-    /**
-     * Session token
-     */
-    200: {
-        token?: string;
-    };
-};
-
-export type ExchangeCodeResponse = ExchangeCodeResponses[keyof ExchangeCodeResponses];

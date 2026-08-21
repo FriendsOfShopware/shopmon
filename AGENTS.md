@@ -2,7 +2,7 @@
 
 ## Tech Stack
 
-- **API**: Go (chi router, sqlc, oapi-codegen, go-queue)
+- **API**: Go (chi router, Huma v2, sqlc, go-queue)
 - **Frontend**: Vue.js + TypeScript
 - **Database**: PostgreSQL (pgx)
 - **Queue**: PostgreSQL (go-queue), optionally AMQP (LavinMQ/RabbitMQ) via `QUEUE_TRANSPORT=amqp`
@@ -19,14 +19,15 @@ api/                          <-- Go API (single binary)
   migrate.go                  <-- Database migration command
   fixtures.go                 <-- Test fixture seeding
   internal/
-    api/                      <-- oapi-codegen generated server interface (DO NOT EDIT)
-    authapi/                  <-- oapi-codegen generated auth server interface (DO NOT EDIT)
+    api/                      <-- Hand-written HTTP DTO types (API models)
+    authapi/                  <-- Hand-written HTTP DTO types (auth models)
+    apirouter/                <-- Huma-on-chi mount + OpenAPI metadata
     auth/                     <-- Authentication (credentials, OAuth, SSO, passkeys, orgs, admin)
     config/                   <-- Environment configuration
     crypto/                   <-- AES-GCM encryption
     database/queries/         <-- sqlc-generated data access (DO NOT EDIT)
-    handler/                  <-- API endpoint handlers (implements OpenAPI ServerInterface)
-    httputil/                 <-- Shared HTTP helpers (WriteJSON, WriteError, ExtractToken)
+    handler/                  <-- API endpoint handlers (Huma operations)
+    httputil/                 <-- Shared HTTP helpers + Huma JSON error override
     jobs/                     <-- Background job handlers + task types (environment scrape, sitespeed, cleanup)
     mail/                     <-- SMTP service + email templates
     middleware/               <-- HTTP middleware (auth, org membership, environment access)
@@ -38,8 +39,6 @@ api/                          <-- Go API (single binary)
     testutil/                 <-- Test infrastructure (testcontainers for Postgres + Redis)
     webui/                    <-- Embedded frontend serving
   migrations/                 <-- SQL migration files (golang-migrate)
-  openapi/
-    spec.yaml                 <-- OpenAPI 3.0.3 specification (source of truth for API)
   sql/
     schema.sql                <-- Full DDL for sqlc
     queries/                  <-- sqlc query definitions
@@ -51,7 +50,7 @@ frontend/                     <-- Vue.js frontend
 ### Error Handling
 
 - Wrap errors with context: `fmt.Errorf("create shop: %w", err)`
-- In handlers, log with `slog.Error` then respond with `httputil.WriteError`
+- In handlers, log with `slog.Error` then return a Huma status error (`huma.Error404NotFound`, …)
 - In background jobs, record errors on the OTel span AND return them
 - **Never** silently discard errors — at minimum use `_ =` for intentional ignoring (e.g. `defer func() { _ = resp.Body.Close() }()`)
 
@@ -87,30 +86,30 @@ frontend/                     <-- Vue.js frontend
 
 ### Handler Pattern
 
-Handlers implement the generated `openapi.ServerInterface`:
+Register each operation with `huma.Register` (existing `operationId`) and implement a Huma handler:
 
 ```go
-func (h *Handler) GetThing(w http.ResponseWriter, r *http.Request, id string) {
-    user := h.requireUser(w, r)       // returns nil + writes 401 if unauthenticated
-    if user == nil {
-        return
-    }
-
-    thing, err := h.queries.GetThing(r.Context(), id)
+func (h *Handler) GetThing(ctx context.Context, input *getThingInput) (*getThingOutput, error) {
+    user, err := h.requireUser(ctx) // returns huma.Error401Unauthorized if unauthenticated
     if err != nil {
-        slog.Error("failed to get thing", "id", id, "error", err)
-        httputil.WriteError(w, http.StatusInternalServerError, "failed to get thing")
-        return
+        return nil, err
     }
 
-    httputil.WriteJSON(w, http.StatusOK, mapToResponse(thing))
+    thing, err := h.things.Get(ctx, user.ID, input.ID)
+    if err != nil {
+        slog.ErrorContext(ctx, "failed to get thing", "id", input.ID, "error", err)
+        return nil, huma.Error500InternalServerError("failed to get thing")
+    }
+
+    return &getThingOutput{Body: mapToResponse(thing)}, nil
 }
 ```
 
 Key rules:
-- Use `h.requireUser()` / `h.requireOrgMembership()` for auth — they handle writing error responses
-- Use `httputil.WriteJSON()` and `httputil.WriteError()` for all responses
-- Use `r.Context()` for all database calls (propagates traces)
+- Use `h.requireUser()` for auth — it returns a Huma 401 error when unauthenticated
+- Return Huma outputs (`Body`, optional `Status`) or `huma.Error*` — error bodies stay `{"message":"..."}`
+- Use `ctx` from the Huma handler for all database calls (propagates traces)
+- Paths are relative to the `/api` chi mount (`/health`, `/organizations/{orgId}/shops`, …)
 
 ### Database Access (sqlc)
 
@@ -138,10 +137,13 @@ Key rules:
 
 When adding or modifying API endpoints:
 
-1. Edit `openapi/spec.yaml` (add paths, schemas, parameters)
-2. Run `mise run generate` (regenerates server interface)
-3. Implement the new method on `Handler` in `internal/handler/`
-4. Add sqlc queries if needed (`sql/queries/`, then `mise run generate`)
+1. Register a Huma operation (`huma.Register`) with the `operationId`, path, method, and input/output structs in `internal/handler` or `internal/auth`
+2. Implement the handler (return a Huma output or `huma.Error*`)
+3. Add or extend DTO types in `internal/api` or `internal/authapi` if needed
+4. Add sqlc queries if needed (`sql/queries/`)
+5. Run `mise run generate` (dumps OpenAPI to gitignored `api/openapi/spec.yaml` and regenerates committed frontend types)
+
+Do not commit or hand-edit `openapi/spec.yaml` — it is a local generate input. The reviewable client is `frontend/src/api/generated/`.
 
 ## CLI Commands
 
@@ -153,6 +155,7 @@ shopmon migrate down        # Rollback last migration
 shopmon migrate status      # Show current migration version
 shopmon fixtures            # Seed test data
 shopmon fixtures --skip-shop # Seed without shop data
+shopmon openapi             # Print OpenAPI YAML generated from Huma routes
 ```
 
 ## Development
@@ -165,7 +168,7 @@ mise run dev             # Run API server + worker + frontend
 mise run dev:worker      # Run background worker only
 mise run test            # Run API integration tests
 mise run lint            # Lint/format/typecheck API + frontend (includes frontend unit tests)
-mise run generate        # Regenerate sqlc + oapi-codegen
+mise run generate        # Regenerate sqlc + dump OpenAPI from Huma + frontend types
 ```
 
 ## Verification

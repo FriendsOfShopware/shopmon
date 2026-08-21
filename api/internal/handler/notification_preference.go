@@ -1,21 +1,38 @@
 package handler
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/notification"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
 )
 
-// GetNotificationEventTypes lists the notifiable event types (the source of
-// truth for the preferences UI), so new event types appear without a frontend
-// change.
-func (h *Handler) GetNotificationEventTypes(w http.ResponseWriter, r *http.Request) {
-	if user := h.requireUser(w, r); user == nil {
-		return
+type getNotificationEventTypesOutput struct {
+	Body []api.NotificationEventType
+}
+
+type getNotificationPreferencesOutput struct {
+	Body []api.NotificationPreference
+}
+
+type setNotificationPreferenceInput struct {
+	Body api.NotificationPreferenceInput
+}
+
+type deleteNotificationPreferenceInput struct {
+	ScopeType string `query:"scopeType"`
+	ScopeId   string `query:"scopeId"`
+	EventType string `query:"eventType"`
+	Channel   string `query:"channel"`
+}
+
+func (h *Handler) GetNotificationEventTypes(ctx context.Context, _ *struct{}) (*getNotificationEventTypesOutput, error) {
+	if _, err := h.requireUser(ctx); err != nil {
+		return nil, err
 	}
 
 	types := notify.ListEventTypes()
@@ -27,7 +44,7 @@ func (h *Handler) GetNotificationEventTypes(w http.ResponseWriter, r *http.Reque
 		})
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getNotificationEventTypesOutput{Body: result}, nil
 }
 
 // validPreferenceScopes and validPreferenceChannels bound the values a client
@@ -38,18 +55,16 @@ var (
 	validPreferenceChannels = map[string]bool{"in_app": true, "email": true}
 )
 
-// GetNotificationPreferences returns the current user's notification preferences.
-func (h *Handler) GetNotificationPreferences(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) GetNotificationPreferences(ctx context.Context, _ *struct{}) (*getNotificationPreferencesOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	rows, err := h.notifications.ListPreferences(r.Context(), user.ID)
+	rows, err := h.notifications.ListPreferences(ctx, user.ID)
 	if err != nil {
-		slog.Error("failed to list notification preferences", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get preferences")
-		return
+		slog.ErrorContext(ctx, "failed to list notification preferences", "error", err)
+		return nil, huma.Error500InternalServerError("failed to get preferences")
 	}
 
 	result := make([]api.NotificationPreference, 0, len(rows))
@@ -64,29 +79,21 @@ func (h *Handler) GetNotificationPreferences(w http.ResponseWriter, r *http.Requ
 		result = append(result, pref)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getNotificationPreferencesOutput{Body: result}, nil
 }
 
-// SetNotificationPreference creates or updates a single notification preference.
-func (h *Handler) SetNotificationPreference(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) SetNotificationPreference(ctx context.Context, input *setNotificationPreferenceInput) (*notificationNoContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var body api.SetNotificationPreferenceJSONRequestBody
-	if err := httputil.DecodeBody(r, &body); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
+	body := input.Body
 	if !validPreferenceScopes[body.ScopeType] {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid scope type")
-		return
+		return nil, huma.Error400BadRequest("invalid scope type")
 	}
 	if !validPreferenceChannels[body.Channel] {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid channel")
-		return
+		return nil, huma.Error400BadRequest("invalid channel")
 	}
 
 	scopeID := ""
@@ -98,51 +105,37 @@ func (h *Handler) SetNotificationPreference(w http.ResponseWriter, r *http.Reque
 		eventType = *body.EventType
 	}
 
-	if err := h.notifications.SetPreference(r.Context(), user.ID, notification.Preference{
+	if err := h.notifications.SetPreference(ctx, user.ID, notification.Preference{
 		ScopeType: body.ScopeType,
 		ScopeID:   scopeID,
 		EventType: eventType,
 		Channel:   body.Channel,
 		Enabled:   body.Enabled,
 	}); err != nil {
-		slog.Error("failed to set notification preference", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to set preference")
-		return
+		slog.ErrorContext(ctx, "failed to set notification preference", "error", err)
+		return nil, huma.Error500InternalServerError("failed to set preference")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &notificationNoContentOutput{Status: http.StatusNoContent}, nil
 }
 
-// DeleteNotificationPreference removes a single notification preference.
-func (h *Handler) DeleteNotificationPreference(w http.ResponseWriter, r *http.Request, params api.DeleteNotificationPreferenceParams) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteNotificationPreference(ctx context.Context, input *deleteNotificationPreferenceInput) (*notificationNoContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if !validPreferenceScopes[params.ScopeType] {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid scope type")
-		return
+	if !validPreferenceScopes[input.ScopeType] {
+		return nil, huma.Error400BadRequest("invalid scope type")
 	}
-	if !validPreferenceChannels[params.Channel] {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid channel")
-		return
+	if !validPreferenceChannels[input.Channel] {
+		return nil, huma.Error400BadRequest("invalid channel")
 	}
 
-	scopeID := ""
-	if params.ScopeId != nil {
-		scopeID = *params.ScopeId
-	}
-	eventType := ""
-	if params.EventType != nil {
-		eventType = *params.EventType
+	if err := h.notifications.DeletePreference(ctx, user.ID, input.ScopeType, input.ScopeId, input.EventType, input.Channel); err != nil {
+		slog.ErrorContext(ctx, "failed to delete notification preference", "error", err)
+		return nil, huma.Error500InternalServerError("failed to delete preference")
 	}
 
-	if err := h.notifications.DeletePreference(r.Context(), user.ID, params.ScopeType, scopeID, eventType, params.Channel); err != nil {
-		slog.Error("failed to delete notification preference", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete preference")
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+	return &notificationNoContentOutput{Status: http.StatusNoContent}, nil
 }

@@ -1,57 +1,66 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
-	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 )
 
-// GetOrganizationShops returns all shops in an organization.
-func (h *Handler) GetOrganizationShops(w http.ResponseWriter, r *http.Request, orgID api.OrgId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-	result, err := h.environments.OrganizationShops(r.Context(), user.ID, orgID)
-	if errors.Is(err, environmentread.ErrNotAuthorized) {
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
-	}
-	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to list shops", "organizationID", orgID, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get shops")
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+type noContentOutput struct{}
+
+type getOrganizationShopsInput struct {
+	OrgID string `path:"orgId" doc:"Organization ID"`
 }
 
-// CreateShop creates a new shop with its first environment.
-func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type getOrganizationShopsOutput struct {
+	Body []api.Shop
+}
+
+func (h *Handler) GetOrganizationShops(ctx context.Context, input *getOrganizationShopsInput) (*getOrganizationShopsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := h.environments.OrganizationShops(ctx, user.ID, input.OrgID)
+	if errors.Is(err, environmentread.ErrNotAuthorized) {
+		return nil, huma.Error403Forbidden("not a member of this organization")
+	}
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to list shops", "organizationID", input.OrgID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to get shops")
+	}
+	return &getOrganizationShopsOutput{Body: result}, nil
+}
+
+type createShopInput struct {
+	OrgID string `path:"orgId" doc:"Organization ID"`
+	Body  api.CreateShopRequest
+}
+
+type createShopOutput struct {
+	Body api.Shop
+}
+
+func (h *Handler) CreateShop(ctx context.Context, input *createShopInput) (*createShopOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req api.CreateShopRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
+	req := input.Body
 	if req.Name == "" || req.EnvironmentName == "" || req.EnvironmentUrl == "" || req.ClientId == "" || req.ClientSecret == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "name, environmentName, environmentUrl, clientId, and clientSecret are required")
-		return
+		return nil, huma.Error400BadRequest("name, environmentName, environmentUrl, clientId, and clientSecret are required")
 	}
 
-	result, err := h.monitoring.CreateShop(r.Context(), monitoring.CreateShopCommand{
+	result, err := h.monitoring.CreateShop(ctx, monitoring.CreateShopCommand{
 		UserID:          user.ID,
-		OrganizationID:  orgId,
+		OrganizationID:  input.OrgID,
 		Name:            req.Name,
 		Description:     req.Description,
 		GitURL:          req.GitUrl,
@@ -61,52 +70,49 @@ func (h *Handler) CreateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 		ClientSecret:    req.ClientSecret,
 	})
 	if errors.Is(err, monitoring.ErrNotAuthorized) {
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	}
 	if errors.Is(err, monitoring.ErrConnectionFailed) {
-		slog.Error("failed to validate shop connection for new shop", "error", err)
-		httputil.WriteError(w, http.StatusBadRequest, "Cannot reach shop. Check your credentials and shop URL.")
-		return
+		slog.ErrorContext(ctx, "failed to validate shop connection for new shop", "error", err)
+		return nil, huma.Error400BadRequest("Cannot reach shop. Check your credentials and shop URL.")
 	}
 	if err != nil {
-		slog.Error("failed to create shop with environment", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create shop")
-		return
+		slog.ErrorContext(ctx, "failed to create shop with environment", "error", err)
+		return nil, huma.Error500InternalServerError("failed to create shop")
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, api.Shop{
+	return &createShopOutput{Body: api.Shop{
 		Id:                   int(result.ShopID),
 		Name:                 req.Name,
 		Description:          req.Description,
 		GitUrl:               req.GitUrl,
-		OrganizationId:       orgId,
+		OrganizationId:       input.OrgID,
 		DefaultEnvironmentId: ptr.Int(&result.EnvironmentID),
-	})
+	}}, nil
 }
 
-// UpdateShop updates an existing shop.
-func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type updateShopInput struct {
+	OrgID  string     `path:"orgId" doc:"Organization ID"`
+	ShopID api.ShopId `path:"shopId" doc:"Shop ID"`
+	Body   api.UpdateShopRequest
+}
+
+func (h *Handler) UpdateShop(ctx context.Context, input *updateShopInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req api.UpdateShopRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
+	req := input.Body
 	var defaultEnvironmentID *int32
 	if req.DefaultEnvironmentId != nil {
 		value := int32(*req.DefaultEnvironmentId)
 		defaultEnvironmentID = &value
 	}
-	err := h.monitoring.UpdateShop(r.Context(), monitoring.UpdateShopCommand{
+	err = h.monitoring.UpdateShop(ctx, monitoring.UpdateShopCommand{
 		UserID:               user.ID,
-		OrganizationID:       orgId,
-		ShopID:               int32(shopId),
+		OrganizationID:       input.OrgID,
+		ShopID:               int32(input.ShopID),
 		Name:                 req.Name,
 		Description:          req.Description,
 		GitURL:               req.GitUrl,
@@ -114,54 +120,47 @@ func (h *Handler) UpdateShop(w http.ResponseWriter, r *http.Request, orgId api.O
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
+		return nil, huma.Error404NotFound("shop not found")
 	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
-		return
+		return nil, huma.Error403Forbidden("shop does not belong to this organization")
 	case errors.Is(err, monitoring.ErrDefaultEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusBadRequest, "default environment not found")
-		return
+		return nil, huma.Error400BadRequest("default environment not found")
 	case errors.Is(err, monitoring.ErrDefaultEnvironmentMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "default environment does not belong to this shop")
-		return
+		return nil, huma.Error403Forbidden("default environment does not belong to this shop")
 	case err != nil:
-		slog.Error("failed to update shop", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update shop")
-		return
+		slog.ErrorContext(ctx, "failed to update shop", "error", err)
+		return nil, huma.Error500InternalServerError("failed to update shop")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// DeleteShop deletes a shop.
-func (h *Handler) DeleteShop(w http.ResponseWriter, r *http.Request, orgId api.OrgId, shopId api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type deleteShopInput struct {
+	OrgID  string     `path:"orgId" doc:"Organization ID"`
+	ShopID api.ShopId `path:"shopId" doc:"Shop ID"`
+}
+
+func (h *Handler) DeleteShop(ctx context.Context, input *deleteShopInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	err := h.monitoring.DeleteShop(r.Context(), user.ID, orgId, int32(shopId))
+	err = h.monitoring.DeleteShop(ctx, user.ID, input.OrgID, int32(input.ShopID))
 	switch {
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "shop not found")
-		return
+		return nil, huma.Error404NotFound("shop not found")
 	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "shop does not belong to this organization")
-		return
+		return nil, huma.Error403Forbidden("shop does not belong to this organization")
 	case errors.Is(err, monitoring.ErrShopHasEnvironments):
-		httputil.WriteError(w, http.StatusConflict, "cannot delete shop with existing environments")
-		return
+		return nil, huma.Error409Conflict("cannot delete shop with existing environments")
 	case err != nil:
-		slog.Error("failed to delete shop", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete shop")
-		return
+		slog.ErrorContext(ctx, "failed to delete shop", "error", err)
+		return nil, huma.Error500InternalServerError("failed to delete shop")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }

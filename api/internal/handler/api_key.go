@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/deployment"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
 // HashApiKeyToken is retained for compatibility with integrations that seeded
@@ -14,8 +14,42 @@ func HashApiKeyToken(token string) string {
 	return deployment.HashAPIKeyToken(token)
 }
 
+type getApiKeyScopesOutput struct {
+	Body []api.ApiKeyScope
+}
+
+type getApiKeysInput struct {
+	OrgID  api.OrgId  `path:"orgId"`
+	ShopID api.ShopId `path:"shopId"`
+}
+
+type getApiKeysOutput struct {
+	Body []api.ApiKey
+}
+
+type createApiKeyInput struct {
+	OrgID  api.OrgId  `path:"orgId"`
+	ShopID api.ShopId `path:"shopId"`
+	Body   api.CreateApiKeyRequest
+}
+
+type createApiKeyOutput struct {
+	Status int
+	Body   api.CreateApiKeyResponse
+}
+
+type deleteApiKeyInput struct {
+	OrgID  api.OrgId  `path:"orgId"`
+	ShopID api.ShopId `path:"shopId"`
+	KeyID  api.KeyId  `path:"keyId"`
+}
+
+type deleteApiKeyOutput struct {
+	Status int
+}
+
 // GetApiKeyScopes returns available API key scopes.
-func (h *Handler) GetApiKeyScopes(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) GetApiKeyScopes(_ context.Context, _ *struct{}) (*getApiKeyScopesOutput, error) {
 	scopes := deployment.AvailableScopes()
 	result := make([]api.ApiKeyScope, 0, len(scopes))
 	for _, scope := range scopes {
@@ -25,23 +59,22 @@ func (h *Handler) GetApiKeyScopes(w http.ResponseWriter, _ *http.Request) {
 			Description: scope.Description,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getApiKeyScopesOutput{Body: result}, nil
 }
 
 // GetApiKeys lists API keys for a shop.
-func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) GetApiKeys(ctx context.Context, input *getApiKeysInput) (*getApiKeysOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	keys, err := h.deployments.ListAPIKeys(r.Context(), deployment.ShopCommand{
+	keys, err := h.deployments.ListAPIKeys(ctx, deployment.ShopCommand{
 		UserID:         user.ID,
-		OrganizationID: orgID,
-		ShopID:         int32(shopID),
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
 	})
 	if err != nil {
-		h.writeDeploymentError(w, r, "list api keys", err)
-		return
+		return nil, h.writeDeploymentError(ctx, "list api keys", err)
 	}
 
 	result := make([]api.ApiKey, 0, len(keys))
@@ -54,54 +87,50 @@ func (h *Handler) GetApiKeys(w http.ResponseWriter, r *http.Request, orgID api.O
 			LastUsedAt: key.LastUsedAt,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getApiKeysOutput{Body: result}, nil
 }
 
 // CreateApiKey creates a new API key for a shop.
-func (h *Handler) CreateApiKey(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) CreateApiKey(ctx context.Context, input *createApiKeyInput) (*createApiKeyOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	var request api.CreateApiKeyRequest
-	if err := httputil.DecodeBody(r, &request); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	key, err := h.deployments.CreateAPIKey(r.Context(), deployment.CreateAPIKeyCommand{
+	key, err := h.deployments.CreateAPIKey(ctx, deployment.CreateAPIKeyCommand{
 		ShopCommand: deployment.ShopCommand{
 			UserID:         user.ID,
-			OrganizationID: orgID,
-			ShopID:         int32(shopID),
+			OrganizationID: input.OrgID,
+			ShopID:         int32(input.ShopID),
 		},
-		Name:   request.Name,
-		Scopes: request.Scopes,
+		Name:   input.Body.Name,
+		Scopes: input.Body.Scopes,
 	})
 	if err != nil {
-		h.writeDeploymentError(w, r, "create api key", err)
-		return
+		return nil, h.writeDeploymentError(ctx, "create api key", err)
 	}
-	httputil.WriteJSON(w, http.StatusCreated, api.CreateApiKeyResponse{
-		Id:     key.ID,
-		Name:   key.Name,
-		Scopes: key.Scopes,
-		Token:  key.Token,
-	})
+	return &createApiKeyOutput{
+		Status: http.StatusCreated,
+		Body: api.CreateApiKeyResponse{
+			Id:     key.ID,
+			Name:   key.Name,
+			Scopes: key.Scopes,
+			Token:  key.Token,
+		},
+	}, nil
 }
 
 // DeleteApiKey deletes an API key.
-func (h *Handler) DeleteApiKey(w http.ResponseWriter, r *http.Request, orgID api.OrgId, shopID api.ShopId, keyID api.KeyId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteApiKey(ctx context.Context, input *deleteApiKeyInput) (*deleteApiKeyOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	if err := h.deployments.DeleteAPIKey(r.Context(), deployment.ShopCommand{
+	if err := h.deployments.DeleteAPIKey(ctx, deployment.ShopCommand{
 		UserID:         user.ID,
-		OrganizationID: orgID,
-		ShopID:         int32(shopID),
-	}, keyID); err != nil {
-		h.writeDeploymentError(w, r, "delete api key", err)
-		return
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
+	}, input.KeyID); err != nil {
+		return nil, h.writeDeploymentError(ctx, "delete api key", err)
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return &deleteApiKeyOutput{Status: http.StatusNoContent}, nil
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 var ErrExtensionNotFound = errors.New("extension not found")
@@ -37,7 +36,7 @@ func (s *Service) Profile(ctx context.Context, userID string) (api.UserProfile, 
 	return api.UserProfile{
 		Id:          dbUser.ID,
 		DisplayName: dbUser.Name,
-		Email:       openapi_types.Email(dbUser.Email),
+		Email:       dbUser.Email,
 		CreatedAt:   database.Time(dbUser.CreatedAt),
 		Locale:      dbUser.Locale,
 	}, nil

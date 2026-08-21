@@ -297,7 +297,9 @@ async function save() {
   saveSuccess.value = false;
   try {
     const severityOverride =
-      form.severityOverride === "none-override" ? null : (form.severityOverride as SeverityLevel);
+      form.severityOverride === "none-override"
+        ? undefined
+        : (form.severityOverride as SeverityLevel);
 
     const { data, error: apiError } = await adminUpdateAdvisory({
       path: { advisoryId: advisory.value.advisoryId },

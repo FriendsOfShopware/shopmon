@@ -55,7 +55,7 @@ func TestWrongMethodReturnsJSON405(t *testing.T) {
 	assertJSONError(t, resp, http.StatusMethodNotAllowed)
 }
 
-// TestInvalidPathParamReturnsJSON400 verifies that oapi-codegen's parameter
+// TestInvalidPathParamReturnsJSON400 verifies that Huma's parameter
 // binding failures surface as a JSON 400, not plain text. A non-numeric
 // environment id cannot bind to the typed path parameter.
 func TestInvalidPathParamReturnsJSON400(t *testing.T) {

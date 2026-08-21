@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# Fold these in GitHub diffs and exclude them from linguist stats.
+api/internal/database/queries/** linguist-generated=true
+frontend/src/api/generated/** linguist-generated=true

@@ -1,83 +1,101 @@
 package handler
 
 import (
+	"context"
 	"errors"
-	"io"
 	"log/slog"
-	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	environmentread "github.com/friendsofshopware/shopmon/api/internal/readmodel/environment"
 )
 
-// GetOrganizationEnvironments returns all environments in an organization.
-func (h *Handler) GetOrganizationEnvironments(w http.ResponseWriter, r *http.Request, orgID api.OrgId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-	result, err := h.environments.OrganizationEnvironments(r.Context(), user.ID, orgID)
-	if err != nil {
-		h.writeEnvironmentReadError(w, r, "list organization environments", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+type getOrganizationEnvironmentsInput struct {
+	OrgID string `path:"orgId" doc:"Organization ID"`
 }
 
-// GetEnvironment returns full environment details.
-func (h *Handler) GetEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetEnvironmentParams) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type getOrganizationEnvironmentsOutput struct {
+	Body []api.AccountEnvironment
+}
+
+func (h *Handler) GetOrganizationEnvironments(ctx context.Context, input *getOrganizationEnvironmentsInput) (*getOrganizationEnvironmentsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := h.environments.OrganizationEnvironments(ctx, user.ID, input.OrgID)
+	if err != nil {
+		return nil, h.writeEnvironmentReadError(ctx, "list organization environments", err)
+	}
+	return &getOrganizationEnvironmentsOutput{Body: result}, nil
+}
+
+type getEnvironmentInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	Language      string            `query:"language" enum:"en,de" doc:"Language for localized store text (label, description, manual, changelog). Falls back to English."`
+}
+
+type getEnvironmentOutput struct {
+	Body api.EnvironmentDetail
+}
+
+func (h *Handler) GetEnvironment(ctx context.Context, input *getEnvironmentInput) (*getEnvironmentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var langStr *string
-	if params.Language != nil {
-		s := string(*params.Language)
-		langStr = &s
+	environmentID := int32(input.EnvironmentID)
+
+	var language *string
+	if input.Language != "" {
+		language = &input.Language
 	}
-	subscribed, err := h.monitoring.IsEnvironmentSubscribed(r.Context(), user.ID, int32(environmentId))
+
+	subscribed, err := h.monitoring.IsEnvironmentSubscribed(ctx, user.ID, int32(environmentID))
 	if err != nil {
-		slog.Error("failed to check environment subscription", "environmentId", environmentId, "error", err)
+		slog.ErrorContext(ctx, "failed to check environment subscription", "environmentId", environmentID, "error", err)
 		subscribed = false
 	}
-	detail, err := h.environments.Detail(r.Context(), user.ID, int32(environmentId), langStr, subscribed)
+	detail, err := h.environments.Detail(ctx, user.ID, int32(environmentID), language, subscribed)
 	if err != nil {
-		h.writeEnvironmentReadError(w, r, "get environment detail", err)
-		return
+		return nil, h.writeEnvironmentReadError(ctx, "get environment detail", err)
 	}
-	httputil.WriteJSON(w, http.StatusOK, detail)
+	return &getEnvironmentOutput{Body: detail}, nil
 }
 
-func (h *Handler) writeEnvironmentReadError(w http.ResponseWriter, r *http.Request, operation string, err error) {
+func (h *Handler) writeEnvironmentReadError(ctx context.Context, operation string, err error) error {
 	switch {
 	case errors.Is(err, environmentread.ErrNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
+		return huma.Error404NotFound("environment not found")
 	case errors.Is(err, environmentread.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return huma.Error403Forbidden("not a member of this organization")
 	default:
-		httputil.WriteInternalError(w, r, err, "failed to load environment", slog.String("operation", operation))
+		slog.ErrorContext(ctx, "failed to load environment", "error", err, "operation", operation)
+		return huma.Error500InternalServerError("failed to load environment")
 	}
 }
 
-// CreateEnvironment creates a new environment.
-func (h *Handler) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type createEnvironmentInput struct {
+	Body api.CreateEnvironmentRequest
+}
+
+type createEnvironmentOutput struct {
+	Body struct {
+		ID int32 `json:"id"`
+	}
+}
+
+func (h *Handler) CreateEnvironment(ctx context.Context, input *createEnvironmentInput) (*createEnvironmentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req api.CreateEnvironmentRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
+	req := input.Body
 	if req.Name == "" || req.ShopUrl == "" || req.ClientId == "" || req.ClientSecret == "" {
-		httputil.WriteError(w, http.StatusBadRequest, "name, shopUrl, clientId, and clientSecret are required")
-		return
+		return nil, huma.Error400BadRequest("name, shopUrl, clientId, and clientSecret are required")
 	}
 
 	environmentToken := ""
@@ -85,7 +103,7 @@ func (h *Handler) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 		environmentToken = *req.EnvironmentToken
 	}
 
-	environmentID, err := h.monitoring.CreateEnvironment(r.Context(), monitoring.CreateEnvironmentCommand{
+	environmentID, err := h.monitoring.CreateEnvironment(ctx, monitoring.CreateEnvironmentCommand{
 		UserID:           user.ID,
 		Name:             req.Name,
 		URL:              req.ShopUrl,
@@ -96,40 +114,39 @@ func (h *Handler) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusBadRequest, "shop not found")
-		return
+		return nil, huma.Error400BadRequest("shop not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
-		slog.Error("failed to create environment", "error", err)
-		httputil.WriteError(w, http.StatusBadRequest, "Cannot reach shop. Check your credentials and shop URL.")
-		return
+		slog.ErrorContext(ctx, "failed to create environment", "error", err)
+		return nil, huma.Error400BadRequest("Cannot reach shop. Check your credentials and shop URL.")
 	case err != nil:
-		slog.Error("failed to create environment", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to create environment")
-		return
+		slog.ErrorContext(ctx, "failed to create environment", "error", err)
+		return nil, huma.Error500InternalServerError("failed to create environment")
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, map[string]interface{}{"id": environmentID})
+	out := &createEnvironmentOutput{}
+	out.Body.ID = environmentID
+	return out, nil
 }
 
-// UpdateEnvironment updates an existing environment.
-func (h *Handler) UpdateEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type updateEnvironmentInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	Body          api.UpdateEnvironmentRequest
+}
+
+func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmentInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req api.UpdateEnvironmentRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
+	environmentID := int32(input.EnvironmentID)
 
-	err := h.monitoring.UpdateEnvironment(r.Context(), monitoring.UpdateEnvironmentCommand{
+	req := input.Body
+	err = h.monitoring.UpdateEnvironment(ctx, monitoring.UpdateEnvironmentCommand{
 		UserID:        user.ID,
-		EnvironmentID: int32(environmentId),
+		EnvironmentID: int32(environmentID),
 		ShopID:        int32(req.ShopId),
 		Name:          req.Name,
 		URL:           req.ShopUrl,
@@ -139,273 +156,271 @@ func (h *Handler) UpdateEnvironment(w http.ResponseWriter, r *http.Request, envi
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
+		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrShopNotFound):
-		httputil.WriteError(w, http.StatusBadRequest, "target shop not found")
-		return
+		return nil, huma.Error400BadRequest("target shop not found")
 	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
-		httputil.WriteError(w, http.StatusForbidden, "target shop belongs to a different organization")
-		return
+		return nil, huma.Error403Forbidden("target shop belongs to a different organization")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
-		slog.Error("failed to build environment update", "error", err)
-		httputil.WriteError(w, http.StatusBadRequest, "Cannot reach shop with new credentials. Check your credentials and shop URL.")
-		return
+		slog.ErrorContext(ctx, "failed to build environment update", "error", err)
+		return nil, huma.Error400BadRequest("Cannot reach shop with new credentials. Check your credentials and shop URL.")
 	case err != nil:
-		slog.Error("failed to update environment", "environmentID", environmentId, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update environment")
-		return
+		slog.ErrorContext(ctx, "failed to update environment", "environmentID", environmentID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to update environment")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// DeleteEnvironment deletes an environment.
-func (h *Handler) DeleteEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	err := h.monitoring.DeleteEnvironment(r.Context(), user.ID, int32(environmentId))
-	switch {
-	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
-	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
-	case err != nil:
-		slog.Error("failed to delete environment", "environmentID", environmentId, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete environment")
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
+type environmentIDInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
 }
 
-// RefreshEnvironment triggers a re-scrape of the environment.
-func (h *Handler) RefreshEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteEnvironment(ctx context.Context, input *environmentIDInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var body api.RefreshEnvironmentJSONRequestBody
-	if err := httputil.DecodeBody(r, &body); err != nil && err != io.EOF {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
+	environmentID := int32(input.EnvironmentID)
 
-	sitespeed := body.Sitespeed != nil && *body.Sitespeed
-	err := h.monitoring.RefreshEnvironment(r.Context(), user.ID, int32(environmentId), sitespeed)
+	err = h.monitoring.DeleteEnvironment(ctx, user.ID, int32(environmentID))
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
+		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case err != nil:
-		slog.Error("failed to enqueue scrape task", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to enqueue refresh task")
-		return
+		slog.ErrorContext(ctx, "failed to delete environment", "environmentID", environmentID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to delete environment")
 	}
 
-	w.WriteHeader(http.StatusAccepted)
+	return &noContentOutput{}, nil
 }
 
-// ClearEnvironmentCache clears the Shopware cache for an environment.
-func (h *Handler) ClearEnvironmentCache(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type refreshEnvironmentInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	Body          *api.RefreshEnvironmentJSONBody
+}
+
+func (h *Handler) RefreshEnvironment(ctx context.Context, input *refreshEnvironmentInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := h.monitoring.ClearEnvironmentCache(r.Context(), user.ID, int32(environmentId))
+	environmentID := int32(input.EnvironmentID)
+
+	sitespeed := false
+	if input.Body != nil && input.Body.Sitespeed != nil {
+		sitespeed = *input.Body.Sitespeed
+	}
+	err = h.monitoring.RefreshEnvironment(ctx, user.ID, int32(environmentID), sitespeed)
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
+		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
+	case err != nil:
+		slog.ErrorContext(ctx, "failed to enqueue scrape task", "error", err)
+		return nil, huma.Error500InternalServerError("failed to enqueue refresh task")
+	}
+
+	return &noContentOutput{}, nil
+}
+
+func (h *Handler) ClearEnvironmentCache(ctx context.Context, input *environmentIDInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	environmentID := int32(input.EnvironmentID)
+
+	err = h.monitoring.ClearEnvironmentCache(ctx, user.ID, int32(environmentID))
+	switch {
+	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
+		return nil, huma.Error404NotFound("environment not found")
+	case errors.Is(err, monitoring.ErrNotAuthorized):
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrCredentialDecryption):
-		slog.Error("failed to decrypt client secret", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to clear cache")
-		return
+		slog.ErrorContext(ctx, "failed to decrypt client secret", "error", err)
+		return nil, huma.Error500InternalServerError("failed to clear cache")
 	case errors.Is(err, monitoring.ErrRemoteOperation):
-		slog.Error("failed to clear environment cache", "error", err)
-		httputil.WriteError(w, http.StatusBadGateway, "failed to clear cache on environment")
-		return
+		slog.ErrorContext(ctx, "failed to clear environment cache", "error", err)
+		return nil, huma.Error502BadGateway("failed to clear cache on environment")
 	case err != nil:
-		slog.Error("failed to clear environment cache", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to clear cache")
-		return
+		slog.ErrorContext(ctx, "failed to clear environment cache", "error", err)
+		return nil, huma.Error500InternalServerError("failed to clear cache")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// RescheduleTask reschedules a scheduled task on the environment.
-func (h *Handler) RescheduleTask(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, taskId api.TaskId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type rescheduleTaskInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	TaskID        string            `path:"taskId" doc:"Scheduled task ID"`
+}
+
+func (h *Handler) RescheduleTask(ctx context.Context, input *rescheduleTaskInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := h.monitoring.RescheduleTask(r.Context(), user.ID, int32(environmentId), string(taskId))
+	environmentID := int32(input.EnvironmentID)
+
+	err = h.monitoring.RescheduleTask(ctx, user.ID, int32(environmentID), input.TaskID)
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
+		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case errors.Is(err, monitoring.ErrCredentialDecryption):
-		slog.Error("failed to decrypt client secret", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to reschedule task")
-		return
+		slog.ErrorContext(ctx, "failed to decrypt client secret", "error", err)
+		return nil, huma.Error500InternalServerError("failed to reschedule task")
 	case errors.Is(err, monitoring.ErrRemoteOperation):
-		slog.Error("failed to reschedule task", "error", err)
-		httputil.WriteError(w, http.StatusBadGateway, "failed to reschedule task on environment")
-		return
+		slog.ErrorContext(ctx, "failed to reschedule task", "error", err)
+		return nil, huma.Error502BadGateway("failed to reschedule task on environment")
 	case err != nil:
-		slog.Error("failed to reschedule task", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to reschedule task")
-		return
+		slog.ErrorContext(ctx, "failed to reschedule task", "error", err)
+		return nil, huma.Error500InternalServerError("failed to reschedule task")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// SubscribeToEnvironment subscribes the user to environment notifications.
-func (h *Handler) SubscribeToEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) SubscribeToEnvironment(ctx context.Context, input *environmentIDInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := h.monitoring.SubscribeToEnvironment(r.Context(), user.ID, int32(environmentId), user.Notifications)
-	if h.writeEnvironmentSubscriptionError(w, r, "subscribe", err) {
-		return
+	environmentID := int32(input.EnvironmentID)
+
+	err = h.monitoring.SubscribeToEnvironment(ctx, user.ID, int32(environmentID), user.Notifications)
+	if err := h.writeEnvironmentSubscriptionError(ctx, "subscribe", err); err != nil {
+		return nil, err
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// UnsubscribeFromEnvironment unsubscribes the user from environment notifications.
-func (h *Handler) UnsubscribeFromEnvironment(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) UnsubscribeFromEnvironment(ctx context.Context, input *environmentIDInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := h.monitoring.UnsubscribeFromEnvironment(r.Context(), user.ID, int32(environmentId), user.Notifications)
-	if h.writeEnvironmentSubscriptionError(w, r, "unsubscribe", err) {
-		return
+	environmentID := int32(input.EnvironmentID)
+
+	err = h.monitoring.UnsubscribeFromEnvironment(ctx, user.ID, int32(environmentID), user.Notifications)
+	if err := h.writeEnvironmentSubscriptionError(ctx, "unsubscribe", err); err != nil {
+		return nil, err
 	}
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-func (h *Handler) writeEnvironmentSubscriptionError(w http.ResponseWriter, r *http.Request, operation string, err error) bool {
+func (h *Handler) writeEnvironmentSubscriptionError(ctx context.Context, operation string, err error) error {
 	switch {
 	case err == nil:
-		return false
+		return nil
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
+		return huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
+		return huma.Error403Forbidden("not a member of this organization")
 	default:
-		slog.ErrorContext(r.Context(), "environment subscription failed", "operation", operation, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update environment subscription")
+		slog.ErrorContext(ctx, "environment subscription failed", "operation", operation, "error", err)
+		return huma.Error500InternalServerError("failed to update environment subscription")
 	}
-	return true
 }
 
-// UpdateSitespeedSettings updates sitespeed settings for an environment.
-func (h *Handler) UpdateSitespeedSettings(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type updateSitespeedSettingsInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	Body          api.SitespeedSettingsRequest
+}
+
+func (h *Handler) UpdateSitespeedSettings(ctx context.Context, input *updateSitespeedSettingsInput) (*noContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req api.SitespeedSettingsRequest
-	if err := httputil.DecodeBody(r, &req); err != nil {
-		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
+	environmentID := int32(input.EnvironmentID)
 
+	req := input.Body
 	var urls []string
 	if req.Urls != nil {
 		urls = append(urls, (*req.Urls)...)
 	}
-	err := h.monitoring.UpdateSitespeedSettings(r.Context(), user.ID, int32(environmentId), req.Enabled, urls)
+	err = h.monitoring.UpdateSitespeedSettings(ctx, user.ID, int32(environmentID), req.Enabled, urls)
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
-		httputil.WriteError(w, http.StatusNotFound, "environment not found")
-		return
+		return nil, huma.Error404NotFound("environment not found")
 	case errors.Is(err, monitoring.ErrNotAuthorized):
-		httputil.WriteError(w, http.StatusForbidden, "not a member of this organization")
-		return
+		return nil, huma.Error403Forbidden("not a member of this organization")
 	case err != nil:
-		slog.Error("failed to update sitespeed settings", "environmentID", environmentId, "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to update sitespeed settings")
-		return
+		slog.ErrorContext(ctx, "failed to update sitespeed settings", "environmentID", environmentID, "error", err)
+		return nil, huma.Error500InternalServerError("failed to update sitespeed settings")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &noContentOutput{}, nil
 }
 
-// GetEnvironmentChangelogs returns a page of recorded changelog entries for an environment.
-func (h *Handler) GetEnvironmentChangelogs(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId, params api.GetEnvironmentChangelogsParams) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
-	}
-
-	// The generated binder only parses integers, it does not enforce the bounds
-	// declared in the spec. Reject out-of-range values here so they cannot reach
-	// PostgreSQL or wrap during the int32 conversion.
-	if params.Limit != nil && (*params.Limit < 1 || *params.Limit > 100) {
-		httputil.WriteError(w, http.StatusBadRequest, "limit must be between 1 and 100")
-		return
-	}
-	if params.Offset != nil && *params.Offset < 0 {
-		httputil.WriteError(w, http.StatusBadRequest, "offset must be greater than or equal to 0")
-		return
-	}
-
-	limit := int32(10)
-	offset := int32(0)
-	if params.Limit != nil {
-		limit = int32(*params.Limit)
-	}
-	if params.Offset != nil {
-		offset = int32(*params.Offset)
-	}
-
-	result, err := h.environments.Changelogs(r.Context(), user.ID, int32(environmentId), limit, offset)
-	if err != nil {
-		h.writeEnvironmentReadError(w, r, "list environment changelogs", err)
-		return
-	}
-	httputil.WriteJSON(w, http.StatusOK, result)
+type getEnvironmentChangelogsInput struct {
+	EnvironmentID api.EnvironmentId `path:"environmentId" doc:"Environment ID"`
+	Limit         int               `query:"limit" default:"10"`
+	Offset        int               `query:"offset" default:"0"`
 }
 
-// GetEnvironmentStatusEvents returns the status change history for an environment.
-func (h *Handler) GetEnvironmentStatusEvents(w http.ResponseWriter, r *http.Request, environmentId api.EnvironmentId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type getEnvironmentChangelogsOutput struct {
+	Body api.EnvironmentChangelogsResponse
+}
+
+func (h *Handler) GetEnvironmentChangelogs(ctx context.Context, input *getEnvironmentChangelogsInput) (*getEnvironmentChangelogsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	events, err := h.environments.StatusEvents(r.Context(), user.ID, int32(environmentId))
-	if err != nil {
-		h.writeEnvironmentReadError(w, r, "list environment status events", err)
-		return
+	environmentID := int32(input.EnvironmentID)
+
+	// Query binding only parses integers; it does not enforce the spec bounds.
+	// Reject out-of-range values here so they cannot reach PostgreSQL or wrap
+	// during the int32 conversion. Omitted limit defaults to 10 via the input tag.
+	if input.Limit < 1 || input.Limit > 100 {
+		return nil, huma.Error400BadRequest("limit must be between 1 and 100")
 	}
-	httputil.WriteJSON(w, http.StatusOK, events)
+	if input.Offset < 0 {
+		return nil, huma.Error400BadRequest("offset must be greater than or equal to 0")
+	}
+
+	limit := int32(input.Limit)
+	offset := int32(input.Offset)
+
+	result, err := h.environments.Changelogs(ctx, user.ID, int32(environmentID), limit, offset)
+	if err != nil {
+		return nil, h.writeEnvironmentReadError(ctx, "list environment changelogs", err)
+	}
+	return &getEnvironmentChangelogsOutput{Body: result}, nil
+}
+
+type getEnvironmentStatusEventsOutput struct {
+	Body []api.StatusEvent
+}
+
+func (h *Handler) GetEnvironmentStatusEvents(ctx context.Context, input *environmentIDInput) (*getEnvironmentStatusEventsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	environmentID := int32(input.EnvironmentID)
+
+	events, err := h.environments.StatusEvents(ctx, user.ID, int32(environmentID))
+	if err != nil {
+		return nil, h.writeEnvironmentReadError(ctx, "list environment status events", err)
+	}
+	return &getEnvironmentStatusEventsOutput{Body: events}, nil
 }

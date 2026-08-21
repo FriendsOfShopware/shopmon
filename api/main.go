@@ -17,6 +17,7 @@ func main() {
 	root.AddCommand(workerCmd())
 	root.AddCommand(migrateCmd())
 	root.AddCommand(fixturesCmd())
+	root.AddCommand(openapiCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

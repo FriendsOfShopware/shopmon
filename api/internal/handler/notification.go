@@ -1,25 +1,36 @@
 package handler
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/api"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 )
 
-// GetNotifications returns all notifications for the current user.
-func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+type getNotificationsOutput struct {
+	Body []api.Notification
+}
+
+type deleteNotificationInput struct {
+	ID int `path:"id"`
+}
+
+type notificationNoContentOutput struct {
+	Status int
+}
+
+func (h *Handler) GetNotifications(ctx context.Context, _ *struct{}) (*getNotificationsOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	rows, err := h.notifications.List(r.Context(), user.ID)
+	rows, err := h.notifications.List(ctx, user.ID)
 	if err != nil {
-		slog.Error("failed to list notifications", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to get notifications")
-		return
+		slog.ErrorContext(ctx, "failed to list notifications", "error", err)
+		return nil, huma.Error500InternalServerError("failed to get notifications")
 	}
 
 	result := make([]api.Notification, 0, len(rows))
@@ -51,53 +62,47 @@ func (h *Handler) GetNotifications(w http.ResponseWriter, r *http.Request) {
 		result = append(result, n)
 	}
 
-	httputil.WriteJSON(w, http.StatusOK, result)
+	return &getNotificationsOutput{Body: result}, nil
 }
 
-// DeleteAllNotifications deletes all notifications for the current user.
-func (h *Handler) DeleteAllNotifications(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteAllNotifications(ctx context.Context, _ *struct{}) (*notificationNoContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.notifications.DeleteAll(r.Context(), user.ID); err != nil {
-		slog.Error("failed to delete all notifications", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete notifications")
-		return
+	if err := h.notifications.DeleteAll(ctx, user.ID); err != nil {
+		slog.ErrorContext(ctx, "failed to delete all notifications", "error", err)
+		return nil, huma.Error500InternalServerError("failed to delete notifications")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &notificationNoContentOutput{Status: http.StatusNoContent}, nil
 }
 
-// DeleteNotification deletes a single notification.
-func (h *Handler) DeleteNotification(w http.ResponseWriter, r *http.Request, id api.NotificationId) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) DeleteNotification(ctx context.Context, input *deleteNotificationInput) (*notificationNoContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.notifications.Delete(r.Context(), user.ID, int32(id)); err != nil {
-		slog.Error("failed to delete notification", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete notification")
-		return
+	if err := h.notifications.Delete(ctx, user.ID, int32(input.ID)); err != nil {
+		slog.ErrorContext(ctx, "failed to delete notification", "error", err)
+		return nil, huma.Error500InternalServerError("failed to delete notification")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &notificationNoContentOutput{Status: http.StatusNoContent}, nil
 }
 
-// MarkNotificationsRead marks all notifications as read for the current user.
-func (h *Handler) MarkNotificationsRead(w http.ResponseWriter, r *http.Request) {
-	user := h.requireUser(w, r)
-	if user == nil {
-		return
+func (h *Handler) MarkNotificationsRead(ctx context.Context, _ *struct{}) (*notificationNoContentOutput, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := h.notifications.MarkAllRead(r.Context(), user.ID); err != nil {
-		slog.Error("failed to mark notifications read", "error", err)
-		httputil.WriteError(w, http.StatusInternalServerError, "failed to mark notifications read")
-		return
+	if err := h.notifications.MarkAllRead(ctx, user.ID); err != nil {
+		slog.ErrorContext(ctx, "failed to mark notifications read", "error", err)
+		return nil, huma.Error500InternalServerError("failed to mark notifications read")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &notificationNoContentOutput{Status: http.StatusNoContent}, nil
 }

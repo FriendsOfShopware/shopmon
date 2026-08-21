@@ -3,7 +3,6 @@ go = "1.26"
 node = "26"
 sqlc = "1.31"
 golangci-lint = "2"
-"go:github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen" = "2.7.0"
 "go:github.com/air-verse/air" = "latest"
 
 [env]
@@ -92,11 +91,10 @@ run = [
 ]
 
 [tasks.generate]
-description = "Generate code (sqlc + oapi-codegen + frontend types)"
+description = "Generate code (sqlc + gitignored OpenAPI dump + frontend types)"
 run = [
   "cd api && sqlc generate",
-  "cd api && oapi-codegen --config oapi-codegen-api.yaml openapi/spec.yaml",
-  "cd api && oapi-codegen --config oapi-codegen-auth.yaml openapi/spec.yaml",
+  "cd api && mkdir -p openapi && go run . openapi > openapi/spec.yaml",
   "cd frontend && npm run generate:api",
 ]
 

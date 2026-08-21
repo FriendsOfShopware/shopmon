@@ -5,6 +5,7 @@
 /api/shopmon*.db*
 /api/files
 /api/tmp
+/api/openapi/
 /api/api
 /compose.override.yml
 /compose.override.yaml

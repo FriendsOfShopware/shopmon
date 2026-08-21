@@ -109,7 +109,7 @@ func TestGithubCallback_InvalidState(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// TestGithubCallback_MissingCode ensures the generated handler rejects a callback
+// TestGithubCallback_MissingCode ensures the handler rejects a callback
 // without the required "code" query parameter.
 func TestGithubCallback_MissingCode(t *testing.T) {
 	env := testutil.Setup(t, withGithub)
@@ -121,7 +121,7 @@ func TestGithubCallback_MissingCode(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// TestGithubCallback_MissingState ensures the generated handler rejects a
+// TestGithubCallback_MissingState ensures the handler rejects a
 // callback without the required "state" query parameter.
 func TestGithubCallback_MissingState(t *testing.T) {
 	env := testutil.Setup(t, withGithub)

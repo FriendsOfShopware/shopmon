@@ -40,8 +40,8 @@ must not reach back into a composition root or HTTP package.
 - Adapter subpackages such as `postgres`, `queue`, `shopware`, `s3output`,
   `oidc`, `credentialmail`, and `redisstate` implement capability-owned ports.
 - `internal/readmodel` owns query-side projections for endpoints that assemble
-  data from several tables. Read models may depend on sqlc and generated
-  OpenAPI response types; they must not contain mutations or authorization
+  data from several tables. Read models may depend on sqlc and HTTP DTO types
+  from `internal/api`; they must not contain mutations or authorization
   policy.
 - Capability-owned worker packages such as `monitoring/scrape`,
   `monitoring/sitespeed`, `catalog/sync`, and `catalog/changelog` implement job
@@ -49,9 +49,14 @@ must not reach back into a composition root or HTTP package.
   dispatch-only bus, worker handler registration, and recurring scheduling
   rather than business workflows. Only the worker registers executable
   handlers; the API and fixture processes merely dispatch messages.
-- `internal/api`, `internal/authapi`, and `internal/database/queries` are
-  generated code. Change their OpenAPI or SQL sources and regenerate them; do
-  not edit generated files.
+- `internal/api` and `internal/authapi` hold hand-written HTTP DTO types used
+  by handlers and read models. Operations are registered with Huma (`huma.Register`)
+  from `internal/handler` and `internal/auth` onto chi via `humachi`.
+- OpenAPI is generated from registered Huma routes (`shopmon openapi`).
+  `mise run generate` dumps it to gitignored `openapi/spec.yaml` only as input
+  for frontend type generation. Do not commit or edit that dump.
+- `internal/database/queries` is generated code. Change the SQL sources and
+  regenerate them; do not edit generated files.
 
 ## Boundary rules
 
@@ -76,13 +81,12 @@ boundaries.
 1. Chi and OpenTelemetry middleware receive the request.
 2. Optional authentication validates a bearer token and attaches an
    `access.Principal`.
-3. The generated OpenAPI router calls an auth or API handler.
+3. Huma (via the Chi adapter) matches the operation and calls the handler.
 4. The handler checks the principal and delegates to a capability service or
    read model.
 5. The service applies authorization and business rules, then calls its ports.
 6. Adapters perform database, queue, remote API, mail, or storage work.
-7. The handler maps the result with `httputil.WriteJSON` or
-   `httputil.WriteError`.
+7. The handler returns a Huma output or a `{"message":"..."}` status error.
 
 ## Job lifecycle
 
@@ -97,13 +101,17 @@ boundaries.
 
 For a new API mutation:
 
-1. Update `openapi/spec.yaml` and regenerate the server interfaces.
+1. Register a Huma operation with the existing `operationId` and implement the
+   handler in `internal/handler` or `internal/auth`. OpenAPI is generated from
+   the registered routes; do not maintain a spec file.
 2. Add the command and operation to the owning capability service.
 3. Add or extend a capability-owned port and implement it in an adapter
    subpackage if persistence or an external system is needed.
 4. Wire the adapter and service in `server.go`.
 5. Keep the handler limited to request mapping, authorization context, service
    invocation, and response mapping.
+6. Run `mise run generate` to dump OpenAPI locally and regenerate frontend
+   API types (`frontend/src/api/generated/`).
 
 For a new query spanning several aggregates, add it to an appropriate read
 model. For a new background workflow, define a typed job contract and keep its

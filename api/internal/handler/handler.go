@@ -2,10 +2,9 @@ package handler
 
 import (
 	"context"
-	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/friendsofshopware/shopmon/api/internal/access"
-	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/catalog"
 	"github.com/friendsofshopware/shopmon/api/internal/deployment"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
@@ -24,9 +23,6 @@ import (
 type AdvisorySyncDispatcher interface {
 	EnqueueComposerAdvisorySync(ctx context.Context) error
 }
-
-// Ensure Handler implements ServerInterface at compile time.
-var _ api.ServerInterface = (*Handler)(nil)
 
 type DatabaseHealth interface {
 	Ping(ctx context.Context) error
@@ -98,22 +94,21 @@ func New(dependencies Dependencies) *Handler {
 	}
 }
 
-// requireUser extracts the authenticated principal populated by auth
-// middleware. It writes the transport response because authentication itself
-// is an HTTP boundary concern.
-func (h *Handler) requireUser(w http.ResponseWriter, r *http.Request) *access.User {
-	user := access.UserFromContext(r.Context())
+func (h *Handler) requireUser(ctx context.Context) (*access.User, error) {
+	user := access.UserFromContext(ctx)
 	if user == nil {
-		httputil.WriteError(w, http.StatusUnauthorized, "unauthorized")
-		return nil
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	return user
+	return user, nil
 }
 
-func (h *Handler) getActiveOrganizationID(r *http.Request) *string {
-	session := access.SessionFromContext(r.Context())
-	if session == nil {
-		return nil
+func (h *Handler) requireAdmin(ctx context.Context) (*access.User, error) {
+	user, err := h.requireUser(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return session.ActiveOrganizationID
+	if user.Role != "admin" {
+		return nil, huma.Error403Forbidden(httputil.MsgAdminRequired)
+	}
+	return user, nil
 }

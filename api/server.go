@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	_ "embed"
 	"log/slog"
 	"net/http"
 	"os/signal"
@@ -14,7 +13,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/audit"
 	auditpostgres "github.com/friendsofshopware/shopmon/api/internal/audit/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/auth"
-	"github.com/friendsofshopware/shopmon/api/internal/authapi"
 	"github.com/friendsofshopware/shopmon/api/internal/catalog"
 	catalogpostgres "github.com/friendsofshopware/shopmon/api/internal/catalog/postgres"
 	catalogshopware "github.com/friendsofshopware/shopmon/api/internal/catalog/shopware"
@@ -66,9 +64,6 @@ import (
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
-
-//go:embed openapi/spec.yaml
-var openapiSpec []byte
 
 func serverCmd() *cobra.Command {
 	return &cobra.Command{
@@ -281,56 +276,17 @@ func runServer(cmd *cobra.Command, args []string) error {
 	r.Route("/api", func(apiRouter chi.Router) {
 		apiRouter.Use(middleware.OptionalAuthMiddleware(sessionAuthenticator))
 
-		// OpenAPI spec & docs
-		apiRouter.Get("/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/x-yaml")
-			_, _ = w.Write(openapiSpec)
-		})
-		apiRouter.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html")
-			_, _ = w.Write([]byte(`<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shopmon API Docs</title>
-</head>
-<body style="margin:0;padding:0;height:100vh">
-  <elements-api
-    apiDescriptionUrl="/api/openapi.yaml"
-    router="hash"
-    layout="sidebar"
-    tryItCredentialsPolicy="include"
-  />
-  <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
-</body>
-</html>`))
-		})
-
-		// Register the generated auth + API handlers with consistent JSON error
-		// handling (param-binding 400s, 404/405 for unmatched routes). The wiring
-		// lives in internal/apirouter so the production server and the test
-		// harness share one source of truth.
+		// Register Huma operations with consistent JSON error handling. The
+		// wiring lives in internal/apirouter so the production server and the
+		// test harness share one source of truth.
 		//
 		// RequireAuth is intentionally NOT applied to the API routes: this
 		// sub-router also serves intentionally public endpoints
 		// (/api/openapi.yaml, /api/docs, the auth routes and health), so a
 		// blanket guard would break them. OptionalAuthMiddleware above populates
-		// the user context, and each handler enforces auth via h.requireUser
-		// (see internal/handler).
-		//
-		// To enforce authentication declaratively for an authenticated-only set
-		// of endpoints, register them on a dedicated sub-router and pass
-		// middleware.RequireAuth through the generated Middlewares option. Note:
-		// oapi-codegen's ChiServerOptions.Middlewares applies the same chain to
-		// *every* route in that generated handler set (no per-route support), so
-		// mixing public and protected endpoints requires splitting into separate
-		// generated handlers / sub-routers rather than guarding individual ops.
+		// the user context, and each handler enforces auth via h.requireUser.
 		apirouter.Mount(apiRouter, h, authHandler, apirouter.Options{
-			AuthMiddlewares: []authapi.MiddlewareFunc{
-				auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, cfg.AuthRateLimitMax)),
-			},
+			AuthRateLimit: auth.RateLimitMiddleware(auth.NewRateLimiter(ctx, 60*time.Second, cfg.AuthRateLimitMax)),
 		})
 	})
 
