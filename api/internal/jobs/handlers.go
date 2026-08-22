@@ -3,7 +3,9 @@ package jobs
 import (
 	"context"
 	"errors"
+	"log/slog"
 
+	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	goqueue "github.com/shyim/go-queue"
 )
 
@@ -84,7 +86,7 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message StoreExtensionSync) error {
 		// Names are high-cardinality; keep them off the Consumer entry span.
-		return handlers.StoreExtensionSynchronizer.Sync(ctx, message.Names, message.ShopwareVersion)
+		return handleStoreExtensionSync(ctx, handlers.StoreExtensionSynchronizer, message)
 	})
 	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message SitespeedScrape) error {
 		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
@@ -111,4 +113,16 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 		return handlers.SecurityPluginSynchronizer.Sync(ctx)
 	})
 	return nil
+}
+
+// handleStoreExtensionSync runs catalog sync and acks Store API rate-limit
+// aborts so the worker does not nack/retry into a still-limited API. Incomplete
+// names stay eligible for the next scheduled scrape dispatch.
+func handleStoreExtensionSync(ctx context.Context, syncer StoreExtensionSynchronizer, message StoreExtensionSync) error {
+	err := syncer.Sync(ctx, message.Names, message.ShopwareVersion)
+	if shopwareaccount.IsRateLimited(err) {
+		slog.Warn("store extension sync rate limited, acknowledging job for later scheduled sync", "error", err)
+		return nil
+	}
+	return err
 }

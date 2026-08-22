@@ -145,6 +145,9 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	// recordOutcome stays false for the "nothing to sync" early return so
 	// no-op freshness checks do not inflate shopmon.store_sync.outcome ok.
 	recordOutcome := true
+	// rateLimited is tracked separately from err: a 429 abort is a successful
+	// partial sync (job acked) but must still increment the rate_limited outcome.
+	rateLimited := false
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
@@ -155,12 +158,11 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 			return
 		}
 		outcome := metrics.OutcomeOK
-		if err != nil {
-			if shopwareaccount.IsRateLimited(err) {
-				outcome = metrics.OutcomeRateLimited
-			} else {
-				outcome = metrics.OutcomeError
-			}
+		switch {
+		case rateLimited:
+			outcome = metrics.OutcomeRateLimited
+		case err != nil:
+			outcome = metrics.OutcomeError
 		}
 		metrics.RecordStoreSyncOutcome(ctx, outcome)
 	}()
@@ -200,8 +202,10 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	//
 	// Versions are probed sequentially (and locales within a version serially)
 	// so a rate-limit from the store is not amplified by fan-out. On 429 after
-	// client retries, remaining versions are aborted and the job returns an
-	// error for a later retry instead of burning through the rest of the list.
+	// client retries, remaining versions are aborted. Partial progress is
+	// persisted without advancing sync bookkeeping so the next scheduled scrape
+	// can finish the work. The job returns success so the queue does not
+	// nack/retry into a still-limited Store API.
 	//
 	// compat[swv][name] is the compatible latest version the store reports for
 	// that Shopware version; best[name] is the plugin data used to build the
@@ -218,7 +222,7 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 			if shopwareaccount.IsRateLimited(err) {
 				// Stop probing further versions; continuing would only deepen the
 				// 429 burst. Partial progress (if any) is persisted below without
-				// advancing sync bookkeeping so the queue / next scrape retries.
+				// advancing sync bookkeeping so the next scheduled scrape retries.
 				slog.Warn("store rate limited, aborting remaining version probes",
 					"shopwareVersion", swv, "error", err)
 				rateLimitErr = err
@@ -248,10 +252,12 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	}
 
 	if !anyProbeSucceeded {
-		// Bookkeeping is deliberately not updated so the queue retry (or the next
-		// scrape dispatch) tries again.
+		// Bookkeeping is deliberately not updated so the next scheduled scrape
+		// dispatch tries again. A rate-limit abort is not a job failure: nacking
+		// would immediately re-hit a still-limited Store API and burn retries.
 		if rateLimitErr != nil {
-			return fmt.Errorf("store rate limited; all probes failed for %d version(s): %w", len(swvs), rateLimitErr)
+			rateLimited = true
+			return nil
 		}
 		return fmt.Errorf("all store probes failed for %d version(s)", len(swvs))
 	}
@@ -271,11 +277,13 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 
 	if rateLimitErr != nil {
 		// Persist what we have but do not mark names fresh — missing compatibility
-		// rows and stale bookkeeping will re-dispatch, and the returned error lets
-		// the queue retry with its own backoff.
+		// rows and stale bookkeeping keep the name-set eligible for the next
+		// scheduled sync. Returning nil acks the job instead of burning the
+		// queue retry budget against a still-limited API.
 		slog.Warn("synced store extensions partially before rate limit",
 			"requested", len(names), "fetched", len(needed), "found", synced)
-		return fmt.Errorf("store rate limited after probing %d/%d version(s): %w", len(compat), len(swvs), rateLimitErr)
+		rateLimited = true
+		return nil
 	}
 
 	if err := h.queries.UpsertStoreExtensionSyncStates(ctx, needed); err != nil {
