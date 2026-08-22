@@ -15,7 +15,6 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -134,7 +133,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 			log.Warn("authentication failed", "error", err)
 			h.notifyAuthError(ctx, env, err)
 			if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-				LastScrapedError: ptr.Of(fmt.Sprintf("Authentication failed: %v", err)),
+				LastScrapedError: new(fmt.Sprintf("Authentication failed: %v", err)),
 				ID:               env.ID,
 			}); err != nil {
 				slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
@@ -171,15 +170,15 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	}()
 	go func() {
 		defer wg.Done()
-		fr.pluginData, fr.pluginErr = client.Post(ctx, "/search/plugin", map[string]interface{}{"limit": 500})
+		fr.pluginData, fr.pluginErr = client.Post(ctx, "/search/plugin", map[string]any{"limit": 500})
 	}()
 	go func() {
 		defer wg.Done()
-		fr.appData, fr.appErr = client.Post(ctx, "/search/app", map[string]interface{}{"limit": 500})
+		fr.appData, fr.appErr = client.Post(ctx, "/search/app", map[string]any{"limit": 500})
 	}()
 	go func() {
 		defer wg.Done()
-		fr.taskData, fr.taskErr = client.Post(ctx, "/search/scheduled-task", map[string]interface{}{"limit": 500})
+		fr.taskData, fr.taskErr = client.Post(ctx, "/search/scheduled-task", map[string]any{"limit": 500})
 	}()
 	go func() {
 		defer wg.Done()
@@ -197,7 +196,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		errMsg := fmt.Sprintf("failed to fetch environment config: %v", fr.configErr)
 		h.notifyDataFetchError(ctx, env, errMsg)
 		if err := h.queries.UpdateEnvironmentScrapeError(ctx, queries.UpdateEnvironmentScrapeErrorParams{
-			LastScrapedError: ptr.Of(errMsg),
+			LastScrapedError: new(errMsg),
 			ID:               env.ID,
 		}); err != nil {
 			slog.Error("failed to update environment scrape error", "environmentId", env.ID, "error", err)
@@ -258,7 +257,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 					Active:      a.Active,
 					Version:     a.Version,
 					Installed:   true,
-					InstalledAt: ptr.Of(a.CreatedAt),
+					InstalledAt: new(a.CreatedAt),
 				})
 			}
 		}
@@ -807,7 +806,7 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 
 	var lastChangelogJSON []byte
 	if hasShopwareUpdate {
-		lastChangelogJSON, err = json.Marshal(map[string]interface{}{
+		lastChangelogJSON, err = json.Marshal(map[string]any{
 			"date": time.Now().Format(time.RFC3339),
 			"from": env.ShopwareVersion,
 			"to":   res.shopwareVersion,

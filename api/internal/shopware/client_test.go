@@ -84,7 +84,7 @@ func TestGetTokenCaches(t *testing.T) {
 	defer ts.Close()
 	c := newTestClient(ts.URL)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, err := c.Get(context.Background(), "/_info/config")
 		require.NoError(t, err)
 	}
@@ -144,7 +144,7 @@ func TestGetTokenSingleflight(t *testing.T) {
 	var wg sync.WaitGroup
 	errs := make([]error, n)
 	wg.Add(n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		go func(i int) {
 			defer wg.Done()
 			_, errs[i] = c.Get(context.Background(), "/_info/config")

@@ -106,7 +106,7 @@ func TestGetEnvironment_NotMember(t *testing.T) {
 // first, so that the newest entry is the last one inserted.
 func seedChangelogs(t *testing.T, env *testutil.TestEnv, environmentID, count int) {
 	t.Helper()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		extensions := fmt.Sprintf(
 			`[{"name":"SwagPayPal","label":"PayPal","state":"updated","oldVersion":"1.%d.0","newVersion":"1.%d.0","active":true}]`,
 			i, i+1,
@@ -191,7 +191,7 @@ func TestGetEnvironmentChangelogs_IdenticalDatesPaginateWithoutOverlap(t *testin
 	shopID := env.SeedShop(t, "org-1", "Test Shop")
 	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
 
-	for i := 0; i < 15; i++ {
+	for range 15 {
 		_, err := env.Pool.Exec(t.Context(),
 			`INSERT INTO environment_changelog (environment_id, extensions, date)
 			 VALUES ($1, '[]'::jsonb, '2026-01-01 12:00:00')`, environmentID)

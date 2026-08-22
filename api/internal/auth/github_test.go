@@ -142,10 +142,10 @@ type mockGithub struct {
 	// response omits access_token (simulating an exchange failure).
 	accessToken string
 	// user is the JSON object returned by GET /user.
-	user map[string]interface{}
+	user map[string]any
 	// emails is the JSON array returned by GET /user/emails (the fallback used
 	// when the user has no public email).
-	emails []map[string]interface{}
+	emails []map[string]any
 }
 
 func newMockGithub(t *testing.T) *mockGithub {
@@ -228,7 +228,7 @@ func githubCallback(t *testing.T, serverURL, code, state string) *http.Response 
 func TestGithubCallback_HappyPath(t *testing.T) {
 	mock := newMockGithub(t)
 	defer mock.server.Close()
-	mock.user = map[string]interface{}{
+	mock.user = map[string]any{
 		"id":         12345,
 		"login":      "octocat",
 		"name":       "The Octocat",
@@ -275,14 +275,14 @@ func TestGithubCallback_HappyPath(t *testing.T) {
 func TestGithubCallback_EmailFallback(t *testing.T) {
 	mock := newMockGithub(t)
 	defer mock.server.Close()
-	mock.user = map[string]interface{}{
+	mock.user = map[string]any{
 		"id":         67890,
 		"login":      "hubot",
 		"name":       "Hubot",
 		"email":      "", // no public email
 		"avatar_url": "",
 	}
-	mock.emails = []map[string]interface{}{
+	mock.emails = []map[string]any{
 		{"email": "noreply@github.com", "primary": false, "verified": true},
 		{"email": "hubot@github.com", "primary": true, "verified": true},
 	}
@@ -329,7 +329,7 @@ func TestGithubCallback_NoAccessToken(t *testing.T) {
 func TestGithubCallback_LinksExistingUser(t *testing.T) {
 	mock := newMockGithub(t)
 	defer mock.server.Close()
-	mock.user = map[string]interface{}{
+	mock.user = map[string]any{
 		"id":         24680,
 		"login":      "existing",
 		"name":       "Existing User",

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -379,12 +380,7 @@ func (s *Service) authorizeShop(ctx context.Context, cmd ShopCommand) error {
 }
 
 func containsScope(scopes []string, expected string) bool {
-	for _, scope := range scopes {
-		if scope == expected {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(scopes, expected)
 }
 
 // HashAPIKeyToken returns the SHA-256 hex digest stored for a plaintext API key.

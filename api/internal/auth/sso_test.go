@@ -41,9 +41,9 @@ type mockOIDC struct {
 }
 
 // jwkFromPublicKey encodes an RSA public key as a JWK for the JWKS endpoint.
-func jwkFromPublicKey(pub *rsa.PublicKey, kid string) map[string]interface{} {
+func jwkFromPublicKey(pub *rsa.PublicKey, kid string) map[string]any {
 	eBytes := big.NewInt(int64(pub.E)).Bytes()
-	return map[string]interface{}{
+	return map[string]any{
 		"kty": "RSA",
 		"use": "sig",
 		"alg": "RS256",
@@ -65,7 +65,7 @@ func mockOIDCProvider(t *testing.T) *mockOIDC {
 		switch r.URL.Path {
 		case "/.well-known/openid-configuration":
 			baseURL := "http://" + r.Host
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"issuer":                 baseURL,
 				"authorization_endpoint": baseURL + "/authorize",
 				"token_endpoint":         baseURL + "/token",
@@ -75,8 +75,8 @@ func mockOIDCProvider(t *testing.T) *mockOIDC {
 			})
 
 		case "/jwks":
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"keys": []interface{}{jwkFromPublicKey(&privateKey.PublicKey, "test-key")},
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"keys": []any{jwkFromPublicKey(&privateKey.PublicKey, "test-key")},
 			})
 
 		case "/token":
@@ -121,7 +121,7 @@ func mockOIDCProvider(t *testing.T) *mockOIDC {
 			if uiSub == "" {
 				uiSub = "sso-user-123"
 			}
-			ui := map[string]interface{}{
+			ui := map[string]any{
 				"sub":   uiSub,
 				"email": "ssouser@testcorp.com",
 				"name":  "SSO User",
@@ -183,7 +183,7 @@ func createOrgWithSSO(t *testing.T, env *testutil.TestEnv, idpURL string) (orgID
 	resp := authPost(t, env.Server.URL, "/api/auth/organizations", ownerCookie, map[string]string{
 		"name": "Test Corp",
 	})
-	var orgResult map[string]interface{}
+	var orgResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&orgResult))
 	_ = resp.Body.Close()
 	orgID = orgResult["id"].(string)
@@ -289,9 +289,9 @@ func TestSSOCallback(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var sessionResult map[string]interface{}
+	var sessionResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sessionResult))
-	user := sessionResult["user"].(map[string]interface{})
+	user := sessionResult["user"].(map[string]any)
 	assert.Equal(t, "ssouser@testcorp.com", user["email"])
 	assert.Equal(t, "SSO User", user["name"])
 }
@@ -379,10 +379,10 @@ func TestSSOCallback_ExistingUserLinksAccount(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+ssoToken)
 	resp, _ = http.DefaultClient.Do(req)
 
-	var sessionResult map[string]interface{}
+	var sessionResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sessionResult))
 	_ = resp.Body.Close()
-	user := sessionResult["user"].(map[string]interface{})
+	user := sessionResult["user"].(map[string]any)
 	assert.Equal(t, "ssouser@testcorp.com", user["email"])
 
 	var userCount int
@@ -624,7 +624,7 @@ func TestSSOCallback_RejectsInsecureStoredEndpoint(t *testing.T) {
 	resp := authPost(t, env.Server.URL, "/api/auth/organizations", ownerCookie, map[string]string{
 		"name": "Test Corp",
 	})
-	var orgResult map[string]interface{}
+	var orgResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&orgResult))
 	_ = resp.Body.Close()
 	orgID := orgResult["id"].(string)

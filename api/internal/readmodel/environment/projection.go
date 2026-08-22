@@ -218,7 +218,7 @@ func mapEnvironmentChecks(rows []queries.EnvironmentCheck) []api.EnvironmentChec
 		}
 
 		if len(row.Params) > 0 {
-			var params map[string]interface{}
+			var params map[string]any
 			if err := json.Unmarshal(row.Params, &params); err == nil && len(params) > 0 {
 				check.Params = &params
 			}

@@ -22,10 +22,10 @@ func seedAdvisory(t *testing.T, q *queries.Queries, id string, packages []string
 	require.NoError(t, q.UpsertComposerAdvisory(ctx, queries.UpsertComposerAdvisoryParams{
 		AdvisoryID: id,
 		Title:      "Seeded advisory " + id,
-		Link:       ptrStr("https://example.com/" + id),
-		Cve:        ptrStr(id),
-		GhsaID:     ptrStr("GHSA-" + id),
-		Severity:   ptrStr("medium"),
+		Link:       new("https://example.com/" + id),
+		Cve:        new(id),
+		GhsaID:     new("GHSA-" + id),
+		Severity:   new("medium"),
 		Sources:    []byte(`[{"name":"GitHub","remoteId":"GHSA-` + id + `"}]`),
 		ReportedAt: pgtype.Timestamp{Time: time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC), Valid: true},
 	}))
@@ -44,18 +44,16 @@ func seedAdvisory(t *testing.T, q *queries.Queries, id string, packages []string
 			NotesInternal:      notesInternal,
 			AffectedComponents: []string{},
 			Tags:               []string{"seed"},
-			EnrichedBy:         ptrStr("test"),
+			EnrichedBy:         new("test"),
 		})
 		require.NoError(t, err)
 	}
 }
 
-func ptrStr(s string) *string { return &s }
-
 func TestListAdvisoriesHidesInvisibleAndInternalNotes(t *testing.T) {
 	env := testutil.Setup(t)
-	seedAdvisory(t, env.Queries, "CVE-VISIBLE", []string{"shopware/core", "shopware/platform"}, true, ptrStr("secret-internal"))
-	seedAdvisory(t, env.Queries, "CVE-HIDDEN", []string{"shopware/core"}, false, ptrStr("hidden-internal"))
+	seedAdvisory(t, env.Queries, "CVE-VISIBLE", []string{"shopware/core", "shopware/platform"}, true, new("secret-internal"))
+	seedAdvisory(t, env.Queries, "CVE-HIDDEN", []string{"shopware/core"}, false, new("hidden-internal"))
 
 	token := env.SeedUser(t, "user-1", "Regular User", "user@example.com", "user")
 

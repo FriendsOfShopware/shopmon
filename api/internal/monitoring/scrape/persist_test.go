@@ -9,7 +9,6 @@ import (
 	catalogsync "github.com/friendsofshopware/shopmon/api/internal/catalog/sync"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -104,17 +103,17 @@ func baseScrapeResult() scrapeResult {
 		extensions: []extensionEntry{
 			{
 				Name: "FroshTools", Label: "Frosh Tools", Active: true, Version: "1.0.0",
-				LatestVersion: ptr.Of("1.2.0"), Installed: true, InstalledAt: ptr.Of("2024-01-01T00:00:00Z"),
+				LatestVersion: new("1.2.0"), Installed: true, InstalledAt: new("2024-01-01T00:00:00Z"),
 				isStore: true,
 			},
 			{
 				Name: "CustomPlugin", Label: "Custom Plugin", Active: true, Version: "2.0.0",
-				Installed: true, InstalledAt: ptr.Of("2024-02-01T00:00:00Z"),
+				Installed: true, InstalledAt: new("2024-02-01T00:00:00Z"),
 			},
 		},
 		scheduledTasks: []shopwareScheduledTask{
 			{ID: "task-1", Name: "log_entry.cleanup", Status: "scheduled", RunInterval: 86400,
-				LastExecutionTime: ptr.Of("2024-01-01T00:00:00Z"), NextExecutionTime: ptr.Of("2999-01-01T00:00:00Z")},
+				LastExecutionTime: new("2024-01-01T00:00:00Z"), NextExecutionTime: new("2999-01-01T00:00:00Z")},
 		},
 		queueEntries: []shopwareQueueEntry{
 			{Name: "async", Size: json.Number("42")},
@@ -124,7 +123,7 @@ func baseScrapeResult() scrapeResult {
 			{ID: "check.a", Level: checker.StatusGreen, MessageKey: "check.a", Source: "env"},
 			{ID: "check.b", Level: checker.StatusYellow, MessageKey: "check.b", Source: "worker", Link: "https://docs.example.com"},
 		},
-		favicon: ptr.Of("https://shop.example.com/favicon.ico"),
+		favicon: new("https://shop.example.com/favicon.ico"),
 	}
 }
 
@@ -341,13 +340,13 @@ func TestResolveExtensionsFromCatalog(t *testing.T) {
 	require.NoError(t, err, "seed extra catalog rows")
 
 	extensions := []extensionEntry{
-		{Name: "FroshTools", Version: "1.0.0", LatestVersion: ptr.Of("1.1.0")}, // compat row 1.2.0 must win
-		{Name: "AcmeNull", Version: "2.0.0", LatestVersion: ptr.Of("2.5.0")},   // NULL compat row keeps shop value
-		{Name: "AcmePending", Version: "3.0.0"},                                // no compat row: prior link value
-		{Name: "CustomPlugin", Version: "2.0.0"},                               // not in catalog
+		{Name: "FroshTools", Version: "1.0.0", LatestVersion: new("1.1.0")}, // compat row 1.2.0 must win
+		{Name: "AcmeNull", Version: "2.0.0", LatestVersion: new("2.5.0")},   // NULL compat row keeps shop value
+		{Name: "AcmePending", Version: "3.0.0"},                             // no compat row: prior link value
+		{Name: "CustomPlugin", Version: "2.0.0"},                            // not in catalog
 	}
 	oldExtensions := []existingExtension{
-		{Name: "AcmePending", Version: "3.0.0", IsStore: true, LatestVersion: ptr.Of("3.9.0")},
+		{Name: "AcmePending", Version: "3.0.0", IsStore: true, LatestVersion: new("3.9.0")},
 	}
 
 	catalog, err := h.resolveExtensionsFromCatalog(ctx, extensions, oldExtensions, "6.5.0.0")
@@ -367,8 +366,8 @@ func TestResolveExtensionsFromCatalog(t *testing.T) {
 		assert.Equalf(t, wantStore, ext.isStore, "%s: isStore", ext.Name)
 		assert.Equalf(t, wantLatest, ext.LatestVersion, "%s: latest version", ext.Name)
 	}
-	assertExt(0, true, ptr.Of("1.2.0"))
-	assertExt(1, true, ptr.Of("2.5.0"))
-	assertExt(2, true, ptr.Of("3.9.0"))
+	assertExt(0, true, new("1.2.0"))
+	assertExt(1, true, new("2.5.0"))
+	assertExt(2, true, new("3.9.0"))
 	assertExt(3, false, nil)
 }

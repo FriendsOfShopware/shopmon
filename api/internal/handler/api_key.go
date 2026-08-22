@@ -97,13 +97,11 @@ func (h *Handler) CreateApiKey(ctx context.Context, input *createApiKeyInput) (*
 		return nil, err
 	}
 	key, err := h.deployments.CreateAPIKey(ctx, deployment.CreateAPIKeyCommand{
-		ShopCommand: deployment.ShopCommand{
-			UserID:         user.ID,
-			OrganizationID: input.OrgID,
-			ShopID:         int32(input.ShopID),
-		},
-		Name:   input.Body.Name,
-		Scopes: input.Body.Scopes,
+		UserID:         user.ID,
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
+		Name:           input.Body.Name,
+		Scopes:         input.Body.Scopes,
 	})
 	if err != nil {
 		return nil, h.writeDeploymentError(ctx, "create api key", err)

@@ -137,7 +137,7 @@ func TestSyncCollapsesPackagesUnderCVE(t *testing.T) {
 		NotesPublic:        &notes,
 		AffectedComponents: []string{},
 		Tags:               []string{"ssrf"},
-		EnrichedBy:         ptr("admin"),
+		EnrichedBy:         new("admin"),
 	})
 	require.NoError(t, err)
 	require.NoError(t, svc.Sync(ctx))
@@ -148,8 +148,6 @@ func TestSyncCollapsesPackagesUnderCVE(t *testing.T) {
 	assert.Equal(t, notes, *row.NotesPublic)
 	assert.Equal(t, []string{"ssrf"}, row.Tags)
 }
-
-func ptr(s string) *string { return &s }
 
 // A Packagist outage must not hold back alerts for matches that scrapes have
 // already stored. The scrape path records match rows but never notifies —

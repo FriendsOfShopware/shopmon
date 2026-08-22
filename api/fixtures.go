@@ -275,74 +275,74 @@ func (s *seeder) seedNotifications(org orgFixture, prodEnvID, stagingEnvID int32
 		// Owner: open production degradation with check reasons
 		{
 			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.change-status.%d", prodEnvID),
-			level: notify.LevelWarning,
+			level:    notify.LevelWarning,
 			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
 			params: map[string]any{"name": prodName, "from": "green", "to": "yellow", "reasons": prodDegradeReasons},
-			link: environmentLink(prodEnvID), read: false,
+			link:   environmentLink(prodEnvID), read: false,
 		},
 		// Owner: open staging auth failure
 		{
 			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.update-auth-error.%d", stagingEnvID),
-			level: notify.LevelError,
+			level:    notify.LevelError,
 			titleKey: "notification.authError.title", messageKey: "notification.authError.message",
 			params: map[string]any{"name": stagingName, "error": "invalid_client: Client authentication failed"},
-			link: environmentLink(stagingEnvID), read: false,
+			link:   environmentLink(stagingEnvID), read: false,
 		},
 		// Owner: read recovery on production (earlier alert, already dismissed)
 		{
 			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.recover-status.%d", prodEnvID),
-			level: notify.LevelInfo,
+			level:    notify.LevelInfo,
 			titleKey: "notification.statusRecovered.title", messageKey: "notification.statusRecovered.message",
 			params: map[string]any{"name": prodName, "from": "red", "to": "green", "reasons": prodRecoverReasons},
-			link: environmentLink(prodEnvID), read: true,
+			link:   environmentLink(prodEnvID), read: true,
 		},
 		// Admin: same production degradation (multi-subscriber)
 		{
 			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.change-status.%d", prodEnvID),
-			level: notify.LevelWarning,
+			level:    notify.LevelWarning,
 			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
 			params: map[string]any{"name": prodName, "from": "green", "to": "yellow", "reasons": prodDegradeReasons},
-			link: environmentLink(prodEnvID), read: false,
+			link:   environmentLink(prodEnvID), read: false,
 		},
 		// Admin: open staging data-fetch failure
 		{
 			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.not.updated_%d", stagingEnvID),
-			level: notify.LevelError,
+			level:    notify.LevelError,
 			titleKey: "notification.dataFetchError.title", messageKey: "notification.dataFetchError.message",
 			params: map[string]any{"name": stagingName},
-			link: environmentLink(stagingEnvID), read: false,
+			link:   environmentLink(stagingEnvID), read: false,
 		},
 		// Admin: open staging degradation
 		{
 			userID: org.user2ID, dedupKey: fmt.Sprintf("environment.change-status.%d", stagingEnvID),
-			level: notify.LevelWarning,
+			level:    notify.LevelWarning,
 			titleKey: "notification.statusDegraded.title", messageKey: "notification.statusDegraded.message",
 			params: map[string]any{"name": stagingName, "from": "green", "to": "yellow", "reasons": stagingDegradeReasons},
-			link: environmentLink(stagingEnvID), read: false,
+			link:   environmentLink(stagingEnvID), read: false,
 		},
 		// Member: open staging data-fetch failure
 		{
 			userID: org.user3ID, dedupKey: fmt.Sprintf("environment.not.updated_%d", stagingEnvID),
-			level: notify.LevelError,
+			level:    notify.LevelError,
 			titleKey: "notification.dataFetchError.title", messageKey: "notification.dataFetchError.message",
 			params: map[string]any{"name": stagingName},
-			link: environmentLink(stagingEnvID), read: false,
+			link:   environmentLink(stagingEnvID), read: false,
 		},
 		// Member: read recovery on staging
 		{
 			userID: org.user3ID, dedupKey: fmt.Sprintf("environment.recover-status.%d", stagingEnvID),
-			level: notify.LevelInfo,
+			level:    notify.LevelInfo,
 			titleKey: "notification.statusRecovered.title", messageKey: "notification.statusRecovered.message",
 			params: map[string]any{"name": stagingName, "from": "yellow", "to": "green"},
-			link: environmentLink(stagingEnvID), read: true,
+			link:   environmentLink(stagingEnvID), read: true,
 		},
 		// Owner: read auth error on production (credentials fixed)
 		{
 			userID: org.user1ID, dedupKey: fmt.Sprintf("environment.update-auth-error.%d", prodEnvID),
-			level: notify.LevelError,
+			level:    notify.LevelError,
 			titleKey: "notification.authError.title", messageKey: "notification.authError.message",
 			params: map[string]any{"name": prodName, "error": "401 Unauthorized"},
-			link: environmentLink(prodEnvID), read: true,
+			link:   environmentLink(prodEnvID), read: true,
 		},
 	}
 
@@ -508,7 +508,7 @@ func (s *seeder) seedDeployments(environmentID int32) []deploymentRef {
 	}
 
 	var deployments []deploymentRef
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		hoursAgo := (7 * 24 * i) / 8
 		startDate := s.now.Add(-time.Duration(hoursAgo) * time.Hour)
 		execTime := rand.Float32()*120 + 5
@@ -615,7 +615,7 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 		// ── Older history: the extension versions chain forward into the entries
 		// below, so PayPal walks 4.3.0 → 6.0.0 across the whole timeline.
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "installed", "newVersion": "4.3.0", "active": true},
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "installed", "newVersion": "3.0.0", "active": true},
 				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "installed", "newVersion": "2.0.0", "active": true},
@@ -623,7 +623,7 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 			date: s.now.Add(-34 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.3.0", "newVersion": "4.4.0", "active": true},
 			}),
 			oldShopwareVersion: &v640,
@@ -631,46 +631,46 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 			date:               s.now.Add(-30 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "deactivated", "active": false},
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "updated", "oldVersion": "3.0.0", "newVersion": "3.1.0", "active": true},
 			}),
 			date: s.now.Add(-27 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagLanguagePack", "label": "Language Pack", "state": "removed", "oldVersion": "2.0.0", "active": false},
 			}),
 			date: s.now.Add(-24 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.4.0", "newVersion": "4.5.0", "active": true},
 				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "installed", "newVersion": "1.2.0", "active": true},
 			}),
 			date: s.now.Add(-21 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "updated", "oldVersion": "1.2.0", "newVersion": "1.3.0", "active": true},
 			}),
 			date: s.now.Add(-18 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "updated", "oldVersion": "3.1.0", "newVersion": "4.0.0", "active": true},
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.5.0", "newVersion": "4.6.0", "active": true},
 			}),
 			date: s.now.Add(-15 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "deactivated", "active": false},
 			}),
 			date: s.now.Add(-12 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "4.6.0", "newVersion": "5.0.0", "active": true},
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "deactivated", "active": false},
 			}),
@@ -679,14 +679,14 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 			date:               s.now.Add(-9 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagB2bPlatform", "label": "B2B Platform", "state": "activated", "active": true},
 			}),
 			date: s.now.Add(-8 * 24 * time.Hour),
 		},
 		// ── Recent history (the original fixtures).
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.0.0", "newVersion": "5.1.0", "active": true},
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "activated", "active": true},
 			}),
@@ -695,14 +695,14 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 			date:               s.now.Add(-6 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.1.0", "newVersion": "5.2.0", "active": true},
 				{"name": "FroshTools", "label": "FroshTools", "state": "installed", "newVersion": "1.0.0", "active": true},
 			}),
 			date: s.now.Add(-4 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "SwagCmsExtensions", "label": "CMS Extensions", "state": "deactivated", "active": false},
 			}),
 			oldShopwareVersion: &v651,
@@ -710,7 +710,7 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 			date:               s.now.Add(-2 * 24 * time.Hour),
 		},
 		{
-			extensions: mustJSON([]map[string]interface{}{
+			extensions: mustJSON([]map[string]any{
 				{"name": "FroshTools", "label": "FroshTools", "state": "updated", "oldVersion": "1.0.0", "newVersion": "1.1.0", "active": true},
 				{"name": "SwagPayPal", "label": "PayPal", "state": "updated", "oldVersion": "5.2.0", "newVersion": "6.0.0", "active": true},
 			}),
@@ -735,7 +735,7 @@ func (s *seeder) seedChangelogs(environmentID int32) {
 	slog.Info("created changelog entries", "environmentId", environmentID, "count", count)
 }
 
-func mustJSON(v interface{}) json.RawMessage {
+func mustJSON(v any) json.RawMessage {
 	b, err := json.Marshal(v)
 	if err != nil {
 		panic(err)

@@ -13,7 +13,7 @@ const sqlOperationUnknown = "UNKNOWN"
 // collapses Datadog resources to `query --`. Prefer the sqlc query name when
 // present; otherwise fall back to the first SQL keyword.
 func SQLSpanName(stmt string) string {
-	for _, line := range strings.Split(stmt, "\n") {
+	for line := range strings.SplitSeq(stmt, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -51,7 +51,7 @@ func sqlcQueryName(line string) (string, bool) {
 }
 
 func firstSQLKeyword(line string) string {
-	for _, field := range strings.Fields(line) {
+	for field := range strings.FieldsSeq(line) {
 		return strings.ToUpper(field)
 	}
 	return sqlOperationUnknown

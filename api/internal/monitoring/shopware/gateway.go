@@ -60,7 +60,7 @@ func (g *Gateway) RescheduleTask(ctx context.Context, credentials monitoring.Sto
 	if err != nil {
 		return err
 	}
-	body := map[string]interface{}{
+	body := map[string]any{
 		"status":            "scheduled",
 		"nextExecutionTime": nextExecution.Format("2006-01-02T15:04:05+00:00"),
 	}

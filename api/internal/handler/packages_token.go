@@ -127,12 +127,10 @@ func (h *Handler) CreatePackagesToken(ctx context.Context, input *createPackages
 	}
 
 	if err := h.packages.Create(ctx, packagesmirror.CreateCommand{
-		ShopCommand: packagesmirror.ShopCommand{
-			UserID:         user.ID,
-			OrganizationID: input.OrgID,
-			ShopID:         int32(input.ShopID),
-		},
-		Token: input.Body.Token,
+		UserID:         user.ID,
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
+		Token:          input.Body.Token,
 	}); err != nil {
 		return nil, h.writePackagesError(ctx, "create packages token", err)
 	}
@@ -148,12 +146,10 @@ func (h *Handler) DeletePackagesToken(ctx context.Context, input *deletePackages
 	}
 
 	if err := h.packages.Delete(ctx, packagesmirror.TokenCommand{
-		ShopCommand: packagesmirror.ShopCommand{
-			UserID:         user.ID,
-			OrganizationID: input.OrgID,
-			ShopID:         int32(input.ShopID),
-		},
-		TokenID: int(input.TokenID),
+		UserID:         user.ID,
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
+		TokenID:        int(input.TokenID),
 	}); err != nil {
 		return nil, h.writePackagesError(ctx, "delete packages token", err)
 	}
@@ -169,12 +165,10 @@ func (h *Handler) SyncPackagesToken(ctx context.Context, input *syncPackagesToke
 	}
 
 	if err := h.packages.Sync(ctx, packagesmirror.TokenCommand{
-		ShopCommand: packagesmirror.ShopCommand{
-			UserID:         user.ID,
-			OrganizationID: input.OrgID,
-			ShopID:         int32(input.ShopID),
-		},
-		TokenID: int(input.TokenID),
+		UserID:         user.ID,
+		OrganizationID: input.OrgID,
+		ShopID:         int32(input.ShopID),
+		TokenID:        int(input.TokenID),
 	}); err != nil {
 		return nil, h.writePackagesError(ctx, "sync packages token", err)
 	}
@@ -197,8 +191,7 @@ func (h *Handler) writePackagesError(ctx context.Context, operation string, err 
 	case errors.Is(err, packagesmirror.ErrTokenRequired):
 		return huma.Error400BadRequest("token is required")
 	default:
-		var remoteError *packagesmirror.RemoteError
-		if errors.As(err, &remoteError) {
+		if remoteError, ok := errors.AsType[*packagesmirror.RemoteError](err); ok {
 			return newPackagesRemoteError(remoteError)
 		}
 		slog.ErrorContext(ctx, "packages operation failed", "operation", operation, "error", err)

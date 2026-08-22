@@ -273,8 +273,7 @@ func SanitizeError(s string) string {
 // classifying it as an absent capability would hide it behind a Debug log while
 // package-level advisory coverage stays silently disabled.
 func isMissingRoute(err error) bool {
-	var apiErr *shopware.ApiError
-	if errors.As(err, &apiErr) {
+	if apiErr, ok := errors.AsType[*shopware.ApiError](err); ok {
 		return apiErr.StatusCode == http.StatusNotFound
 	}
 	return false

@@ -13,7 +13,6 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/httputil"
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 )
 
 // existingExtension is the unified prior state of an extension (store-known or
@@ -91,7 +90,7 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 				Name:       old.Name,
 				Label:      old.Label,
 				State:      "removed",
-				OldVersion: ptr.Of(old.Version),
+				OldVersion: new(old.Version),
 				Active:     old.Active,
 			})
 			continue
@@ -113,8 +112,8 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 			Name:       newExt.Name,
 			Label:      newExt.Label,
 			State:      state,
-			OldVersion: ptr.Of(old.Version),
-			NewVersion: ptr.Of(newExt.Version),
+			OldVersion: new(old.Version),
+			NewVersion: new(newExt.Version),
 			Active:     newExt.Active,
 		})
 	}
@@ -128,7 +127,7 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 			Name:       ne.Name,
 			Label:      ne.Label,
 			State:      "installed",
-			NewVersion: ptr.Of(ne.Version),
+			NewVersion: new(ne.Version),
 			Active:     ne.Active,
 		})
 	}

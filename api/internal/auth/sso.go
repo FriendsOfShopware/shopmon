@@ -18,7 +18,7 @@ import (
 
 // isTrue interprets an OIDC claim value (which may be a bool or a string) as a
 // boolean. OIDC providers sometimes encode email_verified as the string "true".
-func isTrue(v interface{}) bool {
+func isTrue(v any) bool {
 	switch val := v.(type) {
 	case bool:
 		return val
@@ -290,11 +290,11 @@ func (h *AuthHandler) SsoCallback(ctx context.Context, input *ssoCallbackInput) 
 }
 
 type userInfoResponse struct {
-	Sub           string      `json:"sub"`
-	Email         string      `json:"email"`
-	EmailVerified interface{} `json:"email_verified"`
-	Name          string      `json:"name"`
-	Picture       string      `json:"picture"`
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified any    `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
 }
 
 func (h *AuthHandler) fetchUserInfo(ctx context.Context, accessToken, issuer string) (*userInfoResponse, error) {

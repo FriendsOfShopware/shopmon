@@ -35,8 +35,8 @@ type AuthHandler struct {
 }
 
 type StateStore interface {
-	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
-	Get(ctx context.Context, key string, destination interface{}) error
+	Set(ctx context.Context, key string, value any, ttl time.Duration) error
+	Get(ctx context.Context, key string, destination any) error
 }
 
 type HandlerConfig struct {

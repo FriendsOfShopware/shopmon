@@ -11,11 +11,11 @@ import (
 // ssoClaims holds the OIDC ID token claims we read beyond the standard ones
 // (sub/iss/aud/exp/iat) that go-oidc validates and exposes on *oidc.IDToken.
 type ssoClaims struct {
-	Email         string      `json:"email"`
-	EmailVerified interface{} `json:"email_verified"`
-	Name          string      `json:"name"`
-	Picture       string      `json:"picture"`
-	Nonce         string      `json:"nonce"`
+	Email         string `json:"email"`
+	EmailVerified any    `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	Nonce         string `json:"nonce"`
 }
 
 // verifyIDToken verifies an OIDC ID token's RS256 signature against the
