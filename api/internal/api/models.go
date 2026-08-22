@@ -1056,7 +1056,7 @@ type EnvironmentCheck struct {
 	MessageKey *string `json:"messageKey,omitempty"`
 
 	// Params Structured params for interpolating messageKey.
-	Params *map[string]interface{} `json:"params,omitempty"`
+	Params *map[string]any `json:"params,omitempty"`
 }
 
 // EnvironmentDetail defines model for EnvironmentDetail.
@@ -1193,9 +1193,9 @@ type Notification struct {
 	MessageKey *string `json:"messageKey,omitempty"`
 
 	// Params Structured params for interpolating titleKey/messageKey.
-	Params *map[string]interface{} `json:"params,omitempty"`
-	Read   bool                    `json:"read"`
-	Title  string                  `json:"title"`
+	Params *map[string]any `json:"params,omitempty"`
+	Read   bool            `json:"read"`
+	Title  string          `json:"title"`
 
 	// TitleKey Translation key for the title; render with params client-side. Falls back to title.
 	TitleKey *string `json:"titleKey,omitempty"`
@@ -1354,10 +1354,10 @@ type StatusEvent struct {
 
 // StatusReason defines model for StatusReason.
 type StatusReason struct {
-	Level      string                  `json:"level"`
-	MessageKey string                  `json:"messageKey"`
-	Params     *map[string]interface{} `json:"params,omitempty"`
-	Source     *string                 `json:"source,omitempty"`
+	Level      string          `json:"level"`
+	MessageKey string          `json:"messageKey"`
+	Params     *map[string]any `json:"params,omitempty"`
+	Source     *string         `json:"source,omitempty"`
 }
 
 // SubscribedEnvironment defines model for SubscribedEnvironment.

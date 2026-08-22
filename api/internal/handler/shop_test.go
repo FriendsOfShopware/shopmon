@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
-
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -64,7 +62,7 @@ func TestCreateShop(t *testing.T) {
 
 	body, _ := json.Marshal(api.CreateShopRequest{
 		Name:            "New Shop",
-		Description:     ptr.Of("A test shop"),
+		Description:     new("A test shop"),
 		EnvironmentName: "Production",
 		EnvironmentUrl:  mockShopware.URL,
 		ClientId:        "test-client-id",
@@ -81,7 +79,7 @@ func TestCreateShop(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	assert.NotNil(t, result["id"])
 }

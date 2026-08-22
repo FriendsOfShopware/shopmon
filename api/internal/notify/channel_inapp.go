@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 )
@@ -23,9 +24,7 @@ func (c *inAppChannel) Send(ctx context.Context, r Recipient, ev Event, msg Rend
 	stored := ev.Params
 	if len(ev.Reasons) > 0 {
 		stored = make(map[string]any, len(ev.Params)+1)
-		for k, v := range ev.Params {
-			stored[k] = v
-		}
+		maps.Copy(stored, ev.Params)
 		stored["reasons"] = ev.Reasons
 	}
 

@@ -56,8 +56,8 @@ type Repository interface {
 }
 
 type ChallengeStore interface {
-	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
-	Get(ctx context.Context, key string, destination interface{}) error
+	Set(ctx context.Context, key string, value any, ttl time.Duration) error
+	Get(ctx context.Context, key string, destination any) error
 }
 
 type SessionIssuer interface {
@@ -296,7 +296,7 @@ func storedToCredential(stored StoredPasskey) (webauthn.Credential, error) {
 	}
 	var transports []protocol.AuthenticatorTransport
 	if stored.Transports != nil && *stored.Transports != "" {
-		for _, transport := range strings.Split(*stored.Transports, ",") {
+		for transport := range strings.SplitSeq(*stored.Transports, ",") {
 			transports = append(transports, protocol.AuthenticatorTransport(strings.TrimSpace(transport)))
 		}
 	}

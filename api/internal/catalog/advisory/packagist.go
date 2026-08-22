@@ -127,10 +127,7 @@ func (c *packagistClient) advisoriesForPackages(ctx context.Context, packages []
 
 	result := repository.Advisories{}
 	for i := 0; i < len(packages); i += packageBatchSize {
-		end := i + packageBatchSize
-		if end > len(packages) {
-			end = len(packages)
-		}
+		end := min(i+packageBatchSize, len(packages))
 		batch := packages[i:end]
 
 		part, err := c.repo.GetSecurityAdvisories(ctx, batch)

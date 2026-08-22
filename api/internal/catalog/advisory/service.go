@@ -113,7 +113,7 @@ func (s *Service) Sync(ctx context.Context) error {
 			LastUpdatedSince:      state.LastUpdatedSince,
 			LastFullSyncAt:        state.LastFullSyncAt,
 			LastIncrementalSyncAt: state.LastIncrementalSyncAt,
-			LastError:             ptrString(err.Error()),
+			LastError:             new(err.Error()),
 		})
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -252,15 +252,15 @@ func (s *Service) upsertOne(ctx context.Context, adv repository.SecurityAdvisory
 	}
 	var link *string
 	if strings.TrimSpace(adv.Link) != "" {
-		link = ptrString(strings.TrimSpace(adv.Link))
+		link = new(strings.TrimSpace(adv.Link))
 	}
 	var severity *string
 	if strings.TrimSpace(adv.Severity) != "" {
-		severity = ptrString(strings.ToLower(strings.TrimSpace(adv.Severity)))
+		severity = new(strings.ToLower(strings.TrimSpace(adv.Severity)))
 	}
 	var repo *string
 	if strings.TrimSpace(adv.ComposerRepository) != "" {
-		repo = ptrString(strings.TrimSpace(adv.ComposerRepository))
+		repo = new(strings.TrimSpace(adv.ComposerRepository))
 	}
 
 	affected := adv.AffectedVersions
@@ -448,7 +448,7 @@ func (s *Service) applyDetailsByCVE(ctx context.Context, cveID string, details *
 		CvssVector:         details.CVSSVector,
 		Cwes:               cwesJSON,
 		ExternalReferences: refsJSON,
-		DetailsSource:      ptrString(source),
+		DetailsSource:      new(source),
 	}); err != nil {
 		return fmt.Errorf("update details for %s: %w", cveID, err)
 	}
@@ -470,7 +470,7 @@ func (s *Service) applyDetailsByGHSA(ctx context.Context, ghsaID string, details
 			CvssVector:         details.CVSSVector,
 			Cwes:               cwesJSON,
 			ExternalReferences: refsJSON,
-			DetailsSource:      ptrString(source),
+			DetailsSource:      new(source),
 		}); err != nil {
 			return fmt.Errorf("update details for %s: %w", ghsaID, err)
 		}
@@ -557,8 +557,4 @@ func mergePackageNames(base, extra []string) []string {
 	add(base)
 	add(extra)
 	return out
-}
-
-func ptrString(s string) *string {
-	return &s
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/packagesmirror"
@@ -84,10 +85,8 @@ func (c *Client) request(ctx context.Context, method, endpoint string, body io.R
 	if len(responseBody) > maxResponseSize {
 		return nil, fmt.Errorf("%w: response exceeds %d bytes", packagesmirror.ErrRemote, maxResponseSize)
 	}
-	for _, successCode := range successCodes {
-		if resp.StatusCode == successCode {
-			return responseBody, nil
-		}
+	if slices.Contains(successCodes, resp.StatusCode) {
+		return responseBody, nil
 	}
 	return nil, &packagesmirror.RemoteError{StatusCode: resp.StatusCode, Body: responseBody}
 }

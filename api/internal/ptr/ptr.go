@@ -4,8 +4,10 @@ package ptr
 import "time"
 
 // Of returns a pointer to v.
+//
+//go:fix inline
 func Of[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 // Deref returns the value pointed to by p, or the zero value of T when p is nil.

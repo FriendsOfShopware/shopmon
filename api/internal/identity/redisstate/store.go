@@ -24,7 +24,7 @@ func New(redisURL, prefix string) (*Store, error) {
 	return &Store{client: redis.NewClient(options), prefix: prefix}, nil
 }
 
-func (s *Store) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (s *Store) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("marshal identity state: %w", err)
@@ -35,7 +35,7 @@ func (s *Store) Set(ctx context.Context, key string, value interface{}, ttl time
 	return nil
 }
 
-func (s *Store) Get(ctx context.Context, key string, destination interface{}) error {
+func (s *Store) Get(ctx context.Context, key string, destination any) error {
 	data, err := s.client.GetDel(ctx, s.prefix+key).Bytes()
 	if err != nil {
 		return fmt.Errorf("consume identity state: %w", err)

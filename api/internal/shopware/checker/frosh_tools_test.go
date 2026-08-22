@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,7 +95,7 @@ func TestMapFroshChecks(t *testing.T) {
 		},
 		{
 			name:            "current and recommended carried as params",
-			check:           froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: ptr.Of("7.4"), Recommended: ptr.Of("8.2")},
+			check:           froshToolsCheck{Snippet: "phpOutdated", State: "STATE_WARNING", Current: new("7.4"), Recommended: new("8.2")},
 			wantEmitted:     true,
 			wantID:          "frosh.phpOutdated",
 			wantLevel:       StatusYellow,

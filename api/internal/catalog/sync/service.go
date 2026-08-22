@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"slices"
 	"sort"
 
 	"github.com/friendsofshopware/shopmon/api/internal/catalog/storemodel"
@@ -320,13 +321,7 @@ func (h *Service) shopwareVersionsToProbe(ctx context.Context, shopwareVersion s
 	if err != nil {
 		return nil, fmt.Errorf("get distinct shopware versions: %w", err)
 	}
-	found := false
-	for _, v := range swvs {
-		if v == shopwareVersion {
-			found = true
-			break
-		}
-	}
+	found := slices.Contains(swvs, shopwareVersion)
 	if !found && shopwareVersion != "" {
 		swvs = append(swvs, shopwareVersion)
 	}

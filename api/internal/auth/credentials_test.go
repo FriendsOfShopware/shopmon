@@ -26,10 +26,10 @@ func TestSignUpEmail(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 
-	user := result["user"].(map[string]interface{})
+	user := result["user"].(map[string]any)
 	assert.Equal(t, "New User", user["name"])
 	assert.Equal(t, "new@example.com", user["email"])
 	assert.NotEmpty(t, user["id"])
@@ -104,9 +104,9 @@ func TestSignInEmail(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	user := result["user"].(map[string]interface{})
+	user := result["user"].(map[string]any)
 	assert.Equal(t, "Login User", user["name"])
 	assert.Equal(t, "login@example.com", user["email"])
 
@@ -210,7 +210,7 @@ func TestGetSession(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]interface{}
+	var signUpResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
 	token := signUpResult["token"].(string)
@@ -226,9 +226,9 @@ func TestGetSession(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	user := result["user"].(map[string]interface{})
+	user := result["user"].(map[string]any)
 	assert.Equal(t, "Session User", user["name"])
 	assert.Equal(t, "session@example.com", user["email"])
 	assert.NotNil(t, result["session"])
@@ -252,7 +252,7 @@ func TestGetSession_ExpiredBan(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]interface{}
+	var signUpResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
 	token := signUpResult["token"].(string)
@@ -284,7 +284,7 @@ func TestSignOut(t *testing.T) {
 	resp, err := testutil.Post(t, env.Server.URL+"/api/auth/sign-up/email", "application/json", bytes.NewReader(body))
 	require.NoError(t, err)
 
-	var signUpResult map[string]interface{}
+	var signUpResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&signUpResult))
 	_ = resp.Body.Close()
 	token := signUpResult["token"].(string)

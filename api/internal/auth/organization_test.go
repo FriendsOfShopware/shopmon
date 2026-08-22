@@ -23,7 +23,7 @@ func signUp(t *testing.T, serverURL, email, password, name string) string {
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	token, ok := result["token"].(string)
 	require.True(t, ok, "response must contain a token string")
@@ -32,7 +32,7 @@ func signUp(t *testing.T, serverURL, email, password, name string) string {
 }
 
 // authRequest performs an authenticated HTTP request with a JSON body.
-func authRequest(t *testing.T, method, url string, token string, body interface{}) *http.Response {
+func authRequest(t *testing.T, method, url string, token string, body any) *http.Response {
 	t.Helper()
 	var reqBody *bytes.Reader
 	if body != nil {
@@ -50,7 +50,7 @@ func authRequest(t *testing.T, method, url string, token string, body interface{
 }
 
 // authPost performs an authenticated POST request with a JSON body.
-func authPost(t *testing.T, serverURL, path string, token string, body interface{}) *http.Response {
+func authPost(t *testing.T, serverURL, path string, token string, body any) *http.Response {
 	t.Helper()
 	return authRequest(t, "POST", serverURL+path, token, body)
 }
@@ -62,7 +62,7 @@ func authGet(t *testing.T, serverURL, path string, token string) *http.Response 
 }
 
 // authPatch performs an authenticated PATCH request with a JSON body.
-func authPatch(t *testing.T, serverURL, path string, token string, body interface{}) *http.Response {
+func authPatch(t *testing.T, serverURL, path string, token string, body any) *http.Response {
 	t.Helper()
 	return authRequest(t, "PATCH", serverURL+path, token, body)
 }
@@ -74,15 +74,15 @@ func authDelete(t *testing.T, serverURL, path string, token string) *http.Respon
 }
 
 // decodeJSON decodes the response body into a generic map.
-func decodeJSON(t *testing.T, resp *http.Response) map[string]interface{} {
+func decodeJSON(t *testing.T, resp *http.Response) map[string]any {
 	t.Helper()
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	return result
 }
 
 // createOrg is a helper that creates an organization and returns the parsed response.
-func createOrg(t *testing.T, serverURL string, cookie string, name string) map[string]interface{} {
+func createOrg(t *testing.T, serverURL string, cookie string, name string) map[string]any {
 	t.Helper()
 	resp := authPost(t, serverURL, "/api/auth/organizations", cookie, map[string]string{"name": name})
 	defer func() { _ = resp.Body.Close() }()
@@ -142,7 +142,7 @@ func TestOrgUpdate(t *testing.T) {
 	orgID := org["id"].(string)
 
 	newName := "Updated Name"
-	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s", orgID), cookie, map[string]interface{}{
+	resp := authPatch(t, env.Server.URL, fmt.Sprintf("/api/auth/organizations/%s", orgID), cookie, map[string]any{
 		"name": newName,
 	})
 	defer func() { _ = resp.Body.Close() }()
@@ -199,7 +199,7 @@ func TestOrgInviteAndAccept(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&members))
 	assert.Len(t, members, 2)
 }
@@ -232,7 +232,7 @@ func TestOrgInviteAndReject(t *testing.T) {
 	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp3.Body).Decode(&members))
 	assert.Len(t, members, 1) // only the owner
 }
@@ -252,7 +252,7 @@ func TestOrgRemoveMember(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&members))
 	require.Len(t, members, 2)
 
@@ -276,7 +276,7 @@ func TestOrgRemoveMember(t *testing.T) {
 	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
-	var remaining []map[string]interface{}
+	var remaining []map[string]any
 	require.NoError(t, json.NewDecoder(resp3.Body).Decode(&remaining))
 	assert.Len(t, remaining, 1)
 }
@@ -301,7 +301,7 @@ func TestOrgLeave(t *testing.T) {
 	defer func() { _ = resp2.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp2.Body).Decode(&members))
 	assert.Len(t, members, 1)
 	assert.Equal(t, "owner", members[0]["role"])
@@ -335,7 +335,7 @@ func TestOrgSetRole(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&members))
 
 	var memberUserID string
@@ -359,7 +359,7 @@ func TestOrgSetRole(t *testing.T) {
 	defer func() { _ = resp3.Body.Close() }()
 	require.Equal(t, http.StatusOK, resp3.StatusCode)
 
-	var updated []map[string]interface{}
+	var updated []map[string]any
 	require.NoError(t, json.NewDecoder(resp3.Body).Decode(&updated))
 
 	for _, m := range updated {
@@ -381,7 +381,7 @@ func TestOrgListMembers(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var members []map[string]interface{}
+	var members []map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&members))
 	require.Len(t, members, 1)
 	assert.Equal(t, "owner", members[0]["role"])

@@ -31,7 +31,7 @@ https://shopmon.fos.gg
 - [mise](https://mise.jdx.dev) — manages Go, Node.js, and tool versions
 - [Docker](https://www.docker.com/) — for PostgreSQL, Redis, Mailpit, and demo shop
 
-All other tools (Go 1.26, Node 26, sqlc, golangci-lint, air) are installed automatically by mise.
+All other tools (Go 1.27, Node 26, sqlc, golangci-lint, air) are installed automatically by mise.
 
 ### Quick Start
 

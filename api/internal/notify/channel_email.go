@@ -35,18 +35,19 @@ func (c *emailChannel) Send(ctx context.Context, r Recipient, ev Event, msg Rend
 
 	intro := c.tr.T(r.Locale, "email.alertIntro", ev.Params)
 
-	message := msg.Body
+	var message strings.Builder
+	message.WriteString(msg.Body)
 	if len(ev.Reasons) > 0 {
-		message += "\n\n"
+		message.WriteString("\n\n")
 		for i, reason := range ev.Reasons {
 			if i > 0 {
-				message += "\n"
+				message.WriteString("\n")
 			}
-			message += "- " + c.tr.RenderCheck(r.Locale, reason.Key, reason.Params)
+			message.WriteString("- " + c.tr.RenderCheck(r.Locale, reason.Key, reason.Params))
 		}
 	}
 
-	email := c.mail.BuildAlertEmail(r.Name, subject, intro, message, c.alertAction(r.Locale, ev))
+	email := c.mail.BuildAlertEmail(r.Name, subject, intro, message.String(), c.alertAction(r.Locale, ev))
 
 	if err := c.mail.Send(ctx, r.Email, email); err != nil {
 		return fmt.Errorf("send email: %w", err)

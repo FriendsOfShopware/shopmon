@@ -49,7 +49,7 @@ func (h *Handler) GetNotifications(ctx context.Context, _ *struct{}) (*getNotifi
 		}
 
 		if len(row.Params) > 0 {
-			params := map[string]interface{}(row.Params)
+			params := map[string]any(row.Params)
 			if len(params) > 0 {
 				n.Params = &params
 			}

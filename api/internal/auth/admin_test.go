@@ -135,7 +135,7 @@ func TestAdminGetUserDetail(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var detail map[string]interface{}
+	var detail map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&detail))
 	assert.Equal(t, "regular@example.com", detail["email"])
 	// Sub-resources must be present (and never contain secrets).
@@ -299,14 +299,14 @@ func TestAdminImpersonate(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var result map[string]interface{}
+	var result map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 
 	impersonationToken, ok := result["token"].(string)
 	require.True(t, ok)
 	assert.NotEmpty(t, impersonationToken)
 
-	session, ok := result["session"].(map[string]interface{})
+	session, ok := result["session"].(map[string]any)
 	require.True(t, ok)
 	assert.NotEmpty(t, session["token"])
 	assert.NotEmpty(t, session["impersonatedBy"])
@@ -320,13 +320,13 @@ func TestAdminImpersonate(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
 
-	var sessionResp map[string]interface{}
+	var sessionResp map[string]any
 	require.NoError(t, json.NewDecoder(resp2.Body).Decode(&sessionResp))
-	user := sessionResp["user"].(map[string]interface{})
+	user := sessionResp["user"].(map[string]any)
 	assert.Equal(t, "user@example.com", user["email"])
 
 	// Banner visibility depends on session.impersonatedBy being present
-	sessionInfo, ok := sessionResp["session"].(map[string]interface{})
+	sessionInfo, ok := sessionResp["session"].(map[string]any)
 	require.True(t, ok)
 	assert.NotEmpty(t, sessionInfo["impersonatedBy"])
 }

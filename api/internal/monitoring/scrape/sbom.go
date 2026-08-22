@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/sbom"
 )
@@ -52,8 +51,7 @@ func (h *Service) fetchSbom(ctx context.Context, env queries.GetAllEnvironmentsR
 
 	doc, err := sbom.Fetch(ctx, client)
 	if err != nil {
-		var unsupported *sbom.ErrUnsupported
-		if errors.As(err, &unsupported) {
+		if unsupported, ok := errors.AsType[*sbom.ErrUnsupported](err); ok {
 			// Expected for FroshTools releases without the SBOM route, or when
 			// the integration lacks the frosh_tools:read ACL.
 			slog.DebugContext(ctx, "sbom endpoint unavailable",
@@ -194,7 +192,7 @@ func persistSbom(ctx context.Context, q *queries.Queries, environmentID int32, r
 		return q.UpsertEnvironmentSbomStateStatus(ctx, queries.UpsertEnvironmentSbomStateStatusParams{
 			EnvironmentID: environmentID,
 			Supported:     true,
-			LastError:     ptr.Of(sbom.SanitizeError(errText)),
+			LastError:     new(sbom.SanitizeError(errText)),
 		})
 	}
 

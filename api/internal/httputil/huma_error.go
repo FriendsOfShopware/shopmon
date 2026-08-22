@@ -45,8 +45,7 @@ func init() {
 // WriteStatusError writes err using the standard {"message":"..."} JSON shape.
 // Huma status errors keep their status and message; anything else becomes a 500.
 func WriteStatusError(w http.ResponseWriter, err error) {
-	var se huma.StatusError
-	if errors.As(err, &se) {
+	if se, ok := errors.AsType[huma.StatusError](err); ok {
 		WriteError(w, se.GetStatus(), se.Error())
 		return
 	}

@@ -93,7 +93,7 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 	// Collapse concurrent fetches: only one goroutine performs the network
 	// round-trip; the rest wait and share its result. The HTTP call runs
 	// outside c.mu so a slow token endpoint never blocks cache reads.
-	token, err, _ := c.tokenGroup.Do("token", func() (interface{}, error) {
+	token, err, _ := c.tokenGroup.Do("token", func() (any, error) {
 		// Another goroutine may have populated the cache while we waited.
 		if token := c.cachedAccessToken(); token != "" {
 			return token, nil
@@ -168,7 +168,7 @@ func (c *Client) Authenticate(ctx context.Context) error {
 // request performs an authenticated Admin API call. HTTP client tracing comes
 // from httputil's otelhttp transport (span name METHOD host/path); we do not
 // create a second Internal span that would duplicate that client span in Datadog.
-func (c *Client) request(ctx context.Context, method, path string, body interface{}, retry bool) ([]byte, error) {
+func (c *Client) request(ctx context.Context, method, path string, body any, retry bool) ([]byte, error) {
 	token, err := c.getToken(ctx)
 	if err != nil {
 		return nil, err
@@ -227,18 +227,18 @@ func (c *Client) Get(ctx context.Context, path string) ([]byte, error) {
 	return c.request(ctx, "GET", path, nil, true)
 }
 
-func (c *Client) Post(ctx context.Context, path string, body interface{}) ([]byte, error) {
+func (c *Client) Post(ctx context.Context, path string, body any) ([]byte, error) {
 	return c.request(ctx, "POST", path, body, true)
 }
 
-func (c *Client) Put(ctx context.Context, path string, body interface{}) ([]byte, error) {
+func (c *Client) Put(ctx context.Context, path string, body any) ([]byte, error) {
 	return c.request(ctx, "PUT", path, body, true)
 }
 
-func (c *Client) Patch(ctx context.Context, path string, body interface{}) ([]byte, error) {
+func (c *Client) Patch(ctx context.Context, path string, body any) ([]byte, error) {
 	return c.request(ctx, "PATCH", path, body, true)
 }
 
-func (c *Client) Delete(ctx context.Context, path string, body interface{}) ([]byte, error) {
+func (c *Client) Delete(ctx context.Context, path string, body any) ([]byte, error) {
 	return c.request(ctx, "DELETE", path, body, true)
 }

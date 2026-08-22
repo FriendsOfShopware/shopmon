@@ -169,8 +169,7 @@ func TestParseRejectsNonCycloneDXAsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error for a non-CycloneDX document")
 	}
-	var unsupported *ErrUnsupported
-	if errors.As(err, &unsupported) {
+	if _, ok := errors.AsType[*ErrUnsupported](err); ok {
 		t.Fatalf("err = %v, want a plain parse error, not ErrUnsupported", err)
 	}
 }

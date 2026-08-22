@@ -48,7 +48,7 @@ func WriteForbidden(w http.ResponseWriter) {
 }
 
 // WriteJSON writes a JSON response with the given status code.
-func WriteJSON(w http.ResponseWriter, status int, v interface{}) {
+func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
@@ -104,7 +104,7 @@ func WriteErrorAuto(w http.ResponseWriter, err error) {
 }
 
 // DecodeBody decodes a JSON request body into the given value.
-func DecodeBody(r *http.Request, v interface{}) error {
+func DecodeBody(r *http.Request, v any) error {
 	defer func() { _ = r.Body.Close() }()
 	return json.NewDecoder(r.Body).Decode(v)
 }
@@ -112,8 +112,8 @@ func DecodeBody(r *http.Request, v interface{}) error {
 // ExtractToken extracts the session token from the Authorization: Bearer header.
 func ExtractToken(r *http.Request) string {
 	authHeader := r.Header.Get("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		return strings.TrimPrefix(authHeader, "Bearer ")
+	if after, ok := strings.CutPrefix(authHeader, "Bearer "); ok {
+		return after
 	}
 	return ""
 }

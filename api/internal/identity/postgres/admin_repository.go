@@ -59,11 +59,9 @@ func (r *AdminRepository) FindUser(ctx context.Context, userID string) (identity
 		return identity.AdminUserDetail{}, fmt.Errorf("query admin user detail: %w", err)
 	}
 	detail := identity.AdminUserDetail{
-		AdminUser: identity.AdminUser{
-			ID: row.ID, Name: row.Name, Email: row.Email, EmailVerified: row.EmailVerified,
-			Image: row.Image, Role: row.Role, Banned: row.Banned, BanReason: row.BanReason,
-			CreatedAt: row.CreatedAt.Time,
-		},
+		ID: row.ID, Name: row.Name, Email: row.Email, EmailVerified: row.EmailVerified,
+		Image: row.Image, Role: row.Role, Banned: row.Banned, BanReason: row.BanReason,
+		CreatedAt: row.CreatedAt.Time,
 		UpdatedAt: row.UpdatedAt.Time,
 	}
 	if row.BanExpires.Valid {

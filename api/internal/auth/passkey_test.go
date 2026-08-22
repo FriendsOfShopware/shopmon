@@ -98,7 +98,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	attResponse := virtualwebauthn.CreateAttestationResponse(rp, authenticator, credential, *attOpts)
 
 	// Merge challengeKey and name into the attestation response
-	var attJSON map[string]interface{}
+	var attJSON map[string]any
 	require.NoError(t, json.Unmarshal([]byte(attResponse), &attJSON))
 	attJSON["challengeKey"] = regOptions.ChallengeKey
 	attJSON["name"] = "My Test Passkey"
@@ -118,7 +118,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode, "register failed: body=%s", string(body))
 	}
 
-	var regResult map[string]interface{}
+	var regResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&regResult))
 	assert.NotEmpty(t, regResult["id"])
 	assert.Equal(t, "My Test Passkey", regResult["name"])
@@ -153,7 +153,7 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 	assResponse := virtualwebauthn.CreateAssertionResponse(rp, authenticator, credential, *assOpts)
 
 	// Merge challengeKey into assertion
-	var assJSON map[string]interface{}
+	var assJSON map[string]any
 	require.NoError(t, json.Unmarshal([]byte(assResponse), &assJSON))
 	assJSON["challengeKey"] = loginOptions.ChallengeKey
 	loginBody, _ := json.Marshal(assJSON)
@@ -168,9 +168,9 @@ func TestPasskeyFullRegistrationAndLogin(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode, "login failed: body=%s", string(body))
 	}
 
-	var loginResult map[string]interface{}
+	var loginResult map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&loginResult))
-	user, ok := loginResult["user"].(map[string]interface{})
+	user, ok := loginResult["user"].(map[string]any)
 	require.True(t, ok, "response must contain user object, got: %v", loginResult)
 	assert.Equal(t, "passkey@example.com", user["email"])
 	assert.Equal(t, "Passkey User", user["name"])
@@ -259,7 +259,7 @@ func TestPasskeyLoginLegacyBetterAuth(t *testing.T) {
 			require.NoError(t, err)
 			attResponse := virtualwebauthn.CreateAttestationResponse(rp, authenticator, credential, *attOpts)
 
-			var attJSON map[string]interface{}
+			var attJSON map[string]any
 			require.NoError(t, json.Unmarshal([]byte(attResponse), &attJSON))
 			attJSON["challengeKey"] = regOptions.ChallengeKey
 			attJSON["name"] = "Legacy Passkey"
@@ -324,7 +324,7 @@ func TestPasskeyLoginLegacyBetterAuth(t *testing.T) {
 			require.NoError(t, err)
 			assResponse := virtualwebauthn.CreateAssertionResponse(rp, authenticator, credential, *assOpts)
 
-			var assJSON map[string]interface{}
+			var assJSON map[string]any
 			require.NoError(t, json.Unmarshal([]byte(assResponse), &assJSON))
 			assJSON["challengeKey"] = loginOptions.ChallengeKey
 			loginBody, _ := json.Marshal(assJSON)
@@ -338,9 +338,9 @@ func TestPasskeyLoginLegacyBetterAuth(t *testing.T) {
 				require.Equal(t, http.StatusOK, resp.StatusCode, "legacy login failed: body=%s", string(body))
 			}
 
-			var loginResult map[string]interface{}
+			var loginResult map[string]any
 			require.NoError(t, json.NewDecoder(resp.Body).Decode(&loginResult))
-			user, ok := loginResult["user"].(map[string]interface{})
+			user, ok := loginResult["user"].(map[string]any)
 			require.True(t, ok, "response must contain user object, got: %v", loginResult)
 			assert.Equal(t, "legacy@example.com", user["email"])
 		})
@@ -413,7 +413,7 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 		attOpts, _ := virtualwebauthn.ParseAttestationOptions(string(opts.Options))
 		attResp := virtualwebauthn.CreateAttestationResponse(rp, authenticator, cred, *attOpts)
 
-		var attJSON map[string]interface{}
+		var attJSON map[string]any
 		require.NoError(t, json.Unmarshal([]byte(attResp), &attJSON))
 		attJSON["challengeKey"] = opts.ChallengeKey
 		attJSON["name"] = name

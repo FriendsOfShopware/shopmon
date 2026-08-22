@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -257,13 +258,7 @@ func (c *githubClient) fetchAdvisoryURL(ctx context.Context, ghsaID, endpoint st
 	details.References = append(details.References, raw.References...)
 	if details.HTMLURL != "" {
 		// Prefer GHSA page as a stable first reference.
-		found := false
-		for _, r := range details.References {
-			if r == details.HTMLURL {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(details.References, details.HTMLURL)
 		if !found {
 			details.References = append([]string{details.HTMLURL}, details.References...)
 		}

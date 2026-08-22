@@ -83,7 +83,7 @@ func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("shopmon-project-%d", shopID), r.URL.Query().Get("source"))
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
+		_ = json.NewEncoder(w).Encode([]map[string]any{
 			{"id": 1, "source": "shopware", "lastSyncedAt": 1700000000},
 			{"id": 2, "source": "custom", "lastSyncedAt": nil},
 		})
@@ -108,7 +108,7 @@ func TestGetPackagesTokens_WithMockAPI(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	var tokens []map[string]interface{}
+	var tokens []map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&tokens))
 	assert.Len(t, tokens, 2)
 }
@@ -127,7 +127,7 @@ func TestCreatePackagesToken_WithMockAPI(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":           3,
 			"source":       "shopware",
 			"lastSyncedAt": nil,
@@ -162,7 +162,7 @@ func TestDeletePackagesToken_WithMockAPI(t *testing.T) {
 		if r.Method == "GET" {
 			assert.Equal(t, "/api/tokens", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode([]map[string]interface{}{{"id": 42, "source": r.URL.Query().Get("source")}})
+			_ = json.NewEncoder(w).Encode([]map[string]any{{"id": 42, "source": r.URL.Query().Get("source")}})
 			return
 		}
 		assert.Equal(t, "DELETE", r.Method)
@@ -195,7 +195,7 @@ func TestDeletePackagesToken_CrossShopForbidden(t *testing.T) {
 		// Ownership check returns no tokens for this shop; the DELETE must never fire.
 		if r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode([]map[string]interface{}{})
+			_ = json.NewEncoder(w).Encode([]map[string]any{})
 			return
 		}
 		assert.Fail(t, "must not proxy a mutation for a token not owned by the shop")
@@ -227,7 +227,7 @@ func TestSyncPackagesToken_WithMockAPI(t *testing.T) {
 		if r.Method == "GET" {
 			assert.Equal(t, "/api/tokens", r.URL.Path)
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode([]map[string]interface{}{{"id": 42, "source": r.URL.Query().Get("source")}})
+			_ = json.NewEncoder(w).Encode([]map[string]any{{"id": 42, "source": r.URL.Query().Get("source")}})
 			return
 		}
 		assert.Equal(t, "POST", r.Method)

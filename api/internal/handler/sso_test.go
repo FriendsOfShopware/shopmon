@@ -148,7 +148,7 @@ func TestGetSsoProviders_NotMember(t *testing.T) {
 func TestDiscoverSso(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/.well-known/openid-configuration" {
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"issuer":                 "https://idp.example.com",
 				"authorization_endpoint": "https://idp.example.com/authorize",
 				"token_endpoint":         "https://idp.example.com/token",

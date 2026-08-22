@@ -80,7 +80,7 @@ func (s *Service) scrapeEnvironment(ctx context.Context, env queries.GetEnvironm
 	log.Info("calling sitespeed service", "urls", len(urls), "recordId", recordID)
 	endpoint := fmt.Sprintf("%s/api/result/%s", s.cfg.SitespeedEndpoint, recordID)
 
-	reqBody, err := json.Marshal(map[string]interface{}{
+	reqBody, err := json.Marshal(map[string]any{
 		"urls": urls,
 		"headers": map[string]string{
 			"shopmon-shop-token": env.EnvironmentToken,

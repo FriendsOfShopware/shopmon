@@ -40,16 +40,13 @@ func isNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	var noSuchKey *types.NoSuchKey
-	if errors.As(err, &noSuchKey) {
+	if _, ok := errors.AsType[*types.NoSuchKey](err); ok {
 		return true
 	}
-	var notFound *types.NotFound
-	if errors.As(err, &notFound) {
+	if _, ok := errors.AsType[*types.NotFound](err); ok {
 		return true
 	}
-	var apiError smithy.APIError
-	if errors.As(err, &apiError) {
+	if apiError, ok := errors.AsType[smithy.APIError](err); ok {
 		switch apiError.ErrorCode() {
 		case "NoSuchKey", "NotFound", "404":
 			return true

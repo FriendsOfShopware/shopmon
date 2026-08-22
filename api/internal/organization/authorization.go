@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 var (
@@ -118,10 +119,8 @@ func (a *Authorizer) RequireRole(ctx context.Context, userID, organizationID str
 	if err != nil {
 		return "", err
 	}
-	for _, allowedRole := range allowedRoles {
-		if role == allowedRole {
-			return role, nil
-		}
+	if slices.Contains(allowedRoles, role) {
+		return role, nil
 	}
 	return "", fmt.Errorf("%w: %s", ErrRoleNotAllowed, role)
 }
