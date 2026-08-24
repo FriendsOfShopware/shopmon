@@ -15,17 +15,21 @@ import (
 const messageTypePrefix = "github.com/friendsofshopware/shopmon/api/internal/jobs."
 
 func TestDispatchRoutesMessagesWithoutRegisteredHandlers(t *testing.T) {
-	bus, transport := newMemoryBus()
+	bus, catalog, scrape := newMemoryBus()
 
 	tests := []struct {
 		name          string
 		expectedType  string
+		expectedQueue string
+		source        *memory.Transport
 		dispatch      func() error
 		expectedDelay time.Duration
 	}{
 		{
-			name:         "environment scrape",
-			expectedType: messageTypePrefix + "EnvironmentScrape",
+			name:          "environment scrape",
+			expectedType:  messageTypePrefix + "EnvironmentScrape",
+			expectedQueue: ScrapeTransportName,
+			source:        scrape,
 			dispatch: func() error {
 				return Dispatch(context.Background(), bus, EnvironmentScrape{EnvironmentID: 42})
 			},
@@ -33,14 +37,18 @@ func TestDispatchRoutesMessagesWithoutRegisteredHandlers(t *testing.T) {
 		{
 			name:          "delayed sitespeed scrape",
 			expectedType:  messageTypePrefix + "SitespeedScrape",
+			expectedQueue: ScrapeTransportName,
+			source:        scrape,
 			expectedDelay: 15 * time.Minute,
 			dispatch: func() error {
 				return Dispatch(context.Background(), bus, SitespeedScrape{EnvironmentID: 42}, goqueue.WithDelay(15*time.Minute))
 			},
 		},
 		{
-			name:         "catalog sync",
-			expectedType: messageTypePrefix + "StoreExtensionSync",
+			name:          "catalog sync",
+			expectedType:  messageTypePrefix + "StoreExtensionSync",
+			expectedQueue: TransportName,
+			source:        catalog,
 			dispatch: func() error {
 				return Dispatch(context.Background(), bus, StoreExtensionSync{Names: []string{"Example"}, ShopwareVersion: "6.7"})
 			},
@@ -50,8 +58,8 @@ func TestDispatchRoutesMessagesWithoutRegisteredHandlers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			require.NoError(t, test.dispatch())
-			envelope := <-transport.Chan()
-			assert.Equal(t, TransportName, envelope.Transport)
+			envelope := <-test.source.Chan()
+			assert.Equal(t, test.expectedQueue, envelope.Transport)
 			assert.Equal(t, test.expectedType, envelope.Type)
 			_, registered := bus.GetHandler(envelope.Type)
 			assert.False(t, registered, "dispatch-only bus must not require a worker handler")
@@ -68,30 +76,34 @@ func TestDispatchRoutesMessagesWithoutRegisteredHandlers(t *testing.T) {
 }
 
 func TestRegisterHandlersRegistersEveryStableMessageType(t *testing.T) {
-	bus, transport := newMemoryBus()
+	bus, catalog, scrape := newMemoryBus()
 	require.NoError(t, RegisterHandlers(bus, completeHandlers()))
 
-	dispatches := []func() error{
-		func() error { return Dispatch(context.Background(), bus, EnvironmentScrape{}) },
-		func() error { return Dispatch(context.Background(), bus, SitespeedScrape{}) },
-		func() error { return Dispatch(context.Background(), bus, LockCleanup{}) },
-		func() error { return Dispatch(context.Background(), bus, InvitationCleanup{}) },
-		func() error { return Dispatch(context.Background(), bus, OldDataCleanup{}) },
-		func() error { return Dispatch(context.Background(), bus, ShopwareChangelogSync{}) },
-		func() error { return Dispatch(context.Background(), bus, ComposerAdvisorySync{}) },
-		func() error { return Dispatch(context.Background(), bus, StoreExtensionSync{}) },
+	dispatches := []struct {
+		dispatch func() error
+		source   *memory.Transport
+	}{
+		{func() error { return Dispatch(context.Background(), bus, EnvironmentScrape{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, SitespeedScrape{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, LockCleanup{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, InvitationCleanup{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, OldDataCleanup{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, ShopwareChangelogSync{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, ComposerAdvisorySync{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, SecurityPluginSync{}) }, scrape},
+		{func() error { return Dispatch(context.Background(), bus, StoreExtensionSync{}) }, catalog},
 	}
 
-	for _, dispatch := range dispatches {
-		require.NoError(t, dispatch())
-		envelope := <-transport.Chan()
+	for _, test := range dispatches {
+		require.NoError(t, test.dispatch())
+		envelope := <-test.source.Chan()
 		_, registered := bus.GetHandler(envelope.Type)
 		assert.True(t, registered, "worker handler missing for %s", envelope.Type)
 	}
 }
 
 func TestRegisterHandlersRejectsIncompleteWorkerGraph(t *testing.T) {
-	bus, _ := newMemoryBus()
+	bus, _, _ := newMemoryBus()
 	require.Error(t, RegisterHandlers(bus, Handlers{}))
 	require.Error(t, RegisterHandlers(nil, completeHandlers()))
 }
@@ -132,6 +144,19 @@ func TestNewTransportSelectsDriver(t *testing.T) {
 	}
 }
 
+func TestNewTransportsRegistersCatalogAndScrape(t *testing.T) {
+	transports, closeTransport, err := newTransports(nil, BusConfig{
+		Driver: DriverAMQP,
+		AMQP:   AMQPConfig{DSN: "amqp://guest:guest@localhost:5672/", Exchange: "shopmon", Queue: "shopmon"},
+	})
+	require.NoError(t, err)
+	defer func() { require.NoError(t, closeTransport()) }()
+
+	require.Contains(t, transports, TransportName)
+	require.Contains(t, transports, ScrapeTransportName)
+	assert.NotSame(t, transports[TransportName], transports[ScrapeTransportName])
+}
+
 func TestNewTransportKeepsPostgresPoolOpen(t *testing.T) {
 	// postgres.Transport.Close() closes the pool it was handed, which the rest of
 	// the process still uses — NewBus must therefore hand back a no-op closer.
@@ -150,11 +175,13 @@ func TestNewTransportKeepsPostgresPoolOpen(t *testing.T) {
 	assert.NotContains(t, err.Error(), "closed pool")
 }
 
-func newMemoryBus() (*goqueue.Bus, *memory.Transport) {
+func newMemoryBus() (*goqueue.Bus, *memory.Transport, *memory.Transport) {
 	bus := goqueue.NewBus()
-	transport := memory.NewTransport()
-	bus.AddTransport(TransportName, transport)
-	return bus, transport
+	catalog := memory.NewTransport()
+	scrape := memory.NewTransport()
+	bus.AddTransport(TransportName, catalog)
+	bus.AddTransport(ScrapeTransportName, scrape)
+	return bus, catalog, scrape
 }
 
 type scraperStub struct{}

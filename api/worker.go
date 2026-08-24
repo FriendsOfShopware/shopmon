@@ -134,7 +134,9 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		slog.Error("failed to dispatch initial composer advisory sync", "error", err)
 	}
 
-	// Worker
+	// One worker consumes every registered transport. Catalog sync
+	// (TransportName) and shop-facing jobs (ScrapeTransportName) each get
+	// this concurrency, so a StoreExtensionSync backlog cannot starve scrapes.
 	worker := goqueue.NewWorker(bus, goqueue.WorkerConfig{
 		Concurrency:     10,
 		HandlerTimeout:  10 * time.Minute,

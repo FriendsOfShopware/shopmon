@@ -44,11 +44,14 @@ type AMQPConfig struct {
 // dispatch messages, while the worker adds executable handlers through
 // RegisterHandlers.
 //
+// Two transports are registered: the legacy async/catalog queue and the
+// shop-facing scrape queue. See ScrapeTransportName for why they are split.
+//
 // The returned close function releases resources the bus owns itself (the AMQP
-// connection). It never touches the caller-owned pgx pool, so callers keep
+// connections). It never touches the caller-owned pgx pool, so callers keep
 // closing that themselves.
 func NewBus(ctx context.Context, pool *pgxpool.Pool, config BusConfig) (*goqueue.Bus, func() error, error) {
-	transport, closeTransport, err := newTransport(pool, config)
+	transports, closeTransport, err := newTransports(pool, config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,7 +62,9 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, config BusConfig) (*goqueue
 			queueotel.WithSpanNameNormalizer(queueotel.DefaultSpanNameNormalizer),
 		))
 	}
-	bus.AddTransport(TransportName, transport)
+	for name, transport := range transports {
+		bus.AddTransport(name, transport)
+	}
 
 	if err := bus.Setup(ctx); err != nil {
 		_ = closeTransport()
@@ -69,6 +74,14 @@ func NewBus(ctx context.Context, pool *pgxpool.Pool, config BusConfig) (*goqueue
 }
 
 func newTransport(pool *pgxpool.Pool, config BusConfig) (goqueue.Transport, func() error, error) {
+	transports, closeTransport, err := newTransports(pool, config)
+	if err != nil {
+		return nil, nil, err
+	}
+	return transports[TransportName], closeTransport, nil
+}
+
+func newTransports(pool *pgxpool.Pool, config BusConfig) (map[string]goqueue.Transport, func() error, error) {
 	noopClose := func() error { return nil }
 
 	switch config.Driver {
@@ -76,34 +89,67 @@ func newTransport(pool *pgxpool.Pool, config BusConfig) (goqueue.Transport, func
 		if pool == nil {
 			return nil, nil, fmt.Errorf("job bus: postgres driver requires a database pool")
 		}
-		// The pool is shared with the rest of the process, so the transport must
+		// The pool is shared with the rest of the process, so the transports must
 		// not be closed with the bus — postgres.Transport.Close() closes the pool.
-		return postgres.NewTransportFromPool(pool, postgres.Config{
-			Table: "queue_messages",
-		}), noopClose, nil
+		return map[string]goqueue.Transport{
+			TransportName: postgres.NewTransportFromPool(pool, postgres.Config{
+				Table:   "queue_messages",
+				Channel: "queue_notify",
+			}),
+			ScrapeTransportName: postgres.NewTransportFromPool(pool, postgres.Config{
+				Table:   "queue_messages_scrape",
+				Channel: "queue_notify_scrape",
+			}),
+		}, noopClose, nil
 	case DriverAMQP:
 		if config.AMQP.DSN == "" {
 			return nil, nil, fmt.Errorf("job bus: amqp driver requires a broker DSN")
 		}
-		transport := amqp.NewTransport(amqp.Config{
-			DSN:           config.AMQP.DSN,
-			Exchange:      config.AMQP.Exchange,
-			Queue:         config.AMQP.Queue,
-			RoutingKey:    config.AMQP.Queue,
-			PrefetchCount: config.AMQP.PrefetchCount,
-			Durable:       true,
-			// Re-declare exchange, queue, and binding after a broker restart.
-			AutoSetup:         true,
-			PublisherConfirms: true,
-			DelayedExchange:   config.AMQP.DelayedExchange,
-		})
-		return transport, transport.Close, nil
+		catalog := newAMQPTransport(config.AMQP, config.AMQP.Queue)
+		scrapeQueue := config.AMQP.Queue + "-scrape"
+		scrape := newAMQPTransport(config.AMQP, scrapeQueue)
+		return map[string]goqueue.Transport{
+			TransportName:       catalog,
+			ScrapeTransportName: scrape,
+		}, func() error {
+			err := catalog.Close()
+			if scrapeErr := scrape.Close(); scrapeErr != nil && err == nil {
+				err = scrapeErr
+			}
+			return err
+		}, nil
 	default:
 		return nil, nil, fmt.Errorf("job bus: unknown queue driver %q (supported: %s, %s)", config.Driver, DriverPostgres, DriverAMQP)
 	}
 }
 
-// Dispatch routes a Shopmon job explicitly to the stable async transport.
+func newAMQPTransport(config AMQPConfig, queue string) *amqp.Transport {
+	return amqp.NewTransport(amqp.Config{
+		DSN:           config.DSN,
+		Exchange:      config.Exchange,
+		Queue:         queue,
+		RoutingKey:    queue,
+		PrefetchCount: config.PrefetchCount,
+		Durable:       true,
+		// Re-declare exchange, queue, and binding after a broker restart.
+		AutoSetup:         true,
+		PublisherConfirms: true,
+		DelayedExchange:   config.DelayedExchange,
+	})
+}
+
+// transportFor returns the queue a Shopmon job type is published to.
+// StoreExtensionSync stays on the legacy async transport; every other job
+// uses the scrape transport so catalog work cannot occupy the shop-refresh path.
+func transportFor[T any]() string {
+	var zero T
+	if _, ok := any(zero).(StoreExtensionSync); ok {
+		return TransportName
+	}
+	return ScrapeTransportName
+}
+
+// Dispatch routes a Shopmon job to its dedicated transport.
 // go-queue otherwise derives the route from a registered handler, which would
 // force dispatch-only processes to construct the complete worker graph.
 func Dispatch[T any](ctx context.Context, bus *goqueue.Bus, message T, options ...goqueue.Option) error {
@@ -112,6 +158,6 @@ func Dispatch[T any](ctx context.Context, bus *goqueue.Bus, message T, options .
 	}
 	routedOptions := make([]goqueue.Option, 0, len(options)+1)
 	routedOptions = append(routedOptions, options...)
-	routedOptions = append(routedOptions, goqueue.WithQueue(TransportName))
+	routedOptions = append(routedOptions, goqueue.WithQueue(transportFor[T]()))
 	return goqueue.Dispatch(ctx, bus, message, routedOptions...)
 }

@@ -150,6 +150,7 @@ func Setup(t *testing.T, cfgFn ...func(*config.Config)) *TestEnv {
 	// Handlers that enqueue work only need a transport: jobs.Dispatch supplies
 	// the explicit route, so tests do not construct fake worker handlers.
 	bus.AddTransport(jobs.TransportName, &noopTransport{})
+	bus.AddTransport(jobs.ScrapeTransportName, &noopTransport{})
 	organizationRepository := organizationpostgres.NewAuthorizationRepository(q)
 	organizationAuthorizer := organization.NewAuthorizer(organizationRepository)
 	organizationStore := organizationpostgres.NewRepository(pool, q)

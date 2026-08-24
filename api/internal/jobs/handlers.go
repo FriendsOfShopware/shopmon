@@ -75,7 +75,7 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 		return errors.New("register job handlers: security plugin synchronizer is required")
 	}
 
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message EnvironmentScrape) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, message EnvironmentScrape) error {
 		// Annotate the go-queue otel Consumer span before Scrape starts a child
 		// Internal span, so Datadog can facet EnvironmentScrape process by environment.id.
 		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
@@ -86,28 +86,28 @@ func RegisterHandlers(bus *goqueue.Bus, handlers Handlers) error {
 		// Names are high-cardinality; keep them off the Consumer entry span.
 		return handlers.StoreExtensionSynchronizer.Sync(ctx, message.Names, message.ShopwareVersion)
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, message SitespeedScrape) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, message SitespeedScrape) error {
 		return runEnvironmentJob(ctx, message.EnvironmentID, func(ctx context.Context) error {
 			return handlers.SitespeedScraper.Scrape(ctx, message.EnvironmentID)
 		})
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ LockCleanup) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ LockCleanup) error {
 		return handlers.Cleanup.CleanupLocks(ctx)
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ InvitationCleanup) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ InvitationCleanup) error {
 		return handlers.Cleanup.CleanupInvitations(ctx)
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ OldDataCleanup) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ OldDataCleanup) error {
 		return handlers.Cleanup.CleanupOldData(ctx)
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ ShopwareChangelogSync) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ ShopwareChangelogSync) error {
 		return handlers.ChangelogSynchronizer.Sync(ctx)
 	})
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ ComposerAdvisorySync) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ ComposerAdvisorySync) error {
 		return handlers.AdvisorySynchronizer.Sync(ctx)
 	})
 
-	goqueue.HandleFunc(bus, TransportName, func(ctx context.Context, _ SecurityPluginSync) error {
+	goqueue.HandleFunc(bus, ScrapeTransportName, func(ctx context.Context, _ SecurityPluginSync) error {
 		return handlers.SecurityPluginSynchronizer.Sync(ctx)
 	})
 	return nil
