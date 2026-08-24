@@ -1,7 +1,20 @@
 package jobs
 
-// TransportName is the stable queue transport used by every Shopmon job.
-const TransportName = "async"
+const (
+	// TransportName is the legacy async transport (`queue_messages` / AMQP
+	// `QUEUE_AMQP_QUEUE`). StoreExtensionSync stays here so a catalog backlog
+	// does not share claim-order with shop-facing jobs.
+	TransportName = "async"
+	// ScrapeTransportName is the shop-facing job transport
+	// (`queue_messages_scrape` / AMQP `<QUEUE_AMQP_QUEUE>-scrape`).
+	// Environment scrapes, sitespeed, and the other scheduled jobs publish here.
+	//
+	// go-queue's postgres consumer claims `ORDER BY created_at` and retries
+	// keep the original created_at, so StoreExtensionSync 429 retries on the
+	// shared table stay ahead of newer EnvironmentScrape rows. Production
+	// (thousands of shops) starves shop refreshes; staging (two shops) does not.
+	ScrapeTransportName = "scrape"
+)
 
 // Message types are deliberately kept in this package so their reflected type
 // names remain stable for envelopes already persisted in PostgreSQL.

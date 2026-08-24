@@ -167,16 +167,29 @@ func (s *Scheduler) enqueueEnvironmentScrapes(ctx context.Context) {
 		slog.ErrorContext(ctx, "failed to list environments for scrape", "error", err)
 		return
 	}
+	dispatched := 0
+	skipped := 0
+	failed := 0
 	for _, target := range targets {
 		// Back off instead of hammering an environment that has repeatedly
 		// failed to connect.
 		if target.ConnectionIssueCount >= 3 {
+			skipped++
 			continue
 		}
 		if err := s.dispatcher.EnqueueEnvironmentScrape(ctx, target.ID); err != nil {
+			failed++
 			slog.ErrorContext(ctx, "failed to dispatch environment scrape", "environmentId", target.ID, "error", err)
+			continue
 		}
+		dispatched++
 	}
+	slog.InfoContext(ctx, "enqueued environment scrapes",
+		"targets", len(targets),
+		"dispatched", dispatched,
+		"skippedConnectionIssues", skipped,
+		"failed", failed,
+	)
 }
 
 func (s *Scheduler) enqueueSitespeedScrapes(ctx context.Context) {

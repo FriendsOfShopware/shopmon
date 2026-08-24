@@ -169,14 +169,16 @@ Background jobs run on PostgreSQL by default — no extra infrastructure needed.
 
 | Variable | Default | Description |
 |---|---|---|
-| `QUEUE_TRANSPORT` | `postgres` | Job backend: `postgres` (jobs stored in the `queue_messages` table) or `amqp` |
+| `QUEUE_TRANSPORT` | `postgres` | Job backend: `postgres` (jobs stored in `queue_messages` + `queue_messages_scrape`) or `amqp` |
 | `QUEUE_AMQP_DSN` | `amqp://guest:guest@localhost:5672/` | Broker connection string |
 | `QUEUE_AMQP_EXCHANGE` | `shopmon` | Exchange to publish jobs to (declared on startup) |
-| `QUEUE_AMQP_QUEUE` | `shopmon` | Queue workers consume from; also used as the routing key |
-| `QUEUE_AMQP_PREFETCH` | `10` | Unacknowledged deliveries per consumer. Keep it at or above the worker concurrency (10) |
+| `QUEUE_AMQP_QUEUE` | `shopmon` | Catalog-sync queue (and routing key). Shop-facing jobs use `<QUEUE_AMQP_QUEUE>-scrape` (default `shopmon-scrape`) |
+| `QUEUE_AMQP_PREFETCH` | `10` | Unacknowledged deliveries per consumer per queue. Keep it at or above the worker concurrency (10) |
 | `QUEUE_AMQP_DELAYED_EXCHANGE` | `true` | Declare the exchange as `x-delayed-message` so delayed jobs are held by the broker. Accepts `true`/`false`, `1`/`0`, `TRUE`/`FALSE`; an unparseable value keeps delayed delivery on |
 
 Set the same values on the `api` and `worker` services — the API publishes jobs and the worker consumes them.
+
+Shop-refresh jobs (`EnvironmentScrape`, sitespeed, changelog, cleanup, advisory sync) use a dedicated queue so a `StoreExtensionSync` backlog cannot starve shop updates. On PostgreSQL the worker creates `queue_messages_scrape` automatically. On AMQP it declares `<QUEUE_AMQP_QUEUE>-scrape`. After deploy, confirm the worker logs `enqueued environment scrapes` at `:00` and `scraping environment` shortly after. Leftover `EnvironmentScrape` rows in `queue_messages` (or messages still on the catalog AMQP queue) can be left to drain or deleted; the hourly cron republishes to the scrape queue.
 
 Shopmon delays some jobs (post-deployment scrapes, sitespeed reruns), which needs broker-side delayed delivery: **LavinMQ supports it natively**, RabbitMQ needs the [rabbitmq_delayed_message_exchange](https://github.com/rabbitmq/rabbitmq-delayed-message-exchange) plugin. Only set `QUEUE_AMQP_DELAYED_EXCHANGE=false` if your broker has neither — delayed jobs are then delivered immediately, so a post-deployment scrape runs before the shop has settled.
 
