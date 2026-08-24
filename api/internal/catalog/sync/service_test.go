@@ -13,11 +13,15 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
+	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 // mockExtension describes what the mock store returns for one technical name.
@@ -43,6 +47,9 @@ type mockStoreServer struct {
 	// rateLimitedVersions, when set, causes pluginsByName for those Shopware
 	// versions to respond with HTTP 429.
 	rateLimitedVersions map[string]bool
+	// serverErrorVersions, when set, causes pluginsByName for those Shopware
+	// versions to respond with HTTP 500 (non-retryable, not a rate limit).
+	serverErrorVersions map[string]bool
 	// seen records locale@shopwareVersion hits in order.
 	seen []string
 	// inFlight tracks concurrent handlers; maxInFlight is the high-water mark.
@@ -63,6 +70,7 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 			},
 		},
 		rateLimitedVersions: map[string]bool{},
+		serverErrorVersions: map[string]bool{},
 	}
 
 	mux := http.NewServeMux()
@@ -78,6 +86,7 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 			m.maxInFlight = m.inFlight
 		}
 		rateLimited := m.rateLimitedVersions[swv]
+		serverError := m.serverErrorVersions[swv]
 		delay := m.handlerDelay
 		m.mu.Unlock()
 
@@ -94,6 +103,10 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 		if rateLimited {
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		if serverError {
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -228,6 +241,41 @@ func snapshotRowVersions(t *testing.T, pool *pgxpool.Pool) map[string]string {
 		require.NoError(t, rows.Err(), "iterate %s", table)
 	}
 	return result
+}
+
+func withStoreSyncMetrics(t *testing.T) func() map[string]int64 {
+	t.Helper()
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	prev := otel.GetMeterProvider()
+	otel.SetMeterProvider(mp)
+	metrics.Register()
+	t.Cleanup(func() {
+		otel.SetMeterProvider(prev)
+		_ = mp.Shutdown(context.Background())
+	})
+	return func() map[string]int64 {
+		t.Helper()
+		var rm metricdata.ResourceMetrics
+		require.NoError(t, reader.Collect(context.Background(), &rm))
+		out := make(map[string]int64)
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				sum, ok := m.Data.(metricdata.Sum[int64])
+				if !ok {
+					continue
+				}
+				for _, dp := range sum.DataPoints {
+					key := m.Name
+					for _, attr := range dp.Attributes.ToSlice() {
+						key += "|" + string(attr.Key) + "=" + attr.Value.AsString()
+					}
+					out[key] = dp.Value
+				}
+			}
+		}
+		return out
+	}
 }
 
 func countRows(t *testing.T, pool *pgxpool.Pool, table string) int {
@@ -450,10 +498,12 @@ func TestStoreExtensionSyncSerializesLocaleProbes(t *testing.T) {
 // TestStoreExtensionSyncAbortsRemainingVersionsOn429: once the store rate-limits
 // a version probe, SyncNames must stop probing further versions instead of
 // stomping through the rest of the list, leave sync bookkeeping untouched so a
-// retry can continue, and still persist any versions already probed.
+// later scheduled sync can continue, persist any versions already probed, and
+// return nil so the queue acks instead of nacking into a still-limited API.
 func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
+	collect := withStoreSyncMetrics(t)
 
 	// Newest version (6.6.0.0) succeeds; older 6.5.0.0 is rate-limited. Probes
 	// run newest-first, so we get partial progress then abort.
@@ -461,8 +511,8 @@ func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
 	h.account = fastStoreClient(store.URL)
 
 	err := h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false)
-	require.Error(t, err)
-	assert.True(t, shopwareaccount.IsRateLimited(err), "expected rate-limit error, got %v", err)
+	require.NoError(t, err, "rate-limit abort must not fail the job")
+	assert.Equal(t, int64(1), collect()["shopmon.store_sync.outcome|outcome=rate_limited"], "abort must record rate_limited")
 
 	// 6.6 en+de succeeded; 6.5 en hit 429 and aborted before de (and before any
 	// further versions, of which there are none).
@@ -483,23 +533,85 @@ func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
 	// not be advanced (otherwise the hourly freshness gate would starve retries).
 	assert.Equal(t, 1, countRows(t, pool, "store_extension_compatibility"))
 	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"), "bookkeeping not marked fresh after rate limit")
+
+	// Incomplete work stays eligible for the next scheduled pass — both the
+	// aborted Shopware version (compat gap) and a fresh re-sync of the same
+	// names (bookkeeping never written).
+	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.5.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"FroshTools"}, needing, "aborted version must remain eligible")
+	needing, err = h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"FroshTools"}, needing, "partial sync must not mark the name-set fresh")
 }
 
 // TestStoreExtensionSyncAllProbesRateLimited: when the first version is already
-// rate-limited, nothing is persisted and the error surfaces for job retry.
+// rate-limited, nothing is persisted, bookkeeping stays stale, and the job
+// still succeeds so the queue does not immediately retry.
 func TestStoreExtensionSyncAllProbesRateLimited(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+	collect := withStoreSyncMetrics(t)
 	store.rateLimitedVersions["6.6.0.0"] = true
 	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
-	err := h.SyncNames(context.Background(), []string{"FroshTools"}, "6.6.0.0", false)
-	require.Error(t, err)
-	assert.True(t, shopwareaccount.IsRateLimited(err), "expected rate-limit error, got %v", err)
+	err := h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false)
+	require.NoError(t, err, "rate-limit abort must not fail the job")
+	assert.Equal(t, int64(1), collect()["shopmon.store_sync.outcome|outcome=rate_limited"], "abort must record rate_limited")
 
 	assert.Equal(t, []string{"en_GB@6.6.0.0"}, store.seenLocales(), "must not continue after first 429")
 	assert.Equal(t, 0, countRows(t, pool, "store_extension"))
 	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+
+	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"FroshTools"}, needing, "unsynced names must remain eligible")
+}
+
+// TestStoreExtensionSyncNon429StillErrors: a non-429 probe failure on every
+// version is a real job error, not a graceful backoff.
+func TestStoreExtensionSyncNon429StillErrors(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	collect := withStoreSyncMetrics(t)
+	store.serverErrorVersions["6.6.0.0"] = true
+	store.serverErrorVersions["6.5.0.0"] = true
+	h.account = fastStoreClient(store.URL)
+
+	err := h.SyncNames(context.Background(), []string{"FroshTools"}, "6.6.0.0", false)
+	require.Error(t, err)
+	assert.False(t, shopwareaccount.IsRateLimited(err), "500 must not be classified as rate-limited")
+	assert.Contains(t, err.Error(), "all store probes failed")
+	assert.Equal(t, int64(1), collect()["shopmon.store_sync.outcome|outcome=error"], "non-429 must record error")
+
+	assert.Equal(t, 0, countRows(t, pool, "store_extension"))
+	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+}
+
+// TestStoreExtensionSyncRateLimitThenScheduledPass: after a 429 abort, a later
+// SyncNames (the next scheduled scrape dispatch) finishes the remaining
+// versions and only then marks bookkeeping fresh.
+func TestStoreExtensionSyncRateLimitThenScheduledPass(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+	store.rateLimitedVersions["6.5.0.0"] = true
+	h.account = fastStoreClient(store.URL)
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false), "partial abort")
+	assert.Equal(t, 0, countRows(t, pool, "store_extension_sync"))
+
+	store.mu.Lock()
+	store.rateLimitedVersions["6.5.0.0"] = false
+	store.seen = nil
+	store.mu.Unlock()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.6.0.0", false), "scheduled follow-up")
+	assert.Equal(t, 1, countRows(t, pool, "store_extension_sync"), "bookkeeping marked fresh only after a complete sync")
+	assert.Equal(t, 2, countRows(t, pool, "store_extension_compatibility"), "both versions probed")
+
+	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.6.0.0")
+	require.NoError(t, err)
+	assert.Empty(t, needing, "complete sync must satisfy freshness")
 }
 
 // TestOldDataCleanupRetainsCatalog verifies the catalog itself — including its
