@@ -79,7 +79,7 @@ func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) erro
 	// Tracing
 	if traceEndpoint != "" {
 		traceExporter, err := otlptracehttp.New(setupCtx,
-			otlptracehttp.WithEndpointURL(traceEndpoint),
+			otlptracehttp.WithEndpointURL(ensurePath(traceEndpoint, "/v1/traces")),
 		)
 		if err != nil {
 			slog.Error("failed to create OTLP trace exporter", "error", err)

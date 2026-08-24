@@ -35,6 +35,12 @@ func TestEnsurePath(t *testing.T) {
 			want:        "http://localhost:4318/custom",
 		},
 		{
+			name:        "traces path appended",
+			endpoint:    "http://localhost:4318",
+			defaultPath: "/v1/traces",
+			want:        "http://localhost:4318/v1/traces",
+		},
+		{
 			name:        "invalid url unchanged",
 			endpoint:    "://not a url",
 			defaultPath: "/v1/logs",
