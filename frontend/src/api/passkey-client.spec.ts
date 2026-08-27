@@ -35,7 +35,13 @@ describe("passkey client serialization", () => {
     );
     client.setConfig({ fetch: fetchMock, baseUrl: "http://example.test/api" });
 
-    const body = { challengeKey: "abc", name: "Laptop", id: "cred", rawId: "cred", type: "public-key" };
+    const body = {
+      challengeKey: "abc",
+      name: "Laptop",
+      id: "cred",
+      rawId: "cred",
+      type: "public-key",
+    };
     await passkeyRegister({ body });
 
     expect(fetchMock).toHaveBeenCalled();
