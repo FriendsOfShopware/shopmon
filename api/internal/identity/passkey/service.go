@@ -13,6 +13,7 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/identity"
 	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 )
@@ -283,7 +284,7 @@ func storedToCredential(stored StoredPasskey) (webauthn.Credential, error) {
 	if err != nil {
 		return webauthn.Credential{}, fmt.Errorf("decode credential ID for passkey %s: %w", stored.ID, err)
 	}
-	publicKey, err := decodeBase64Any(stored.PublicKey)
+	publicKey, err := decodeCOSEPublicKey(stored.PublicKey)
 	if err != nil {
 		return webauthn.Credential{}, fmt.Errorf("decode public key for passkey %s: %w", stored.ID, err)
 	}
@@ -336,14 +337,47 @@ func credentialToStored(userID string, credential *webauthn.Credential) (StoredP
 }
 
 func decodeBase64Any(value string) ([]byte, error) {
-	for _, encoding := range []*base64.Encoding{
-		base64.RawURLEncoding, base64.RawStdEncoding, base64.URLEncoding, base64.StdEncoding,
-	} {
+	for _, encoding := range base64Encodings {
 		if decoded, err := encoding.DecodeString(value); err == nil {
 			return decoded, nil
 		}
 	}
 	return nil, fmt.Errorf("no supported base64 encoding matched")
+}
+
+// decodeCOSEPublicKey decodes a stored WebAuthn public key and returns the
+// first candidate that parses as a COSE key. Trying encodings blindly can
+// succeed with the wrong variant and yield "Unsupported Public Key Type" at
+// assertion time — the production symptom for some better-auth rows.
+func decodeCOSEPublicKey(value string) ([]byte, error) {
+	var candidates [][]byte
+	var lastErr error
+	for _, encoding := range base64Encodings {
+		decoded, err := encoding.DecodeString(value)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		candidates = append(candidates, decoded)
+	}
+	if decoded, err := hex.DecodeString(value); err == nil {
+		candidates = append(candidates, decoded)
+	}
+	for _, decoded := range candidates {
+		if _, err := webauthncose.ParsePublicKey(decoded); err != nil {
+			lastErr = err
+			continue
+		}
+		return decoded, nil
+	}
+	if lastErr != nil {
+		return nil, fmt.Errorf("no supported COSE public key encoding matched: %w", lastErr)
+	}
+	return nil, fmt.Errorf("no supported COSE public key encoding matched")
+}
+
+var base64Encodings = []*base64.Encoding{
+	base64.RawURLEncoding, base64.RawStdEncoding, base64.URLEncoding, base64.StdEncoding,
 }
 
 func generateToken() (string, error) {

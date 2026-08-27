@@ -3251,7 +3251,7 @@ export type ListUserPasskeysResponses = {
 export type ListUserPasskeysResponse = ListUserPasskeysResponses[keyof ListUserPasskeysResponses];
 
 export type PasskeyLoginData = {
-    body: Blob | File;
+    body: unknown;
     path?: never;
     query?: never;
     url: '/auth/passkey/login';
@@ -3301,7 +3301,7 @@ export type PasskeyLoginOptionsResponses = {
 export type PasskeyLoginOptionsResponse = PasskeyLoginOptionsResponses[keyof PasskeyLoginOptionsResponses];
 
 export type PasskeyRegisterData = {
-    body: Blob | File;
+    body: unknown;
     path?: never;
     query?: never;
     url: '/auth/passkey/register';
