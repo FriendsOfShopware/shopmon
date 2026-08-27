@@ -587,7 +587,7 @@ async function createPasskey() {
     };
     const attestation = await startRegistration({ optionsJSON: options.publicKey });
     const { error: registerError } = await passkeyRegister({
-      body: { challengeKey, name: passKeyName.value, ...attestation } as never,
+      body: { challengeKey, name: passKeyName.value, ...attestation },
     });
     if (registerError) {
       alert.error(t("settings.passkeyRegisterFailed"));

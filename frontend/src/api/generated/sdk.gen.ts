@@ -664,11 +664,10 @@ export const listUserPasskeys = <ThrowOnError extends boolean = false>(options?:
  * Complete passkey login
  */
 export const passkeyLogin = <ThrowOnError extends boolean = false>(options: Options<PasskeyLoginData, ThrowOnError>): RequestResult<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError> => (options.client ?? client).post<PasskeyLoginResponses, PasskeyLoginErrors, ThrowOnError>({
-    bodySerializer: null,
     url: '/auth/passkey/login',
     ...options,
     headers: {
-        'Content-Type': 'application/octet-stream',
+        'Content-Type': 'application/json',
         ...options.headers
     }
 });
@@ -682,12 +681,11 @@ export const passkeyLoginOptions = <ThrowOnError extends boolean = false>(option
  * Complete passkey registration
  */
 export const passkeyRegister = <ThrowOnError extends boolean = false>(options: Options<PasskeyRegisterData, ThrowOnError>): RequestResult<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError> => (options.client ?? client).post<PasskeyRegisterResponses, PasskeyRegisterErrors, ThrowOnError>({
-    bodySerializer: null,
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/auth/passkey/register',
     ...options,
     headers: {
-        'Content-Type': 'application/octet-stream',
+        'Content-Type': 'application/json',
         ...options.headers
     }
 });

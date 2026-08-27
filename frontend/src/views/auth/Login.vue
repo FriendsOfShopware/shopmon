@@ -220,7 +220,7 @@ async function webauthnLogin() {
 
     // Send assertion to server
     const { data: loginData, error } = await passkeyLogin({
-      body: { challengeKey, ...assertion } as never,
+      body: { challengeKey, ...assertion },
     });
 
     if (error) {

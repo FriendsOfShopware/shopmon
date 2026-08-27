@@ -43,13 +43,13 @@ func (h *AuthHandler) PasskeyRegister(ctx context.Context, input *passkeyRegiste
 		return nil, err
 	}
 	var metadata passkeyRegisterMetadata
-	if err := json.Unmarshal(input.RawBody, &metadata); err != nil {
+	if err := json.Unmarshal(input.Body, &metadata); err != nil {
 		return nil, huma.Error400BadRequest("invalid request body")
 	}
 	if metadata.ChallengeKey == "" {
 		return nil, huma.Error400BadRequest("challengeKey is required")
 	}
-	registered, err := h.passkeys.FinishRegistration(ctx, requestWithRawBody(ctx, input.RawBody), identitypasskey.User{
+	registered, err := h.passkeys.FinishRegistration(ctx, requestWithRawBody(ctx, input.Body), identitypasskey.User{
 		ID: principal.User.ID, Name: principal.User.Name, Email: principal.User.Email,
 	}, metadata.ChallengeKey, metadata.Name)
 	if err != nil {
@@ -70,13 +70,13 @@ func (h *AuthHandler) PasskeyLoginOptions(ctx context.Context, _ *struct{}) (*pa
 
 func (h *AuthHandler) PasskeyLogin(ctx context.Context, input *passkeyLoginInput) (*tokenUserOutput, error) {
 	var metadata passkeyLoginMetadata
-	if err := json.Unmarshal(input.RawBody, &metadata); err != nil {
+	if err := json.Unmarshal(input.Body, &metadata); err != nil {
 		return nil, huma.Error400BadRequest("invalid request body")
 	}
 	if metadata.ChallengeKey == "" {
 		return nil, huma.Error400BadRequest("challengeKey is required")
 	}
-	r := requestWithRawBody(ctx, input.RawBody)
+	r := requestWithRawBody(ctx, input.Body)
 	authentication, err := h.passkeys.FinishLogin(r, metadata.ChallengeKey, sessionMetadata(r))
 	if err != nil {
 		if errors.Is(err, identitypasskey.ErrChallenge) {

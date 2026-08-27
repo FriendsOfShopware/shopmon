@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/descope/virtualwebauthn"
+	"github.com/friendsofshopware/shopmon/api/internal/apirouter"
+	"github.com/friendsofshopware/shopmon/api/internal/auth"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -433,4 +436,23 @@ func TestPasskeyRegisterMultiple(t *testing.T) {
 	var count int
 	require.NoError(t, env.Pool.QueryRow(t.Context(), `SELECT COUNT(*) FROM passkey WHERE user_id = 'user-1'`).Scan(&count))
 	assert.Equal(t, 2, count)
+}
+
+func TestPasskeyFinishOpenAPIUsesJSON(t *testing.T) {
+	t.Parallel()
+
+	router := chi.NewRouter()
+	api := apirouter.NewAPI(router)
+	auth.Register(api, &auth.AuthHandler{})
+
+	for _, path := range []string{"/auth/passkey/login", "/auth/passkey/register"} {
+		item := api.OpenAPI().Paths[path]
+		require.NotNil(t, item, path)
+		require.NotNil(t, item.Post, path)
+		require.NotNil(t, item.Post.RequestBody, path)
+		_, hasJSON := item.Post.RequestBody.Content["application/json"]
+		_, hasOctet := item.Post.RequestBody.Content["application/octet-stream"]
+		assert.True(t, hasJSON, "%s should accept application/json", path)
+		assert.False(t, hasOctet, "%s must not be advertised as a binary upload", path)
+	}
 }

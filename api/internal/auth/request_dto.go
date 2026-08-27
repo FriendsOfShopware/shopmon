@@ -1,5 +1,7 @@
 package auth
 
+import "encoding/json"
+
 type signUpEmailInput struct {
 	Body signUpEmailRequest
 }
@@ -44,11 +46,14 @@ type exchangeCodeInput struct {
 }
 
 type passkeyRegisterInput struct {
-	RawBody []byte
+	// Body must be JSON (not RawBody). RawBody is advertised as
+	// application/octet-stream, and the generated client then skips JSON
+	// serialization of the WebAuthn payload.
+	Body json.RawMessage
 }
 
 type passkeyLoginInput struct {
-	RawBody []byte
+	Body json.RawMessage
 }
 
 type tokenUserOutput struct {
