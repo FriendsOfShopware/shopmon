@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -144,6 +145,11 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 	environmentID := int32(input.EnvironmentID)
 
 	req := input.Body
+	grace, ok := taskGraceMinutes(req.TaskGraceMinutes)
+	if !ok {
+		return nil, huma.Error400BadRequest(fmt.Sprintf("taskGraceMinutes must be between 0 and %d", monitoring.MaxTaskGraceMinutes))
+	}
+
 	err = h.monitoring.UpdateEnvironment(ctx, monitoring.UpdateEnvironmentCommand{
 		UserID:        user.ID,
 		EnvironmentID: int32(environmentID),
@@ -154,7 +160,7 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		ClientSecret:  req.ClientSecret,
 		Ignores:       req.Ignores,
 
-		TaskGraceMinutes: taskGraceMinutes(req.TaskGraceMinutes),
+		TaskGraceMinutes: grace,
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
@@ -340,15 +346,19 @@ func (h *Handler) writeEnvironmentSubscriptionError(ctx context.Context, operati
 	}
 }
 
-// taskGraceMinutes narrows the request's int to the int32 the domain
-// carries. Huma rejects negative values against the schema minimum before the
-// handler runs, and the service checks again for non-HTTP callers.
-func taskGraceMinutes(value *int) *int32 {
+// taskGraceMinutes narrows the request's int to the int32 the domain carries,
+// reporting false for a value that would not survive the conversion. int is 64
+// bits on the platforms this runs on, so a large request value would otherwise
+// wrap to an unrelated (possibly negative) grace period.
+func taskGraceMinutes(value *int) (*int32, bool) {
 	if value == nil {
-		return nil
+		return nil, true
+	}
+	if *value < 0 || int64(*value) > int64(monitoring.MaxTaskGraceMinutes) {
+		return nil, false
 	}
 	converted := int32(*value)
-	return &converted
+	return &converted, true
 }
 
 type updateSitespeedSettingsInput struct {

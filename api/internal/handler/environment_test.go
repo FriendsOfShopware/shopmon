@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -555,6 +557,16 @@ func TestUpdateEnvironmentTaskGrace(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, update(t, -1), "a negative grace period is rejected")
 	assert.Equal(t, 0, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
+
+	// Values past the conversion limit are rejected rather than silently wrapping
+	// to an unrelated int32 or overflowing the time.Duration the checks use.
+	assert.Equal(t, http.StatusBadRequest, update(t, int(monitoring.MaxTaskGraceMinutes)+1))
+	assert.Equal(t, http.StatusBadRequest, update(t, math.MaxInt32+1))
+	assert.Equal(t, 0, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes,
+		"a rejected update leaves the stored grace period untouched")
+
+	assert.Equal(t, http.StatusNoContent, update(t, int(monitoring.MaxTaskGraceMinutes)), "the limit itself is accepted")
+	assert.Equal(t, int(monitoring.MaxTaskGraceMinutes), getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
 }
 
 func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {

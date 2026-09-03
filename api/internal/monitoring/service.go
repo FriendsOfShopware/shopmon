@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 )
 
@@ -19,10 +20,17 @@ var (
 	ErrConnectionFailed           = errors.New("shop connection failed")
 	ErrCredentialDecryption       = errors.New("credential decryption failed")
 	ErrRemoteOperation            = errors.New("remote environment operation failed")
-	ErrInvalidTaskGrace           = errors.New("task overdue grace period must not be negative")
+	ErrInvalidTaskGrace           = errors.New("task overdue grace period out of range")
 )
 
 const deploymentOutputCleanupTimeout = 30 * time.Second
+
+// MaxTaskGraceMinutes is not a policy limit on how long a grace period may be —
+// it is the point where the value stops surviving the round trip. Above it the
+// minutes no longer fit the integer column, and multiplying them by time.Minute
+// overflows time.Duration, so the checks would judge tasks against a different
+// (or negative) period than the one that was saved.
+const MaxTaskGraceMinutes int32 = int32(math.MaxInt64 / int64(time.Minute))
 
 type Shop struct {
 	ID                   int32
@@ -336,7 +344,7 @@ type UpdateEnvironmentCommand struct {
 	ClientSecret  *string
 	Ignores       *[]string
 	// TaskGraceMinutes replaces the environment's overdue grace period
-	// when set. Negative values are rejected; there is no upper bound.
+	// when set. Rejected outside [0, MaxTaskGraceMinutes].
 	TaskGraceMinutes *int32
 }
 
@@ -383,7 +391,7 @@ func (s *Service) UpdateEnvironment(ctx context.Context, cmd UpdateEnvironmentCo
 		environment.Ignores = append([]string(nil), (*cmd.Ignores)...)
 	}
 	if cmd.TaskGraceMinutes != nil {
-		if *cmd.TaskGraceMinutes < 0 {
+		if *cmd.TaskGraceMinutes < 0 || *cmd.TaskGraceMinutes > MaxTaskGraceMinutes {
 			return ErrInvalidTaskGrace
 		}
 		environment.TaskGraceMinutes = *cmd.TaskGraceMinutes

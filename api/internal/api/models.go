@@ -1393,7 +1393,7 @@ type UpdateEnvironmentRequest struct {
 	Name         *string   `json:"name,omitempty"`
 	ShopId       int       `json:"shopId"`
 	ShopUrl      *string   `json:"shopUrl,omitempty"`
-	TaskGraceMinutes *int `json:"taskGraceMinutes,omitempty" minimum:"0"`
+	TaskGraceMinutes *int  `json:"taskGraceMinutes,omitempty" minimum:"0" maximum:"153722867"`
 }
 
 // UpdateShopRequest defines model for UpdateShopRequest.
