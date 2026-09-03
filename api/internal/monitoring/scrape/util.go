@@ -135,8 +135,20 @@ func calculateExtensionDiff(oldExtensions []existingExtension, newExtensions []e
 	return diffs
 }
 
-// isScheduledTaskOverdue determines if a scheduled task is overdue based on its next execution time.
-func isScheduledTaskOverdue(task shopwareScheduledTask) bool {
+// taskGrace is the environment's configured grace period for overdue
+// scheduled tasks. A negative value would make tasks overdue before they are
+// due, so it is floored at zero.
+func taskGrace(env queries.GetAllEnvironmentsRow) time.Duration {
+	if env.TaskGraceMinutes <= 0 {
+		return 0
+	}
+	return time.Duration(env.TaskGraceMinutes) * time.Minute
+}
+
+// isScheduledTaskOverdue determines if a scheduled task is overdue based on its
+// next execution time, allowing for the environment's grace period so a task the
+// worker has not picked up yet is not flagged the second it comes due.
+func isScheduledTaskOverdue(task shopwareScheduledTask, grace time.Duration) bool {
 	if task.NextExecutionTime == nil {
 		return false
 	}
@@ -151,7 +163,7 @@ func isScheduledTaskOverdue(task shopwareScheduledTask) bool {
 	for _, format := range formats {
 		t, err := time.Parse(format, *task.NextExecutionTime)
 		if err == nil {
-			return time.Now().After(t)
+			return time.Now().After(t.Add(grace))
 		}
 	}
 	return false

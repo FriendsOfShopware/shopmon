@@ -12,9 +12,12 @@ func TestCheckTasks(t *testing.T) {
 	overdue := time.Now().Add(-time.Hour).Format(time.RFC3339)
 	future := time.Now().Add(time.Hour).Format(time.RFC3339)
 
+	justDue := time.Now().Add(-5 * time.Minute).Format(time.RFC3339)
+
 	tests := []struct {
 		name          string
 		tasks         []ScheduledTask
+		grace         time.Duration
 		wantSuccess   bool
 		wantWarningID string
 	}{
@@ -61,6 +64,33 @@ func TestCheckTasks(t *testing.T) {
 			wantSuccess: true,
 		},
 		{
+			name: "task late by less than the grace period emits success",
+			tasks: []ScheduledTask{
+				{
+					Name:              "just_due_task",
+					Status:            "active",
+					RunInterval:       7200,
+					NextExecutionTime: &justDue,
+				},
+			},
+			grace:       10 * time.Minute,
+			wantSuccess: true,
+		},
+		{
+			name: "task late by more than the grace period emits warning",
+			tasks: []ScheduledTask{
+				{
+					Name:              "stalled_task",
+					Status:            "active",
+					RunInterval:       7200,
+					NextExecutionTime: &overdue,
+				},
+			},
+			grace:         10 * time.Minute,
+			wantSuccess:   false,
+			wantWarningID: "task.stalled_task",
+		},
+		{
 			name: "not overdue task emits success",
 			tasks: []ScheduledTask{
 				{
@@ -77,7 +107,7 @@ func TestCheckTasks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := NewOutput(nil)
-			checkTasks(context.Background(), Input{ScheduledTasks: tt.tasks}, output)
+			checkTasks(context.Background(), Input{ScheduledTasks: tt.tasks, TaskGrace: tt.grace}, output)
 
 			var hasSuccess, hasWarning bool
 			for _, check := range output.Result().Checks {

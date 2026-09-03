@@ -124,6 +124,10 @@ type Input struct {
 	Client         HTTPClient
 	Ignores        []string
 	Missing        MissingData
+	// TaskGrace is how long a scheduled task may run past its next
+	// execution time before it counts as overdue. Configured per environment;
+	// zero means a task is overdue the moment its due time passes.
+	TaskGrace time.Duration
 	// SecurityAdvisories is the local Packagist catalog snapshot used by
 	// checkSecurity. Empty means the security check is skipped (e.g. catalog
 	// not synced yet).

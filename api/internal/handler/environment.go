@@ -153,6 +153,8 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		ClientID:      req.ClientId,
 		ClientSecret:  req.ClientSecret,
 		Ignores:       req.Ignores,
+
+		TaskGraceMinutes: taskGraceMinutes(req.TaskGraceMinutes),
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
@@ -163,6 +165,8 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		return nil, huma.Error400BadRequest("target shop not found")
 	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
 		return nil, huma.Error403Forbidden("target shop belongs to a different organization")
+	case errors.Is(err, monitoring.ErrInvalidTaskGrace):
+		return nil, huma.Error400BadRequest("taskGraceMinutes must not be negative")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
 		slog.ErrorContext(ctx, "failed to build environment update", "error", err)
 		return nil, huma.Error400BadRequest("Cannot reach shop with new credentials. Check your credentials and shop URL.")
@@ -334,6 +338,17 @@ func (h *Handler) writeEnvironmentSubscriptionError(ctx context.Context, operati
 		slog.ErrorContext(ctx, "environment subscription failed", "operation", operation, "error", err)
 		return huma.Error500InternalServerError("failed to update environment subscription")
 	}
+}
+
+// taskGraceMinutes narrows the request's int to the int32 the domain
+// carries. Huma rejects negative values against the schema minimum before the
+// handler runs, and the service checks again for non-HTTP callers.
+func taskGraceMinutes(value *int) *int32 {
+	if value == nil {
+		return nil
+	}
+	converted := int32(*value)
+	return &converted
 }
 
 type updateSitespeedSettingsInput struct {

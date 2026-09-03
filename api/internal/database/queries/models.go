@@ -140,6 +140,7 @@ type Environment struct {
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
 	EnvironmentToken     string           `json:"environment_token"`
+	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 }
 

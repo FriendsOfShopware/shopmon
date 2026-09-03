@@ -269,6 +269,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		SitespeedEnabled:   environment.SitespeedEnabled,
 		SitespeedDetailUrl: sitespeedDetailURL(s.config, environment.ID, environment.SitespeedEnabled),
 		SitespeedUrls:      sitespeedURLs,
+		TaskGraceMinutes:   int(environment.TaskGraceMinutes),
 		Extensions:         aggregate.extensions,
 		ScheduledTasks:     mapEnvironmentScheduledTasks(aggregate.tasks),
 		Queues:             mapEnvironmentQueues(aggregate.queues),

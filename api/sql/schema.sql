@@ -164,6 +164,10 @@ CREATE TABLE "environment" (
   "sitespeed_enabled" boolean NOT NULL DEFAULT false,
   "sitespeed_urls" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "environment_token" text NOT NULL,
+  -- Grace period before a scheduled task whose next execution time has passed
+  -- counts as overdue. Shopware writes the next run time before the worker
+  -- picks the task up, so a short lag is normal operation, not a fault.
+  "task_grace_minutes" integer NOT NULL DEFAULT 10,
   "created_at" timestamp NOT NULL
 );
 

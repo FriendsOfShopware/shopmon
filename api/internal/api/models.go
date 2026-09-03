@@ -1093,6 +1093,7 @@ type EnvironmentDetail struct {
 	Status             string                 `json:"status"`
 	Subscribed         bool                   `json:"subscribed"`
 	Url                string                 `json:"url"`
+	TaskGraceMinutes   int                    `json:"taskGraceMinutes"`
 }
 
 // EnvironmentExtension defines model for EnvironmentExtension.
@@ -1392,6 +1393,7 @@ type UpdateEnvironmentRequest struct {
 	Name         *string   `json:"name,omitempty"`
 	ShopId       int       `json:"shopId"`
 	ShopUrl      *string   `json:"shopUrl,omitempty"`
+	TaskGraceMinutes *int `json:"taskGraceMinutes,omitempty" minimum:"0"`
 }
 
 // UpdateShopRequest defines model for UpdateShopRequest.
