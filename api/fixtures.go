@@ -540,8 +540,10 @@ func (s *seeder) seedDeployments(environmentID int32) []deploymentRef {
 	return deployments
 }
 
-// seedSitespeed creates sitespeed samples every ~6h over the last 7 days, with a
-// performance penalty applied to samples taken shortly after a deployment.
+// seedSitespeed creates one sitespeed sample per day over the last month, with a
+// performance penalty applied to samples taken shortly after a deployment. Daily
+// steps keep every sample at least a day apart from its neighbours, so the charts
+// show a real trend line instead of one stack of points.
 func (s *seeder) seedSitespeed(environmentID int32, deployments []deploymentRef) {
 	const (
 		baseTTFB         = 120.0
@@ -551,16 +553,20 @@ func (s *seeder) seedSitespeed(environmentID int32, deployments []deploymentRef)
 		baseCLS          = 0.05
 		baseTransferSize = 1200000.0
 	)
+	// One sample per day, so consecutive entries are always a day apart.
+	const sampleDays = 29
 	count := 0
 
-	for hoursAgo := 7 * 24; hoursAgo >= 0; hoursAgo -= 6 {
-		createdAt := s.now.Add(-time.Duration(hoursAgo) * time.Hour)
+	for daysAgo := sampleDays - 1; daysAgo >= 0; daysAgo-- {
+		createdAt := s.now.AddDate(0, 0, -daysAgo)
 
 		var deploymentID *int32
 		deploymentPenalty := 1.0
 		for _, d := range deployments {
+			// A sample belongs to the deployment that happened within the day
+			// before it — the sampling interval, so no deployment is missed.
 			diff := createdAt.Sub(d.createdAt)
-			if diff >= 0 && diff < 2*time.Hour {
+			if diff >= 0 && diff < 24*time.Hour {
 				id := d.id
 				deploymentID = &id
 				deploymentPenalty = 1.3
@@ -577,9 +583,10 @@ func (s *seeder) seedSitespeed(environmentID int32, deployments []deploymentRef)
 		cls := float32(math.Round(baseCLS*jitter()*deploymentPenalty*1000) / 1000)
 		transferSize := int32(math.Round(baseTransferSize * jitter()))
 
-		if err := s.q.InsertEnvironmentSitespeed(s.ctx, queries.InsertEnvironmentSitespeedParams{
+		if err := s.q.InsertEnvironmentSitespeedAt(s.ctx, queries.InsertEnvironmentSitespeedAtParams{
 			EnvironmentID:          &environmentID,
 			DeploymentID:           deploymentID,
+			CreatedAt:              pgtype.Timestamp{Time: createdAt, Valid: true},
 			Ttfb:                   &ttfb,
 			FullyLoaded:            &fullyLoaded,
 			LargestContentfulPaint: &lcp,
