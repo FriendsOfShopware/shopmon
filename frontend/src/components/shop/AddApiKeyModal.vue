@@ -12,7 +12,7 @@
             <FormControl>
               <Input
                 v-bind="componentField"
-                :placeholder="$t('shop.apiKeyNamePlaceholder')"
+                :placeholder="$t('shop.apiKeyPlaceholder')"
                 autocomplete="off"
               />
             </FormControl>
