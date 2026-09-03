@@ -896,7 +896,16 @@
     "clsOverTime": "Cumulative Layout Shift Over Time",
     "clsScore": "CLS Score",
     "date": "Date",
-    "sitespeedDetails": "{name} details"
+    "sitespeedDetails": "{name} details",
+    "timespan": "Timespan",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days",
+    "lastYear": "Last year",
+    "allTime": "All time",
+    "hideFromChart": "Hide this run from the charts",
+    "showInChart": "Show this run in the charts",
+    "showAllInChart": "Show all runs"
   },
   "deployments": {
     "setupTitle": "How to Track Deployments",

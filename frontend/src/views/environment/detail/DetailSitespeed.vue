@@ -20,16 +20,28 @@
       </Card>
     </div>
 
-    <!-- External link -->
-    <div v-if="environment.sitespeedDetailUrl" class="flex items-center justify-between">
+    <!-- Timespan filter + external link -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-lg font-semibold">{{ $t("shopDetail.performanceOverTime") }}</h2>
-      <Button variant="outline" size="sm" as-child>
-        <a :href="environment.sitespeedDetailUrl" target="_blank">
-          <icon-fa6-solid:chart-line class="mr-1.5 size-3" />
-          {{ $t("sitespeed.sitespeedDetails", { name: $t("nav.sitespeed") }) }}
-          <icon-fa6-solid:arrow-up-right-from-square class="ml-1.5 size-2.5" />
-        </a>
-      </Button>
+      <div class="flex items-center gap-2">
+        <Select v-model="timespan">
+          <SelectTrigger class="w-44" :aria-label="$t('sitespeed.timespan')">
+            <SelectValue :placeholder="$t('sitespeed.timespan')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="option in timespanOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Button v-if="environment.sitespeedDetailUrl" variant="outline" size="sm" as-child>
+          <a :href="environment.sitespeedDetailUrl" target="_blank">
+            <icon-fa6-solid:chart-line class="mr-1.5 size-3" />
+            {{ $t("sitespeed.sitespeedDetails", { name: $t("nav.sitespeed") }) }}
+            <icon-fa6-solid:arrow-up-right-from-square class="ml-1.5 size-2.5" />
+          </a>
+        </Button>
+      </div>
     </div>
 
     <!-- Charts -->
@@ -88,6 +100,7 @@
             { key: 'transferSize', name: t('shopDetail.size'), sortable: true },
           ]"
           :data="environment.sitespeeds"
+          :row-class="(row) => (isRunHidden(row) ? 'opacity-50' : '')"
         >
           <template #cell-createdAt="{ row }">
             <span class="tabular-nums text-muted-foreground">{{
@@ -140,6 +153,35 @@
               row.transferSize ? formatBytes(row.transferSize) : "—"
             }}</span>
           </template>
+          <template #cell-actions-header>
+            <Button
+              v-if="hiddenRuns.size"
+              variant="ghost"
+              size="sm"
+              class="h-7 text-xs font-normal"
+              @click="showAllRuns"
+            >
+              {{ $t("sitespeed.showAllInChart") }}
+            </Button>
+          </template>
+          <template #cell-actions="{ row }">
+            <Button
+              variant="ghost"
+              size="icon"
+              class="size-8 text-muted-foreground hover:text-foreground"
+              :title="
+                isRunHidden(row) ? $t('sitespeed.showInChart') : $t('sitespeed.hideFromChart')
+              "
+              :aria-label="
+                isRunHidden(row) ? $t('sitespeed.showInChart') : $t('sitespeed.hideFromChart')
+              "
+              :aria-pressed="isRunHidden(row)"
+              @click="toggleRunVisibility(row)"
+            >
+              <icon-fa6-solid:eye-slash v-if="isRunHidden(row)" class="size-3.5" />
+              <icon-fa6-solid:eye v-else class="size-3.5" />
+            </Button>
+          </template>
         </DataTable>
       </CardContent>
     </Card>
@@ -157,6 +199,13 @@ import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useI18n } from "vue-i18n";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DataTable from "@/components/layout/DataTable.vue";
@@ -169,6 +218,57 @@ Chart.register(...registerables, annotationPlugin);
 const showSitespeedData = computed(
   () => environment.value?.sitespeedEnabled && (environment.value?.sitespeeds?.length ?? 0) > 0,
 );
+
+// ── Chart visibility ──
+// Runs the user hid via the eye button in the history table. They stay in the
+// table (dimmed) and in the summary cards, and only drop out of the charts, so
+// a single outlier run cannot flatten the rest of the curve.
+const hiddenRuns = ref(new Set<string>());
+
+function isRunHidden(run: { createdAt: string }): boolean {
+  return hiddenRuns.value.has(run.createdAt);
+}
+
+function toggleRunVisibility(run: { createdAt: string }) {
+  // Replace the Set so the computed chart data and the icons react to the change.
+  const next = new Set(hiddenRuns.value);
+  if (!next.delete(run.createdAt)) next.add(run.createdAt);
+  hiddenRuns.value = next;
+}
+
+function showAllRuns() {
+  hiddenRuns.value = new Set();
+}
+
+// ── Chart timespan ──
+// Days of history the charts cover; null keeps every run.
+const timespanDays: Record<string, number | null> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+  "1y": 365,
+  all: null,
+};
+
+const timespan = ref("30d");
+
+const timespanOptions = computed(() => [
+  { value: "7d", label: t("sitespeed.last7Days") },
+  { value: "30d", label: t("sitespeed.last30Days") },
+  { value: "90d", label: t("sitespeed.last90Days") },
+  { value: "1y", label: t("sitespeed.lastYear") },
+  { value: "all", label: t("sitespeed.allTime") },
+]);
+
+const visibleSitespeeds = computed(() => {
+  const entries = environment.value?.sitespeeds ?? [];
+  const days = timespanDays[timespan.value] ?? null;
+  const cutoff = days === null ? null : Date.now() - days * 24 * 60 * 60 * 1000;
+  return entries.filter(
+    (entry) =>
+      !isRunHidden(entry) && (cutoff === null || new Date(entry.createdAt).getTime() >= cutoff),
+  );
+});
 
 // Latest entry
 const latest = computed(() => {
@@ -295,9 +395,8 @@ const clsChartCanvas = ref<HTMLCanvasElement | null>(null);
 const clsChartInstance = ref<Chart | null>(null);
 
 const deploymentMarkers = computed(() => {
-  if (!environment.value?.sitespeeds) return [];
   const map = new Map<number, { id: number; name: string; timestamp: number }>();
-  environment.value.sitespeeds.forEach((item) => {
+  visibleSitespeeds.value.forEach((item) => {
     if (item.deployment?.id && !map.has(item.deployment.id)) {
       map.set(item.deployment.id, {
         id: item.deployment.id,
@@ -390,13 +489,13 @@ const chartConfigs: ChartConfig[] = [
 ];
 
 function createChart(config: ChartConfig) {
-  if (!config.canvasRef.value || !environment.value?.sitespeeds) return;
+  if (!config.canvasRef.value) return;
   config.chartInstance.value?.destroy();
 
   const ctx = config.canvasRef.value.getContext("2d");
   if (!ctx) return;
 
-  const sorted = [...environment.value.sitespeeds].sort(
+  const sorted = [...visibleSitespeeds.value].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
@@ -459,7 +558,15 @@ function createChart(config: ChartConfig) {
       scales: {
         x: {
           type: "time",
-          time: { unit: "day", displayFormats: { day: "MMM dd" } },
+          // No fixed unit: a short timespan can hold several runs of the same day,
+          // which a day unit collapses into a single unlabelled tick. minUnit keeps
+          // it from going down to seconds, and the tick cap keeps the axis readable
+          // whether it spans an hour or a year.
+          time: {
+            minUnit: "minute",
+            displayFormats: { minute: "MMM dd HH:mm", hour: "MMM dd HH:mm", day: "MMM dd" },
+          },
+          ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0 },
           title: { display: false },
         },
         y: { beginAtZero: true, title: { display: true, text: config.yAxisLabel } },
@@ -505,4 +612,6 @@ watch(
   () => void renderCharts(),
   { deep: true },
 );
+
+watch([hiddenRuns, timespan], () => void renderCharts());
 </script>
