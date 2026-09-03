@@ -905,7 +905,8 @@
     "allTime": "All time",
     "hideFromChart": "Hide this run from the charts",
     "showInChart": "Show this run in the charts",
-    "showAllInChart": "Show all runs"
+    "showAllInChart": "Show all runs",
+    "noRunsInTimespan": "No runs in the selected timespan. Pick a longer timespan or unhide runs to see the charts."
   },
   "deployments": {
     "setupTitle": "How to Track Deployments",

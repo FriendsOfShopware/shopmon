@@ -45,7 +45,7 @@
     </div>
 
     <!-- Charts -->
-    <template v-if="showSitespeedData">
+    <template v-if="showSitespeedData && visibleSitespeeds.length">
       <Card>
         <CardHeader class="pb-2">
           <CardTitle class="text-base">{{ $t("sitespeed.performanceOverTime") }}</CardTitle>
@@ -81,6 +81,15 @@
         </Card>
       </div>
     </template>
+
+    <!-- Every run is outside the selected timespan or hidden: say so, otherwise
+         the three empty charts read as a rendering failure. -->
+    <Card v-else-if="showSitespeedData">
+      <CardContent class="p-6 text-center text-muted-foreground">
+        <icon-fa6-solid:chart-line class="mx-auto mb-2 size-6 opacity-50" />
+        <p>{{ $t("sitespeed.noRunsInTimespan") }}</p>
+      </CardContent>
+    </Card>
 
     <!-- History table -->
     <Card v-if="environment.sitespeeds?.length" class="overflow-hidden p-0">

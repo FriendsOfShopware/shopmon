@@ -905,7 +905,8 @@
     "allTime": "Gesamter Zeitraum",
     "hideFromChart": "Diesen Lauf in den Diagrammen ausblenden",
     "showInChart": "Diesen Lauf in den Diagrammen anzeigen",
-    "showAllInChart": "Alle Läufe anzeigen"
+    "showAllInChart": "Alle Läufe anzeigen",
+    "noRunsInTimespan": "Keine Läufe im gewählten Zeitraum. Wählen Sie einen längeren Zeitraum oder blenden Sie Läufe wieder ein, um die Diagramme zu sehen."
   },
   "deployments": {
     "setupTitle": "Deployments nachverfolgen",

@@ -174,6 +174,22 @@ describe("DetailSitespeed", () => {
     );
   });
 
+  it("explains an empty result instead of rendering blank charts", async () => {
+    environment.value = { ...environment.value, sitespeeds: [oldRun] };
+    const wrapper = mountComponent();
+    await settleCharts();
+
+    // The single run is 120 days old, so the default 30 day window is empty.
+    expect(wrapper.find("canvas").exists()).toBe(false);
+    expect(wrapper.text()).toContain("No runs in the selected timespan");
+
+    (wrapper.vm as unknown as { timespan: string }).timespan = "all";
+    await settleCharts();
+
+    expect(wrapper.find("canvas").exists()).toBe(true);
+    expect(wrapper.text()).not.toContain("No runs in the selected timespan");
+  });
+
   it("includes older runs when the timespan is widened", async () => {
     const wrapper = mountComponent();
     await settleCharts();
