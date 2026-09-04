@@ -711,6 +711,7 @@ export type EnvironmentDetail = {
     id: number;
     ignores: Array<string>;
     lastChangelog: AccountChangelog;
+    lastDeploymentAt: string | null;
     lastScrapedAt: string | null;
     lastScrapedError: string | null;
     name: string;

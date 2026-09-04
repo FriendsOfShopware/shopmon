@@ -503,6 +503,21 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 	return i, err
 }
 
+const getEnvironmentLastDeploymentAt = `-- name: GetEnvironmentLastDeploymentAt :one
+SELECT created_at
+FROM deployment
+WHERE environment_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetEnvironmentLastDeploymentAt(ctx context.Context, environmentID int32) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentLastDeploymentAt, environmentID)
+	var created_at pgtype.Timestamp
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
 const getEnvironmentNotificationSubscribers = `-- name: GetEnvironmentNotificationSubscribers :many
 SELECT u.id, u.name, u.email, u.locale
 FROM "user" u

@@ -418,11 +418,17 @@ const infoItems = computed(() => {
         : t("common.never"),
     },
     {
-      label: t("shopDetail.lastDeployment"),
+      label: t("shopDetail.deploymentsCount"),
       value:
         environment.value.deploymentsCount > 0
           ? t("deployments.count", { count: environment.value.deploymentsCount })
           : t("common.never"),
+    },
+    {
+      label: t("shopDetail.lastDeployment"),
+      value: environment.value.lastDeploymentAt
+        ? formatDateTime(environment.value.lastDeploymentAt)
+        : t("common.never"),
     },
     { label: t("shopDetail.environment"), value: environment.value.cache?.environment ?? "-" },
     { label: t("shopDetail.cacheAdapter"), value: environment.value.cache?.cacheAdapter ?? "-" },

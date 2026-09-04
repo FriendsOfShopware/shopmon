@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
@@ -83,6 +84,45 @@ func TestGetEnvironment(t *testing.T) {
 	assert.NotNil(t, environment.ScheduledTasks)
 	assert.NotNil(t, environment.Queues)
 	assert.NotNil(t, environment.Checks)
+	assert.Equal(t, 0, environment.DeploymentsCount)
+	assert.Nil(t, environment.LastDeploymentAt)
+}
+
+// TestGetEnvironment_LastDeployment covers the deployment summary in the detail
+// payload: the total count plus the timestamp of the most recent deployment.
+func TestGetEnvironment_LastDeployment(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	// Seed the older deployment last so the query cannot pass by insertion order.
+	latest := time.Now().UTC().Truncate(time.Microsecond)
+	older := latest.Add(-24 * time.Hour)
+	for _, createdAt := range []time.Time{latest, older} {
+		_, err := env.Pool.Exec(t.Context(), `
+			INSERT INTO deployment (environment_id, name, command, return_code, start_date, end_date, execution_time, created_at)
+			VALUES ($1, 'Deploy', 'bin/console deploy', 0, $2, $2, 12.5, $2)
+		`, environmentID, createdAt)
+		require.NoError(t, err)
+	}
+
+	req := testutil.NewRequest(t, "GET", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var environment api.EnvironmentDetail
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environment))
+	assert.Equal(t, 2, environment.DeploymentsCount)
+	require.NotNil(t, environment.LastDeploymentAt)
+	assert.True(t, latest.Equal(*environment.LastDeploymentAt),
+		"expected last deployment %s, got %s", latest, *environment.LastDeploymentAt)
 }
 
 func TestGetEnvironment_NotMember(t *testing.T) {
