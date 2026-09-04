@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
-    <DialogContent class="flex max-h-[calc(100vh-4rem)] max-w-2xl flex-col">
+    <DialogContent class="flex max-h-[calc(100dvh-4rem)] max-w-2xl flex-col">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <icon-fa6-solid:rotate />
