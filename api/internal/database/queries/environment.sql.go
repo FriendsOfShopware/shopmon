@@ -958,6 +958,40 @@ func (q *Queries) InsertEnvironmentSitespeed(ctx context.Context, arg InsertEnvi
 	return err
 }
 
+const insertEnvironmentSitespeedAt = `-- name: InsertEnvironmentSitespeedAt :exec
+INSERT INTO environment_sitespeed (environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type InsertEnvironmentSitespeedAtParams struct {
+	EnvironmentID          *int32           `json:"environment_id"`
+	DeploymentID           *int32           `json:"deployment_id"`
+	CreatedAt              pgtype.Timestamp `json:"created_at"`
+	Ttfb                   *int32           `json:"ttfb"`
+	FullyLoaded            *int32           `json:"fully_loaded"`
+	LargestContentfulPaint *int32           `json:"largest_contentful_paint"`
+	FirstContentfulPaint   *int32           `json:"first_contentful_paint"`
+	CumulativeLayoutShift  *float32         `json:"cumulative_layout_shift"`
+	TransferSize           *int32           `json:"transfer_size"`
+}
+
+// Same insert with an explicit timestamp. Fixtures use it to seed a history that
+// spans days; NOW() would collapse every seeded sample onto the seeding moment.
+func (q *Queries) InsertEnvironmentSitespeedAt(ctx context.Context, arg InsertEnvironmentSitespeedAtParams) error {
+	_, err := q.db.Exec(ctx, insertEnvironmentSitespeedAt,
+		arg.EnvironmentID,
+		arg.DeploymentID,
+		arg.CreatedAt,
+		arg.Ttfb,
+		arg.FullyLoaded,
+		arg.LargestContentfulPaint,
+		arg.FirstContentfulPaint,
+		arg.CumulativeLayoutShift,
+		arg.TransferSize,
+	)
+	return err
+}
+
 const listEnvironmentsByOrganization = `-- name: ListEnvironmentsByOrganization :many
 SELECT e.id, e.name, e.url, e.favicon, e.status, e.shopware_version,
        e.last_scraped_at, e.last_scraped_error, e.created_at, e.shop_id, e.organization_id,

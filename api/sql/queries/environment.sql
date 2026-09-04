@@ -267,6 +267,12 @@ SELECT e.id, e.url, e.sitespeed_urls, e.active_deployment_id, e.environment_toke
 INSERT INTO environment_sitespeed (environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size)
 VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8);
 
+-- Same insert with an explicit timestamp. Fixtures use it to seed a history that
+-- spans days; NOW() would collapse every seeded sample onto the seeding moment.
+-- name: InsertEnvironmentSitespeedAt :exec
+INSERT INTO environment_sitespeed (environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
 -- name: GetEnvironmentNotificationSubscribers :many
 SELECT u.id, u.name, u.email, u.locale
 FROM "user" u
