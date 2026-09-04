@@ -1075,6 +1075,7 @@ type EnvironmentDetail struct {
 	Id                 int                    `json:"id"`
 	Ignores            *[]string              `json:"ignores"`
 	LastChangelog      *AccountChangelog      `json:"lastChangelog"`
+	LastDeploymentAt   *time.Time             `json:"lastDeploymentAt"`
 	LastScrapedAt      *time.Time             `json:"lastScrapedAt"`
 	LastScrapedError   *string                `json:"lastScrapedError"`
 	Name               string                 `json:"name"`

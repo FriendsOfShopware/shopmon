@@ -13,6 +13,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/ptr"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -109,6 +110,7 @@ type detailAggregate struct {
 	sitespeeds     []queries.EnvironmentSitespeed
 	changelogCount int32
 	deployCount    int32
+	lastDeployAt   pgtype.Timestamp
 	subscribed     bool
 }
 
@@ -178,6 +180,17 @@ func (s *Service) loadAggregate(ctx context.Context, environmentID int32, langua
 			return fmt.Errorf("count environment deployments: %w", err)
 		}
 		aggregate.deployCount = count
+		return nil
+	})
+	group.Go(func() error {
+		createdAt, err := s.queries.GetEnvironmentLastDeploymentAt(groupCtx, environmentID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("get environment last deployment: %w", err)
+		}
+		aggregate.lastDeployAt = createdAt
 		return nil
 	})
 
@@ -278,6 +291,7 @@ func (s *Service) buildDetail(environment *queries.GetEnvironmentByIDRow, aggreg
 		Sitespeeds:         mapEnvironmentSitespeeds(aggregate.sitespeeds),
 		ChangelogsCount:    int(aggregate.changelogCount),
 		DeploymentsCount:   int(aggregate.deployCount),
+		LastDeploymentAt:   database.TimePtr(aggregate.lastDeployAt),
 		LastChangelog:      lastChangelog,
 		Subscribed:         aggregate.subscribed,
 	}, nil

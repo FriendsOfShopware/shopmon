@@ -104,6 +104,13 @@ SELECT COUNT(*)::int FROM environment_changelog WHERE environment_id = $1;
 -- name: CountEnvironmentDeployments :one
 SELECT COUNT(*)::int FROM deployment WHERE environment_id = $1;
 
+-- name: GetEnvironmentLastDeploymentAt :one
+SELECT created_at
+FROM deployment
+WHERE environment_id = $1
+ORDER BY created_at DESC
+LIMIT 1;
+
 -- name: UpdateEnvironmentSitespeedSettings :exec
 UPDATE environment SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3;
 

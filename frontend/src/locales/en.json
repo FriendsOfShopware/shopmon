@@ -819,6 +819,7 @@
     "lastCheckedAt": "Last Checked At",
     "shopUpdateTooltip": "Environment is updated once an hour automatically",
     "lastShopUpdate": "Last Environment Update",
+    "deploymentsCount": "Deployment Count",
     "lastDeployment": "Last Deployment",
     "environment": "Environment",
     "cacheAdapter": "Cache Adapter",

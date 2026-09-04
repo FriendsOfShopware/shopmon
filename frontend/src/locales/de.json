@@ -819,6 +819,7 @@
     "lastCheckedAt": "Zuletzt geprüft am",
     "shopUpdateTooltip": "Umgebung wird automatisch einmal pro Stunde aktualisiert",
     "lastShopUpdate": "Letzte Umgebungs-Aktualisierung",
+    "deploymentsCount": "Anzahl Deployments",
     "lastDeployment": "Letztes Deployment",
     "environment": "Umgebung",
     "cacheAdapter": "Cache-Adapter",
