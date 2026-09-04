@@ -69,6 +69,8 @@ func (r *Repository) FindEnvironment(ctx context.Context, environmentID int32) (
 		ShopwareVersion:       row.ShopwareVersion,
 		EnvironmentToken:      row.EnvironmentToken,
 		Ignores:               ignores,
+
+		TaskGraceMinutes: row.TaskGraceMinutes,
 	}, nil
 }
 
@@ -187,7 +189,9 @@ func (r *Repository) UpdateEnvironment(ctx context.Context, environment monitori
 		ClientSecret: environment.EncryptedClientSecret,
 		Ignores:      ignores,
 		ShopID:       environment.ShopID,
-		ID:           environment.ID,
+
+		TaskGraceMinutes: environment.TaskGraceMinutes,
+		ID:               environment.ID,
 	}); err != nil {
 		return fmt.Errorf("update environment: %w", err)
 	}

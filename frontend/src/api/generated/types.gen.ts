@@ -728,6 +728,7 @@ export type EnvironmentDetail = {
     sitespeeds: Array<Sitespeed>;
     status: string;
     subscribed: boolean;
+    taskGraceMinutes: number;
     url: string;
 };
 
@@ -1152,6 +1153,7 @@ export type UpdateEnvironmentRequest = {
     name?: string;
     shopId: number;
     shopUrl?: string;
+    taskGraceMinutes?: number;
 };
 
 export type UpdateOrganizationRequest = {

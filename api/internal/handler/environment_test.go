@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/friendsofshopware/shopmon/api/internal/api"
 	"github.com/friendsofshopware/shopmon/api/internal/crypto"
+	"github.com/friendsofshopware/shopmon/api/internal/monitoring"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -511,6 +513,60 @@ func TestUpdateEnvironment(t *testing.T) {
 	var environment api.EnvironmentDetail
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&environment))
 	assert.Equal(t, "New Name", environment.Name)
+	assert.Equal(t, 10, environment.TaskGraceMinutes, "an update that omits the field keeps the default grace period")
+}
+
+func TestUpdateEnvironmentTaskGrace(t *testing.T) {
+	env := testutil.Setup(t)
+	token := env.SeedUser(t, "user-1", "Test User", "test@example.com", "user")
+	env.SeedOrganization(t, "org-1", "Test Org", "test-org", "user-1")
+	shopID := env.SeedShop(t, "org-1", "Test Shop")
+	environmentID := env.SeedEnvironment(t, "org-1", shopID, "My Environment", "https://env.example.com")
+
+	assert.Equal(t, 10, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes,
+		"a new environment starts on the default grace period")
+
+	update := func(t *testing.T, grace int) int {
+		t.Helper()
+		body, err := json.Marshal(api.UpdateEnvironmentRequest{
+			ShopId:                  shopID,
+			TaskGraceMinutes: &grace,
+		})
+		require.NoError(t, err)
+
+		req := testutil.NewRequest(t, "PATCH", fmt.Sprintf("%s/api/environments/%d", env.Server.URL, environmentID), bytes.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+		return resp.StatusCode
+	}
+
+	assert.Equal(t, http.StatusNoContent, update(t, 45))
+	assert.Equal(t, 45, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
+
+	// No upper bound: a long grace period is a valid choice, not a typo to reject.
+	assert.Equal(t, http.StatusNoContent, update(t, 10080))
+	assert.Equal(t, 10080, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
+
+	// Zero is meaningful — flag a task the moment it comes due.
+	assert.Equal(t, http.StatusNoContent, update(t, 0))
+	assert.Equal(t, 0, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
+
+	assert.Equal(t, http.StatusBadRequest, update(t, -1), "a negative grace period is rejected")
+	assert.Equal(t, 0, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
+
+	// Values past the conversion limit are rejected rather than silently wrapping
+	// to an unrelated int32 or overflowing the time.Duration the checks use.
+	assert.Equal(t, http.StatusBadRequest, update(t, int(monitoring.MaxTaskGraceMinutes)+1))
+	assert.Equal(t, http.StatusBadRequest, update(t, math.MaxInt32+1))
+	assert.Equal(t, 0, getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes,
+		"a rejected update leaves the stored grace period untouched")
+
+	assert.Equal(t, http.StatusNoContent, update(t, int(monitoring.MaxTaskGraceMinutes)), "the limit itself is accepted")
+	assert.Equal(t, int(monitoring.MaxTaskGraceMinutes), getEnvironmentDetail(t, env.Server.URL, token, environmentID).TaskGraceMinutes)
 }
 
 func TestSubscribeAndUnsubscribeEnvironment(t *testing.T) {

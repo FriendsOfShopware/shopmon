@@ -125,6 +125,28 @@
             </div>
           </div>
 
+          <Separator />
+
+          <!-- Health check thresholds -->
+          <div>
+            <h3 class="text-sm font-semibold">{{ $t("environment.healthChecks") }}</h3>
+            <p class="mt-0.5 text-xs text-muted-foreground">
+              {{ $t("environment.taskGraceDesc") }}
+            </p>
+
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <FormField v-slot="{ componentField }" name="taskGraceMinutes">
+                <FormItem>
+                  <FormLabel>{{ $t("environment.taskGrace") }}</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" type="number" min="0" step="1" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+            </div>
+          </div>
+
           <div class="flex justify-end">
             <Button :disabled="isSubmitting" type="submit">
               <icon-fa6-solid:floppy-disk
@@ -300,6 +322,10 @@ const selectedShopId = ref<number>(0);
 
 const environmentId = Number.parseInt(route.params.environmentId as string, 10);
 
+// Mirrors the database default, so an environment saved before the field existed
+// still shows the value the checks actually use.
+const DEFAULT_TASK_GRACE_MINUTES = 10;
+
 getAccountShops().then(({ data }) => {
   if (data) shops.value = data;
 });
@@ -326,6 +352,10 @@ async function loadEnvironment() {
     setFieldValue("name", environment.value.name);
     setFieldValue("shopUrl", environment.value.url);
     setFieldValue("shopId", String(environment.value.shopId ?? ""));
+    setFieldValue(
+      "taskGraceMinutes",
+      environment.value.taskGraceMinutes ?? DEFAULT_TASK_GRACE_MINUTES,
+    );
   }
 
   isLoading.value = false;
@@ -357,6 +387,10 @@ const schema = toTypedSchema(
     shopId: z.string().min(1, t("validation.shopRequired")),
     clientId: z.string().optional(),
     clientSecret: z.string().optional(),
+    taskGraceMinutes: z.coerce
+      .number({ invalid_type_error: t("validation.taskGraceRange") })
+      .int(t("validation.taskGraceRange"))
+      .min(0, t("validation.taskGraceRange")),
   }),
 );
 
@@ -379,6 +413,7 @@ const onSubmit = handleSubmit(async (values) => {
           clientId: values.clientId,
           clientSecret: values.clientSecret,
           shopId: Number(values.shopId),
+          taskGraceMinutes: values.taskGraceMinutes,
         },
       });
 

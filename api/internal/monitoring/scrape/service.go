@@ -404,6 +404,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 		},
 		Client:             client,
 		Ignores:            ignores,
+		TaskGrace:   taskGrace(env),
 		Missing:            missing,
 		SecurityAdvisories: securityAdvisories,
 		// Composer package inventory from the FroshTools SBOM. Empty when the
@@ -671,7 +672,7 @@ func (h *Service) persistScrapeResult(ctx context.Context, env queries.GetAllEnv
 	taskIDs := make([]string, 0, len(res.scheduledTasks))
 	for _, st := range res.scheduledTasks {
 		taskIDs = append(taskIDs, st.ID)
-		overdue := isScheduledTaskOverdue(st)
+		overdue := isScheduledTaskOverdue(st, taskGrace(env))
 		if err := txQueries.UpsertEnvironmentScheduledTask(ctx, queries.UpsertEnvironmentScheduledTaskParams{
 			EnvironmentID:     env.ID,
 			TaskID:            st.ID,

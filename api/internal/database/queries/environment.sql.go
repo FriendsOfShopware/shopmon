@@ -164,6 +164,7 @@ const getAllEnvironments = `-- name: GetAllEnvironments :many
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       e.task_grace_minutes,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -184,6 +185,7 @@ type GetAllEnvironmentsRow struct {
 	EnvironmentToken     string           `json:"environment_token"`
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
+	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
 	ShopName             *string          `json:"shop_name"`
 }
 
@@ -211,6 +213,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 			&i.EnvironmentToken,
 			&i.SitespeedEnabled,
 			&i.SitespeedUrls,
+			&i.TaskGraceMinutes,
 			&i.ShopName,
 		); err != nil {
 			return nil, err
@@ -224,7 +227,7 @@ func (q *Queries) GetAllEnvironments(ctx context.Context) ([]GetAllEnvironmentsR
 }
 
 const getEnvironmentByID = `-- name: GetEnvironmentByID :one
-SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
+SELECT e.id, e.organization_id, e.shop_id, e.name, e.status, e.url, e.favicon, e.client_id, e.client_secret, e.shopware_version, e.last_scraped_at, e.last_scraped_error, e.ignores, e.environment_image, e.last_changelog, e.active_deployment_id, e.connection_issue_count, e.sitespeed_enabled, e.sitespeed_urls, e.environment_token, e.task_grace_minutes, e.created_at, o.name AS organization_name, s.name AS shop_name, s.description AS shop_description
 FROM environment e
 JOIN organization o ON o.id = e.organization_id
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -252,6 +255,7 @@ type GetEnvironmentByIDRow struct {
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
 	EnvironmentToken     string           `json:"environment_token"`
+	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 	OrganizationName     string           `json:"organization_name"`
 	ShopName             *string          `json:"shop_name"`
@@ -282,6 +286,7 @@ func (q *Queries) GetEnvironmentByID(ctx context.Context, id int32) (GetEnvironm
 		&i.SitespeedEnabled,
 		&i.SitespeedUrls,
 		&i.EnvironmentToken,
+		&i.TaskGraceMinutes,
 		&i.CreatedAt,
 		&i.OrganizationName,
 		&i.ShopName,
@@ -448,6 +453,7 @@ const getEnvironmentForScrape = `-- name: GetEnvironmentForScrape :one
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       e.task_grace_minutes,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
@@ -469,6 +475,7 @@ type GetEnvironmentForScrapeRow struct {
 	EnvironmentToken     string           `json:"environment_token"`
 	SitespeedEnabled     bool             `json:"sitespeed_enabled"`
 	SitespeedUrls        json.RawMessage  `json:"sitespeed_urls"`
+	TaskGraceMinutes     int32            `json:"task_grace_minutes"`
 	ShopName             *string          `json:"shop_name"`
 }
 
@@ -490,6 +497,7 @@ func (q *Queries) GetEnvironmentForScrape(ctx context.Context, id int32) (GetEnv
 		&i.EnvironmentToken,
 		&i.SitespeedEnabled,
 		&i.SitespeedUrls,
+		&i.TaskGraceMinutes,
 		&i.ShopName,
 	)
 	return i, err
@@ -1074,17 +1082,20 @@ func (q *Queries) ReassignShopDefaultEnvironment(ctx context.Context, id int32) 
 }
 
 const updateEnvironment = `-- name: UpdateEnvironment :exec
-UPDATE environment SET name = $1, url = $2, client_id = $3, client_secret = $4, ignores = $5, shop_id = $6 WHERE id = $7
+UPDATE environment SET name = $1, url = $2, client_id = $3, client_secret = $4, ignores = $5, shop_id = $6,
+       task_grace_minutes = $7
+WHERE id = $8
 `
 
 type UpdateEnvironmentParams struct {
-	Name         string          `json:"name"`
-	Url          string          `json:"url"`
-	ClientID     string          `json:"client_id"`
-	ClientSecret string          `json:"client_secret"`
-	Ignores      json.RawMessage `json:"ignores"`
-	ShopID       int32           `json:"shop_id"`
-	ID           int32           `json:"id"`
+	Name             string          `json:"name"`
+	Url              string          `json:"url"`
+	ClientID         string          `json:"client_id"`
+	ClientSecret     string          `json:"client_secret"`
+	Ignores          json.RawMessage `json:"ignores"`
+	ShopID           int32           `json:"shop_id"`
+	TaskGraceMinutes int32           `json:"task_grace_minutes"`
+	ID               int32           `json:"id"`
 }
 
 func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentParams) error {
@@ -1095,6 +1106,7 @@ func (q *Queries) UpdateEnvironment(ctx context.Context, arg UpdateEnvironmentPa
 		arg.ClientSecret,
 		arg.Ignores,
 		arg.ShopID,
+		arg.TaskGraceMinutes,
 		arg.ID,
 	)
 	return err

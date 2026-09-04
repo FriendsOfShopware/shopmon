@@ -22,7 +22,7 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 		if task.RunInterval <= 3600 {
 			continue
 		}
-		if isTaskOverdue(task) {
+		if isTaskOverdue(task, input.TaskGrace) {
 			hasWarning = true
 			output.Warning(
 				fmt.Sprintf("%s%s", prefixScheduledTask, task.Name),
@@ -37,7 +37,11 @@ func checkTasks(_ context.Context, input Input, output *Output) {
 	}
 }
 
-func isTaskOverdue(task ScheduledTask) bool {
+// isTaskOverdue reports whether a task is late by more than the grace period.
+// Shopware writes next_execution_time when it queues the task, so the worker
+// picking it up a moment later is normal operation — only a task still unrun
+// after the grace period has actually stalled.
+func isTaskOverdue(task ScheduledTask, grace time.Duration) bool {
 	if task.NextExecutionTime == nil {
 		return false
 	}
@@ -51,7 +55,7 @@ func isTaskOverdue(task ScheduledTask) bool {
 	for _, format := range formats {
 		t, err := time.Parse(format, *task.NextExecutionTime)
 		if err == nil {
-			return time.Now().After(t)
+			return time.Now().After(t.Add(grace))
 		}
 	}
 	return false

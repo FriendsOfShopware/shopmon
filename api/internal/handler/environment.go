@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -144,6 +145,11 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 	environmentID := int32(input.EnvironmentID)
 
 	req := input.Body
+	grace, ok := taskGraceMinutes(req.TaskGraceMinutes)
+	if !ok {
+		return nil, huma.Error400BadRequest(fmt.Sprintf("taskGraceMinutes must be between 0 and %d", monitoring.MaxTaskGraceMinutes))
+	}
+
 	err = h.monitoring.UpdateEnvironment(ctx, monitoring.UpdateEnvironmentCommand{
 		UserID:        user.ID,
 		EnvironmentID: int32(environmentID),
@@ -153,6 +159,8 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		ClientID:      req.ClientId,
 		ClientSecret:  req.ClientSecret,
 		Ignores:       req.Ignores,
+
+		TaskGraceMinutes: grace,
 	})
 	switch {
 	case errors.Is(err, monitoring.ErrEnvironmentNotFound):
@@ -163,6 +171,8 @@ func (h *Handler) UpdateEnvironment(ctx context.Context, input *updateEnvironmen
 		return nil, huma.Error400BadRequest("target shop not found")
 	case errors.Is(err, monitoring.ErrShopOrganizationMismatch):
 		return nil, huma.Error403Forbidden("target shop belongs to a different organization")
+	case errors.Is(err, monitoring.ErrInvalidTaskGrace):
+		return nil, huma.Error400BadRequest("taskGraceMinutes must not be negative")
 	case errors.Is(err, monitoring.ErrConnectionFailed):
 		slog.ErrorContext(ctx, "failed to build environment update", "error", err)
 		return nil, huma.Error400BadRequest("Cannot reach shop with new credentials. Check your credentials and shop URL.")
@@ -334,6 +344,21 @@ func (h *Handler) writeEnvironmentSubscriptionError(ctx context.Context, operati
 		slog.ErrorContext(ctx, "environment subscription failed", "operation", operation, "error", err)
 		return huma.Error500InternalServerError("failed to update environment subscription")
 	}
+}
+
+// taskGraceMinutes narrows the request's int to the int32 the domain carries,
+// reporting false for a value that would not survive the conversion. int is 64
+// bits on the platforms this runs on, so a large request value would otherwise
+// wrap to an unrelated (possibly negative) grace period.
+func taskGraceMinutes(value *int) (*int32, bool) {
+	if value == nil {
+		return nil, true
+	}
+	if *value < 0 || int64(*value) > int64(monitoring.MaxTaskGraceMinutes) {
+		return nil, false
+	}
+	converted := int32(*value)
+	return &converted, true
 }
 
 type updateSitespeedSettingsInput struct {

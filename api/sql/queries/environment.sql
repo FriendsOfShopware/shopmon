@@ -22,7 +22,9 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
 RETURNING id;
 
 -- name: UpdateEnvironment :exec
-UPDATE environment SET name = $1, url = $2, client_id = $3, client_secret = $4, ignores = $5, shop_id = $6 WHERE id = $7;
+UPDATE environment SET name = $1, url = $2, client_id = $3, client_secret = $4, ignores = $5, shop_id = $6,
+       task_grace_minutes = $7
+WHERE id = $8;
 
 -- name: UpdateEnvironmentName :exec
 UPDATE environment SET name = $1 WHERE id = $2;
@@ -109,6 +111,7 @@ UPDATE environment SET sitespeed_enabled = $1, sitespeed_urls = $2 WHERE id = $3
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       e.task_grace_minutes,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id;
@@ -117,6 +120,7 @@ LEFT JOIN shop s ON s.id = e.shop_id;
 SELECT e.id, e.name, e.url, e.client_id, e.client_secret, e.shopware_version,
        e.organization_id, e.ignores, e.last_scraped_at, e.last_scraped_error,
        e.connection_issue_count, e.environment_token, e.sitespeed_enabled, e.sitespeed_urls,
+       e.task_grace_minutes,
        s.name AS shop_name
 FROM environment e
 LEFT JOIN shop s ON s.id = e.shop_id
