@@ -900,7 +900,17 @@
     "clsOverTime": "Cumulative Layout Shift über Zeit",
     "clsScore": "CLS-Wert",
     "date": "Datum",
-    "sitespeedDetails": "{name} Details"
+    "sitespeedDetails": "{name} Details",
+    "timespan": "Zeitraum",
+    "last7Days": "Letzte 7 Tage",
+    "last30Days": "Letzte 30 Tage",
+    "last90Days": "Letzte 90 Tage",
+    "lastYear": "Letztes Jahr",
+    "allTime": "Gesamter Zeitraum",
+    "hideFromChart": "Diesen Lauf in den Diagrammen ausblenden",
+    "showInChart": "Diesen Lauf in den Diagrammen anzeigen",
+    "showAllInChart": "Alle Läufe anzeigen",
+    "noRunsInTimespan": "Keine Läufe im gewählten Zeitraum. Wählen Sie einen längeren Zeitraum oder blenden Sie Läufe wieder ein, um die Diagramme zu sehen."
   },
   "deployments": {
     "setupTitle": "Deployments nachverfolgen",

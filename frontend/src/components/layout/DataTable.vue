@@ -23,7 +23,11 @@
       </TableHeader>
 
       <TableBody>
-        <TableRow v-for="(row, rowIndex) in sortedFilteredData" :key="rowIndex">
+        <TableRow
+          v-for="(row, rowIndex) in sortedFilteredData"
+          :key="rowIndex"
+          :class="rowClass?.(row)"
+        >
           <TableCell v-for="column in columns" :key="column.key" :class="[column.class]">
             <slot :name="`cell-${column.key}`" :row="row" :row-index="rowIndex">
               {{ row[column.key] }}
@@ -94,10 +98,12 @@ const props = withDefaults(
     };
     data: RowData[];
     searchTerm?: string;
+    rowClass?: (row: RowData) => string;
   }>(),
   {
     searchTerm: "",
     defaultSort: undefined,
+    rowClass: undefined,
   },
 );
 
