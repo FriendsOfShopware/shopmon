@@ -321,7 +321,11 @@
     "title": "Ecosystem",
     "description": "Aggregate growth and Shopware version statistics across all of Shopmon.",
     "loading": "Loading ecosystem statistics...",
-    "groupByMinor": "Group by minor version"
+    "environmentsGrowth": "Environment Growth",
+    "userGrowth": "User Growth",
+    "shopwareDistribution": "Shopware Version Distribution",
+    "groupByMinor": "Group by minor version",
+    "noVersionData": "No version data available yet."
   },
   "notFound": {
     "title": "Page not found",
