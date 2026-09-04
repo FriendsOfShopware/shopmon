@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="show" @update:open="(v: boolean) => !v && $emit('close')">
-    <DialogContent class="max-w-2xl">
+    <DialogContent class="flex max-h-[calc(100dvh-4rem)] max-w-2xl flex-col">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <icon-fa6-solid:rotate />
@@ -8,18 +8,18 @@
         </DialogTitle>
       </DialogHeader>
 
-      <div>
-        <Select @update:model-value="(v) => v && $emit('versionSelected', String(v))">
-          <SelectTrigger class="mb-3 w-full">
-            <SelectValue :placeholder="$t('updateWizard.selectVersion')" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="version in shopwareVersions" :key="version" :value="version">
-              {{ version }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+      <Select @update:model-value="(v) => v && $emit('versionSelected', String(v))">
+        <SelectTrigger class="w-full shrink-0">
+          <SelectValue :placeholder="$t('updateWizard.selectVersion')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="version in shopwareVersions" :key="version" :value="version">
+            {{ version }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
+      <div class="-mx-6 min-h-0 overflow-y-auto px-6">
         <template v-if="loading">
           <div class="py-4 text-center">
             {{ $t("common.loading") }}
