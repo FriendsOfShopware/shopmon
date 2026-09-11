@@ -3,12 +3,14 @@ package securityplugin
 import "strings"
 
 // pluginBranchToShopware maps a SwagPlatformSecurity major version to the
-// Shopware line it serves. Confirmed by probing the store's pluginsByName
-// endpoint: 6.7 resolves to 4.x, 6.6 to 3.x, 6.5 to 2.x.
+// Shopware line it serves. Confirmed by the require constraints in the
+// plugin's packages.shopware.com feed: 4.x requires ~6.7.0, 3.x ~6.6.0, 2.x
+// ~6.5.0.
 //
-// This is a constant rather than an inference. The store returns changelogs for
-// every branch regardless of the Shopware version queried, so nothing in the
-// response identifies which line a given entry belongs to.
+// This is a constant rather than an inference from the feed's constraints:
+// older branches mix constraints within one branch (1.x spans "~6.4.0",
+// ">=6.1.0 <6.5.0" and "*"), so no single line can be derived for them, and
+// the checker keeps an equivalent map that must agree with this one.
 var pluginBranchToShopware = map[string]string{
 	"4": "6.7",
 	"3": "6.6",
