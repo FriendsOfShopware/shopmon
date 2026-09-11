@@ -77,6 +77,10 @@ type Config struct {
 	// ShopwareChangelogURL is the base URL of the Shopware release changelog API
 	// (index.json + per-version JSON) crawled hourly by the worker.
 	ShopwareChangelogURL string `env:"SHOPWARE_CHANGELOG_URL" envDefault:"https://releases.shopware.com/changelog"`
+	// ShopwarePackagesURL is the base URL of the public Shopware Composer
+	// repository. Its package feeds serve extension versions and changelogs
+	// without the rate limits of the store API.
+	ShopwarePackagesURL string `env:"SHOPWARE_PACKAGES_URL" envDefault:"https://packages.shopware.com"`
 
 	// The OTLP signal endpoints fall back to the generic
 	// OTEL_EXPORTER_OTLP_ENDPOINT, and service env/version to the Datadog
