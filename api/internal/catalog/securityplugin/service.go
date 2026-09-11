@@ -13,17 +13,15 @@ import (
 
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwarepackages"
 )
 
 // ExtensionName is the technical name of the Shopware Security Plugin.
 const ExtensionName = "SwagPlatformSecurity"
 
-// anchorVersions ensure every known branch is probed even when no monitored
-// shop runs that Shopware line yet. Without them a fleet that is entirely on
-// 6.7 would never learn what 3.x backports, and a shop upgrading onto 6.6 would
-// start with an empty map.
-var anchorVersions = []string{"6.7.0.0", "6.6.0.0", "6.5.0.0"}
+// PackageName is the plugin's Composer name on packages.shopware.com, whose
+// feed lists every released version with its changelog.
+const PackageName = "store.shopware.com/swagplatformsecurity"
 
 // coverageDropTolerance guards against markup drift. If a re-parse finds fewer
 // than this fraction of the identifiers a branch had before, the existing rows
@@ -33,31 +31,31 @@ const coverageDropTolerance = 0.5
 
 var tracer = otel.Tracer("shopmon/catalog/securityplugin")
 
-// StoreClient fetches plugin metadata from the Shopware account API.
-type StoreClient interface {
-	PluginsByName(ctx context.Context, locale, shopwareVersion string, technicalNames []string) ([]shopwareaccount.StorePlugin, error)
+// FeedClient fetches package feeds from the Shopware Composer repository.
+type FeedClient interface {
+	PackageFeed(ctx context.Context, name string) (*shopwarepackages.Package, error)
 }
 
 // Service refreshes the GHSA -> plugin version map.
 //
-// It calls the store directly rather than routing through the extension catalog
-// sync: that sync is driven by installed extensions, and writing catalog and
-// compatibility rows for a plugin nobody has installed would pollute the
-// extension catalog and its orphan-cleanup queries.
+// It reads the packages.shopware.com feed directly rather than routing through
+// the extension catalog sync: that sync is driven by installed extensions, and
+// writing catalog and compatibility rows for a plugin nobody has installed
+// would pollute the extension catalog and its orphan-cleanup queries.
 type Service struct {
 	// pool backs the transaction that persist() needs: the map's upserts,
 	// prune, and coverage rows must land atomically.
 	pool    *pgxpool.Pool
 	queries *queries.Queries
-	client  StoreClient
+	client  FeedClient
 	now     func() time.Time
 }
 
-func NewService(pool *pgxpool.Pool, q *queries.Queries, client StoreClient) *Service {
+func NewService(pool *pgxpool.Pool, q *queries.Queries, client FeedClient) *Service {
 	return &Service{pool: pool, queries: q, client: client, now: time.Now}
 }
 
-// Sync re-derives the whole map from the store changelog.
+// Sync re-derives the whole map from the plugin's package feed changelog.
 //
 // The changelog is small (under a hundred entries), so a full recompute is
 // cheaper than tracking deltas and is self-correcting: a fix to the parser
@@ -118,59 +116,34 @@ func (s *Service) Sync(ctx context.Context) error {
 	return nil
 }
 
-// collectChangelog probes every relevant Shopware version and merges the
-// results. One probe already returns entries for all branches, but the endpoint
-// omits the plugin entirely when no release supports the requested version, so
-// probing several versions is what makes the map robust.
+// collectChangelog fetches the plugin's packages.shopware.com feed once. The
+// feed lists every released version with its changelog regardless of any
+// Shopware version scoping, replacing the store API's pluginsByName probing:
+// one unauthenticated request instead of one request per in-use Shopware
+// version.
 func (s *Service) collectChangelog(ctx context.Context) ([]ChangelogEntry, error) {
-	versionsToProbe := map[string]bool{}
-	for _, v := range anchorVersions {
-		versionsToProbe[v] = true
-	}
-	inUse, err := s.queries.GetDistinctEnvironmentShopwareVersions(ctx)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to list environment shopware versions", "error", err)
-	}
-	for _, v := range inUse {
-		if v != "" {
-			versionsToProbe[v] = true
-		}
-	}
-
 	byVersion := map[string]ChangelogEntry{}
-	var probeSucceeded bool
+	var feedSucceeded bool
 
-	for shopwareVersion := range versionsToProbe {
-		plugins, err := s.client.PluginsByName(ctx, "en_GB", shopwareVersion, []string{ExtensionName})
-		if err != nil {
-			slog.WarnContext(ctx, "failed to probe security plugin",
-				"shopwareVersion", shopwareVersion, "error", err)
-			continue
-		}
-		probeSucceeded = true
-
-		for _, plugin := range plugins {
-			if plugin.Name != ExtensionName {
+	feed, err := s.client.PackageFeed(ctx, PackageName)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to fetch security plugin feed", "error", err)
+	} else {
+		feedSucceeded = true
+		for _, v := range feed.Versions {
+			if v.Version == "" {
 				continue
 			}
-			for _, entry := range plugin.Changelogs {
-				if entry.Version == "" {
-					continue
-				}
-				if _, seen := byVersion[entry.Version]; seen {
-					continue
-				}
-				byVersion[entry.Version] = ChangelogEntry{
-					Version:    entry.Version,
-					Changelog:  entry.Text,
-					ReleasedAt: parseStoreDate(entry.CreationDate.Date),
-				}
+			byVersion[v.Version] = ChangelogEntry{
+				Version:    v.Version,
+				Changelog:  v.Changelog,
+				ReleasedAt: v.ReleasedAt,
 			}
 		}
 	}
 
 	// Fall back to the catalog copy, which exists whenever a monitored shop has
-	// the plugin installed. Free, and keeps the map fresh if the store is down.
+	// the plugin installed. Free, and keeps the map fresh if the feed is down.
 	if rows, err := s.queries.GetStoreExtensionChangelogs(ctx, ExtensionName); err == nil {
 		for _, row := range rows {
 			if row.Version == "" || row.ChangelogEn == nil {
@@ -183,7 +156,7 @@ func (s *Service) collectChangelog(ctx context.Context) ([]ChangelogEntry, error
 		}
 	}
 
-	if !probeSucceeded && len(byVersion) == 0 {
+	if !feedSucceeded && len(byVersion) == 0 {
 		return nil, fmt.Errorf("no security plugin changelog could be fetched")
 	}
 
@@ -274,19 +247,6 @@ func (s *Service) persist(ctx context.Context, fixes []Fix, coverage []Coverage,
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit security plugin transaction: %w", err)
-	}
-	return nil
-}
-
-func parseStoreDate(value string) *time.Time {
-	if value == "" {
-		return nil
-	}
-	for _, layout := range []string{"2006-01-02 15:04:05.000000", "2006-01-02 15:04:05", time.RFC3339} {
-		if t, err := time.Parse(layout, value); err == nil {
-			utc := t.UTC()
-			return &utc
-		}
 	}
 	return nil
 }
