@@ -7,6 +7,7 @@ package shopwarepackages
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,6 +23,11 @@ const DefaultBaseURL = "https://packages.shopware.com"
 // maxFeedResponseBytes bounds how much we read from a single feed response, so
 // a misbehaving upstream can't exhaust worker memory.
 const maxFeedResponseBytes = 10 << 20 // 10 MB
+
+// ErrNotFound marks a feed that packages.shopware.com does not serve (HTTP
+// 404) — the normal case for custom plugins that are not distributed through
+// the store's Composer repository.
+var ErrNotFound = errors.New("package feed not found")
 
 // Client fetches package feeds from packages.shopware.com.
 type Client struct {
@@ -87,6 +93,9 @@ func (c *Client) PackageFeed(ctx context.Context, name string) (*Package, error)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("%w: %s", ErrNotFound, name)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch package feed %s: unexpected status %d", name, resp.StatusCode)
 	}

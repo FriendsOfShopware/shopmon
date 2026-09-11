@@ -2,17 +2,20 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/friendsofshopware/shopmon/api/internal/catalog/storemodel"
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwarepackages"
 	"github.com/friendsofshopware/shopmon/api/internal/version"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -35,6 +38,9 @@ type Service struct {
 	// account is an optional store client override (tests). When nil, SyncNames
 	// constructs one from cfg.ShopwareAPIURL.
 	account *shopwareaccount.Client
+	// packages is an optional packages.shopware.com client override (tests).
+	// When nil, SyncNames constructs one from cfg.ShopwarePackagesURL.
+	packages *shopwarepackages.Client
 }
 
 // NewService creates a new Service.
@@ -47,6 +53,13 @@ func (h *Service) accountClient() *shopwareaccount.Client {
 		return h.account
 	}
 	return shopwareaccount.NewClient(h.cfg.ShopwareAPIURL, nil)
+}
+
+func (h *Service) packagesClient() *shopwarepackages.Client {
+	if h.packages != nil {
+		return h.packages
+	}
+	return shopwarepackages.NewClient(h.cfg.ShopwarePackagesURL, nil)
 }
 
 // Sync refreshes the requested names using the normal freshness checks.
@@ -190,15 +203,43 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 
 	client := h.accountClient()
 
+	// Compatibility is resolved from the packages.shopware.com feed wherever
+	// possible: the feed lists every release with its shopware/core constraint,
+	// so the compatible latest version for every in-use Shopware version can be
+	// computed locally instead of probing the rate-limited store API once per
+	// version. The store is still probed for what the feed does not have —
+	// store membership, metadata, translations, pictures, and the changelog
+	// history the global latest version is derived from.
+	//
+	// compat[name][swv] is the compatible latest version for that Shopware
+	// version (nil for "checked, no compatible release"); feedResolved marks
+	// names whose compat map came from the feed. best[name] is the plugin data
+	// used to build the shared catalog subtree, preferring the probe with the
+	// most changelog history (which yields the correct uncapped global latest
+	// version).
+	compat := make(map[string]map[string]*string, len(needed))
+	feedResolved := make(map[string]bool, len(needed))
+	for _, name := range needed {
+		byShopwareVersion, err := h.compatibleVersionsFromFeed(ctx, name, swvs)
+		if err != nil {
+			return err
+		}
+		if byShopwareVersion != nil {
+			compat[name] = byShopwareVersion
+			feedResolved[name] = true
+		}
+	}
+
 	// The store's pluginsByName endpoint is scoped to the requested Shopware
 	// version: it omits any plugin whose releases are all incompatible with that
 	// version. So an extension must be persisted from a probe that actually
 	// returned it, not from a fixed "newest" version — otherwise an extension
 	// installed only on an older environment (whose latest release predates the
 	// newest environment's Shopware version) would be dropped from the catalog
-	// while still being marked synced. Every in-use version is therefore probed
-	// (en + de), and each extension's catalog data is taken from the richest
-	// probe that returned it.
+	// while still being marked synced. Versions are therefore walked newest
+	// first, probing only names that still need the store: not yet returned by
+	// any probe, or without feed-resolved compatibility (the feed does not
+	// cover custom plugins, so those keep the per-version probing).
 	//
 	// Versions are probed sequentially (and locales within a version serially)
 	// so a rate-limit from the store is not amplified by fan-out. On 429 after
@@ -206,18 +247,22 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 	// persisted without advancing sync bookkeeping so the next scheduled scrape
 	// can finish the work. The job returns success so the queue does not
 	// nack/retry into a still-limited Store API.
-	//
-	// compat[swv][name] is the compatible latest version the store reports for
-	// that Shopware version; best[name] is the plugin data used to build the
-	// shared catalog subtree, preferring the probe with the most changelog
-	// history (which yields the correct uncapped global latest version).
-	compat := make(map[string]map[string]string, len(swvs))
 	best := make(map[string]*storemodel.Data, len(needed))
 	anyProbeSucceeded := false
 	var rateLimitErr error
 
 	for _, swv := range swvs {
-		enPlugins, dePlugins, err := h.probeVersion(ctx, client, swv, needed)
+		var probeNames []string
+		for _, name := range needed {
+			if _, found := best[name]; !found || !feedResolved[name] {
+				probeNames = append(probeNames, name)
+			}
+		}
+		if len(probeNames) == 0 {
+			break
+		}
+
+		enPlugins, dePlugins, err := h.probeVersion(ctx, client, swv, probeNames)
 		if err != nil {
 			if shopwareaccount.IsRateLimited(err) {
 				// Stop probing further versions; continuing would only deepen the
@@ -238,17 +283,31 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 		enMap := storemodel.IndexPlugins(enPlugins)
 		deMap := storemodel.IndexPlugins(dePlugins)
 
-		versions := make(map[string]string)
-		for _, name := range needed {
+		for _, name := range probeNames {
 			sd := &storemodel.Data{English: enMap[name], German: deMap[name]}
-			if p := sd.Primary(); p != nil {
-				versions[name] = p.Version
-				if cur, ok := best[name]; !ok || len(sd.MergedChangelogs()) > len(cur.MergedChangelogs()) {
-					best[name] = sd
+			p := sd.Primary()
+
+			if !feedResolved[name] {
+				// Without a feed the compatible latest version comes from the
+				// probe itself; an absent plugin records a NULL row ("checked,
+				// no compatible release") for this Shopware version.
+				if compat[name] == nil {
+					compat[name] = make(map[string]*string, len(swvs))
 				}
+				var latest *string
+				if p != nil {
+					latest = nilIfEmpty(p.Version)
+				}
+				compat[name][swv] = latest
+			}
+
+			if p == nil {
+				continue
+			}
+			if cur, ok := best[name]; !ok || len(sd.MergedChangelogs()) > len(cur.MergedChangelogs()) {
+				best[name] = sd
 			}
 		}
-		compat[swv] = versions
 	}
 
 	if !anyProbeSucceeded {
@@ -268,7 +327,7 @@ func (h *Service) SyncNames(ctx context.Context, names []string, shopwareVersion
 		if !ok {
 			continue // not a store extension; still recorded in the bookkeeping below
 		}
-		if err := h.persistExtension(ctx, name, sd, compat); err != nil {
+		if err := h.persistExtension(ctx, name, sd, compat[name]); err != nil {
 			return err
 		}
 		synced++
@@ -320,6 +379,87 @@ func (h *Service) probeVersion(ctx context.Context, client *shopwareaccount.Clie
 		slog.Warn("failed to fetch store plugins", "locale", "de_DE", "shopwareVersion", shopwareVersion, "error", deErr)
 	}
 	return enPlugins, dePlugins, nil
+}
+
+// compatibleVersionsFromFeed resolves the latest compatible extension version
+// for each Shopware version from the packages.shopware.com feed. It returns
+// nil when the feed cannot be used — unknown package (custom plugins are not
+// on packages.shopware.com), request failure, or no version with an evaluable
+// shopware/core constraint — in which case the caller falls back to probing
+// the store API per Shopware version.
+func (h *Service) compatibleVersionsFromFeed(ctx context.Context, name string, shopwareVersions []string) (map[string]*string, error) {
+	feed, err := h.packagesClient().PackageFeed(ctx, storePackageName(name))
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if errors.Is(err, shopwarepackages.ErrNotFound) {
+			slog.DebugContext(ctx, "no packages feed for extension, falling back to store probes", "extension", name)
+		} else {
+			slog.WarnContext(ctx, "failed to fetch packages feed, falling back to store probes", "extension", name, "error", err)
+		}
+		return nil, nil
+	}
+
+	byShopwareVersion := make(map[string]*string, len(shopwareVersions))
+	evaluable := false
+	for _, swv := range shopwareVersions {
+		latest, ok := latestCompatibleVersion(feed.Versions, swv)
+		if ok {
+			evaluable = true
+		}
+		byShopwareVersion[swv] = latest
+	}
+	if !evaluable {
+		slog.WarnContext(ctx, "packages feed has no evaluable versions, falling back to store probes", "extension", name)
+		return nil, nil
+	}
+	return byShopwareVersion, nil
+}
+
+// latestCompatibleVersion returns the newest feed version whose shopware/core
+// constraint matches the given Shopware version. Versions with a pre-release
+// marker or without a constraint are skipped. The second return value reports
+// whether any version had an evaluable constraint, so the caller can tell a
+// genuinely incompatible extension apart from a feed it cannot make sense of.
+func latestCompatibleVersion(versions []shopwarepackages.PackageVersion, shopwareVersion string) (*string, bool) {
+	var latest *string
+	evaluable := false
+	for _, feedVersion := range versions {
+		constraint := shopwareCoreConstraint(feedVersion.Require)
+		if constraint == "" || strings.Contains(feedVersion.Version, "-") {
+			continue
+		}
+		ok, err := version.Satisfies(shopwareVersion, constraint)
+		if err != nil {
+			continue
+		}
+		evaluable = true
+		if !ok {
+			continue
+		}
+		if latest == nil || version.Compare(*latest, feedVersion.Version) < 0 {
+			v := feedVersion.Version
+			latest = &v
+		}
+	}
+	return latest, evaluable
+}
+
+func shopwareCoreConstraint(require map[string]string) string {
+	for packageName, constraint := range require {
+		if strings.EqualFold(packageName, "shopware/core") {
+			return constraint
+		}
+	}
+	return ""
+}
+
+// storePackageName maps a store technical name to its Composer package name on
+// packages.shopware.com, which serves every store extension under a lowercased
+// store.shopware.com/ vendor prefix.
+func storePackageName(technicalName string) string {
+	return "store.shopware.com/" + strings.ToLower(technicalName)
 }
 
 // shopwareVersionsToProbe returns every Shopware version in use by any
@@ -458,8 +598,11 @@ func persistStoreExtensionCatalog(ctx context.Context, q *queries.Queries, name 
 }
 
 // persistExtension writes one extension's catalog subtree and compatibility
-// rows in a single transaction.
-func (h *Service) persistExtension(ctx context.Context, name string, sd *storemodel.Data, compat map[string]map[string]string) error {
+// rows in a single transaction. compat maps each in-use Shopware version to
+// its compatible latest version; a nil value records "checked, no compatible
+// release", and a Shopware version absent from the map gets no row, so the
+// compatibility gap re-triggers a sync on the next scrape.
+func (h *Service) persistExtension(ctx context.Context, name string, sd *storemodel.Data, compat map[string]*string) error {
 	tx, err := h.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -472,13 +615,7 @@ func (h *Service) persistExtension(ctx context.Context, name string, sd *storemo
 		return err
 	}
 
-	for swv, versions := range compat {
-		// An extension absent from a version's probe has no compatible release
-		// there; the NULL row records that the combination was checked.
-		var latest *string
-		if v, ok := versions[name]; ok && v != "" {
-			latest = &v
-		}
+	for swv, latest := range compat {
 		if err := qtx.UpsertStoreExtensionCompatibility(ctx, queries.UpsertStoreExtensionCompatibilityParams{
 			ExtensionName:   name,
 			ShopwareVersion: swv,

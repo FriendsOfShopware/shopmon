@@ -74,11 +74,19 @@ func TestPackageFeedToleratesMissingDate(t *testing.T) {
 }
 
 func TestPackageFeedErrorsOnNon200(t *testing.T) {
-	srv := feedServer(t, http.StatusNotFound, `{}`)
+	srv := feedServer(t, http.StatusTeapot, `{}`)
 
 	_, err := NewClient(srv.URL, nil).PackageFeed(context.Background(), "store.shopware.com/swagplatformsecurity")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "404")
+	assert.NotErrorIs(t, err, ErrNotFound)
+	assert.Contains(t, err.Error(), "418")
+}
+
+func TestPackageFeedNotFound(t *testing.T) {
+	srv := feedServer(t, http.StatusNotFound, `{}`)
+
+	_, err := NewClient(srv.URL, nil).PackageFeed(context.Background(), "store.shopware.com/swagplatformsecurity")
+	require.ErrorIs(t, err, ErrNotFound)
 }
 
 func TestPackageFeedErrorsOnInvalidJSON(t *testing.T) {
