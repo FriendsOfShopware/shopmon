@@ -14,14 +14,13 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/config"
 	"github.com/friendsofshopware/shopmon/api/internal/database"
 	"github.com/friendsofshopware/shopmon/api/internal/database/queries"
-	"github.com/friendsofshopware/shopmon/api/internal/httputil"
 	"github.com/friendsofshopware/shopmon/api/internal/jobs"
 	jobspostgres "github.com/friendsofshopware/shopmon/api/internal/jobs/postgres"
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	monitoringscrape "github.com/friendsofshopware/shopmon/api/internal/monitoring/scrape"
 	"github.com/friendsofshopware/shopmon/api/internal/monitoring/sitespeed"
-	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwarepackages"
 	"github.com/friendsofshopware/shopmon/api/internal/telemetry"
 	goqueue "github.com/shyim/go-queue"
 	queueotel "github.com/shyim/go-queue/middleware/otel"
@@ -94,8 +93,7 @@ func runWorker(cmd *cobra.Command, args []string) error {
 		NVDAPIKey:   cfg.NVDAPIKey,
 		Mailer:      mailSvc,
 	})
-	securityPluginSync := securityplugin.NewService(pool, q, shopwareaccount.NewClient(
-		cfg.ShopwareAPIURL, httputil.NewHTTPClient(httputil.WithTimeout(30*time.Second))))
+	securityPluginSync := securityplugin.NewService(pool, q, shopwarepackages.NewClient(cfg.ShopwarePackagesURL, nil))
 	if err := jobs.RegisterHandlers(bus, jobs.Handlers{
 		EnvironmentScraper:         environmentScrape,
 		StoreExtensionSynchronizer: storeSync,

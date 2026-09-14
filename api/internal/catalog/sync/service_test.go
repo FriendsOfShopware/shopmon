@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/maintenance"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/shopwareaccount"
+	"github.com/friendsofshopware/shopmon/api/internal/shopwarepackages"
 	"github.com/friendsofshopware/shopmon/api/internal/testutil/testdb"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -35,13 +37,25 @@ type mockExtension struct {
 	changelogVersions []string
 }
 
+// mockFeedVersion is one release in the mock packages.shopware.com feed.
+type mockFeedVersion struct {
+	version    string
+	constraint string
+}
+
 // mockStoreServer serves the pluginsByName endpoint for a configurable set of
 // extensions whose availability and reported latest version depend on the
-// requested Shopware version, and counts requests.
+// requested Shopware version, plus the packages.shopware.com package feeds,
+// and counts requests.
 type mockStoreServer struct {
 	*httptest.Server
-	requests   atomic.Int64
-	extensions map[string]*mockExtension
+	requests    atomic.Int64
+	feedRequests atomic.Int64
+	extensions  map[string]*mockExtension
+	// feeds maps a lowercased technical name to its package feed versions; a
+	// name absent from the map gets a 404 like a package unknown to
+	// packages.shopware.com.
+	feeds map[string][]mockFeedVersion
 
 	mu sync.Mutex
 	// rateLimitedVersions, when set, causes pluginsByName for those Shopware
@@ -50,6 +64,9 @@ type mockStoreServer struct {
 	// serverErrorVersions, when set, causes pluginsByName for those Shopware
 	// versions to respond with HTTP 500 (non-retryable, not a rate limit).
 	serverErrorVersions map[string]bool
+	// feedServerErrorNames, when set, causes the package feed for those
+	// lowercased names to respond with HTTP 500.
+	feedServerErrorNames map[string]bool
 	// seen records locale@shopwareVersion hits in order.
 	seen []string
 	// inFlight tracks concurrent handlers; maxInFlight is the high-water mark.
@@ -69,8 +86,16 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 				changelogVersions:       []string{"1.2.0", "1.1.0", "1.0.0"},
 			},
 		},
-		rateLimitedVersions: map[string]bool{},
-		serverErrorVersions: map[string]bool{},
+		feeds: map[string][]mockFeedVersion{
+			"froshtools": {
+				{version: "1.2.0", constraint: "~6.6.0"},
+				{version: "1.1.0", constraint: "~6.5.0"},
+				{version: "1.0.0", constraint: "~6.5.0"},
+			},
+		},
+		rateLimitedVersions:  map[string]bool{},
+		serverErrorVersions:  map[string]bool{},
+		feedServerErrorNames: map[string]bool{},
 	}
 
 	mux := http.NewServeMux()
@@ -151,6 +176,40 @@ func newMockStoreServer(t *testing.T) *mockStoreServer {
 		assert.NoError(t, json.NewEncoder(w).Encode(plugins), "encode mock response")
 	})
 
+	mux.HandleFunc("/feeds/package/store.shopware.com/", func(w http.ResponseWriter, r *http.Request) {
+		m.feedRequests.Add(1)
+		name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/feeds/package/store.shopware.com/"), ".json")
+
+		m.mu.Lock()
+		versions, ok := m.feeds[name]
+		serverError := m.feedServerErrorNames[name]
+		m.mu.Unlock()
+
+		if serverError {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		feedVersions := make([]map[string]any, 0, len(versions))
+		for _, v := range versions {
+			feedVersions = append(feedVersions, map[string]any{
+				"version":   v.version,
+				"date":      "2023-01-01T00:00:00+00:00",
+				"changelog": "changelog " + v.version,
+				"require":   map[string]string{"shopware/core": v.constraint},
+			})
+		}
+		w.Header().Set("Content-Type", "application/json")
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+			"name":     "store.shopware.com/" + name,
+			"versions": feedVersions,
+		}), "encode mock feed response")
+	})
+
 	m.Server = httptest.NewServer(mux)
 	t.Cleanup(m.Close)
 	return m
@@ -186,7 +245,7 @@ func setupSyncTest(t *testing.T) (*Service, *pgxpool.Pool, *mockStoreServer) {
 	pool := testdb.Setup(t)
 	q := queries.New(pool)
 	store := newMockStoreServer(t)
-	h := NewService(pool, q, &config.Config{ShopwareAPIURL: store.URL})
+	h := NewService(pool, q, &config.Config{ShopwareAPIURL: store.URL, ShopwarePackagesURL: store.URL})
 
 	seedEnvironment(t, pool, "Production", "6.5.0.0")
 	seedEnvironment(t, pool, "Staging", "6.6.0.0")
@@ -291,8 +350,11 @@ func TestStoreExtensionSyncPersistsCatalog(t *testing.T) {
 
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools", "CustomPlugin"}, "6.5.0.0", false))
 
-	// en + de for each in-use Shopware version (6.5.0.0 and 6.6.0.0).
+	// FroshTools is feed-resolved, so the store is probed at the newest version
+	// only; the feed-missing CustomPlugin keeps per-version probing:
+	// en+de at 6.6.0.0 (both names) plus en+de at 6.5.0.0 (CustomPlugin).
 	assert.Equal(t, int64(4), store.requests.Load(), "store requests")
+	assert.Equal(t, int64(2), store.feedRequests.Load(), "feed requests (FroshTools hit, CustomPlugin 404)")
 
 	for table, want := range map[string]int{
 		"store_extension":                     1,
@@ -372,6 +434,121 @@ func TestStoreExtensionSyncPersistsOlderOnlyExtension(t *testing.T) {
 	assert.Equal(t, 1, countRows(t, pool, "store_extension_sync"))
 }
 
+// TestStoreExtensionSyncCompatibilityFromFeed: compatibility for every in-use
+// Shopware version is computed from the packages feed, so the store is probed
+// only until the extension's metadata is found (newest version, en+de) instead
+// of once per in-use version.
+func TestStoreExtensionSyncCompatibilityFromFeed(t *testing.T) {
+	h, pool, store := setupSyncTest(t)
+	ctx := context.Background()
+
+	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false))
+
+	assert.Equal(t, []string{"en_GB@6.6.0.0", "de_DE@6.6.0.0"}, store.seenLocales(),
+		"feed-resolved extension is probed at the newest version only")
+	assert.Equal(t, int64(1), store.feedRequests.Load(), "one feed request")
+
+	// Both compatibility rows come from the feed — including 6.5.0.0, which was
+	// never probed against the store.
+	for swv, want := range map[string]string{"6.5.0.0": "1.1.0", "6.6.0.0": "1.2.0"} {
+		var latest *string
+		require.NoErrorf(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = $1`, swv).Scan(&latest), "read compatibility %s", swv)
+		require.NotNilf(t, latest, "compatible latest for %s", swv)
+		assert.Equalf(t, want, *latest, "compatible latest for %s", swv)
+	}
+
+	// The catalog subtree is complete and nothing stays eligible for re-sync.
+	assert.Equal(t, 1, countRows(t, pool, "store_extension"))
+	assert.Equal(t, 3, countRows(t, pool, "store_extension_version"))
+	needing, err := h.namesNeedingSync(ctx, []string{"FroshTools"}, "6.5.0.0")
+	require.NoError(t, err)
+	assert.Empty(t, needing, "feed-resolved sync satisfies the compatibility check")
+}
+
+// TestStoreExtensionSyncFeedFallback: when the feed cannot be used (server
+// error, or no version with an evaluable constraint), compatibility falls back
+// to probing the store once per in-use Shopware version.
+func TestStoreExtensionSyncFeedFallback(t *testing.T) {
+	for name, mutate := range map[string]func(*mockStoreServer){
+		"feed server error": func(store *mockStoreServer) {
+			store.feedServerErrorNames["froshtools"] = true
+		},
+		"no evaluable constraint": func(store *mockStoreServer) {
+			store.feeds["froshtools"] = []mockFeedVersion{{version: "1.2.0", constraint: ""}}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h, pool, store := setupSyncTest(t)
+			mutate(store)
+			ctx := context.Background()
+
+			require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false))
+
+			assert.Equal(t, []string{
+				"en_GB@6.6.0.0", "de_DE@6.6.0.0",
+				"en_GB@6.5.0.0", "de_DE@6.5.0.0",
+			}, store.seenLocales(), "fallback probes every in-use version")
+
+			for swv, want := range map[string]string{"6.5.0.0": "1.1.0", "6.6.0.0": "1.2.0"} {
+				var latest *string
+				require.NoErrorf(t, pool.QueryRow(ctx, `SELECT latest_version FROM store_extension_compatibility WHERE extension_name = 'FroshTools' AND shopware_version = $1`, swv).Scan(&latest), "read compatibility %s", swv)
+				require.NotNilf(t, latest, "compatible latest for %s", swv)
+				assert.Equalf(t, want, *latest, "compatible latest for %s", swv)
+			}
+		})
+	}
+}
+
+func TestLatestCompatibleVersion(t *testing.T) {
+	versions := []shopwarepackages.PackageVersion{
+		{Version: "1.2.0", Require: map[string]string{"shopware/core": "~6.6.0"}},
+		{Version: "1.1.0", Require: map[string]string{"shopware/core": "~6.5.0"}},
+		{Version: "1.0.0", Require: map[string]string{"shopware/core": "~6.5.0"}},
+	}
+
+	latest, ok := latestCompatibleVersion(versions, "6.5.0.0")
+	require.True(t, ok, "evaluable")
+	require.NotNil(t, latest)
+	assert.Equal(t, "1.1.0", *latest, "newest version matching 6.5")
+
+	latest, ok = latestCompatibleVersion(versions, "6.6.0.0")
+	require.True(t, ok, "evaluable")
+	require.NotNil(t, latest)
+	assert.Equal(t, "1.2.0", *latest, "newest version matching 6.6")
+
+	// Pre-release versions and releases without a constraint are skipped.
+	withNoise := append([]shopwarepackages.PackageVersion{
+		{Version: "2.0.0-rc1", Require: map[string]string{"shopware/core": "~6.6.0"}},
+		{Version: "1.3.0"},
+	}, versions...)
+	latest, ok = latestCompatibleVersion(withNoise, "6.6.0.0")
+	require.True(t, ok, "evaluable")
+	require.NotNil(t, latest)
+	assert.Equal(t, "1.2.0", *latest, "pre-release and constraint-less versions skipped")
+
+	// The require key match is case-insensitive and range constraints work.
+	ranged := []shopwarepackages.PackageVersion{
+		{Version: "1.5.0", Require: map[string]string{"Shopware/Core": ">=6.5.0 <6.7.0"}},
+	}
+	latest, ok = latestCompatibleVersion(ranged, "6.6.0.0")
+	require.True(t, ok, "evaluable")
+	require.NotNil(t, latest)
+	assert.Equal(t, "1.5.0", *latest)
+
+	// A constrained feed that matches nothing is evaluable but yields no version.
+	latest, ok = latestCompatibleVersion(versions, "6.4.0.0")
+	require.True(t, ok, "evaluable")
+	assert.Nil(t, latest, "no compatible release")
+
+	// A feed whose constraints cannot be parsed is not evaluable at all.
+	broken := []shopwarepackages.PackageVersion{
+		{Version: "1.0.0", Require: map[string]string{"shopware/core": "not-a-constraint"}},
+	}
+	latest, ok = latestCompatibleVersion(broken, "6.6.0.0")
+	assert.False(t, ok, "not evaluable")
+	assert.Nil(t, latest)
+}
+
 // TestStoreExtensionSyncFreshIsNoop: a second sync right after the first must
 // be answered from the bookkeeping without any HTTP request or row write. This
 // is what collapses concurrent dispatches from many environments sharing the
@@ -427,10 +604,12 @@ func TestStoreExtensionSyncPicksUpNewRelease(t *testing.T) {
 	require.NoError(t, h.SyncNames(ctx, []string{"FroshTools"}, "6.5.0.0", false), "first sync")
 	before := snapshotRowVersions(t, pool)
 
-	// A new release appears and the bookkeeping ages out.
+	// A new release appears (in the store and in the packages feed) and the
+	// bookkeeping ages out.
 	frosh := store.extensions["FroshTools"]
 	frosh.latestByShopwareVersion["6.6.0.0"] = "1.3.0"
 	frosh.changelogVersions = append([]string{"1.3.0"}, frosh.changelogVersions...)
+	store.feeds["froshtools"] = append([]mockFeedVersion{{version: "1.3.0", constraint: "~6.6.0"}}, store.feeds["froshtools"]...)
 	_, err := pool.Exec(ctx, `UPDATE store_extension_sync SET last_synced_at = NOW() - INTERVAL '2 days'`)
 	require.NoError(t, err, "age sync state")
 
@@ -481,9 +660,12 @@ func TestNamesNeedingSyncCompatibilityGap(t *testing.T) {
 }
 
 // TestStoreExtensionSyncSerializesLocaleProbes: en and de for a version must
-// not run concurrently, otherwise catalog sync doubles store API pressure.
+// not run concurrently, otherwise catalog sync doubles store API pressure. The
+// feed is removed so the extension keeps per-version probing, which is what
+// exercises the multi-version walk order.
 func TestStoreExtensionSyncSerializesLocaleProbes(t *testing.T) {
 	h, _, store := setupSyncTest(t)
+	delete(store.feeds, "froshtools")
 	store.handlerDelay = 30 * time.Millisecond
 
 	require.NoError(t, h.SyncNames(context.Background(), []string{"FroshTools"}, "6.5.0.0", false))
@@ -505,8 +687,11 @@ func TestStoreExtensionSyncAbortsRemainingVersionsOn429(t *testing.T) {
 	ctx := context.Background()
 	collect := withStoreSyncMetrics(t)
 
-	// Newest version (6.6.0.0) succeeds; older 6.5.0.0 is rate-limited. Probes
-	// run newest-first, so we get partial progress then abort.
+	// Without a feed the extension keeps per-version probing, so the walk
+	// reaches the rate-limited older version. Newest version (6.6.0.0)
+	// succeeds; older 6.5.0.0 is rate-limited. Probes run newest-first, so we
+	// get partial progress then abort.
+	delete(store.feeds, "froshtools")
 	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 
@@ -594,6 +779,8 @@ func TestStoreExtensionSyncNon429StillErrors(t *testing.T) {
 func TestStoreExtensionSyncRateLimitThenScheduledPass(t *testing.T) {
 	h, pool, store := setupSyncTest(t)
 	ctx := context.Background()
+	// Feed-missing, so the first pass walks into the rate-limited version.
+	delete(store.feeds, "froshtools")
 	store.rateLimitedVersions["6.5.0.0"] = true
 	h.account = fastStoreClient(store.URL)
 

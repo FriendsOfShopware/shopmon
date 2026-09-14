@@ -13,6 +13,7 @@ import (
 // (e.g. "GET api.shopware.com/pluginStore/pluginsByName").
 var sharedSpanHosts = map[string]struct{}{
 	"api.shopware.com":          {},
+	"packages.shopware.com":     {},
 	"releases.shopware.com":     {},
 	"store.shopware.com":        {},
 	"raw.githubusercontent.com": {},
