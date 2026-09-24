@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,12 +17,12 @@ type mockHTTPClient struct {
 	errs      map[string]error
 }
 
-func (m *mockHTTPClient) Get(_ context.Context, path string) ([]byte, error) {
+func (m *mockHTTPClient) Get(_ context.Context, path string) (*shopware.Response, error) {
 	if err, ok := m.errs[path]; ok {
 		return nil, err
 	}
 	if body, ok := m.responses[path]; ok {
-		return body, nil
+		return &shopware.Response{StatusCode: 200, Body: body}, nil
 	}
 	return nil, errors.New("unexpected path: " + path)
 }

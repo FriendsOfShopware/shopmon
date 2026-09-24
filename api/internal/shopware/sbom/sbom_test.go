@@ -34,8 +34,11 @@ type stubFetcher struct {
 	err  error
 }
 
-func (s stubFetcher) Get(context.Context, string) ([]byte, error) {
-	return s.body, s.err
+func (s stubFetcher) Get(context.Context, string) (*shopware.Response, error) {
+	if s.err != nil {
+		return nil, s.err
+	}
+	return &shopware.Response{StatusCode: http.StatusOK, Body: s.body}, nil
 }
 
 func TestParsePackages(t *testing.T) {
@@ -188,14 +191,14 @@ func TestParseRejectsOversizedPayload(t *testing.T) {
 // frosh_tools:read ACL — fixable configuration that must surface as an error,
 // not be hidden as an absent capability.
 func TestFetchTreatsOnly404AsUnsupported(t *testing.T) {
-	client := stubFetcher{err: &shopware.ApiError{StatusCode: http.StatusNotFound, Body: "nope"}}
+	client := stubFetcher{err: &shopware.APIError{StatusCode: http.StatusNotFound, Body: "nope"}}
 	_, err := Fetch(context.Background(), client)
 	var unsupported *ErrUnsupported
 	if !errors.As(err, &unsupported) {
 		t.Errorf("404: err = %v, want ErrUnsupported", err)
 	}
 
-	client = stubFetcher{err: &shopware.ApiError{StatusCode: http.StatusForbidden, Body: "missing acl"}}
+	client = stubFetcher{err: &shopware.APIError{StatusCode: http.StatusForbidden, Body: "missing acl"}}
 	_, err = Fetch(context.Background(), client)
 	if err == nil || errors.As(err, &unsupported) {
 		t.Errorf("403: err = %v, want a real error so the ACL problem is visible", err)
@@ -203,7 +206,7 @@ func TestFetchTreatsOnly404AsUnsupported(t *testing.T) {
 }
 
 func TestFetchPropagatesRealErrors(t *testing.T) {
-	client := stubFetcher{err: &shopware.ApiError{StatusCode: http.StatusInternalServerError, Body: "boom"}}
+	client := stubFetcher{err: &shopware.APIError{StatusCode: http.StatusInternalServerError, Body: "boom"}}
 	_, err := Fetch(context.Background(), client)
 
 	var unsupported *ErrUnsupported

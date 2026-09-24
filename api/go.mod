@@ -3,6 +3,7 @@ module github.com/friendsofshopware/shopmon/api
 go 1.27.0
 
 require (
+	github.com/FriendsOfShopware/go-shopware-http-client v0.0.0-20260923160238-1215aec3f6e9
 	github.com/aws/aws-sdk-go-v2 v1.47.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.5
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.5

@@ -24,7 +24,7 @@ const Path = "/_action/frosh-tools/security/sbom"
 
 // Fetcher is the subset of the Shopware admin client this package needs.
 type Fetcher interface {
-	Get(ctx context.Context, path string) ([]byte, error)
+	Get(ctx context.Context, path string) (*shopware.Response, error)
 }
 
 // Document is the parsed CycloneDX BOM. Only the fields Shopmon consumes are
@@ -78,7 +78,7 @@ func Fetch(ctx context.Context, client Fetcher) (*Document, error) {
 		return nil, &ErrUnsupported{Reason: "no client"}
 	}
 
-	raw, err := client.Get(ctx, Path)
+	resp, err := client.Get(ctx, Path)
 	if err != nil {
 		// Only a missing route means "this shop cannot serve an SBOM". A 403
 		// means the integration lacks the frosh_tools:read ACL — a fixable
@@ -90,7 +90,7 @@ func Fetch(ctx context.Context, client Fetcher) (*Document, error) {
 		return nil, fmt.Errorf("fetch sbom: %w", err)
 	}
 
-	return Parse(raw)
+	return Parse(resp.Body)
 }
 
 // maxDocumentBytes caps the SBOM payload. The document is shop-controlled and
@@ -273,7 +273,7 @@ func SanitizeError(s string) string {
 // classifying it as an absent capability would hide it behind a Debug log while
 // package-level advisory coverage stays silently disabled.
 func isMissingRoute(err error) bool {
-	if apiErr, ok := errors.AsType[*shopware.ApiError](err); ok {
+	if apiErr, ok := errors.AsType[*shopware.APIError](err); ok {
 		return apiErr.StatusCode == http.StatusNotFound
 	}
 	return false

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 )
 
 type Status string
@@ -102,7 +104,7 @@ type ShopConfig struct {
 
 // HTTPClient interface for making requests to the shop
 type HTTPClient interface {
-	Get(ctx context.Context, path string) ([]byte, error)
+	Get(ctx context.Context, path string) (*shopware.Response, error)
 }
 
 // MissingData marks upstream data sets the caller failed to collect for this

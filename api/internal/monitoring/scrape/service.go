@@ -15,6 +15,7 @@ import (
 	"github.com/friendsofshopware/shopmon/api/internal/mail"
 	"github.com/friendsofshopware/shopmon/api/internal/metrics"
 	"github.com/friendsofshopware/shopmon/api/internal/notify"
+	"github.com/friendsofshopware/shopmon/api/internal/shopware"
 	"github.com/friendsofshopware/shopmon/api/internal/shopware/checker"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/otel"
@@ -144,12 +145,12 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	}
 
 	type fetchResults struct {
-		configData    []byte
-		pluginData    []byte
-		appData       []byte
-		taskData      []byte
-		queueData     []byte
-		cacheInfoData []byte
+		configData    *shopware.Response
+		pluginData    *shopware.Response
+		appData       *shopware.Response
+		taskData      *shopware.Response
+		queueData     *shopware.Response
+		cacheInfoData *shopware.Response
 		configErr     error
 		pluginErr     error
 		appErr        error
@@ -206,7 +207,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	}
 
 	var shopConfig shopwareConfig
-	if err := json.Unmarshal(fr.configData, &shopConfig); err != nil {
+	if err := json.Unmarshal(fr.configData.Body, &shopConfig); err != nil {
 		return fmt.Errorf("decode config: %w", err)
 	}
 
@@ -220,7 +221,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 	if fr.pluginErr == nil {
 		var pluginsResp shopwareSearchResponse[shopwarePlugin]
-		if err := json.Unmarshal(fr.pluginData, &pluginsResp); err != nil {
+		if err := json.Unmarshal(fr.pluginData.Body, &pluginsResp); err != nil {
 			slog.Warn("failed to parse Shopware plugins", "environmentId", env.ID, "error", err)
 			missing.Extensions = true
 		} else {
@@ -246,7 +247,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 	if fr.appErr == nil {
 		var appsResp shopwareSearchResponse[shopwareApp]
-		if err := json.Unmarshal(fr.appData, &appsResp); err != nil {
+		if err := json.Unmarshal(fr.appData.Body, &appsResp); err != nil {
 			slog.Warn("failed to parse Shopware apps", "environmentId", env.ID, "error", err)
 			missing.Extensions = true
 		} else {
@@ -269,7 +270,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 	var scheduledTasks []shopwareScheduledTask
 	if fr.taskErr == nil {
 		var tasksResp shopwareSearchResponse[shopwareScheduledTask]
-		if err := json.Unmarshal(fr.taskData, &tasksResp); err != nil {
+		if err := json.Unmarshal(fr.taskData.Body, &tasksResp); err != nil {
 			slog.Warn("failed to parse Shopware scheduled tasks", "environmentId", env.ID, "error", err)
 			missing.ScheduledTasks = true
 		} else {
@@ -282,7 +283,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 	var queueEntries []shopwareQueueEntry
 	if fr.queueErr == nil {
-		if err := json.Unmarshal(fr.queueData, &queueEntries); err != nil {
+		if err := json.Unmarshal(fr.queueData.Body, &queueEntries); err != nil {
 			slog.Error("failed to parse queue data", "environmentId", env.ID, "error", err)
 		}
 	} else {
@@ -291,7 +292,7 @@ func (h *Service) scrapeEnvironment(ctx context.Context, env queries.GetAllEnvir
 
 	var cacheInfo shopwareCacheInfo
 	if fr.cacheInfoErr == nil {
-		if err := json.Unmarshal(fr.cacheInfoData, &cacheInfo); err != nil {
+		if err := json.Unmarshal(fr.cacheInfoData.Body, &cacheInfo); err != nil {
 			slog.Warn("failed to parse cache info", "environmentId", env.ID, "error", err)
 			missing.CacheInfo = true
 		}

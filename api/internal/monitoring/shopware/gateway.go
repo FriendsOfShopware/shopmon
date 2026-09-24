@@ -25,12 +25,12 @@ func NewGateway(appSecret string) *Gateway {
 
 func (g *Gateway) ValidateConnection(ctx context.Context, credentials monitoring.ConnectionCredentials) (monitoring.ShopInfo, error) {
 	client := shopwareclient.NewClient(credentials.URL, credentials.ClientID, credentials.ClientSecret, credentials.EnvironmentToken)
-	body, err := client.Get(ctx, "/_info/config")
+	resp, err := client.Get(ctx, "/_info/config")
 	if err != nil {
 		return monitoring.ShopInfo{}, fmt.Errorf("fetch shop config: %w", err)
 	}
 	var info monitoring.ShopInfo
-	if err := json.Unmarshal(body, &info); err != nil {
+	if err := json.Unmarshal(resp.Body, &info); err != nil {
 		return monitoring.ShopInfo{}, fmt.Errorf("decode shop config: %w", err)
 	}
 	return info, nil

@@ -57,7 +57,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	// Every failure below leaves the shop's real health unknown. Reporting no
 	// checks would read as "everything recovered", so the source is marked
 	// unavailable and the caller keeps the last known checks.
-	healthData, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
+	healthResp, err := input.Client.Get(ctx, "/_action/frosh-tools/health/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools health status", "error", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
@@ -65,7 +65,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	}
 
 	var healthChecks []froshToolsCheck
-	if err := json.Unmarshal(healthData, &healthChecks); err != nil {
+	if err := json.Unmarshal(healthResp.Body, &healthChecks); err != nil {
 		slog.Warn("failed to parse FroshTools health data", "error", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
@@ -73,7 +73,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 
 	mapFroshChecks(healthChecks, output)
 
-	perfData, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
+	perfResp, err := input.Client.Get(ctx, "/_action/frosh-tools/performance/status")
 	if err != nil {
 		slog.Warn("failed to fetch FroshTools performance status", "error", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
@@ -81,7 +81,7 @@ func checkFroshTools(ctx context.Context, input Input, output *Output) {
 	}
 
 	var perfChecks []froshToolsCheck
-	if err := json.Unmarshal(perfData, &perfChecks); err != nil {
+	if err := json.Unmarshal(perfResp.Body, &perfChecks); err != nil {
 		slog.Warn("failed to parse FroshTools performance data", "error", err)
 		output.MarkUnavailable(SourceFroshTools, prefixFroshTools)
 		return
