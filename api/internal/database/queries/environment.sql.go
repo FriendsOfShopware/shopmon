@@ -633,7 +633,7 @@ func (q *Queries) GetEnvironmentScheduledTasks(ctx context.Context, environmentI
 
 const getEnvironmentSitespeeds = `-- name: GetEnvironmentSitespeeds :many
 SELECT id, environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size
-FROM environment_sitespeed WHERE environment_id = $1 ORDER BY created_at DESC LIMIT 1000
+FROM environment_sitespeed WHERE environment_id = $1 ORDER BY created_at DESC LIMIT 100
 `
 
 func (q *Queries) GetEnvironmentSitespeeds(ctx context.Context, environmentID *int32) ([]EnvironmentSitespeed, error) {
