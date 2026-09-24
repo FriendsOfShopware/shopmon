@@ -47,7 +47,7 @@ const secondRecentRun = {
   transferSize: 2048,
 };
 const oldRun = {
-  createdAt: daysAgo(120),
+  createdAt: daysAgo(60),
   ttfb: 300,
   fullyLoaded: 3000,
   largestContentfulPaint: 2900,
@@ -121,7 +121,7 @@ describe("DetailSitespeed", () => {
     await settleCharts();
 
     expect(wrapper.text()).toContain("Last 30 days");
-    // The 120 day old run is outside the default window.
+    // The 60 day old run is outside the default window.
     expect(lastChartTimestamps()).toEqual([
       new Date(secondRecentRun.createdAt).getTime(),
       new Date(recentRun.createdAt).getTime(),
@@ -179,11 +179,11 @@ describe("DetailSitespeed", () => {
     const wrapper = mountComponent();
     await settleCharts();
 
-    // The single run is 120 days old, so the default 30 day window is empty.
+    // The single run is 60 days old, so the default 30 day window is empty.
     expect(wrapper.find("canvas").exists()).toBe(false);
     expect(wrapper.text()).toContain("No runs in the selected timespan");
 
-    (wrapper.vm as unknown as { timespan: string }).timespan = "all";
+    (wrapper.vm as unknown as { timespan: string }).timespan = "90d";
     await settleCharts();
 
     expect(wrapper.find("canvas").exists()).toBe(true);
@@ -195,7 +195,7 @@ describe("DetailSitespeed", () => {
     await settleCharts();
 
     // The Select renders a listbox only when opened, so drive the model directly.
-    (wrapper.vm as unknown as { timespan: string }).timespan = "all";
+    (wrapper.vm as unknown as { timespan: string }).timespan = "90d";
     await settleCharts();
 
     expect(lastChartTimestamps()).toEqual([
