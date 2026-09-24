@@ -89,7 +89,7 @@ SELECT id, environment_id, check_id, level, message, message_key, params, source
 
 -- name: GetEnvironmentSitespeeds :many
 SELECT id, environment_id, deployment_id, created_at, ttfb, fully_loaded, largest_contentful_paint, first_contentful_paint, cumulative_layout_shift, transfer_size
-FROM environment_sitespeed WHERE environment_id = $1 ORDER BY created_at DESC LIMIT 100;
+FROM environment_sitespeed WHERE environment_id = $1 ORDER BY created_at DESC LIMIT 1000;
 
 -- name: GetEnvironmentChangelogs :many
 SELECT id, environment_id, extensions, old_shopware_version, new_shopware_version, date
