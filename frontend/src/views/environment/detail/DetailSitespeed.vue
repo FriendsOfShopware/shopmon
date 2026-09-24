@@ -250,13 +250,12 @@ function showAllRuns() {
 }
 
 // ── Chart timespan ──
-// Days of history the charts cover; null keeps every run.
-const timespanDays: Record<string, number | null> = {
+// Days of history the charts cover. Runs older than 90 days are pruned
+// by the nightly cleanup, so there is nothing beyond that to show.
+const timespanDays: Record<string, number> = {
   "7d": 7,
   "30d": 30,
   "90d": 90,
-  "1y": 365,
-  all: null,
 };
 
 const timespan = ref("30d");
@@ -265,17 +264,14 @@ const timespanOptions = computed(() => [
   { value: "7d", label: t("sitespeed.last7Days") },
   { value: "30d", label: t("sitespeed.last30Days") },
   { value: "90d", label: t("sitespeed.last90Days") },
-  { value: "1y", label: t("sitespeed.lastYear") },
-  { value: "all", label: t("sitespeed.allTime") },
 ]);
 
 const visibleSitespeeds = computed(() => {
   const entries = environment.value?.sitespeeds ?? [];
-  const days = timespanDays[timespan.value] ?? null;
-  const cutoff = days === null ? null : Date.now() - days * 24 * 60 * 60 * 1000;
+  const days = timespanDays[timespan.value] ?? 30;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
   return entries.filter(
-    (entry) =>
-      !isRunHidden(entry) && (cutoff === null || new Date(entry.createdAt).getTime() >= cutoff),
+    (entry) => !isRunHidden(entry) && new Date(entry.createdAt).getTime() >= cutoff,
   );
 });
 
