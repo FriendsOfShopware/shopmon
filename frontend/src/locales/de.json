@@ -1257,7 +1257,14 @@
     "title": "Shopware Erweiterungs-Kompatibilitätsprüfung",
     "selectVersion": "Update-Version auswählen",
     "extensionCompatibility": "Erweiterungs-Kompatibilität",
-    "notInStore": "Dieses Plugin ist nicht im Store verfügbar. Bitte kontaktieren Sie den Plugin-Hersteller."
+    "notInStore": "Dieses Plugin ist nicht im Store verfügbar. Bitte kontaktieren Sie den Plugin-Hersteller.",
+    "summary": {
+      "incompatible": "inkompatibel",
+      "unknown": "unbekannt",
+      "updateAvailable": "Update verfügbar",
+      "compatible": "kompatibel",
+      "inactive": "inaktiv"
+    }
   },
   "whatsNew": {
     "title": "Neuigkeiten: Packages Mirror",

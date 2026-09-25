@@ -333,6 +333,7 @@ import {
   type EnvironmentExtension as Extension,
 } from "@/api/generated";
 import { formatDate, formatDateTime } from "@/helpers/formatter";
+import { compareByCompatibilitySeverity } from "@/helpers/extensionCompatibility";
 import { useEnvironmentDetail } from "@/composables/useEnvironmentDetail";
 import { useEnvironmentChangelogModal } from "@/composables/useEnvironmentChangelogModal";
 import { useExtensionChangelogModal } from "@/composables/useExtensionChangelogModal";
@@ -572,6 +573,8 @@ async function loadUpdateWizard(version: string) {
 
     dialogUpdateWizard.value = extensions.sort((a, b) => {
       if (a.active !== b.active) return a.active ? -1 : 1;
+      const severityDiff = compareByCompatibilitySeverity(a, b);
+      if (severityDiff !== 0) return severityDiff;
       return a.label.localeCompare(b.label);
     });
   } catch (e) {
