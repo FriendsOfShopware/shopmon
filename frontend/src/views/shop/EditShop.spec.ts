@@ -69,7 +69,7 @@ vi.mock("@/composables/useAlert", () => ({
   }),
 }));
 
-import { getAccountShops } from "@/api/generated";
+import { getAccountShops, updateShop } from "@/api/generated";
 
 describe("EditShop", () => {
   beforeEach(() => {
@@ -118,6 +118,61 @@ describe("EditShop", () => {
     const wrapper = mountComponent();
     await flushPromises();
     expect(wrapper.find('input[name="name"]').exists()).toBe(true);
+  });
+
+  it("prefills shop fields from the loaded shop and saves edits", async () => {
+    vi.mocked(updateShop).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: new Response(null, { status: 204 }),
+    } as any);
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const nameInput = wrapper.find('input[name="name"]');
+    const gitInput = wrapper.find('input[name="gitUrl"]');
+    const description = wrapper.find("textarea");
+
+    expect((nameInput.element as HTMLInputElement).value).toBe("Test Shop");
+    expect((gitInput.element as HTMLInputElement).value).toBe("https://github.com/test/repo");
+    expect((description.element as HTMLTextAreaElement).value).toBe("A test shop");
+
+    await nameInput.setValue("Renamed Shop");
+    await gitInput.setValue("https://github.com/test/other");
+    await description.setValue("Updated description");
+    await wrapper.find("form").trigger("submit");
+
+    // vee-validate debounces schema validation before calling the submit handler.
+    await vi.waitFor(() => {
+      expect(updateShop).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { orgId: "org-1", shopId: 1 },
+          body: {
+            name: "Renamed Shop",
+            description: "Updated description",
+            gitUrl: "https://github.com/test/other",
+          },
+        }),
+      );
+    });
+  });
+
+  it("prefills the name when description and git URL are null", async () => {
+    vi.mocked(getAccountShops).mockResolvedValue({
+      data: [{ ...mockShop, description: null, gitUrl: null }],
+      error: undefined,
+      response: new Response(),
+    } as any);
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect((wrapper.find('input[name="name"]').element as HTMLInputElement).value).toBe(
+      "Test Shop",
+    );
+    expect((wrapper.find('input[name="gitUrl"]').element as HTMLInputElement).value).toBe("");
+    expect((wrapper.find("textarea").element as HTMLTextAreaElement).value).toBe("");
   });
 
   it("has description textarea", async () => {
